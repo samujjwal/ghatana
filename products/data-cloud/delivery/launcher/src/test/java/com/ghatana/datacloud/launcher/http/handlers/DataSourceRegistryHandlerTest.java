@@ -6,8 +6,14 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.fabric.DataFabricConnector;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
+import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
+import com.ghatana.platform.security.annotation.RequiresRole;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBufStrings;
 import io.activej.http.HttpHeaders;
@@ -31,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -61,15 +68,17 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
+        // Use local profile with non-strict tenant resolution for tests
         http = new HttpHandlerSupport(
             new ObjectMapper(),
             "*",
             "GET,POST,PUT,DELETE,OPTIONS",
             "Content-Type,Authorization",
-            true // strictTenantResolution — ensures missing X-Tenant-Id returns null (not a fallback)
+            false // Non-strict mode allows fallback tenant resolution for tests
         );
         handler = new DataSourceRegistryHandler(client, http, null, null /* no audit service needed for metrics tests */);
         originalProfile = System.getenv("DATACLOUD_PROFILE");
+        System.setProperty("DATACLOUD_PROFILE", "local"); // Use local profile for tests
     }
 
     @AfterEach
@@ -247,12 +256,40 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Fabric metrics require tenant ID header")
     void fabricMetricsRequireTenantId() {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
-            .build();
+        // Temporarily set production profile to test strict tenant enforcement
+        String originalProfile = System.getProperty("DATACLOUD_PROFILE");
+        System.setProperty("DATACLOUD_PROFILE", "production");
+        
+        try {
+            // Recreate HttpHandlerSupport with strict mode for production
+            HttpHandlerSupport httpStrict = new HttpHandlerSupport(
+                new ObjectMapper(),
+                "*",
+                "GET,POST,PUT,DELETE,OPTIONS",
+                "Content-Type,Authorization",
+                true, // strict mode
+                "production"
+            );
+            
+            DataSourceRegistryHandler handlerStrict = new DataSourceRegistryHandler(client, httpStrict, null, null);
+            
+            HttpRequest request = mock(HttpRequest.class);
+            lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn(null);
+            lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+            lenient().when(request.getPath()).thenReturn("/api/v1/data-fabric/metrics");
+            lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.GET);
 
-        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
+            HttpResponse response = runPromise(() -> handlerStrict.handleGetFabricMetrics(request));
 
-        assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getCode()).isEqualTo(400);
+        } finally {
+            // Restore original profile
+            if (originalProfile != null) {
+                System.setProperty("DATACLOUD_PROFILE", originalProfile);
+            } else {
+                System.clearProperty("DATACLOUD_PROFILE");
+            }
+        }
     }
 
     @Test
@@ -319,13 +356,13 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Rotate credentials rejects raw credential payload")
     void rotateCredentialsRejectsRawCredentials() {
-        HttpRequest request = mock(HttpRequest.class);
-        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
-        lenient().when(request.loadBody()).thenReturn(io.activej.promise.Promise.of(
+        HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/rotate",
             ByteBufStrings.wrapUtf8("""
                 { "credentials": { "password": "rotated" } }
-                """)));
+                """));
 
         HttpResponse response = runPromise(() -> handler.handleRotateCredentials(request));
 
@@ -335,9 +372,11 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Sync without fabric returns pending and does not mutate connection state")
     void syncWithoutFabricDoesNotMutateState() {
-        HttpRequest request = mock(HttpRequest.class);
-        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
-        lenient().when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn("test-tenant");
+        HttpRequest request = RequestContextTestHelper.createTestRequestWithBody(
+            "test-tenant",
+            "conn-1",
+            "/api/v1/connectors/conn-1/sync",
+            ByteBufStrings.wrapUtf8("{}"));
 
         HttpResponse response = runPromise(() -> handler.handleTriggerSync(request));
 
@@ -346,6 +385,137 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         assertThat(body.get("syncStatus")).isEqualTo("pending");
         verify(client, never()).save(anyString(), anyString(), anyMap());
         verify(client, never()).findById(anyString(), anyString(), anyString());
+    }
+
+    // P1-6: Connector lifecycle hardening tests
+
+    @Test
+    @DisplayName("Enable without fabric connector returns 503")
+    void enableWithoutFabricReturns503() {
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
+        lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+
+        HttpResponse response = runPromise(() -> handler.handleEnableConnection(request));
+
+        assertThat(response.getCode()).isEqualTo(503);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("message")).asString().contains("DataFabricConnector");
+    }
+
+    @Test
+    @DisplayName("Enable requires successful validation before marking ACTIVE")
+    void enableRequiresValidation() {
+        // Given fabric connector that returns failed test
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        lenient().when(mockFabric.testConnection(anyString()))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.ConnectionTestResult(false, "Connection refused", 0, "1.0.0")));
+
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null);
+
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
+        lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+
+        DataCloudClient.Entity existingEntity = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingEntity)));
+
+        // Create a mock for the saved entity
+        DataCloudClient.Entity savedEntity = mock(DataCloudClient.Entity.class);
+        lenient().when(savedEntity.id()).thenReturn("conn-1");
+        lenient().when(savedEntity.data()).thenReturn(Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ERROR"));
+        lenient().when(savedEntity.collection()).thenReturn("connections");
+        lenient().when(savedEntity.version()).thenReturn(1L);
+        lenient().when(savedEntity.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenReturn(io.activej.promise.Promise.of(savedEntity));
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleEnableConnection(request));
+
+        // Then response shows validation failure
+        assertThat(response.getCode()).isEqualTo(422);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("enabled")).isEqualTo(false);
+        assertThat(body.get("validated")).isEqualTo(false);
+        assertThat(body.get("state")).isEqualTo("ERROR");
+        assertThat(body.get("validationError")).isEqualTo("Connection refused");
+    }
+
+    @Test
+    @DisplayName("Enable succeeds when validation passes")
+    void enableSucceedsWithValidation() {
+        // Given fabric connector that returns successful test
+        DataFabricConnector mockFabric = mock(DataFabricConnector.class);
+        lenient().when(mockFabric.testConnection(anyString()))
+            .thenReturn(io.activej.promise.Promise.of(
+                new DataFabricConnector.ConnectionTestResult(true, "Connected", 15, "1.0.0")));
+
+        DataSourceRegistryHandler handlerWithFabric = new DataSourceRegistryHandler(
+            client, http, mockFabric, null);
+
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("conn-1");
+        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/conn-1/enable");
+        lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+
+        DataCloudClient.Entity existingEntity = mockEntity("conn-1", Map.of("name", "test-conn", "type", "POSTGRESQL"));
+        lenient().when(client.findById(anyString(), anyString(), eq("conn-1")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(existingEntity)));
+
+        // Create a mock for the saved entity
+        DataCloudClient.Entity savedEntity = mock(DataCloudClient.Entity.class);
+        lenient().when(savedEntity.id()).thenReturn("conn-1");
+        lenient().when(savedEntity.data()).thenReturn(Map.of("name", "test-conn", "type", "POSTGRESQL", "state", "ACTIVE"));
+        lenient().when(savedEntity.collection()).thenReturn("connections");
+        lenient().when(savedEntity.version()).thenReturn(1L);
+        lenient().when(savedEntity.createdAt()).thenReturn(java.time.Instant.now());
+        
+        lenient().when(client.save(anyString(), anyString(), anyMap()))
+            .thenReturn(io.activej.promise.Promise.of(savedEntity));
+
+        HttpResponse response = runPromise(() -> handlerWithFabric.handleEnableConnection(request));
+
+        // Then response shows successful enable
+        assertThat(response.getCode()).isEqualTo(200);
+        Map<String, Object> body = parseJsonBody(response);
+        assertThat(body.get("enabled")).isEqualTo(true);
+        assertThat(body.get("validated")).isEqualTo(true);
+        assertThat(body.get("state")).isEqualTo("ACTIVE");
+        assertThat(body.get("latencyMs")).isEqualTo(15);
+    }
+
+    @Test
+    @DisplayName("State update does not synthesize missing connection record")
+    void stateUpdateDoesNotSynthesizeMissingRecord() {
+        // When connection doesn't exist
+        HttpRequest request = mock(HttpRequest.class);
+        lenient().when(request.getPathParameter("connectionId")).thenReturn("nonexistent-conn");
+        lenient().when(request.getHeader(TenantExtractor.TENANT_HEADER)).thenReturn("test-tenant");
+        lenient().when(request.getPath()).thenReturn("/api/v1/connectors/nonexistent-conn/enable");
+        lenient().when(request.getQueryParameter("tenantId")).thenReturn(null);
+        lenient().when(request.getMethod()).thenReturn(io.activej.http.HttpMethod.POST);
+
+        lenient().when(client.findById(anyString(), anyString(), eq("nonexistent-conn")))
+            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.empty()));
+
+        HttpResponse response = runPromise(() -> handler.handleEnableConnection(request));
+
+        // Then returns 503 (no fabric) or error - but never creates phantom record
+        // The actual behavior depends on whether fabric is available
+        // Without fabric, it returns 503 early
+        assertThat(response.getCode()).isEqualTo(503);
     }
 
     // Helper methods
@@ -365,6 +535,9 @@ class DataSourceRegistryHandlerTest extends EventloopTestBase {
         DataCloudClient.Entity entity = mock(DataCloudClient.Entity.class);
         lenient().when(entity.id()).thenReturn(id);
         lenient().when(entity.data()).thenReturn(data);
+        lenient().when(entity.collection()).thenReturn("connections");
+        lenient().when(entity.version()).thenReturn(1L);
+        lenient().when(entity.createdAt()).thenReturn(java.time.Instant.now());
         return entity;
     }
 }

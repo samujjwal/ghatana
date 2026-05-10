@@ -55,15 +55,22 @@ function getProjectUpdatedAt(project: ProjectWithOwnership): string {
     return new Date(0).toISOString();
 }
 
+// TODO-011: Mark client-derived actions as degraded/fallback
 // TODO-012: Remove empty-action fallback that masks backend failure
 // Distinguish between loaded-and-empty and backend-unavailable
+interface NextActionTitlesResult {
+    readonly titles: readonly string[];
+    readonly isDegraded: boolean;
+    readonly isFallback: boolean;
+}
+
 function getProjectNextActionTitles(
     project: ProjectWithOwnership,
     backendAvailable: boolean,
-): readonly string[] {
+): NextActionTitlesResult {
     if (!backendAvailable) {
         // Backend is unavailable - don't mask the failure
-        return [];
+        return { titles: [], isDegraded: true, isFallback: false };
     }
 
     if (Array.isArray(project.aiNextActions)) {
@@ -72,13 +79,15 @@ function getProjectNextActionTitles(
             .slice(0, 3);
 
         if (backedActions.length > 0) {
-            return backedActions;
+            // TODO-011: Mark client-derived aiNextActions as degraded/fallback
+            // Backend actions are authoritative, aiNextActions are client-derived fallback
+            return { titles: backedActions, isDegraded: true, isFallback: true };
         }
     }
 
     // Backend is available but returned empty aiNextActions (loaded-and-empty)
     // Don't use fallback - this is a legitimate empty state
-    return [];
+    return { titles: [], isDegraded: false, isFallback: false };
 }
 
 // TODO-013: Add dashboard degraded-state UX
@@ -224,6 +233,8 @@ export default function Component() {
     const blockedWork = dashboardActions?.blockedWork ?? [];
     const reviewRequired = dashboardActions?.reviewRequired ?? [];
     const safeToContinue = dashboardActions?.safeToContinue ?? [];
+    // TODO-011: Use backend dashboard actions as authoritative source
+    // Mark as degraded when backend is unavailable
     const dashboardDecisionBrief = buildDashboardDecisionBrief(
         blockedWork,
         reviewRequired,
@@ -260,12 +271,18 @@ export default function Component() {
 
         // Backend is available if not loading and no error
         const backendAvailable = !dashboardActionsLoading && !dashboardActionsError;
-        const actionTitles = getProjectNextActionTitles(mostRecentProject, backendAvailable);
+        const { titles, isDegraded, isFallback } = getProjectNextActionTitles(mostRecentProject, backendAvailable);
 
-        return actionTitles.map((title, index): NextAction => ({
+        // TODO-011: Don't show client-derived fallback actions in dashboard
+        // Only show backend-authoritative actions
+        if (isFallback) {
+            return [];
+        }
+
+        return titles.map((title, index): NextAction => ({
             id: `dashboard-next-action-${index}`,
             title,
-            description: `${title} · ${mostRecentProject.name}`,
+            description: `${title} · ${mostRecentProject.name}${isDegraded ? ' (degraded)' : ''}`,
             priority: index === 0 ? 'primary' : index === 1 ? 'secondary' : 'tertiary',
             action: () => {
                 navigate(getProjectResumePath(mostRecentProject));
@@ -446,29 +463,39 @@ export default function Component() {
                             <h2 className="text-lg font-semibold text-text-primary">Workspace Health</h2>
                         </div>
                         <div className="space-y-2">
-                            {workspaces.filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id)).length > 0 ? (
-                                workspaces
-                                    .filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id))
-                                    .slice(0, 2)
-                                    .map((ws) => (
+                            {(() => {
+                                const emptyWorkspaces = workspaces.filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id));
+                                if (emptyWorkspaces.length > 0) {
+                                    return emptyWorkspaces.slice(0, 2).map((ws) => (
                                         <p key={ws.id} className="text-sm text-warning-color dark:text-warning-color">
                                             {ws.name} has no projects yet.
                                         </p>
-                                    ))
-                            ) : mostRecentProject && getProjectNextActionTitles(mostRecentProject, !dashboardActionsLoading && !dashboardActionsError).length > 0 && Array.isArray(mostRecentProject.aiNextActions) && mostRecentProject.aiNextActions.length > 0 ? (
-                                <p className="text-sm text-warning-color dark:text-warning-color">
-                                    {mostRecentProject.name} has {getProjectNextActionTitles(mostRecentProject, !dashboardActionsLoading && !dashboardActionsError).length} backed review action(s) to check.
-                                </p>
-                            ) : mostRecentProject ? (
-                                <p className="text-sm text-text-secondary">
-                                    No backed blocker or review actions are reported by the project API yet. Resume the lifecycle cockpit to refresh readiness.
-                                </p>
-                            ) : (
-                                <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>All workspaces have active projects.</span>
-                                </div>
-                            )}
+                                    ));
+                                }
+                                if (mostRecentProject && !dashboardActionsLoading && !dashboardActionsError) {
+                                    const result = getProjectNextActionTitles(mostRecentProject, true);
+                                    if (result.titles.length > 0) {
+                                        return (
+                                            <p className="text-sm text-warning-color dark:text-warning-color">
+                                                {mostRecentProject.name} has {result.titles.length} backend-backed review action(s) to check.
+                                            </p>
+                                        );
+                                    }
+                                }
+                                if (mostRecentProject) {
+                                    return (
+                                        <p className="text-sm text-text-secondary">
+                                            No backed blocker or review actions are reported by the project API yet. Resume the lifecycle cockpit to refresh readiness.
+                                        </p>
+                                    );
+                                }
+                                return (
+                                    <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        <span>All workspaces have active projects.</span>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -540,6 +567,7 @@ export default function Component() {
                         error={dashboardActionsError}
                         emptyText="No backend blockers are reported for this workspace."
                         onOpenProject={openDashboardAction}
+                        onRetry={() => window.location.reload()}
                     />
                     <DashboardActionStatusCard
                         title="Review Required"
@@ -549,21 +577,18 @@ export default function Component() {
                         error={dashboardActionsError}
                         emptyText="No backend review actions are waiting."
                         onOpenProject={openDashboardAction}
+                        onRetry={() => window.location.reload()}
                     />
                     <DashboardActionStatusCard
-                        title="Safe To Continue"
+                        title="Safe to Continue"
                         tone="safe"
                         actions={safeToContinue}
                         loading={dashboardActionsLoading === true}
                         error={dashboardActionsError}
-                        emptyText="No safe continuation action has been reported yet."
+                        emptyText="No safe continuation actions are available."
                         onOpenProject={openDashboardAction}
+                        onRetry={() => window.location.reload()}
                     />
-                    {executeDashboardAction.error instanceof Error && (
-                        <p role="alert" className="md:col-span-3 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-color">
-                            Could not execute the safe dashboard action: {executeDashboardAction.error.message}
-                        </p>
-                    )}
                 </section>
 
                 <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">
@@ -655,16 +680,34 @@ interface DashboardActionStatusCardProps {
     readonly error: unknown;
     readonly emptyText: string;
     readonly onOpenProject: (action: ProjectDashboardAction) => void;
+    readonly onRetry?: () => void;
 }
 
 function DashboardActionStatusCard(props: DashboardActionStatusCardProps) {
-    const { title, tone, actions, loading, error, emptyText, onOpenProject } = props;
+    const { title, tone, actions, loading, error, emptyText, onOpenProject, onRetry } = props;
     const toneClass =
         tone === 'safe'
             ? 'border-emerald-200 bg-emerald-50/60 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200'
             : tone === 'review'
                 ? 'border-primary-200 bg-primary-50/60 text-primary-800 dark:border-primary-900/50 dark:bg-primary-950/20 dark:text-primary-200'
                 : 'border-warning-border bg-warning-bg/60 text-warning-color dark:border-warning-border/50 dark:bg-warning-bg/20 dark:text-warning-color';
+
+    // TODO-013: Extract error details for degraded state UX
+    const getErrorDetails = (err: unknown): { message: string; correlationId?: string } => {
+        if (typeof err === 'string') {
+            return { message: err };
+        }
+        if (typeof err === 'object' && err !== null) {
+            const errorObj = err as Record<string, unknown>;
+            return {
+                message: typeof errorObj.message === 'string' ? errorObj.message : 'Unknown error',
+                correlationId: typeof errorObj.correlationId === 'string' ? errorObj.correlationId : undefined,
+            };
+        }
+        return { message: 'Unknown error' };
+    };
+
+    const errorDetails = error ? getErrorDetails(error) : null;
 
     return (
         <div className={`rounded-2xl border p-5 shadow-sm ${toneClass}`}>
@@ -678,7 +721,27 @@ function DashboardActionStatusCard(props: DashboardActionStatusCardProps) {
             {loading ? (
                 <p className="mt-4 text-sm opacity-80">Loading backend action status...</p>
             ) : error ? (
-                <p className="mt-4 text-sm opacity-80">Could not load backed action status. Retry from the dashboard refresh.</p>
+                <div className="mt-4 space-y-3">
+                    <p className="text-sm opacity-80">
+                        Could not load backed action status: {errorDetails?.message || 'Unknown error'}
+                    </p>
+                    {errorDetails?.correlationId && (
+                        <p className="text-xs opacity-70">
+                            Correlation ID: <code className="rounded bg-white/50 px-1.5 py-0.5">{errorDetails.correlationId}</code>
+                        </p>
+                    )}
+                    {onRetry && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onRetry}
+                            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/50 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/70 dark:border-black/30 dark:bg-black/20 dark:hover:bg-black/30"
+                        >
+                            <RefreshCw className="h-3 w-3" />
+                            Retry
+                        </Button>
+                    )}
+                </div>
             ) : actions.length === 0 ? (
                 <p className="mt-4 text-sm opacity-80">{emptyText}</p>
             ) : (

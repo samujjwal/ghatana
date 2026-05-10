@@ -47,12 +47,12 @@ export default function Component() {
             if (!projectId) {
                 throw new Error('Project id is required to load project settings');
             }
-            if (currentWorkspaceId) {
-                return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as unknown as Promise<ProjectContract>;
+            if (!currentWorkspaceId) {
+                throw new Error('Workspace context is required - project access must be scoped (TODO-001)');
             }
-            return yappcApi.projects.get(projectId) as unknown as Promise<ProjectContract>;
+            return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as unknown as Promise<ProjectContract>;
         },
-        enabled: Boolean(projectId),
+        enabled: Boolean(projectId) && Boolean(currentWorkspaceId),
     });
 
     const [form, setForm] = useState<ProjectSettingsFormState>({

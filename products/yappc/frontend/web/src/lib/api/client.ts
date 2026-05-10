@@ -663,27 +663,27 @@ export const projects = {
     post<typeof body, unknown>('/api/projects/setup-suggestion', body, 'projects.setupSuggestion'),
   current: (projectId: string) =>
     get<Project>(`/api/projects/${encodeURIComponent(projectId)}/current`, 'projects.current'),
-  activity: (projectId: string, workspaceId?: string) =>
+  activity: (projectId: string, workspaceId: string) =>
     get<ProjectActivityResponse>(
       `/api/projects/${encodeURIComponent(projectId)}/activity${encodeQuery({ workspaceId })}`,
       'projects.activity',
     ),
-  artifacts: (projectId: string, workspaceId?: string) =>
+  artifacts: (projectId: string, workspaceId: string) =>
     get<ProjectArtifactsResponse>(
       `/api/projects/${encodeURIComponent(projectId)}/artifacts${encodeQuery({ workspaceId })}`,
       'projects.artifacts',
     ),
-  sprintCurrent: (projectId: string, workspaceId?: string) =>
+  sprintCurrent: (projectId: string, workspaceId: string) =>
     get<ProjectSprintCurrentResponse>(
       `/api/projects/${encodeURIComponent(projectId)}/sprints/current${encodeQuery({ workspaceId })}`,
       'projects.sprintCurrent',
     ),
-  backlog: (projectId: string, workspaceId?: string, limit: number = 20) =>
+  backlog: (projectId: string, workspaceId: string, limit: number = 20) =>
     get<ProjectBacklogResponse>(
       `/api/projects/${encodeURIComponent(projectId)}/backlog${encodeQuery({ workspaceId, limit: String(limit) })}`,
       'projects.backlog',
     ),
-  recentRuns: (projectId: string, workspaceId?: string, limit: number = 10) =>
+  recentRuns: (projectId: string, workspaceId: string, limit: number = 10) =>
     get<ProjectRunsResponse>(
       `/api/projects/${encodeURIComponent(projectId)}/runs${encodeQuery({ workspaceId, limit: String(limit) })}`,
       'projects.recentRuns',
@@ -717,7 +717,7 @@ export const projects = {
       {},
       'projects.refreshAiDetails',
     ),
-  export: (projectId: string, workspaceId?: string) =>
+  export: (projectId: string, workspaceId: string) =>
     getResponse(
       `/api/projects/${encodeURIComponent(projectId)}/export${encodeQuery({ workspaceId })}`,
       'projects.export',

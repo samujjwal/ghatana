@@ -61,7 +61,7 @@ export type ProjectShellContract = {
 	workspaceId?: string;
 	currentPhase: string;
 	phaseProgress?: number;
-	// TODO-004: Include backend capability contract
+	// TODO-004: Backend capability contract - authoritative source of truth
 	userId?: string;
 	role?: string;
 	capabilities?: {
@@ -71,7 +71,10 @@ export type ProjectShellContract = {
 		delete: boolean;
 		include?: boolean;
 		comment?: boolean;
+		export?: boolean;
+		share?: boolean;
 	};
+	// Deprecated - use capabilities instead (TODO-004)
 	isOwner?: boolean;
 	isIncluded?: boolean;
 };

@@ -1,289 +1,38 @@
 /**
- * Project Preview Route
+ * Preview Route - Redirect to Observe Phase
  *
- * External preview host surface for the current project.
- * Shows a configured preview host in an iframe when available.
+ * This route is deprecated. Preview and runtime signals are now part of Observe.
+ * Redirects to the canonical observe phase cockpit.
  *
  * @doc.type route
- * @doc.purpose External preview host surface with device mode controls
+ * @doc.purpose Redirect legacy preview route to canonical phase
  * @doc.layer product
- * @doc.pattern Route Component
+ * @doc.pattern Redirect Component
  */
 
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { RefreshCw as Refresh, ExternalLink as OpenInNew, Smartphone, Tablet, Laptop, AlertTriangle, Loader2 } from 'lucide-react';
-import type { PreviewStatusContract } from '@/contracts/workspace-project';
-import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
-import { LegacyRouteCompatibilityNotice } from './LegacyRouteCompatibilityNotice';
-import { Button } from '../../../components/ui/Button';
+import { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router';
 
-type DeviceMode = 'mobile' | 'tablet' | 'desktop';
+// TODO-009: Redirect legacy preview route to canonical observe phase
+export default function PreviewRedirectRoute() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
 
-const deviceDimensions: Record<DeviceMode, { width: string; label: string }> = {
-    mobile: { width: '375px', label: 'Mobile' },
-    tablet: { width: '768px', label: 'Tablet' },
-    desktop: { width: '100%', label: 'Desktop' }
-};
-
-function getPreviewStatusView(status: PreviewStatusContract): {
-    label: string;
-    className: string;
-    detail: string;
-    capabilityBoundary: string;
-} {
-    switch (status) {
-        case 'external-ready':
-            return {
-                label: 'External preview ready',
-                className: 'border-success-border bg-success-bg text-success-color dark:border-success-border/60 dark:bg-success-bg/40 dark:text-success-color',
-                detail: 'This route embeds a configured external preview host. It does not run a local preview runtime by itself.',
-                capabilityBoundary: 'Preview only — this is not a live deployment console. Changes are not deployed to production.',
-            };
-        case 'loading':
-            return {
-                label: 'Checking preview host...',
-                className: 'border-info-border bg-info-bg text-info-color dark:border-info-border/60 dark:bg-info-bg/40 dark:text-info-color',
-                detail: 'Verifying that the configured preview host is reachable.',
-                capabilityBoundary: 'Preview only — this is not a live deployment console.',
-            };
-        case 'unavailable':
-            return {
-                label: 'Preview host unreachable',
-                className: 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color',
-                detail: 'The preview host is configured but not responding. It may be starting up or temporarily offline.',
-                capabilityBoundary: 'Preview only — this is not a live deployment console.',
-            };
-        case 'error':
-            return {
-                label: 'Preview host error',
-                className: 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive',
-                detail: 'The preview host returned an error. Check the host configuration or try again later.',
-                capabilityBoundary: 'Preview only — this is not a live deployment console.',
-            };
-        default:
-            return {
-                label: 'Preview unavailable',
-                className: 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color',
-                detail: 'A preview host must be configured before this screen can expose a live preview.',
-                capabilityBoundary: 'Preview only — this is not a live deployment console.',
-            };
+  useEffect(() => {
+    if (projectId) {
+      navigate(`/p/${projectId}/observe`, { replace: true });
     }
+  }, [projectId, navigate]);
+
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="text-center">
+        <p className="text-sm text-fg-muted">Redirecting to Observe phase...</p>
+      </div>
+    </div>
+  );
 }
 
-/**
- * Preview page component
- */
-export default function PreviewPage() {
-    const { projectId } = useParams();
-    const [device, setDevice] = useState<DeviceMode>('desktop');
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [previewStatus, setPreviewStatus] = useState<PreviewStatusContract>('loading');
-
-    const previewFeatureEnabled = import.meta.env.VITE_FEATURE_PROJECT_PREVIEW === 'true';
-    const previewBaseUrl = import.meta.env.VITE_PREVIEW_BASE_URL;
-
-    useEffect(() => {
-        if (!previewFeatureEnabled || !previewBaseUrl) {
-            setPreviewStatus('unconfigured');
-            return;
-        }
-        setPreviewStatus('loading');
-        let cancelled = false;
-        const checkHost = async (): Promise<void> => {
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 5000);
-                await fetch(`${previewBaseUrl}/health`, { method: 'HEAD', signal: controller.signal, mode: 'no-cors' });
-                clearTimeout(timeout);
-                if (!cancelled) {
-                    setPreviewStatus('external-ready');
-                }
-            } catch {
-                if (!cancelled) {
-                    setPreviewStatus('unavailable');
-                }
-            }
-        };
-        void checkHost();
-        return () => { cancelled = true; };
-    }, [previewFeatureEnabled, previewBaseUrl]);
-
-    const previewStatusView = getPreviewStatusView(previewStatus);
-
-    if (previewStatus === 'unconfigured' || previewStatus === 'loading' || previewStatus === 'unavailable' || previewStatus === 'error') {
-        return (
-            <div className="flex h-full flex-col">
-                <LegacyRouteCompatibilityNotice
-                    projectId={projectId}
-                    legacySurface="Project preview"
-                    canonicalPhase="observe"
-                    reason="Preview and runtime signals are now part of Observe."
-                />
-                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-divider bg-bg-paper p-8 text-center">
-                    <div className="max-w-lg">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
-                            {previewStatus === 'loading' && <Loader2 className="w-3 h-3 animate-spin" />}
-                            {previewStatus === 'unavailable' && <AlertTriangle className="w-3 h-3" />}
-                            {previewStatus === 'error' && <AlertTriangle className="w-3 h-3" />}
-                            {previewStatusView.label}
-                        </span>
-                        <h1 className="text-xl font-semibold text-text-primary mt-3">Preview {previewStatus === 'loading' ? 'Setup' : 'Not Available'}</h1>
-                        <p className="mt-3 text-sm text-text-secondary">
-                            {previewStatusView.detail}
-                        </p>
-                        <p className="mt-2 text-xs text-text-secondary border-t border-divider pt-2">
-                            {previewStatusView.capabilityBoundary}
-                        </p>
-                        {previewStatus === 'unavailable' && (
-                            <Button
-                                type="button"
-                                onClick={() => setPreviewStatus('loading')}
-                                className="mt-4"
-                                startIcon={<Refresh className="w-4 h-4" />}
-                            >
-                                Retry
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const previewUrl = `${previewBaseUrl}/preview/${projectId}`;
-
-    const handleRefresh = () => {
-        setRefreshKey(prev => prev + 1);
-    };
-
-    const handleOpenExternal = () => {
-        window.open(previewUrl, '_blank');
-    };
-
-    return (
-        <div className="flex flex-col h-full">
-            <LegacyRouteCompatibilityNotice
-                projectId={projectId}
-                legacySurface="Project preview"
-                canonicalPhase="observe"
-                reason="Preview and runtime signals are now part of Observe."
-            />
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-divider bg-bg-paper px-4 py-3">
-                <div>
-                    <p className="text-sm font-semibold text-text-primary">Preview via external host</p>
-                    <p className="mt-1 text-xs text-text-secondary">{previewStatusView.detail}</p>
-                    <p className="mt-1 text-[10px] text-text-secondary uppercase tracking-wide opacity-70">
-                        {previewStatusView.capabilityBoundary}
-                    </p>
-                </div>
-                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
-                    {previewStatusView.label}
-                </span>
-            </div>
-            {/* Preview Controls */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-text-secondary">Device:</span>
-                    <div className="flex items-center bg-bg-paper border border-divider rounded-lg overflow-hidden">
-                        <Button
-                            type="button"
-                            onClick={() => setDevice('mobile')}
-                            variant="ghost"
-                            size="small"
-                            className={`p-2 transition-colors ${
-                                device === 'mobile' 
-                                    ? 'bg-info-bg text-info-color'
-                                    : 'text-text-secondary hover:bg-surface-muted'
-                            }`}
-                            title="Mobile"
-                            aria-label="Preview mobile device"
-                        >
-                            <Smartphone className="w-5 h-5" />
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={() => setDevice('tablet')}
-                            variant="ghost"
-                            size="small"
-                            className={`p-2 transition-colors ${
-                                device === 'tablet' 
-                                    ? 'bg-info-bg text-info-color'
-                                    : 'text-text-secondary hover:bg-surface-muted'
-                            }`}
-                            title="Tablet"
-                            aria-label="Preview tablet device"
-                        >
-                            <Tablet className="w-5 h-5" />
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={() => setDevice('desktop')}
-                            variant="ghost"
-                            size="small"
-                            className={`p-2 transition-colors ${
-                                device === 'desktop' 
-                                    ? 'bg-info-bg text-info-color'
-                                    : 'text-text-secondary hover:bg-surface-muted'
-                            }`}
-                            title="Desktop"
-                            aria-label="Preview desktop device"
-                        >
-                            <Laptop className="w-5 h-5" />
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button
-                        type="button"
-                        onClick={handleRefresh}
-                        variant="ghost"
-                        size="small"
-                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted"
-                        title="Refresh Preview"
-                        aria-label="Refresh preview"
-                    >
-                        <Refresh className="w-5 h-5" />
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={handleOpenExternal}
-                        variant="ghost"
-                        size="small"
-                        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted"
-                        title="Open in New Tab"
-                        aria-label="Open preview in new tab"
-                    >
-                        <OpenInNew className="w-5 h-5" />
-                    </Button>
-                </div>
-            </div>
-
-            {/* Preview Frame */}
-            <div className="flex-1 flex items-center justify-center bg-surface-muted dark:bg-surface-muted rounded-lg overflow-hidden">
-                <div 
-                    className="h-full bg-white dark:bg-surface shadow-lg transition-all duration-300 overflow-hidden"
-                    style={{ width: deviceDimensions[device].width, maxWidth: '100%' }}
-                >
-                    <iframe
-                        key={refreshKey}
-                        src={previewUrl}
-                        className="w-full h-full border-0"
-                        title="Project Preview"
-                        data-testid="preview-iframe"
-                        sandbox={getExternalPreviewSandbox()}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                    />
-                </div>
-            </div>
-
-            {/* Status Bar */}
-            <div className="flex items-center justify-between mt-3 text-xs text-text-secondary">
-                <span>Preview URL: {previewUrl}</span>
-                <span>{deviceDimensions[device].label} View via configured external preview host</span>
-            </div>
-        </div>
-    );
+export function ErrorBoundary() {
+  return null;
 }

@@ -216,13 +216,23 @@ public final class DataSourceRegistryHandler {
                 e -> {
                     log.error("[testConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
                     updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
-                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TESTED", false);
-                    return Promise.of(http.errorResponse(502, "Connection test failed: " + e.getMessage()));
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TEST_FAILED", false);
+                    return Promise.of(http.errorResponse(502, "Test failed: " + e.getMessage()));
                 });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/enable ─────────────────────────
 
+    /**
+     * Enables a connector after live validation.
+     *
+     * <p>In production profiles, enable requires successful test connection validation.
+     * The connector state transitions: TESTING -> (validation) -> ACTIVE|ERROR.
+     * This prevents marking connectors active when they cannot actually connect.
+     *
+     * @param request HTTP request with connectionId path parameter
+     * @return Promise with enable result
+     */
     public Promise<HttpResponse> handleEnableConnection(HttpRequest request) {
         String tenantId = http.requireTenantIdOrFail(request);
         String connectionId = request.getPathParameter("connectionId");
@@ -232,17 +242,57 @@ public final class DataSourceRegistryHandler {
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
-        return updateConnectionState(tenantId, connectionId, "ACTIVE", "healthy")
-            .map(e -> {
-                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLED", true);
-                return http.jsonResponse(Map.of(
-                    "tenantId", tenantId,
-                    "connectionId", connectionId,
-                    "state", "ACTIVE",
-                    "enabled", true,
-                    "timestamp", Instant.now().toString()
-                ));
-            });
+
+        // P1-6: Require fabric connector for production-grade enable
+        if (fabric == null) {
+            log.warn("[enableConnection] tenant={} id={} - Cannot enable without DataFabricConnector", tenantId, connectionId);
+            return Promise.of(http.errorResponse(503,
+                "Connector enable requires DataFabricConnector. " +
+                "This deployment does not have a configured connector runtime."));
+        }
+
+        // Set state to TESTING during validation
+        return updateConnectionState(tenantId, connectionId, "TESTING", "validating")
+            .then(e -> fabric.testConnection(connectionId))
+            .map(result -> {
+                if (result.success()) {
+                    // Validation passed - mark ACTIVE
+                    updateConnectionStateAsync(tenantId, connectionId, "ACTIVE", "healthy");
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLED", true);
+                    return http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "connectionId", connectionId,
+                        "state", "ACTIVE",
+                        "enabled", true,
+                        "validated", true,
+                        "latencyMs", result.latencyMs(),
+                        "timestamp", Instant.now().toString()
+                    ));
+                } else {
+                    // Validation failed - mark ERROR and reject enable
+                    updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLE_REJECTED", false);
+                    return http.jsonResponse(422, Map.of(
+                        "tenantId", tenantId,
+                        "connectionId", connectionId,
+                        "state", "ERROR",
+                        "enabled", false,
+                        "validated", false,
+                        "validationError", result.message(),
+                        "timestamp", Instant.now().toString()
+                    ));
+                }
+            })
+            .then(
+                r -> Promise.of(r),
+                e -> {
+                    log.error("[enableConnection] tenant={} id={} validation failed: {}",
+                        tenantId, connectionId, e.getMessage(), e);
+                    updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLE_FAILED", false);
+                    return Promise.of(http.errorResponse(502,
+                        "Enable validation failed: " + e.getMessage()));
+                });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/disable ──────────────────────────
@@ -272,19 +322,16 @@ public final class DataSourceRegistryHandler {
                 .then(
                     r -> Promise.of(r),
                     e -> {
-                        log.error("[disableConnection] tenant={} id={} disconnect failed: {}", tenantId, connectionId, e.getMessage(), e);
+                        log.error("[disableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
                         return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
-                            .map(ent -> {
-                                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
-                                return http.jsonResponse(Map.of(
-                                    "tenantId", tenantId,
-                                    "connectionId", connectionId,
-                                    "state", "INACTIVE",
-                                    "enabled", false,
-                                    "warning", "Disconnect failed but state set to inactive: " + e.getMessage(),
-                                    "timestamp", Instant.now().toString()
-                                ));
-                            });
+                            .map(updated -> http.jsonResponse(Map.of(
+                                "tenantId", tenantId,
+                                "connectionId", connectionId,
+                                "state", "INACTIVE",
+                                "enabled", false,
+                                "warning", "Disconnect failed but state set to inactive: " + e.getMessage(),
+                                "timestamp", Instant.now().toString()
+                            )));
                     });
         }
         return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
@@ -614,17 +661,26 @@ public final class DataSourceRegistryHandler {
         }
     }
 
+    /**
+     * Updates connection state with validation.
+     *
+     * <p>P1-6: In production profiles, this method validates the connection exists
+     * and does not allow synthesizing missing records via state updates.
+     *
+     * @param tenantId tenant ID
+     * @param connectionId connection ID
+     * @param state new state
+     * @param healthStatus health status
+     * @return Promise with updated entity
+     */
     private Promise<DataCloudClient.Entity> updateConnectionState(String tenantId, String connectionId, String state, String healthStatus) {
         return client.findById(tenantId, DC_CONNECTIONS, connectionId)
             .then(opt -> {
                 if (opt.isEmpty()) {
-                    return Promise.of(DataCloudClient.Entity.of(connectionId, DC_CONNECTIONS, Map.of(
-                        "id", connectionId,
-                        "tenantId", tenantId,
-                        "state", state,
-                        "healthStatus", healthStatus,
-                        "updatedAt", Instant.now().toString()
-                    )));
+                    // P1-6: Do not synthesize missing connections by state update
+                    log.warn("[updateConnectionState] Connection not found: tenant={} id={}", tenantId, connectionId);
+                    return Promise.<DataCloudClient.Entity>ofException(
+                        new IllegalStateException("Connection not found: " + connectionId));
                 }
                 Map<String, Object> data = new LinkedHashMap<>(opt.get().data());
                 data.put("state", state);

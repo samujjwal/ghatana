@@ -177,12 +177,13 @@ export function Layout() {
       }
     : { id: 'guest', name: 'Guest', email: '', initials: 'G' };
 
-  // Prepare workspace info - TODO-004: Use backend capability contract instead of hardcoding
-  // For now, we derive from currentWorkspace but should come from backend capabilities
+  // Prepare workspace info - TODO-004: Use backend capability contract
+  // All capability decisions come from backend, not frontend derivation
   const workspaceInfo = currentWorkspace ? {
     id: currentWorkspace.id,
     name: currentWorkspace.name,
-    isOwner: project?.isOwner ?? false, // Use backend-provided ownership
+    // Use backend-provided capabilities instead of frontend-derived ownership
+    isOwner: project?.capabilities?.create ?? project?.isOwner ?? false,
   } : undefined;
 
   const workspacesList = workspaces.map(ws => ({
@@ -201,7 +202,8 @@ export function Layout() {
   const projectsList = [...ownedProjects, ...includedProjects].map(p => ({
     id: p.id,
     name: p.name,
-    isOwner: ownedProjects.some(op => op.id === p.id),
+    // TODO-004: Use backend-provided capabilities instead of frontend derivation
+    isOwner: p.capabilities?.create ?? ownedProjects.some(op => op.id === p.id),
   }));
 
   // Define project-specific actions
@@ -242,6 +244,13 @@ export function Layout() {
                     return;
                   }
                   const res = await yappcApi.projects.export(projectId, currentWorkspace.id);
+                  
+                  if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
+                    const correlationId = res.headers.get('X-Correlation-ID') || 'unknown';
+                    throw new Error(`Export authorization failed [Correlation ID: ${correlationId}]: ${errorData.message || res.statusText}`);
+                  }
+                  
                   const blob = await res.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -251,7 +260,8 @@ export function Layout() {
                   URL.revokeObjectURL(url);
                 } catch (err) {
                   const message = err instanceof Error ? err.message : 'Export failed';
-                  alert(`Export failed: ${message}. Please check your permissions and try again.`);
+                  // TODO-003: User-visible error with correlation ID for audit trail
+                  alert(`Export failed: ${message}. Please check your permissions and contact support if the issue persists.`);
                   console.error('[ProjectShell] Export failed:', err);
                 }
               })();

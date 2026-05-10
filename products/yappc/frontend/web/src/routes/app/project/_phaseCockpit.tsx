@@ -168,6 +168,30 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<PhaseActionResult | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState<string | null>(null);
+
+  // TODO-008: Verify scope and phase capability before allowing access
+  if (!projectId) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold">Project context required</h2>
+          <p className="mt-1 text-sm">Project ID is missing from the URL. Please navigate to a valid project page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentWorkspaceId) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold">Workspace context required</h2>
+          <p className="mt-1 text-sm">Workspace context is required to access this phase. Please select a workspace first.</p>
+        </div>
+      </div>
+    );
+  }
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
@@ -336,6 +360,24 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     ...step,
     onAccept: handleSuggestionAction,
   }));
+
+  // TODO-008: Verify phase capability from backend
+  if (project && project.capabilities) {
+    const phaseCapability = project.capabilities[phase as keyof typeof project.capabilities];
+    if (phaseCapability === false) {
+      return (
+        <div className="p-6">
+          <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+            <h2 className="font-semibold">Phase access denied</h2>
+            <p className="mt-1 text-sm">
+              You do not have permission to access the {config.name} phase for this project.
+              Please contact your workspace administrator or project owner for access.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   if (projectQuery.isLoading || !project) {
     return (

@@ -12,6 +12,7 @@ import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.datacloud.launcher.http.ProvenanceEnricher;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import com.ghatana.platform.security.annotation.Secured;
@@ -379,7 +380,7 @@ public class EntityCrudHandler {
                     }
                 }
 
-                Map<String, Object> provenanced = withProvenance(data, request, handlerSpan.spanId());
+                Map<String, Object> provenanced = ProvenanceEnricher.enrichWithProvenance(data, request, handlerSpan.spanId());
                 
                 // DC-BE-003: Wrap entity save + event append in transaction when available
                 if (transactionManager != null) {
@@ -845,7 +846,7 @@ public class EntityCrudHandler {
             }
 
             List<Promise<DataCloudClient.Entity>> savePromises = entityList.stream()
-                .map(data -> client.save(resolvedTenant, collection, withProvenance(data, request, handlerSpan.spanId())))
+                .map(data -> client.save(resolvedTenant, collection, ProvenanceEnricher.enrichWithProvenance(data, request, handlerSpan.spanId())))
                 .toList();
 
             return Promises.toList(savePromises)
@@ -1173,51 +1174,6 @@ public class EntityCrudHandler {
             envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
         }
         return envelope;
-    }
-
-    // ==================== Provenance Helpers (P0.6) ====================
-
-    private static final Set<String> PII_FIELDS = Set.of(
-        "email", "phone", "ssn", "social_security", "password", "credit_card", "dob", "date_of_birth"
-    );
-
-    /**
-     * Injects an entity-level provenance envelope (who/when/why) into the payload
-     * before it reaches the storage layer.  This is a non-destructive enrichment:
-     * the original fields are preserved and a {@code _provenance} block is added.
-     *
-     * <p>Also performs lightweight policy classification (P0.6) by scanning field
-     * names for known sensitive data indicators.
-     */
-    private static Map<String, Object> withProvenance(Map<String, Object> data,
-                                                        HttpRequest request,
-                                                        String correlationId) {
-        Map<String, Object> enriched = new LinkedHashMap<>(data);
-        Map<String, Object> provenance = new LinkedHashMap<>();
-        provenance.put("actor", Map.of("type", "api", "id", resolveActorId(request)));
-        provenance.put("timestamp", Instant.now().toString());
-        provenance.put("correlationId", correlationId != null ? correlationId : "");
-        provenance.put("source", "rest-api");
-        provenance.put("dataClassification", classifyDataSensitivity(data));
-        enriched.put("_provenance", provenance);
-        return enriched;
-    }
-
-    /** Lightweight heuristic policy classification (P0.6). */
-    private static String classifyDataSensitivity(Map<String, Object> data) {
-        for (String key : data.keySet()) {
-            String lower = key.toLowerCase();
-            if (PII_FIELDS.contains(lower)) return "pii";
-        }
-        return "standard";
-    }
-
-    private static String resolveActorId(HttpRequest request) {
-        String userId = request.getHeader(HttpHeaders.of("X-User-Id"));
-        if (userId != null && !userId.isBlank()) return userId.trim();
-        String clientId = request.getHeader(HttpHeaders.of("X-Client-Id"));
-        if (clientId != null && !clientId.isBlank()) return clientId.trim();
-        return "api";
     }
 
     // ==================== Collection Metadata Management (P0.2) ====================

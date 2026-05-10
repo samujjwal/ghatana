@@ -459,6 +459,8 @@ describe('DashboardRoute source-of-truth actions', () => {
             source: 'project.lifecyclePhase',
             requiresReview: false,
             safeToRun: true,
+            isDegraded: false,
+            isFallback: false,
             updatedAt: '2026-05-07T00:00:00.000Z',
           },
         ],
@@ -480,5 +482,145 @@ describe('DashboardRoute source-of-truth actions', () => {
       });
       expect(mockNavigate).toHaveBeenCalledWith('/p/project-safe/shape');
     });
+  });
+
+  // TODO-014: Test that review-required actions navigate to review instead of executing
+  it('navigates review-required actions to phase cockpit without backend execution', async () => {
+    const user = userEvent.setup();
+    mockUseWorkspaceContext.mockReturnValue({
+      ownedProjects: [buildProject({ id: 'project-review', lifecyclePhase: 'GENERATE' })],
+      includedProjects: [],
+      workspaces: [workspace],
+      currentWorkspace: workspace,
+      dashboardActions: {
+        workspaceId: 'ws-1',
+        blockedWork: [],
+        reviewRequired: [
+          {
+            id: 'review-1',
+            projectId: 'project-review',
+            projectName: 'Review Project',
+            workspaceId: 'ws-1',
+            lifecyclePhase: 'GENERATE',
+            routePhase: 'generate',
+            kind: 'review',
+            title: 'Review generated diff',
+            summary: 'Open generate cockpit for the backed project action.',
+            severity: 'warning',
+            source: 'project.aiNextActions',
+            requiresReview: true,
+            safeToRun: false,
+            isDegraded: false,
+            isFallback: false,
+            updatedAt: '2026-05-07T00:00:00.000Z',
+          },
+        ],
+        safeToContinue: [],
+        generatedAt: '2026-05-07T00:00:00.000Z',
+      },
+      dashboardActionsLoading: false,
+      dashboardActionsError: null,
+      isLoading: false,
+    });
+
+    renderRoute();
+
+    await user.click(screen.getByRole('button', { name: /review/i }));
+
+    expect(mockExecuteDashboardAction).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/p/project-review/generate');
+  });
+
+  // TODO-014: Test that unsafe blocker actions are never run directly
+  it('navigates unsafe blocker actions to phase cockpit without backend execution', async () => {
+    const user = userEvent.setup();
+    mockUseWorkspaceContext.mockReturnValue({
+      ownedProjects: [buildProject({ id: 'project-blocked', lifecyclePhase: 'RUN' })],
+      includedProjects: [],
+      workspaces: [workspace],
+      currentWorkspace: workspace,
+      dashboardActions: {
+        workspaceId: 'ws-1',
+        blockedWork: [
+          {
+            id: 'blocked-1',
+            projectId: 'project-blocked',
+            projectName: 'Blocked Project',
+            workspaceId: 'ws-1',
+            lifecyclePhase: 'RUN',
+            routePhase: 'run',
+            kind: 'blocker',
+            title: 'Resolve critical security blocker',
+            summary: 'Open run cockpit for the backed project action.',
+            severity: 'critical',
+            source: 'project.aiNextActions',
+            requiresReview: true,
+            safeToRun: false,
+            isDegraded: false,
+            isFallback: false,
+            updatedAt: '2026-05-07T00:00:00.000Z',
+          },
+        ],
+        reviewRequired: [],
+        safeToContinue: [],
+        generatedAt: '2026-05-07T00:00:00.000Z',
+      },
+      dashboardActionsLoading: false,
+      dashboardActionsError: null,
+      isLoading: false,
+    });
+
+    renderRoute();
+
+    await user.click(screen.getByRole('button', { name: /open/i }));
+
+    expect(mockExecuteDashboardAction).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/p/project-blocked/run');
+  });
+
+  // TODO-014: Test that degraded safe actions are not executed
+  it('does not execute degraded safe actions through backend', async () => {
+    const user = userEvent.setup();
+    mockUseWorkspaceContext.mockReturnValue({
+      ownedProjects: [buildProject({ id: 'project-degraded', lifecyclePhase: 'SHAPE' })],
+      includedProjects: [],
+      workspaces: [workspace],
+      currentWorkspace: workspace,
+      dashboardActions: {
+        workspaceId: 'ws-1',
+        blockedWork: [],
+        reviewRequired: [],
+        safeToContinue: [
+          {
+            id: 'safe-degraded-1',
+            projectId: 'project-degraded',
+            projectName: 'Degraded Project',
+            workspaceId: 'ws-1',
+            lifecyclePhase: 'SHAPE',
+            routePhase: 'shape',
+            kind: 'safe-to-continue',
+            title: 'Resume shape phase',
+            summary: 'Continue from shape.',
+            severity: 'info',
+            source: 'project.aiNextActions',
+            requiresReview: false,
+            safeToRun: true,
+            isDegraded: true,
+            isFallback: true,
+            updatedAt: '2026-05-07T00:00:00.000Z',
+          },
+        ],
+        generatedAt: '2026-05-07T00:00:00.000Z',
+      },
+      dashboardActionsLoading: false,
+      dashboardActionsError: null,
+      isLoading: false,
+    });
+
+    renderRoute();
+
+    // Degraded actions should not be shown in the dashboard
+    expect(screen.queryByText(/resume shape phase/i)).not.toBeInTheDocument();
+    expect(mockExecuteDashboardAction).not.toHaveBeenCalled();
   });
 });

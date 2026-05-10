@@ -1,555 +1,691 @@
-## Production Readiness Verdict
+## Scope and evidence note
 
-**Production ready: No.**
-**Confidence: Medium-high** for architecture/code direction and root blockers, based on the target commit snapshot files I inspected. I did not execute the full Gradle/pnpm test suite or enumerate every repository file because the GitHub file-search index was not selected for this chat; I used the direct GitHub connector against commit `3d0eded86e8dae16bece7997c50e09b32c934b0b`. The commit itself is a YAPPC changelog-only commit, so this audit treats it as the full repository snapshot, not as a diff review. 
+I executed this as a **current-snapshot audit** of `samujjwal/ghatana` at commit `0f4b6eb1c28f13fd9ae3341b15fb6659a436d595`, focused on `products/data-cloud` and shared/platform libraries used by Data Cloud. The commit itself is a YAPPC changelog-only commit, so the audit treats the SHA as the full repository state at that point, not as a diff-only review. 
 
-**Main verdict:** Data Cloud is moving in the right architectural direction, but it is still **not production-grade** because the implementation remains transitional: critical security/durability/audit/transaction dependencies are still optional in runtime composition, contract truth is duplicated across OpenAPI/runtime/frontend schemas, the shared-library boundary is documented but not fully enforced, and cleanup debt still leaves stale audit/analysis artifacts in the repo.
-
-**Highest-risk area:** production fail-closed behavior across security, tenant isolation, audit, policy, durability, AI, idempotency, and transaction boundaries.
-
-**Direction of improvement:** Yes, significantly improving. The canonical docs now define Data Cloud as one AI-native operational data fabric, organized by planes, with AEP only as the Action Plane runtime. They also define `/api/v1/surfaces` as the Runtime Truth endpoint, central contracts under `products/data-cloud/contracts`, and strict dependency rules that prevent Data/Event/Context/Governance planes from importing Action Plane internals.  
-
-**Shared libraries verdict:** Partially ready, not production-ready. The desired ownership model is clear: shared platform modules should remain shared only when genuinely cross-product, and Data Cloud/Action-specific behavior should move into `products/data-cloud`. However, the codebase still shows transitional shared-service residue and product/shared-boundary migration work.  
+This was a source-level GitHub audit. I did **not** run the build, tests, UI, containers, or deployment stack.
 
 ---
 
-# Root Architectural Blockers
+# 7.1 Production Readiness Verdict
 
-## P0-1 Production fail-closed posture is documented but not fully enforced by runtime composition
+**Production ready: No**
 
-**Why it matters:** Data Cloud’s value depends on trust: tenant isolation, governance, auditability, durable event/data processing, and safe automation. If production-sensitive dependencies silently fall back to noop, in-memory, heuristic, or disabled modes, the product can appear live while violating its own architecture.
+**Confidence level:** Medium-high for architecture/code-level findings; medium for runtime behavior because tests/build were not executed.
 
-**Root cause:** The canonical architecture requires production profiles to fail closed for missing security, policy, audit, durability, runtime dependencies, and AI completion services. But the launcher still wires many trust-critical capabilities as optional builder dependencies.
+**Direction of travel:** The implementation is clearly improving toward the intended Data Cloud architecture. The canonical docs now define Data Cloud as an AI-native operational data fabric, organized by planes, with AEP explicitly positioned as the Action Plane runtime rather than a separate customer-facing product.  The canonical plane architecture also defines product planes, runtime truth, target layout, dependency rules, and shared-platform migration rules. 
+
+**Main blockers:**
+
+1. Tenant/scope/authorization enforcement is still not proven end to end.
+2. Mutating workflows are not consistently atomic or idempotent across planes.
+3. Production-critical services can fall back to no-op, in-memory, heuristic, or disabled behavior.
+4. Runtime truth, route registry, OpenAPI, generated clients, and UI surfaces are not yet one canonical system.
+5. Product/shared-library boundaries are better documented than fully enforced.
+6. Connector lifecycle is still metadata/control-plane heavy and not yet a durable ingestion pipeline.
+7. Stale audit/docs and compatibility artifacts remain and will keep causing repeated re-audits.
+
+**Highest-risk area:** Backend-enforced tenant/scope/authorization combined with non-atomic entity/event/index/automation writes.
+
+**Shared libraries verdict:** Partially reusable, but not yet cleanly bounded. The repo has many shared platform modules and Data Cloud-specific plane modules included together in the Gradle graph, while the canonical architecture still calls out platform modules that should be kept generic, split, or moved into Data Cloud when they encode Data Cloud/Action Plane semantics.  
+
+---
+
+# 7.2 Root Architectural Blockers
+
+## P0-1 Canonical tenant, scope, and authorization enforcement is not proven end to end
+
+**Why it matters:** Data Cloud’s core value depends on tenant isolation, data ownership, sovereignty, privacy, and governed automation. Any route accepting tenant/scope from spoofable request input is a production blocker.
+
+**Root cause:** Tenant resolution and handler-level authorization are still distributed. `HttpHandlerSupport` can resolve tenant from request metadata, principal, header, query parameter, or safe-mode fallback. Handlers then manually call `requireTenantIdOrFail`. Middleware rate-limits by tenant from request header/query. A security filter and access registry exist by path, but this audit did not verify that every registered route is forced through them.    
 
 **Evidence:**
 
-* The architecture says production must fail closed for missing tenant context, authentication, authorization, policy engine, audit writer, durable event store, redaction policy, AEP dependency, runtime probes, and AI completion service. 
-* `DataCloudHttpServer` still has many optional dependencies: audit can be null and “silently skipped,” API key resolver null means security filter is not activated, settings/idempotency stores fall back to in-memory, transaction manager null means multi-step writes run without transaction boundaries, metrics default to noop, and trace export can be absent. 
-* `AiAssistHandler` correctly supports production fail-closed behavior, but only when `productionMode` is explicitly enabled; its default is false. 
-* Tenant fallback is improved: default tenant fallback is limited to local/test/development modes, while strict/non-local modes return null. This is a good partial fix, but it needs to be part of a broader profile gate. 
+* `HttpHandlerSupport` resolves tenant from principal, header, query, and local/test/development fallback. 
+* `DataCloudMiddleware` extracts tenant from header/query for tenant rate limiting. 
+* `DataSourceRegistryHandler` uses `@RequiresRole("ADMIN")` and manually resolves tenant per handler. 
+* `EntityCrudHandler` is annotated `@Secured`, but handler logic still manually resolves tenant from the HTTP helper. 
+* `DataCloudHttpServer` has optional API key/JWT/policy components and comments that the security filter is not activated when the resolver is absent. 
 
-**Affected surfaces:** all APIs, Runtime Truth, entity writes, event writes, AI assist, exports, governance, audit, reports, pipelines, Action Plane runtime, UI action enablement.
+**Affected surfaces:** All APIs, connectors, entities, events, query, analytics, governance, action, export, AI assist, voice, admin/settings, pipeline execution.
 
-**Correct target pattern:** a central `RuntimeProfileValidator` / `ProductionReadinessGate` that validates runtime profile at startup and prevents non-local deployment when required dependencies are missing.
+**Correct target pattern:** A single immutable `RequestContext` created before routing from authenticated identity, delegated support context, workspace/org/project scope, roles, tier, policy context, and audit context. Handlers should receive trusted context, not parse tenant/scope directly.
 
 **Required fix:**
 
-1. Define required dependencies by deployment profile: local, test, sovereign, standalone, enterprise, cloud.
-2. Fail startup in non-local profiles if auth, policy, audit, durable event store, durable entity store, durable settings, durable idempotency, transaction manager, metrics, traces, and redaction policies are absent.
-3. Allow noop/in-memory/heuristic fallback only under explicit local/test/preview profiles.
-4. Publish the same evaluated posture into `/api/v1/surfaces`.
+* Make production/staging fail closed unless JWT/API key/auth context, tenant, workspace/org where required, roles, and policy engine are configured.
+* Remove tenant query parameter support from production.
+* Allow tenant header only when cryptographically bound to authenticated identity or gateway metadata.
+* Generate route/action/permission matrix from a canonical route registry.
+* Add support-access delegation with redaction and audit evidence.
 
 **Required tests:**
 
-* Production profile startup fails without auth.
-* Production profile startup fails without audit writer.
-* Production profile startup fails without policy engine.
-* Production profile startup fails without durable idempotency store.
-* Production profile startup fails without transaction manager for mutating routes.
-* Production AI routes return 503 when no completion service is configured.
+* Spoofed `X-Tenant-Id` blocked.
+* Spoofed `tenantId` query blocked.
+* Tenant mismatch between token and header blocked.
+* Every route covered by permission matrix.
+* Platform/support users cannot access customer data unless delegated.
+* Same route tested for admin/editor/viewer/operator/support/client roles.
 
-**Cleanup implications:** remove scattered per-handler fallback comments and centralize fallback policy in one runtime profile gate.
+**Cleanup implications:** Centralize tenant/scope/auth code; delete per-handler tenant parsing except for context extraction tests.
 
 ---
 
-## P0-2 Mutating workflows are not uniformly atomic, idempotent, policy-checked, and audited
+## P0-2 Mutating workflows are not consistently atomic, idempotent, or replay-safe
 
-**Why it matters:** Data Cloud’s core promise is trusted operational truth. Entity save, event append, semantic indexing, audit, provenance, and downstream visibility must behave deterministically under retries and partial failures.
+**Why it matters:** Data Cloud writes often affect entity state, event log, indexes, provenance, audit, automation, and downstream retrieval. Partial writes create untrustworthy data and break provenance.
 
-**Root cause:** Entity writes have partial hardening, but the pattern is not yet universal. `EntityCrudHandler` explicitly notes that idempotency is implemented for entity save/batch only and that other mutating routes still require idempotency support or explicit non-idempotent documentation. Transaction handling is optional, rollback for event append is best-effort, and semantic indexing is outside the transactional boundary. 
+**Root cause:** Transaction and idempotency are optional or limited. `EntityCrudHandler` only implements idempotency for entity save/batch and explicitly notes that other mutating routes still need idempotency or explicit non-idempotent documentation. The transaction manager is optional, and the non-transactional path saves entity, appends event, broadcasts WebSocket, and indexes semantically as separate steps. 
 
-**Affected surfaces:** entities, events, pipelines, workflows, governance operations, analytics automation, AI actions, data lifecycle actions, exports/import-like flows, Action Plane runs.
+**Evidence:**
 
-**Correct target pattern:** one canonical write-command runtime:
+* `EntityCrudHandler` comments identify missing idempotency coverage for pipelines, events, governance, analytics, and other mutating routes. 
+* `DataCloudHttpServer` says generic/entity idempotency stores may fall back to in-memory and that absent transaction manager means multi-step writes execute without transaction boundaries. 
+* `DataCloudClient.Event` has validation as a method rather than enforcing required envelope fields at construction/append boundaries. 
 
-```text
-request
-→ tenant/auth/policy resolution
-→ idempotency check
-→ validation
-→ transaction/outbox
-→ entity/event/audit/provenance write
-→ index/update async via outbox
-→ response with trace/evidence
-```
+**Affected surfaces:** Entity CRUD, batch writes, event append, pipeline creation/execution, governance mutations, AI actions, connector syncs, reports, exports, learning review actions.
+
+**Correct target pattern:** Canonical mutation command runtime with idempotency, optimistic concurrency, transaction/outbox, audit, provenance, retries, and replay semantics.
 
 **Required fix:**
 
-1. Introduce a shared `DataCloudCommandExecutor`.
-2. Make idempotency required for all retryable mutating routes.
-3. Use transactional outbox for event append, audit write, and semantic indexing side effects.
-4. Require audit/provenance for sensitive mutations.
-5. Move rollback semantics from best-effort comments to deterministic compensation/outbox processing.
+* Create a shared Data Cloud mutation runtime.
+* Require idempotency keys for retryable mutating routes or explicitly mark routes non-idempotent.
+* Use durable idempotency stores in all non-local profiles.
+* Wrap entity + event + provenance + audit + index scheduling in transaction/outbox.
+* Move semantic indexing/WebSocket notifications to after-commit/outbox consumers.
 
 **Required tests:**
 
-* Retry same entity write with same idempotency key returns identical result.
-* Retry pipeline create/execute does not duplicate runs.
-* Entity save failure after event append rolls back or emits compensation.
-* Semantic indexing failure does not corrupt entity/event truth.
-* Sensitive mutation without audit writer fails in production.
+* Retry same command does not duplicate data.
+* Event append failure does not leave untracked entity mutation.
+* Index failure does not corrupt canonical store.
+* Outbox replay is deterministic.
+* All mutating routes have idempotency/retry tests.
 
-**Cleanup implications:** remove route-specific idempotency implementations once the command executor is in place.
+**Cleanup implications:** Remove route-local idempotency implementations and replace with shared command middleware.
 
 ---
 
-## P0-3 Product/shared boundary remains transitional, especially around Action Plane and shared services
+## P0-3 Production-critical dependencies can silently degrade to no-op, in-memory, heuristic, or disabled behavior
 
-**Why it matters:** Data Cloud must avoid becoming a god product while also avoiding fake shared libraries that exist only because Data Cloud and AEP used to be separate. Shared libraries should be reusable infrastructure, not hidden Data Cloud business logic.
+**Why it matters:** Production trust requires clear fail-closed startup and truthful runtime status. Optional production-critical services make the product appear live while core correctness, audit, AI, metrics, transactions, or security are degraded.
 
-**Root cause:** The canonical plane architecture is clear, but the repo still has transitional naming, compatibility concepts, and residual shared-service cleanup. The README says AEP is not a separate customer-facing product and is the Action Plane runtime.  The plane architecture gives explicit rules for what stays in platform versus what moves into Data Cloud.  But `shared-services/README.md` still identifies `feature-store-ingest` as **RESIDUE** whose canonical location is now under `products/data-cloud/planes/intelligence/feature-ingest`. 
+**Root cause:** `DataCloudHttpServer` centralizes many optional dependencies and falls back to local/embedded behavior in several critical areas. 
 
-**Affected surfaces:** shared services, platform modules, Action Plane runtime, agent core, workflow, messaging, AI integration, data governance, contracts, UI terminology.
+**Evidence:**
 
-**Correct target pattern:**
+* Metrics collector defaults to no-op unless configured. 
+* AI assist uses heuristic fallback when `CompletionService` is absent. 
+* Audit service may be null and audit emission skipped. 
+* Settings and idempotency can fall back to in-memory. 
+* Security filter is not activated when API-key resolver is null; JWT is disabled when provider is null. 
+* Connector test/sync returns pending/degraded when fabric connector is absent. 
 
-```text
-platform/ = generic cross-product primitives
-shared-services/ = real networked services used by multiple products
-products/data-cloud/ = Data Cloud product behavior and plane-specific runtime
-```
+**Affected surfaces:** Security, observability, AI, connectors, settings, idempotency, transactions, audit, runtime truth.
+
+**Correct target pattern:** Profile-based runtime composition with hard production requirements and explicit degraded states.
 
 **Required fix:**
 
-1. Audit each shared module against the documented “used by 3+ unrelated products or generic infrastructure” rule.
-2. Move Data Cloud/Action-specific behavior into Data Cloud planes.
-3. Delete shared-service residue after validating no Gradle/runtime references.
-4. Keep only generic agent/workflow/messaging/AI/provider/policy primitives in platform.
+* Define `local`, `test`, `preview`, `staging`, `production`, and `sovereign` profiles.
+* Fail startup in staging/production if security, audit, metrics, durable idempotency, durable settings, transaction/outbox, and tenant resolver are absent.
+* Allow preview/degraded only behind explicit runtime truth states.
+* Surface every missing dependency through `/api/v1/surfaces`, readiness, and operations UI.
 
 **Required tests:**
 
-* Dependency direction test: platform must not import product code.
-* Data/Event/Context/Governance planes must not import Action implementation.
-* Shared-service residue path is not referenced by Gradle, deployment, docs, or runtime.
-* Cross-product reuse scorecard passes.
+* Production startup fails when required components are absent.
+* Local profile permits safe fallbacks with warnings.
+* Runtime truth reports missing dependencies accurately.
+* UI hides/disables degraded surfaces without fake success.
 
-**Cleanup implications:** remove stale `feature-store-ingest` residue and migrate docs/scripts to canonical plane terminology.
+**Cleanup implications:** Remove silent fallbacks from production code paths; move safe fallbacks to local/test modules.
 
 ---
 
-## P1-4 Contract truth is duplicated across OpenAPI, runtime handlers, frontend Zod schemas, and service clients
+## P1-4 Runtime truth, route registry, and route compatibility are still mixed
 
-**Why it matters:** Contract drift will break SDKs, UI behavior, Runtime Truth gating, and external product consumption. Data Cloud’s architecture requires product-level contracts to be the source of truth.
+**Why it matters:** Runtime truth is supposed to tell users what is live, degraded, disabled, preview, or unavailable. If routes, UI gates, OpenAPI, and runtime state drift, the UI can expose dead or unsafe actions.
 
-**Root cause:** Canonical docs say contracts belong under `products/data-cloud/contracts`, UI should use generated clients/frontend adapters, and runtime routes must match OpenAPI.   But the UI still maintains extensive local Zod schemas described as the frontend/backend “single source of truth,” including capability and surface schemas, collection schemas, pipeline schemas, reports, models, compliance, voice, analytics, and more. 
+**Root cause:** The repo has canonical runtime truth direction, but older “capability” vocabulary and route aliases remain. The router registers canonical `/api/v1/action/*` routes alongside legacy root-level action routes such as `/api/v1/pipelines`, `/api/v1/memory`, and `/api/v1/learning`. 
 
-**Affected surfaces:** UI, generated SDK, API handlers, OpenAPI contracts, Runtime Truth, tests, mocks/MSW, docs.
+**Evidence:**
 
-**Correct target pattern:** OpenAPI/proto/schema contracts generate clients, runtime validators, frontend schemas, mock fixtures, and route inventory checks.
+* README says `/api/v1/surfaces` is canonical and `/api/v1/capabilities` compatibility endpoint was removed. 
+* Plane architecture says to avoid capability-area language and use planes/surfaces/runtime truth. 
+* UI/source search still shows `useCapabilityGate.ts`, action `useCapabilities.ts`, and generated `aep-client.ts`.   
+* Router has duplicate canonical and non-canonical routes for action surfaces. 
+
+**Affected surfaces:** UI navigation, Action Plane, pipelines, memory, learning, contracts, generated clients, docs, tests.
+
+**Correct target pattern:** One canonical route/surface/action registry generated from OpenAPI and runtime truth metadata.
 
 **Required fix:**
 
-1. Generate TypeScript clients and Zod schemas from canonical OpenAPI.
-2. Remove hand-maintained frontend contract schemas except thin UI view-model schemas.
-3. Add CI drift gate: OpenAPI ↔ runtime route inventory ↔ frontend generated client.
-4. Treat MSW/mock handlers as test-only and generated from contracts.
+* Make `/api/v1/surfaces` the single runtime truth source.
+* Generate UI gates, route registry, SDK clients, and route tests from contracts.
+* Deprecate legacy routes behind explicit compatibility flag with removal date.
+* Rename remaining capability vocabulary where it is not explicitly compatibility-only.
 
 **Required tests:**
 
-* OpenAPI validates.
-* Runtime routes match OpenAPI.
-* UI imports generated clients, not backend internals or hand-rolled service contracts.
-* Mock/test schemas are generated or contract-validated.
+* Every UI route maps to a runtime surface.
+* Every runtime surface maps to an OpenAPI operation.
+* Every OpenAPI operation maps to a handler.
+* Legacy routes disabled by default in production.
 
-**Cleanup implications:** delete or reduce `delivery/ui/src/contracts/schemas.ts` once generated equivalents exist.
+**Cleanup implications:** Remove duplicate route registrations once compatibility window closes.
 
 ---
 
-## P1-5 Runtime Truth exists, but it is not yet a full operational truth authority
+## P1-5 Product/shared-library boundaries remain documented but not fully enforced
 
-**Why it matters:** The UI and SDK should never claim a surface is live unless the backend has actually probed required dependencies and can explain degradation.
+**Why it matters:** Shared libraries should provide reusable infrastructure, not hidden Data Cloud product behavior. Otherwise Data Cloud becomes coupled to platform internals and other products inherit Data Cloud-specific semantics.
 
-**Root cause:** The canonical architecture expects Runtime Truth to expose live/degraded/unavailable state, dependencies, posture, evidence, and probes.  The current handler returns a supplier-provided map under `surfaces`, plus `generatedAt`, and the frontend normalizes booleans/strings/objects into surface states.   This is a good migration step, but it is still too loose: raw values can be normalized into operational states without proving dependency health.
+**Root cause:** The canonical plane architecture correctly defines keep/move/split rules, but the Gradle graph still includes many shared platform modules alongside Data Cloud plane modules.  
 
-**Affected surfaces:** Home, navigation, Operations, Trust, pipelines, reports, AI, connectors, plugins, SDK feature gates.
+**Evidence:**
 
-**Correct target pattern:** typed `SurfaceRecord` objects generated from a server-side `RuntimeTruthRegistry`:
+* Plane architecture says keep platform modules only when generic/cross-product and move Data Cloud/Action semantics into `products/data-cloud`. 
+* `settings.gradle.kts` includes many platform modules such as workflow, AI integration, governance, security, agent-core, messaging, data-governance, and tool-runtime, plus many Data Cloud Action Plane modules. 
+* `DataCloudClient` explicitly uses a product SPI EventLogStore and bridges to platform EventLogStore through adapters. 
+* Both `products:data-cloud:planes:action:kernel-bridge` and `products:data-cloud:extensions:kernel-bridge` are included, creating a boundary/ownership review candidate. 
 
-```text
-surfaceId
-state
-ownerPlane
-requiredDependencies
-dependencyProbeResults
-tenantScope
-runtimeProfile
-lastCheckedAt
-evidence
-limitations
-actionsAllowed
-```
+**Affected surfaces:** Shared SPI, contracts, workflow, messaging, AI integration, governance, Action Plane, kernel bridge, platform contracts.
+
+**Correct target pattern:** Strict dependency direction enforced by ArchUnit/build checks, with product semantics only in Data Cloud planes/extensions.
 
 **Required fix:**
 
-1. Replace raw map snapshots with typed surface records.
-2. Require dependency probes for every LIVE surface.
-3. Make surface state tenant/profile-aware.
-4. Expose runtime posture fields from the canonical architecture.
-5. Fail CI when undocumented/unregistered surfaces are introduced.
+* Produce module ownership matrix.
+* Move Data Cloud-specific workflow/action/memory/review/governance behavior into Data Cloud planes.
+* Keep only generic primitives in platform modules.
+* Add forbidden-dependency checks for product-to-product and Data/Event/Governance-to-Action internals.
 
 **Required tests:**
 
-* Surface cannot be LIVE without required dependency probes.
-* UI disables actions when surface is MISCONFIGURED/UNAVAILABLE.
-* Runtime Truth response schema is contract-generated.
-* Per-tenant surface state does not leak cross-tenant availability.
+* Build fails on forbidden imports.
+* Shared modules do not import Data Cloud product packages.
+* Product code does not duplicate platform abstractions.
 
-**Cleanup implications:** remove capability compatibility layer once all UI code uses `Surface*` concepts only.
+**Cleanup implications:** Split, move, or delete modules that exist only because Data Cloud and AEP were previously separate product boundaries.
 
 ---
 
-## P1-6 UI is still service-module driven rather than fully outcome-first and contract-generated
+## P1-6 Connector lifecycle is not yet a durable ingestion/extraction runtime
 
-**Why it matters:** Data Cloud’s UI should be low-cognitive-load, outcome-first, role-aware, runtime-truth-gated, and not expose implementation boundaries like AEP.
+**Why it matters:** Data Cloud’s data-source onboarding must lead to trusted, replayable, observable ingestion with source evidence, schema discovery, sync jobs, retries, and lineage.
 
-**Root cause:** The design docs define outcome-first navigation: Home, Data, Events, Query, Pipelines, Trust, Operations; Action Plane surfaces should feel native to Data Cloud.  The UI API index still exports many hand-written service modules and includes implementation wording such as “Events — AEP event fabric explorer.” 
+**Root cause:** Connector registry is currently centered on metadata records in `dc_connections`; fabric operations are optional. When fabric is absent, test/sync report pending/degraded rather than executing. `handleEnableConnection` can set a connector active/healthy by state update, and `updateConnectionState` can synthesize a missing record. 
 
-**Affected surfaces:** navigation, Events, Memory, Agents, Pipelines, Runtime Truth, API clients, route gates.
+**Evidence:**
 
-**Correct target pattern:** UI consumes generated Data Cloud clients and a single route/action registry derived from contracts + Runtime Truth.
+* `DataSourceRegistryHandler` stores connector metadata in `dc_connections`. 
+* Raw credentials are removed/rejected and `secretRef` is preferred, which is good, but actual secret-vault integration was not verified from fetched code. 
+* Fabric connector is optional; schema returns 503 when absent, test/sync return pending/degraded. 
+* Enable/disable state mutation is separated from live connector validation. 
+
+**Affected surfaces:** Connectors, data source onboarding, sync, schema discovery, health, lineage, data quality, ingestion jobs.
+
+**Correct target pattern:** Connector control plane + ingestion job runtime + secret manager + schema registry + evidence ledger + retry/dead-letter pipeline.
 
 **Required fix:**
 
-1. Replace per-service API exports with generated clients and frontend adapters.
-2. Remove AEP implementation wording from user-facing UI comments, labels, routes, and docs.
-3. Bind route/action availability to typed Runtime Truth records.
-4. Use shared design system components consistently for shell, cards, tables, inspectors, activity timelines, and review queues.
+* Split connector metadata from sync/job runtime.
+* Require real fabric connector implementation for production connector enablement.
+* Do not mark active/healthy without successful validation.
+* Introduce sync job IDs, idempotency, row/source evidence, retry policy, DLQ, and provenance.
+* Bind credentials to external secret manager reference only.
 
 **Required tests:**
 
-* UI route traversal from Data Cloud home.
-* Runtime Truth gate disables unavailable actions.
-* No `AEP` wording in customer-facing UI except internal docs/developer-only areas.
-* Accessibility coverage for shell, tables, review queues, modals, charts.
+* Enable fails if connector cannot validate.
+* Missing connector cannot be synthesized by state update.
+* Sync retry is idempotent.
+* Source row traces to canonical record and search/report result.
+* Raw credentials never persisted or returned.
 
-**Cleanup implications:** consolidate `delivery/ui/src/api/*` into generated client adapters.
+**Cleanup implications:** Replace metadata-only lifecycle with canonical connector runtime.
 
 ---
 
-## P1-7 AI/automation is promising but not yet uniformly governed, evidenced, and privacy-hardened
+## P1-7 Contract, API, and UI parity is not yet one source of truth
 
-**Why it matters:** Data Cloud positions AI/ML as implicit and pervasive. That only works if every automated suggestion/action is advisory, explainable, policy-aware, auditable, and interruptible.
+**Why it matters:** Data Cloud needs stable APIs, generated clients, runtime truth, and UI actions to remain aligned. Manual router registration increases drift risk.
 
-**Root cause:** `AiAssistHandler` contains strong intent: confidence, fallback metadata, production fail-closed behavior, tenant quota checks, and optional action recording. But production behavior depends on wiring, AI action persistence depends on an optional client, and not all AI paths are proven to pass through a single governance/HITL/provenance policy.  The design requires every AI/agentic action to show data used, confidence/risk, policy decision, review state, rollback/override options, and audit/trace ID. 
+**Root cause:** Canonical OpenAPI files exist, but routes are hand-registered in `DataCloudRouterBuilder`; UI services/hooks and generated AEP clients also coexist.  
 
-**Affected surfaces:** schema inference, analytics suggest/automate, pipeline draft/refine, anomaly explanation, recommendations, Action Plane agents/runs/reviews.
+**Evidence:**
 
-**Correct target pattern:** one `AiActionExecutor` / `AutomationDecisionEnvelope`:
+* README identifies canonical contracts under `products/data-cloud/contracts/openapi/data-cloud.yaml` and `action-plane.yaml`, plus compatibility `aep.yaml`. 
+* Router contains hand-coded route registration across many domains. 
+* Search found canonical Data Cloud OpenAPI plus a platform test resource copy of `data-cloud-openapi.yaml`, which is a drift risk unless it is generated/validated.  
+* UI/action paths still include capability hooks and generated `aep-client.ts`.  
 
-```text
-input classification
-redaction summary
-model/provider
-confidence
-evidence
-policy decision
-requiresHumanReview
-audit id
-trace id
-rollback/override options
-```
+**Affected surfaces:** OpenAPI, generated SDK, UI API clients, route handlers, Action Plane compatibility, tests.
+
+**Correct target pattern:** Contract-first route manifest with generated clients and route coverage tests.
 
 **Required fix:**
 
-1. Centralize AI/automation execution policy.
-2. Require redaction and classification metadata before model calls.
-3. Require evidence/provenance for every AI response.
-4. Route low-confidence/high-risk outputs to HITL.
-5. Persist AI actions and decisions in an audit/evidence store in non-local profiles.
+* Generate route registry from OpenAPI operation IDs.
+* Generate SDK/UI clients from canonical contracts only.
+* Remove platform duplicate contract resources or generate them during tests.
+* Add OpenAPI drift checks to CI.
 
 **Required tests:**
 
-* Raw PII is not sent to LLM prompts.
-* Low-confidence result creates review item.
-* Production AI unavailable returns 503.
-* AI action response includes confidence/evidence/audit/trace.
-* Human override interrupts delegated automation.
+* Every handler route exists in OpenAPI.
+* Every OpenAPI route has handler coverage.
+* UI imports generated client only for production API calls.
+* Compatibility `aep.yaml` equals `action-plane.yaml` until retired.
 
-**Cleanup implications:** remove route-local heuristic behavior from individual handlers and move it behind the central automation policy.
+**Cleanup implications:** Remove hand-maintained duplicated route/client/contract artifacts.
 
 ---
 
-## P1-8 Observability exists as a design goal but remains optional in runtime wiring
+## P1-8 Provenance, lineage, and trust metadata are present but not enforced as mandatory
 
-**Why it matters:** Data Cloud must be operationally trustworthy. Noop metrics, unpersisted traces, or skipped audit events make production incidents and compliance reviews unverifiable.
+**Why it matters:** Data Cloud should be provenance-first. Every derived result, AI action, report, search result, and automation should trace back to source evidence.
 
-**Root cause:** The architecture defines telemetry taxonomy, runtime posture fields, traces, metrics, logs, audit, and surface-state reporting.  But the launcher defaults metrics to noop, allows trace exporter to be null, and allows audit service to be null. 
+**Root cause:** Data/event contracts include provenance-capable fields, but many are optional and validation is caller-driven. 
 
-**Affected surfaces:** all runtime APIs, import/processing jobs, AI assist, Action Plane runs, governance actions, Runtime Truth, incident response.
+**Evidence:**
 
-**Correct target pattern:** observability is optional only in local/test. Non-local profiles require metrics, trace export, structured logs, audit writer, and incident hooks.
+* `DataCloudClient.Event` includes optional source, subject, schema version, correlation, causation, actor, classification, policy context, provenance, and trace context. 
+* `Event.validate()` requires `source`, but validation is not enforced in the record constructor. 
+* `EntityCrudHandler` adds provenance and emits CDC events on save, but this is handler-specific rather than a globally enforced append/write contract. 
+* Lineage handler/plugin paths exist, but implementation completeness was not verified from fetched content. 
+
+**Affected surfaces:** Entity writes, events, connector sync, semantic index, search, analytics, reports, AI actions, governance, exports.
+
+**Correct target pattern:** Mandatory provenance envelope at write/append boundaries.
 
 **Required fix:**
 
-1. Add observability requirements to runtime profile validation.
-2. Emit canonical metrics for every route/action.
-3. Persist traces/audit for sensitive operations.
-4. Include observability posture in `/api/v1/surfaces`.
+* Enforce source, actor, tenant, correlation, classification, policy context, and provenance at append/write boundaries.
+* Make AI-generated/derived records carry source evidence and confidence.
+* Require reports/search/export to include lineage references or explicit “not available” trust state.
+* Disallow authoritative UI display when provenance is missing.
 
 **Required tests:**
 
-* Non-local profile fails without metrics/audit/tracing.
-* Sensitive mutation emits audit event.
-* Request ID/correlation ID appears in response and logs.
-* Degraded dependency emits surface-state change.
+* Event append without source/provenance fails in production.
+* Report row traces to canonical/source record.
+* AI suggestion carries evidence and confidence.
+* Export includes provenance or explicit redaction/trust metadata.
 
-**Cleanup implications:** remove “silent skip” behavior for audit and noop observability outside local/test.
-
----
-
-## P1-9 Test and release gates exist, but are fragmented across scripts, docs, and module tests
-
-**Why it matters:** A production readiness bar is only useful if it is one repeatable command/pipeline that gates releases.
-
-**Root cause:** The repo has many good signals: tenant isolation scripts, coverage/flakiness scripts, OpenAPI drift checks, runtime truth tests, security filter tests, architecture tests, route access tests, and production profile tests.       But the audited prompt’s desired release gate is broader than any single verified pipeline I could confirm.
-
-**Affected surfaces:** CI, release readiness, architecture gates, cleanup validation, test coverage, production profile validation.
-
-**Correct target pattern:** one product-level release gate:
-
-```bash
-products/data-cloud/scripts/verify-production-readiness.sh
-```
-
-It should orchestrate build, lint, typecheck, tests, OpenAPI drift, route inventory, runtime truth, tenant isolation, authz matrix, dependency boundaries, cleanup scan, placeholder scan, and e2e traversal.
-
-**Required tests:** the release gate itself should be tested/smoke-validated and required by CI.
-
-**Cleanup implications:** consolidate overlapping scripts into one orchestrated product release gate with subcommands.
+**Cleanup implications:** Remove deprecated `Event.of` from production paths.
 
 ---
 
-## P2-10 Documentation and cleanup debt still risks repeated audits
+## P1-9 UI/product surfaces still have mock/deprecated route risk
 
-**Why it matters:** The prompt’s goal is to stop repeated rediscovery of stale code/docs. Data Cloud now has canonical docs, but older root-level analysis/audit artifacts still appear in repository search and can confuse future reviews.
+**Why it matters:** User trust depends on the UI exposing only real backend-backed capabilities with accurate degraded states. Mocks and deprecated routes must not leak into production.
 
-**Root cause:** Canonical docs are listed in the Data Cloud README.  But search still surfaces `dc-aep-analysis.md`, `ghatana-data-cloud-aep-end-to-end-audit.md`, archived audit TODOs, and legacy implementation plans.     Some current design docs also contain stale contradictory wording about no active `products/data-cloud/planes/action` references even though the same docs define Action Plane as living there.  
+**Root cause:** UI mock/deprecated files and test API mocks remain in the Data Cloud UI tree, while canonical docs require UI to use generated clients and frontend adapters, not backend internals. 
 
-**Affected surfaces:** docs, search, architecture scripts, generated scorecards, future audit accuracy.
+**Evidence:**
 
-**Correct target pattern:** one canonical docs index plus explicit archive exclusion rules.
+* `delivery/ui/src/mocks/deprecatedRoutes.ts` exists. 
+* `delivery/ui/e2e/helpers/api-mocks.ts` exists. 
+* Real-backend E2E specs also exist by path, which is positive, but their completeness was not verified from content.  
+
+**Affected surfaces:** UI route gating, onboarding, dashboard, Data, Events, Query, Pipelines, Trust, Operations, tests.
+
+**Correct target pattern:** Mocks test-only; production UI consumes generated clients and runtime truth.
 
 **Required fix:**
 
-1. Keep only canonical docs in `products/data-cloud/docs/product`, `architecture`, `api`, `operations`, `security`, `testing`, `i18n`, `accessibility`.
-2. Move old analysis/audit docs under dated archive with archive warning headers or delete them.
-3. Fix contradictory migration wording in current canonical docs.
-4. Ensure truth-check scripts ignore archive paths.
+* Ensure mocks are excluded from production bundles.
+* Replace deprecated route mappings with runtime truth driven redirects or compatibility UI banners.
+* Add production build guard that fails on imports from `src/mocks`.
 
-**Required tests:** documentation truth check, no stale active references, no archive docs linked from canonical docs unless explicitly marked historical.
+**Required tests:**
 
-**Cleanup implications:** high.
+* Production build contains no mock imports.
+* UI route map is generated or validated against `/api/v1/surfaces`.
+* Every visible action has a real backend E2E path.
 
----
-
-# Migration / Completeness Matrix
-
-| Surface                            |     Boundary |     Contract | Runtime Truth | Tenant/Authz |   Provenance | Privacy/Security | AI/Automation | Observability |        Tests |      Cleanup | Status |
-| ---------------------------------- | -----------: | -----------: | ------------: | -----------: | -----------: | ---------------: | ------------: | ------------: | -----------: | -----------: | -----: |
-| Product boundary / plane model     |            ✅ |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Shared library boundary            |           🟡 |           🟡 |             ⚫ |            ⚫ |            ⚫ |               🟡 |            🟡 |            🟡 |           🟡 |           🔴 |     🟡 |
-| Data Cloud app shell               |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Runtime Truth `/api/v1/surfaces`   |            ✅ |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |             ⚫ |            🟡 |           🟡 |           🟡 |     🟡 |
-| Entity CRUD                        |            ✅ |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |             ⚫ |            🟡 |           🟡 |           🟡 |     🟡 |
-| Entity mutation atomicity          |           🟡 |           🟡 |             ⚫ |           🟡 |           🟡 |               🟡 |             ⚫ |            🟡 |           🟡 |           🟡 |     🔴 |
-| Event append / event truth         |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Connectors / source onboarding     |           🟡 |           🟡 |            🟡 | Not verified | Not verified |     Not verified |  Not verified |  Not verified | Not verified |           🟡 |     🟡 |
-| Credential / secret handling       | Not verified | Not verified |  Not verified | Not verified | Not verified |     Not verified |             ⚫ |  Not verified | Not verified | Not verified |     🔴 |
-| Ingestion / extraction / transform |           🟡 |           🟡 |            🟡 | Not verified |           🟡 |               🟡 |            🟡 |            🟡 | Not verified |           🟡 |     🟡 |
-| Canonical data model               |           🟡 |           🟡 |             ⚫ |           🟡 |           🟡 |               🟡 |             ⚫ |            🟡 |           🟡 |           🟡 |     🟡 |
-| Search / retrieval / indexing      |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Reports / analytics                |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Action Plane / AEP runtime         |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| HITL / reviews / learning          |           🟡 |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 | Not verified |           🟡 |     🟡 |
-| AI assist / automation             |            ✅ |           🟡 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🟡 |     🟡 |
-| Frontend contracts                 |           🟡 |           🔴 |            🟡 |           🟡 |           🟡 |               🟡 |            🟡 |            🟡 |           🟡 |           🔴 |     🔴 |
-| Generated SDK usage                |           🟡 |           🟡 |            🟡 |            ⚫ |            ⚫ |               🟡 |             ⚫ |             ⚫ | Not verified |           🟡 |     🟡 |
-| Observability                      |           🟡 |           🟡 |            🟡 |            ⚫ |           🟡 |               🟡 |            🟡 |            🔴 |           🟡 |           🟡 |     🟡 |
-| i18n                               | Not verified | Not verified |             ⚫ |            ⚫ |            ⚫ |                ⚫ |             ⚫ |             ⚫ | Not verified | Not verified |     🔴 |
-| Accessibility                      | Not verified | Not verified |             ⚫ |            ⚫ |            ⚫ |                ⚫ |             ⚫ |             ⚫ | Not verified | Not verified |     🔴 |
-| Repository cleanup                 |           🟡 |           🟡 |            🟡 |            ⚫ |            ⚫ |                ⚫ |             ⚫ |             ⚫ |           🟡 |           🔴 |     🔴 |
+**Cleanup implications:** Move mocks under test-only folders or delete deprecated route mocks after compatibility removal.
 
 ---
 
-# File-Level Gaps
+## P2-10 Observability and resilience are present but not enforced as production gates
 
-| Root blocker | Path                                                                                                                      | Gap                                                                                                                                                             | Fix                                                                                                    | Tests                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| P0-1         | `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java`        | Too many trust-critical runtime dependencies remain optional or fallback to noop/in-memory/silent skip.                                                         | Add centralized runtime profile validator and fail startup in non-local profiles.                      | Production profile missing dependency tests.       |
-| P0-2         | `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java` | Entity save/batch idempotency exists, but other mutations are explicitly not covered; transaction manager is optional; event rollback is best-effort.           | Introduce canonical command executor with transaction/outbox/idempotency/audit.                        | Retry, partial failure, compensation, audit tests. |
-| P1-5         | `SurfaceRegistryHandler.java`                                                                                             | `/surfaces` returns supplier map, not visibly a typed dependency-probe/evidence-backed registry.                                                                | Return typed `SurfaceRecord` with dependency probe evidence and posture.                               | Surface cannot be LIVE without probe evidence.     |
-| P1-4         | `delivery/ui/src/contracts/schemas.ts`                                                                                    | Frontend maintains broad “single source of truth” schemas instead of generated contract-derived schemas.                                                        | Generate Zod/client contracts from OpenAPI.                                                            | OpenAPI ↔ generated schemas drift gate.            |
-| P1-5         | `delivery/ui/src/api/surfaces.service.ts`                                                                                 | Deprecated capability compatibility layer remains even after `/capabilities` removal.                                                                           | Remove capability types/hooks after route migration.                                                   | No `Capability*` imports in UI.                    |
-| P1-6         | `delivery/ui/src/api/index.ts`                                                                                            | UI API surface still exposes many hand-written services and AEP implementation wording.                                                                         | Consolidate to generated clients + Data Cloud terminology.                                             | UI terminology and generated-client usage checks.  |
-| P0-3         | `shared-services/README.md` / `shared-services/feature-store-ingest`                                                      | README marks `feature-store-ingest` as residue and says canonical location is Data Cloud intelligence plane.                                                    | Delete residue after validating no references.                                                         | Gradle, grep, dependency graph checks.             |
-| P2-10        | `dc-aep-analysis.md`, `ghatana-data-cloud-aep-end-to-end-audit.md`, `docs/archive/data-cloud-audit-legacy/*`              | Stale/legacy audit and analysis docs still appear in repo search.                                                                                               | Move/delete/archive with warning headers and exclude from truth scans.                                 | Documentation truth check.                         |
-| P2-10        | `02_data_cloud_unified_detailed_architecture.md`, `03_data_cloud_unified_high_level_design.md`                            | Current docs contain contradictory stale migration wording around `products/data-cloud/planes/action` despite defining it as canonical Action Plane location.   | Rewrite acceptance/validation rows to mean “no stale pre-merge AEP paths,” not “no action plane path.” | Docs consistency check.                            |
+**Why it matters:** Data Cloud’s operational trust requires metrics, traces, audit events, structured errors, readiness, degraded state, and recovery paths.
+
+**Root cause:** Observability hooks exist, but production enforcement is optional in several places. 
+
+**Evidence:**
+
+* `HttpHandlerSupport` provides request IDs, structured error envelopes, and response helpers. 
+* Middleware provides rate limiting, payload limits, and content-type enforcement. 
+* Metrics collector defaults to no-op if not explicitly configured. 
+* Operations/runbook and validation scripts exist by path, but execution was not verified.  
+
+**Required fix:** Production profile should require real metrics, traces, audit, health probes, alerting, backup/restore validation, and runtime truth checks.
 
 ---
 
-# Prioritized Implementation Sequence
+## P2-11 Accessibility and i18n readiness are not verified from inspected implementation
 
-## 1. Canonical production profile and fail-closed gate
+**Why it matters:** Data Cloud is intended as enterprise-grade product UX. Accessibility and i18n cannot be retrofitted later without high cost.
 
-**Goal:** stop non-local startup when critical runtime dependencies are missing.
-**Main files:** `DataCloudHttpServer.java`, launcher config, Runtime Truth registry, deployment profile config.
-**Expected outcome:** no production deployment can silently run with noop audit, noop metrics, in-memory idempotency, missing transaction manager, disabled security, missing policy engine, or heuristic-only AI.
-**Acceptance:** production-like profile fails closed unless all required trust dependencies are configured.
-**Cleanup:** remove scattered fallback rules from handlers.
+**Root cause:** UI docs and tests exist by path, but this audit did not verify actual UI component implementation for keyboard, screen reader, focus, chart accessibility, translation, locale formatting, or timezone correctness.
+
+**Evidence:** UI architecture/design/user manual docs exist by path, but content and UI implementation were not fully fetched or executed.   
+
+**Status:** Not verified from current code/docs inspected.
+
+---
+
+## P2-12 Repository/document cleanup debt remains high
+
+**Why it matters:** The prompt’s core goal is to stop repeated audits caused by stale docs, legacy audit artifacts, duplicate systems, and compatibility confusion.
+
+**Root cause:** Canonical docs are improving, but old audit/analysis/implementation docs remain in archive and root-level locations. Some stale docs are archived correctly, but root-level audit/analysis files still create noise.    
+
+---
+
+# 7.3 Migration / Completeness Matrix
+
+| Surface                             | Product Boundary | Shared Abstraction | Route/API Registry | Tenant Resolver | Permission Guard | Data Contract | Connector Runtime | Pipeline Runtime | Provenance | Privacy | Security | AI/Automation | Human Override | Observability | i18n | a11y | Tests | Cleanup | Status |
+| ----------------------------------- | ---------------: | -----------------: | -----------------: | --------------: | ---------------: | ------------: | ----------------: | ---------------: | ---------: | ------: | -------: | ------------: | -------------: | ------------: | ---: | ---: | ----: | ------: | -----: |
+| Data Cloud app shell/dashboard      |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Data source onboarding              |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                🟡 |               🔴 |         🟡 |      🟡 |       🟡 |            🟡 |             🔴 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Connector registry                  |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                🟡 |               🔴 |         🟡 |      🟡 |       🟡 |            🔴 |             🔴 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Credential/secret handling          |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                🟡 |                ⚫ |         🟡 |      🟡 |       🟡 |             ⚫ |              ⚫ |            🟡 |    ⚫ |    ⚫ |    🟡 |      🟡 |     🟡 |
+| Ingestion/extraction/transformation |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                🔴 |               🔴 |         🟡 |      🟡 |       🟡 |            🟡 |             🔴 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🔴 |
+| Canonical data/fact model           |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |             ⚫ |              ⚫ |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Events/event log                    |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |               🟡 |         🟡 |      🟡 |       🟡 |            🟡 |              ⚫ |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Search/retrieval/indexing           |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |            🟡 |              ⚫ |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Governance/trust/privacy            |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Action Plane / automation           |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                 ⚫ |               🟡 |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Runtime truth `/api/v1/surfaces`    |               🟡 |                 🟡 |                 🟡 |               ⚫ |                ⚫ |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |    ⚫ |    ⚫ |    🟡 |      🟡 |     🟡 |
+| Shared contracts                    |               🟡 |                 🟡 |                 🟡 |               ⚫ |                ⚫ |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |             ⚫ |              ⚫ |             ⚫ |    ⚫ |    ⚫ |    🟡 |      🟡 |     🟡 |
+| Shared runtime libraries            |               🟡 |                 🟡 |                  ⚫ |               ⚫ |                ⚫ |            🟡 |                 ⚫ |               🟡 |         🟡 |      🟡 |       🟡 |            🟡 |              ⚫ |            🟡 |    ⚫ |    ⚫ |    🟡 |      🟡 |     🟡 |
+| UI/design-system usage              |               🟡 |                 🟡 |                 🟡 |               ⚫ |               🟡 |            🟡 |                 ⚫ |                ⚫ |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+| Test/validation gates               |               🟡 |                 🟡 |                 🟡 |              🟡 |               🟡 |            🟡 |                🟡 |               🟡 |         🟡 |      🟡 |       🟡 |            🟡 |             🟡 |            🟡 |   🔴 |   🔴 |    🟡 |      🟡 |     🟡 |
+
+Legend: ✅ Complete, 🟡 Partial, 🔴 Missing/unverified blocker, ⚫ Not applicable.
+
+---
+
+# 7.4 File-Level Gaps
+
+| Root blocker        | Path                                                                                                                     | Gap                                                                                                     | Required fix                                                                                        | Required tests                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Auth/scope          | `products/data-cloud/delivery/launcher/.../HttpHandlerSupport.java`                                                      | Tenant can be resolved from principal, header, query, or local fallback.                                | Replace with canonical authenticated `RequestContext`; production rejects query/header-only tenant. | Tenant spoofing, token/header mismatch, production fallback disabled.    |
+| Auth/scope          | `products/data-cloud/delivery/launcher/.../DataCloudMiddleware.java`                                                     | Tenant rate limit extracts tenant from header/query and middleware is not the authorization layer.      | Rate limit after authenticated context; separate unauthenticated IP limits from tenant limits.      | Rate limit cannot be bypassed/spoofed by changing tenant header.         |
+| Route/runtime truth | `DataCloudRouterBuilder.java`                                                                                            | Canonical `/api/v1/action/*` and legacy `/api/v1/*` action routes coexist.                              | Generate route registry from OpenAPI/runtime truth; flag legacy routes.                             | Route-contract parity, legacy disabled in production.                    |
+| Atomicity           | `EntityCrudHandler.java`                                                                                                 | Transaction/idempotency coverage is partial and route-local.                                            | Shared mutation command runtime with durable idempotency/outbox.                                    | Retry, rollback, event failure, index failure tests.                     |
+| Connector lifecycle | `DataSourceRegistryHandler.java`                                                                                         | Metadata-state lifecycle can report pending/degraded and enable state without full runtime validation.  | Connector job runtime with validation, sync job, secret manager, provenance.                        | Enable requires live validation; sync idempotency; raw secret rejection. |
+| Production profile  | `DataCloudHttpServer.java`                                                                                               | Many critical dependencies are optional/no-op/in-memory/heuristic.                                      | Profile-validated composition that fails closed in production.                                      | Production profile startup matrix.                                       |
+| Event contract      | `DataCloudClient.java`                                                                                                   | Event provenance/security fields are optional and validation is caller-driven.                          | Enforce canonical event envelope at append boundary.                                                | Append without source/provenance fails in production.                    |
+| Shared boundary     | `settings.gradle.kts`                                                                                                    | Platform/shared and Data Cloud Action modules still require ownership review.                           | Module ownership matrix and dependency rules.                                                       | Forbidden import/build graph tests.                                      |
+| Contract drift      | `products/data-cloud/contracts/openapi/data-cloud.yaml`, `platform/contracts/src/test/resources/data-cloud-openapi.yaml` | Canonical and copied/test contract resources can drift.                                                 | Generate copies or remove duplicate source.                                                         | OpenAPI drift check in CI.                                               |
+| UI mock risk        | `delivery/ui/src/mocks/deprecatedRoutes.ts`, `delivery/ui/e2e/helpers/api-mocks.ts`                                      | Mock/deprecated route code remains in UI tree.                                                          | Move to test-only or remove after compatibility migration.                                          | Production bundle mock-import guard.                                     |
+
+---
+
+# 7.5 Prioritized Implementation Sequence
+
+## 1. Canonical product/shared-library boundary hardening
+
+**Goal:** Make Data Cloud product semantics live inside `products/data-cloud`, with shared libraries limited to generic primitives.
+
+**Main areas:** `settings.gradle.kts`, `platform:java:*`, `products/data-cloud/planes/*`, kernel bridge modules.
+
+**Acceptance criteria:**
+
+* Product/shared ownership matrix exists.
+* Forbidden dependency checks enforce plane rules.
+* Platform modules contain no Data Cloud plane semantics.
+* Duplicate kernel bridge ownership is resolved.
+
+---
 
 ## 2. Canonical tenant/scope/authorization model
 
-**Goal:** make tenant, workspace, role, policy, and route/action access one backend-enforced path.
-**Main files:** `HttpHandlerSupport.java`, `DataCloudSecurityFilter.java`, `EndpointSensitivity.java`, `RouteActionAccessRegistry.java`, handlers.
-**Expected outcome:** no handler relies on frontend gating or informal annotations alone.
-**Acceptance:** route/action matrix tests cover all protected routes.
-**Cleanup:** remove route-local authorization duplication.
+**Goal:** Create one trusted request/scope model for all routes.
 
-## 3. Canonical write-command runtime
+**Main areas:** `HttpHandlerSupport`, `DataCloudSecurityFilter`, `RouteActionAccessRegistry`, middleware, handlers.
 
-**Goal:** all mutations are atomic, idempotent, audited, and observable.
-**Main files:** `EntityCrudHandler.java`, event handlers, pipeline/workflow handlers, governance handlers.
-**Expected outcome:** entity/event/audit/index side effects are coordinated through transaction/outbox.
-**Acceptance:** retry and partial-failure golden tests pass.
-**Cleanup:** remove per-handler idempotency implementations.
+**Acceptance criteria:**
 
-## 4. Contract generation and drift prevention
-
-**Goal:** OpenAPI/proto/schema contracts become the single source of truth.
-**Main files:** `products/data-cloud/contracts/**`, `delivery/ui/src/contracts/schemas.ts`, `delivery/ui/src/api/**`, SDK generation.
-**Expected outcome:** frontend clients/schemas are generated, runtime routes match contracts.
-**Acceptance:** OpenAPI validation, route inventory, SDK generation, UI generated-client checks pass.
-**Cleanup:** delete hand-maintained duplicate schemas.
-
-## 5. Runtime Truth hardening
-
-**Goal:** make `/api/v1/surfaces` operationally authoritative.
-**Main files:** `SurfaceRegistryHandler.java`, Runtime Truth registry/probes, UI surface service.
-**Expected outcome:** every surface has typed state, dependencies, evidence, runtime posture, and tenant/profile scope.
-**Acceptance:** no LIVE surface without probe evidence.
-**Cleanup:** remove capability compatibility language.
-
-## 6. Product/shared-library boundary hardening
-
-**Goal:** enforce Data Cloud plane boundaries and keep shared libraries generic.
-**Main files:** Gradle modules, platform modules, shared-services, architecture tests.
-**Expected outcome:** Data Cloud behavior lives in Data Cloud; platform stays generic.
-**Acceptance:** dependency direction and cross-product reuse scorecard pass.
-**Cleanup:** delete shared-service residue and stale module references.
-
-## 7. AI/automation governance envelope
-
-**Goal:** every AI/automation action has evidence, confidence, policy, audit, and HITL routing.
-**Main files:** `AiAssistHandler.java`, Action Plane runtime, governance/audit services, review queue.
-**Expected outcome:** AI is implicit but never silent or ungoverned.
-**Acceptance:** PII redaction, low-confidence HITL, production unavailable, and evidence tests pass.
-**Cleanup:** move handler-local heuristic behavior behind central automation policy.
-
-## 8. UI/UX and design-system consolidation
-
-**Goal:** outcome-first UI backed by generated clients and Runtime Truth.
-**Main files:** `delivery/ui/src/api/**`, route registry, runtime gates, pages/components.
-**Expected outcome:** no AEP-as-product wording, no dead actions, no fake live surfaces.
-**Acceptance:** Playwright route traversal, runtime gating, a11y tests pass.
-**Cleanup:** consolidate service modules and remove duplicated client logic.
-
-## 9. Observability and operations hardening
-
-**Goal:** metrics, traces, logs, audit, and incident signals become mandatory in non-local profiles.
-**Main files:** launcher, operations plane, health/runtime truth handlers, runbooks.
-**Expected outcome:** actionable runtime evidence for every sensitive operation.
-**Acceptance:** observability profile tests and incident/degraded-state tests pass.
-**Cleanup:** remove noop production observability.
-
-## 10. Repository cleanup and canonical docs consolidation
-
-**Goal:** stop repeated audit noise from stale docs/code.
-**Main files:** root docs, archive docs, Data Cloud docs, shared-services residue.
-**Expected outcome:** one canonical docs set and clean active tree.
-**Acceptance:** doc truth check, stale-reference check, cleanup checklist pass.
+* Tenant comes from authenticated identity or trusted gateway context.
+* Header/query tenant is blocked in production.
+* Every route has action, sensitivity, permission, tenant/workspace requirement, and audit policy.
+* Support/delegated access is explicit and audited.
 
 ---
 
-# Regression and Release Gates
+## 3. Data source and connector runtime hardening
 
-Minimum gates before production readiness:
+**Goal:** Move from connector metadata registry to durable connector lifecycle.
 
-* Full build for Data Cloud product modules.
-* Full build for directly used platform/shared libraries.
-* Contract validation for `data-cloud.yaml`, `action-plane.yaml`, and compatibility `aep.yaml`.
-* Runtime route inventory ↔ OpenAPI drift check.
-* Generated SDK/client/schema check.
-* Tenant isolation tests.
-* Role/action/route authorization matrix tests.
-* Production profile fail-closed tests.
-* Entity/event mutation idempotency tests.
-* Transaction/outbox partial-failure tests.
-* Event-to-context-to-action provenance tests.
-* Runtime Truth dependency-probe tests.
-* AI unavailable / low-confidence / redaction / HITL tests.
-* Export/download privacy tests.
-* Observability tests for trace/request ID/audit/metrics.
-* UI traversal from Data Cloud home.
-* UI runtime-truth action gating tests.
-* Accessibility tests for shell, tables, modals, review queues, charts.
-* i18n smoke tests for dates, numbers, strings, timezone.
-* Placeholder/mock/stub production scan.
-* Dead-code and stale-doc scan.
-* Dependency direction checks.
-* Circular dependency checks.
-* Cleanup validation.
+**Main areas:** `DataSourceRegistryHandler`, `DataFabricConnector`, connector jobs, secret handling, sync status.
+
+**Acceptance criteria:**
+
+* Enable requires successful live validation.
+* Sync creates durable job with idempotency and row-level evidence.
+* Raw credentials are never persisted or returned.
+* Missing fabric runtime means surface is unavailable, not half-operational.
+
+---
+
+## 4. Ingestion/extraction/transformation pipeline hardening
+
+**Goal:** Make ingestion deterministic, replayable, observable, and provenance-first.
+
+**Acceptance criteria:**
+
+* Source row → canonical record → index/report/export lineage exists.
+* Retries are idempotent.
+* Partial failure uses DLQ/poison record handling.
+* Backfills and incremental syncs are test-covered.
+
+---
+
+## 5. Canonical data model, contracts, and schema evolution
+
+**Goal:** Make entity/event/query/schema models consistent across backend, contracts, SDK, and UI.
+
+**Acceptance criteria:**
+
+* OpenAPI is canonical.
+* Generated clients are used in UI/SDK.
+* Event envelope fields are enforced at append boundary.
+* Schema evolution tests cover incompatible changes.
+
+---
+
+## 6. Retrieval/search/indexing correctness
+
+**Goal:** Ensure retrieval is tenant-aware, provenance-aware, and never stale without disclosure.
+
+**Acceptance criteria:**
+
+* Search/index operations are authorized by tenant/workspace/source.
+* Index invalidation/rebuild is deterministic.
+* Results include provenance/trust/freshness metadata.
+
+---
+
+## 7. Provenance, lineage, trust, and governance layer
+
+**Goal:** Make trust explicit across every derived result.
+
+**Acceptance criteria:**
+
+* Every derived result has lineage.
+* Every AI/automation action has evidence and confidence.
+* Missing provenance blocks authoritative display.
+
+---
+
+## 8. AI/ML-native automation with human override
+
+**Goal:** Make AI implicit, evidence-backed, interruptible, and safe.
+
+**Acceptance criteria:**
+
+* Low-confidence actions require review.
+* Human takeover/override is supported.
+* AI suggestions/actions are audited and reversible where applicable.
+
+---
+
+## 9. Data Cloud UI/UX and design-system consolidation
+
+**Goal:** Ensure simple, information-rich, no-mock, no-dead-route UI.
+
+**Acceptance criteria:**
+
+* UI uses generated clients and runtime truth.
+* Mocks are test-only.
+* Every visible action has real backend coverage.
+* Unsupported/degraded states are explicit.
+
+---
+
+## 10. Privacy/security/i18n/a11y/observability gates
+
+**Goal:** Make cross-cutting requirements release-blocking.
+
+**Acceptance criteria:**
+
+* Production fails without auth, audit, metrics, durable stores, and policy engine.
+* i18n and a11y tests exist and run.
+* Security tests cover route matrix and data leakage.
+
+---
+
+## 11. Test hardening and golden-master validation
+
+**Goal:** Replace test presence with meaningful test proof.
+
+**Acceptance criteria:**
+
+* Connector onboarding E2E.
+* Tenant isolation E2E.
+* Entity/event/outbox golden-master.
+* Route/OpenAPI/UI parity tests.
+* Production profile startup tests.
+* No mock imports in prod bundle.
+
+---
+
+## 12. Repository cleanup and architectural consolidation
+
+**Goal:** Remove legacy artifacts that keep causing repeated audits.
+
+**Acceptance criteria:**
+
+* Canonical docs matrix complete.
+* Stale root audit docs moved/deleted.
+* Archived docs clearly excluded from canonical truth.
+* Duplicate routes/contracts/constants removed or intentionally feature-flagged.
+
+---
+
+# 7.6 Regression and Release Gates
+
+Minimum production gates before readiness:
+
+* [ ] Full Data Cloud app traversal from primary route.
+* [ ] Route/action/permission matrix for all registered routes.
+* [ ] Tenant spoofing tests for header, query, token mismatch, workspace mismatch.
+* [ ] Support/delegated-access audit and redaction tests.
+* [ ] Connector onboarding → test → schema → sync → canonical record E2E.
+* [ ] Secret handling test proving raw credentials are rejected and not persisted.
+* [ ] Entity save/update/delete golden-master with entity + event + provenance + outbox.
+* [ ] Idempotency tests for every retryable mutating route.
+* [ ] Event append rejects missing source/provenance in production.
+* [ ] Search/retrieval/index authorization tests.
+* [ ] Report/export/search result provenance parity tests.
+* [ ] Runtime truth `/api/v1/surfaces` parity with OpenAPI and UI navigation.
+* [ ] Legacy route compatibility disabled by default in production.
+* [ ] AI suggestion evidence/confidence/human-review tests.
+* [ ] Human override/interruption tests for automation.
+* [ ] Privacy redaction and cross-tenant leakage tests.
+* [ ] Accessibility test suite for keyboard/focus/screen reader/chart/table surfaces.
+* [ ] i18n test suite for strings, dates, numbers, time zones, and locale fallback.
+* [ ] Production profile startup fails without security/audit/metrics/durable stores/policy engine.
+* [ ] OpenAPI drift check.
+* [ ] No production imports from UI mocks.
+* [ ] Build/lint/typecheck/unit/integration/E2E pass.
+* [ ] Dead-code and duplicate-contract checks pass.
+* [ ] Repository cleanup checklist complete.
 
 ---
 
 # Repository Cleanup Plan
 
-| Priority | Classification         | Path                                                                                           | Reason                                                                                  | Evidence | Safe Fix                                                                | Tests/Validation                             |
-| -------- | ---------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------- | -------------------------------------------- |
-| P0       | Replace                | `DataCloudHttpServer.java`                                                                     | Central composition is too large and allows optional production-sensitive dependencies. |          | Split into profile validator, route modules, plane composition modules. | Startup profile tests, route smoke tests.    |
-| P0       | Replace                | `EntityCrudHandler.java` mutation flow                                                         | Atomicity/idempotency/audit is partial and route-specific.                              |          | Introduce canonical command executor and outbox.                        | Retry/partial-failure tests.                 |
-| P1       | Merge/Replace          | `delivery/ui/src/contracts/schemas.ts`                                                         | Duplicates canonical contracts as frontend-maintained truth.                            |          | Generate schemas from OpenAPI; keep only view-model schemas.            | Contract drift check.                        |
-| P1       | Delete after migration | `Capability*` compatibility in `surfaces.service.ts`                                           | Capability language remains after canonical `/surfaces` migration.                      |          | Remove compatibility hooks/types after imports migrate.                 | No `Capability*` imports.                    |
-| P1       | Replace                | `delivery/ui/src/api/index.ts`                                                                 | Hand-written services and AEP implementation wording leak into UI layer.                |          | Use generated clients + Data Cloud terminology.                         | UI terminology scan, generated-client check. |
-| P1       | Delete                 | `shared-services/feature-store-ingest`                                                         | Marked as residue; canonical location is Data Cloud intelligence plane.                 |          | Delete after reference scan.                                            | Gradle/dependency grep/build.                |
-| P1       | Move/Delete            | `dc-aep-analysis.md`                                                                           | Root-level stale analysis artifact.                                                     |          | Move to dated archive or delete.                                        | Documentation truth check.                   |
-| P1       | Move/Delete            | `ghatana-data-cloud-aep-end-to-end-audit.md`                                                   | Root-level stale audit artifact.                                                        |          | Move to dated archive or delete.                                        | Documentation truth check.                   |
-| P2       | Keep archived, exclude | `docs/archive/data-cloud-audit-legacy/*`                                                       | Historical audit/TODO files should not influence current truth.                         |          | Add archive warning headers and exclude from truth scans.               | Docs index/truth scan.                       |
-| P2       | Fix                    | `02_data_cloud_unified_detailed_architecture.md`, `03_data_cloud_unified_high_level_design.md` | Stale contradictory wording around active `planes/action` path.                         |          | Clarify “no stale pre-merge AEP paths,” not no Action Plane path.       | Docs consistency test.                       |
+| Priority | Classification             | Path                                                                                                               | Reason                                                                                           | Evidence | Safe Fix                                                                              | Tests/Validation                    |
+| -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------- | ----------------------------------- |
+| P0       | Replace                    | `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java` | Still acts as a large composition/god class with many optional production-critical dependencies. |          | Move profile validation and composition into smaller runtime composition modules.     | Production profile startup matrix.  |
+| P0       | Replace                    | `HttpHandlerSupport.java` tenant resolution                                                                        | Tenant can come from principal/header/query/local fallback.                                      |          | Central authenticated `RequestContext`; block query/header-only tenant in production. | Tenant spoofing tests.              |
+| P0       | Replace                    | `DataCloudMiddleware.java` tenant extraction                                                                       | Tenant rate limiting uses header/query before trusted auth context.                              |          | Tenant rate limits after auth context; unauthenticated IP limit separate.             | Rate-limit spoof tests.             |
+| P0       | Replace                    | `EntityCrudHandler.java` mutation flow                                                                             | Idempotency and transaction support are partial/optional.                                        |          | Canonical command runtime with durable idempotency and outbox.                        | Retry/rollback/golden-master tests. |
+| P1       | Merge/Replace              | `DataCloudRouterBuilder.java`                                                                                      | Canonical and legacy action routes coexist; route registry is hand-coded.                        |          | Generate route registry from OpenAPI/runtime truth; feature-flag legacy aliases.      | Route-contract parity tests.        |
+| P1       | Replace                    | `DataSourceRegistryHandler.java`                                                                                   | Connector lifecycle is metadata-first; enable/sync can be degraded without durable runtime.      |          | Connector control plane + job runtime + secret manager + evidence ledger.             | Connector E2E and secret tests.     |
+| P1       | Move/Split                 | Platform workflow/agent/messaging/AI/governance modules                                                            | Plane doc says to split/move Data Cloud/Action-specific behavior.                                |          | Module ownership matrix; move product behavior into Data Cloud.                       | Forbidden dependency checks.        |
+| P1       | Merge                      | `products:data-cloud:planes:action:kernel-bridge` and `products:data-cloud:extensions:kernel-bridge`               | Two Data Cloud kernel bridge modules need ownership clarification.                               |          | Keep one canonical bridge boundary or split by runtime vs extension with docs.        | Build graph and dependency tests.   |
+| P1       | Replace                    | `platform/contracts/src/test/resources/data-cloud-openapi.yaml`                                                    | Potential duplicate of canonical product contract.                                               |          | Generate test resource from canonical OpenAPI or delete duplicate after verification. | OpenAPI drift check.                |
+| P1       | Move/Archive               | `dc-aep-analysis.md`                                                                                               | Root-level historical analysis conflicts with canonical plane model.                             |          | Move under archive or delete if superseded.                                           | Docs index check.                   |
+| P1       | Move/Archive               | `ghatana-data-cloud-aep-end-to-end-audit.md`                                                                       | Root-level old audit artifact creates repeated audit noise.                                      |          | Move to archive with noncanonical marker or delete.                                   | Docs truth check.                   |
+| P2       | Keep but mark noncanonical | `docs/archive/data-cloud-audit-legacy/*`                                                                           | Archive exists, but should not influence current audits.                                         |          | Keep only if clearly excluded from canonical docs.                                    | Documentation truth checker.        |
+| P2       | Move/Delete                | `delivery/ui/src/mocks/deprecatedRoutes.ts`                                                                        | Mock/deprecated route risk in UI source tree.                                                    |          | Move to test-only or remove after compatibility migration.                            | Production bundle import guard.     |
+| P2       | Move                       | `delivery/ui/e2e/helpers/api-mocks.ts`                                                                             | Acceptable for tests, but must never leak to production.                                         |          | Keep under test-only with import restrictions.                                        | Prod build mock check.              |
+| P2       | Merge                      | Duplicate bodyless mutation route constants                                                                        | Constants appear in both server and middleware.                                                  |          | Single route metadata registry.                                                       | Middleware route coverage tests.    |
 
 ---
 
 ## Canonical Docs Matrix
 
-| Doc                                                               | Keep | Merge | Archive | Delete | Notes                                                   |
-| ----------------------------------------------------------------- | ---: | ----: | ------: | -----: | ------------------------------------------------------- |
-| `products/data-cloud/README.md`                                   |    ✅ |       |         |        | Good canonical entry point.                             |
-| `docs/architecture/PLANE_ARCHITECTURE.md`                         |    ✅ |       |         |        | Canonical architecture.                                 |
-| `docs/product/01_data_cloud_unified_vision_market_positioning.md` |    ✅ |       |         |        | Canonical vision/positioning.                           |
-| `docs/product/02_data_cloud_unified_detailed_architecture.md`     |    ✅ |       |         |        | Keep, but fix stale contradictory validation wording.   |
-| `docs/product/03_data_cloud_unified_high_level_design.md`         |    ✅ |       |         |        | Keep, but fix stale contradictory migration wording.    |
-| `docs/api/REST_API_DOCUMENTATION.md`                              |    ✅ |    🟡 |         |        | Keep only if generated/validated from OpenAPI.          |
-| `docs/operations/RUNBOOK.md`                                      |    ✅ |       |         |        | Keep as operations canonical doc.                       |
-| `contracts/README.md`                                             |    ✅ |       |         |        | Keep as contract ownership doc.                         |
-| `delivery/ui/ARCHITECTURE.md`                                     |    ✅ |    🟡 |         |        | Keep if aligned with product HLD and generated clients. |
-| `dc-aep-analysis.md`                                              |      |       |      🟡 |     🟡 | Root-level stale analysis; remove from active truth.    |
-| `ghatana-data-cloud-aep-end-to-end-audit.md`                      |      |       |      🟡 |     🟡 | Root-level stale audit; remove from active truth.       |
-| `docs/archive/data-cloud-audit-legacy/*`                          |      |       |       ✅ |        | Keep only as archive with warning/exclusion.            |
-| `docs/archive/data-cloud-implementation-legacy/*`                 |      |       |       ✅ |        | Keep only as archive with warning/exclusion.            |
+| Doc                                                               | Keep | Merge | Archive | Delete | Notes                                                                              |
+| ----------------------------------------------------------------- | ---: | ----: | ------: | -----: | ---------------------------------------------------------------------------------- |
+| `products/data-cloud/README.md`                                   |    ✅ |       |         |        | Canonical product index and module map.                                            |
+| `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md`     |    ✅ |       |         |        | Canonical architecture and migration rules.                                        |
+| `docs/product/01_data_cloud_unified_vision_market_positioning.md` |    ✅ |       |         |        | Keep as canonical product/market doc.                                              |
+| `docs/product/02_data_cloud_unified_detailed_architecture.md`     |    ✅ |       |         |        | Keep as detailed architecture.                                                     |
+| `docs/product/03_data_cloud_unified_high_level_design.md`         |    ✅ |       |         |        | Keep as UX/API/migration design.                                                   |
+| `products/data-cloud/contracts/README.md`                         |    ✅ |       |         |        | Contract Plane ownership.                                                          |
+| `products/data-cloud/contracts/openapi/data-cloud.yaml`           |    ✅ |       |         |        | Canonical Data Cloud API.                                                          |
+| `products/data-cloud/contracts/openapi/action-plane.yaml`         |    ✅ |       |         |        | Canonical Action Plane API.                                                        |
+| `products/data-cloud/contracts/openapi/aep.yaml`                  |    ✅ |       |         |        | Keep only as temporary compatibility contract.                                     |
+| `products/data-cloud/docs/api/REST_API_DOCUMENTATION.md`          |    ✅ |    🟡 |         |        | Should be generated/validated from OpenAPI.                                        |
+| UI architecture/design docs                                       |   🟡 |     ✅ |         |        | Merge into one canonical frontend/design-system architecture.                      |
+| `products/data-cloud/docs/DISTRIBUTED_WORKFLOW_ROADMAP.md`        |      |     ✅ |      🟡 |        | Merge into Action Plane implementation roadmap.                                    |
+| `docs/archive/data-cloud-audit-legacy/*`                          |      |       |       ✅ |        | Keep only with noncanonical disclaimer.                                            |
+| `docs/archive/data-cloud-implementation-legacy/*`                 |      |       |       ✅ |        | Keep only if referenced as historical archive.                                     |
+| `dc-aep-analysis.md`                                              |      |       |       ✅ |     🟡 | Root-level historical artifact; archive/delete after confirming no canonical refs. |
+| `ghatana-data-cloud-aep-end-to-end-audit.md`                      |      |       |       ✅ |     🟡 | Root-level audit artifact; archive/delete after confirming no canonical refs.      |
 
 ---
 
 ## Final Cleanup Checklist
 
-* [ ] Legacy root-level Data Cloud/AEP analysis docs removed or archived.
-* [ ] Old audit/TODO docs excluded from canonical truth scans.
-* [ ] `shared-services/feature-store-ingest` residue deleted after reference validation.
-* [ ] Capability terminology removed from active UI/API code after migration.
-* [ ] Frontend contract schemas generated from canonical OpenAPI.
-* [ ] Runtime Truth records typed and dependency-probe backed.
-* [ ] Data Cloud/Action Plane docs corrected for stale path wording.
-* [ ] Product-specific behavior removed from shared libraries.
-* [ ] Shared modules validated by cross-product reuse scorecard.
-* [ ] In-memory/noop/heuristic fallbacks blocked in non-local profiles.
-* [ ] All mutating routes use canonical idempotency/transaction/audit path.
-* [ ] Build/lint/typecheck/test/release gate passes.
-* [ ] No hidden production fallback paths remain.
+* [ ] Legacy root-level Data Cloud/AEP audit docs moved to archive or deleted.
+* [ ] Archive docs explicitly excluded from canonical source of truth.
+* [ ] Canonical docs index points only to current product/architecture/design/API/ops docs.
+* [ ] Product/shared module ownership matrix created.
+* [ ] Product-specific logic removed from shared platform libraries.
+* [ ] Duplicate kernel bridge ownership resolved.
+* [ ] Duplicate OpenAPI/test contract copies removed or generated.
+* [ ] Duplicate route constants merged into canonical route metadata.
+* [ ] Legacy action route aliases feature-flagged or removed.
+* [ ] Capability vocabulary removed except explicit compatibility code.
+* [ ] UI mocks isolated to test-only folders.
+* [ ] Production build fails on mock imports.
+* [ ] Production profile fails without security, audit, metrics, durable stores, and policy engine.
+* [ ] Entity/event/provenance/idempotency mutation runtime centralized.
+* [ ] Connector lifecycle upgraded from metadata registry to durable job runtime.
+* [ ] Build/lint/typecheck/unit/integration/E2E pass after cleanup.
+* [ ] No hidden fallback runtime paths remain in production profile.
+* [ ] No duplicate route runtimes remain.
+* [ ] No duplicate contract truth remains.

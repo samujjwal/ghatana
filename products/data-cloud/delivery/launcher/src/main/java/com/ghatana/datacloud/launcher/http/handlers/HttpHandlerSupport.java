@@ -6,6 +6,8 @@ import com.ghatana.datacloud.infrastructure.governance.http.dto.ErrorResponse;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
@@ -41,6 +43,7 @@ public class HttpHandlerSupport {
     private final String deploymentMode;
     private final Executor sharedBlockingExecutor;
     private static final java.util.Set<String> SAFE_FALLBACK_MODES = java.util.Set.of("local", "test", "development");
+    private final RequestContextResolver requestContextResolver;
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
                               String corsAllowOrigin,
@@ -70,6 +73,7 @@ public class HttpHandlerSupport {
         this.strictTenantResolution = strictTenantResolution;
         this.deploymentMode         = (deploymentMode == null || deploymentMode.isBlank()) ? "local" : deploymentMode;
         this.sharedBlockingExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        this.requestContextResolver = new RequestContextResolver(this.deploymentMode, strictTenantResolution);
     }
 
     /**
@@ -372,29 +376,93 @@ public class HttpHandlerSupport {
     }
 
     /**
-    * Resolves tenant from {@code X-Tenant-Id} header or query parameter.
-    *
-    * Resolves the tenant ID from the request, returning {@code null} when none is present or
-    * the supplied value fails the shared tenant identifier format validation.
+     * Resolves tenant from authenticated identity only in production profiles.
+     * In non-production profiles, falls back to X-Tenant-Id header or query parameter.
      *
-    * <p>Handlers in non-local profiles should prefer this method and reject {@code null}
-    * results. Example usage:
-     * <pre>{@code
-     * String tenantId = http.requireTenantIdOrFail(request);
-     * if (tenantId == null) {
-     *     return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
-     * }
-     * }</pre>
+     * <p><strong>Production Behavior:</strong>
+     * <ul>
+     *   <li>X-Tenant-Id header is REJECTED (returns null, triggers 403)</li>
+     *   <li>tenantId query parameter is REJECTED (returns null, triggers 403)</li>
+     *   <li>Tenant MUST come from authenticated Principal (JWT/API key)</li>
+     * </ul>
+     *
+     * <p><strong>Recommended:</strong> Use {@link #resolveRequestContext(HttpRequest)} for new code
+     * to get the full authenticated context including roles and audit trail.
      *
      * @param request inbound HTTP request
-     * @return tenant ID if present; {@code null} if absent
+     * @return tenant ID if present and valid; {@code null} if absent, invalid, or spoofed
+     * @deprecated Use {@link #resolveRequestContext(HttpRequest)} for production-grade resolution
      */
+    @Deprecated
     public String requireTenantIdOrFail(HttpRequest request) {
-        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
-        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) {
-            return sanitizeTenantId(metadata.tenantId());
+        // Try canonical resolver first (enforces production rules)
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (result.isSuccess()) {
+            return result.context().map(RequestContext::tenantId).orElse(null);
         }
-        return resolveTenantId(request);
+
+        // Resolution failed - return null (caller should check and return appropriate error)
+        return null;
+    }
+
+    /**
+     * Requires tenant ID and returns error response details if unavailable.
+     * This is the production-safe method that properly handles spoofing attempts.
+     *
+     * @param request inbound HTTP request
+     * @return Resolution result with either tenant ID or error code/message
+     */
+    public TenantResolutionResult requireTenantIdWithError(HttpRequest request) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+
+        if (result.isSuccess()) {
+            String tenantId = result.context()
+                .map(RequestContext::tenantId)
+                .orElse(null);
+
+            if (tenantId == null) {
+                return TenantResolutionResult.error(401,
+                    "Unable to resolve tenant from authenticated request. " +
+                    "Ensure JWT/API key includes tenant claim.");
+            }
+
+            return TenantResolutionResult.success(tenantId, result.context().get());
+        }
+
+        return TenantResolutionResult.error(result.errorCode(), result.errorMessage());
+    }
+
+    /**
+     * Result of tenant resolution with optional full context.
+     */
+    public static final class TenantResolutionResult {
+        private final String tenantId;
+        private final RequestContext context;
+        private final int errorCode;
+        private final String errorMessage;
+        private final boolean success;
+
+        private TenantResolutionResult(String tenantId, RequestContext context, int errorCode, String errorMessage, boolean success) {
+            this.tenantId = tenantId;
+            this.context = context;
+            this.errorCode = errorCode;
+            this.errorMessage = errorMessage;
+            this.success = success;
+        }
+
+        public static TenantResolutionResult success(String tenantId, RequestContext context) {
+            return new TenantResolutionResult(tenantId, context, 0, null, true);
+        }
+
+        public static TenantResolutionResult error(int code, String message) {
+            return new TenantResolutionResult(null, null, code, message, false);
+        }
+
+        public boolean isSuccess() { return success; }
+        public String tenantId() { return tenantId; }
+        public RequestContext context() { return context; }
+        public int errorCode() { return errorCode; }
+        public String errorMessage() { return errorMessage; }
     }
 
     /**
@@ -417,7 +485,9 @@ public class HttpHandlerSupport {
 
     /**
      * Returns whether the request carries an explicit tenant identifier candidate before validation.
+     * @deprecated Use {@link #resolveRequestContext(HttpRequest)} for production-grade resolution
      */
+    @Deprecated
     public boolean hasExplicitTenantCandidate(HttpRequest request) {
         RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
         if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) {
@@ -426,19 +496,49 @@ public class HttpHandlerSupport {
         return findRawTenantCandidate(request) != null;
     }
 
+    /**
+     * Resolves the canonical authenticated RequestContext for the HTTP request.
+     *
+     * <p>This is the production-grade method for obtaining tenant/scope/authorization context.
+     * It enforces:
+     * <ul>
+     *   <li>Rejection of X-Tenant-Id header in production profiles</li>
+     *   <li>Rejection of tenantId query parameter in production profiles</li>
+     *   <li>Tenant MUST come from authenticated identity in production</li>
+     *   <li>Full audit trail for support/delegated access</li>
+     * </ul>
+     *
+     * @param request the HTTP request
+     * @return the resolved RequestContext, or null if resolution failed
+     */
+    public RequestContext resolveRequestContext(HttpRequest request) {
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (result.isSuccess()) {
+            return result.context().orElse(null);
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the canonical RequestContext or returns an error response if resolution fails.
+     *
+     * @param request the HTTP request
+     * @return ResolutionResult containing either context or error details
+     */
+    public RequestContextResolver.ResolutionResult resolveRequestContextWithError(HttpRequest request) {
+        return requestContextResolver.resolve(request);
+    }
+
+    /**
+     * @deprecated Use RequestContextResolver for production-grade tenant resolution
+     */
+    @Deprecated
     private String resolveTenantId(HttpRequest request) {
-        Principal principal = request.getAttachment(Principal.class);
-        if (principal != null && principal.getTenantId() != null && !principal.getTenantId().isBlank()) {
-            return sanitizeTenantId(principal.getTenantId());
+        // Delegate to canonical resolver
+        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
+        if (result.isSuccess()) {
+            return result.context().map(RequestContext::tenantId).orElse(null);
         }
-        String candidate = findRawTenantCandidate(request);
-        if (candidate != null) {
-            return sanitizeTenantId(candidate);
-        }
-        // DC-AUD-014: Non-strict mode falls back to default tenant ONLY in safe modes.
-        // Production / staging must never silently fall back.
-        if (strictTenantResolution) return null;
-        if (SAFE_FALLBACK_MODES.contains(deploymentMode)) return "default";
         return null;
     }
 

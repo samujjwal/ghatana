@@ -101,6 +101,9 @@ export function usePhaseCockpitData({
         throw new Error('Missing project id for phase cockpit.');
       }
 
+      if (!workspaceId) {
+        throw new Error('Workspace context is required - project snapshot fetch must be scoped (TODO-001)');
+      }
       return fetchProjectSnapshot(projectId, workspaceId);
     },
     enabled: Boolean(projectId),

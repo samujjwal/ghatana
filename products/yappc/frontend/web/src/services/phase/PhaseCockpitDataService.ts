@@ -177,11 +177,12 @@ export function normalizeProjectSnapshot(
 
 export async function fetchProjectSnapshot(
   projectId: string,
-  workspaceId?: string,
+  workspaceId: string,
 ): Promise<PhaseProjectSnapshot> {
-  const project = workspaceId
-    ? await yappcApi.projects.getScoped(projectId, workspaceId)
-    : await yappcApi.projects.get(projectId);
+  if (!workspaceId) {
+    throw new Error('Workspace context is required - project access must be scoped (TODO-001)');
+  }
+  const project = await yappcApi.projects.getScoped(projectId, workspaceId);
   return normalizeProjectSnapshot(project);
 }
 

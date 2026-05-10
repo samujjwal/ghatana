@@ -3,23 +3,23 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const workspaceAliases = {
-  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
-  '@ghatana/canvas/flow': path.resolve(__dirname, '../../../platform/typescript/canvas/src/flow/index.ts'),
-  '@ghatana/canvas/hybrid': path.resolve(__dirname, '../../../platform/typescript/canvas/src/hybrid/index.ts'),
+  '@ghatana/design-system': path.resolve(__dirname, '../../../../platform/typescript/design-system/src/index.ts'),
+  '@ghatana/canvas/flow': path.resolve(__dirname, '../../../../platform/typescript/canvas/src/flow/index.ts'),
+  '@ghatana/canvas/hybrid': path.resolve(__dirname, '../../../../platform/typescript/canvas/src/hybrid/index.ts'),
   // DC-UX-050: add missing topology alias that was causing dev-console module resolution warnings
-  '@ghatana/canvas/topology': path.resolve(__dirname, '../../../platform/typescript/canvas/src/topology/index.ts'),
-  '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
-  '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
-  '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/platform-utils/src/index.ts'),
-  '@ghatana/product-shell': path.resolve(__dirname, '../../../platform/typescript/product-shell/src/index.ts'),
-  '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
-  '@ghatana/domain-components': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/index.ts'),
-  '@ghatana/domain-components/security': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/security/index.ts'),
-  '@ghatana/domain-components/privacy': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/privacy/index.ts'),
-  '@ghatana/domain-components/voice': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/voice/index.ts'),
-  '@ghatana/domain-components/nlp': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/nlp/index.ts'),
-  '@ghatana/domain-components/selection': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/selection/index.ts'),
-  '@ghatana/wizard': path.resolve(__dirname, '../../../platform/typescript/wizard/src/index.ts'),
+  '@ghatana/canvas/topology': path.resolve(__dirname, '../../../../platform/typescript/canvas/src/topology/index.ts'),
+  '@ghatana/theme': path.resolve(__dirname, '../../../../platform/typescript/theme/src/index.ts'),
+  '@ghatana/tokens': path.resolve(__dirname, '../../../../platform/typescript/tokens/src/index.ts'),
+  '@ghatana/platform-utils': path.resolve(__dirname, '../../../../platform/typescript/platform-utils/src/index.ts'),
+  '@ghatana/product-shell': path.resolve(__dirname, '../../../../platform/typescript/product-shell/src/index.ts'),
+  '@ghatana/realtime': path.resolve(__dirname, '../../../../platform/typescript/realtime/src/index.ts'),
+  '@ghatana/domain-components': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/index.ts'),
+  '@ghatana/domain-components/security': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/security/index.ts'),
+  '@ghatana/domain-components/privacy': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/privacy/index.ts'),
+  '@ghatana/domain-components/voice': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/voice/index.ts'),
+  '@ghatana/domain-components/nlp': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/nlp/index.ts'),
+  '@ghatana/domain-components/selection': path.resolve(__dirname, '../../../../platform/typescript/domain-components/src/selection/index.ts'),
+  '@ghatana/wizard': path.resolve(__dirname, '../../../../platform/typescript/wizard/src/index.ts'),
 }
 
 /**
@@ -88,6 +88,14 @@ export default defineConfig({
             return 'diagram';
           }
         },
+      },
+      // P1-9: Exclude mocks directory from production builds
+      // This ensures MSW mocks are completely tree-shaken from production bundles
+      external: (id) => {
+        if (process.env.NODE_ENV === 'production' && id.includes('/mocks/')) {
+          return true;
+        }
+        return false;
       },
     },
   },
