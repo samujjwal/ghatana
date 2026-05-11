@@ -89,7 +89,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 
     testFixturesImplementation(libs.bundles.testing.core)
-    testFixturesImplementation("org.assertj:assertj-core:3.26.3")
+    testFixturesImplementation("org.assertj:assertj-core:3.27.7")
     testFixturesImplementation(project(":platform:java:testing"))
 
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
