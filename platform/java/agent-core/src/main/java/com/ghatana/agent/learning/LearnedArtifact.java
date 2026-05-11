@@ -8,6 +8,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type record
+ * @doc.purpose Represents a learned artifact produced by an agent during the learning phase
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
 public record LearnedArtifact(
         String artifactId,
         String agentId,

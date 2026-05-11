@@ -6,10 +6,14 @@ info:
   description: |
     REST API for the YAPPC (Yet Another Product Platform Creator) lifecycle service.
 
-    All `/api/*` endpoints require a valid API key supplied in the
-    `X-API-Key` request header, or a valid JWT Bearer token in the
-    `Authorization` header. Tenant isolation is enforced automatically via
-    the `TenantContextFilter`.
+    **Authentication Modes:**
+    - **Browser/Web UI**: Cookie-based session authentication (httpOnly cookie `yappc_session`). Use for web UI and browser-based access.
+    - **Service-to-Service**: API key (`X-API-Key` header) or JWT Bearer token (`Authorization: Bearer <token>`). Use for backend services and automated tools.
+
+    **Scope Propagation:**
+    Tenant/workspace/project scope is extracted from path parameters, query parameters (`?scope=project:read`), or headers (`X-Scope: project:read`) in priority order: path > query > header.
+
+    Tenant isolation is enforced automatically via the `TenantContextFilter`.
   contact:
     name: YAPPC Platform Team
     url: https://github.com/ghatana/ghatana
@@ -132,7 +136,11 @@ paths:
   /api/auth/login:
     post:
       tags: [auth]
-      summary: Authenticate user and issue JWT
+      summary: Authenticate user and establish session (browser)
+      description: |
+        Authenticates a user and establishes a secure httpOnly cookie session.
+        Use this endpoint for browser/web UI authentication. The session cookie is
+        managed by the server and automatically sent with subsequent requests.
       operationId: login
       security: []
       requestBody:
@@ -146,7 +154,12 @@ paths:
               password: "s3cr3t"
       responses:
         "200":
-          description: Authentication successful
+          description: Authentication successful, session cookie set
+          headers:
+            Set-Cookie:
+              description: httpOnly session cookie
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -157,18 +170,21 @@ paths:
   /api/auth/refresh:
     post:
       tags: [auth]
-      summary: Exchange a refresh token for a new access token pair
-      operationId: refreshAuthToken
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RefreshTokenRequest"
+      summary: Refresh session cookie (browser)
+      description: |
+        Refreshes the current session cookie. The session cookie is automatically
+        sent with this request. No request body is required for cookie-based auth.
+      operationId: refreshSession
+      security:
+        - CookieAuth: []
       responses:
         "200":
-          description: Token refresh successful
+          description: Session refreshed, new cookie set
+          headers:
+            Set-Cookie:
+              description: Refreshed httpOnly session cookie
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -179,34 +195,45 @@ paths:
   /api/auth/logout:
     post:
       tags: [auth]
-      summary: Invalidate the current session
+      summary: Invalidate the current session (browser)
+      description: |
+        Invalidates the current session. The session cookie is automatically
+        sent with this request. No request body is required for cookie-based auth.
       operationId: logout
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RefreshTokenRequest"
+      security:
+        - CookieAuth: []
       responses:
         "200":
-          description: Session invalidated
+          description: Session invalidated, cookie cleared
+          headers:
+            Set-Cookie:
+              description: Cleared session cookie
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/LogoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/auth/validate:
     get:
       tags: [auth]
-      summary: Validate the current JWT
-      operationId: validateToken
+      summary: Validate the current session (browser)
+      description: |
+        Validates the current session. The session cookie is automatically
+        sent with this request. Returns user and session information if valid.
+      operationId: validateSession
+      security:
+        - CookieAuth: []
       responses:
         "200":
-          description: Token is valid
+          description: Session is valid
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TokenValidationResult"
+                $ref: "#/components/schemas/LoginResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
 

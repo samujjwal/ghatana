@@ -8,6 +8,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type record
+ * @doc.purpose Evidence supporting promotion of a learning candidate to active status
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
 public record PromotionEvidence(
         String evidenceId,
         String candidateId,

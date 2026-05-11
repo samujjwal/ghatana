@@ -360,7 +360,7 @@ public class GenerationApiController {
                     // This prevents actor spoofing in review decisions
                     String actorId = principal.getName();
 
-                    GenerationReviewRequest reviewRequest = new GenerationReviewRequest(
+                    GenerationReviewRequest reviewRequest = GenerationReviewRequest.of(
                         runId,
                         decisionBody.projectId(),
                         actorId,

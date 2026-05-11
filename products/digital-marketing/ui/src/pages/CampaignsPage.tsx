@@ -17,6 +17,7 @@ import { useCampaigns, useCreateCampaign, useLaunchCampaign, usePauseCampaign, u
 import { useToast } from '@/hooks/useToast';
 import { ApiError } from '@/lib/http-client';
 import { canPerformAction } from '@/lib/action-permissions';
+import { formatDate } from '@/lib/i18n/format';
 import type { CampaignType, CampaignObjective } from '@/types/campaign';
 import {
   Button,
@@ -281,7 +282,7 @@ export function CampaignsPage(): React.ReactElement {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Q4 Acquisition"
+              placeholder="Campaign name"
               required
               fullWidth
             />
@@ -442,7 +443,7 @@ export function CampaignsPage(): React.ReactElement {
                         {c.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-4 py-2 text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="px-4 py-2 text-gray-500">{formatDate(c.createdAt)}</TableCell>
                     <TableCell className="px-4 py-2">
                       <div className="flex gap-2">
                         {c.status === 'DRAFT' && (

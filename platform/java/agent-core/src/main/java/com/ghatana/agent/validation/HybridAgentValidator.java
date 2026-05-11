@@ -10,6 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Validates hybrid agent definitions for routing and fallback metadata
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
 public final class HybridAgentValidator implements AgentTypeSpecificValidator {
     @Override
     public List<String> validate(AgentDefinition definition) {

@@ -1,6 +1,14 @@
 # YAPPC Codebase - Quick Reference & Action Items
 
-> **Updated:** 2026-02-21 | **Version:** 2.0 (post-refactoring)
+> **Updated:** 2026-04-27 | **Version:** 2.0 (post-refactoring)
+
+## Source of Truth
+
+**Architecture:** `docs/ARCHITECTURE.md` - Canonical system architecture and module structure  
+**Routes:** `docs/api/route-manifest.yaml` - Source of truth for all API routes  
+**Security:** `docs/SECURITY.md` - Authentication and authorization policy  
+**Build:** `Makefile` - Build automation and development commands  
+**Contract:** `docs/api/openapi.yaml` - OpenAPI specification (generated from route manifest)
 
 ## 🏗️ Module Architecture (v2.0)
 
@@ -55,6 +63,65 @@ All service wiring uses ActiveJ `AbstractModule` / `ModuleBuilder`:
 # Standalone build (from products/yappc/)
 cd products/yappc && make build-standalone
 ```
+
+### Quick Start for New Developers
+
+```bash
+# From products/yappc/ directory
+make quick-start
+```
+
+This command:
+1. Verifies your development environment
+2. Installs all dependencies
+3. Starts infrastructure services (Postgres, Redis)
+4. Provides next steps for starting backend and frontend
+
+### Contract Validation
+
+```bash
+# Validate route manifest parity with OpenAPI and backend registry
+make contract-check
+```
+
+This runs the `checkYappcOpenApiParity` Gradle task to ensure:
+- All routes in `route-manifest.yaml` have matching paths in `openapi.yaml`
+- Operation IDs are consistent across manifest and OpenAPI
+- Auth levels and scopes are properly aligned
+
+### Production Readiness Checks
+
+```bash
+# Run all production readiness checks
+make production-check
+```
+
+This runs:
+1. Contract validation (route manifest ↔ OpenAPI)
+2. Linting (Java checkstyle/PMD, frontend ESLint)
+3. Full test suite (Java + frontend)
+
+### Docker Smoke Workflow
+
+```bash
+# Start all services with Docker Compose
+make docker-up
+
+# Check health of all services
+make health
+
+# View logs from all services
+make logs
+
+# Stop and remove all Docker containers
+make docker-down
+```
+
+The `health` command checks:
+- Domain API (8082): `/health`
+- AI Requirements API (8081): `/health`
+- Lifecycle API (8083): `/health`
+- Backend API (8000): `/health`
 
 ---
 

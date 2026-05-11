@@ -1,8 +1,8 @@
 package com.ghatana.digitalmarketing.api.middleware;
 
 import com.ghatana.digitalmarketing.api.DmosApiErrorResponses;
-import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
-import com.ghatana.digitalmarketing.contracts.DmOperationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -13,11 +13,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -51,6 +54,8 @@ public final class IdempotencyMiddleware {
         HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE
     );
     private static final Duration DEFAULT_TTL = Duration.ofHours(24);
+    private static final ObjectMapper FINGERPRINT_MAPPER = new ObjectMapper()
+        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
     private final DataSource dataSource;
     private final Eventloop eventloop;
@@ -117,7 +122,7 @@ public final class IdempotencyMiddleware {
 
             String requestFingerprint = computeRequestFingerprint(request);
 
-            return checkIdempotency(idempotencyKey, effectiveTenantId, requestFingerprint)
+            return checkIdempotency(idempotencyKey, effectiveTenantId, requestFingerprint, request)
                 .then(existingResponse -> {
                     if (existingResponse != null) {
                         // P1-021: Return cached response for duplicate request
@@ -141,7 +146,8 @@ public final class IdempotencyMiddleware {
      * @param requestFingerprint fingerprint of the request
      * @return promise resolving to cached response, or null if not found
      */
-    private Promise<CachedResponse> checkIdempotency(String idempotencyKey, String tenantId, String requestFingerprint) {
+    private Promise<CachedResponse> checkIdempotency(String idempotencyKey, String tenantId, String requestFingerprint,
+                                                     HttpRequest request) {
         return Promise.ofBlocking(eventloop, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(
@@ -160,9 +166,11 @@ public final class IdempotencyMiddleware {
                         if (!requestFingerprint.equals(storedFingerprint)) {
                             LOG.error("[DMOS-IDEMPOTENCY] Key collision detected: " +
                                 "key={}, tenant={}", idempotencyKey, tenantId);
-                            throw new IdempotencyKeyCollisionException(
-                                "Different request with same idempotency key detected"
-                            );
+                            return CachedResponse.fromHttpResponse(DmosApiErrorResponses.error(
+                                409,
+                                "X-Idempotency-Key was already used for a different request",
+                                request
+                            ));
                         }
 
                         return new CachedResponse(
@@ -198,8 +206,7 @@ public final class IdempotencyMiddleware {
                      "INSERT INTO dmos_idempotency_store " +
                      "(idempotency_key, tenant_id, request_fingerprint, response_status, " +
                      "response_headers, response_body, expires_at, created_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, NOW()) " +
-                     "ON CONFLICT (idempotency_key, tenant_id) DO NOTHING")) {
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, NOW())")) {
 
                 stmt.setString(1, idempotencyKey);
                 stmt.setString(2, tenantId);
@@ -212,6 +219,9 @@ public final class IdempotencyMiddleware {
                 stmt.executeUpdate();
                 return null;
             } catch (SQLException e) {
+                if ("23505".equals(e.getSQLState())) {
+                    return null;
+                }
                 LOG.error("[DMOS-IDEMPOTENCY] Failed to store response", e);
                 // Don't fail the request if caching fails
                 return null;
@@ -223,16 +233,15 @@ public final class IdempotencyMiddleware {
      * Computes a fingerprint of the request for collision detection.
      */
     private String computeRequestFingerprint(HttpRequest request) {
-        // Simple fingerprint: method + path + body hash
+        // Semantic fingerprint: method + path + canonical JSON body hash when possible.
         StringBuilder fp = new StringBuilder();
         fp.append(request.getMethod()).append("|");
         fp.append(request.getRelativePath()).append("|");
 
         try {
             if (request.getBody() != null) {
-                byte[] body = request.getBody().getString(java.nio.charset.StandardCharsets.UTF_8)
-                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                fp.append(java.util.Arrays.hashCode(body));
+                byte[] body = request.getBody().asArray();
+                fp.append(sha256(canonicalizeBody(body)));
             } else {
                 fp.append("no-body");
             }
@@ -244,12 +253,45 @@ public final class IdempotencyMiddleware {
     }
 
     private byte[] getResponseBodyBytes(HttpResponse response) {
-        // Extract body bytes from response - simplified for this implementation
+        if (response.getBody() != null) {
+            return response.getBody().asArray();
+        }
         return new byte[0];
+    }
+
+    private byte[] canonicalizeBody(byte[] body) {
+        if (body.length == 0) {
+            return body;
+        }
+        try {
+            Object json = FINGERPRINT_MAPPER.readValue(body, Object.class);
+            return FINGERPRINT_MAPPER.writeValueAsBytes(json);
+        } catch (Exception ignored) {
+            return body;
+        }
+    }
+
+    private String sha256(byte[] body) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(body);
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte value : hash) {
+                hex.append(String.format("%02x", value));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException exception) {
+            return new String(body, StandardCharsets.UTF_8);
+        }
     }
 
     // Helper record for cached responses
     private record CachedResponse(int status, String headers, byte[] body) {
+        static CachedResponse fromHttpResponse(HttpResponse response) {
+            byte[] body = response.getBody() == null ? new byte[0] : response.getBody().asArray();
+            return new CachedResponse(response.getCode(), "{}", body);
+        }
+
         HttpResponse toHttpResponse() {
             return HttpResponse.ofCode(status)
                 .withBody(body)

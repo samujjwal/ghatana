@@ -21,5 +21,14 @@ export function RoiRoasPage(): React.ReactElement {
     return <Navigate to="/login" replace />;
   }
 
-  return <FeatureUnavailablePage featureName="ROI and ROAS" reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'} (requires dmos.reporting capability).`} />;
+  return (
+    <FeatureUnavailablePage
+      featureName="ROI and ROAS"
+      reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'}.`}
+      capability="dmos.reporting"
+      connector="Cost and revenue analytics runtime"
+      productionGate="Locked until cost, revenue, currency, formula version, freshness, and confidence are persisted."
+      remediation="Use Dashboard Summary budget metrics and approved exports until ROI/ROAS formulas are production-backed."
+    />
+  );
 }

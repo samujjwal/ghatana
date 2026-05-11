@@ -13,29 +13,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { DashboardPage } from '@/pages/DashboardPage';
 import type { ApprovalRecordResponse } from '@/types/approval';
-import type { BudgetRecommendation } from '@/types/budget';
-import type { Campaign } from '@/types/campaign';
+import type { DashboardSummary } from '@/types/dashboard';
 
 const mockUseApprovalQueue = vi.fn();
-const mockUseCampaigns = vi.fn();
 const mockUseStrategy = vi.fn();
-const mockUseBudgetRecommendation = vi.fn();
 const mockUseConnectorHealth = vi.fn();
+const mockUseDashboardSummary = vi.fn();
 
 vi.mock('@/hooks/useApprovalQueue', () => ({
   useApprovalQueue: (...args: unknown[]) => mockUseApprovalQueue(...args),
-}));
-
-vi.mock('@/hooks/useCampaigns', () => ({
-  useCampaigns: (...args: unknown[]) => mockUseCampaigns(...args),
 }));
 
 vi.mock('@/hooks/useStrategy', () => ({
   useStrategy: (...args: unknown[]) => mockUseStrategy(...args),
 }));
 
-vi.mock('@/hooks/useBudget', () => ({
-  useBudgetRecommendation: (...args: unknown[]) => mockUseBudgetRecommendation(...args),
+vi.mock('@/hooks/useDashboardSummary', () => ({
+  useDashboardSummary: (...args: unknown[]) => mockUseDashboardSummary(...args),
 }));
 
 vi.mock('@/hooks/useConnectorHealth', () => ({
@@ -85,46 +79,45 @@ const PENDING: ApprovalRecordResponse = {
   snapshotAt: null,
 };
 
-const APPROVED_BUDGET: BudgetRecommendation = {
-  recommendationId: 'budget-1',
+const DASHBOARD_SUMMARY: DashboardSummary = {
   workspaceId: 'ws-1',
-  strategyId: 'strat-1',
-  status: 'APPROVED',
-  totalMonthlyCap: 1000,
-  changeThresholdPct: 10,
-  channelAllocations: [],
-  rationale: 'Approved budget',
-  assumptions: 'Steady CPC',
-  modelVersion: 'v1',
-  generatedAt: '2026-01-10T10:00:00Z',
-  generatedBy: 'system',
-  approvedAt: '2026-01-10T10:30:00Z',
-  approvedBy: 'approver-1',
-};
-
-const DRAFT_BUDGET: BudgetRecommendation = {
-  ...APPROVED_BUDGET,
-  recommendationId: 'budget-2',
-  status: 'DRAFT',
-  approvedAt: null,
-  approvedBy: null,
-};
-
-const LAUNCHED_CAMPAIGN: Campaign = {
-  id: 'cmp-1',
-  workspaceId: 'ws-1',
-  name: 'Launch A',
-  status: 'LAUNCHED',
-  type: 'PAID_SEARCH',
-  objective: 'LEADS',
-  budgetCents: 60000,
-  startDate: '2026-01-01',
-  endDate: '2026-01-31',
-  audience: 'SMB',
-  landingPageUrl: null,
-  createdBy: 'user-1',
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
+  campaignMetrics: {
+    totalCampaigns: 3,
+    activeCampaigns: 1,
+    pausedCampaigns: 1,
+    completedCampaigns: 0,
+    archivedCampaigns: 0,
+  },
+  approvalMetrics: {
+    pendingApprovals: 0,
+    overdueApprovals: 0,
+    approvalsToday: 0,
+    approvalsThisWeek: 0,
+  },
+  budgetMetrics: {
+    totalBudget: 1000,
+    spentBudget: 600,
+    remainingBudget: 400,
+    pacingPercentage: 0.6,
+    onTrack: true,
+  },
+  leadMetrics: {
+    totalLeads: 0,
+    qualifiedLeads: 0,
+    conversionRate: 0,
+    leadsToday: 0,
+    leadsThisWeek: 0,
+  },
+  freshness: {
+    lastUpdated: '2026-01-10T12:00:00Z',
+    stalenessSeconds: 10,
+    status: 'FRESH',
+  },
+  confidence: 'HIGH',
+  metricSource: 'DMOS_BACKEND_SUMMARY',
+  formulaVersion: 'dashboard-summary.v1',
+  authorizationScope: 'tenant_workspace',
+  partialData: false,
 };
 
 function buildQueryClient(): QueryClient {
@@ -138,6 +131,8 @@ function renderPage(token: string | null = 'test-token'): void {
         initialToken={token}
         initialWorkspaceId="ws-1"
         initialTenantId="tenant-1"
+        initialPrincipalId="user-1"
+        initialSessionId="session-1"
         initialRoles={[]}
       >
         <MemoryRouter initialEntries={['/workspaces/ws-1/dashboard']}>
@@ -164,13 +159,6 @@ describe('DashboardPage', () => {
       error: null,
       refetch: vi.fn(),
     });
-    mockUseCampaigns.mockReturnValue({
-      campaigns: [],
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    });
     mockUseStrategy.mockReturnValue({
       strategy: null,
       isLoading: false,
@@ -178,12 +166,11 @@ describe('DashboardPage', () => {
       error: null,
       refetch: vi.fn(),
     });
-    mockUseBudgetRecommendation.mockReturnValue({
-      recommendation: null,
+    mockUseDashboardSummary.mockReturnValue({
+      summary: DASHBOARD_SUMMARY,
       isLoading: false,
       isError: false,
       error: null,
-      refetch: vi.fn(),
     });
     mockUseConnectorHealth.mockReturnValue({
       connectors: [],
@@ -331,87 +318,92 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/kill-switch active/i)).toBeInTheDocument();
   });
 
-  it('shows unavailable budget state when no recommendation exists', async () => {
-    renderPage();
-    expect(await screen.findByTestId('budget-tracking-unavailable')).toBeInTheDocument();
-  });
-
-  it('shows draft budget with hidden utilization telemetry', async () => {
-    mockUseBudgetRecommendation.mockReturnValue({
-      recommendation: DRAFT_BUDGET,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('renders budget values from the backend dashboard summary', async () => {
     renderPage();
 
     expect(await screen.findByText('$1,000')).toBeInTheDocument();
-    expect(screen.getByTestId('budget-utilization-unavailable')).toBeInTheDocument();
-    expect(screen.getByText(/draft recommendation/i)).toBeInTheDocument();
-  });
-
-  it('shows approved budget spend and utilization', async () => {
-    mockUseBudgetRecommendation.mockReturnValue({
-      recommendation: APPROVED_BUDGET,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockUseCampaigns.mockReturnValue({
-      campaigns: [LAUNCHED_CAMPAIGN],
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
-    renderPage();
-
-    expect(await screen.findByText('$600')).toBeInTheDocument();
+    expect(screen.getByText('$600')).toBeInTheDocument();
     expect(screen.getByText('$400')).toBeInTheDocument();
     expect(screen.getByText('60.0%')).toBeInTheDocument();
+    expect(screen.getAllByText(/source: dmos_backend_summary/i).length).toBeGreaterThan(0);
   });
 
-  it('shows overspend utilization above 100 percent', async () => {
-    mockUseBudgetRecommendation.mockReturnValue({
-      recommendation: APPROVED_BUDGET,
+  it('renders campaign values from the backend dashboard summary', async () => {
+    renderPage();
+
+    expect(await screen.findByTestId('campaign-status-widget')).toHaveTextContent('Active');
+    expect(screen.getByTestId('campaign-status-widget')).toHaveTextContent('1');
+    expect(screen.getByTestId('campaign-status-widget')).toHaveTextContent('Paused');
+    expect(screen.getByTestId('campaign-status-widget')).toHaveTextContent('Pending');
+  });
+
+  it('shows unavailable campaign and budget states when dashboard summary is absent', async () => {
+    mockUseDashboardSummary.mockReturnValue({
+      summary: null,
       isLoading: false,
       isError: false,
       error: null,
-      refetch: vi.fn(),
-    });
-    mockUseCampaigns.mockReturnValue({
-      campaigns: [
-        { ...LAUNCHED_CAMPAIGN, id: 'cmp-overspend-1', budgetCents: 80000 },
-        { ...LAUNCHED_CAMPAIGN, id: 'cmp-overspend-2', budgetCents: 50000 },
-      ],
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
     });
 
     renderPage();
 
-    expect(await screen.findByText('$1,300')).toBeInTheDocument();
-    expect(screen.getByText('$-300')).toBeInTheDocument();
-    expect(screen.getByText('130.0%')).toBeInTheDocument();
+    expect(await screen.findByTestId('campaign-status-unavailable')).toBeInTheDocument();
+    expect(screen.getByTestId('budget-tracking-unavailable')).toBeInTheDocument();
   });
 
-  it('shows budget error state when budget API fails', async () => {
-    mockUseBudgetRecommendation.mockReturnValue({
-      recommendation: null,
+  it('shows dashboard summary error state when the summary API fails', async () => {
+    mockUseDashboardSummary.mockReturnValue({
+      summary: null,
       isLoading: false,
       isError: true,
-      error: new Error('budget failed'),
-      refetch: vi.fn(),
+      error: new Error('summary failed'),
     });
 
     renderPage();
 
-    expect(await screen.findByText(/failed to load budget data/i)).toBeInTheDocument();
+    expect(await screen.findByText(/failed to load campaign status/i)).toBeInTheDocument();
+    expect(screen.getByText(/failed to load budget data/i)).toBeInTheDocument();
+  });
+
+  it('shows partial dashboard summary state with confidence and authorization scope', async () => {
+    mockUseDashboardSummary.mockReturnValue({
+      summary: {
+        ...DASHBOARD_SUMMARY,
+        confidence: 'MEDIUM',
+        partialData: true,
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    renderPage();
+
+    expect(await screen.findByTestId('campaign-status-state')).toHaveTextContent(/partial/i);
+    expect(screen.getByTestId('budget-tracking-state')).toHaveTextContent(/partial/i);
+    expect(screen.getAllByText(/confidence: medium/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/scope: tenant_workspace/i).length).toBeGreaterThan(0);
+  });
+
+  it('shows stale dashboard summary state', async () => {
+    mockUseDashboardSummary.mockReturnValue({
+      summary: {
+        ...DASHBOARD_SUMMARY,
+        freshness: {
+          lastUpdated: '2026-01-10T10:00:00Z',
+          stalenessSeconds: 3600,
+          status: 'STALE',
+        },
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    renderPage();
+
+    expect(await screen.findByTestId('campaign-status-state')).toHaveTextContent(/stale/i);
+    expect(screen.getByTestId('budget-tracking-state')).toHaveTextContent(/stale/i);
+    expect(screen.getAllByText(/stale data/i).length).toBeGreaterThan(0);
   });
 });

@@ -15,6 +15,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
+ * @doc.type class
+ * @doc.purpose Governed executor that wraps every TypedAgent call in the uniform GAA lifecycle pipeline
+ * @doc.layer agent-core
+ * @doc.pattern Service
+ */
+/**
  * Governed executor that wraps every {@link TypedAgent#process(AgentContext, Object)}
  * call in the uniform GAA lifecycle pipeline.
  */

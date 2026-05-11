@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import type { ApprovalSnapshot } from '@/types/approval';
+import { formatDateTime } from '@/lib/i18n/format';
 
 interface ApprovalSnapshotPanelProps {
   snapshot: ApprovalSnapshot;
@@ -26,7 +27,7 @@ export const ApprovalSnapshotPanel: React.FC<ApprovalSnapshotPanelProps> = ({
     >
       Approval Snapshot
       <span className="ml-2 text-xs font-normal text-gray-400">
-        captured {new Date(snapshot.snapshotAt).toLocaleString()}
+        captured {formatDateTime(snapshot.snapshotAt)}
       </span>
     </h3>
 

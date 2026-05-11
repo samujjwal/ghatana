@@ -25,7 +25,7 @@ function stateClasses(tone: PageStateTone): string {
   if (tone === 'empty') {
     return 'text-sm text-gray-500';
   }
-  return 'text-sm text-gray-400';
+  return 'text-sm text-gray-600';
 }
 
 export function PageStateNotice({

@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @doc.type class
+ * @doc.purpose Creates minimal canonical evaluation packs for each agent type
+ * @doc.layer agent-core
+ * @doc.pattern Factory
+ */
+/**
  * Creates minimal canonical evaluation packs for each agent type.
  */
 public final class AgentTypeEvalPackFactory {

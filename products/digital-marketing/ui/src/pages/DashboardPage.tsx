@@ -87,11 +87,18 @@ export function DashboardPage(): React.ReactElement {
   const budgetSource = dashboardSummary
     ? `${dashboardSummary.metricSource} (${dashboardSummary.formulaVersion})`
     : 'Dashboard Summary API';
+  const dashboardFreshnessStatus = freshness?.status;
+  const dashboardConfidence = dashboardSummary?.confidence;
+  const dashboardAuthorizationScope = dashboardSummary?.authorizationScope;
   const budgetUnavailableReason =
-    dashboardSummary === null
+    dashboardSummary === null && !dashboardSummaryLoading && !dashboardSummaryError
       ? 'No budget recommendation is available yet.'
       : undefined;
   const isBudgetPartial = Boolean(dashboardSummary?.partialData);
+  const campaignUnavailableReason =
+    dashboardSummary === null && !dashboardSummaryLoading && !dashboardSummaryError
+      ? 'Campaign metrics are unavailable until the dashboard summary API returns data.'
+      : undefined;
 
   return (
     <section
@@ -158,6 +165,13 @@ export function DashboardPage(): React.ReactElement {
           pendingCount={pendingCampaignCount}
           isLoading={dashboardSummaryLoading}
           isError={dashboardSummaryError}
+          isPartial={isBudgetPartial}
+          source={budgetSource}
+          lastUpdated={budgetGeneratedAt}
+          freshnessStatus={dashboardFreshnessStatus}
+          confidence={dashboardConfidence}
+          authorizationScope={dashboardAuthorizationScope}
+          unavailableReason={campaignUnavailableReason}
         />
         <BudgetTrackingWidget
           workspaceId={workspaceId ?? ''}
@@ -170,6 +184,9 @@ export function DashboardPage(): React.ReactElement {
           isPartial={isBudgetPartial}
           source={budgetSource}
           lastUpdated={budgetGeneratedAt}
+          freshnessStatus={dashboardFreshnessStatus}
+          confidence={dashboardConfidence}
+          authorizationScope={dashboardAuthorizationScope}
           unavailableReason={budgetUnavailableReason}
         />
         <StrategyInsightsWidget

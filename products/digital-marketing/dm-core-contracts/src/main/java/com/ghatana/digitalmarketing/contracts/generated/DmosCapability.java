@@ -9,6 +9,7 @@ package com.ghatana.digitalmarketing.application.capabilities;
  * @doc.type enum
  * @doc.purpose Canonical DMOS capability definitions
  * @doc.layer product
+ * @doc.pattern Enumeration
  */
 public enum DmosCapability {
     /**

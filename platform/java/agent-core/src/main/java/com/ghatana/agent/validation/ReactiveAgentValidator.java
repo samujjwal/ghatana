@@ -11,6 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Validates reactive agent definitions for stateless execution requirements
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
 public final class ReactiveAgentValidator implements AgentTypeSpecificValidator {
     @Override
     public List<String> validate(AgentDefinition definition) {

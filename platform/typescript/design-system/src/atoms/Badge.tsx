@@ -70,6 +70,7 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>((props, ref) 
   const surface = isDark ? darkColors : lightColors;
 
   const main = paletteEntry[500] ?? palette.gray[500];
+  const accessibleText = paletteEntry[800] ?? paletteEntry[700] ?? main;
   const contrast =
     paletteEntry.contrastText ??
     (tone === 'neutral' ? surface.text.secondary : isDark ? surface.text.primary : '#ffffff');
@@ -114,7 +115,7 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>((props, ref) 
       colorStyle = {
         backgroundColor: softBackground,
         borderColor: 'transparent',
-        color: tone === 'neutral' ? surface.text.secondary : main,
+        color: tone === 'neutral' ? surface.text.secondary : accessibleText,
       };
       break;
   }

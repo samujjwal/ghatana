@@ -10,6 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Validates composite agent definitions for required metadata
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
 public final class CompositeAgentValidator implements AgentTypeSpecificValidator {
     @Override
     public List<String> validate(AgentDefinition definition) {

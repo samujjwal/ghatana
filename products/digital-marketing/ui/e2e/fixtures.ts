@@ -74,6 +74,57 @@ export const AI_ACTION = {
   completedAt: '2026-01-10T09:00:05Z',
 };
 
+export const CAMPAIGN = {
+  id: 'camp-e2e-1',
+  workspaceId: TEST_WORKSPACE,
+  name: 'E2E Search Launch',
+  type: 'PAID_SEARCH',
+  objective: 'LEADS',
+  status: 'DRAFT',
+  budgetCents: 50000,
+  audience: 'SMB owners in California',
+  landingPageUrl: 'https://example.com/landing',
+  startDate: '2026-05-12',
+  endDate: '2026-06-12',
+  createdAt: '2026-05-11T12:00:00Z',
+  updatedAt: '2026-05-11T12:00:00Z',
+};
+
+export const MARKETING_STRATEGY = {
+  strategyId: 'strat-e2e-1',
+  workspaceId: TEST_WORKSPACE,
+  status: 'DRAFT',
+  goals: [],
+  channelPlans: [],
+  budgetCap: 5000,
+  rationale: 'E2E strategy fixture',
+  assumptions: 'Fixture only',
+  measurementPlan: 'Weekly review',
+  contentPlan: 'Search landing page copy',
+  modelVersion: 'strategy-v1',
+  generatedAt: '2026-01-10T10:00:00Z',
+  generatedBy: TEST_PRINCIPAL,
+  approvedAt: null,
+  approvedBy: null,
+};
+
+export const BUDGET_RECOMMENDATION = {
+  recommendationId: 'budget-e2e-1',
+  workspaceId: TEST_WORKSPACE,
+  strategyId: MARKETING_STRATEGY.strategyId,
+  status: 'DRAFT',
+  totalMonthlyCap: 5000,
+  changeThresholdPct: 10,
+  channelAllocations: [],
+  rationale: 'E2E budget fixture',
+  assumptions: 'Fixture only',
+  modelVersion: 'budget-v1',
+  generatedAt: '2026-01-10T10:00:00Z',
+  generatedBy: TEST_PRINCIPAL,
+  approvedAt: null,
+  approvedBy: null,
+};
+
 export const ENABLED_CAPABILITIES = {
   workspaceId: TEST_WORKSPACE,
   capabilities: [
@@ -108,6 +159,21 @@ export async function mockDmosApi(page: Page): Promise<void> {
   await page.route(
     `**/v1/workspaces/${TEST_WORKSPACE}/approvals/pending`,
     (route) => route.fulfill({ json: { items: [approvalState, APPROVAL_APPROVED] } }),
+  );
+
+  await page.route(
+    `**/v1/workspaces/${TEST_WORKSPACE}/campaigns**`,
+    (route) => route.fulfill({ json: { items: [CAMPAIGN], count: 1, offset: 0, limit: 20 } }),
+  );
+
+  await page.route(
+    `**/v1/workspaces/${TEST_WORKSPACE}/strategy`,
+    (route) => route.fulfill({ json: MARKETING_STRATEGY }),
+  );
+
+  await page.route(
+    `**/v1/workspaces/${TEST_WORKSPACE}/budget-recommendation`,
+    (route) => route.fulfill({ json: BUDGET_RECOMMENDATION }),
   );
 
   // Approval status (single)

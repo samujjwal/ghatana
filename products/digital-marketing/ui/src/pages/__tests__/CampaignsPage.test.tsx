@@ -11,6 +11,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { CampaignsPage } from '@/pages/CampaignsPage';
 import type { Campaign } from '@/types/campaign';
@@ -67,21 +68,23 @@ function renderPage(
   roles: string[] = ['brand-manager'],
 ): void {
   render(
-    <QueryClientProvider client={buildQueryClient()}>
-      <AuthProvider
-        initialToken={token}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialRoles={roles}
-      >
-        <MemoryRouter initialEntries={['/workspaces/ws-1/campaigns']}>
-          <Routes>
-            <Route path="/login" element={<div data-testid="login-page" />} />
-            <Route path="/workspaces/:workspaceId/campaigns" element={<CampaignsPage />} />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken={token}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialRoles={roles}
+        >
+          <MemoryRouter initialEntries={['/workspaces/ws-1/campaigns']}>
+            <Routes>
+              <Route path="/login" element={<div data-testid="login-page" />} />
+              <Route path="/workspaces/:workspaceId/campaigns" element={<CampaignsPage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 

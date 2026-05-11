@@ -5,6 +5,12 @@
 package com.ghatana.agent.learning;
 
 /**
+ * @doc.type class
+ * @doc.purpose Enforces declared learning contract boundaries
+ * @doc.layer agent-core
+ * @doc.pattern Utility
+ */
+/**
  * Enforces declared learning contract boundaries.
  */
 public final class LearningPermissionChecker {

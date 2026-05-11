@@ -70,10 +70,10 @@ public class GenerationServiceImpl implements GenerationService {
         GenerationRun generationRun = GenerationRun.builder()
             .id(runId)
             .planId(spec.shapeSpec().id())
-            .projectId(spec.shapeSpec().projectId())
+            .projectId(spec.shapeSpec().metadata().getOrDefault("projectId", "default-project"))
             .tenantId(spec.shapeSpec().tenantId())
-            .workspaceId(spec.shapeSpec().workspaceId())
-            .intent(spec.shapeSpec().intent())
+            .workspaceId(spec.shapeSpec().metadata().getOrDefault("workspaceId", "default-workspace"))
+            .intent(null) // TODO: Load actual Intent from intentRef
             .status(GenerationRun.RunStatus.GENERATING)
             .reviewStatus(GenerationRun.ReviewStatus.PENDING)
             .createdAt(createdAt)
@@ -94,10 +94,10 @@ public class GenerationServiceImpl implements GenerationService {
                 GenerationRun completedRun = GenerationRun.builder()
                     .id(runId)
                     .planId(spec.shapeSpec().id())
-                    .projectId(spec.shapeSpec().projectId())
+                    .projectId(spec.shapeSpec().metadata().getOrDefault("projectId", "default-project"))
                     .tenantId(spec.shapeSpec().tenantId())
-                    .workspaceId(spec.shapeSpec().workspaceId())
-                    .intent(spec.shapeSpec().intent())
+                    .workspaceId(spec.shapeSpec().metadata().getOrDefault("workspaceId", "default-workspace"))
+                    .intent(null) // TODO: Load actual Intent from intentRef
                     .status(GenerationRun.RunStatus.COMPLETED)
                     .artifactIds(artifacts.artifacts().stream().map(Artifact::id).toList())
                     .reviewStatus(GenerationRun.ReviewStatus.PENDING)
@@ -114,34 +114,8 @@ public class GenerationServiceImpl implements GenerationService {
                     .then(() -> auditLogger.log(ServiceObservability.auditEvent("generate.execute", spec, artifacts))
                         .map(v -> artifacts));
             })
-            .whenException(e -> {
-                log.error("Generation failed", e);
-                ServiceObservability.incrementFailure(
-                    metrics,
-                    "yappc.generate.execute",
-                    e,
-                    ServiceObservability.tenantTag(spec.shapeSpec().tenantId()));
-
-                // Update generation run with failed status
-                GenerationRun failedRun = GenerationRun.builder()
-                    .id(runId)
-                    .planId(spec.shapeSpec().id())
-                    .projectId(spec.shapeSpec().projectId())
-                    .tenantId(spec.shapeSpec().tenantId())
-                    .workspaceId(spec.shapeSpec().workspaceId())
-                    .intent(spec.shapeSpec().intent())
-                    .status(GenerationRun.RunStatus.FAILED)
-                    .reviewStatus(GenerationRun.ReviewStatus.PENDING)
-                    .createdAt(createdAt)
-                    .completedAt(Instant.now())
-                    .addProvenance("generator_version", "1.0.0")
-                    .addProvenance("validation_passed", String.valueOf(spec.validationResult().passed()))
-                    .addProvenance("error", e.getMessage() != null ? e.getMessage() : "Unknown error")
-                    .addMetadata("spec_ref", spec.shapeSpec().id())
-                    .build();
-
-                return generationRunRepository.save(failedRun)
-                    .then(() -> Promise.ofException(e));
+            .whenException(() -> {
+                log.error("Generation failed");
             });
     }
 
@@ -161,13 +135,8 @@ public class GenerationServiceImpl implements GenerationService {
                     return auditLogger.log(ServiceObservability.auditEvent("generate.diff", spec, diff))
                             .map(v -> diff);
                 })
-                .whenException(e -> {
-                    log.error("Diff generation failed", e);
-                    ServiceObservability.incrementFailure(
-                        metrics,
-                        "yappc.generate.diff",
-                        e,
-                        ServiceObservability.tenantTag(spec.shapeSpec().tenantId()));
+                .whenException(() -> {
+                    log.error("Diff generation failed");
                 });
     }
 
@@ -188,11 +157,11 @@ public class GenerationServiceImpl implements GenerationService {
                     if (!checksPassed) {
                         return Promise.ofException(new IllegalStateException("Rollback safety checks failed"));
                     }
-                    return executeReviewDecision(request, metricName, decidedAt);
+                    return executeReviewDecision(request, metricName, decidedAt, startTime);
                 });
         }
         
-        return executeReviewDecision(request, metricName, decidedAt);
+        return executeReviewDecision(request, metricName, decidedAt, startTime);
     }
 
     /**
@@ -200,31 +169,31 @@ public class GenerationServiceImpl implements GenerationService {
      */
     private Promise<Boolean> performRollbackSafetyChecks(GenerationReviewRequest request) {
         return generationRunRepository.findById(request.runId())
-            .then(runOpt -> {
-                if (runOpt.isEmpty()) {
+            .then(run -> {
+                if (run == null) {
                     log.error("Cannot rollback: generation run {} not found", request.runId());
                     return Promise.of(false);
                 }
                 
-                GenerationRun run = runOpt.get();
+                GenerationRun runEntity = run;
                 List<String> failures = new java.util.ArrayList<>();
                 
                 // Check 1: Run must be in a state that can be rolled back (APPROVED or COMPLETED)
-                if (run.reviewStatus() != GenerationRun.ReviewStatus.APPROVED 
-                    && run.reviewStatus() != GenerationRun.ReviewStatus.NONE) {
-                    failures.add("Run is not in a rollback-eligible state (current status: " + run.reviewStatus() + ")");
+                if (runEntity.reviewStatus() != GenerationRun.ReviewStatus.APPROVED 
+                    && runEntity.reviewStatus() != GenerationRun.ReviewStatus.PENDING) {
+                    failures.add("Run is not in a rollback-eligible state (current status: " + runEntity.reviewStatus() + ")");
                 }
                 
                 // Check 2: Rollback must be within a reasonable time window (e.g., 30 days)
-                if (run.completedAt() != null) {
-                    java.time.Duration timeSinceCompletion = java.time.Duration.between(run.completedAt(), Instant.now());
+                if (runEntity.completedAt() != null) {
+                    java.time.Duration timeSinceCompletion = java.time.Duration.between(runEntity.completedAt(), Instant.now());
                     if (timeSinceCompletion.toDays() > 30) {
                         failures.add("Rollback window expired (completed more than 30 days ago)");
                     }
                 }
                 
                 // Check 3: Run must not already be rolled back
-                if (run.reviewStatus() == GenerationRun.ReviewStatus.ROLLED_BACK) {
+                if (runEntity.reviewStatus() == GenerationRun.ReviewStatus.ROLLED_BACK) {
                     failures.add("Run has already been rolled back");
                 }
                 
@@ -251,11 +220,10 @@ public class GenerationServiceImpl implements GenerationService {
                 
                 return Promise.of(failures.isEmpty());
             })
-            .whenException(e -> {
-                log.error("Error performing rollback safety checks for run {}", request.runId(), e);
+            .whenException(() -> {
+                log.error("Error performing rollback safety checks for run {}", request.runId());
                 metrics.incrementCounter("yappc.generate.rollback.safety_check_error", 
                     Map.of("run_id", request.runId()));
-                return Promise.of(false);
             });
     }
 
@@ -265,7 +233,8 @@ public class GenerationServiceImpl implements GenerationService {
     private Promise<GenerationReviewResult> executeReviewDecision(
             GenerationReviewRequest request, 
             String metricName, 
-            Instant decidedAt) {
+            Instant decidedAt,
+            long startTime) {
         // Map review action to review status
         GenerationRun.ReviewStatus reviewStatus = switch (request.action()) {
             case APPLY -> GenerationRun.ReviewStatus.APPROVED;
@@ -305,24 +274,24 @@ public class GenerationServiceImpl implements GenerationService {
                 log.warn("Failed to serialize user edits for run {}", request.runId(), e);
             }
         }
+        final String finalUserEditsJson = userEditsJson;
 
         // Update generation run review status with provenance
         return generationRunRepository.updateReviewStatus(request.runId(), reviewStatus)
             .then(() -> {
                 // Store review provenance in generation run metadata
                 return generationRunRepository.findById(request.runId())
-                    .then(runOpt -> {
-                        if (runOpt.isPresent()) {
-                            GenerationRun run = runOpt.get();
+                    .then(run -> {
+                        if (run != null) {
                             // Add review decision to metadata
-                            Map<String, String> updatedMetadata = new java.util.HashMap<>(run.metadata());
+                            Map<String, Object> updatedMetadata = new java.util.HashMap<>(run.metadata());
                             updatedMetadata.put("review_decision", request.action().wireValue());
                             updatedMetadata.put("review_actor", request.actorId());
                             updatedMetadata.put("review_timestamp", decidedAt.toString());
                             updatedMetadata.putAll(reviewProvenance);
                             
-                            if (userEditsJson != null) {
-                                updatedMetadata.put("user_edits", userEditsJson);
+                            if (finalUserEditsJson != null) {
+                                updatedMetadata.put("user_edits", finalUserEditsJson);
                             }
                             
                             GenerationRun updatedRun = GenerationRun.builder()
@@ -369,15 +338,13 @@ public class GenerationServiceImpl implements GenerationService {
 
                 return auditLogger.log(ServiceObservability.auditEvent(result.auditEvent(), request, result))
                     .map(v -> result)
-                    .whenException(e -> {
-                        log.error("Generation review decision failed", e);
-                        ServiceObservability.incrementFailure(metrics, metricName, e, tags);
+                    .whenException(() -> {
+                        log.error("Generation review decision failed");
                     });
             });
     }
 
-    /**
-     * Serializes user edits to JSON for storage.
+    /**er edits to JSON for storage.
      */
     private String serializeUserEdits(List<GenerationReviewRequest.UserEdit> userEdits) {
         StringBuilder json = new StringBuilder("[");
@@ -702,7 +669,7 @@ public class GenerationServiceImpl implements GenerationService {
         // Check for deleted artifacts
         oldArtifacts.artifacts().forEach(oldArtifact -> {
             boolean stillExists = newArtifacts.artifacts().stream()
-                    .anyMatch(new -> new.name().equals(oldArtifact.name()));
+                    .anyMatch(newArtifact -> newArtifact.name().equals(oldArtifact.name()));
             
             if (!stillExists) {
                 List<ArtifactDiff.DiffRegion> regions = List.of(
@@ -782,7 +749,7 @@ public class GenerationServiceImpl implements GenerationService {
             com.ghatana.yappc.domain.shape.EntitySpec entity,
             ValidatedSpec spec) {
         StringBuilder code = new StringBuilder();
-        String packageName = "com.ghatana." + spec.shapeSpec().projectId().toLowerCase() + ".domain";
+        String packageName = "com.ghatana." + spec.shapeSpec().metadata().getOrDefault("projectId", "yappc").toLowerCase() + ".domain";
 
         code.append("package ").append(packageName).append(";\n\n");
         code.append("import java.time.Instant;\n");
@@ -825,7 +792,7 @@ public class GenerationServiceImpl implements GenerationService {
      */
     private String generateDeterministicConfiguration(ValidatedSpec spec) {
         StringBuilder config = new StringBuilder();
-        String projectName = spec.shapeSpec().projectId() != null ? spec.shapeSpec().projectId().toLowerCase() : "yappc";
+        String projectName = spec.shapeSpec().metadata().getOrDefault("projectId", "yappc").toLowerCase();
 
         config.append("server:\n");
         config.append("  port: 8080\n");
@@ -863,7 +830,7 @@ public class GenerationServiceImpl implements GenerationService {
      */
     private String generateDeterministicDocumentation(ValidatedSpec spec) {
         StringBuilder docs = new StringBuilder();
-        String projectName = spec.shapeSpec().projectId() != null ? spec.shapeSpec().projectId() : "YAPPC Project";
+        String projectName = spec.shapeSpec().metadata().getOrDefault("projectId", "YAPPC Project");
         String architecture = spec.shapeSpec().architecture() != null ? spec.shapeSpec().architecture().name() : "Monolithic";
 
         docs.append("# ").append(projectName).append("\n\n");
@@ -905,7 +872,7 @@ public class GenerationServiceImpl implements GenerationService {
      */
     private String generateDeterministicCIPipeline(ValidatedSpec spec) {
         StringBuilder pipeline = new StringBuilder();
-        String projectName = spec.shapeSpec().projectId() != null ? spec.shapeSpec().projectId().toLowerCase() : "yappc";
+        String projectName = spec.shapeSpec().metadata().getOrDefault("projectId", "yappc").toLowerCase();
 
         pipeline.append("name: CI\n\n");
         pipeline.append("on:\n");

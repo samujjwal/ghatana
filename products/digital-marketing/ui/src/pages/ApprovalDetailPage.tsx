@@ -17,6 +17,7 @@ import { ApprovalSnapshotPanel } from '@/components/approval/ApprovalSnapshotPan
 import { DecideDialog } from '@/components/approval/DecideDialog';
 import { PageStateNotice } from '@/components/PageStateNotice';
 import { canPerformAction } from '@/lib/action-permissions';
+import { formatDateTime } from '@/lib/i18n/format';
 import { hasMinimumRole, validateRoles, type ValidRole } from '@/lib/role-utils';
 import { Badge, Button } from '@ghatana/design-system';
 
@@ -153,13 +154,13 @@ export function ApprovalDetailPage(): React.ReactElement {
             </div>
             <div>
               <dt className="font-medium text-gray-600">Submitted At</dt>
-              <dd>{new Date(request.submittedAt).toLocaleString()}</dd>
+              <dd>{formatDateTime(request.submittedAt)}</dd>
             </div>
             {(request.decidedAt || request.decidedBy) && (
               <>
                 <div>
                   <dt className="font-medium text-gray-600">Decided At</dt>
-                  <dd>{request.decidedAt ? new Date(request.decidedAt).toLocaleString() : '—'}</dd>
+                  <dd>{formatDateTime(request.decidedAt, { fallback: '—' })}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-gray-600">Decided By</dt>

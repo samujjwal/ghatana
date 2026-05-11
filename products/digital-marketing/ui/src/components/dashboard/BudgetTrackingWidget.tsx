@@ -11,6 +11,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { DataFreshnessBadge } from '@/components/dashboard/DataFreshnessBadge';
 import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
+import { formatCurrency, formatPercent } from '@/lib/i18n/format';
+import type { DashboardConfidenceLevel, DashboardFreshnessStatus } from '@/types/dashboard';
 
 interface BudgetTrackingWidgetProps {
   workspaceId: string;
@@ -24,6 +26,9 @@ interface BudgetTrackingWidgetProps {
   source?: string;
   lastUpdated?: string | null;
   isPartial?: boolean;
+  freshnessStatus?: DashboardFreshnessStatus;
+  confidence?: DashboardConfidenceLevel;
+  authorizationScope?: string;
 }
 
 export function BudgetTrackingWidget({
@@ -38,6 +43,9 @@ export function BudgetTrackingWidget({
   source,
   lastUpdated,
   isPartial = false,
+  freshnessStatus,
+  confidence,
+  authorizationScope,
 }: BudgetTrackingWidgetProps): React.ReactElement {
   if (isLoading) {
     return (
@@ -71,7 +79,16 @@ export function BudgetTrackingWidget({
         state="unavailable"
         message={unavailableReason}
         stateMessageTestId="budget-tracking-unavailable"
-        footer={<DataFreshnessBadge source={source} lastUpdated={lastUpdated} isPartial={false} />}
+        footer={(
+          <DataFreshnessBadge
+            source={source}
+            lastUpdated={lastUpdated}
+            isPartial={false}
+            freshnessStatus={freshnessStatus}
+            confidence={confidence}
+            authorizationScope={authorizationScope}
+          />
+        )}
       />
     );
   }
@@ -90,7 +107,19 @@ export function BudgetTrackingWidget({
       title="Budget Tracking"
       footer={(
         <>
-          <DataFreshnessBadge source={source} lastUpdated={lastUpdated} isPartial={isPartial} />
+          <DataFreshnessBadge
+            source={source}
+            lastUpdated={lastUpdated}
+            isPartial={isPartial}
+            freshnessStatus={freshnessStatus}
+            confidence={confidence}
+            authorizationScope={authorizationScope}
+          />
+          {(isPartial || isStaleStatus(freshnessStatus)) && (
+            <p className="mt-1 text-[11px] text-yellow-700" data-testid="budget-tracking-state">
+              {isPartial ? 'Budget metrics are partial.' : 'Budget metrics are stale.'}
+            </p>
+          )}
           <Link
             to={`/workspaces/${workspaceId}/budget`}
             className="mt-3 block text-xs text-blue-600 hover:underline"
@@ -104,26 +133,26 @@ export function BudgetTrackingWidget({
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-800">Total Budget</span>
           <span className="text-sm font-semibold text-gray-900">
-            {hasPrimaryBudget ? `$${(totalBudget ?? 0).toLocaleString()}` : 'Unavailable'}
+            {formatCurrency(totalBudget)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-800">Spent</span>
           <span className="text-sm font-semibold text-gray-900">
-            {spent !== null ? `$${spent.toLocaleString()}` : 'Unavailable'}
+            {formatCurrency(spent)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-800">Remaining</span>
           <span className="text-sm font-semibold text-gray-900">
-            {remaining !== null ? `$${remaining.toLocaleString()}` : 'Unavailable'}
+            {formatCurrency(remaining)}
           </span>
         </div>
         <div className="border-t border-gray-200 pt-2 mt-2" data-testid="budget-utilization-block">
           <div className="flex justify-between items-center mb-1">
             <span className="text-xs font-medium text-gray-900">Utilization</span>
             <span className={`text-sm font-bold ${utilizationColor}`}>
-              {utilizationPercent !== null ? `${utilization.toFixed(1)}%` : 'Unavailable'}
+              {formatPercent(utilizationPercent)}
             </span>
           </div>
           {hasSpend ? (
@@ -148,4 +177,8 @@ export function BudgetTrackingWidget({
       </div>
     </DashboardWidgetCard>
   );
+}
+
+function isStaleStatus(status: DashboardFreshnessStatus | undefined): boolean {
+  return status === 'STALE' || status === 'VERY_STALE' || status === 'CRITICAL';
 }

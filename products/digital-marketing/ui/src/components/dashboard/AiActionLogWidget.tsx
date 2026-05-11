@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { formatDateTime } from '@/lib/i18n/format';
 import type { AiActionLogEntry } from '@/types/ai-action';
 import { DashboardWidgetCard } from './DashboardWidgetCard';
 
@@ -50,7 +51,7 @@ export const AiActionLogWidget: React.FC<AiActionLogWidgetProps> = ({
               >
                 <div className="font-medium text-gray-700">{entry.summary}</div>
                 <div className="text-gray-500">
-                  {entry.status} · {entry.actionType} · {new Date(entry.occurredAt).toLocaleString()}
+                  {entry.status} · {entry.actionType} · {formatDateTime(entry.occurredAt)}
                 </div>
               </li>
             ))}

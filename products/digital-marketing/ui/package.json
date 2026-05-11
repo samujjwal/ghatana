@@ -18,7 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:a11y": "playwright test --grep @a11y",
     "test:e2e:realbackend": "playwright test --config=playwright.config.realbackend.ts",
-    "generate-api-types": "npx openapi-typescript-codegen -i ../../../platform/contracts/openapi/dmos.yaml -o src/types/api-generated.ts"
+    "generate-api-types": "openapi -i ../docs/api-contract.yaml -o src/types/api-generated.ts"
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",

@@ -920,6 +920,8 @@ module.exports = {
      * See YAPPC-P1-008 in the YAPPC audit.
      *
      * Task 3.1.5: Define allowed facades for Data Cloud + AEP imports
+     * Task 5.F.1: Create typed YAPPC-facing facades for Data Cloud + AEP (Java)
+     * Task 5.F.2: Move direct imports behind those facades
      */
     "no-yappc-direct-platform-imports": {
       meta: {

@@ -1,12 +1,7 @@
 package com.ghatana.yappc.services.lifecycle.storage;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
-import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
-import com.ghatana.yappc.infrastructure.datacloud.entity.ArtifactContentEntity;
-import com.ghatana.yappc.infrastructure.datacloud.entity.ArtifactMetadataEntity;
-import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade;
 import com.ghatana.yappc.storage.ArtifactStore;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -17,37 +12,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
+ * YAPPC artifact store using Data Cloud facade.
+ *
+ * Migration Status: Migrated to use DataCloudArtifactFacade (task 5.F.2)
+ * Previous implementation used direct DataCloudClient and YappcDataCloudRepository.
+ * Route ownership: scaffold-api
+ *
  * @doc.type class
- * @doc.purpose Repository-backed YAPPC artifact store using the canonical Data Cloud adapter seam
+ * @doc.purpose YAPPC artifact store using Data Cloud facade (task 5.F.2)
  * @doc.layer product
- * @doc.pattern Repository/Adapter
+ * @doc.pattern Facade Adapter
  */
 public final class YappcDataCloudArtifactStore implements ArtifactStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(YappcDataCloudArtifactStore.class);
-    private static final String ARTIFACTS_COLLECTION = "yappc-artifacts";
-    private static final String METADATA_COLLECTION = "yappc-artifact-metadata";
 
-    private final YappcDataCloudRepository<ArtifactContentEntity> artifactRepository;
-    private final YappcDataCloudRepository<ArtifactMetadataEntity> metadataRepository;
+    private final DataCloudArtifactFacade artifactFacade;
 
-    public YappcDataCloudArtifactStore(@NotNull DataCloudClient client, @NotNull ObjectMapper mapper) {
-        YappcEntityMapper entityMapper = new YappcEntityMapper(mapper);
-        this.artifactRepository = new YappcDataCloudRepository<>(
-            client,
-            entityMapper,
-            ARTIFACTS_COLLECTION,
-            ArtifactContentEntity.class
-        );
-        this.metadataRepository = new YappcDataCloudRepository<>(
-            client,
-            entityMapper,
-            METADATA_COLLECTION,
-            ArtifactMetadataEntity.class
-        );
+    public YappcDataCloudArtifactStore(@NotNull DataCloudArtifactFacade artifactFacade) {
+        this.artifactFacade = artifactFacade;
     }
 
     @Override
@@ -55,43 +42,44 @@ public final class YappcDataCloudArtifactStore implements ArtifactStore {
         String tenantId = requireTenantId();
         String normalizedPath = normalizeArtifactPath(path);
         String version = UUID.randomUUID().toString();
-        ArtifactContentEntity entity = new ArtifactContentEntity(
-            buildArtifactId(normalizedPath, version),
-            normalizedPath,
-            version,
-            Base64.getEncoder().encodeToString(content),
-            content.length,
-            tenantId,
-            System.currentTimeMillis()
-        );
+        String projectId = extractProjectId(path);
 
-        return artifactRepository.save(entity)
-            .map(saved -> {
-                LOG.info("Stored artifact via repository seam: path={} version={} tenant={}",
-                    normalizedPath, saved.version(), tenantId);
-                return saved.version();
-            });
+        return artifactFacade.storeArtifact(
+            new DataCloudArtifactFacade.ArtifactStorageRequest(
+                projectId,
+                tenantId,
+                "yappc-artifact",
+                Base64.getEncoder().encodeToString(content),
+                Map.of("path", normalizedPath),
+                version
+            )
+        ).map(artifactId -> {
+            LOG.info("Stored artifact via facade: path={} version={} tenant={}",
+                normalizedPath, version, tenantId);
+            return version;
+        });
     }
 
     @Override
     public Promise<byte[]> get(String path) {
-        requireTenantId();
+        String tenantId = requireTenantId();
         VersionedArtifactPath versionedPath = parseVersionedArtifactPath(path);
-        UUID artifactId = buildArtifactId(versionedPath.basePath(), versionedPath.version());
+        String artifactId = buildArtifactId(versionedPath.basePath(), versionedPath.version());
 
-        return artifactRepository.findById(artifactId)
-            .map(entityOpt -> entityOpt
-                .map(entity -> Base64.getDecoder().decode(entity.content()))
+        return artifactFacade.retrieveArtifact(artifactId, tenantId)
+            .map(contentOpt -> contentOpt
+                .map(content -> Base64.getDecoder().decode(content.content()))
                 .orElseThrow(() -> new IllegalArgumentException("Artifact not found: " + path)));
     }
 
     @Override
     public Promise<List<String>> list(String prefix) {
-        requireTenantId();
-        String normalizedPath = normalizeArtifactPath(prefix);
-        return artifactRepository.findByField("path", normalizedPath)
-            .map(entities -> entities.stream()
-                .map(ArtifactContentEntity::version)
+        String tenantId = requireTenantId();
+        String projectId = extractProjectId(prefix);
+        
+        return artifactFacade.listArtifacts(projectId, tenantId)
+            .map(metadataList -> metadataList.stream()
+                .map(DataCloudArtifactFacade.ArtifactMetadata::version)
                 .toList());
     }
 
@@ -99,49 +87,40 @@ public final class YappcDataCloudArtifactStore implements ArtifactStore {
     public Promise<Void> putMetadata(String path, Map<String, String> meta) {
         String tenantId = requireTenantId();
         String normalizedPath = normalizeMetadataPath(path);
-        ArtifactMetadataEntity entity = new ArtifactMetadataEntity(
-            buildMetadataId(normalizedPath),
-            normalizedPath,
-            Map.copyOf(meta),
-            tenantId,
-            System.currentTimeMillis()
-        );
+        String projectId = extractProjectId(path);
+        String version = extractVersionFromMetadataPath(normalizedPath);
 
-        return metadataRepository.save(entity).map(saved -> null);
+        return artifactFacade.storeArtifact(
+            new DataCloudArtifactFacade.ArtifactStorageRequest(
+                projectId,
+                tenantId,
+                "yappc-metadata",
+                normalizedPath,
+                meta,
+                version
+            )
+        ).map(artifactId -> null);
     }
 
     @Override
     public Promise<Map<String, String>> getMetadata(String path) {
-        requireTenantId();
+        String tenantId = requireTenantId();
         String normalizedPath = normalizeMetadataPath(path);
-        return metadataRepository.findById(buildMetadataId(normalizedPath))
-            .map(entityOpt -> entityOpt.map(ArtifactMetadataEntity::metadata).orElseGet(Map::of));
+        String artifactId = buildMetadataId(normalizedPath);
+
+        return artifactFacade.retrieveArtifact(artifactId, tenantId)
+            .map(contentOpt -> contentOpt
+                .map(DataCloudArtifactFacade.ArtifactContent::metadata)
+                .orElseGet(Map::of));
     }
 
     @Override
     public Promise<Void> delete(String path) {
-        requireTenantId();
-        if (path.endsWith("/metadata")) {
-            return deleteMetadataEntity(normalizeMetadataPath(path));
-        }
-
+        String tenantId = requireTenantId();
         VersionedArtifactPath versionedPath = parseVersionedArtifactPath(path);
-        UUID artifactId = buildArtifactId(versionedPath.basePath(), versionedPath.version());
-        String metadataPath = buildMetadataPath(versionedPath.basePath(), versionedPath.version());
+        String artifactId = buildArtifactId(versionedPath.basePath(), versionedPath.version());
 
-        return artifactRepository.deleteById(artifactId)
-            .then(unused -> deleteMetadataEntity(metadataPath), error -> {
-                LOG.debug("Artifact entity not found during delete, continuing with metadata cleanup: {}", path);
-                return deleteMetadataEntity(metadataPath);
-            });
-    }
-
-    private Promise<Void> deleteMetadataEntity(String metadataPath) {
-        return metadataRepository.deleteById(buildMetadataId(metadataPath))
-            .then(unused -> Promise.complete(), error -> {
-                LOG.debug("Artifact metadata not found during delete, treating as no-op: {}", metadataPath);
-                return Promise.complete();
-            });
+        return artifactFacade.deleteArtifact(artifactId, tenantId);
     }
 
     private String requireTenantId() {
@@ -187,16 +166,32 @@ public final class YappcDataCloudArtifactStore implements ArtifactStore {
         );
     }
 
-    private UUID buildArtifactId(String path, String version) {
-        return UUID.nameUUIDFromBytes((path + "::" + version).getBytes(StandardCharsets.UTF_8));
+    private String buildArtifactId(String path, String version) {
+        return UUID.nameUUIDFromBytes((path + "::" + version).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
-    private UUID buildMetadataId(String metadataPath) {
-        return UUID.nameUUIDFromBytes(("metadata::" + metadataPath).getBytes(StandardCharsets.UTF_8));
+    private String buildMetadataId(String metadataPath) {
+        return UUID.nameUUIDFromBytes(("metadata::" + metadataPath).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     private String buildMetadataPath(String path, String version) {
         return path + "/" + version + "/metadata";
+    }
+
+    private String extractProjectId(String path) {
+        String normalized = normalizeArtifactPath(path);
+        int firstSlash = normalized.indexOf('/');
+        return firstSlash > 0 ? normalized.substring(0, firstSlash) : "default-project";
+    }
+
+    private String extractVersionFromMetadataPath(String metadataPath) {
+        String normalized = metadataPath.strip();
+        if (!normalized.endsWith("/metadata")) {
+            return "latest";
+        }
+        String withoutMetadata = normalized.substring(0, normalized.length() - "/metadata".length());
+        int lastSlash = withoutMetadata.lastIndexOf('/');
+        return lastSlash > 0 ? withoutMetadata.substring(lastSlash + 1) : "latest";
     }
 
     private record VersionedArtifactPath(String basePath, String version) {

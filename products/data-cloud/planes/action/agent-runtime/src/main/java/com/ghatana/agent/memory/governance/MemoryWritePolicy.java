@@ -14,6 +14,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 /**
+ * @doc.type class
+ * @doc.purpose Strict write gate for learned memory artifacts
+ * @doc.layer data-cloud
+ * @doc.pattern Policy
+ */
+/**
  * Strict write gate for learned memory artifacts.
  */
 public final class MemoryWritePolicy {

@@ -50,6 +50,26 @@ YAPPC is an **AI-powered project scaffolding and code-generation platform** buil
 
 ## System Architecture
 
+### Source of Truth for API Routes
+
+**Route Manifest (`products/yappc/docs/api/route-manifest.yaml`)** is the canonical source of truth for all YAPPC API routes.
+
+- **Purpose**: Single machine-readable source defining all routes, authentication modes, scopes, ownership, and architectural boundaries
+- **Validation**: The `checkYappcOpenApiParity` Gradle task validates parity between the manifest and OpenAPI specification
+- **Generation**: Route metadata is used to generate `RouteAuthorizationRegistry` at build time, eliminating manual duplication
+- **Integration Points**:
+  - OpenAPI (`products/yappc/docs/api/openapi.yaml`): Every route must have matching path and operationId
+  - Frontend Client: Generated from OpenAPI, operationId maps to client method names
+  - Backend Registry: Generated from manifest, auth level determines credential requirements
+
+**Route Entry Schema**:
+- **Required Fields**: `method`, `path`, `auth`, `owner`, `boundary`, `operationId`
+- **Optional Fields**: `scopes` (required when auth=required), `auditEventType`, `privacyClassification`
+- **Auth Levels**: `public` (no auth), `required` (session cookie or API key/Bearer), `optional` (guest access)
+- **Boundaries**: `YAPPC` (owned by YAPPC), `DATA_CLOUD_AEP` (delegates to platform services)
+
+**See**: `products/yappc/docs/api/route-manifest.yaml` for complete schema documentation and examples.
+
 ### High-Level Layers
 
 ```

@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @doc.type class
+ * @doc.purpose Dispatches canonical AgentSpec validation to type-specific validators
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
+/**
  * Dispatches canonical AgentSpec validation to type-specific validators.
  */
 public final class AgentSpecValidator {

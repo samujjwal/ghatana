@@ -123,7 +123,7 @@ public final class DashboardActionServiceImpl implements DashboardActionService 
             safeToContinueActions,
             reasonLabel,
             isDegraded,
-            packet.generatedAt()
+            packet.timestamp()
         );
     }
 
@@ -165,8 +165,8 @@ public final class DashboardActionServiceImpl implements DashboardActionService 
             return false;
         }
         
-        return !packet.healthSignals().preview().healthy()
-            || !packet.healthSignals().generation().healthy()
-            || !packet.healthSignals().runtime().healthy();
+        return !packet.healthSignals().preview().isHealthy()
+            || !packet.healthSignals().generation().isHealthy()
+            || !packet.healthSignals().runtime().isHealthy();
     }
 }

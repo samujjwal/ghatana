@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { listCampaigns, createCampaign, launchCampaign, pauseCampaign, completeCampaign, archiveCampaign, rollbackCampaign, duplicateCampaign } from '@/api/campaigns';
+import { useIdempotencyKeys } from '@/hooks/useIdempotencyKeys';
 import type { Campaign, CreateCampaignRequest, CampaignListResponse } from '@/types/campaign';
 import type { ApiError } from '@/lib/http-client';
 
@@ -61,12 +62,14 @@ export function useCreateCampaign(
   onError?: (error: ApiError) => void
 ): UseCreateCampaignReturn {
   const queryClient = useQueryClient();
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:create');
 
-  const mutation = useMutation<Campaign, ApiError, { body: CreateCampaignRequest; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { body: CreateCampaignRequest; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: ({ body, idempotencyKey }) => {
       return createCampaign(workspaceId!, body, idempotencyKey);
     },
-    onSuccess: () => {
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
     },
     onError: (error) => {
@@ -75,7 +78,10 @@ export function useCreateCampaign(
   });
 
   return {
-    create: (body) => mutation.mutateAsync({ body, idempotencyKey: crypto.randomUUID() }),
+    create: (body) => {
+      const intentParts = [workspaceId, body];
+      return mutation.mutateAsync({ body, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -95,8 +101,9 @@ export function useLaunchCampaign(
 ): UseLaunchCampaignReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:launch');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -110,7 +117,8 @@ export function useLaunchCampaign(
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       // Keep audit timeline in sync after launch commands.
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
@@ -121,7 +129,10 @@ export function useLaunchCampaign(
   });
 
   return {
-    launch: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
+    launch: (campaignId) => {
+      const intentParts = [workspaceId, campaignId];
+      return mutation.mutateAsync({ campaignId, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
@@ -142,8 +153,9 @@ export function usePauseCampaign(
 ): UsePauseCampaignReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:pause');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -157,7 +169,8 @@ export function usePauseCampaign(
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
     },
     onError: (error, { campaignId }) => {
@@ -166,7 +179,10 @@ export function usePauseCampaign(
   });
 
   return {
-    pause: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
+    pause: (campaignId) => {
+      const intentParts = [workspaceId, campaignId];
+      return mutation.mutateAsync({ campaignId, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
@@ -187,8 +203,9 @@ export function useCompleteCampaign(
 ): UseCampaignActionReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:complete');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -197,12 +214,18 @@ export function useCompleteCampaign(
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
+      queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
+    },
     onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
+    execute: (campaignId) => {
+      const intentParts = [workspaceId, campaignId];
+      return mutation.mutateAsync({ campaignId, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -215,8 +238,9 @@ export function useArchiveCampaign(
 ): UseCampaignActionReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:archive');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -225,12 +249,18 @@ export function useArchiveCampaign(
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
+      queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
+    },
     onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
+    execute: (campaignId) => {
+      const intentParts = [workspaceId, campaignId];
+      return mutation.mutateAsync({ campaignId, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -243,8 +273,9 @@ export function useRollbackCampaign(
 ): UseCampaignActionReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:rollback');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -253,12 +284,18 @@ export function useRollbackCampaign(
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
+      queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
+    },
     onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
+    execute: (campaignId) => {
+      const intentParts = [workspaceId, campaignId];
+      return mutation.mutateAsync({ campaignId, intentParts, idempotencyKey: getIdempotencyKey(intentParts) });
+    },
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -278,8 +315,9 @@ export function useDuplicateCampaign(
 ): UseDuplicateCampaignReturn {
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('campaign:duplicate');
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; newName: string; idempotencyKey: string }>({
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; newName: string; idempotencyKey: string; intentParts: readonly unknown[] }>({
     mutationFn: async ({ campaignId, newName, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
@@ -288,16 +326,23 @@ export function useDuplicateCampaign(
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
+    onSuccess: (_campaign, variables) => {
+      clearIdempotencyKey(variables.intentParts);
+      queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
+    },
     onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: (campaignId: string, newName: string) => mutation.mutateAsync({
-      campaignId,
-      newName,
-      idempotencyKey: crypto.randomUUID(),
-    }),
+    execute: (campaignId: string, newName: string) => {
+      const intentParts = [workspaceId, campaignId, newName];
+      return mutation.mutateAsync({
+        campaignId,
+        newName,
+        intentParts,
+        idempotencyKey: getIdempotencyKey(intentParts),
+      });
+    },
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,

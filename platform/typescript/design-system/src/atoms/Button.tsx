@@ -95,8 +95,11 @@ function getButtonScheme(
   const surface = isDark ? darkColors : lightColors;
 
   const main = paletteEntry[500] ?? palette.primary[500];
+  const solidMain = isDark ? main : paletteEntry[700] ?? main;
   const hover = paletteEntry[600] ?? main;
+  const solidHover = isDark ? hover : paletteEntry[800] ?? hover;
   const active = paletteEntry[700] ?? hover;
+  const solidActive = isDark ? active : paletteEntry[900] ?? active;
 
   const soft = paletteEntry[100] ?? (isDark ? hexToRgba('#ffffff', 0.08) : hexToRgba('#000000', 0.04));
   const softHover =
@@ -113,7 +116,7 @@ function getButtonScheme(
   const focusRing = hexToRgba(main, focusRingAlpha);
 
   const disabledBackground = surface.action.disabledBackground;
-  const disabledColor = surface.text.disabled;
+  const disabledColor = isDark ? surface.text.disabled : palette.gray[700] ?? surface.text.secondary;
   const disabledBorder =
     variant === 'solid'
       ? disabledBackground
@@ -125,19 +128,19 @@ function getButtonScheme(
         base: {
           background: 'transparent',
           border: main,
-          foreground: main,
+          foreground: tone === 'neutral' ? surface.text.primary : active,
           focusRing,
         },
         hover: {
           background: soft,
           border: hover,
-          foreground: hover,
+          foreground: tone === 'neutral' ? surface.text.primary : active,
           focusRing,
         },
         active: {
           background: softHover,
           border: active,
-          foreground: active,
+          foreground: tone === 'neutral' ? surface.text.primary : solidActive,
           focusRing,
         },
         disabled: {
@@ -236,20 +239,20 @@ function getButtonScheme(
     default:
       return {
         base: {
-          background: main,
-          border: main,
+          background: solidMain,
+          border: solidMain,
           foreground,
           focusRing,
         },
         hover: {
-          background: hover,
-          border: hover,
+          background: solidHover,
+          border: solidHover,
           foreground,
           focusRing,
         },
         active: {
-          background: active,
-          border: active,
+          background: solidActive,
+          border: solidActive,
           foreground,
           focusRing,
         },

@@ -1,51 +1,195 @@
 # YAPPC Route Manifest
-# Single source of truth for all routes served by YAPPC servers.
-# The CheckYappcOpenApiParity Gradle task fails if any route listed here
-# does not appear in products/yappc/docs/api/openapi.yaml paths.
+# ═══════════════════════════════════════════════════════════════════════════════
+# Source of Truth: This is the canonical source for all YAPPC API routes.
+# Validation: The CheckYappcOpenApiParity Gradle task validates parity with openapi.yaml.
+# Generation: Route metadata is used to generate RouteAuthorizationRegistry at build time.
 #
-# Format: structured YAML objects with machine-readable metadata
-# Required fields: method, path, auth, owner, boundary, operationId
-# Optional fields: scopes (if auth is required), auditEventType, privacyClassification
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMA DEFINITION
+# ═══════════════════════════════════════════════════════════════════════════════
 #
-# Auth levels:
-# - public: No authentication required
-# - required: Authentication required (valid JWT or session cookie)
-# - optional: Authentication optional (guest access allowed)
+# Each route entry is a YAML object with the following schema:
 #
-# Common scopes:
-# - workspace:read: Read access to workspace data
-# - workspace:write: Write access to workspace data
-# - project:read: Read access to project data
-# - project:write: Write access to project data
-# - admin: Administrative operations
+# Required Fields:
+#   method (string): HTTP method. Must be one of: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+#   path (string): URL path. Parameters use {param} syntax (e.g., /api/v1/projects/{id})
+#   auth (enum): Authentication level. Must be one of: public, required, optional
+#   owner (string): Owning service/module (e.g., yappc-services, scaffold-api)
+#   boundary (enum): Architectural boundary. Must be one of: YAPPC, DATA_CLOUD_AEP
+#   operationId (string): Unique operation identifier. PascalCase, matches OpenAPI operationId
 #
-# Privacy classification (defaults to INTERNAL for required auth, PUBLIC for public):
-# - PUBLIC: No sensitive data, can be exposed publicly
-# - INTERNAL: Internal use only, not for public exposure
-# - CONFIDENTIAL: Sensitive data requiring access control
-# - RESTRICTED: Highly sensitive, strict access control required
+# Optional Fields:
+#   scopes (array of strings): Required OAuth scopes. Required when auth=required, empty when auth=public
+#   auditEventType (string): Audit event type. Defaults to UPPER_SNAKE_CASE of operationId
+#   privacyClassification (enum): Data sensitivity. Defaults to PUBLIC for public auth, INTERNAL for required
 #
-# Audit event types (derived from operationId if not specified):
-# - INTENT_CAPTURE, INTENT_ANALYZE, INTENT_READ
-# - SHAPE_DERIVE, SHAPE_MODEL, SHAPE_READ
-# - VALIDATE_ARTIFACTS, VALIDATE_WITH_CONFIG, VALIDATE_WITH_POLICY
-# - GENERATE_ARTIFACTS, GENERATE_DIFF, ARTIFACTS_READ
-# - RUN_ARTIFACTS, RUN_WITH_OBSERVATION, RUN_ROLLBACK, RUN_PROMOTE
-# - OBSERVE_RUN, LEARN_FROM_RUN, LEARN_WITH_CONTEXT
-# - EVOLVE_SYSTEM, EVOLVE_WITH_CONSTRAINTS
-# - LIFECYCLE_EXECUTE
-# - ARTIFACT_GRAPH_INGEST, ARTIFACT_GRAPH_ANALYZE, ARTIFACT_GRAPH_MERGE, ARTIFACT_GRAPH_QUERY
-# - RESIDUAL_ANALYZE, SOURCE_IMPORT
-# - PREVIEW_SESSION_CREATE, PREVIEW_SESSION_VALIDATE
-# - CAPABILITIES_QUERY, CAPABILITIES_GET
-# - PHASE_PACKET_REQUEST, PHASE_PACKET_GET
-# - DASHBOARD_ACTIONS_REQUEST, DASHBOARD_ACTIONS_GET
-# - VECTOR_SEARCH, VECTOR_INDEX, VECTOR_DELETE, VECTOR_RAG
-# - AGENTS_LIST, AGENTS_EXECUTE, COPILOT_CHAT
-# - WORKFLOW_CREATE, WORKFLOW_START, WORKFLOW_PAUSE, WORKFLOW_RESUME, WORKFLOW_CANCEL
-# - PACK_LIST, PACK_VALIDATE, SCAFFOLD_CREATE, SCAFFOLD_UPDATE
-# - TEMPLATE_RENDER, DEPENDENCY_ANALYZE
-# - REFACTOR_JOB_CREATE, REFACTOR_JOB_START, REFACTOR_JOB_STOP
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIELD VALIDATION RULES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# method:
+#   - Must be uppercase HTTP verb
+#   - Pattern: ^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)$
+#
+# path:
+#   - Must start with /
+#   - Parameters use {param} syntax (not :param)
+#   - Pattern: ^/api/v1(/[a-z0-9-]+({[a-zA-Z0-9_]+})?)*$
+#   - Examples: /health, /api/v1/projects/{id}, /api/v1/projects/{projectId}/phases/{phaseId}
+#
+# auth:
+#   - public: No authentication required (e.g., /health, /ready)
+#   - required: Authentication required (valid session cookie or API key/Bearer token)
+#   - optional: Authentication optional (guest access allowed, enhanced with auth)
+#
+# owner:
+#   - Must match a registered service name
+#   - Common values: yappc-services, yappc-api, scaffold-api, refactorer-api
+#   - Pattern: ^[a-z0-9-]+(-api|-services)?$
+#
+# boundary:
+#   - YAPPC: Routes owned and implemented by YAPPC
+#   - DATA_CLOUD_AEP: Routes that delegate to Data Cloud or AEP platform services
+#
+# operationId:
+#   - Must be unique across all routes
+#   - PascalCase naming convention
+#   - Pattern: ^[A-Z][a-zA-Z0-9]*$
+#   - Examples: captureIntent, listPacks, createRefactorJob
+#
+# scopes:
+#   - Required when auth=required
+#   - Must be empty when auth=public
+#   - Common scopes: workspace:read, workspace:write, project:read, project:write, admin
+#   - Pattern: ^[a-z]+:(read|write|admin)$
+#
+# auditEventType:
+#   - Defaults to UPPER_SNAKE_CASE of operationId if not specified
+#   - Pattern: ^[A-Z][A-Z0-9_]*$
+#   - Examples: INTENT_CAPTURE, PACK_LIST, REFACTOR_JOB_CREATE
+#
+# privacyClassification:
+#   - PUBLIC: No sensitive data, can be exposed publicly (default for auth=public)
+#   - INTERNAL: Internal use only, not for public exposure (default for auth=required)
+#   - CONFIDENTIAL: Sensitive data requiring access control
+#   - RESTRICTED: Highly sensitive, strict access control required
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXAMPLES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Example 1: Public health check
+#   - method: GET
+#     path: /health
+#     auth: public
+#     scopes: []
+#     owner: yappc-services
+#     boundary: YAPPC
+#     operationId: liveness
+#     auditEventType: LIVENESS_CHECK
+#     privacyClassification: PUBLIC
+#
+# Example 2: Authenticated project read
+#   - method: GET
+#     path: /api/v1/projects/{id}
+#     auth: required
+#     scopes: [project:read]
+#     owner: yappc-services
+#     boundary: YAPPC
+#     operationId: getProject
+#     auditEventType: PROJECT_READ
+#     privacyClassification: CONFIDENTIAL
+#
+# Example 3: Authenticated project write with multiple scopes
+#   - method: POST
+#     path: /api/v1/projects/{id}/phases/{phaseId}/execute
+#     auth: required
+#     scopes: [project:write, admin]
+#     owner: yappc-services
+#     boundary: YAPPC
+#     operationId: executePhase
+#     auditEventType: PHASE_EXECUTE
+#     privacyClassification: RESTRICTED
+#
+# Example 4: Platform boundary route (delegates to Data Cloud)
+#   - method: POST
+#     path: /api/v1/vector/search
+#     auth: required
+#     scopes: [project:read]
+#     owner: yappc-api
+#     boundary: DATA_CLOUD_AEP
+#     operationId: vectorSearch
+#     auditEventType: VECTOR_SEARCH
+#     privacyClassification: CONFIDENTIAL
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMMON SCOPES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# workspace:read    - Read access to workspace-level data
+# workspace:write   - Write access to workspace-level data
+# project:read      - Read access to project-level data
+# project:write     - Write access to project-level data
+# admin             - Administrative operations (system-wide)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMMON AUDIT EVENT TYPES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Lifecycle Phases:
+#   INTENT_CAPTURE, INTENT_ANALYZE, INTENT_READ
+#   SHAPE_DERIVE, SHAPE_MODEL, SHAPE_READ
+#   VALIDATE_ARTIFACTS, VALIDATE_WITH_CONFIG, VALIDATE_WITH_POLICY
+#   GENERATE_ARTIFACTS, GENERATE_DIFF, ARTIFACTS_READ
+#   RUN_ARTIFACTS, RUN_WITH_OBSERVATION, RUN_ROLLBACK, RUN_PROMOTE
+#   OBSERVE_RUN, LEARN_FROM_RUN, LEARN_WITH_CONTEXT
+#   EVOLVE_SYSTEM, EVOLVE_WITH_CONSTRAINTS
+#   LIFECYCLE_EXECUTE
+#
+# Artifact Graph:
+#   ARTIFACT_GRAPH_INGEST, ARTIFACT_GRAPH_ANALYZE, ARTIFACT_GRAPH_MERGE, ARTIFACT_GRAPH_QUERY
+#   RESIDUAL_ANALYZE, SOURCE_IMPORT
+#
+# Preview & Session:
+#   PREVIEW_SESSION_CREATE, PREVIEW_SESSION_VALIDATE
+#
+# Cockpit & Dashboard:
+#   CAPABILITIES_QUERY, CAPABILITIES_GET
+#   PHASE_PACKET_REQUEST, PHASE_PACKET_GET
+#   DASHBOARD_ACTIONS_REQUEST, DASHBOARD_ACTIONS_GET
+#
+# Platform Integration (DATA_CLOUD_AEP boundary):
+#   VECTOR_SEARCH, VECTOR_INDEX, VECTOR_DELETE, VECTOR_RAG
+#   AGENTS_LIST, AGENTS_EXECUTE, COPILOT_CHAT
+#   WORKFLOW_CREATE, WORKFLOW_START, WORKFLOW_PAUSE, WORKFLOW_RESUME, WORKFLOW_CANCEL
+#
+# Scaffold:
+#   PACK_LIST, PACK_VALIDATE, SCAFFOLD_CREATE, SCAFFOLD_UPDATE
+#   TEMPLATE_RENDER, DEPENDENCY_ANALYZE
+#
+# Refactorer:
+#   REFACTOR_JOB_CREATE, REFACTOR_JOB_START, REFACTOR_JOB_STOP
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# INTEGRATION POINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# 1. OpenAPI (products/yappc/docs/api/openapi.yaml):
+#    - Every route must have a matching path and operationId
+#    - HTTP method must match
+#    - Security schemes must align with auth level
+#
+# 2. RouteAuthorizationRegistry (generated at build time):
+#    - Routes are loaded from this manifest
+#    - auth level determines credential requirements
+#    - scopes are mapped to permissions
+#    - privacy classification determines audit logging
+#
+# 3. Frontend Client (generated from OpenAPI):
+#    - operationId maps to generated client method names
+#    - scopes are documented in OpenAPI security schemes
+#
+# ═══════════════════════════════════════════════════════════════════════════════
 
 # ─── yappc-services (YappcHttpServer) ─────────────────────────────────────────
 yappc-services:

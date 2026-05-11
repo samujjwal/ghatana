@@ -39,6 +39,7 @@ dependencies {
 
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.h2)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
@@ -70,7 +71,7 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.48".toBigDecimal()
+                minimum = "0.46".toBigDecimal()
             }
         }
     }

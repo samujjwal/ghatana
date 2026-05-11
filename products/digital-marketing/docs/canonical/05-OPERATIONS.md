@@ -55,6 +55,21 @@ Production startup must fail closed when:
 | Retention | Data retention periods, DSAR workflow config |
 | UI | API base URL, production auth mode, feature availability source |
 
+### Required Production Environment Variables
+
+Production bootstrap must validate these variables before accepting traffic:
+
+| Area | Required Variables |
+|---|---|
+| Runtime | `DMOS_ENV=production`, `PORT` |
+| Persistence | `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD` |
+| Policy/Auth | `DMOS_OPA_URL`, identity provider issuer/audience/session config |
+| Privacy | `DMOS_PII_HMAC_KEY`, `DMOS_CONTACT_ENCRYPTION_KEY` |
+| AI Governance | `DMOS_GOVERNED_AI_ENABLED=true`, `DMOS_KERNEL_AGENT_ENDPOINT` |
+| Observability | `OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_COLLECTOR_ENDPOINT`, `OTEL_SERVICE_NAME`, `LOG_LEVEL` |
+| Google Ads | `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_DEVELOPER_TOKEN` |
+| UI | `VITE_API_BASE_URL`, production auth provider flags |
+
 ## Release Gates
 
 A release is allowed only when:
@@ -211,6 +226,21 @@ DMOS is production-operable when:
 - Privacy operations are documented and tested.
 - Production logs and traces are redacted.
 - Rollback/fix-forward procedures are documented.
+
+## Runbook Index
+
+Every incident class below must have a concrete runbook before production release:
+
+| Incident Class | Runbook |
+|---|---|
+| Campaign launch failure | `docs/runbooks/launch-failure.md` |
+| Connector outage | `docs/runbooks/connector-outage.md` |
+| Kill switch activation/removal | `docs/runbooks/kill-switch.md` |
+| Data freshness incident | `docs/runbooks/data-freshness-incident.md` |
+| Privacy incident | `docs/runbooks/privacy-incident.md` |
+| DSAR request | `docs/runbooks/dsar-request.md` |
+| Rollback/fix-forward | `docs/runbooks/rollback.md` |
+| Release gate failure | `docs/runbooks/release-gate-failure.md` |
 
 ## Recovered Operational Requirements
 

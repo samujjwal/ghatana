@@ -268,6 +268,18 @@ jobs:
         working-directory: products/digital-marketing/ui
         run: pnpm run test:route-contract
 
+      - name: Run no-fake-data production scan
+        run: node scripts/check-dmos-no-fake-data.mjs
+
+      - name: Run DMOS documentation matrix guard
+        run: node scripts/check-dmos-docs-matrix.mjs
+
+      - name: Run DMOS operations documentation guard
+        run: node scripts/check-dmos-operations-docs.mjs
+
+      - name: Run DMOS duplicate runtime guard
+        run: node scripts/check-dmos-duplicate-runtimes.mjs
+
   # =============================================================================
   # Job 4b: Stable Route E2E (UI -> API -> Postgres, real backend) - P1-2 Mandatory
   # =============================================================================
@@ -408,13 +420,7 @@ jobs:
           DMOS_ENV: production
 
       - name: Validate No Stubs in Production (P0-016)
-        run: |
-          # Check for deterministic/stub classes in production code
-          if grep -r "DeterministicAgentOrchestrationAdapter" products/digital-marketing/dm-application/src/main/java --include="*.java" | grep -v "ProductionBootstrapValidator"; then
-            echo "❌ Found deterministic adapter reference in production code"
-            exit 1
-          fi
-          echo "✅ No deterministic stubs found in production wiring"
+        run: node scripts/check-dmos-production-wiring.mjs
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

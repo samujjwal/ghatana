@@ -11,6 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @doc.type class
+ * @doc.purpose Validates deterministic agent definitions for determinism guarantee and subtype
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
 public final class DeterministicAgentValidator implements AgentTypeSpecificValidator {
     private static final Set<String> VALID_SUBTYPES = Set.of(
             "RULE_ENGINE", "THRESHOLD", "FSM", "PATTERN_MATCHER",

@@ -127,8 +127,10 @@ describe('Boundary routes', () => {
     renderWithAuth(path, element);
 
     expect(screen.getByTestId('feature-unavailable-page')).toBeInTheDocument();
+    expect(screen.getByTestId('feature-unavailable-details')).toBeInTheDocument();
+    expect(screen.getByText('Production gate')).toBeInTheDocument();
     expect(screen.getByText('Feature Unavailable')).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(featureName, 'i'))).toBeInTheDocument();
+    expect(screen.getAllByText(new RegExp(featureName, 'i')).length).toBeGreaterThan(0);
   });
 
   it.each(CASES)('redirects unauthenticated access to login for $label', ({ path, element }) => {

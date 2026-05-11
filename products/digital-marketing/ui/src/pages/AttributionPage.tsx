@@ -21,5 +21,14 @@ export function AttributionPage(): React.ReactElement {
     return <Navigate to="/login" replace />;
   }
 
-  return <FeatureUnavailablePage featureName="Attribution Reporting" reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'} (requires dmos.reporting capability).`} />;
+  return (
+    <FeatureUnavailablePage
+      featureName="Attribution Reporting"
+      reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'}.`}
+      capability="dmos.reporting"
+      connector="Attribution source-event lineage"
+      productionGate="Locked until touchpoint lineage, attribution model, source, freshness, and confidence are persisted."
+      remediation="Use explicit campaign source metadata and approved reports until attribution runtime is connected."
+    />
+  );
 }

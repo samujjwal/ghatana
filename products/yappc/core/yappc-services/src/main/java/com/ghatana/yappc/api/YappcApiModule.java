@@ -3,6 +3,7 @@ package com.ghatana.yappc.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
@@ -17,6 +18,9 @@ import com.ghatana.yappc.services.intent.IntentServiceImpl;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
+import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
+import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
 import com.ghatana.yappc.services.phase.PhasePacketService;
@@ -34,6 +38,7 @@ import io.activej.http.HttpClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
 import java.util.Set;
@@ -74,8 +79,9 @@ public class YappcApiModule extends AbstractModule {
     GenerationService generationService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new GenerationServiceImpl(aiService, auditLogger, metrics);
+            MetricsCollector metrics,
+            GenerationRunRepository generationRunRepository) {
+        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository);
     }
 
     @Provides
@@ -272,8 +278,14 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
-    PhasePacketService phasePacketService() {
-        return new PhasePacketServiceImpl();
+    PhasePacketService phasePacketService(
+            DataCloudClient dataCloudClient,
+            YappcArtifactRepository artifactRepository,
+            PhaseGateValidator phaseGateValidator,
+            PolicyEngine policyEngine,
+            @Nullable BusinessMetrics metrics,
+            @Nullable com.ghatana.audit.AuditLogger auditLogger) {
+        return new PhasePacketServiceImpl(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, metrics, auditLogger);
     }
 
     @Provides

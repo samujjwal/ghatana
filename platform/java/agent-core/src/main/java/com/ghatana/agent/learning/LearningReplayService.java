@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * @doc.type class
+ * @doc.purpose Deterministic replay scorer for learned candidates
+ * @doc.layer agent-core
+ * @doc.pattern Service
+ */
+/**
  * Deterministic replay scorer for learned candidates.
  */
 public final class LearningReplayService {

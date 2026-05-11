@@ -19,6 +19,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
+ * @doc.type class
+ * @doc.purpose Data-Cloud-backed persistence for promotion evidence
+ * @doc.layer data-cloud
+ * @doc.pattern Repository
+ */
+/**
  * Data-Cloud-backed persistence for promotion evidence.
  */
 public final class DataCloudPromotionEvidenceRepository implements PromotionEvidenceRepository {

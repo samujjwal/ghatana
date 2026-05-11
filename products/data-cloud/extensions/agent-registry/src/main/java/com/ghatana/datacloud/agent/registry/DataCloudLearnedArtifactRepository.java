@@ -21,6 +21,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
+ * @doc.type class
+ * @doc.purpose Data-Cloud-backed persistence for learned artifacts
+ * @doc.layer data-cloud
+ * @doc.pattern Repository
+ */
+/**
  * Data-Cloud-backed persistence for learned artifacts.
  */
 public final class DataCloudLearnedArtifactRepository implements LearnedArtifactRepository {

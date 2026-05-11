@@ -21,7 +21,11 @@ export function SelfMarketingFunnelPage(): React.ReactElement {
   return (
     <FeatureUnavailablePage
       featureName="Self-Marketing Funnel"
-      reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'} (requires dedicated funnel analytics APIs).`}
+      reason={`is currently unavailable for workspace ${workspaceId ?? 'unknown'}.`}
+      capability="dmos.self-marketing"
+      connector="Dedicated self-marketing funnel APIs"
+      productionGate="Locked until the internal tenant boundary, lead capture, consent, and funnel analytics are production-backed."
+      remediation="Use the MVP intake, consent, and reporting surfaces for production workflows while self-marketing remains gated."
     />
   );
 }

@@ -51,11 +51,14 @@ Do this in **four layers**:
 
 **Goal:** Every route has one canonical path across manifest, OpenAPI, frontend client, backend registration, and authorization registry.
 
-**Current issues to fix:**
+**Status:** ✅ Completed (tasks 0.2.2, 0.2.3, 0.2.4, 0.2.5, 0.2.6)
 
-* Manifest has `/api/v1/phase/packet`, but `RouteAuthorizationRegistry` registers `/api/v1/yappc/phase/packet`.  
-* Manifest has `/api/v1/preview/session/create`, but `RouteAuthorizationRegistry` registers `/api/v1/yappc/preview/session/create`.  
-* Manifest has `/api/v1/dashboard/actions`, but the registry shown does not register those dashboard action routes.  
+**Resolution:**
+- Fixed phase packet path drift: canonical path is `/api/v1/phase/packet`
+- Fixed preview session path drift: canonical paths are `/api/v1/preview/session/create` and `/api/v1/preview/session/validate`
+- Added dashboard action registry entries for `/api/v1/dashboard/actions`
+- Normalized path param syntax to `{param}` format across all route metadata
+- Added contract test for route parity across all layers
 
 **Implementation tasks:**
 

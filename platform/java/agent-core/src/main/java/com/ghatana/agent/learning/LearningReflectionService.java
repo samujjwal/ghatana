@@ -14,6 +14,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
+ * @doc.type class
+ * @doc.purpose Converts turn outcomes into bounded learning candidates
+ * @doc.layer agent-core
+ * @doc.pattern Service
+ */
+/**
  * Converts turn outcomes into bounded learning candidates.
  */
 public final class LearningReflectionService {

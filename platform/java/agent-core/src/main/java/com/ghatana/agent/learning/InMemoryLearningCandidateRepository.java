@@ -13,6 +13,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * @doc.type class
+ * @doc.purpose In-memory learning candidate repository for tests and local execution
+ * @doc.layer agent-core
+ * @doc.pattern Repository
+ */
+/**
  * In-memory learning candidate repository for tests and local execution.
  */
 public final class InMemoryLearningCandidateRepository implements LearningCandidateRepository {

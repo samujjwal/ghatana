@@ -10,6 +10,7 @@
 import React from 'react';
 import { DataFreshnessBadge } from '@/components/dashboard/DataFreshnessBadge';
 import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
+import { formatDateTime } from '@/lib/i18n/format';
 
 interface ConnectorHealth {
   name: string;
@@ -124,7 +125,7 @@ export function ConnectorHealthWidget({
                   ) : null}
                   {connector.lastSync ? (
                     <p className="text-[11px] text-gray-500">
-                      Last sync: {new Date(connector.lastSync).toLocaleString()}
+                      Last sync: {formatDateTime(connector.lastSync)}
                     </p>
                   ) : null}
                 </div>

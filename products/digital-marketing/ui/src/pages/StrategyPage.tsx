@@ -15,6 +15,7 @@ import { AIProvenancePanel } from '@/components/AIProvenancePanel';
 import { PageStateNotice } from '@/components/PageStateNotice';
 import { ApiError } from '@/lib/http-client';
 import { canPerformAction } from '@/lib/action-permissions';
+import { formatCurrency, formatDateTime } from '@/lib/i18n/format';
 import {
   useStrategy,
   useGenerateStrategy,
@@ -403,7 +404,7 @@ export function StrategyPage(): React.ReactElement {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500">Budget Cap</p>
-              <p className="text-lg font-medium">${strategy.budgetCap.toLocaleString()}</p>
+              <p className="text-lg font-medium">{formatCurrency(strategy.budgetCap)}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Model Version</p>
@@ -441,7 +442,7 @@ export function StrategyPage(): React.ReactElement {
                       <TableRow key={idx} className="border-t">
                         <TableCell className="px-4 py-2">{p.channelType}</TableCell>
                         <TableCell className="px-4 py-2">{p.objective}</TableCell>
-                        <TableCell className="px-4 py-2">${p.estimatedBudget.toLocaleString()}</TableCell>
+                        <TableCell className="px-4 py-2">{formatCurrency(p.estimatedBudget)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -505,9 +506,9 @@ export function StrategyPage(): React.ReactElement {
           entityId={strategy.strategyId}
           snapshotLines={[
             `Goals: ${strategy.goals.length}`,
-            `Budget cap: $${strategy.budgetCap.toLocaleString()}`,
+            `Budget cap: ${formatCurrency(strategy.budgetCap)}`,
             `Status: ${strategy.status}`,
-            `Generated: ${strategy.generatedAt ? new Date(strategy.generatedAt).toLocaleString() : '—'}`,
+            `Generated: ${formatDateTime(strategy.generatedAt, { fallback: '—' })}`,
           ]}
           isPending={isApproving}
           onConfirm={(comment) => {

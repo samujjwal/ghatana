@@ -30,6 +30,9 @@ dependencies {
     implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
+    // YAPPC facades
+    implementation(project(":products:yappc:core:yappc-facades"))
+
     // YAPPC agents runtime (for AepEventPublisher)
     implementation(project(":products:yappc:core:agents:runtime"))
     implementation(project(":products:yappc:core:agents"))

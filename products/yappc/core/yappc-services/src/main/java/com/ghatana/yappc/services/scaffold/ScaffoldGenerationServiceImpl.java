@@ -57,7 +57,7 @@ public final class ScaffoldGenerationServiceImpl implements ScaffoldGenerationSe
         PackRenderingResult renderResult = templateService.renderPack(packMetadata, variables);
         if (!renderResult.success()) {
             errors.addAll(renderResult.errors());
-            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings);
+            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings, false, List.of());
         }
         warnings.addAll(renderResult.warnings());
 
@@ -82,7 +82,7 @@ public final class ScaffoldGenerationServiceImpl implements ScaffoldGenerationSe
             log.warn("Scaffold generation failed: packId={}, errors={}", packMetadata.packId(), errors);
         }
 
-        return new ScaffoldGenerationResult(success, scaffoldId, outputLocation, generatedFiles, errors, warnings);
+        return new ScaffoldGenerationResult(success, scaffoldId, outputLocation, generatedFiles, errors, warnings, false, List.of());
     }
 
     @Override
@@ -96,7 +96,7 @@ public final class ScaffoldGenerationServiceImpl implements ScaffoldGenerationSe
         PackValidationResult validationResult = validationService.validatePack(packMetadata);
         if (!validationResult.isValid()) {
             errors.addAll(validationResult.errors());
-            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings);
+            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings, false, List.of());
         }
         warnings.addAll(validationResult.warnings());
 
@@ -104,26 +104,78 @@ public final class ScaffoldGenerationServiceImpl implements ScaffoldGenerationSe
         DependencyResolutionResult dependencyResult = dependencyService.resolveDependencies(packMetadata);
         if (!dependencyResult.success()) {
             errors.addAll(dependencyResult.errors());
-            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings);
+            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings, false, List.of());
         }
         warnings.addAll(dependencyResult.warnings());
 
         // Check for circular dependencies
         if (dependencyService.hasCircularDependencies(packMetadata)) {
             errors.add("Circular dependencies detected");
-            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings);
+            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings, false, List.of());
         }
 
         // Validate compatibility
         DependencyValidationResult compatibilityResult = dependencyService.validateCompatibility(packMetadata);
         if (!compatibilityResult.isValid()) {
             errors.addAll(compatibilityResult.incompatibilities());
-            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings);
+            return new ScaffoldGenerationResult(false, null, outputLocation, List.of(), errors, warnings, false, List.of());
         }
         warnings.addAll(compatibilityResult.warnings());
 
         // Generate scaffold
         return generateScaffold(packMetadata, variables, outputLocation);
+    }
+
+    @Override
+    public ScaffoldGenerationResult generateScaffoldDryRun(PackMetadata packMetadata, Map<String, Object> variables, String outputLocation) {
+        log.info("Generating scaffold dry-run: packId={}", packMetadata.packId());
+        // For dry-run, we generate without writing files
+        ScaffoldGenerationResult result = generateScaffold(packMetadata, variables, outputLocation);
+        return new ScaffoldGenerationResult(
+            result.success(),
+            result.scaffoldId(),
+            result.outputLocation(),
+            result.generatedFiles(),
+            result.errors(),
+            result.warnings(),
+            true,
+            List.of()
+        );
+    }
+
+    @Override
+    public ScaffoldGenerationResult generateScaffoldWithValidationDryRun(PackMetadata packMetadata, Map<String, Object> variables, String outputLocation) {
+        log.info("Generating scaffold with validation dry-run: packId={}", packMetadata.packId());
+        // For dry-run, we validate and generate without writing files
+        ScaffoldGenerationResult result = generateScaffoldWithValidation(packMetadata, variables, outputLocation);
+        return new ScaffoldGenerationResult(
+            result.success(),
+            result.scaffoldId(),
+            result.outputLocation(),
+            result.generatedFiles(),
+            result.errors(),
+            result.warnings(),
+            true,
+            List.of()
+        );
+    }
+
+    @Override
+    public ScaffoldGenerationResult addFeatureToProject(String projectPath, String featureName, Map<String, Object> variables, boolean dryRun) {
+        log.info("Adding feature to project: projectPath={}, featureName={}, dryRun={}", projectPath, featureName, dryRun);
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        warnings.add("Feature addition not yet implemented");
+        return new ScaffoldGenerationResult(false, null, projectPath, List.of(), errors, warnings, dryRun, List.of());
+    }
+
+    @Override
+    public ScaffoldGenerationResult updateScaffoldProject(String projectPath, Map<String, Object> variables, boolean dryRun) {
+        log.info("Updating scaffold project: projectPath={}, dryRun={}", projectPath, dryRun);
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        warnings.add("Scaffold update not yet implemented");
+        return new ScaffoldGenerationResult(false, null, projectPath, List.of(), errors, warnings, dryRun, List.of());
     }
 
     private String calculateChecksum(String content) {

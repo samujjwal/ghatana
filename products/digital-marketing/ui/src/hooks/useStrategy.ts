@@ -16,6 +16,7 @@ import {
   submitStrategyForApproval,
   approveStrategy,
 } from '@/api/strategy';
+import { useIdempotencyKeys } from '@/hooks/useIdempotencyKeys';
 import type { MarketingStrategy, GenerateStrategyRequest } from '@/types/strategy';
 
 export function useStrategy(workspaceId: string | null): {
@@ -55,14 +56,15 @@ export function useGenerateStrategy(
   error: Error | null;
 } {
   const queryClient = useQueryClient();
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('strategy:generate');
 
-  const mutation = useMutation<MarketingStrategy, Error, GenerateStrategyRequest>({
-    mutationFn: (body) => {
-      // P1-022: Generate idempotency key at mutation start
-      const idempotencyKey = crypto.randomUUID();
+  const mutation = useMutation<MarketingStrategy, Error, { body: GenerateStrategyRequest; intentParts: readonly unknown[] }>({
+    mutationFn: ({ body, intentParts }) => {
+      const idempotencyKey = getIdempotencyKey(intentParts);
       return generateStrategy(workspaceId!, body, idempotencyKey);
     },
-    onSuccess: () => {
+    onSuccess: (_strategy, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       // P1-032: Invalidate strategy and AI action log queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
@@ -73,7 +75,10 @@ export function useGenerateStrategy(
   });
 
   return {
-    generate: mutation.mutateAsync,
+    generate: (body) => {
+      const intentParts = [workspaceId, body];
+      return mutation.mutateAsync({ body, intentParts });
+    },
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -90,14 +95,15 @@ export function useSubmitStrategyApproval(
   error: Error | null;
 } {
   const queryClient = useQueryClient();
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('strategy:submit-approval');
 
-  const mutation = useMutation<MarketingStrategy, Error, string>({
-    mutationFn: (strategyId) => {
-      // P1-022: Generate idempotency key at mutation start
-      const idempotencyKey = crypto.randomUUID();
+  const mutation = useMutation<MarketingStrategy, Error, { strategyId: string; intentParts: readonly unknown[] }>({
+    mutationFn: ({ strategyId, intentParts }) => {
+      const idempotencyKey = getIdempotencyKey(intentParts);
       return submitStrategyForApproval(workspaceId!, strategyId, idempotencyKey);
     },
-    onSuccess: () => {
+    onSuccess: (_strategy, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       // P1-032: Invalidate strategy and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
@@ -108,7 +114,10 @@ export function useSubmitStrategyApproval(
   });
 
   return {
-    submit: mutation.mutateAsync,
+    submit: (strategyId) => {
+      const intentParts = [workspaceId, strategyId];
+      return mutation.mutateAsync({ strategyId, intentParts });
+    },
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -125,13 +134,15 @@ export function useApproveStrategy(
   error: Error | null;
 } {
   const queryClient = useQueryClient();
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('strategy:approve');
 
-  const mutation = useMutation<MarketingStrategy, Error, { strategyId: string; auditComment?: string }>({
-    mutationFn: ({ strategyId, auditComment }) => {
-      const idempotencyKey = crypto.randomUUID();
+  const mutation = useMutation<MarketingStrategy, Error, { strategyId: string; auditComment?: string; intentParts: readonly unknown[] }>({
+    mutationFn: ({ strategyId, auditComment, intentParts }) => {
+      const idempotencyKey = getIdempotencyKey(intentParts);
       return approveStrategy(workspaceId!, strategyId, idempotencyKey, auditComment);
     },
-    onSuccess: () => {
+    onSuccess: (_strategy, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
@@ -141,7 +152,10 @@ export function useApproveStrategy(
   });
 
   return {
-    approve: (strategyId, auditComment) => mutation.mutateAsync({ strategyId, auditComment }),
+    approve: (strategyId, auditComment) => {
+      const intentParts = [workspaceId, strategyId, auditComment ?? ''];
+      return mutation.mutateAsync({ strategyId, auditComment, intentParts });
+    },
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,

@@ -68,7 +68,7 @@ class DmosLargeDataIT extends EventloopTestBase {
         try (var conn = POSTGRES.createConnection("")) {
             conn.createStatement().executeUpdate(
                     "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES " +
-                    "('" + PERF_WORKSPACE + "','perf-tenant','perf-ws','ACTIVE',NOW(),NOW(),'perf')"
+                    "('" + PERF_WORKSPACE + "','__legacy_unspecified_tenant__','perf-ws','ACTIVE',NOW(),NOW(),'perf')"
             );
         }
 
@@ -85,7 +85,7 @@ class DmosLargeDataIT extends EventloopTestBase {
             var stmt = conn.prepareStatement(
                     "INSERT INTO dmos_campaigns " +
                     "(id, workspace_id, tenant_id, name, status, type, created_at, updated_at, created_by) " +
-                    "VALUES (?, ?, 'perf-tenant', ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user')"
+                    "VALUES (?, ?, '__legacy_unspecified_tenant__', ?, 'DRAFT', 'EMAIL', NOW(), NOW(), 'perf-user')"
             );
             for (int i = 0; i < TOTAL_ROWS; i++) {
                 stmt.setString(1, "perf-camp-" + i);

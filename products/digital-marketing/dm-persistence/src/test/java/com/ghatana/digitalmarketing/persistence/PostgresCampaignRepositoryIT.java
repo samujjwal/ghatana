@@ -59,13 +59,13 @@ class PostgresCampaignRepositoryIT extends EventloopTestBase {
         try (var conn = POSTGRES.createConnection("")) {
             conn.createStatement().executeUpdate(
                 "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES " +
-                "('ws-alpha','test-tenant','ws-alpha','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-beta','test-tenant','ws-beta','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-gamma','test-tenant','ws-gamma','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-delta','test-tenant','ws-delta','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-one','test-tenant','ws-one','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-two','test-tenant','ws-two','ACTIVE',NOW(),NOW(),'test')," +
-                "('ws-ts','test-tenant','ws-ts','ACTIVE',NOW(),NOW(),'test') " +
+                "('ws-alpha','__legacy_unspecified_tenant__','ws-alpha','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-beta','__legacy_unspecified_tenant__','ws-beta','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-gamma','__legacy_unspecified_tenant__','ws-gamma','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-delta','__legacy_unspecified_tenant__','ws-delta','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-one','__legacy_unspecified_tenant__','ws-one','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-two','__legacy_unspecified_tenant__','ws-two','ACTIVE',NOW(),NOW(),'test')," +
+                "('ws-ts','__legacy_unspecified_tenant__','ws-ts','ACTIVE',NOW(),NOW(),'test') " +
                 "ON CONFLICT (id) DO NOTHING"
             );
         } catch (Exception e) {

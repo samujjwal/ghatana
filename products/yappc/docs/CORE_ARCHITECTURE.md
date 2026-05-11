@@ -5,6 +5,13 @@
 **Phase:** BDY-5 (Boundary Implementation Plan)  
 **Status:** ✅ Well-decomposed — 18 Gradle submodules covering 5 domain concerns
 
+## Source of Truth
+
+**Architecture:** `ARCHITECTURE.md` - Canonical system architecture  
+**Module Catalog:** `MODULE_CATALOG.md` - Authoritative active/retired module inventory  
+**Routes:** `api/route-manifest.yaml` - Source of truth for all API routes  
+**Security:** `SECURITY.md` - Authentication and authorization policy
+
 ---
 
 ## Overview

@@ -11,6 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Validates custom agent definitions for registered subtype and schema metadata
+ * @doc.layer agent-core
+ * @doc.pattern Validator
+ */
 public final class CustomAgentValidator implements AgentTypeSpecificValidator {
     @Override
     public List<String> validate(AgentDefinition definition) {

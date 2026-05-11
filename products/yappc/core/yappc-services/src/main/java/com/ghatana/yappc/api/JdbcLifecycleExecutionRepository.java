@@ -142,7 +142,7 @@ public final class JdbcLifecycleExecutionRepository implements LifecycleExecutio
                 ResultSet rs = ps.executeQuery();
 
                 if (rs.next()) {
-                    return mapRowToExecution(rs);
+                    return mapRowToLifecycleExecution(rs);
                 }
                 return null;
             } catch (SQLException e) {
@@ -169,7 +169,7 @@ public final class JdbcLifecycleExecutionRepository implements LifecycleExecutio
                 ResultSet rs = ps.executeQuery();
                 List<LifecycleExecution> results = new ArrayList<>();
                 while (rs.next()) {
-                    results.add(mapRowToExecution(rs));
+                    results.add(mapRowToLifecycleExecution(rs));
                 }
                 return results;
             } catch (SQLException e) {
@@ -180,7 +180,8 @@ public final class JdbcLifecycleExecutionRepository implements LifecycleExecutio
         });
     }
 
-    private LifecycleExecution mapRowToExecution(ResultSet rs) throws SQLException {
+    @SuppressWarnings("unchecked")
+    private LifecycleExecution mapRowToLifecycleExecution(ResultSet rs) throws SQLException {
         try {
             return new LifecycleExecution(
                 rs.getString("execution_id"),

@@ -8,6 +8,7 @@
 import React, { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { decideApproval } from '@/api/approvals';
+import { useIdempotencyKeys } from '@/hooks/useIdempotencyKeys';
 import { ApiError } from '@/lib/http-client';
 import type { ApprovalDecision } from '@/types/approval';
 import {
@@ -38,17 +39,22 @@ export const DecideDialog: React.FC<DecideDialogProps> = ({
   const [decision, setDecision] = useState<ApprovalDecision>('APPROVE');
   const [comment, setComment] = useState('');
   const queryClient = useQueryClient();
+  const { getIdempotencyKey, clearIdempotencyKey } = useIdempotencyKeys('approval:decision');
 
   const mutation = useMutation({
-    mutationFn: () => {
-      // P1-022: Generate idempotency key at mutation start
-      const idempotencyKey = crypto.randomUUID();
+    mutationFn: ({
+      decision: submittedDecision,
+      notes,
+      intentParts,
+    }: { decision: ApprovalDecision; notes?: string; intentParts: readonly unknown[] }) => {
+      const idempotencyKey = getIdempotencyKey(intentParts);
       return decideApproval(workspaceId, requestId, {
-        decision,
-        notes: comment.trim() || undefined,
+        decision: submittedDecision,
+        notes,
       }, idempotencyKey);
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
+      clearIdempotencyKey(variables.intentParts);
       await queryClient.invalidateQueries({
         queryKey: ['approvals'],
       });
@@ -62,7 +68,12 @@ export const DecideDialog: React.FC<DecideDialogProps> = ({
     (e: React.FormEvent) => {
       e.preventDefault();
       if (canSubmit) {
-        mutation.mutate();
+        const notes = comment.trim() || undefined;
+        mutation.mutate({
+          decision,
+          notes,
+          intentParts: [workspaceId, requestId, decision, notes ?? ''],
+        });
       }
     },
     [canSubmit, mutation],

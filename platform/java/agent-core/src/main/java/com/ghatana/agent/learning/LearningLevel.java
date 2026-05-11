@@ -5,6 +5,12 @@
 package com.ghatana.agent.learning;
 
 /**
+ * @doc.type enum
+ * @doc.purpose Declared learning authority for an agent release
+ * @doc.layer agent-core
+ * @doc.pattern Enumeration
+ */
+/**
  * Declared learning authority for an agent release.
  */
 public enum LearningLevel {

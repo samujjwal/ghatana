@@ -240,6 +240,7 @@ public final class DmosApiServer extends Launcher {
             "DATABASE_URL",
             "DMOS_PII_HMAC_KEY",
             "DMOS_CONTACT_ENCRYPTION_KEY",
+            "DMOS_OPA_URL",
         };
 
         for (String var : requiredVars) {
@@ -249,6 +250,22 @@ public final class DmosApiServer extends Launcher {
                     "Required environment variable not set for production: " + var
                 );
             }
+        }
+
+        String otelEndpoint = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
+        String legacyOtelEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
+        if ((otelEndpoint == null || otelEndpoint.isBlank())
+            && (legacyOtelEndpoint == null || legacyOtelEndpoint.isBlank())) {
+            throw new IllegalStateException(
+                "OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_COLLECTOR_ENDPOINT is required for production telemetry"
+            );
+        }
+
+        String governedAiEnabled = System.getenv("DMOS_GOVERNED_AI_ENABLED");
+        if ("false".equalsIgnoreCase(governedAiEnabled)) {
+            throw new IllegalStateException(
+                "DMOS_GOVERNED_AI_ENABLED=false is not allowed in production. Governed AI artifact workflow is mandatory."
+            );
         }
 
         LOG.info("Production requirements validated successfully");
@@ -295,7 +312,7 @@ public final class DmosApiServer extends Launcher {
             } catch (Exception exception) {
                 LOG.error("Failed to start DMOS API server", exception);
                 shutdownLatch.countDown();
-                System.exit(1);
+                throw new RuntimeException("Failed to start DMOS API server", exception);
             }
         });
         eventloop.run();
@@ -313,8 +330,9 @@ public final class DmosApiServer extends Launcher {
         AsyncServlet budget = get(DmosBudgetRecommendationServlet.class).getServlet();
         AsyncServlet audit = get(DmosWebsiteAuditServlet.class).getServlet();
         AsyncServlet consent = get(DmosConsentServlet.class).getServlet();
+        AsyncServlet boundaryReporting = get(DmosBoundaryReportingServlet.class).getServlet();
 
-        return request -> {
+        AsyncServlet routed = request -> {
             String path = request.getPath();
             if (request.getMethod() == HttpMethod.OPTIONS) {
                 return Promise.of(corsPreflight(request.getHeader(HttpHeaders.of("Origin"))));
@@ -341,6 +359,8 @@ public final class DmosApiServer extends Launcher {
                     response = strategy.serve(request);
                 } else if (path.contains("/budget")) {
                     response = budget.serve(request);
+                } else if (path.contains("/funnel-analytics") || path.contains("/attribution") || path.contains("/roi-roas")) {
+                    response = boundaryReporting.serve(request);
                 } else if (path.contains("/audit")) {
                     response = audit.serve(request);
                 } else if (path.contains("/consent") || path.contains("/suppression") || path.contains("/unsubscribe")) {
@@ -355,6 +375,10 @@ public final class DmosApiServer extends Launcher {
                 return Promise.ofException(e);
             }
         };
+        if (usePostgres()) {
+            return get(com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware.class).wrap(routed);
+        }
+        return routed;
     }
 
     private static HttpResponse corsPreflight(String origin) {
@@ -517,6 +541,9 @@ public final class DmosApiServer extends Launcher {
                 collectorEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
             }
             if (collectorEndpoint == null || collectorEndpoint.isBlank()) {
+                if (environment.equals(PRODUCTION)) {
+                    throw new IllegalStateException("Production telemetry endpoint is required");
+                }
                 collectorEndpoint = "http://localhost:4317";
             }
             tracingManager = TracingManager.createDefault("dmos-api", "1.0.0", collectorEndpoint);
@@ -934,7 +961,7 @@ public final class DmosApiServer extends Launcher {
             if (governedEnabled) {
                 String kernelEndpoint = System.getenv("DMOS_KERNEL_AGENT_ENDPOINT");
                 if (kernelEndpoint == null || kernelEndpoint.isBlank()) {
-                    kernelEndpoint = "http://localhost:8080";
+                    throw new IllegalStateException("DMOS_KERNEL_AGENT_ENDPOINT is required for production governed AI");
                 }
                 KernelAgentOrchestrationAdapter agentPort =
                     new KernelAgentOrchestrationAdapter(kernelEndpoint, true);
@@ -944,7 +971,7 @@ public final class DmosApiServer extends Launcher {
                     new AiPolicyCheckServiceImpl()
                 );
             } else {
-                LOG.warn("[PRODUCTION] Governed AI workflow disabled via DMOS_GOVERNED_AI_ENABLED=false; strategy generation will use deterministic fallback");
+                throw new IllegalStateException("Governed AI workflow cannot be disabled in production");
             }
         }
         StrategyGeneratorService strategyService = new StrategyGeneratorServiceImpl(
@@ -1037,6 +1064,7 @@ public final class DmosApiServer extends Launcher {
 
         WebsiteAuditService websiteAuditService = get(WebsiteAuditService.class);
         register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop, httpContextFactory));
+        register(DmosBoundaryReportingServlet.class, new DmosBoundaryReportingServlet(eventloop, httpContextFactory));
 
         if (usePostgres()) {
             DataSource dataSource = get(DataSource.class);
@@ -1074,8 +1102,7 @@ public final class DmosApiServer extends Launcher {
             return new OpaAuthorizationService(circuitBreakingEngine);
         }
         if (environment.equals(PRODUCTION)) {
-            LOG.warn("[PRODUCTION] DMOS_OPA_URL not configured; authorization will use allowAll. " +
-                "Set DMOS_OPA_URL to enable real OPA-backed policy enforcement.");
+            throw new IllegalStateException("DMOS_OPA_URL is required in production; allow-all authorization is not permitted.");
         } else {
             LOG.info("[{}] Using allowAll authorization for development (set DMOS_OPA_URL for OPA)", environment);
         }
@@ -1088,8 +1115,7 @@ public final class DmosApiServer extends Launcher {
      */
     private BridgeAuditEmitter createAuditEmitter() {
         if (environment.equals(PRODUCTION)) {
-            LOG.warn("[PRODUCTION] Kernel bridge audit emitter not configured; using noOp. Enable via DMOS_KERNEL_AUDIT_ENABLED.");
-            return BridgeAuditEmitter.noOp();
+            throw new IllegalStateException("Production audit emitter is not configured; no-op audit is not permitted.");
         }
         LOG.info("[{}] Using noOp audit emitter for development", environment);
         return BridgeAuditEmitter.noOp();

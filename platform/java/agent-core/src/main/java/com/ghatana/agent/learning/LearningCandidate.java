@@ -8,6 +8,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type record
+ * @doc.purpose Proposed learned artifact awaiting evaluation and promotion
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
 public record LearningCandidate(
         String candidateId,
         String agentId,

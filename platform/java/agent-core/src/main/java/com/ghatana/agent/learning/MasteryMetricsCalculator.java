@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @doc.type class
+ * @doc.purpose Calculates mastery indicators from execution results and learned artifacts
+ * @doc.layer agent-core
+ * @doc.pattern Service
+ */
+/**
  * Calculates mastery indicators from execution results and learned artifacts.
  */
 public final class MasteryMetricsCalculator {

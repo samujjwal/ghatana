@@ -15,6 +15,7 @@ import { AIProvenancePanel } from '@/components/AIProvenancePanel';
 import { PageStateNotice } from '@/components/PageStateNotice';
 import { ApiError } from '@/lib/http-client';
 import { canPerformAction } from '@/lib/action-permissions';
+import { formatCurrency, formatPercent } from '@/lib/i18n/format';
 import {
   useBudgetRecommendation,
   useGenerateBudget,
@@ -247,11 +248,11 @@ export function BudgetPage(): React.ReactElement {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-500">Total Monthly Cap</p>
-              <p className="text-lg font-medium">${recommendation.totalMonthlyCap.toLocaleString()}</p>
+              <p className="text-lg font-medium">{formatCurrency(recommendation.totalMonthlyCap)}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Change Threshold</p>
-              <p className="text-lg font-medium">{recommendation.changeThresholdPct}%</p>
+              <p className="text-lg font-medium">{formatPercent(recommendation.changeThresholdPct)}</p>
             </div>
           </div>
 
@@ -272,8 +273,8 @@ export function BudgetPage(): React.ReactElement {
                     {recommendation.channelAllocations.map((a: ChannelAllocation, idx: number) => (
                       <TableRow key={idx} className="border-t">
                         <TableCell className="px-4 py-2">{a.channelType}</TableCell>
-                        <TableCell className="px-4 py-2">${a.recommendedAmount.toLocaleString()}</TableCell>
-                        <TableCell className="px-4 py-2">${a.dailyCap.toLocaleString()}</TableCell>
+                        <TableCell className="px-4 py-2">{formatCurrency(a.recommendedAmount)}</TableCell>
+                        <TableCell className="px-4 py-2">{formatCurrency(a.dailyCap)}</TableCell>
                         <TableCell className="px-4 py-2 text-gray-600">{a.rationale}</TableCell>
                       </TableRow>
                     ))}
@@ -322,8 +323,8 @@ export function BudgetPage(): React.ReactElement {
           entityLabel="Budget Recommendation"
           entityId={recommendation.recommendationId}
           snapshotLines={[
-            `Total monthly cap: $${recommendation.totalMonthlyCap.toLocaleString()}`,
-            `Change threshold: ${recommendation.changeThresholdPct}%`,
+            `Total monthly cap: ${formatCurrency(recommendation.totalMonthlyCap)}`,
+            `Change threshold: ${formatPercent(recommendation.changeThresholdPct)}`,
             `Status: ${recommendation.status}`,
           ]}
           isPending={isApproving}

@@ -9,6 +9,12 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * @doc.type interface
+ * @doc.purpose Optional observer for governed lifecycle phase traces
+ * @doc.layer agent-core
+ * @doc.pattern FunctionalInterface
+ */
+/**
  * Optional observer for governed lifecycle phase traces.
  */
 @FunctionalInterface

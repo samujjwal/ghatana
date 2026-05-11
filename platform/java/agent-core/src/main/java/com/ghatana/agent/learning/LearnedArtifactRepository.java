@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * @doc.type interface
+ * @doc.purpose Durable store for evaluated and promotable learned artifacts
+ * @doc.layer agent-core
+ * @doc.pattern Repository
+ */
+/**
  * Durable store for evaluated and promotable learned artifacts.
  */
 public interface LearnedArtifactRepository {

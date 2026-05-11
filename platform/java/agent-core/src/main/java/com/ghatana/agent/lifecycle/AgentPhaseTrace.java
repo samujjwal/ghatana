@@ -10,6 +10,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
+ * @doc.type record
+ * @doc.purpose Immutable trace entry for one lifecycle phase
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * Immutable trace entry for one lifecycle phase.
  */
 public record AgentPhaseTrace(

@@ -10,6 +10,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { StrategyPage } from '@/pages/StrategyPage';
 import type { MarketingStrategy } from '@/types/strategy';
@@ -83,21 +84,23 @@ function renderPage(
   roles: string[] = ['brand-manager'],
 ): void {
   render(
-    <QueryClientProvider client={buildQueryClient()}>
-      <AuthProvider
-        initialToken={token}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialRoles={roles}
-      >
-        <MemoryRouter initialEntries={['/workspaces/ws-1/strategy']}>
-          <Routes>
-            <Route path="/login" element={<div data-testid="login-page" />} />
-            <Route path="/workspaces/:workspaceId/strategy" element={<StrategyPage />} />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken={token}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialRoles={roles}
+        >
+          <MemoryRouter initialEntries={['/workspaces/ws-1/strategy']}>
+            <Routes>
+              <Route path="/login" element={<div data-testid="login-page" />} />
+              <Route path="/workspaces/:workspaceId/strategy" element={<StrategyPage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 

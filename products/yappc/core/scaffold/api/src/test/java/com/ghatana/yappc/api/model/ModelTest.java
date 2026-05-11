@@ -206,8 +206,8 @@ class ModelTest {
             );
 
             assertThat(conflict.dependencyName()).isEqualTo("slf4j-api");
-            assertThat(conflict.type()).isEqualTo(ConflictInfo.ConflictType.VERSION_MISMATCH); 
-            assertThat(conflict.resolution()).contains("2.0.0");
+            assertThat(conflict.type()).isEqualTo(ConflictInfo.ConflictType.VERSION_MISMATCH);
+            assertThat(conflict.resolution().recommendedVersion()).contains("2.0.0");
         }
     }
 }

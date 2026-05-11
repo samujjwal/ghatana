@@ -13,6 +13,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * @doc.type class
+ * @doc.purpose In-memory promotion evidence repository for tests and local execution
+ * @doc.layer agent-core
+ * @doc.pattern Repository
+ */
+/**
  * In-memory promotion evidence repository for tests and local execution.
  */
 public final class InMemoryPromotionEvidenceRepository implements PromotionEvidenceRepository {

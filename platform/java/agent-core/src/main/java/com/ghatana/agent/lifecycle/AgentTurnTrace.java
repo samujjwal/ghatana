@@ -10,6 +10,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
+ * @doc.type record
+ * @doc.purpose Trace envelope for one governed agent turn
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * Trace envelope for one governed agent turn.
  */
 public record AgentTurnTrace(

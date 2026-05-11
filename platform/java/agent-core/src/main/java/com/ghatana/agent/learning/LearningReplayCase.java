@@ -7,6 +7,12 @@ package com.ghatana.agent.learning;
 import java.util.Map;
 
 /**
+ * @doc.type record
+ * @doc.purpose One offline replay/evaluation case for a learned candidate
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * One offline replay/evaluation case for a learned candidate.
  */
 public record LearningReplayCase(

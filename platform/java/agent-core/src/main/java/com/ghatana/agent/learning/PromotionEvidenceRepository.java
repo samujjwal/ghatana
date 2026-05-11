@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * @doc.type interface
+ * @doc.purpose Durable store for evidence that justifies promoting a learned artifact
+ * @doc.layer agent-core
+ * @doc.pattern Repository
+ */
+/**
  * Durable store for evidence that justifies promoting a learned artifact.
  */
 public interface PromotionEvidenceRepository {

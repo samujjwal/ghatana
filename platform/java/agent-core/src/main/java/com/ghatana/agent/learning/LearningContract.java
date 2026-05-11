@@ -7,6 +7,12 @@ package com.ghatana.agent.learning;
 import java.util.Set;
 
 /**
+ * @doc.type record
+ * @doc.purpose Declares what an agent may learn and which targets it may propose changes for
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * Declares what an agent may learn and which targets it may propose changes for.
  */
 public record LearningContract(

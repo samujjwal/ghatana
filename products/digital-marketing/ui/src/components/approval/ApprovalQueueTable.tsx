@@ -10,6 +10,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { ApprovalRecordResponse } from '@/types/approval';
+import { formatDate } from '@/lib/i18n/format';
 import { Badge, Table, TableHead, TableBody, TableRow, TableCell } from '@ghatana/design-system';
 
 interface ApprovalQueueTableProps {
@@ -85,7 +86,7 @@ export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
                 {a.submittedBy}
               </TableCell>
               <TableCell className="py-2 pr-4 text-xs text-gray-500">
-                {new Date(a.submittedAt).toLocaleDateString()}
+                {formatDate(a.submittedAt)}
               </TableCell>
               <TableCell className="py-2">
                 <Link

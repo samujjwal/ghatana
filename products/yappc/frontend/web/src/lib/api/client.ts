@@ -35,12 +35,16 @@ import { authService } from '@/services/auth/AuthService';
 import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
 
 // Task 3.2.2: Import OpenAPI-generated client for adapter layer
-import { OpenAPI, AuthService as GeneratedAuthService } from '../../clients/generated/api';
+import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService } from '../../clients/generated/api';
 import type {
   LoginRequest as GeneratedLoginRequestType,
   LoginResponse as GeneratedLoginResponseType,
   RefreshTokenRequest,
   LogoutResponse,
+  Workspace as GeneratedWorkspace,
+  Project as GeneratedProject,
+  CreateWorkspaceRequest as GeneratedCreateWorkspaceRequest,
+  UpdateWorkspaceRequest as GeneratedUpdateWorkspaceRequest,
 } from '../../clients/generated/api';
 
 // Task 3.2.2: Configure OpenAPI client for cookie-session mode
@@ -354,7 +358,7 @@ async function putScoped<TBody, TResult>(
 export { getScoped, postScoped, patchScoped, putScoped };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Auth  (/api/auth/*)
+// Auth  (/api/auth/*) - Adapter layer delegating to generated client (task 3.2.2)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
@@ -397,23 +401,84 @@ export interface UserProfile {
   tenantId: string;
 }
 
+// Task 3.2.2: Adapter functions to bridge between generated client and existing types
+function adaptLoginRequest(request: LoginRequest): GeneratedLoginRequestType {
+  return { email: request.email, password: request.password };
+}
+
+function adaptLoginResponse(response: GeneratedLoginResponseType): LoginSessionResponse {
+  // Generated client returns cookie-session response with user and session info
+  // For backward compatibility, construct a token response from session info
+  const expiresIn = response.session?.expiresAt 
+    ? Math.floor((new Date(response.session.expiresAt).getTime() - Date.now()) / 1000)
+    : 3600;
+  
+  return {
+    user: {
+      id: response.user?.id || '',
+      email: response.user?.email || '',
+      name: response.user?.name || '',
+      firstName: response.user?.firstName,
+      lastName: response.user?.lastName,
+      avatar: response.user?.avatar,
+      avatarUrl: response.user?.avatarUrl,
+      tenantId: response.user?.tenantId,
+      workspaceIds: response.user?.workspaceIds,
+      roles: response.user?.roles,
+      role: (response.user?.role || 'VIEWER') as 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER',
+    },
+    tokens: {
+      accessToken: '', // Cookie-session mode: no access token in response
+      refreshToken: '', // Cookie-session mode: no refresh token in response
+      expiresIn,
+    },
+  };
+}
+
 export const auth = {
-  login: (body: LoginRequest) =>
-    post<LoginRequest, LoginSessionResponse>('/api/auth/login', body, 'auth.login'),
-  loginSession: (body: LoginRequest) =>
-    post<LoginRequest, LoginSessionResponse>('/api/auth/login', body, 'auth.loginSession'),
-  refresh: () => post<Record<string, never>, AuthTokenResponse>('/api/auth/refresh', {}, 'auth.refresh'),
-  logout: () => post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout'),
+  // Task 3.2.2: Delegate to generated client
+  login: (body: LoginRequest): Promise<LoginSessionResponse> => {
+    const generatedRequest = adaptLoginRequest(body);
+    return GeneratedAuthService.login(generatedRequest).then(adaptLoginResponse);
+  },
+  // Task 3.2.2: Alias for login (backward compatibility)
+  loginSession: (body: LoginRequest): Promise<LoginSessionResponse> => {
+    return auth.login(body);
+  },
+  // Task 3.2.2: For cookie-session mode, refresh is handled via cookies
+  // Keep existing implementation until generated client supports cookie refresh
+  refresh: (): Promise<AuthTokenResponse> => {
+    return post<Record<string, never>, AuthTokenResponse>('/api/auth/refresh', {}, 'auth.refresh');
+  },
+  // Task 3.2.2: For cookie-session mode, logout is handled via cookies
+  // Keep existing implementation until generated client supports cookie logout
+  logout: (): Promise<void> => {
+    return post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout');
+  },
+  // Task 3.2.2: Keep existing implementation for updateProfile (not in generated client yet)
   updateProfile: (body: AuthProfileUpdateRequest) =>
     put<AuthProfileUpdateRequest, AuthProfileUpdateRequest>('/api/auth/profile', body, 'auth.updateProfile'),
+  // Task 3.2.2: Keep existing implementation for ssoCallback (not in generated client yet)
   ssoCallback: (body: { code: string; state?: string | null }) =>
     post<{ code: string; state?: string | null }, { token: string }>(
       '/api/auth/sso/callback',
       body,
       'auth.ssoCallback',
     ),
-  validate: () => get<{ valid: boolean }>('/api/auth/validate', 'auth.validate'),
-  me: () => get<UserProfile>('/api/auth/me', 'auth.me'),
+  // Task 3.2.2: Delegate to generated client for validate
+  validate: (): Promise<{ valid: boolean }> => {
+    return GeneratedAuthService.validateToken().then(response => ({ valid: response.valid || false }));
+  },
+  // Task 3.2.2: Delegate to generated client for me
+  me: (): Promise<UserProfile> => {
+    return GeneratedAuthService.currentUser().then(response => ({
+      id: response.id || '',
+      email: response.email || '',
+      name: response.name || '',
+      role: response.role || '',
+      tenantId: response.tenantId || '',
+    }));
+  },
 } as const;
 
 export interface AccountProfile {
@@ -538,33 +603,23 @@ export const errorReporting = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Workspaces  (/api/workspaces/*)
+// Workspaces  (/api/workspaces/*) - Adapter layer delegating to generated client (task 3.2.3)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface Workspace {
-  id: string;
-  name: string;
-  description?: string;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-export interface CreateWorkspaceRequest {
-  name: string;
-  description?: string;
-}
-export interface UpdateWorkspaceRequest {
-  name?: string;
-  description?: string;
-}
+// Task 3.2.3: Export generated types for backward compatibility
+export type Workspace = GeneratedWorkspace;
+export type CreateWorkspaceRequest = GeneratedCreateWorkspaceRequest;
+export type UpdateWorkspaceRequest = GeneratedUpdateWorkspaceRequest;
 
 export const workspaces = {
-  list: () => get<Workspace[]>('/api/workspaces', 'workspaces.list'),
-  get: (workspaceId: string) => get<Workspace>(`/api/workspaces/${encodeURIComponent(workspaceId)}`, 'workspaces.get'),
-  create: (body: CreateWorkspaceRequest) => post<CreateWorkspaceRequest, Workspace>('/api/workspaces', body, 'workspaces.create'),
+  // Task 3.2.3: Delegate to generated client
+  list: () => WorkspacesService.listWorkspaces(),
+  get: (workspaceId: string) => WorkspacesService.getWorkspace(workspaceId),
+  create: (body: CreateWorkspaceRequest) => WorkspacesService.createWorkspace(body),
   update: (workspaceId: string, body: UpdateWorkspaceRequest) =>
-    patch<UpdateWorkspaceRequest, Workspace>(`/api/workspaces/${encodeURIComponent(workspaceId)}`, body, 'workspaces.update'),
-  delete: (workspaceId: string) => del<void>(`/api/workspaces/${encodeURIComponent(workspaceId)}`, 'workspaces.delete'),
+    WorkspacesService.updateWorkspace(workspaceId, body),
+  delete: (workspaceId: string) => WorkspacesService.deleteWorkspace(workspaceId),
+  // Task 3.2.3: Keep existing implementation for methods not in generated client
   suggestName: () => get<{ name: string }>('/api/workspaces/suggest-name', 'workspaces.suggestName'),
   refreshAi: (workspaceId: string) =>
     post<Record<string, never>, void>(`/api/workspaces/${encodeURIComponent(workspaceId)}/refresh-ai`, {}, 'workspaces.refreshAi'),
@@ -577,39 +632,26 @@ export const workspaces = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Projects  (/api/projects/*)
+// Projects  (/api/projects/*) - Adapter layer delegating to generated client (task 3.2.3)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  workspaceId: string;
-  ownerWorkspaceId?: string;
-  type?: string;
-  status?: string;
-  lifecyclePhase?: string;
-  isDefault?: boolean;
-  aiNextActions?: string[];
-  aiHealthScore?: number;
+// Task 3.2.3: Export generated types for backward compatibility
+export type ProjectBase = GeneratedProject;
+export type CreateProjectRequest = GeneratedCreateProjectRequest;
+export type UpdateProjectRequest = GeneratedUpdateProjectRequest;
+
+// Task 3.2.3: Keep enriched Project type with frontend-specific fields for backward compatibility
+// These fields (role, isOwned, capabilities, etc.) are added by client-side enrichment
+export interface Project extends ProjectBase {
+  workspaceId: string; // Frontend convenience field derived from ownerWorkspaceId
   role?: WorkspaceRole;
   isOwned?: boolean;
   isIncluded?: boolean;
   readOnly?: boolean;
   capabilities?: ResourceCapabilities;
   currentPhase?: string;
-  createdAt: string;
-  updatedAt: string;
 }
-export interface CreateProjectRequest {
-  name: string;
-  description?: string;
-  workspaceId: string;
-}
-export interface UpdateProjectRequest {
-  name?: string;
-  description?: string;
-}
+
 export interface ProjectListResponse {
   readonly owned: Project[];
   readonly included: Project[];
@@ -765,18 +807,14 @@ function unwrapProjectResource(response: Project | ProjectResourceResponse): Pro
 }
 
 export const projects = {
-  list: (workspaceId: string) =>
-    get<ProjectListResponse | Project[]>(
-      `/api/projects${encodeQuery({ workspaceId })}`,
-      'projects.list',
-    ),
-  get: async (projectId: string) =>
-    unwrapProjectResource(
-      await get<Project | ProjectResourceResponse>(
-        `/api/projects/${encodeURIComponent(projectId)}`,
-        'projects.get',
-      ),
-    ),
+  // Task 3.2.3: Delegate to generated client for basic CRUD
+  list: (workspaceId?: string) => ProjectsService.listProjects(workspaceId || ''),
+  get: (projectId: string, workspaceId?: string) => ProjectsService.getProject(projectId, workspaceId),
+  create: (body: CreateProjectRequest) => ProjectsService.createProject(body),
+  update: (projectId: string, workspaceId: string, body: UpdateProjectRequest) =>
+    ProjectsService.updateProject(projectId, workspaceId, body),
+  delete: (projectId: string, workspaceId: string) => ProjectsService.deleteProject(projectId, workspaceId),
+  // Task 3.2.3: Keep existing implementation for methods not in generated client or requiring enrichment
   getScoped: async (projectId: string, workspaceId: string) =>
     unwrapProjectResource(
       await get<Project | ProjectResourceResponse>(
@@ -784,9 +822,6 @@ export const projects = {
         'projects.getScoped',
       ),
     ),
-  create: (body: CreateProjectRequest) => post<CreateProjectRequest, Project>('/api/projects', body, 'projects.create'),
-  update: (projectId: string, body: UpdateProjectRequest) =>
-    patch<UpdateProjectRequest, Project>(`/api/projects/${encodeURIComponent(projectId)}`, body, 'projects.update'),
   updateScoped: async (projectId: string, workspaceId: string, body: UpdateProjectRequest) => {
     // P1-9: Replace raw fetch with typed helper to maintain type safety
     const response = await patchWithHeaders<UpdateProjectRequest, Project | ProjectResourceResponse>(
@@ -797,7 +832,6 @@ export const projects = {
     );
     return unwrapProjectResource(response);
   },
-  delete: (projectId: string) => del<void>(`/api/projects/${encodeURIComponent(projectId)}`, 'projects.delete'),
   suggestName: (params?: ProjectNameSuggestionRequest) =>
     get<ProjectNameSuggestionResponse>(
       `/api/projects/suggest-name${encodeQuery({ workspaceId: params?.workspaceId, type: params?.type })}`,

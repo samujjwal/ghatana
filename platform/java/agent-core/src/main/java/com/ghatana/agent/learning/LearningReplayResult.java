@@ -8,6 +8,12 @@ import java.time.Instant;
 import java.util.List;
 
 /**
+ * @doc.type record
+ * @doc.purpose Result of replaying candidate evidence against an evaluation pack
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * Result of replaying candidate evidence against an evaluation pack.
  */
 public record LearningReplayResult(

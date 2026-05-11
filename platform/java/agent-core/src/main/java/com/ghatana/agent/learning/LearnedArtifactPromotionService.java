@@ -12,6 +12,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
+ * @doc.type class
+ * @doc.purpose Promotion state machine for learned artifacts
+ * @doc.layer agent-core
+ * @doc.pattern Service
+ */
+/**
  * Promotion state machine for learned artifacts.
  */
 public final class LearnedArtifactPromotionService {

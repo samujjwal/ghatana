@@ -10,6 +10,7 @@
  * @doc.pattern Presentational
  */
 import React, { useState } from 'react';
+import { formatDateTime } from '@/lib/i18n/format';
 
 export interface AIProvenancePanelProps {
   /** Provider/service name for the model invocation. */
@@ -49,13 +50,7 @@ export function AIProvenancePanel({
 }: AIProvenancePanelProps): React.ReactElement {
   const [open, setOpen] = useState(false);
 
-  const formattedDate = (() => {
-    try {
-      return new Date(generatedAt).toLocaleString();
-    } catch {
-      return generatedAt;
-    }
-  })();
+  const formattedDate = formatDateTime(generatedAt, { fallback: generatedAt });
 
   return (
     <div

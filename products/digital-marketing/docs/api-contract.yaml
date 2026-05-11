@@ -160,6 +160,132 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    post:
+      summary: Create a campaign
+      description: |
+        Creates a new campaign in DRAFT status. Requires idempotency key.
+      operationId: createCampaign
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Required for write operations
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - idempotency key already used
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Compliance violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/funnel-analytics:
+    get:
+      summary: Get funnel analytics
+      description: Boundary reporting route. Returns 423 until canonical analytics runtime data is available.
+      operationId: getFunnelAnalytics
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '423':
+          description: Reporting capability is locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/attribution:
+    get:
+      summary: Get attribution reporting
+      description: Boundary reporting route. Returns 423 until attribution source-event lineage is available.
+      operationId: getAttributionReporting
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '423':
+          description: Reporting capability is locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/roi-roas:
+    get:
+      summary: Get ROI/ROAS reporting
+      description: Boundary reporting route. Returns 423 until cost/revenue source metrics are available.
+      operationId: getRoiRoasReporting
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '423':
+          description: Reporting capability is locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /workspaces/{workspaceId}/consent:
     post:
       summary: Record consent
@@ -338,66 +464,6 @@ paths:
       responses:
         '200':
           description: Contact point suppressed and consent withdrawn
-
-    post:
-      summary: Create a campaign
-      description: |
-        Creates a new campaign in DRAFT status. Requires idempotency key.
-      operationId: createCampaign
-      parameters:
-        - name: X-Tenant-ID
-          in: header
-          required: true
-          schema:
-            type: string
-        - name: X-Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Required for write operations
-        - name: X-Correlation-ID
-          in: header
-          required: false
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateCampaignRequest'
-      responses:
-        '201':
-          description: Campaign created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Campaign'
-        '400':
-          description: Invalid request body
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Not authorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict - idempotency key already used
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Compliance violation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /workspaces/{workspaceId}/campaigns/{campaignId}:
     parameters:

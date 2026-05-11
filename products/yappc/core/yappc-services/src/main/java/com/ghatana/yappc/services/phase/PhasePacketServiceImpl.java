@@ -83,6 +83,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             @NotNull Principal principal,
             String correlationId
     ) {
+        long startTime = System.currentTimeMillis();
         String effectiveCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
         log.info("Building phase packet: phase={}, projectId={}, workspaceId={}, tenantId={}, correlationId={}",
             phase, projectId, workspaceId, principal.getTenantId(), effectiveCorrelationId);
@@ -163,29 +164,13 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
 
                 // Record metrics if available
                 if (metrics != null) {
-                    metrics.incrementCounter("phase.packet.built", Map.of(
-                        "phase", phase,
-                        "tenantId", principal.getTenantId(),
-                        "tier", tier.name()
-                    ));
+                    metrics.recordPhaseGateValidation(principal.getTenantId(), phase, "BUILT", System.currentTimeMillis() - startTime);
                 }
 
                 log.debug("Built phase packet successfully: phase={}, projectId={}, correlationId={}",
                     phase, projectId, effectiveCorrelationId);
 
                 return Promise.of(packet);
-            })
-            .whenException(e -> {
-                log.error("Error building phase packet: phase={}, projectId={}, correlationId={}",
-                    phase, projectId, effectiveCorrelationId, e);
-                if (metrics != null) {
-                    metrics.incrementCounter("phase.packet.failed", Map.of(
-                        "phase", phase,
-                        "tenantId", principal.getTenantId(),
-                        "error", e.getClass().getSimpleName()
-                    ));
-                }
-                return Promise.ofException(e);
             });
     }
 
@@ -199,10 +184,10 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     ) {
         try {
             // Query project metadata from DataCloud
-            String projectPath = String.format("tenants/%s/projects/%s", tenantId, projectId);
-            return dataCloudClient.get(projectPath)
-                .map(data -> {
-                    if (data == null || data.isEmpty()) {
+            return dataCloudClient.findById(tenantId, "projects", projectId)
+                .map(entityOpt -> {
+                    Map<String, Object> data = entityOpt.isPresent() ? entityOpt.get().data() : Map.of();
+                    if (data.isEmpty()) {
                         log.warn("Project state not found: projectId={}, tenantId={}", projectId, tenantId);
                         return Map.of(
                             "projectId", projectId,
@@ -222,18 +207,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         "status", data.getOrDefault("status", "active"),
                         "createdAt", data.getOrDefault("createdAt", Instant.now().toString())
                     );
-                })
-                .whenException(e -> {
-                    log.error("Error querying project state from DataCloud: projectId={}, tenantId={}", projectId, tenantId, e);
-                    // Return default project state on error
-                    return Promise.of(Map.of(
-                        "projectId", projectId,
-                        "workspaceId", workspaceId,
-                        "tenantId", tenantId,
-                        "name", "Project-" + projectId,
-                        "tier", "PRO",
-                        "status", "active"
-                    ));
                 });
         } catch (Exception e) {
             log.error("Unexpected error in queryProjectState", e);
@@ -270,25 +243,25 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             var validationResult = phaseGateValidator.validate(projectId, phaseType, Map.of())
                 .getResult();
             
-            if (validationResult == null || validationResult.isAllClear()) {
+            if (validationResult == null || validationResult.allClear()) {
                 return List.of();
             }
             
             // Convert ValidationResult blockers to PhasePacket.PhaseBlocker
             return validationResult.blockers().stream()
-                .map(blocker -> {
+                .<PhasePacket.PhaseBlocker>map(blocker -> {
                     String severity = blocker.startsWith("missing-artifact") ? "CRITICAL" : "WARNING";
                     String title = blocker.replace("entry-criterion: ", "")
                                         .replace("prior-exit-criterion: ", "")
                                         .replace("missing-artifact: ", "");
                     return new PhasePacket.PhaseBlocker(
                         blocker,
-                        title,
-                        severity,
                         blocker.startsWith("missing-artifact") ? "ARTIFACT" : "CRITERION",
+                        title,
                         blocker,
-                        null,
-                        Instant.now().toEpochMilli()
+                        severity,
+                        blocker,
+                        true
                     );
                 })
                 .toList();
@@ -515,13 +488,12 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             
             // Convert to RequiredArtifact records
             return requiredArtifactKeys.stream()
-                .map(artifactKey -> new PhasePacket.RequiredArtifact(
+                .<PhasePacket.RequiredArtifact>map(artifactKey -> new PhasePacket.RequiredArtifact(
                     artifactKey,
                     artifactKey,
                     "REQUIRED",
                     null,
-                    false,
-                    null
+                    false
                 ))
                 .toList();
         } catch (Exception e) {
@@ -558,14 +530,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             
             // Convert to CompletedArtifact records
             return versions.stream()
-                .map(version -> new PhasePacket.CompletedArtifact(
+                .<PhasePacket.CompletedArtifact>map(version -> new PhasePacket.CompletedArtifact(
                     phase + "-" + version,
                     phase + "-" + version,
                     phase,
-                    version,
-                    "COMPLETED",
-                    Instant.now().toEpochMilli(),
-                    null,
+                    Instant.now(),
                     null
                 ))
                 .toList();
@@ -599,8 +568,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     phase,
                     "System",
                     "Phase packet queried",
-                    Map.of("phase", phase, "projectId", projectId),
-                    Instant.now().toEpochMilli()
+                    Instant.now(),
+                    "INFO"
                 )
             );
         } catch (Exception e) {

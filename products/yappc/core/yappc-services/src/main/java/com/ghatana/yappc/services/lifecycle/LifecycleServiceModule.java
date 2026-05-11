@@ -15,6 +15,7 @@ import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ArtifactGraphController;
 import com.ghatana.yappc.api.ValidationApiController;
+import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
 import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
@@ -45,6 +46,10 @@ import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
+import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade;
+import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade.ArtifactStorageRequest;
+import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade.ArtifactContent;
+import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade.ArtifactMetadata;
 import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
@@ -192,9 +197,10 @@ public class LifecycleServiceModule extends AbstractModule {
     GenerationService generationService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            GenerationRunRepository generationRunRepository) {
         logger.info("Creating GenerationService");
-        return new GenerationServiceImpl(aiService, auditLogger, metrics);
+        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository);
     }
 
     // ========== Phase 4: Run ==========
@@ -358,20 +364,95 @@ public class LifecycleServiceModule extends AbstractModule {
     // ========== HTTP API Controllers ==========
 
     /**
-     * Provides the durable {@link YappcArtifactRepository} backed by DataCloud.
+     * Provides {@link DataCloudArtifactFacade} as an adapter over {@link DataCloudClient}.
      *
-    * <p>The infrastructure-side {@link YappcDataCloudArtifactStore} persists artifacts
-    * through the canonical YAPPC Data Cloud repository seam, using {@link TenantContext}
-    * for multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
+     * <p>This is a temporary adapter while the full Data Cloud facade implementation
+     * is being completed. It wraps the legacy DataCloudClient to satisfy the new
+     * DataCloudArtifactFacade interface contract.
      *
      * @param client DataCloud SPI client
+     * @return facade adapter for artifact storage
+     */
+    @Provides
+    com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade dataCloudArtifactFacade(DataCloudClient client) {
+        return new com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade() {
+            @Override
+            public io.activej.promise.Promise<String> storeArtifact(ArtifactStorageRequest request) {
+                Map<String, Object> data = Map.of(
+                    "projectId", request.projectId(),
+                    "tenantId", request.tenantId(),
+                    "artifactType", request.artifactType(),
+                    "content", request.content(),
+                    "metadata", request.metadata(),
+                    "version", request.version()
+                );
+                return client.save(request.tenantId(), "yappc-artifacts", data)
+                    .map(entity -> entity.id());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.Optional<ArtifactContent>> retrieveArtifact(String artifactId, String tenantId) {
+                return client.findById(tenantId, "yappc-artifacts", artifactId)
+                    .map(opt -> opt.map(entity -> new ArtifactContent(
+                        entity.id(),
+                        (String) entity.data().get("content"),
+                        (String) entity.data().get("contentType"),
+                        ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
+                        (Map<String, String>) entity.data().getOrDefault("metadata", Map.of())
+                    )));
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.List<ArtifactMetadata>> listArtifacts(String projectId, String tenantId) {
+                DataCloudClient.Filter filter = DataCloudClient.Filter.eq("projectId", projectId);
+                DataCloudClient.Query query = DataCloudClient.Query.builder()
+                    .filter(filter)
+                    .limit(100)
+                    .build();
+                return client.query(tenantId, "yappc-artifacts", query)
+                    .map(list -> {
+                        java.util.List<ArtifactMetadata> metadata = list.stream()
+                            .map(entity -> new ArtifactMetadata(
+                                entity.id(),
+                                (String) entity.data().get("projectId"),
+                                (String) entity.data().get("artifactType"),
+                                (String) entity.data().get("version"),
+                                ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
+                                entity.createdAt().toEpochMilli(),
+                                (Map<String, String>) entity.data().getOrDefault("metadata", Map.of())
+                            ))
+                            .toList();
+                        return metadata;
+                    });
+            }
+
+            @Override
+            public io.activej.promise.Promise<Void> deleteArtifact(String artifactId, String tenantId) {
+                return client.delete(tenantId, "yappc-artifacts", artifactId);
+            }
+
+            @Override
+            public io.activej.promise.Promise<Boolean> artifactExists(String artifactId, String tenantId) {
+                return client.findById(tenantId, "yappc-artifacts", artifactId)
+                    .map(opt -> opt.isPresent());
+            }
+        };
+    }
+
+    /**
+     * Provides the durable {@link YappcArtifactRepository} backed by Data Cloud.
+     *
+     * <p>Uses {@link YappcDataCloudArtifactStore} which delegates to Data Cloud
+     * through the canonical YAPPC Data Cloud repository seam, using {@link TenantContext}
+     * for multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
+     *
+     * @param facade Data Cloud artifact facade
      * @return production-grade durable artifact repository
      */
     @Provides
-    YappcArtifactRepository artifactRepository(DataCloudClient client) {
-        ObjectMapper mapper = new ObjectMapper();
+    YappcArtifactRepository artifactRepository(com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade facade) {
         logger.info("Creating YappcArtifactRepository backed by YappcDataCloudArtifactStore");
-        return new YappcArtifactRepository(new YappcDataCloudArtifactStore(client, mapper));
+        return new YappcArtifactRepository(new YappcDataCloudArtifactStore(facade));
     }
 
     /**

@@ -5,6 +5,12 @@
 package com.ghatana.agent.learning;
 
 /**
+ * @doc.type record
+ * @doc.purpose Aggregate mastery indicators for an agent or release
+ * @doc.layer agent-core
+ * @doc.pattern Record
+ */
+/**
  * Aggregate mastery indicators for an agent or release.
  */
 public record MasteryMetrics(

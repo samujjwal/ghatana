@@ -8,6 +8,7 @@ import com.ghatana.audit.AuditLogger;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.domain.intent.IntentInput;
 import com.ghatana.yappc.domain.intent.IntentSpec;
 import com.ghatana.yappc.domain.learn.Insights;
@@ -108,9 +109,10 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
         when(denyPolicyEngine.evaluate(any(), any())).thenReturn(Promise.of(false));
 
         CiCdPort ciCdPort = new NoOpCiCdAdapter();
+        GenerationRunRepository generationRunRepository = mock(GenerationRunRepository.class);
         intentService    = new IntentServiceImpl(completionService, auditLogger, metrics);
         shapeService     = new ShapeServiceImpl(completionService, auditLogger, metrics);
-        generationService = new GenerationServiceImpl(completionService, auditLogger, metrics);
+        generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository);
         runService       = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         observeService   = new ObserveServiceImpl(metrics, auditLogger);
         learningService  = new LearningServiceImpl(completionService, auditLogger, metrics);

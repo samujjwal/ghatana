@@ -67,8 +67,8 @@ class PostgresCampaignRepositoryTest extends EventloopTestBase {
         try (var conn = postgres.createConnection("")) {
             conn.createStatement().executeUpdate(
                 "INSERT INTO dmos_workspaces (id, tenant_id, name, status, created_at, updated_at, created_by) VALUES "
-                + "('ws-1','test-tenant','ws-1','ACTIVE',NOW(),NOW(),'test'),"
-                + "('ws-2','test-tenant','ws-2','ACTIVE',NOW(),NOW(),'test'),"
+                + "('ws-1','__legacy_unspecified_tenant__','ws-1','ACTIVE',NOW(),NOW(),'test'),"
+                + "('ws-2','__legacy_unspecified_tenant__','ws-2','ACTIVE',NOW(),NOW(),'test'),"
                 + "('ws-foreign','foreign-tenant','ws-foreign','ACTIVE',NOW(),NOW(),'test') "
                 + "ON CONFLICT (id) DO NOTHING"
             );
@@ -276,7 +276,7 @@ class PostgresCampaignRepositoryTest extends EventloopTestBase {
             stmt.setString(2, "ws-1");
             try (var rs = stmt.executeQuery()) {
                 assertThat(rs.next()).isTrue();
-                assertThat(rs.getString(1)).isEqualTo("test-tenant");
+                assertThat(rs.getString(1)).isEqualTo("__legacy_unspecified_tenant__");
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to verify tenant_id persistence", e);

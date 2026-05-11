@@ -9,7 +9,9 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { DataFreshnessBadge } from '@/components/dashboard/DataFreshnessBadge';
 import { DashboardWidgetCard } from '@/components/dashboard/DashboardWidgetCard';
+import type { DashboardConfidenceLevel, DashboardFreshnessStatus } from '@/types/dashboard';
 
 interface CampaignStatusWidgetProps {
   workspaceId: string;
@@ -18,6 +20,13 @@ interface CampaignStatusWidgetProps {
   pendingCount?: number;
   isLoading?: boolean;
   isError?: boolean;
+  unavailableReason?: string;
+  source?: string;
+  lastUpdated?: string | null;
+  isPartial?: boolean;
+  freshnessStatus?: DashboardFreshnessStatus;
+  confidence?: DashboardConfidenceLevel;
+  authorizationScope?: string;
 }
 
 export function CampaignStatusWidget({
@@ -27,6 +36,13 @@ export function CampaignStatusWidget({
   pendingCount = 0,
   isLoading = false,
   isError = false,
+  unavailableReason,
+  source,
+  lastUpdated,
+  isPartial = false,
+  freshnessStatus,
+  confidence,
+  authorizationScope,
 }: CampaignStatusWidgetProps): React.ReactElement {
   const total = activeCount + pausedCount + pendingCount;
 
@@ -51,17 +67,54 @@ export function CampaignStatusWidget({
     );
   }
 
+  if (unavailableReason) {
+    return (
+      <DashboardWidgetCard
+        testId="campaign-status-widget"
+        title="Campaign Status"
+        state="unavailable"
+        message={unavailableReason}
+        stateMessageTestId="campaign-status-unavailable"
+        footer={(
+          <DataFreshnessBadge
+            source={source}
+            lastUpdated={lastUpdated}
+            isPartial={false}
+            freshnessStatus={freshnessStatus}
+            confidence={confidence}
+            authorizationScope={authorizationScope}
+          />
+        )}
+      />
+    );
+  }
+
   return (
     <DashboardWidgetCard
       testId="campaign-status-widget"
       title="Campaign Status"
       footer={(
-        <Link
-          to={`/workspaces/${workspaceId}/campaigns`}
-          className="mt-3 block text-xs text-blue-600 hover:underline"
-        >
-          View all campaigns →
-        </Link>
+        <>
+          <Link
+            to={`/workspaces/${workspaceId}/campaigns`}
+            className="mt-3 block text-xs text-blue-600 hover:underline"
+          >
+            View all campaigns →
+          </Link>
+          <DataFreshnessBadge
+            source={source}
+            lastUpdated={lastUpdated}
+            isPartial={isPartial}
+            freshnessStatus={freshnessStatus}
+            confidence={confidence}
+            authorizationScope={authorizationScope}
+          />
+          {(isPartial || isStaleStatus(freshnessStatus)) && (
+            <p className="mt-1 text-[11px] text-yellow-700" data-testid="campaign-status-state">
+              {isPartial ? 'Campaign metrics are partial.' : 'Campaign metrics are stale.'}
+            </p>
+          )}
+        </>
       )}
     >
       <div className="space-y-2">
@@ -86,4 +139,8 @@ export function CampaignStatusWidget({
       </div>
     </DashboardWidgetCard>
   );
+}
+
+function isStaleStatus(status: DashboardFreshnessStatus | undefined): boolean {
+  return status === 'STALE' || status === 'VERY_STALE' || status === 'CRITICAL';
 }

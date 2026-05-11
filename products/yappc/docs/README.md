@@ -2,6 +2,15 @@
 
 **AI-Native Product Development Platform**
 
+## Source of Truth
+
+**Architecture:** `ARCHITECTURE.md` - Canonical system architecture and module structure  
+**Routes:** `api/route-manifest.yaml` - Source of truth for all API routes  
+**Security:** `SECURITY.md` - Authentication and authorization policy  
+**API Contract:** `api/openapi.yaml` - OpenAPI specification (validated against route manifest)  
+**Build:** `../Makefile` - Build automation and development commands  
+**Module Catalog:** `MODULE_CATALOG.md` - Authoritative active/retired module inventory
+
 > **Looking for everything?** → [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) is the canonical entry point for all YAPPC docs.
 
 ## Quick Links

@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * @doc.type interface
+ * @doc.purpose Durable store for governed turn and phase traces
+ * @doc.layer agent-core
+ * @doc.pattern Repository
+ */
+/**
  * Durable store for governed turn and phase traces.
  */
 public interface AgentTurnTraceRepository {
