@@ -3,12 +3,9 @@
 # The CheckYappcOpenApiParity Gradle task fails if any route listed here
 # does not appear in products/yappc/docs/api/openapi.yaml paths.
 #
-# Format: each route entry is  "METHOD /path"
-# Parametrised segments use {name} notation (same as OpenAPI).
-#
-# Auth/scope metadata format (as comments):
-# # @auth: public | required | optional
-# # @scopes: scope1,scope2 (if applicable)
+# Format: structured YAML objects with machine-readable metadata
+# Required fields: method, path, auth, owner, boundary, operationId
+# Optional fields: scopes (if auth is required)
 #
 # Auth levels:
 # - public: No authentication required
@@ -24,343 +21,790 @@
 
 # ─── yappc-services (YappcHttpServer) ─────────────────────────────────────────
 yappc-services:
-  # @auth: public
-  - GET  /health
-  # @auth: public
-  - GET  /api/v1/yappc/info
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/intent/capture
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/intent/analyze
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/yappc/intent/{id}
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/shape/derive
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/shape/model
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/yappc/shape/{id}
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/validate
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/validate/with-config
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/validate/with-policy
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/generate
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/generate/diff
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/yappc/generate/artifacts/{id}
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/run
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/run/with-observation
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/run/rollback
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/run/promote
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/observe
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/learn
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/learn/with-context
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/evolve
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/evolve/with-constraints
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/lifecycle/execute
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/artifact/graph/ingest
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/artifact/graph/analyze
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/artifact/graph/merge
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/artifact/graph/query
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/yappc/artifact/residual/analyze
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/yappc/artifact/import-source
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/preview/session/create
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/preview/session/validate
+  - method: GET
+    path: /health
+    auth: public
+    scopes: []
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: liveness
+  - method: GET
+    path: /api/v1/yappc/info
+    auth: public
+    scopes: []
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: serviceInfo
+  - method: POST
+    path: /api/v1/yappc/intent/capture
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: captureIntent
+  - method: POST
+    path: /api/v1/yappc/intent/analyze
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: analyzeIntent
+  - method: GET
+    path: /api/v1/yappc/intent/{id}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getIntent
+  - method: POST
+    path: /api/v1/yappc/shape/derive
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: deriveShape
+  - method: POST
+    path: /api/v1/yappc/shape/model
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: modelShape
+  - method: GET
+    path: /api/v1/yappc/shape/{id}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getShape
+  - method: POST
+    path: /api/v1/yappc/validate
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: validateArtifacts
+  - method: POST
+    path: /api/v1/yappc/validate/with-config
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: validateWithConfig
+  - method: POST
+    path: /api/v1/yappc/validate/with-policy
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: validateWithPolicy
+  - method: POST
+    path: /api/v1/yappc/generate
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: generateArtifacts
+  - method: POST
+    path: /api/v1/yappc/generate/diff
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: generateDiff
+  - method: GET
+    path: /api/v1/yappc/generate/artifacts/{id}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getArtifacts
+  - method: POST
+    path: /api/v1/yappc/run
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: runArtifacts
+  - method: POST
+    path: /api/v1/yappc/run/with-observation
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId:RunWithObservation
+  - method: POST
+    path: /api/v1/yappc/run/rollback
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: rollbackRun
+  - method: POST
+    path: /api/v1/yappc/run/promote
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: promoteRun
+  - method: POST
+    path: /api/v1/yappc/observe
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: observeRun
+  - method: POST
+    path: /api/v1/yappc/learn
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: learnFromRun
+  - method: POST
+    path: /api/v1/yappc/learn/with-context
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: learnWithContext
+  - method: POST
+    path: /api/v1/yappc/evolve
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: evolveSystem
+  - method: POST
+    path: /api/v1/yappc/evolve/with-constraints
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: evolveWithConstraints
+  - method: POST
+    path: /api/v1/yappc/lifecycle/execute
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: executeLifecycle
+  - method: POST
+    path: /api/v1/yappc/artifact/graph/ingest
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: ingestArtifactGraph
+  - method: POST
+    path: /api/v1/yappc/artifact/graph/analyze
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: analyzeArtifactGraph
+  - method: POST
+    path: /api/v1/yappc/artifact/graph/merge
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: mergeArtifactGraph
+  - method: POST
+    path: /api/v1/yappc/artifact/graph/query
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: queryArtifactGraph
+  - method: POST
+    path: /api/v1/yappc/artifact/residual/analyze
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: analyzeResidual
+  - method: POST
+    path: /api/v1/yappc/artifact/import-source
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: importSource
+  - method: POST
+    path: /api/v1/preview/session/create
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: createPreviewSession
+  - method: POST
+    path: /api/v1/preview/session/validate
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: validatePreviewSession
   # Authorization and Capabilities
-  # @auth: required
-  # @scopes: admin
-  - POST /api/v1/capabilities
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/capabilities
+  - method: POST
+    path: /api/v1/capabilities
+    auth: required
+    scopes: [admin]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: queryCapabilities
+  - method: GET
+    path: /api/v1/capabilities
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getCapabilities
   # Phase Cockpit
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/phase/packet
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/phase/packet
+  - method: POST
+    path: /api/v1/phase/packet
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: requestPhasePacket
+  - method: GET
+    path: /api/v1/phase/packet
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getPhasePacket
   # Dashboard Actions
-  # @auth: required
-  # @scopes: workspace:read
-  - POST /api/v1/dashboard/actions
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/dashboard/actions
+  - method: POST
+    path: /api/v1/dashboard/actions
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: requestDashboardActions
+  - method: GET
+    path: /api/v1/dashboard/actions
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getDashboardActions
 
 # ─── yappc-api (VectorRoutes / AgentRoutes / WorkflowRoutes) ──────────────────
+# NOTE: These routes should be moved to Data Cloud+AEP boundary
+# Current boundary: YAPPC (to be migrated to DATA_CLOUD_AEP)
 yappc-api:
   # Vector
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/vector/search
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/vector/search/hybrid
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/vector/similar/{id}
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/vector/index
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/vector/index/batch
-  # @auth: required
-  # @scopes: project:write
-  - DELETE /api/v1/vector/index/{id}
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/vector/rag
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/vector/rag/chat
+  - method: POST
+    path: /api/v1/vector/search
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorSearch
+  - method: POST
+    path: /api/v1/vector/search/hybrid
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorSearchHybrid
+  - method: GET
+    path: /api/v1/vector/similar/{id}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorSimilar
+  - method: POST
+    path: /api/v1/vector/index
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorIndex
+  - method: POST
+    path: /api/v1/vector/index/batch
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorIndexBatch
+  - method: DELETE
+    path: /api/v1/vector/index/{id}
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorIndexDelete
+  - method: POST
+    path: /api/v1/vector/rag
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorRag
+  - method: POST
+    path: /api/v1/vector/rag/chat
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: vectorRagChat
   # Agents
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/agents
-  # @auth: public
-  - GET  /api/v1/agents/health
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/agents/capabilities
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/agents/by-capability/{capability}
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/agents/{name}
-  # @auth: public
-  - GET  /api/v1/agents/{name}/health
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/agents/{name}/execute
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/agents/copilot/chat
-  # @auth: required
-  # @scopes: workspace:read
-  - POST /api/v1/agents/search
-  # @auth: required
-  # @scopes: workspace:read
-  - POST /api/v1/agents/predict
+  - method: GET
+    path: /api/v1/agents
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: listAgents
+  - method: GET
+    path: /api/v1/agents/health
+    auth: public
+    scopes: []
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: agentsHealth
+  - method: GET
+    path: /api/v1/agents/capabilities
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: agentsCapabilities
+  - method: GET
+    path: /api/v1/agents/by-capability/{capability}
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: agentsByCapability
+  - method: GET
+    path: /api/v1/agents/{name}
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: getAgent
+  - method: GET
+    path: /api/v1/agents/{name}/health
+    auth: public
+    scopes: []
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: agentHealth
+  - method: POST
+    path: /api/v1/agents/{name}/execute
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: executeAgent
+  - method: POST
+    path: /api/v1/agents/copilot/chat
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: copilotChat
+  - method: POST
+    path: /api/v1/agents/search
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: searchAgents
+  - method: POST
+    path: /api/v1/agents/predict
+    auth: required
+    scopes: [workspace:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: predictAgent
   # Workflows
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/workflows
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/workflows/{id}
-  # @auth: required
-  # @scopes: project:write
-  - DELETE /api/v1/workflows/{id}
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/start
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/pause
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/resume
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/cancel
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/steps/advance
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{id}/steps/{stepId}/goto
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/workflows/{id}/plans/generate
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{workflowId}/plans/{planId}/approve
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/workflows/{workflowId}/plans/{planId}/reject
-  # @auth: required
-  # @scopes: project:write
-  - PUT    /api/v1/workflows/{workflowId}/plans/{planId}/steps
-  # @auth: required
-  # @scopes: project:read
-  - POST   /api/v1/workflows/{id}/route
+  - method: POST
+    path: /api/v1/workflows
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: createWorkflow
+  - method: GET
+    path: /api/v1/workflows
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: listWorkflows
+  - method: GET
+    path: /api/v1/workflows/{id}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: getWorkflow
+  - method: DELETE
+    path: /api/v1/workflows/{id}
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: deleteWorkflow
+  - method: POST
+    path: /api/v1/workflows/{id}/start
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: startWorkflow
+  - method: POST
+    path: /api/v1/workflows/{id}/pause
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: pauseWorkflow
+  - method: POST
+    path: /api/v1/workflows/{id}/resume
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: resumeWorkflow
+  - method: POST
+    path: /api/v1/workflows/{id}/cancel
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: cancelWorkflow
+  - method: POST
+    path: /api/v1/workflows/{id}/steps/advance
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: advanceWorkflowStep
+  - method: POST
+    path: /api/v1/workflows/{id}/steps/{stepId}/goto
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: gotoWorkflowStep
+  - method: POST
+    path: /api/v1/workflows/{id}/plans/generate
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: generateWorkflowPlan
+  - method: POST
+    path: /api/v1/workflows/{workflowId}/plans/{planId}/approve
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: approveWorkflowPlan
+  - method: POST
+    path: /api/v1/workflows/{workflowId}/plans/{planId}/reject
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: rejectWorkflowPlan
+  - method: PUT
+    path: /api/v1/workflows/{workflowId}/plans/{planId}/steps
+    auth: required
+    scopes: [project:write]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: updateWorkflowPlanSteps
+  - method: POST
+    path: /api/v1/workflows/{id}/route
+    auth: required
+    scopes: [project:read]
+    owner: yappc-api
+    boundary: DATA_CLOUD_AEP
+    operationId: routeWorkflow
 
 # ─── scaffold/api (YappcServer) ───────────────────────────────────────────────
 scaffold-api:
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/languages
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/categories
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/platforms
-  # @auth: required
-  # @scopes: admin
-  - POST /api/v1/packs/refresh
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/{name}
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/{name}/validate
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/{name}/templates
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/packs/{name}/variables
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/scaffold/projects
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/scaffold/projects/add-feature
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/scaffold/projects/update
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/scaffold/projects/info
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/scaffold/projects/state
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/scaffold/projects/validate
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/scaffold/projects/check-updates
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/scaffold/projects/preview-update
-  # @auth: required
-  # @scopes: project:read
-  - GET  /api/v1/scaffold/projects/features
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/scaffold/projects/export
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/scaffold/projects/import
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/templates/render
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/templates/helpers
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/templates/validate
-  # @auth: required
-  # @scopes: workspace:read
-  - GET  /api/v1/dependencies/analyze/pack/{name}
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/dependencies/analyze/project
-  # @auth: required
-  # @scopes: project:read
-  - POST /api/v1/dependencies/conflicts
-  # @auth: required
-  # @scopes: project:write
-  - POST /api/v1/dependencies/add-conflicts
+  - method: GET
+    path: /api/v1/packs
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: listPacks
+  - method: GET
+    path: /api/v1/packs/languages
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPackLanguages
+  - method: GET
+    path: /api/v1/packs/categories
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPackCategories
+  - method: GET
+    path: /api/v1/packs/platforms
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPackPlatforms
+  - method: POST
+    path: /api/v1/packs/refresh
+    auth: required
+    scopes: [admin]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: refreshPacks
+  - method: GET
+    path: /api/v1/packs/{name}
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPack
+  - method: GET
+    path: /api/v1/packs/{name}/validate
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: validatePack
+  - method: GET
+    path: /api/v1/packs/{name}/templates
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPackTemplates
+  - method: GET
+    path: /api/v1/packs/{name}/variables
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getPackVariables
+  - method: POST
+    path: /api/v1/scaffold/projects
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: createScaffoldProject
+  - method: POST
+    path: /api/v1/scaffold/projects/add-feature
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: addFeatureToProject
+  - method: POST
+    path: /api/v1/scaffold/projects/update
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: updateScaffoldProject
+  - method: GET
+    path: /api/v1/scaffold/projects/info
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getScaffoldProjectInfo
+  - method: GET
+    path: /api/v1/scaffold/projects/state
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getScaffoldProjectState
+  - method: GET
+    path: /api/v1/scaffold/projects/validate
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: validateScaffoldProject
+  - method: GET
+    path: /api/v1/scaffold/projects/check-updates
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: checkScaffoldUpdates
+  - method: POST
+    path: /api/v1/scaffold/projects/preview-update
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: previewScaffoldUpdate
+  - method: GET
+    path: /api/v1/scaffold/projects/features
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getScaffoldFeatures
+  - method: POST
+    path: /api/v1/scaffold/projects/export
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: exportScaffoldProject
+  - method: POST
+    path: /api/v1/scaffold/projects/import
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: importScaffoldProject
+  - method: POST
+    path: /api/v1/templates/render
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: renderTemplate
+  - method: GET
+    path: /api/v1/templates/helpers
+    auth: required
+    scopes: [workspace:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: getTemplateHelpers
+  - method: POST
+    path: /api/v1/templates/validate
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: validateTemplate
+  - method: GET
+    path: /api/v1/dependencies/analyze/pack/{name}
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: analyzePackDependencies
+  - method: POST
+    path: /api/v1/dependencies/analyze/project
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: analyzeProjectDependencies
+  - method: POST
+    path: /api/v1/dependencies/conflicts
+    auth: required
+    scopes: [project:read]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: detectDependencyConflicts
+  - method: POST
+    path: /api/v1/dependencies/add-conflicts
+    auth: required
+    scopes: [project:write]
+    owner: scaffold-api
+    boundary: YAPPC
+    operationId: addDependencyConflicts
 
 # ─── refactorer/api (RefactorerHttpServer) ────────────────────────────────────
 refactorer-api:
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/jobs
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/jobs/{jobId}
-  # @auth: required
-  # @scopes: project:write
-  - DELETE /api/v1/jobs/{jobId}
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/jobs/{jobId}/report
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/jobs/{jobId}/start
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/jobs/{jobId}/stop
-  # @auth: required
-  # @scopes: project:write
-  - POST   /api/v1/jobs/{jobId}/runs
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/jobs/{jobId}/runs
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/jobs/{jobId}/runs/{runId}
-  # @auth: required
-  # @scopes: project:read
-  - GET    /api/v1/jobs/{jobId}/runs/{runId}/logs
-  # @auth: required
-  # @scopes: admin
-  - POST   /v1/diagnose
-  # @auth: public
-  - GET    /v1/config
+  - method: POST
+    path: /api/v1/jobs
+    auth: required
+    scopes: [project:write]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: createRefactorJob
+  - method: GET
+    path: /api/v1/jobs/{jobId}
+    auth: required
+    scopes: [project:read]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: getRefactorJob
+  - method: DELETE
+    path: /api/v1/jobs/{jobId}
+    auth: required
+    scopes: [project:write]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: deleteRefactorJob
+  - method: GET
+    path: /api/v1/jobs/{jobId}/report
+    auth: required
+    scopes: [project:read]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: getRefactorJobReport
+  - method: POST
+    path: /api/v1/jobs/{jobId}/start
+    auth: required
+    scopes: [project:write]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: startRefactorJob
+  - method: POST
+    path: /api/v1/jobs/{jobId}/stop
+    auth: required
+    scopes: [project:write]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: stopRefactorJob
+  - method: POST
+    path: /api/v1/jobs/{jobId}/runs
+    auth: required
+    scopes: [project:write]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: createRefactorJobRun
+  - method: GET
+    path: /api/v1/jobs/{jobId}/runs
+    auth: required
+    scopes: [project:read]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: listRefactorJobRuns
+  - method: GET
+    path: /api/v1/jobs/{jobId}/runs/{runId}
+    auth: required
+    scopes: [project:read]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: getRefactorJobRun
+  - method: GET
+    path: /api/v1/jobs/{jobId}/runs/{runId}/logs
+    auth: required
+    scopes: [project:read]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: getRefactorJobRunLogs
+  - method: POST
+    path: /v1/diagnose
+    auth: required
+    scopes: [admin]
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: diagnoseRefactorer
+  - method: GET
+    path: /v1/config
+    auth: public
+    scopes: []
+    owner: refactorer-api
+    boundary: YAPPC
+    operationId: getRefactorerConfig

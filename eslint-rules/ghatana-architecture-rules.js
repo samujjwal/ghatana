@@ -908,6 +908,94 @@ module.exports = {
     },
 
     /**
+     * Rule: no-yappc-direct-platform-imports
+     *
+     * Prevents YAPPC from directly importing platform modules that should be
+     * accessed through Data Cloud+AEP typed contract facades.
+     *
+     * This enforces the product boundary requirement that platform-like APIs
+     * (agents, workflows, vector search) must be accessed through typed
+     * contract facades rather than direct imports.
+     *
+     * See YAPPC-P1-008 in the YAPPC audit.
+     */
+    "no-yappc-direct-platform-imports": {
+      meta: {
+        type: "error",
+        docs: {
+          description:
+            "Disallow direct platform imports in YAPPC that should use Data Cloud+AEP contract facades",
+          category: "Architecture",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          directPlatformImport:
+            "🚫 Direct platform import detected: '{{import}}'. " +
+            "YAPPC must access platform capabilities through Data Cloud+AEP typed contract facades. " +
+            "Use the contract facade instead of importing directly from platform modules.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+
+        // Only enforce for files inside products/yappc/
+        if (!currentFilePath.includes("/products/yappc/")) return {};
+
+        // Platform modules that should be accessed through contract facades
+        // These represent platform-like capabilities that belong in Data Cloud+AEP
+        const CONTRACT_FACADE_MODULES = [
+          // Agent platform - should use Data Cloud+AEP agent contract facade
+          "@ghatana/agent-core",
+          "@ghatana/ai-integration",
+          // Workflow platform - should use Data Cloud+AEP workflow contract facade
+          "@ghatana/workflow",
+          // Vector/search platform - should use Data Cloud+AEP search contract facade
+          "@ghatana/vector",
+          // Event cloud - should use Data Cloud+AEP event contract facade
+          "@ghatana/event-cloud",
+        ];
+
+        function checkImport(node, importPath) {
+          for (const module of CONTRACT_FACADE_MODULES) {
+            if (importPath === module || importPath.startsWith(`${module}/`)) {
+              context.report({
+                node,
+                messageId: "directPlatformImport",
+                data: { import: importPath },
+              });
+              return;
+            }
+          }
+        }
+
+        return {
+          ImportDeclaration(node) {
+            checkImport(node, node.source.value);
+          },
+          ExportNamedDeclaration(node) {
+            if (node.source) {
+              checkImport(node, node.source.value);
+            }
+          },
+          ExportAllDeclaration(node) {
+            checkImport(node, node.source.value);
+          },
+          CallExpression(node) {
+            // Check dynamic imports
+            if (
+              node.callee.type === "Import" &&
+              node.arguments[0]?.type === "Literal"
+            ) {
+              checkImport(node, node.arguments[0].value);
+            }
+          },
+        };
+      },
+    },
+
+    /**
      * Rule: no-platform-datagrid-duplicate
      *
      * Prevents direct imports from platform/typescript/data-grid when

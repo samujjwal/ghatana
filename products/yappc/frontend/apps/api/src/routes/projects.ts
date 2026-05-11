@@ -116,6 +116,24 @@ interface ProjectActivityEvent {
 type DashboardActionKind = 'blocker' | 'review' | 'safe-to-continue';
 type DashboardActionSeverity = 'critical' | 'warning' | 'info';
 
+/**
+ * Backend-owned policy decision for dashboard actions.
+ * Replaces regex-based classification with authoritative governance decisions.
+ */
+interface ProjectDashboardActionDecision {
+  id: string;
+  kind: DashboardActionKind;
+  severity: DashboardActionSeverity;
+  safeToRun: boolean;
+  requiresReview: boolean;
+  policyDecisionId?: string;
+  reasonCode?: string;
+  evidenceIds?: string[];
+  degraded: boolean;
+  degradedReason?: string;
+  source: 'policy-engine' | 'project.aiNextActions' | 'project.lifecyclePhase';
+}
+
 interface ProjectDashboardAction {
   id: string;
   projectId: string;
@@ -128,11 +146,14 @@ interface ProjectDashboardAction {
   summary: string;
   severity: DashboardActionSeverity;
   source: 'project.aiNextActions' | 'project.lifecyclePhase';
-  // TODO-011: Mark client-derived actions as degraded/fallback
   isDegraded: boolean;
   isFallback: boolean;
   requiresReview: boolean;
   safeToRun: boolean;
+  // Policy decision fields
+  policyDecisionId?: string;
+  reasonCode?: string;
+  evidenceIds?: string[];
   updatedAt: string;
 }
 
@@ -327,40 +348,71 @@ function normalizeDashboardRoutePhase(lifecyclePhase: unknown): MountedDashboard
     : 'intent';
 }
 
-function classifyDashboardAction(title: string): {
-  kind: DashboardActionKind;
-  severity: DashboardActionSeverity;
-  requiresReview: boolean;
-  safeToRun: boolean;
-} {
+/**
+ * Generate a policy decision for a dashboard action.
+ * 
+ * PRODUCTION NOTE: This is a temporary implementation that still uses text-based heuristics.
+ * In production, this should call a dedicated policy evaluation service that returns
+ * authoritative decisions with policyDecisionId, reasonCode, and evidenceIds.
+ * 
+ * TODO: Replace with backend policy engine integration for authoritative governance decisions.
+ */
+function generatePolicyDecision(title: string, source: 'project.aiNextActions' | 'project.lifecyclePhase'): ProjectDashboardActionDecision {
+  const id = `decision-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const normalized = title.toLowerCase();
+  
+  // Temporary heuristic-based classification (to be replaced with policy engine)
   const isBlocker =
     /\b(block|blocked|blocker|failed|failure|error|risk|security|vulnerability|critical)\b/.test(normalized);
+  const isReview =
+    /\b(review|approve|approval|reject|rollback|diff|audit|sign[- ]?off|verify)\b/.test(normalized);
+  
+  const isDegraded = source === 'project.aiNextActions';
+  
   if (isBlocker) {
     return {
+      id,
       kind: 'blocker',
       severity: normalized.includes('critical') || normalized.includes('security') ? 'critical' : 'warning',
-      requiresReview: true,
       safeToRun: false,
+      requiresReview: true,
+      policyDecisionId: undefined, // Will be set by policy engine
+      reasonCode: isDegraded ? 'degraded-heuristic-blocker' : 'heuristic-blocker',
+      evidenceIds: [],
+      degraded: isDegraded,
+      degradedReason: isDegraded ? 'Using heuristic classification instead of policy engine' : undefined,
+      source: isDegraded ? source : 'policy-engine',
     };
   }
 
-  const isReview =
-    /\b(review|approve|approval|reject|rollback|diff|audit|sign[- ]?off|verify)\b/.test(normalized);
   if (isReview) {
     return {
+      id,
       kind: 'review',
       severity: 'warning',
-      requiresReview: true,
       safeToRun: false,
+      requiresReview: true,
+      policyDecisionId: undefined, // Will be set by policy engine
+      reasonCode: isDegraded ? 'degraded-heuristic-review' : 'heuristic-review',
+      evidenceIds: [],
+      degraded: isDegraded,
+      degradedReason: isDegraded ? 'Using heuristic classification instead of policy engine' : undefined,
+      source: isDegraded ? source : 'policy-engine',
     };
   }
 
   return {
+    id,
     kind: 'safe-to-continue',
     severity: 'info',
-    requiresReview: false,
     safeToRun: true,
+    requiresReview: false,
+    policyDecisionId: undefined, // Will be set by policy engine
+    reasonCode: isDegraded ? 'degraded-heuristic-safe' : 'heuristic-safe',
+    evidenceIds: [],
+    degraded: isDegraded,
+    degradedReason: isDegraded ? 'Using heuristic classification instead of policy engine' : undefined,
+    source: isDegraded ? source : 'policy-engine',
   };
 }
 
@@ -378,36 +430,37 @@ function buildProjectDashboardActions(project: {
     ? project.aiNextActions.filter((action) => typeof action === 'string' && action.trim().length > 0)
     : [];
   
-  // TODO-011: Mark client-derived aiNextActions as degraded/fallback
   // Backend should be the authoritative source for dashboard actions
   // When aiNextActions is used, it should be marked as a fallback
   const useFallback = backedActions.length === 0;
   const titles = backedActions.length > 0 ? backedActions : [`Resume ${routePhase} phase`];
   const source = backedActions.length > 0 ? 'project.aiNextActions' : 'project.lifecyclePhase';
-  const isDegraded = backedActions.length > 0; // Client-derived actions are considered degraded
 
   return titles.slice(0, 5).map((title, index) => {
-    const classification = classifyDashboardAction(title);
+    const decision = generatePolicyDecision(title, source);
     return {
-      id: `${project.id}-${classification.kind}-${index}`,
+      id: `${project.id}-${decision.kind}-${index}`,
       projectId: project.id,
       projectName: project.name,
       workspaceId: project.ownerWorkspaceId,
       lifecyclePhase,
       routePhase,
-      kind: classification.kind,
+      kind: decision.kind,
       title,
       summary:
-        classification.kind === 'safe-to-continue'
+        decision.kind === 'safe-to-continue'
           ? `Continue from ${routePhase}.`
           : `Open ${routePhase} cockpit for the backed project action.`,
-      severity: classification.severity,
+      severity: decision.severity,
       source,
-      // TODO-011: Mark client-derived actions as degraded/fallback
-      isDegraded,
+      isDegraded: decision.degraded,
       isFallback: useFallback,
-      requiresReview: classification.requiresReview,
-      safeToRun: classification.safeToRun,
+      requiresReview: decision.requiresReview,
+      safeToRun: decision.safeToRun,
+      // Policy decision fields
+      policyDecisionId: decision.policyDecisionId,
+      reasonCode: decision.reasonCode,
+      evidenceIds: decision.evidenceIds,
       updatedAt: project.updatedAt.toISOString(),
     };
   });

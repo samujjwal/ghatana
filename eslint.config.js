@@ -59,6 +59,7 @@ module.exports = [
       "ghatana/no-dev-auth-in-prod": "error",
       "ghatana/no-duplicate-utilities": "error",
       "ghatana/no-duplicate-components": "error",
+      "ghatana/no-yappc-direct-platform-imports": "error",
       "i18n/i18n-coverage": "warn",
       "no-restricted-imports": [
         "error",

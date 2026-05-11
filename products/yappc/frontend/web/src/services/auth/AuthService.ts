@@ -50,7 +50,6 @@ export interface AuthSession {
     refreshToken: string;
     expiresAt: string;
     permissions: string[];
-    platformToken?: string;
 }
 
 export interface LoginCredentials {
@@ -201,9 +200,6 @@ export class AuthService {
             this.currentSession = session;
             this.saveSession(session);
             this.setupSessionRefresh();
-
-            // Exchange product token for platform token
-            await this.exchangePlatformToken();
 
             logger.info('Login successful', 'auth', {
                 userId: session.user.id,
@@ -373,64 +369,21 @@ export class AuthService {
 
     /**
      * Get auth token for API calls
+     *
+     * SECURITY: In cookie mode, tokens are in httpOnly cookies and cannot be read from JavaScript.
+     * This method returns empty string for cookie mode. The API client automatically sends cookies.
      */
     public getAuthToken(): string | null {
-        return this.currentSession?.token || null;
-    }
-
-    /**
-     * Get platform token for cross-product API calls
-     */
-    public getPlatformToken(): string | null {
-        return this.currentSession?.platformToken || null;
-    }
-
-    /**
-     * Exchange product token for platform token
-     */
-    public async exchangePlatformToken(): Promise<boolean> {
-        try {
-            if (!this.currentSession) {
-                return false;
-            }
-
-            const authGatewayUrl = import.meta.env.VITE_AUTH_GATEWAY_URL || 'http://localhost:8081';
-            const response = await fetch(`${authGatewayUrl}/auth/exchange`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.currentSession.token}`,
-                },
-            });
-
-            if (!response.ok) {
-                logger.warn('Platform token exchange failed', 'auth', {
-                    status: response.status,
-                });
-                return false;
-            }
-
-            const data = await parseJsonResponse<{ platformToken: string; expiresIn: number }>(
-                response,
-                'auth platform token exchange'
-            );
-
-            this.currentSession.platformToken = data.platformToken;
-            this.saveSession(this.currentSession);
-
-            logger.info('Platform token obtained successfully', 'auth', { userId: this.currentSession.user.id });
-            return true;
-
-        } catch (error) {
-            logger.error('Platform token exchange error', 'auth', {
-                error: error instanceof Error ? error.message : String(error)
-            });
-            return false;
-        }
+        // Tokens are in httpOnly cookies - not accessible from JavaScript
+        // The API client handles cookie-based auth automatically
+        return null;
     }
 
     /**
      * Refresh authentication token
+     *
+     * SECURITY: In cookie mode, the server sets new httpOnly cookies.
+     * We only need to update the expiresAt metadata from the response.
      */
     public async refreshToken(): Promise<boolean> {
         try {
@@ -438,14 +391,28 @@ export class AuthService {
                 return false;
             }
 
-            const authData = await yappcApi.auth.refresh({
-                refreshToken: this.currentSession.refreshToken,
-            } satisfies ApiRefreshTokenRequest);
+            // Call refresh endpoint - server will set new httpOnly cookies
+            const response = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ refreshToken: this.currentSession.refreshToken }),
+            });
 
-            // Update session with new token pair
-            this.currentSession.token = authData.accessToken;
-            this.currentSession.refreshToken = authData.refreshToken;
-            this.currentSession.expiresAt = new Date(Date.now() + authData.expiresIn * 1000).toISOString();
+            if (!response.ok) {
+                logger.warn('Token refresh failed', 'auth', { status: response.status });
+                return false;
+            }
+
+            const data = await parseJsonResponse<{ expiresAt: string; authMode: string }>(
+                response,
+                'auth token refresh'
+            );
+
+            // Update session expiresAt from response
+            this.currentSession.expiresAt = data.expiresAt;
             this.saveSession(this.currentSession);
             this.setupSessionRefresh();
 

@@ -4533,10 +4533,17 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+      description: API key for internal service-to-service authentication
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT Bearer token for internal service authentication
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Cookie-based session authentication for browser clients (httpOnly cookies)
 
   parameters:
     ResourceId:
@@ -5519,12 +5526,19 @@ components:
 
     LoginResponse:
       type: object
-      required: [user, tokens]
+      required: [user]
       properties:
         user:
           $ref: "#/components/schemas/AuthUser"
-        tokens:
-          $ref: "#/components/schemas/AuthTokenPair"
+        session:
+          type: object
+          properties:
+            expiresAt:
+              type: string
+              format: date-time
+            authMode:
+              type: string
+              enum: [COOKIE]
 
     RefreshTokenRequest:
       type: object
@@ -5534,8 +5548,14 @@ components:
           type: string
 
     RefreshTokenResponse:
-      allOf:
-        - $ref: "#/components/schemas/AuthTokenPair"
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        authMode:
+          type: string
+          enum: [COOKIE]
 
     LogoutResponse:
       type: object

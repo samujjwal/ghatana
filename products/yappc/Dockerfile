@@ -31,6 +31,10 @@ RUN ./gradlew :core:yappc-services:build \
               :core:scaffold:build \
               --no-daemon -q
 
+# Verify backend build artifacts exist
+RUN ls -la core/yappc-services/build/libs/ && \
+    test -f core/yappc-services/build/libs/*.jar || (echo "ERROR: Backend JAR not found" && exit 1)
+
 # ============================================================================
 # STAGE 2: Frontend Build (Node)
 # ============================================================================
@@ -53,6 +57,10 @@ COPY products/audio-video/libs/typescript products/audio-video/libs/typescript
 RUN pnpm install --frozen-lockfile && \
     cd products/yappc/frontend && \
     pnpm build:all
+
+# Verify frontend build artifacts exist
+RUN test -d products/yappc/frontend/dist || (echo "ERROR: Frontend dist directory not found" && exit 1) && \
+    ls -la products/yappc/frontend/dist/
 
 # ============================================================================
 # STAGE 3: Runtime Image (Production)
@@ -77,13 +85,17 @@ RUN addgroup -g 1000 yappc && \
 
 WORKDIR /app
 
-# Copy backend JAR from builder
+# Copy backend JAR from builder with verification
+RUN ls -la /workspace/core/yappc-services/build/libs/*.jar || (echo "ERROR: Backend JAR not found in builder" && exit 1)
 COPY --from=backend-builder /workspace/core/yappc-services/build/libs/*.jar \
      /app/yappc-backend.jar
+RUN test -f /app/yappc-backend.jar || (echo "ERROR: Backend JAR copy failed" && exit 1)
 
-# Copy frontend static assets
+# Copy frontend static assets with verification
+RUN test -d /workspace/products/yappc/frontend/dist || (echo "ERROR: Frontend dist not found in builder" && exit 1)
 COPY --from=frontend-builder /workspace/products/yappc/frontend/dist \
      /app/public
+RUN test -d /app/public || (echo "ERROR: Frontend copy failed" && exit 1)
 
 # Copy configuration templates
 COPY products/yappc/infrastructure/docker/.env.template /app/.env.example

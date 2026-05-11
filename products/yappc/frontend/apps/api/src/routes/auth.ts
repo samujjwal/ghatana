@@ -74,15 +74,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                   role: { type: 'string' },
                 },
               },
-              tokens: {
-                type: 'object',
-                properties: {
-                  accessToken: { type: 'string' },
-                  refreshToken: { type: 'string' },
-                  expiresIn: { type: 'number' },
-                },
-              },
             },
+            required: ['user'],
           },
         },
       },
@@ -183,8 +176,11 @@ export async function authRoutes(fastify: FastifyInstance) {
           maxAge: 30 * 24 * 60 * 60 * 1000,
         });
         
-        // Return minimal response - tokens are in httpOnly cookies
-        reply.send({ accessToken: result.accessToken, expiresIn: result.expiresIn });
+        // Return only non-sensitive session metadata - tokens are in httpOnly cookies
+        reply.send({ 
+          expiresAt: new Date(Date.now() + result.expiresIn * 1000).toISOString(),
+          authMode: 'COOKIE',
+        });
       } catch (error: unknown) {
         reply.code(401).send({
           error: 'Token refresh failed',
@@ -298,16 +294,31 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         const hasCreatedWorkspace = workspaces.length > 0;
 
-        const hasCreatedProject = await checkUserHasProjects(userId);
+        const projectCheck = await checkUserHasProjects(userId);
+        const hasCreatedProject = projectCheck.hasProjects;
 
-        const hasInvitedTeamMember = await checkUserHasInvitedMembers(
+        const memberCheck = await checkUserHasInvitedMembers(
           userId,
           workspaces.map((w) => w.id)
         );
+        const hasInvitedTeamMember = memberCheck.hasInvited;
+
+        // Track degraded status for observability
+        const degraded = projectCheck.degraded || memberCheck.degraded;
+        if (degraded) {
+          console.error(JSON.stringify({
+            event: 'onboarding_check_degraded',
+            userId,
+            projectCheck: projectCheck.degraded ? projectCheck.degradedReason : null,
+            memberCheck: memberCheck.degraded ? memberCheck.degradedReason : null,
+          }));
+        }
 
         const onboardingStatus = {
           userId,
           completed: hasCompletedProfile && hasCreatedWorkspace && hasCreatedProject,
+          degraded,
+          degradedReason: degraded ? 'dependency_lookup_failed' : undefined,
           steps: {
             profile: {
               completed: hasCompletedProfile,
@@ -371,7 +382,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 // Onboarding Helper Functions
 // ============================================================================
 
-async function checkUserHasProjects(userId: string): Promise<boolean> {
+async function checkUserHasProjects(userId: string): Promise<{ hasProjects: boolean; degraded?: boolean; degradedReason?: string }> {
   try {
     const prisma = await import('../database/client.js').then(m => m.getPrismaClient());
     
@@ -382,21 +393,32 @@ async function checkUserHasProjects(userId: string): Promise<boolean> {
       },
     });
     
-    return projectCount > 0;
+    return { hasProjects: projectCount > 0 };
   } catch (error) {
-    console.error('Failed to check user projects:', error);
-    // Return false on error to avoid blocking onboarding
-    return false;
+    // Use structured logging - log error with context
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(JSON.stringify({ 
+      error: errorMessage, 
+      userId, 
+      event: 'check_user_projects_failed' 
+    }));
+    
+    // Return degraded status instead of silently returning false
+    return { 
+      hasProjects: false, 
+      degraded: true, 
+      degradedReason: 'project_lookup_failed' 
+    };
   }
 }
 
 async function checkUserHasInvitedMembers(
   userId: string,
   workspaceIds: string[]
-): Promise<boolean> {
+): Promise<{ hasInvited: boolean; degraded?: boolean; degradedReason?: string }> {
   try {
     if (workspaceIds.length === 0) {
-      return false;
+      return { hasInvited: false };
     }
     
     const prisma = await import('../database/client.js').then(m => m.getPrismaClient());
@@ -414,11 +436,23 @@ async function checkUserHasInvitedMembers(
       },
     });
     
-    return memberCount > 0;
+    return { hasInvited: memberCount > 0 };
   } catch (error) {
-    console.error('Failed to check invited members:', error);
-    // Return false on error to avoid blocking onboarding
-    return false;
+    // Use structured logging - log error with context
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(JSON.stringify({ 
+      error: errorMessage, 
+      userId, 
+      workspaceIds, 
+      event: 'check_invited_members_failed' 
+    }));
+    
+    // Return degraded status instead of silently returning false
+    return { 
+      hasInvited: false, 
+      degraded: true, 
+      degradedReason: 'member_lookup_failed' 
+    };
   }
 }
 

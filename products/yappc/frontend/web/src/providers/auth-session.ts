@@ -93,7 +93,7 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
  * Check if user has an active session (cookie present).
  * No token returned - cookies are httpOnly.
  */
-export function hasActiveSession(): boolean {
+export async function hasActiveSession(): Promise<boolean> {
   return hasSession();
 }
 
@@ -125,7 +125,7 @@ export async function fetchAuthSession(
   fetchImpl?: typeof fetch
 ): Promise<AuthSessionUser | null> {
   // Check if we have a session cookie
-  if (!hasSession()) {
+  if (!(await hasSession())) {
     return null;
   }
 

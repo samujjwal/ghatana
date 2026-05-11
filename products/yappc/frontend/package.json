@@ -40,7 +40,12 @@
     "deps:update": "pnpm update --latest",
     "deps:audit": "pnpm audit",
     "lighthouse": "lhci autorun",
-    "analyze": "pnpm build && open apps/web/dist/stats.html"
+    "analyze": "pnpm build && open apps/web/dist/stats.html",
+    "release:full": "pnpm release:openapi && pnpm release:accessibility && pnpm release:visual && pnpm release:performance",
+    "release:openapi": "node ../../scripts/validate-openapi-parity.js ../../docs/api/openapi.yaml ../../docs/api/route-manifest.yaml",
+    "release:accessibility": "playwright test --config web/playwright.config.ts --grep '@a11y'",
+    "release:visual": "playwright test --config web/playwright.config.ts --grep '@visual'",
+    "release:performance": "lhci autorun --collect.url=['http://localhost:4173'] --collect.numberOfRuns=3"
   },
   "dependencies": {
     "@growthbook/growthbook-react": "^1.6.5",

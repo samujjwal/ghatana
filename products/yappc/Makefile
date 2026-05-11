@@ -16,6 +16,10 @@ YELLOW := \033[1;33m
 RED := \033[0;31m
 NC := \033[0m
 
+# Resolve repository root (works from any subdirectory)
+REPO_ROOT := $(shell git rev-parse --show-toplevel 2>/dev/null || echo ".")
+GRADLEW := $(REPO_ROOT)/gradlew
+
 # Default target
 .DEFAULT_GOAL := help
 
@@ -43,7 +47,7 @@ verify:
 ## build: Build all services (Java + Frontend) via monorepo Gradle
 build:
 	@echo "$(BLUE)═══ Building YAPPC with standardized structure ═══$(NC)"
-	@./gradlew :core:yappc-services:build :core:yappc-api:build :core:scaffold:build --parallel
+	@$(GRADLEW) :core:yappc-services:build :core:yappc-api:build :core:scaffold:build --parallel
 	@echo "$(BLUE)═══ Building frontend ═══$(NC)"
 	@cd frontend && pnpm build:web
 	@echo "$(GREEN)✓ Build complete!$(NC)"
@@ -51,21 +55,21 @@ build:
 ## build-standalone: Build in standalone mode (from products/yappc/)
 build-standalone:
 	@echo "$(BLUE)═══ Building YAPPC in standalone mode ═══$(NC)"
-	@./gradlew clean build --parallel
+	@$(GRADLEW) clean build --parallel
 	@cd frontend && pnpm build:web
 	@echo "$(GREEN)✓ Standalone build complete!$(NC)"
 
 ## build-fast: Fast build (skip tests and checks)
 build-fast:
 	@echo "$(BLUE)═══ Fast building all services ═══$(NC)"
-	@./gradlew build -x test -x check --parallel
+	@$(GRADLEW) build -x test -x check --parallel
 	@cd frontend && pnpm build:web
 	@echo "$(GREEN)✓ Fast build complete!$(NC)"
 
 ## clean: Clean all build artifacts
 clean:
 	@echo "$(BLUE)═══ Cleaning build artifacts ═══$(NC)"
-	@./gradlew clean
+	@$(GRADLEW) clean
 	@cd frontend && pnpm run clean:generated || true
 	@rm -rf frontend/node_modules/.cache
 	@echo "$(GREEN)✓ Clean complete!$(NC)"
@@ -73,14 +77,14 @@ clean:
 ## test: Run all tests (Java + Frontend)
 test:
 	@echo "$(BLUE)═══ Running Java tests ═══$(NC)"
-	@./gradlew test
+	@$(GRADLEW) test
 	@echo "$(BLUE)═══ Running frontend tests ═══$(NC)"
 	@cd frontend && pnpm test
 	@echo "$(GREEN)✓ All tests passed!$(NC)"
 
 ## test-java: Run Java tests only
 test-java:
-	@./gradlew test
+	@$(GRADLEW) test
 
 ## test-frontend: Run frontend tests only
 test-frontend:
@@ -93,7 +97,7 @@ test-e2e:
 ## lint: Lint all code
 lint:
 	@echo "$(BLUE)═══ Linting Java code ═══$(NC)"
-	@./gradlew checkstyleMain pmdMain || true
+	@$(GRADLEW) checkstyleMain pmdMain || true
 	@echo "$(BLUE)═══ Linting frontend code ═══$(NC)"
 	@cd frontend && pnpm lint
 	@echo "$(GREEN)✓ Lint complete!$(NC)"
@@ -101,7 +105,7 @@ lint:
 ## format: Format all code
 format:
 	@echo "$(BLUE)═══ Formatting Java code ═══$(NC)"
-	@./gradlew spotlessApply
+	@$(GRADLEW) spotlessApply
 	@echo "$(BLUE)═══ Formatting frontend code ═══$(NC)"
 	@cd frontend && pnpm format
 	@echo "$(GREEN)✓ Format complete!$(NC)"
@@ -190,7 +194,7 @@ typecheck:
 ## coverage: Run tests with coverage
 coverage:
 	@echo "$(BLUE)═══ Running Java tests with coverage ═══$(NC)"
-	@./gradlew test jacocoTestReport
+	@$(GRADLEW) test jacocoTestReport
 	@echo "$(BLUE)═══ Running frontend tests with coverage ═══$(NC)"
 	@cd frontend && pnpm test:coverage
 	@echo "$(GREEN)✓ Coverage reports generated!$(NC)"
@@ -206,7 +210,7 @@ install:
 ## update: Update all dependencies
 update:
 	@echo "$(BLUE)═══ Updating Gradle dependencies ═══$(NC)"
-	@./gradlew dependencies --write-locks
+	@$(GRADLEW) dependencies --write-locks
 	@echo "$(BLUE)═══ Updating npm dependencies ═══$(NC)"
 	@cd frontend && pnpm update
 	@echo "$(GREEN)✓ Dependencies updated!$(NC)"
@@ -216,7 +220,7 @@ audit:
 	@echo "$(BLUE)═══ Auditing npm dependencies ═══$(NC)"
 	@cd frontend && pnpm audit
 	@echo "$(BLUE)═══ Checking for outdated dependencies ═══$(NC)"
-	@./gradlew dependencyUpdates
+	@$(GRADLEW) dependencyUpdates
 
 ## ports: List all used ports
 ports:
@@ -240,7 +244,7 @@ ports:
 ## docs: Generate documentation
 docs:
 	@echo "$(BLUE)═══ Generating documentation ═══$(NC)"
-	@./gradlew javadoc
+	@$(GRADLEW) javadoc
 	@cd frontend && pnpm run typedoc || echo "$(YELLOW)TypeDoc not configured$(NC)"
 	@echo "$(GREEN)✓ Documentation generated!$(NC)"
 
@@ -252,14 +256,14 @@ release:
 ## db-migrate: Run database migrations
 db-migrate:
 	@echo "$(BLUE)═══ Running database migrations ═══$(NC)"
-	@./gradlew flywayMigrate
+	@$(GRADLEW) flywayMigrate
 	@echo "$(GREEN)✓ Migrations complete!$(NC)"
 
 ## db-reset: Reset database (WARNING: destructive!)
 db-reset:
 	@echo "$(RED)⚠ WARNING: This will delete all data!$(NC)"
 	@read -p "Are you sure? (yes/no): " confirm && [ "$$confirm" = "yes" ]
-	@./gradlew flywayClean flywayMigrate
+	@$(GRADLEW) flywayClean flywayMigrate
 	@echo "$(GREEN)✓ Database reset complete!$(NC)"
 
 ## quick-start: Quick start for new developers
