@@ -24,24 +24,41 @@ export interface StoredSession {
 
 /**
  * Retrieve the access token from httpOnly cookie only.
- * No localStorage fallback - this is intentional for security.
+ * 
+ * SECURITY: httpOnly cookies cannot be read from JavaScript.
+ * This function returns null because tokens are managed by the browser/server.
+ * The API client will automatically send httpOnly cookies with requests.
  */
 export function getAccessToken(): string | null {
-  return getAccessTokenFromCookie();
+  // httpOnly cookies are automatically sent by the browser
+  // We cannot read them from JavaScript - this is intentional for security
+  return null;
 }
 
 /**
  * Retrieve the refresh token from httpOnly cookie only.
+ * 
+ * SECURITY: httpOnly cookies cannot be read from JavaScript.
+ * This function returns null because tokens are managed by the browser/server.
  */
 export function getRefreshToken(): string | null {
-  return getRefreshTokenFromCookie();
+  // httpOnly cookies are automatically sent by the browser
+  // We cannot read them from JavaScript - this is intentional for security
+  return null;
 }
 
 /**
- * Check if user appears to have an active session (cookie present)
+ * Check if user appears to have an active session.
+ * 
+ * SECURITY: We validate session by calling /api/auth/me instead of reading cookies.
  */
-export function hasSession(): boolean {
-  return !!getAccessTokenFromCookie();
+export async function hasSession(): Promise<boolean> {
+  try {
+    await yappcApi.auth.me();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -51,7 +68,7 @@ export function hasSession(): boolean {
 export async function clearSession(): Promise<void> {
   try {
     await yappcApi.auth.logout({
-      refreshToken: getRefreshToken() ?? '',
+      refreshToken: '', // Not needed when using httpOnly cookies
     });
   } catch {
     // Silent fail - cookies will expire naturally
@@ -110,20 +127,4 @@ export function clearStoredSession(): void {
   } catch {
     // Silent fail
   }
-}
-
-function getAccessTokenFromCookie(): string | null {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
-  return match?.[1] ?? null;
-}
-
-function getRefreshTokenFromCookie(): string | null {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const match = document.cookie.match(/(?:^|;\s*)refreshToken=([^;]+)/);
-  return match?.[1] ?? null;
 }

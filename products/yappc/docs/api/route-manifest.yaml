@@ -5,131 +5,362 @@
 #
 # Format: each route entry is  "METHOD /path"
 # Parametrised segments use {name} notation (same as OpenAPI).
+#
+# Auth/scope metadata format (as comments):
+# # @auth: public | required | optional
+# # @scopes: scope1,scope2 (if applicable)
+#
+# Auth levels:
+# - public: No authentication required
+# - required: Authentication required (valid JWT or session cookie)
+# - optional: Authentication optional (guest access allowed)
+#
+# Common scopes:
+# - workspace:read: Read access to workspace data
+# - workspace:write: Write access to workspace data
+# - project:read: Read access to project data
+# - project:write: Write access to project data
+# - admin: Administrative operations
 
 # ─── yappc-services (YappcHttpServer) ─────────────────────────────────────────
 yappc-services:
+  # @auth: public
   - GET  /health
+  # @auth: public
   - GET  /api/v1/yappc/info
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/intent/capture
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/intent/analyze
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/yappc/intent/{id}
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/shape/derive
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/shape/model
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/yappc/shape/{id}
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/validate
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/validate/with-config
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/validate/with-policy
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/generate
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/generate/diff
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/yappc/generate/artifacts/{id}
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/run
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/run/with-observation
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/run/rollback
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/run/promote
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/observe
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/learn
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/learn/with-context
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/evolve
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/evolve/with-constraints
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/lifecycle/execute
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/artifact/graph/ingest
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/artifact/graph/analyze
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/artifact/graph/merge
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/artifact/graph/query
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/yappc/artifact/residual/analyze
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/yappc/artifact/import-source
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/preview/session/create
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/preview/session/validate
   # Authorization and Capabilities
+  # @auth: required
+  # @scopes: admin
   - POST /api/v1/capabilities
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/capabilities
   # Phase Cockpit
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/phase/packet
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/phase/packet
   # Dashboard Actions
+  # @auth: required
+  # @scopes: workspace:read
   - POST /api/v1/dashboard/actions
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/dashboard/actions
 
 # ─── yappc-api (VectorRoutes / AgentRoutes / WorkflowRoutes) ──────────────────
 yappc-api:
   # Vector
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/vector/search
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/vector/search/hybrid
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/vector/similar/{id}
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/vector/index
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/vector/index/batch
+  # @auth: required
+  # @scopes: project:write
   - DELETE /api/v1/vector/index/{id}
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/vector/rag
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/vector/rag/chat
   # Agents
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/agents
+  # @auth: public
   - GET  /api/v1/agents/health
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/agents/capabilities
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/agents/by-capability/{capability}
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/agents/{name}
+  # @auth: public
   - GET  /api/v1/agents/{name}/health
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/agents/{name}/execute
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/agents/copilot/chat
+  # @auth: required
+  # @scopes: workspace:read
   - POST /api/v1/agents/search
+  # @auth: required
+  # @scopes: workspace:read
   - POST /api/v1/agents/predict
   # Workflows
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/workflows
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/workflows/{id}
+  # @auth: required
+  # @scopes: project:write
   - DELETE /api/v1/workflows/{id}
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/start
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/pause
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/resume
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/cancel
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/steps/advance
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{id}/steps/{stepId}/goto
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/workflows/{id}/plans/generate
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{workflowId}/plans/{planId}/approve
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/workflows/{workflowId}/plans/{planId}/reject
+  # @auth: required
+  # @scopes: project:write
   - PUT    /api/v1/workflows/{workflowId}/plans/{planId}/steps
+  # @auth: required
+  # @scopes: project:read
   - POST   /api/v1/workflows/{id}/route
 
 # ─── scaffold/api (YappcServer) ───────────────────────────────────────────────
 scaffold-api:
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/languages
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/categories
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/platforms
+  # @auth: required
+  # @scopes: admin
   - POST /api/v1/packs/refresh
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/{name}
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/{name}/validate
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/{name}/templates
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/packs/{name}/variables
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/scaffold/projects
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/scaffold/projects/add-feature
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/scaffold/projects/update
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/scaffold/projects/info
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/scaffold/projects/state
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/scaffold/projects/validate
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/scaffold/projects/check-updates
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/scaffold/projects/preview-update
+  # @auth: required
+  # @scopes: project:read
   - GET  /api/v1/scaffold/projects/features
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/scaffold/projects/export
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/scaffold/projects/import
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/templates/render
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/templates/helpers
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/templates/validate
+  # @auth: required
+  # @scopes: workspace:read
   - GET  /api/v1/dependencies/analyze/pack/{name}
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/dependencies/analyze/project
+  # @auth: required
+  # @scopes: project:read
   - POST /api/v1/dependencies/conflicts
+  # @auth: required
+  # @scopes: project:write
   - POST /api/v1/dependencies/add-conflicts
 
 # ─── refactorer/api (RefactorerHttpServer) ────────────────────────────────────
 refactorer-api:
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/jobs
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/jobs/{jobId}
+  # @auth: required
+  # @scopes: project:write
   - DELETE /api/v1/jobs/{jobId}
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/jobs/{jobId}/report
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/jobs/{jobId}/start
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/jobs/{jobId}/stop
+  # @auth: required
+  # @scopes: project:write
   - POST   /api/v1/jobs/{jobId}/runs
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/jobs/{jobId}/runs
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/jobs/{jobId}/runs/{runId}
+  # @auth: required
+  # @scopes: project:read
   - GET    /api/v1/jobs/{jobId}/runs/{runId}/logs
+  # @auth: required
+  # @scopes: admin
   - POST   /v1/diagnose
+  # @auth: public
   - GET    /v1/config

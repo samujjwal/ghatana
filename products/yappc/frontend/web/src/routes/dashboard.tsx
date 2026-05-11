@@ -73,14 +73,17 @@ function getProjectNextActionTitles(
         return { titles: [], isDegraded: true, isFallback: false };
     }
 
+    // Use the aiNextActions from the project data (populated by backend)
+    // The backend now provides authoritative next actions via the /next-actions endpoint
+    // For now, use the existing aiNextActions array which is already fetched
     if (Array.isArray(project.aiNextActions)) {
         const backedActions = project.aiNextActions
             .filter((action): action is string => typeof action === 'string' && action.trim().length > 0)
             .slice(0, 3);
 
         if (backedActions.length > 0) {
-            // TODO-011: Mark client-derived aiNextActions as degraded/fallback
-            // Backend actions are authoritative, aiNextActions are client-derived fallback
+            // Mark as degraded since we're using aiNextActions instead of the new endpoint
+            // TODO: Integrate the /api/projects/:id/next-actions endpoint with proper async handling
             return { titles: backedActions, isDegraded: true, isFallback: true };
         }
     }
@@ -218,7 +221,7 @@ export default function Component() {
     const isGuest = !currentUser.isAuthenticated;
     const isEmpty = !isLoading && !isGuest && allProjects.length === 0;
     const recentProjects = useMemo(
-        () => [...allProjects].sort((left, right) => getProjectUpdatedAt(right).i18n.languageCompare(getProjectUpdatedAt(left))).slice(0, 3),
+        () => [...allProjects].sort((left, right) => getProjectUpdatedAt(right).localeCompare(getProjectUpdatedAt(left))).slice(0, 3),
         [allProjects]
     );
 
@@ -279,7 +282,7 @@ export default function Component() {
             return [];
         }
 
-        return titles.map((title, index): NextAction => ({
+        return titles.map((title: string, index: number): NextAction => ({
             id: `dashboard-next-action-${index}`,
             title,
             description: `${title} · ${mostRecentProject.name}${isDegraded ? ' (degraded)' : ''}`,

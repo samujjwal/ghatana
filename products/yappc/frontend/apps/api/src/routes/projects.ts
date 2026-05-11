@@ -39,36 +39,62 @@ interface UpdateProjectBody {
   lifecyclePhase?: LifecyclePhaseInput;
 }
 
-type PersistedLifecyclePhase =
+// Canonical lifecycle phase names (after migration)
+// These match the Prisma schema enum values
+type CanonicalLifecyclePhase = 
   | 'INTENT'
-  | 'CONTEXT'
-  | 'PLAN'
-  | 'EXECUTE'
-  | 'VERIFY'
+  | 'SHAPE'
+  | 'VALIDATE'
+  | 'GENERATE'
+  | 'RUN'
   | 'OBSERVE'
   | 'LEARN'
-  | 'INSTITUTIONALIZE';
+  | 'EVOLVE';
 
+// Legacy phase names for backward compatibility (before migration)
+type LegacyLifecyclePhase = 'CONTEXT' | 'PLAN' | 'EXECUTE' | 'VERIFY' | 'INSTITUTIONALIZE';
 type MountedLifecyclePhase = 'SHAPE' | 'VALIDATE' | 'GENERATE' | 'RUN' | 'IMPROVE' | 'EVOLVE';
-type LifecyclePhaseInput = PersistedLifecyclePhase | MountedLifecyclePhase;
+type LifecyclePhaseInput = CanonicalLifecyclePhase | LegacyLifecyclePhase | MountedLifecyclePhase;
 type MountedDashboardPhase = 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'learn' | 'evolve';
 
-function normalizeLifecyclePhase(lifecyclePhase?: LifecyclePhaseInput): PersistedLifecyclePhase | undefined {
-  switch (lifecyclePhase) {
-    case 'SHAPE':
-      return 'CONTEXT';
-    case 'VALIDATE':
-      return 'PLAN';
-    case 'GENERATE':
-      return 'EXECUTE';
-    case 'RUN':
-      return 'VERIFY';
-    case 'IMPROVE':
-      return 'LEARN';
-    case 'EVOLVE':
-      return 'INSTITUTIONALIZE';
+/**
+ * Compatibility adapter for legacy lifecycle phase values.
+ * 
+ * This function handles legacy phase names that may still exist in the database
+ * from before the canonical phase migration. New code should always use canonical
+ * phase names: INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, LEARN, EVOLVE.
+ * 
+ * @param lifecyclePhase - The lifecycle phase value (canonical or legacy)
+ * @returns The canonical lifecycle phase, or undefined if the input is invalid
+ */
+function normalizeLifecyclePhase(lifecyclePhase?: LifecyclePhaseInput): CanonicalLifecyclePhase | undefined {
+  if (!lifecyclePhase) {
+    return undefined;
+  }
+  
+  // Return as-is if it's already a canonical phase
+  if (['INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'LEARN', 'EVOLVE'].includes(lifecyclePhase)) {
+    return lifecyclePhase as CanonicalLifecyclePhase;
+  }
+  
+  // Handle legacy phase names for backward compatibility
+  switch (lifecyclePhase as LegacyLifecyclePhase) {
+    case 'CONTEXT':
+      return 'SHAPE';
+    case 'PLAN':
+      return 'VALIDATE';
+    case 'EXECUTE':
+      return 'GENERATE';
+    case 'VERIFY':
+      return 'RUN';
+    case 'INSTITUTIONALIZE':
+      return 'EVOLVE';
     default:
-      return lifecyclePhase;
+      // Handle IMPROVE as an alias for LEARN
+      if (lifecyclePhase === 'IMPROVE') {
+        return 'LEARN';
+      }
+      return lifecyclePhase as CanonicalLifecyclePhase;
   }
 }
 
@@ -180,22 +206,29 @@ interface ProjectAccessMetadata {
   };
 }
 
-const DASHBOARD_ROUTE_BY_PHASE: Readonly<Record<LifecyclePhaseInput, MountedDashboardPhase>> = {
+const PHASE_TO_DASHBOARD_PHASE: Record<
+  LifecyclePhaseInput,
+  MountedDashboardPhase
+> = {
   INTENT: 'intent',
   SHAPE: 'shape',
-  CONTEXT: 'shape',
   VALIDATE: 'validate',
-  PLAN: 'validate',
   GENERATE: 'generate',
-  EXECUTE: 'generate',
   RUN: 'run',
-  VERIFY: 'run',
   OBSERVE: 'observe',
   LEARN: 'learn',
-  IMPROVE: 'learn',
   EVOLVE: 'evolve',
+  // Legacy phase names for backward compatibility
+  CONTEXT: 'shape',
+  PLAN: 'validate',
+  EXECUTE: 'generate',
+  VERIFY: 'run',
   INSTITUTIONALIZE: 'evolve',
+  IMPROVE: 'learn',
 };
+
+// Alias for the phase mapping - used in dashboard route normalization
+const DASHBOARD_ROUTE_BY_PHASE = PHASE_TO_DASHBOARD_PHASE;
 
 // ============================================================================
 // Rule-based Assistance Helpers
@@ -955,6 +988,62 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       };
 
       return reply.send(response);
+    }
+  );
+
+  /**
+   * GET /api/projects/:projectId/next-actions
+   * Return authoritative next actions for a project based on lifecycle phase, artifact state, and readiness gates.
+   * This is the single source of truth for dashboard next-best-action cards.
+   */
+  fastify.get<{ Params: ProjectParams; Querystring: { workspaceId?: string } }>(
+    '/projects/:projectId/next-actions',
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const { workspaceId } = request.query;
+
+      if (!request.user?.userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      // Verify workspace access if provided
+      if (workspaceId) {
+        if (project.ownerWorkspaceId !== workspaceId) {
+          const inclusion = await prisma.workspaceProject.findUnique({
+            where: {
+              workspaceId_projectId: { workspaceId, projectId },
+            },
+          });
+          if (!inclusion) {
+            return reply.status(403).send({ error: 'Project is not visible in this workspace' });
+          }
+        }
+      }
+
+      // Build authoritative dashboard actions based on lifecycle phase and artifact state
+      const dashboardActions = buildProjectDashboardActions(project);
+
+      // Return only the titles of safe-to-continue and review actions
+      // Blockers are handled separately in the dashboard-actions endpoint
+      const nextActionTitles = dashboardActions
+        .filter((action) => action.kind === 'safe-to-continue' || action.kind === 'review')
+        .map((action) => action.title);
+
+      return reply.send({
+        projectId,
+        nextActions: nextActionTitles,
+        currentPhase: project.lifecyclePhase,
+        aiNextActions: project.aiNextActions || [],
+        generatedAt: new Date().toISOString(),
+      });
     }
   );
 

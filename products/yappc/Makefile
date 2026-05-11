@@ -43,7 +43,7 @@ verify:
 ## build: Build all services (Java + Frontend) via monorepo Gradle
 build:
 	@echo "$(BLUE)═══ Building YAPPC with standardized structure ═══$(NC)"
-	@../../gradlew :products:yappc:build -x test --parallel
+	@./gradlew :core:yappc-services:build :core:yappc-api:build :core:scaffold:build --parallel
 	@echo "$(BLUE)═══ Building frontend ═══$(NC)"
 	@cd frontend && pnpm build:web
 	@echo "$(GREEN)✓ Build complete!$(NC)"
@@ -51,7 +51,7 @@ build:
 ## build-standalone: Build in standalone mode (from products/yappc/)
 build-standalone:
 	@echo "$(BLUE)═══ Building YAPPC in standalone mode ═══$(NC)"
-	@./gradlew clean build -x test --parallel
+	@./gradlew clean build --parallel
 	@cd frontend && pnpm build:web
 	@echo "$(GREEN)✓ Standalone build complete!$(NC)"
 

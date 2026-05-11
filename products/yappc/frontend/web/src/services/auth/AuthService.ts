@@ -75,6 +75,8 @@ export interface AuthResult {
     requiresTwoFactor?: boolean;
 }
 
+// Removed parseStoredSession function - no longer storing full sessions in localStorage
+
 /**
  * Authentication Service
  */
@@ -86,7 +88,8 @@ export class AuthService {
     private readonly TOKEN_REFRESH_THRESHOLD = 15 * 60 * 1000; // 15 minutes
 
     private constructor() {
-        this.initializeFromStorage();
+        // Initialize async - don't await in constructor
+        void this.initializeFromStorage();
     }
 
     public static getInstance(): AuthService {
@@ -98,23 +101,60 @@ export class AuthService {
 
     /**
      * Initialize authentication from stored session
+     * 
+     * SECURITY: Only restores non-sensitive metadata from localStorage.
+     * Full session validation is done via server-backed /api/auth/me probe.
      */
-    private initializeFromStorage(): void {
+    private async initializeFromStorage(): Promise<void> {
         try {
             if (typeof window === 'undefined' || !window.localStorage) {
                 return;
             }
-            const storedSession = window.localStorage.getItem('auth-session');
-            if (storedSession) {
-                const session = parseStoredSession(storedSession);
-                if (this.isSessionValid(session)) {
-                    this.currentSession = session;
-                    this.setupSessionRefresh();
-                    logger.info('Session restored from storage', 'auth', { userId: session.user.id });
-                } else {
-                    this.clearSession();
-                    logger.info('Stored session expired, cleared', 'auth');
-                }
+            
+            const storedMetadata = window.localStorage.getItem('auth-session-meta');
+            if (!storedMetadata) {
+                return;
+            }
+            
+            const metadata = JSON.parse(storedMetadata) as { userId: string; expiresAt: string };
+            
+            // Check if session is expired based on metadata
+            if (new Date(metadata.expiresAt) <= new Date()) {
+                this.clearSession();
+                logger.info('Stored session expired, cleared', 'auth');
+                return;
+            }
+            
+            // Validate session with server-backed /api/auth/me probe
+            try {
+                const userInfo = await yappcApi.auth.me();
+                
+                // Ensure role is one of the expected values
+                const normalizedUser = {
+                    ...userInfo,
+                    role: ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'].includes(userInfo.role as string)
+                        ? userInfo.role as ApiRole
+                        : 'VIEWER' as ApiRole,
+                } satisfies ApiAuthUser;
+                
+                // Reconstruct session from server response
+                const session: AuthSession = {
+                    user: this.mapApiUser(normalizedUser),
+                    token: '', // Tokens are in httpOnly cookies
+                    refreshToken: '', // Tokens are in httpOnly cookies
+                    expiresAt: metadata.expiresAt,
+                    permissions: this.mapPermissions(normalizedUser.role),
+                };
+                
+                this.currentSession = session;
+                this.setupSessionRefresh();
+                logger.info('Session validated and restored', 'auth', { userId: session.user.id });
+            } catch (error) {
+                // Server validation failed - clear session
+                logger.warn('Server session validation failed, clearing session', 'auth', {
+                    error: error instanceof Error ? error.message : String(error)
+                });
+                this.clearSession();
             }
         } catch (error) {
             logger.error('Failed to initialize auth from storage', 'auth', {
@@ -140,7 +180,23 @@ export class AuthService {
                     email: credentials.email,
                     password: credentials.password,
                 } satisfies ApiLoginRequest);
-            const session = this.createSessionFromApiResponse(authData);
+            
+            // In cookie mode, tokens are in httpOnly cookies
+            // Call /api/auth/me to get complete user info
+            const userInfo = await yappcApi.auth.me();
+            
+            // Ensure role is one of the expected values
+            const normalizedUser = {
+                ...userInfo,
+                role: ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'].includes(userInfo.role as string)
+                    ? userInfo.role as ApiRole
+                    : 'VIEWER' as ApiRole,
+            } satisfies ApiAuthUser;
+            
+            const session = this.createSessionFromApiResponse({
+                ...authData,
+                user: normalizedUser,
+            });
 
             this.currentSession = session;
             this.saveSession(session);
@@ -459,29 +515,43 @@ export class AuthService {
 
     /**
      * Save session to storage
+     * 
+     * SECURITY: Tokens are stored in httpOnly cookies only.
+     * We only persist non-sensitive metadata (userId, expiresAt) to localStorage
+     * for session restoration on page reload. Tokens are NEVER stored in localStorage.
      */
     private saveSession(session: AuthSession): void {
         try {
-            // Check if cookies are being used (httpOnly cookies are set by backend)
-            const hasCookie = document.cookie.includes('accessToken');
-            
-            // Only save to localStorage if cookies are not being used (backward compatibility)
-            if (!hasCookie) {
-                localStorage.setItem('auth-session', JSON.stringify(session));
+            if (typeof window === 'undefined' || !window.localStorage) {
+                return;
             }
+            
+            // Only store non-sensitive metadata - never tokens
+            const sessionMetadata = {
+                userId: session.user.id,
+                expiresAt: session.expiresAt,
+            };
+            
+            localStorage.setItem('auth-session-meta', JSON.stringify(sessionMetadata));
         } catch (error) {
-            logger.error('Failed to save session to storage', 'auth', {
+            logger.error('Failed to save session metadata to storage', 'auth', {
                 error: error instanceof Error ? error.message : String(error)
             });
         }
     }
 
     private createSessionFromApiResponse(authData: ApiAuthResponse): AuthSession {
+        // In cookie mode, tokens are in httpOnly cookies, not in the response body
+        // The response only contains user metadata
+        const hasTokens = 'tokens' in authData && authData.tokens !== undefined;
+        
         return {
             user: this.mapApiUser(authData.user),
-            token: authData.tokens.accessToken,
-            refreshToken: authData.tokens.refreshToken,
-            expiresAt: new Date(Date.now() + authData.tokens.expiresIn * 1000).toISOString(),
+            token: hasTokens ? authData.tokens.accessToken : '', // Tokens are in cookies
+            refreshToken: hasTokens ? authData.tokens.refreshToken : '', // Tokens are in cookies
+            expiresAt: hasTokens 
+                ? new Date(Date.now() + authData.tokens.expiresIn * 1000).toISOString()
+                : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24h for cookie mode
             permissions: this.mapPermissions(authData.user.role),
         };
     }
@@ -525,6 +595,9 @@ export class AuthService {
 
     /**
      * Clear current session
+     * 
+     * SECURITY: Only clears metadata from localStorage.
+     * Tokens are cleared by server via httpOnly cookie expiration.
      */
     private clearSession(): void {
         this.currentSession = null;
@@ -534,10 +607,15 @@ export class AuthService {
         }
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
+                // Only clear metadata - tokens are in httpOnly cookies
+                window.localStorage.removeItem('auth-session-meta');
+                // Also clear legacy keys if they exist
                 window.localStorage.removeItem('auth-session');
+                window.localStorage.removeItem('auth_token');
+                window.localStorage.removeItem('api_key');
             }
         } catch (error) {
-            logger.warn('Failed to clear session from storage', 'auth', {
+            logger.warn('Failed to clear session metadata from storage', 'auth', {
                 error: error instanceof Error ? error.message : String(error)
             });
         }

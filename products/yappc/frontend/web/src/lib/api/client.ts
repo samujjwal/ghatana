@@ -816,21 +816,38 @@ export interface GenerateDiffReview {
   readonly files: readonly GeneratedFileDiff[];
 }
 export interface GenerateArtifactsResponse {
-  readonly runId?: string;
+  readonly runId: string;
   readonly executionId?: string;
-  readonly status?: string;
-  readonly reviewRequired?: boolean;
+  readonly status: 'pending' | 'running' | 'completed' | 'failed' | 'degraded';
+  readonly reviewRequired: boolean;
   readonly diff?: GenerateDiffReview;
+  // Provenance metadata (required for production-grade generation)
+  readonly traceId?: string;
+  readonly evidenceIds?: readonly string[];
+  readonly policyDecisionId?: string;
+  readonly degraded?: boolean;
+  readonly degradedReason?: string;
+  readonly generatedAt: string;
+  readonly model?: string;
+  readonly confidence?: number;
+  readonly confidenceReason?: string;
 }
 export interface RegenerateDiffRequest {
   readonly runId: string;
   readonly diff: string;
 }
 export interface RegenerateDiffResponse {
-  readonly runId?: string;
-  readonly status?: string;
+  readonly runId: string;
+  readonly status: 'pending' | 'running' | 'completed' | 'failed' | 'degraded';
   readonly diff?: GenerateDiffReview;
-  readonly reviewRequired?: boolean;
+  readonly reviewRequired: boolean;
+  // Provenance metadata
+  readonly traceId?: string;
+  readonly evidenceIds?: readonly string[];
+  readonly policyDecisionId?: string;
+  readonly degraded?: boolean;
+  readonly degradedReason?: string;
+  readonly generatedAt: string;
 }
 export type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
 export interface GenerateReviewDecisionRequest {

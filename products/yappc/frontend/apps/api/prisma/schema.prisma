@@ -700,13 +700,13 @@ enum ProjectStatus {
 ///
 enum LifecyclePhase {
   INTENT
-  CONTEXT
-  PLAN
-  EXECUTE
-  VERIFY
+  SHAPE
+  VALIDATE
+  GENERATE
+  RUN
   OBSERVE
   LEARN
-  INSTITUTIONALIZE
+  EVOLVE
 }
 
 // ============================================================================

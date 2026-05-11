@@ -6,8 +6,8 @@
  * Verifies that critical gates actually execute and pass, not just that files exist.
  *
  * Usage:
- *   node scripts/verify-release-readiness.mjs              # Evidence-presence mode (fast)
- *   node scripts/verify-release-readiness.mjs --execute   # Execution mode (production)
+ *   node scripts/verify-release-readiness.mjs              # Execution mode (production default)
+ *   node scripts/verify-release-readiness.mjs --evidence-only  # Evidence-presence mode (fast, local only)
  *
  * @doc.type script
  * @doc.purpose Fail release readiness when critical YAPPC gates do not execute successfully
@@ -157,8 +157,9 @@ function checkFile(relativePath) {
 const failures = [];
 const passes = [];
 
-// Check if running in execution mode (default to evidence-presence for backward compatibility)
-const executionMode = process.argv.includes('--execute');
+// Check if running in evidence-only mode (default to execution mode for production safety)
+const evidenceOnlyMode = process.argv.includes('--evidence-only');
+const executionMode = !evidenceOnlyMode;
 
 for (const gate of requiredEvidence) {
   const missing = gate.files.filter((file) => !checkFile(file));
@@ -247,10 +248,12 @@ if (failures.length > 0) {
     console.error(`FAIL ${message}`);
   }
   console.error(`Release readiness gate failed with ${failures.length} issue(s).`);
-  console.error(`Run with --execute flag to validate execution results in addition to evidence presence.`);
+  console.error(`Run with --evidence-only flag to skip execution validation (local development only).`);
   process.exit(1);
 }
 
 const mode = executionMode ? 'execution' : 'evidence-presence';
 console.log(`Release readiness gate passed with ${passes.length} checks (${mode} mode).`);
-console.warn(`⚠️  Production releases should use --execute flag for full validation.`);
+if (evidenceOnlyMode) {
+  console.warn(`⚠️  Evidence-only mode skips execution validation - use for local development only.`);
+}

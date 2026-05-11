@@ -45,18 +45,8 @@ function toAuthenticatedUser(user: AuthUser): JWTUserPayload {
 // ============================================================================
 
 export async function authRoutes(fastify: FastifyInstance) {
-  // Register cookie plugin if available
-  // Note: Requires @fastify/cookie to be installed
-  // pnpm add @fastify/cookie
-  try {
-    // @ts-ignore - Cookie plugin may not be registered
-    await fastify.register(import('@fastify/cookie'), {
-      secret: process.env.COOKIE_SECRET || 'change-me-in-production',
-    });
-  } catch {
-    // Cookie plugin not available, fall back to token-in-response mode
-    console.warn('Cookie plugin not available, using token-in-response mode');
-  }
+  // Cookie plugin is registered in index.ts at startup
+  // This ensures httpOnly cookies are always available
 
   // Login endpoint
   fastify.post(
@@ -106,32 +96,27 @@ export async function authRoutes(fastify: FastifyInstance) {
           password,
         });
 
-        // Set httpOnly cookies if cookie plugin is available
-        if (reply.setCookie && typeof reply.setCookie === 'function') {
-          const isProduction = process.env.NODE_ENV === 'production';
-          
-          reply.setCookie('accessToken', result.tokens.accessToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'strict',
-            path: '/',
-            maxAge: result.tokens.expiresIn * 1000,
-          });
-          
-          reply.setCookie('refreshToken', result.tokens.refreshToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'strict',
-            path: '/api/auth/refresh',
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          });
-          
-          // Return user info only when using cookies
-          reply.send({ user: result.user });
-        } else {
-          // Fall back to token-in-response mode
-          reply.send(result);
-        }
+        // Set httpOnly cookies - cookie plugin is always available
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        reply.setCookie('accessToken', result.tokens.accessToken, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'strict',
+          path: '/',
+          maxAge: result.tokens.expiresIn * 1000,
+        });
+        
+        reply.setCookie('refreshToken', result.tokens.refreshToken, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'strict',
+          path: '/api/auth/refresh',
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        });
+        
+        // Return user info only - tokens are in httpOnly cookies
+        reply.send({ user: result.user });
       } catch (error: unknown) {
         reply.code(401).send({
           error: 'Authentication failed',
@@ -179,32 +164,27 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         const result = await authService.refreshTokens(refreshToken);
 
-        // Set new cookies if cookie plugin is available
-        if (reply.setCookie && typeof reply.setCookie === 'function') {
-          const isProduction = process.env.NODE_ENV === 'production';
-          
-          reply.setCookie('accessToken', result.accessToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'strict',
-            path: '/',
-            maxAge: result.expiresIn * 1000,
-          });
-          
-          reply.setCookie('refreshToken', result.refreshToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'strict',
-            path: '/api/auth/refresh',
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-          });
-          
-          // Return user info only when using cookies
-          reply.send({ accessToken: result.accessToken, expiresIn: result.expiresIn });
-        } else {
-          // Fall back to token-in-response mode
-          reply.send(result);
-        }
+        // Set new cookies - cookie plugin is always available
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        reply.setCookie('accessToken', result.accessToken, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'strict',
+          path: '/',
+          maxAge: result.expiresIn * 1000,
+        });
+        
+        reply.setCookie('refreshToken', result.refreshToken, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'strict',
+          path: '/api/auth/refresh',
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        
+        // Return minimal response - tokens are in httpOnly cookies
+        reply.send({ accessToken: result.accessToken, expiresIn: result.expiresIn });
       } catch (error: unknown) {
         reply.code(401).send({
           error: 'Token refresh failed',
@@ -246,19 +226,15 @@ export async function authRoutes(fastify: FastifyInstance) {
           await authService.logout(refreshToken);
         }
 
-        // Clear cookies if cookie plugin is available
-        if (reply.clearCookie && typeof reply.clearCookie === 'function') {
-          reply.clearCookie('accessToken', { path: '/' });
-          reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
-        }
+        // Clear cookies - cookie plugin is always available
+        reply.clearCookie('accessToken', { path: '/' });
+        reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
 
         reply.send({ message: 'Logged out successfully' });
       } catch (error: unknown) {
         // Always clear cookies even if logout fails
-        if (reply.clearCookie && typeof reply.clearCookie === 'function') {
-          reply.clearCookie('accessToken', { path: '/' });
-          reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
-        }
+        reply.clearCookie('accessToken', { path: '/' });
+        reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
         
         reply.code(400).send({
           error: 'Logout failed',
@@ -396,18 +372,54 @@ export async function authRoutes(fastify: FastifyInstance) {
 // ============================================================================
 
 async function checkUserHasProjects(userId: string): Promise<boolean> {
-  // This would query the database to check if user has created any projects
-  // For now, return a placeholder that can be implemented with actual Prisma queries
-  return false;
+  try {
+    const prisma = await import('../database/client.js').then(m => m.getPrismaClient());
+    
+    // Check if user has created any projects
+    const projectCount = await prisma.project.count({
+      where: {
+        createdById: userId,
+      },
+    });
+    
+    return projectCount > 0;
+  } catch (error) {
+    console.error('Failed to check user projects:', error);
+    // Return false on error to avoid blocking onboarding
+    return false;
+  }
 }
 
 async function checkUserHasInvitedMembers(
-  _userId: string,
-  _workspaceIds: string[]
+  userId: string,
+  workspaceIds: string[]
 ): Promise<boolean> {
-  // This would check if user has invited any members to their workspaces
-  // For now, return a placeholder that can be implemented with actual queries
-  return false;
+  try {
+    if (workspaceIds.length === 0) {
+      return false;
+    }
+    
+    const prisma = await import('../database/client.js').then(m => m.getPrismaClient());
+    
+    // Check if user has added any members to their workspaces
+    // Count members in the user's workspaces (excluding the user themselves)
+    const memberCount = await prisma.workspaceMember.count({
+      where: {
+        workspaceId: {
+          in: workspaceIds,
+        },
+        userId: {
+          not: userId, // Exclude the user themselves
+        },
+      },
+    });
+    
+    return memberCount > 0;
+  } catch (error) {
+    console.error('Failed to check invited members:', error);
+    // Return false on error to avoid blocking onboarding
+    return false;
+  }
 }
 
 // ============================================================================

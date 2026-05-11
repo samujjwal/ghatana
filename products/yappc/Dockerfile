@@ -25,11 +25,11 @@ COPY libs libs
 COPY products/yappc products/yappc
 COPY contracts contracts
 
-# Build YAPPC backend services (skip tests for speed)
-RUN ./gradlew :products:yappc:backend:api:build \
-              :products:yappc:core:lifecycle:build \
-              :products:yappc:core:scaffold:core:build \
-              -x test --no-daemon -q
+# Build YAPPC backend services (run tests for production safety)
+RUN ./gradlew :core:yappc-services:build \
+              :core:yappc-api:build \
+              :core:scaffold:build \
+              --no-daemon -q
 
 # ============================================================================
 # STAGE 2: Frontend Build (Node)
@@ -78,7 +78,7 @@ RUN addgroup -g 1000 yappc && \
 WORKDIR /app
 
 # Copy backend JAR from builder
-COPY --from=backend-builder /workspace/products/yappc/backend/api/build/libs/*.jar \
+COPY --from=backend-builder /workspace/core/yappc-services/build/libs/*.jar \
      /app/yappc-backend.jar
 
 # Copy frontend static assets

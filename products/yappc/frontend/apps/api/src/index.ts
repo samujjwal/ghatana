@@ -6,6 +6,7 @@ import fastify from 'fastify';
 import { randomUUID } from 'node:crypto';
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
+import cookie from '@fastify/cookie';
 import { apiRateLimitMiddleware, aiRateLimitMiddleware } from './middleware/RateLimitMiddleware.js';
 import fs from 'fs';
 import path from 'path';
@@ -160,21 +161,24 @@ export async function createApp(
 
   // In production, require secure configuration - no defaults
   const isProduction = process.env.NODE_ENV === 'production';
-  if (isProduction) {
-    if (!process.env.COOKIE_SECRET) {
-      throw new Error('COOKIE_SECRET environment variable is required in production. Aborting startup.');
-    }
+  
+  // COOKIE_SECRET is always required for cookie-based auth
+  if (!process.env.COOKIE_SECRET) {
+    throw new Error('COOKIE_SECRET environment variable is required. Aborting startup.');
+  }
 
+  // Reject default secret in all environments for security
+  if (process.env.COOKIE_SECRET === 'change-me-in-production') {
+    throw new Error('Default COOKIE_SECRET detected. Set a secure secret. Aborting startup.');
+  }
+
+  if (isProduction) {
     if (!process.env.JWT_REFRESH_SECRET) {
       throw new Error('JWT_REFRESH_SECRET environment variable is required in production. Aborting startup.');
     }
 
     if (!process.env.JAVA_BACKEND_API_KEY) {
       throw new Error('JAVA_BACKEND_API_KEY environment variable is required in production. Aborting startup.');
-    }
-
-    if (process.env.COOKIE_SECRET === 'change-me-in-production') {
-      throw new Error('Default COOKIE_SECRET detected in production. Set a secure secret. Aborting startup.');
     }
   }
 
@@ -183,6 +187,11 @@ export async function createApp(
   }
 
   const app = fastify({ logger: true });
+
+  // Register cookie plugin - required for httpOnly cookie-based auth
+  await app.register(cookie, {
+    secret: process.env.COOKIE_SECRET,
+  });
 
   instrumentFastify(app);
 

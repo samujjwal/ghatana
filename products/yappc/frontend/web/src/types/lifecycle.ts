@@ -258,20 +258,9 @@ export function canTransitionToPhase(
 }
 
 function normalizeLifecyclePhase(phase: LifecyclePhase): LifecyclePhase {
-    switch (phase) {
-        case LifecyclePhase.SHAPE:
-            return LifecyclePhase.CONTEXT;
-        case LifecyclePhase.VALIDATE:
-            return LifecyclePhase.PLAN;
-        case LifecyclePhase.GENERATE:
-            return LifecyclePhase.EXECUTE;
-        case LifecyclePhase.RUN:
-            return LifecyclePhase.VERIFY;
-        case LifecyclePhase.IMPROVE:
-            return LifecyclePhase.LEARN;
-        default:
-            return phase;
-    }
+    // Return canonical phase as-is - no mapping needed
+    // Legacy phase names are handled by the backend compatibility adapter
+    return phase;
 }
 
 /**
