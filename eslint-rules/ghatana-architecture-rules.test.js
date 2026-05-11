@@ -403,6 +403,77 @@ runJsxSuite(
 );
 
 // =============================================================================
+// no-yappc-direct-platform-imports (task 3.1.2)
+// =============================================================================
+console.log("\nno-yappc-direct-platform-imports");
+
+runSuite(
+  "prevents YAPPC from importing platform modules that should use contract facades",
+  "no-yappc-direct-platform-imports",
+  {
+    valid: [
+      {
+        // yappc file importing from @data-cloud/api (allowed facade, task 3.1.5) → allowed
+        filename: "/repo/products/yappc/ui/src/component.ts",
+        code: `import { AgentClient } from "@data-cloud/api";`,
+      },
+      {
+        // yappc file importing from @aep/api (allowed facade, task 3.1.5) → allowed
+        filename: "/repo/products/yappc/ui/src/component.ts",
+        code: `import { WorkflowClient } from "@aep/api";`,
+      },
+      {
+        // yappc file importing from @ghatana/platform-utils (not in contract facade list) → allowed
+        filename: "/repo/products/yappc/ui/src/component.ts",
+        code: `import { cn } from "@ghatana/platform-utils";`,
+      },
+      {
+        // yappc file importing from @ghatana/design-system (not in contract facade list) → allowed
+        filename: "/repo/products/yappc/ui/src/component.ts",
+        code: `import { Button } from "@ghatana/design-system";`,
+      },
+      {
+        // non-yappc file importing platform modules → not checked
+        filename: "/repo/products/data-cloud/ui/src/page.ts",
+        code: `import { AgentCore } from "@ghatana/agent-core";`,
+      },
+    ],
+    invalid: [
+      {
+        // yappc file importing @ghatana/agent-core directly → should use @data-cloud/api
+        filename: "/repo/products/yappc/ui/src/component.ts",
+        code: `import { AgentCore } from "@ghatana/agent-core";`,
+        errors: [{ messageId: "directPlatformImport" }],
+      },
+      {
+        // yappc file importing @ghatana/ai-integration directly → should use @data-cloud/api
+        filename: "/repo/products/yappc/services/agent.ts",
+        code: `import { AIIntegration } from "@ghatana/ai-integration";`,
+        errors: [{ messageId: "directPlatformImport" }],
+      },
+      {
+        // yappc file importing @ghatana/workflow directly → should use @aep/api
+        filename: "/repo/products/yappc/services/workflow.ts",
+        code: `import { WorkflowEngine } from "@ghatana/workflow";`,
+        errors: [{ messageId: "directPlatformImport" }],
+      },
+      {
+        // yappc file importing @ghatana/vector directly → should use @data-cloud/api
+        filename: "/repo/products/yappc/services/search.ts",
+        code: `import { VectorStore } from "@ghatana/vector";`,
+        errors: [{ messageId: "directPlatformImport" }],
+      },
+      {
+        // yappc file importing @ghatana/event-cloud directly → should use @data-cloud/api
+        filename: "/repo/products/yappc/services/events.ts",
+        code: `import { EventCloud } from "@ghatana/event-cloud";`,
+        errors: [{ messageId: "directPlatformImport" }],
+      },
+    ],
+  }
+);
+
+// =============================================================================
 // Summary
 // =============================================================================
 console.log(`\n─────────────────────────────────────────`);

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: roadmap_synthesis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {quarters: [{theme, initiatives, milestones, resources, risks}], dependencies, flexibility_points, metrics}
     - name: timeline_optimization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Optimize timeline based on dependencies and resources
     - name: roadmap_visualization
       type: SERVICE_CALL

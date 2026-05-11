@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: audience_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Identify stakeholder type and needs
     - name: communication_crafting
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

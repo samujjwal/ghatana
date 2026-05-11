@@ -274,63 +274,104 @@ jobs:
   stable-route-e2e-realbackend:
     name: Stable Route E2E (Real Backend) - Mandatory for Production
     runs-on: ubuntu-latest
-    # P1-2: Make real-backend E2E mandatory for production release
-    # Fails with clear error message if required environment variables are not configured
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: dmos_e2e
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate Required Environment Variables
-        run: |
-          if [ -z "${{ vars.DMOS_UI_BASE_URL }}" ]; then
-            echo "❌ DMOS_UI_BASE_URL environment variable is required for production release"
-            echo "Please configure DMOS_UI_BASE_URL in repository settings"
-            exit 1
-          fi
-          if [ -z "${{ vars.DMOS_API_BASE_URL }}" ]; then
-            echo "❌ DMOS_API_BASE_URL environment variable is required for production release"
-            echo "Please configure DMOS_API_BASE_URL in repository settings"
-            exit 1
-          fi
-          if [ -z "${{ vars.DMOS_TEST_WORKSPACE }}" ]; then
-            echo "❌ DMOS_TEST_WORKSPACE environment variable is required for production release"
-            echo "Please configure DMOS_TEST_WORKSPACE in repository settings"
-            exit 1
-          fi
-          if [ -z "${{ secrets.DMOS_TEST_TOKEN }}" ]; then
-            echo "❌ DMOS_TEST_TOKEN secret is required for production release"
-            echo "Please configure DMOS_TEST_TOKEN in repository secrets"
-            exit 1
-          fi
-          echo "✅ All required environment variables are configured"
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10
 
-      - name: Install dependencies
+      - name: Install UI dependencies
+        working-directory: products/digital-marketing/ui
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         working-directory: products/digital-marketing/ui
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Start DMOS API
+        run: |
+          ./gradlew :products:digital-marketing:dm-api:runDmosApiServer > /tmp/dmos-api.log 2>&1 &
+          echo $! > /tmp/dmos-api.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://localhost:8080/health/live > /dev/null; then
+              echo "✅ DMOS API is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ DMOS API failed to start"
+          cat /tmp/dmos-api.log
+          exit 1
+        env:
+          DMOS_ENV: development
+          PORT: 8080
+          DMOS_PII_HMAC_KEY: ci-e2e-hmac-key
+
+      - name: Start DMOS UI
+        working-directory: products/digital-marketing/ui
+        run: |
+          DMOS_API_PROXY_TARGET=http://localhost:8080 pnpm dev --host 127.0.0.1 --port 5174 > /tmp/dmos-ui.log 2>&1 &
+          echo $! > /tmp/dmos-ui.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://localhost:5174/login > /dev/null; then
+              echo "✅ DMOS UI is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ DMOS UI failed to start"
+          cat /tmp/dmos-ui.log
+          exit 1
+
       - name: Run stable route release gate suite against real backend
         working-directory: products/digital-marketing/ui
         env:
-          DMOS_UI_BASE_URL: ${{ vars.DMOS_UI_BASE_URL }}
-          DMOS_API_BASE_URL: ${{ vars.DMOS_API_BASE_URL }}
-          DMOS_TEST_WORKSPACE: ${{ vars.DMOS_TEST_WORKSPACE }}
-          DMOS_TEST_TOKEN: ${{ secrets.DMOS_TEST_TOKEN }}
+          DMOS_UI_BASE_URL: http://localhost:5174
+          DMOS_API_BASE_URL: http://localhost:8080
+          DMOS_TEST_WORKSPACE: ws-e2e
+          DMOS_TEST_TENANT: tenant-e2e
+          DMOS_TEST_PRINCIPAL: principal-e2e
+          DMOS_TEST_TOKEN: dev-e2e-token
         run: pnpm test:e2e:realbackend
+
+      - name: Stop real-backend services
+        if: always()
+        run: |
+          if [ -f /tmp/dmos-ui.pid ]; then kill "$(cat /tmp/dmos-ui.pid)" || true; fi
+          if [ -f /tmp/dmos-api.pid ]; then kill "$(cat /tmp/dmos-api.pid)" || true; fi
 
       - name: Upload real-backend Playwright report
         uses: actions/upload-artifact@v4
@@ -411,7 +452,8 @@ jobs:
         run: |
           echo "Checking fail-closed security implementation..."
           if grep -r "X-Principal-ID" products/digital-marketing/dm-api/src/main/java --include="*.java" | grep -q "getHeader"; then
-            echo "⚠️ Found client-side principal header usage - ensure server-side derivation is used"
+            echo "❌ Found client-side principal header usage - server-side identity derivation is required"
+            exit 1
           fi
           echo "✅ Security header validation complete"
 
@@ -557,7 +599,8 @@ jobs:
         run: |
           # Check for plaintext PII handling in production code
           if grep -r "email" products/digital-marketing/dm-persistence/src/main/java --include="*.java" | grep -i "varchar" | grep -v "hashed" | grep -v "encrypted"; then
-            echo "⚠️ Found potential plaintext email storage - ensure PII is hashed/encrypted"
+            echo "❌ Found potential plaintext email storage - PII must be hashed/encrypted"
+            exit 1
           fi
           echo "✅ PII hardening validation complete"
 
@@ -597,7 +640,8 @@ jobs:
         run: |
           # Ensure dashboard metrics are computed server-side, not in UI
           if grep -r "computeMetrics" products/digital-marketing/ui/src --include="*.ts" --include="*.tsx"; then
-            echo "⚠️ Found metric computation in UI - should be backend-only"
+            echo "❌ Found metric computation in UI - dashboard metrics must come from backend summary API"
+            exit 1
           fi
           echo "✅ Backend-only computation validated"
 
@@ -746,7 +790,7 @@ jobs:
           cat > release-report.md << 'EOF'
           # DMOS P0/P1 Release Gate Report
 
-          ## Status: ${{ needs.release-gate.result }}
+          ## Status: See the `Check all P0/P1 tests passed` step in this job.
 
           ### Test Results Summary
 
@@ -768,7 +812,7 @@ jobs:
 
           ### Release Decision
 
-          ${{ needs.release-gate.result == 'success' && '✅ PRODUCTION RELEASE APPROVED' || '❌ PRODUCTION RELEASE BLOCKED' }}
+          The release decision is enforced by the summary step above. Any failed required job blocks production release.
 
           Generated at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
           EOF

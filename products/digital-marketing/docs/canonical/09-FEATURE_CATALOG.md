@@ -8,11 +8,11 @@ This document is the self-contained inventory of DMOS features, their intended o
 
 | Status | Meaning |
 |---|---|
-| Stable | Intended for production once release gates pass |
+| Ready | Implemented, tested, operationalized, and passing release gates |
 | Partial | Implemented but missing critical completeness, tests, or production hardening |
 | Boundary | Product scope defined, but must remain feature-gated until implemented with real data/services |
-| Blocked | Must not be exposed in production until blocker is resolved |
-| Future | Not part of current production pass |
+| Dev/Test only | Useful for local/test workflows but blocked from production |
+| Not verified | Implementation may exist, but current production proof has not been run |
 
 ## Feature Inventory
 
@@ -20,9 +20,9 @@ This document is the self-contained inventory of DMOS features, their intended o
 |---|---|---|---|---|
 | Workspace | Login and workspace entry | Partial | Production identity provider | Prod auth tests, dev login gated |
 | Workspace | Dashboard command center | Partial | Campaigns, approvals, AI actions, connectors | Real data UI/API/E2E |
-| Workspace | Capability-driven routes | Stable | Workspace capabilities API | Backend and UI flag tests |
-| Campaigns | Campaign list | Stable | Persistence, tenant filters | API/UI/persistence tests |
-| Campaigns | Campaign create | Stable | Validation, persistence, audit | E2E create flow |
+| Workspace | Capability-driven routes | Partial | Workspace capabilities API | Backend and UI flag tests |
+| Campaigns | Campaign list | Partial | Persistence, tenant filters | API/UI/persistence tests |
+| Campaigns | Campaign create | Partial | Validation, persistence, audit | E2E create flow |
 | Campaigns | Campaign detail | Partial | Aggregated campaign data | UI/API consistency tests |
 | Campaigns | Launch/pause/complete/archive | Partial | Lifecycle rules, connector, approvals | Domain/API/E2E tests |
 | Campaigns | Rollback | Partial | Connector compensation | Connector rollback tests |
@@ -36,23 +36,23 @@ This document is the self-contained inventory of DMOS features, their intended o
 | Content | Landing-page generation | Partial | AI provider, content model | API/UI tests |
 | Content | Email follow-up generation | Partial | AI provider, sequence model | API/UI tests |
 | Content | Content validation | Partial | Policy packs | Validation tests |
-| Approvals | Approval queue | Stable | Approval service, permission model | Role matrix tests |
-| Approvals | Approval detail | Stable | Snapshot and risk metadata | UI/API tests |
-| Approvals | Approve/reject | Stable | Immutable decision model | Conflict/audit tests |
-| AI | AI action log | Stable | Persistence, redaction | Redaction/UI/API tests |
+| Approvals | Approval queue | Partial | Approval service, permission model | Role matrix tests |
+| Approvals | Approval detail | Partial | Snapshot and risk metadata | UI/API tests |
+| Approvals | Approve/reject | Partial | Immutable decision model | Conflict/audit tests |
+| AI | AI action log | Partial | Persistence, redaction | Redaction/UI/API tests |
 | AI | Model provenance | Partial | Provider metadata | API/UI tests |
 | AI | Next-best action | Partial | Analytics and campaign state | Recommendation tests |
 | Connector | Google Ads OAuth/status | Partial | OAuth config, token handling | Security/connector tests |
 | Connector | Google Ads campaign execution | Partial | Outbox, idempotency, external API | Connector E2E/sandbox |
 | Connector | Retry/DLQ | Partial | Queue/outbox infrastructure | Chaos tests |
-| Connector | Kill switch | Stable | Feature flag/capability service | API/UI tests |
+| Connector | Kill switch | Partial | Feature flag/capability service | API/UI tests |
 | Reporting | ROI/ROAS | Boundary | Spend/revenue/performance data | Formula and UI tests |
 | Reporting | Funnel analytics | Boundary | Event/funnel data model | Calculation tests |
 | Reporting | Attribution | Boundary | Touchpoint model | Model tests |
 | Market | Market research | Boundary | Research providers, provenance | Source/provenance tests |
 | Agency | Multi-client workspace | Boundary | Client/account data model | Tenant/client tests |
 | Localization | Multi-language campaigns | Boundary | Locale model, compliance rules | i18n/policy tests |
-| Operations | Observability | Stable | OTel/logging/metrics | Trace/metric validation |
+| Operations | Observability | Partial | OTel/logging/metrics | Trace/metric validation |
 | Operations | Retention/DSAR | Partial | PII model, retention jobs | Privacy tests |
 
 ## Feature Lifecycle
@@ -67,9 +67,9 @@ Every feature moves through:
 6. **Released:** Feature flag enabled for intended tenants.
 7. **Measured:** Usage, quality, and outcome metrics reviewed.
 
-## Stable Feature Requirements
+## Ready Feature Requirements
 
-A feature can be marked stable only when:
+A feature can be marked `Ready` only when:
 
 - It is backed by real backend services.
 - It has durable production persistence if stateful.
@@ -186,12 +186,12 @@ This catalog must be updated when:
 | Learning | Playbook versioning | Boundary | Experiment results promote into playbooks |
 | Experimentation | A/B tests | Boundary | Hypothesis, sample size, winner criteria |
 | Attribution | Touchpoint model | Boundary | Last-click MVP; multi-touch later |
-| Agency | White-label reports | Future | Requires multi-client model |
-| Enterprise | SSO/data residency/custom policies | Future | Post-MVP |
+| Agency | White-label reports | Boundary | Requires multi-client model |
+| Enterprise | SSO/data residency/custom policies | Boundary | Post-MVP |
 
 ## Feature Promotion Checklist
 
-Before any boundary feature becomes stable:
+Before any boundary feature becomes `Ready`:
 
 - Product requirement exists.
 - Design is complete.

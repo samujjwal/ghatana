@@ -50,7 +50,7 @@ spec:
     - architecture
     - design
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: platform-architecture-orchestrator
     name: Platform Architecture Orchestrator
@@ -84,7 +84,7 @@ spec:
     - platform-architecture
     - infrastructure
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: plugin-architecture-orchestrator
     name: Plugin Architecture Orchestrator
@@ -118,7 +118,7 @@ spec:
     - plugin-architecture
     - extensibility
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: runtime-architecture-orchestrator
     name: Runtime Architecture Orchestrator
@@ -153,7 +153,7 @@ spec:
     - runtime-architecture
     - agent-runtime
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: domain-architecture-capability-agent
     name: Domain Architecture Capability Agent
@@ -188,7 +188,7 @@ spec:
     - domain-architecture
     - ddd
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: service-design-capability-agent
     name: Service Design Capability Agent
@@ -210,7 +210,7 @@ spec:
     - service-design
     - microservices
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: event-architecture-capability-agent
     name: Event Architecture Capability Agent
@@ -240,7 +240,7 @@ spec:
     - event-architecture
     - event-sourcing
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: data-architecture-capability-agent
     name: Data Architecture Capability Agent
@@ -262,7 +262,7 @@ spec:
     - data-architecture
     - caching
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: security-architecture-capability-agent
     name: Security Architecture Capability Agent
@@ -286,7 +286,7 @@ spec:
     - security-architecture
     - rbac
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: observability-architecture-capability-agent
     name: Observability Architecture Capability Agent
@@ -309,7 +309,7 @@ spec:
     - observability
     - monitoring
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: plugin-contract-capability-agent
     name: Plugin Contract Capability Agent
@@ -331,7 +331,7 @@ spec:
     - plugin-contracts
     - extensibility
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: agent-runtime-capability-agent
     name: Agent Runtime Capability Agent
@@ -353,7 +353,7 @@ spec:
     - agent-runtime
     - execution
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: memory-architecture-capability-agent
     name: Memory Architecture Capability Agent
@@ -383,7 +383,7 @@ spec:
     - memory-architecture
     - multi-tier
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: domain-model-task-agent
     name: Domain Model Task Agent
@@ -404,7 +404,7 @@ spec:
     - domain-model
     - ddd
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: bounded-context-task-agent
     name: Bounded Context Task Agent
@@ -424,7 +424,7 @@ spec:
     - bounded-context
     - mapping
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: service-boundary-task-agent
     name: Service Boundary Task Agent
@@ -444,7 +444,7 @@ spec:
     - service-boundary
     - decomposition
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: api-contract-task-agent
     name: API Contract Task Agent
@@ -467,7 +467,7 @@ spec:
     - api-contract
     - openapi
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: graphql-schema-task-agent
     name: GraphQL Schema Task Agent
@@ -488,7 +488,7 @@ spec:
     - graphql
     - schema
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: event-schema-task-agent
     name: Event Schema Task Agent
@@ -510,7 +510,7 @@ spec:
     - event-schema
     - versioning
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: workflow-architecture-task-agent
     name: Workflow Architecture Task Agent
@@ -532,7 +532,7 @@ spec:
     - workflow
     - orchestration
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: data-store-selection-task-agent
     name: Data Store Selection Task Agent
@@ -553,7 +553,7 @@ spec:
     - data-store
     - selection
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: caching-strategy-task-agent
     name: Caching Strategy Task Agent
@@ -575,7 +575,7 @@ spec:
     - caching
     - strategy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: search-architecture-task-agent
     name: Search Architecture Task Agent
@@ -597,7 +597,7 @@ spec:
     - search
     - architecture
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: security-control-task-agent
     name: Security Control Task Agent
@@ -619,7 +619,7 @@ spec:
     - security-controls
     - threat-mitigation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: rbac-architecture-task-agent
     name: RBAC Architecture Task Agent
@@ -641,7 +641,7 @@ spec:
     - rbac
     - access-control
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: tenant-isolation-task-agent
     name: Tenant Isolation Task Agent
@@ -663,7 +663,7 @@ spec:
     - tenant-isolation
     - multi-tenancy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: audit-architecture-task-agent
     name: Audit Architecture Task Agent
@@ -685,7 +685,7 @@ spec:
     - audit
     - logging
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: observability-plan-task-agent
     name: Observability Plan Task Agent
@@ -707,7 +707,7 @@ spec:
     - observability
     - plan
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: deployment-topology-task-agent
     name: Deployment Topology Task Agent
@@ -729,7 +729,7 @@ spec:
     - deployment
     - topology
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: plugin-lifecycle-task-agent
     name: Plugin Lifecycle Task Agent
@@ -751,7 +751,7 @@ spec:
     - plugin-lifecycle
     - hooks
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: plugin-compatibility-task-agent
     name: Plugin Compatibility Task Agent
@@ -772,7 +772,7 @@ spec:
     - plugin-compatibility
     - versioning
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: agent-memory-design-task-agent
     name: Agent Memory Design Task Agent
@@ -794,7 +794,7 @@ spec:
     - agent-memory
     - configuration
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: context-assembly-task-agent
     name: Context Assembly Task Agent
@@ -815,7 +815,7 @@ spec:
     - context-assembly
     - tokens
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: policy-enforcement-architecture-task-agent
     name: Policy Enforcement Architecture Task Agent
@@ -837,7 +837,7 @@ spec:
     - policy-enforcement
     - opa
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: rate-limit-architecture-task-agent
     name: Rate Limit Architecture Task Agent
@@ -859,7 +859,7 @@ spec:
     - rate-limiting
     - throttling
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: backup-recovery-architecture-task-agent
     name: Backup Recovery Architecture Task Agent
@@ -881,7 +881,7 @@ spec:
     - backup-recovery
     - disaster-recovery
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: schema-comparer
     name: Schema Comparer
@@ -897,7 +897,7 @@ spec:
     - schema
     - comparison
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: backward-compatibility-checker
     name: Backward Compatibility Checker
@@ -913,7 +913,7 @@ spec:
     - compatibility
     - schemas
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: event-versioning-unit
     name: Event Versioning Unit
@@ -929,7 +929,7 @@ spec:
     - versioning
     - events
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: boundary-leak-detector
     name: Boundary Leak Detector
@@ -945,7 +945,7 @@ spec:
     - boundary
     - leak-detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: topology-shape-unit
     name: Topology Shape Unit
@@ -961,7 +961,7 @@ spec:
     - topology
     - classification
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: consistency-model-selector
     name: Consistency Model Selector
@@ -977,7 +977,7 @@ spec:
     - consistency
     - selection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: cache-invalidation-advisor
     name: Cache Invalidation Advisor
@@ -993,7 +993,7 @@ spec:
     - cache
     - invalidation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: tenant-scope-validator
     name: Tenant Scope Validator
@@ -1009,7 +1009,7 @@ spec:
     - tenant
     - validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: role-scope-checker
     name: Role Scope Checker
@@ -1025,7 +1025,7 @@ spec:
     - role
     - scope
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: plugin-manifest-validator
     name: Plugin Manifest Validator
@@ -1041,7 +1041,7 @@ spec:
     - plugin
     - manifest
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: memory-tier-selector
     name: Memory Tier Selector
@@ -1058,7 +1058,7 @@ spec:
     - memory
     - tier-selection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: policy-rule-translator
     name: Policy Rule Translator
@@ -1075,7 +1075,7 @@ spec:
     - policy
     - rego-translation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: audit-field-checker
     name: Audit Field Checker
@@ -1091,7 +1091,7 @@ spec:
     - audit
     - field-validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: trace-span-planner
     name: Trace Span Planner
@@ -1108,7 +1108,7 @@ spec:
     - tracing
     - otel
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: failure-mode-classifier
     name: Failure Mode Classifier
@@ -1125,7 +1125,7 @@ spec:
     - failure-modes
     - classification
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

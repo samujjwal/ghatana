@@ -73,14 +73,53 @@ public final class Campaign {
     public String getCreatedBy()       { return createdBy; }
 
     /**
+     * Transitions the campaign to {@link CampaignStatus#PENDING_LAUNCH}.
+     * Only valid from {@link CampaignStatus#DRAFT}, {@link CampaignStatus#APPROVED},
+     * or {@link CampaignStatus#PAUSED}.
+     *
+     * @throws IllegalStateException if the campaign is not in a launchable state
+     */
+    public Campaign requestLaunch() {
+        requireStatus("request launch", CampaignStatus.DRAFT, CampaignStatus.APPROVED, CampaignStatus.PAUSED);
+        return toBuilder().status(CampaignStatus.PENDING_LAUNCH).updatedAt(Instant.now()).build();
+    }
+
+    /**
      * Transitions the campaign to {@link CampaignStatus#LAUNCHED}.
-     * Only valid from {@link CampaignStatus#DRAFT} or {@link CampaignStatus#PAUSED}.
+     * Only valid once launch execution has completed.
+     *
+     * @throws IllegalStateException if the campaign is not in a launch-running state
+     */
+    public Campaign markLaunched() {
+        requireStatus("mark launched", CampaignStatus.PENDING_LAUNCH, CampaignStatus.LAUNCH_RUNNING);
+        return toBuilder().status(CampaignStatus.LAUNCHED).updatedAt(Instant.now()).build();
+    }
+
+    /**
+     * Backward-compatible alias for non-external launch paths.
      *
      * @throws IllegalStateException if the campaign is not in a launchable state
      */
     public Campaign launch() {
-        requireStatus("launch", CampaignStatus.DRAFT, CampaignStatus.PAUSED);
-        return toBuilder().status(CampaignStatus.LAUNCHED).updatedAt(Instant.now()).build();
+        return requestLaunch().markLaunched();
+    }
+
+    /** Marks durable launch execution as running. */
+    public Campaign markLaunchRunning() {
+        requireStatus("mark launch running", CampaignStatus.PENDING_LAUNCH);
+        return toBuilder().status(CampaignStatus.LAUNCH_RUNNING).updatedAt(Instant.now()).build();
+    }
+
+    /** Marks launch execution as failed. */
+    public Campaign markLaunchFailed() {
+        requireStatus("mark launch failed", CampaignStatus.PENDING_LAUNCH, CampaignStatus.LAUNCH_RUNNING);
+        return toBuilder().status(CampaignStatus.LAUNCH_FAILED).updatedAt(Instant.now()).build();
+    }
+
+    /** Marks external execution as blocked by connector governance. */
+    public Campaign markExternalExecutionBlocked() {
+        requireStatus("mark external execution blocked", CampaignStatus.PENDING_LAUNCH);
+        return toBuilder().status(CampaignStatus.EXTERNAL_EXECUTION_BLOCKED).updatedAt(Instant.now()).build();
     }
 
     /**
@@ -126,13 +165,21 @@ public final class Campaign {
      * @throws IllegalStateException if the campaign is not in a rollbackable state
      */
     public Campaign rollback() {
-        requireStatus("rollback", CampaignStatus.LAUNCHED, CampaignStatus.PAUSED);
-        return toBuilder().status(CampaignStatus.DRAFT).updatedAt(Instant.now()).build();
+        requireStatus(
+            "rollback",
+            CampaignStatus.PENDING_LAUNCH,
+            CampaignStatus.LAUNCH_RUNNING,
+            CampaignStatus.LAUNCH_FAILED,
+            CampaignStatus.EXTERNAL_EXECUTION_BLOCKED,
+            CampaignStatus.LAUNCHED,
+            CampaignStatus.PAUSED
+        );
+        return toBuilder().status(CampaignStatus.ROLLED_BACK).updatedAt(Instant.now()).build();
     }
 
     /** Returns {@code true} when a launch or resume is currently permitted. */
     public boolean isLaunchable() {
-        return status == CampaignStatus.DRAFT || status == CampaignStatus.PAUSED;
+        return status == CampaignStatus.DRAFT || status == CampaignStatus.APPROVED || status == CampaignStatus.PAUSED;
     }
 
     private void requireStatus(String operation, CampaignStatus... allowed) {

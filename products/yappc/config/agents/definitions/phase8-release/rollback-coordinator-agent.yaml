@@ -12,7 +12,7 @@ generator:
   type: PIPELINE
   steps:
     - name: rollback_assessment
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Assess rollback type based on trigger:
         - Canary failure: revert traffic routing, scale down canary pods
@@ -27,7 +27,7 @@ generator:
       service: deployment-service
       endpoint: /deployments/revert
     - name: state_cleanup
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Clean up partial state from failed deployment:
         - Revert feature flags to pre-deployment state

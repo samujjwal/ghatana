@@ -918,6 +918,8 @@ module.exports = {
      * contract facades rather than direct imports.
      *
      * See YAPPC-P1-008 in the YAPPC audit.
+     *
+     * Task 3.1.5: Define allowed facades for Data Cloud + AEP imports
      */
     "no-yappc-direct-platform-imports": {
       meta: {
@@ -932,8 +934,7 @@ module.exports = {
         messages: {
           directPlatformImport:
             "🚫 Direct platform import detected: '{{import}}'. " +
-            "YAPPC must access platform capabilities through Data Cloud+AEP typed contract facades. " +
-            "Use the contract facade instead of importing directly from platform modules.",
+            "{{suggestion}}",
         },
       },
 
@@ -943,27 +944,52 @@ module.exports = {
         // Only enforce for files inside products/yappc/
         if (!currentFilePath.includes("/products/yappc/")) return {};
 
+        // Allowed contract facades (task 3.1.5)
+        const ALLOWED_FACADES = [
+          "@data-cloud/api",
+          "@aep/api",
+        ];
+
         // Platform modules that should be accessed through contract facades
         // These represent platform-like capabilities that belong in Data Cloud+AEP
         const CONTRACT_FACADE_MODULES = [
-          // Agent platform - should use Data Cloud+AEP agent contract facade
+          // Agent platform - should use @data-cloud/api agent facade
           "@ghatana/agent-core",
           "@ghatana/ai-integration",
-          // Workflow platform - should use Data Cloud+AEP workflow contract facade
+          // Workflow platform - should use @aep/api workflow facade
           "@ghatana/workflow",
-          // Vector/search platform - should use Data Cloud+AEP search contract facade
+          // Vector/search platform - should use @data-cloud/api search facade
           "@ghatana/vector",
-          // Event cloud - should use Data Cloud+AEP event contract facade
+          // Event cloud - should use @data-cloud/api event facade
           "@ghatana/event-cloud",
         ];
 
+        // Map blocked modules to their recommended facades (task 3.1.5)
+        const FACADE_SUGGESTIONS = {
+          "@ghatana/agent-core": "Use @data-cloud/api agent contract facade instead.",
+          "@ghatana/ai-integration": "Use @data-cloud/api AI integration facade instead.",
+          "@ghatana/workflow": "Use @aep/api workflow contract facade instead.",
+          "@ghatana/vector": "Use @data-cloud/api vector search facade instead.",
+          "@ghatana/event-cloud": "Use @data-cloud/api event cloud facade instead.",
+        };
+
         function checkImport(node, importPath) {
+          // Allow imports from allowed facades (task 3.1.5)
+          for (const facade of ALLOWED_FACADES) {
+            if (importPath === facade || importPath.startsWith(`${facade}/`)) {
+              return; // Allowed, skip check
+            }
+          }
+
+          // Check for blocked direct platform imports
           for (const module of CONTRACT_FACADE_MODULES) {
             if (importPath === module || importPath.startsWith(`${module}/`)) {
+              // Find the appropriate suggestion
+              let suggestion = FACADE_SUGGESTIONS[module] || "Use the appropriate Data Cloud or AEP contract facade instead.";
               context.report({
                 node,
                 messageId: "directPlatformImport",
-                data: { import: importPath },
+                data: { import: importPath, suggestion },
               });
               return;
             }

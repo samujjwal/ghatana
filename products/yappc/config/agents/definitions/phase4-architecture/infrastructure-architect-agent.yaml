@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: infrastructure_design
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {compute, storage, networking, topology, scaling, iac_approach, cost_estimate, operations}
     - name: cost_optimization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Optimize for cost while meeting NFRs
     - name: iac_generation
       type: SERVICE_CALL

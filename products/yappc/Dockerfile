@@ -33,7 +33,7 @@ RUN ./gradlew :core:yappc-services:build \
 
 # Verify backend build artifacts exist
 RUN ls -la core/yappc-services/build/libs/ && \
-    test -f core/yappc-services/build/libs/*.jar || (echo "ERROR: Backend JAR not found" && exit 1)
+    test -f core/yappc-services/build/libs/yappc-services.jar || (echo "ERROR: Backend JAR not found" && exit 1)
 
 # ============================================================================
 # STAGE 2: Frontend Build (Node)
@@ -85,17 +85,13 @@ RUN addgroup -g 1000 yappc && \
 
 WORKDIR /app
 
-# Copy backend JAR from builder with verification
-RUN ls -la /workspace/core/yappc-services/build/libs/*.jar || (echo "ERROR: Backend JAR not found in builder" && exit 1)
-COPY --from=backend-builder /workspace/core/yappc-services/build/libs/*.jar \
+# Copy backend JAR from builder (verification done in builder stage)
+COPY --from=backend-builder /workspace/core/yappc-services/build/libs/yappc-services.jar \
      /app/yappc-backend.jar
-RUN test -f /app/yappc-backend.jar || (echo "ERROR: Backend JAR copy failed" && exit 1)
 
-# Copy frontend static assets with verification
-RUN test -d /workspace/products/yappc/frontend/dist || (echo "ERROR: Frontend dist not found in builder" && exit 1)
+# Copy frontend static assets (verification done in builder stage)
 COPY --from=frontend-builder /workspace/products/yappc/frontend/dist \
      /app/public
-RUN test -d /app/public || (echo "ERROR: Frontend copy failed" && exit 1)
 
 # Copy configuration templates
 COPY products/yappc/infrastructure/docker/.env.template /app/.env.example
@@ -103,6 +99,12 @@ COPY products/yappc/infrastructure/docker/docker-compose.yml /app/
 
 # Set ownership
 RUN chown -R yappc:yappc /app
+
+# Verify non-root user can write to application directories (task 2.1.5)
+RUN su yappc -s /bin/sh -c "touch /app/.write-test && rm /app/.write-test" || \
+    (echo "ERROR: Non-root user cannot write to /app" && exit 1)
+RUN su yappc -s /bin/sh -c "touch /app/public/.write-test && rm /app/public/.write-test" || \
+    (echo "ERROR: Non-root user cannot write to /app/public" && exit 1)
 
 # Switch to non-root user
 USER yappc

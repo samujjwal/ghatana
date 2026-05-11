@@ -19,13 +19,13 @@ Archived documentation (stale or superseded) is available in [docs/audits/archiv
 
 | Module | Purpose | Production Status |
 |---|---|---|
-| `dm-core-contracts` | Canonical typed IDs, `DmOperationContext`, actor/context propagation, bridge context conversion | Stable |
-| `dm-domain-packs` | Boundary policy rules, compliance rule packs, plugin startup bindings, pack validations | Stable |
-| `dm-kernel-bridge` | Product-owned adapter over kernel bridge ports (feature flags, audit, compliance, human-approval plugin) | Stable |
-| `dm-domain` | Domain model, aggregates, invariants, approval target types, AI action log | Stable scaffold |
+| `dm-core-contracts` | Canonical typed IDs, `DmOperationContext`, actor/context propagation, bridge context conversion | Ready |
+| `dm-domain-packs` | Boundary policy rules, compliance rule packs, plugin startup bindings, pack validations | Ready |
+| `dm-kernel-bridge` | Product-owned adapter over kernel bridge ports (feature flags, audit, compliance, human-approval plugin) | Partial |
+| `dm-domain` | Domain model, aggregates, invariants, approval target types, AI action log | Partial |
 | `dm-application` | Application services and orchestrations: campaign, strategy, budget, approval, content, connector, workflow, AI actions | MVP scaffold — deterministic adapters are production-blocked via ProductionBootstrapValidator (P0-006) |
 | `dm-infra` | In-memory repository adapters for local dev, tests, and single-instance staging (ConcurrentHashMap-backed) | Dev/test only — production uses PostgreSQL adapters from dm-persistence |
-| `dm-persistence` | Persistence module (Flyway migrations, PostgreSQL adapters) | Production-ready with PostgreSQL adapters |
+| `dm-persistence` | Persistence module (Flyway migrations, PostgreSQL adapters) | Partial |
 | `dm-connector-google-ads` | OkHttp adapters for Google Ads OAuth, campaign creation, and performance retrieval (REST API v14) | Adapter layer complete; command/workflow runtime wiring complete (P0-007) |
 | `dm-api` | ActiveJ HTTP servlets for all DMOS routes; rate limiting, correlation ID, tenant header enforcement | MVP complete |
 | `dm-integration-tests` | DMOS integration test suites | Partial |
@@ -140,7 +140,7 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 
 ## UI Routes
 
-### Stable (Production-Ready)
+### Stable (Implemented Surface)
 
 | Path | Page | Description | Capability |
 |---|---|---|---|
@@ -160,9 +160,9 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 | `/workspaces/:workspaceId/funnel-analytics` | `FunnelAnalyticsPage` | Full-funnel conversion analytics and stage drop-off reporting | dmos.reporting |
 | `/workspaces/:workspaceId/attribution` | `AttributionPage` | Multi-touch attribution models and channel credit distribution | dmos.reporting |
 | `/workspaces/:workspaceId/roi-roas` | `RoiRoasPage` | Return on investment and return on ad spend dashboards | dmos.reporting |
-| `/workspaces/:workspaceId/self-marketing-funnel` | `SelfMarketingFunnelPage` | Product-led growth funnel management and trial onboarding flows | dmos.self-marketing |
-| `/workspaces/:workspaceId/market-research` | `MarketResearchPage` | Trend analysis, buyer persona generation, and competitive intelligence | dmos.market-research |
-| `/workspaces/:workspaceId/advanced-channels` | `AdvancedChannelsPage` | Programmatic advertising, Connected TV, and influencer management | dmos.advanced-channels |
+| `/workspaces/:workspaceId/self-marketing-funnel` | `SelfMarketingFunnelPage` | Product-led growth funnel management and trial onboarding flows | dmos.self_marketing |
+| `/workspaces/:workspaceId/market-research` | `MarketResearchPage` | Trend analysis, buyer persona generation, and competitive intelligence | dmos.market_research |
+| `/workspaces/:workspaceId/advanced-channels` | `AdvancedChannelsPage` | Programmatic advertising, Connected TV, and influencer management | dmos.advanced_channels |
 | `/workspaces/:workspaceId/localization` | `LocalizationPage` | Multi-language campaign support and region-specific compliance controls | dmos.localization |
 | `/workspaces/:workspaceId/agency` | `AgencyOperationsPage` | Client onboarding, white-label reports, and multi-client workspace management | dmos.agency |
 
@@ -181,33 +181,31 @@ P2-001: README UI routes section split by implementation state (stable vs bounda
 
 ## Production Readiness
 
+DMOS uses evidence-based readiness states:
+
+- `Ready`: implemented, tested, documented, operationalized, and passing release gates.
+- `Partial`: implemented in part, but missing hardening, coverage, or production integration.
+- `Boundary`: product scope is defined but must remain gated or unavailable.
+- `Dev/Test only`: useful for local workflows but blocked from production.
+- `Not verified`: implementation may exist, but the required production proof has not been run.
+
 | Dimension | Status | Notes |
 |---|---:|---|
-| Build cleanliness | ✅ Ready | All quality gates pass |
-| API correctness | ✅ Ready | Enums, DTO shapes, headers aligned with backend |
-| UI (unit-tested) | ✅ Ready | 61 unit tests pass |
-| UI (E2E) | ✅ Ready | Real-backend E2E mandatory for production release (P1-2) |
-| Persistence | ✅ Ready | PostgreSQL adapters implemented in dm-persistence with full migration support |
-| Google Ads connector | ✅ Ready | Durable workflow execution with idempotency, retry, DLQ, kill switch (P0-4) |
-| Observability (OTel) | ✅ Complete | OTLP gRPC exporter wired in production/staging (`OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_COLLECTOR_ENDPOINT`); correlation IDs propagated UI → API span attributes; `DmosTelemetry` instruments all HTTP, command, and connector flows |
-| Privacy/security | ✅ Ready | AES-GCM encryption, HMAC-SHA256 hashing, consent enforcement, DSAR export/delete/anonymize (P0-6) |
-| Approval workflow | ✅ Ready | Full UI + API + plugin integration; snapshot, decide, audit trail |
-| AI action transparency | ✅ Ready | AI action log persisted and surfaced in UI |
-| AI governance | ✅ Ready | End-to-end AI workflow governance with provenance, evidence, policy checks (P0-7) |
-| Analytics/runtime | ✅ Ready | Canonical analytics with source events, freshness, confidence (P0-5) |
-| Command center | ✅ Ready | Next-best-step guidance with real data integration (P1-1) |
-| Kernel bridge integration | ✅ Complete | Platform plugins wired; real kernel bridge authorization/audit integration verified (P0-008) |
+| Build cleanliness | Not verified | Local and CI gates must be run for the current commit before release claims are made. |
+| API correctness | Partial | Core campaign/approval routes exist; generated OpenAPI/client parity is still being reconciled. |
+| UI unit coverage | Partial | Unit tests exist, but dashboard and boundary-state coverage is incomplete. |
+| UI E2E | Partial | Mocked E2E exists; real-backend E2E is required and must be self-contained in CI. |
+| Persistence | Partial | PostgreSQL adapters exist; repository contracts are being hardened to require tenant and workspace scope. |
+| Google Ads connector | Partial | Launch now records explicit pre-execution states; sandbox E2E, workflow replay, and external-ID proof remain required. |
+| Observability (OTel) | Partial | Correlation and telemetry exist in key paths; source/freshness/production bootstrap proof remains required. |
+| Privacy/security | Partial | Consent, suppression, PII, and DSAR surfaces exist in part; end-to-end enforcement and key-management proof remain required. |
+| Approval workflow | Partial | Queue/detail/decision paths exist; immutable snapshot and resume/block semantics require complete integration proof. |
+| AI action transparency | Partial | AI action log exists; mandatory provenance/evidence/risk metadata must be enforced across all AI outputs. |
+| AI governance | Partial | Governance scaffolding exists; every AI workflow must persist provenance, risk, redaction, approval, and evaluation evidence. |
+| Analytics/runtime | Partial | `DashboardSummaryService` exists; UI still needs to rely only on canonical backend summary data. |
+| Command center | Partial | Next-best-action UI exists, but data source, freshness, confidence, and report/export parity are not fully verified. |
+| Kernel bridge integration | Not verified | Platform plugin integration must be proven by production bootstrap and integration gates for the current build. |
 
-**P0 Production Readiness Summary:**
-- ✅ P0-1: Production MVP contract documented in canonical/06-PRODUCTION_MVP_CONTRACT.md
-- ✅ P0-2: Canonical route/action/capability registry generated from single manifest
-- ✅ P0-3: Auth, scope, tenant, workspace, and support access enforcement hardened
-- ✅ P0-4: Campaign launch converted to durable workflow execution with idempotency, retry, DLQ, kill switch
-- ✅ P0-5: Canonical analytics/reporting runtime with source events, freshness, confidence
-- ✅ P0-6: Privacy, consent, suppression, and DSAR implementation complete
-- ✅ P0-7: AI workflows governed end to end with provenance, evidence, policy checks
+**Current production decision:** production release is blocked until the canonical MVP loop in [docs/canonical/06-PRODUCTION_MVP_CONTRACT.md](docs/canonical/06-PRODUCTION_MVP_CONTRACT.md) has `Ready` proof for every step and `.github/workflows/dmos-release-gate.yml` passes without warning-only checks.
 
-**P1 Production Readiness Summary:**
-- ✅ P1-1: UI/UX tightened into command center with next-best-step guidance
-- ✅ P1-2: Production release gates made mandatory with real-backend E2E
-- ✅ P1-3: Repository cleanup and doc consolidation completed
+**Duplicate UI surface:** `dm-ui` is archived/non-built. The production frontend surface is `ui`.

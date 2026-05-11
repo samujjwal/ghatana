@@ -12,7 +12,7 @@ generator:
   type: PIPELINE
   steps:
     - name: gate_checks
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Evaluate all release gate criteria:
         1. SBOM present and valid (CycloneDX or SPDX)

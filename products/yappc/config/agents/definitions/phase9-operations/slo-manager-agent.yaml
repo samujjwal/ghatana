@@ -20,7 +20,7 @@ generator:
       service: slo-service
       endpoint: /calculate
     - name: slo_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -48,7 +48,7 @@ generator:
           recommendations
         }
     - name: action_recommendation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate action recommendations
 
 memory:

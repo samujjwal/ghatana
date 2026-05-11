@@ -21,10 +21,10 @@ generator:
       endpoint: /policies/applicable
       description: Retrieve applicable policies for action
     - name: compliance_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Apply policy rules and constraints
     - name: risk_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.0
@@ -44,7 +44,7 @@ generator:
         
         Output as JSON: {compliance_score, violations, risk_level, mitigations, approved}
     - name: decision_gate
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Allow/block based on risk and compliance
 
 memory:

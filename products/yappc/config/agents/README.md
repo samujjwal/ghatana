@@ -65,11 +65,13 @@ metadata:
 
 spec:
   level: 1|2|3  # Strategic, Expert, Worker
+  agentType: PROBABILISTIC|DETERMINISTIC|STREAM_PROCESSOR|PLANNING|HYBRID|ADAPTIVE|COMPOSITE|REACTIVE|CUSTOM
+  agentSubtype: LLM|RULE_ENGINE|POLICY_ENGINE|PATTERN_MATCHER|ML_MODEL|...
   capabilities: [...]
   inputs: [...]
   outputs: [...]
   generator:
-    type: llm|template|pipeline|rule-based|service-call
+    type: PROBABILISTIC|DETERMINISTIC|HYBRID|SERVICE_CALL
     config: {...}
   memory:
     types: [episodic, semantic, procedural, preference]
@@ -82,10 +84,10 @@ spec:
 
 YAPPC leverages the framework's `OutputGenerator` flexibility:
 
-1. **LLMGenerator**: Probabilistic, for reasoning/creative tasks
-2. **TemplateGenerator**: Deterministic, for scaffolding
-3. **PipelineGenerator**: Hybrid, chains multiple generators
-4. **RuleBasedGenerator**: Deterministic, for compliance/validation
+1. **LLMGenerator**: `PROBABILISTIC` with subtype `LLM`, for reasoning/creative tasks
+2. **TemplateGenerator**: `DETERMINISTIC`, for scaffolding
+3. **PipelineGenerator**: `HYBRID`, chains multiple generators
+4. **RuleEngineGenerator**: `DETERMINISTIC` with subtype `RULE_ENGINE`, for compliance/validation
 5. **ServiceCallGenerator**: Calls external tools
 
 ## Instance Configuration

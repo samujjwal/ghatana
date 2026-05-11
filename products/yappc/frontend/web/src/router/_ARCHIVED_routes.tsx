@@ -48,6 +48,48 @@ const PhaseOverviewPage = lazy(
 const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'));
 const ProfilePage = lazy(() => import('../pages/settings/ProfilePage'));
 
+// Phase Cockpit Routes (8-Phase IA Navigation under /p/:projectId/:phase)
+const IntentCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.IntentCockpitRoute,
+  }))
+);
+const ShapeCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.ShapeCockpitRoute,
+  }))
+);
+const ValidateCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.ValidateCockpitRoute,
+  }))
+);
+const GenerateCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.GenerateCockpitRoute,
+  }))
+);
+const RunCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.RunCockpitRoute,
+  }))
+);
+const ObserveCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.ObserveCockpitRoute,
+  }))
+);
+const LearnCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.LearnCockpitRoute,
+  }))
+);
+const EvolveCockpitRoute = lazy(() =>
+  import('../routes/app/project/_phaseCockpit').then((m) => ({
+    default: m.EvolveCockpitRoute,
+  }))
+);
+
 // Bootstrapping Phase (Phase 1)
 const BootstrapSessionPage = lazy(
   () => import('../pages/bootstrapping/BootstrapSessionPage')
@@ -377,6 +419,30 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <PhaseOverviewPage /> },
       { path: ':phase', element: <PhaseOverviewPage /> },
+    ],
+  },
+
+  // Phase Cockpit Routes (8-Phase IA Navigation under /p/:projectId/:phase)
+  {
+    path: '/p/:projectId',
+    element: (
+      <AuthGuard>
+        <ProjectGuard>
+          <Suspense fallback={<PageLoader />}>
+            <ProjectLayout />
+          </Suspense>
+        </ProjectGuard>
+      </AuthGuard>
+    ),
+    children: [
+      { path: 'intent', element: <IntentCockpitRoute /> },
+      { path: 'shape', element: <ShapeCockpitRoute /> },
+      { path: 'validate', element: <ValidateCockpitRoute /> },
+      { path: 'generate', element: <GenerateCockpitRoute /> },
+      { path: 'run', element: <RunCockpitRoute /> },
+      { path: 'observe', element: <ObserveCockpitRoute /> },
+      { path: 'learn', element: <LearnCockpitRoute /> },
+      { path: 'evolve', element: <EvolveCockpitRoute /> },
     ],
   },
 

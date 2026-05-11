@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.persistence.campaign;
 
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
+import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
@@ -41,8 +42,8 @@ public final class PostgresCampaignRepository implements CampaignRepository {
 
     private static final String UPSERT_SQL =
         "INSERT INTO dmos_campaigns (id, workspace_id, tenant_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by) " +
-        "SELECT ?, ?, ws.tenant_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? " +
-        "FROM dmos_workspaces ws WHERE ws.id = ? " +
+        "SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? " +
+        "FROM dmos_workspaces ws WHERE ws.id = ? AND ws.tenant_id = ? " +
         "ON CONFLICT (id, workspace_id) DO UPDATE SET " +
         "  tenant_id = EXCLUDED.tenant_id, name = EXCLUDED.name, status = EXCLUDED.status, type = EXCLUDED.type, " +
         "  objective = EXCLUDED.objective, budget_cents = EXCLUDED.budget_cents, start_date = EXCLUDED.start_date, " +
@@ -51,19 +52,16 @@ public final class PostgresCampaignRepository implements CampaignRepository {
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT id, workspace_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by " +
-        "FROM dmos_campaigns WHERE id = ? AND workspace_id = ? " +
-        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
+        "FROM dmos_campaigns WHERE id = ? AND workspace_id = ? AND tenant_id = ?";
 
     private static final String LIST_BY_WORKSPACE_SQL =
         "SELECT id, workspace_id, name, status, type, objective, budget_cents, start_date, end_date, audience, landing_page_url, created_at, updated_at, created_by " +
-        "FROM dmos_campaigns WHERE workspace_id = ? " +
-        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?) " +
+        "FROM dmos_campaigns WHERE workspace_id = ? AND tenant_id = ? " +
         "ORDER BY created_at DESC, id DESC " +
         "LIMIT ? OFFSET ?";
 
     private static final String COUNT_BY_WORKSPACE_SQL =
-        "SELECT COUNT(*) FROM dmos_campaigns WHERE workspace_id = ? " +
-        "AND tenant_id = (SELECT tenant_id FROM dmos_workspaces WHERE id = ?)";
+        "SELECT COUNT(*) FROM dmos_campaigns WHERE workspace_id = ? AND tenant_id = ?";
 
     private final DataSource dataSource;
     private final Executor executor;
@@ -74,26 +72,29 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     }
 
     @Override
-    public Promise<Campaign> save(Campaign campaign) {
+    public Promise<Campaign> save(DmTenantId tenantId, Campaign campaign) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(campaign, "campaign must not be null");
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(UPSERT_SQL)) {
                 stmt.setString(1, campaign.getId());
                 stmt.setString(2, campaign.getWorkspaceId().getValue());
-                stmt.setString(3, campaign.getName());
-                stmt.setString(4, campaign.getStatus().name());
-                stmt.setString(5, campaign.getType().name());
-                stmt.setString(6, campaign.getObjective());
-                stmt.setObject(7, campaign.getBudgetCents());
-                stmt.setString(8, campaign.getStartDate());
-                stmt.setString(9, campaign.getEndDate());
-                stmt.setString(10, campaign.getAudience());
-                stmt.setString(11, campaign.getLandingPageUrl());
-                stmt.setTimestamp(12, Timestamp.from(campaign.getCreatedAt()));
-                stmt.setTimestamp(13, Timestamp.from(campaign.getUpdatedAt()));
-                stmt.setString(14, campaign.getCreatedBy());
-                stmt.setString(15, campaign.getWorkspaceId().getValue());
+                stmt.setString(3, tenantId.getValue());
+                stmt.setString(4, campaign.getName());
+                stmt.setString(5, campaign.getStatus().name());
+                stmt.setString(6, campaign.getType().name());
+                stmt.setString(7, campaign.getObjective());
+                stmt.setObject(8, campaign.getBudgetCents());
+                stmt.setString(9, campaign.getStartDate());
+                stmt.setString(10, campaign.getEndDate());
+                stmt.setString(11, campaign.getAudience());
+                stmt.setString(12, campaign.getLandingPageUrl());
+                stmt.setTimestamp(13, Timestamp.from(campaign.getCreatedAt()));
+                stmt.setTimestamp(14, Timestamp.from(campaign.getUpdatedAt()));
+                stmt.setString(15, campaign.getCreatedBy());
+                stmt.setString(16, campaign.getWorkspaceId().getValue());
+                stmt.setString(17, tenantId.getValue());
                 int rowsUpdated = stmt.executeUpdate();
                 if (rowsUpdated == 0) {
                     throw new DmPersistenceException(
@@ -111,7 +112,8 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     }
 
     @Override
-    public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
+    public Promise<Optional<Campaign>> findById(DmTenantId tenantId, DmWorkspaceId workspaceId, String campaignId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(campaignId, "campaignId must not be null");
         return Promise.ofBlocking(executor, () -> {
@@ -119,7 +121,7 @@ public final class PostgresCampaignRepository implements CampaignRepository {
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
                 stmt.setString(1, campaignId);
                 stmt.setString(2, workspaceId.getValue());
-                stmt.setString(3, workspaceId.getValue());
+                stmt.setString(3, tenantId.getValue());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(mapRow(rs));
@@ -134,16 +136,17 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     }
 
     @Override
-    public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+    public Promise<List<Campaign>> listByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId, int limit, int offset) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         int boundedLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
         int boundedOffset = Math.max(offset, 0);
 
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(LIST_BY_WORKSPACE_SQL)) {
+                PreparedStatement stmt = conn.prepareStatement(LIST_BY_WORKSPACE_SQL)) {
                 stmt.setString(1, workspaceId.getValue());
-                stmt.setString(2, workspaceId.getValue());
+                stmt.setString(2, tenantId.getValue());
                 stmt.setInt(3, boundedLimit);
                 stmt.setInt(4, boundedOffset);
                 try (ResultSet rs = stmt.executeQuery()) {
@@ -164,14 +167,15 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     }
 
     @Override
-    public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+    public Promise<Long> countByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
 
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(COUNT_BY_WORKSPACE_SQL)) {
+                PreparedStatement stmt = conn.prepareStatement(COUNT_BY_WORKSPACE_SQL)) {
                 stmt.setString(1, workspaceId.getValue());
-                stmt.setString(2, workspaceId.getValue());
+                stmt.setString(2, tenantId.getValue());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return rs.getLong(1);

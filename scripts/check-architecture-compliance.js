@@ -71,6 +71,7 @@ class ArchitectureChecker {
       await this.checkGradleDependencyDirection();
       await this.checkBannedLibraries();
       await this.checkDeprecatedPackages();
+      await this.checkAgentConformance();
       await this.checkDuplicatePackageNames();
       await this.checkLicensePolicy();
       this.checkAllowlistFreshness();
@@ -83,6 +84,27 @@ class ArchitectureChecker {
     } catch (error) {
       console.error('💥 Fatal error during architecture check:', error.message);
       return EXIT_CODES.ERROR;
+    }
+  }
+
+  async checkAgentConformance() {
+    console.log('🤖 Checking canonical agent conformance...');
+
+    try {
+      execSync('bash scripts/check-agent-conformance.sh', {
+        cwd: process.cwd(),
+        stdio: 'pipe',
+      });
+      console.log('   Agent conformance passed\n');
+    } catch (error) {
+      const output = `${error.stdout || ''}${error.stderr || ''}`;
+      this.addViolation(
+        'AGENT_CONFORMANCE',
+        'Canonical agent conformance failed',
+        'scripts/check-agent-conformance.sh',
+        { output }
+      );
+      console.log('');
     }
   }
 

@@ -16,7 +16,7 @@ metadata:
   - level3
   - product-intelligence
 identity:
-  agentType: deterministic
+  agentType: DETERMINISTIC
   subtype: rule
   determinismGuarantee: full
   stateMutability: stateless

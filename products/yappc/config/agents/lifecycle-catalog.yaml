@@ -27,7 +27,7 @@ spec:
     - phase0
     - requirements
     - analysis
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: project-scoping-agent
     name: Project Scoping Agent
@@ -43,7 +43,7 @@ spec:
     - phase0
     - scoping
     - planning
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: architecture-design-agent
     name: Architecture Design Agent
@@ -68,7 +68,7 @@ spec:
     - phase1
     - architecture
     - design
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: component-planner
     name: Component Planner
@@ -87,7 +87,7 @@ spec:
     - phase1
     - components
     - planning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: data-model-designer
     name: Data Model Designer
@@ -106,7 +106,7 @@ spec:
     - phase1
     - data
     - modeling
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: api-design-agent
     name: API Design Agent
@@ -125,7 +125,7 @@ spec:
     - phase1
     - api
     - design
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: ui-ux-designer
     name: UI/UX Designer Agent
@@ -144,7 +144,7 @@ spec:
     - phase1
     - ui-ux
     - design
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: technical-writer
     name: Technical Writer Agent
@@ -169,7 +169,7 @@ spec:
     - phase1
     - documentation
     - writing
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: validation-agent
     name: Validation Agent
@@ -188,7 +188,7 @@ spec:
     - phase2
     - validation
     - verification
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: risk-assessment-agent
     name: Risk Assessment Agent
@@ -210,7 +210,7 @@ spec:
     - phase2
     - risk
     - assessment
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: feasibility-analyzer
     name: Feasibility Analyzer
@@ -229,7 +229,7 @@ spec:
     - phase2
     - feasibility
     - analysis
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: stakeholder-reviewer
     name: Stakeholder Reviewer
@@ -247,7 +247,7 @@ spec:
     - phase2
     - review
     - stakeholders
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: code-generator
     name: Code Generator Agent
@@ -266,7 +266,7 @@ spec:
     - phase3
     - code-generation
     - implementation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: test-generator
     name: Test Generator Agent
@@ -285,7 +285,7 @@ spec:
     - phase3
     - testing
     - generation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: documentation-generator
     name: Documentation Generator
@@ -304,7 +304,7 @@ spec:
     - phase3
     - documentation
     - generation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: deployment-config-generator
     name: Deployment Config Generator
@@ -324,7 +324,7 @@ spec:
     - phase3
     - deployment
     - configuration
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: deployment-executor
     name: Deployment Executor Agent
@@ -343,7 +343,7 @@ spec:
     - phase4
     - deployment
     - execution
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: migration-runner
     name: Migration Runner Agent
@@ -362,7 +362,7 @@ spec:
     - phase4
     - migration
     - data
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: integration-executor
     name: Integration Executor Agent
@@ -378,7 +378,7 @@ spec:
     - phase4
     - integration
     - execution
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: smoke-test-runner
     name: Smoke Test Runner Agent
@@ -396,7 +396,7 @@ spec:
     - phase4
     - testing
     - smoke-tests
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: monitoring-agent
     name: Monitoring Agent
@@ -415,7 +415,7 @@ spec:
     - phase5
     - monitoring
     - observability
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: log-analyzer
     name: Log Analyzer Agent
@@ -434,7 +434,7 @@ spec:
     - phase5
     - logs
     - analysis
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: performance-monitor
     name: Performance Monitor Agent
@@ -453,7 +453,7 @@ spec:
     - phase5
     - performance
     - monitoring
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: user-behavior-analyzer
     name: User Behavior Analyzer Agent
@@ -473,7 +473,7 @@ spec:
     - phase5
     - analytics
     - behavior
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: anomaly-detector
     name: Anomaly Detector Agent
@@ -492,7 +492,7 @@ spec:
     - phase5
     - anomaly-detection
     - alerting
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: optimization-agent
     name: Optimization Agent
@@ -511,7 +511,7 @@ spec:
     - phase6
     - optimization
     - performance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: refactoring-agent
     name: Refactoring Agent
@@ -530,7 +530,7 @@ spec:
     - phase6
     - refactoring
     - code-quality
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: bug-fix-agent
     name: Bug Fix Agent
@@ -549,7 +549,7 @@ spec:
     - phase6
     - bug-fixing
     - quality
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: accessibility-improver
     name: Accessibility Improver Agent
@@ -568,7 +568,7 @@ spec:
     - phase6
     - accessibility
     - a11y
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: security-patcher
     name: Security Patcher Agent
@@ -587,7 +587,7 @@ spec:
     - phase6
     - security
     - patching
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: deprecation-planner
     name: Deprecation Planner Agent
@@ -606,7 +606,7 @@ spec:
     - phase7
     - deprecation
     - planning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: migration-assistant
     name: Migration Assistant Agent
@@ -625,7 +625,7 @@ spec:
     - phase7
     - migration
     - assistance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sunset-executor
     name: Sunset Executor Agent
@@ -644,7 +644,7 @@ spec:
     - phase7
     - sunset
     - execution
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: archivist
     name: Archivist Agent
@@ -663,7 +663,7 @@ spec:
     - phase8
     - archiving
     - data
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: knowledge-capture-final
     name: Final Knowledge Capture Agent
@@ -688,7 +688,7 @@ spec:
     - phase8
     - knowledge
     - retrospectives
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1: []

@@ -6,14 +6,15 @@
 
 ## 1. Overview
 
-The Ghatana agent system is a **layered, platform-wide agentic architecture**. It is not a single runtime monolith. Authority and responsibility are split across four distinct layers.
+The Ghatana agent system is a **layered, platform-wide agentic architecture**. It is not a single runtime monolith. Authority and responsibility are split across the five layers accepted in ADR-020.
 
 | Layer | Location | Owns |
 |-------|----------|------|
-| Platform contracts + control standards | `platform/java/agent-core`, `platform/java/tool-runtime`, `platform/java/workflow`, `platform-kernel/*` | `TypedAgent<I,O>` interface, nine-type taxonomy, release model, tool contracts |
-| AEP execution runtime | `products/data-cloud/planes/action/agent-runtime` | Dispatch, execution policy, assurance, learning loops, governed execution |
-| Data Cloud persistence | `products/data-cloud/` | Agent releases, memory artifacts, evaluation artifacts, rollout state, trace/index search |
-| Product adapters | `products/*/` | Domain-specific agent logic behind `AgentLogicProvider` SPI |
+| Specification and Release | `platform/java/agent-core` | `AgentSpec` / `AgentDefinition`, `AgentDescriptor`, nine-type taxonomy, `AgentRelease` |
+| Control and Governance | `platform/java/tool-runtime`, `platform/java/workflow`, `platform/java/policy-as-code` | tool governance, policy, approval, workflow control |
+| Execution | `products/data-cloud/planes/action/agent-runtime` | dispatch, lifecycle execution, assurance, checkpointing, delegation |
+| Memory, Context, and Evaluation | `products/data-cloud/extensions/agent-registry`, Data Cloud memory/runtime modules | memory, evaluation, traces, rollout and promotion evidence |
+| Product Capability | `products/*/` | domain-specific logic, tools, personas, roles, and adapters behind platform contracts |
 
 ---
 
@@ -37,7 +38,7 @@ All agents implement `TypedAgent<I, O>`.
 
 ## 3. Three-Plane Architecture (AEP)
 
-AEP implements the three-plane model from the DSLA/NDSLA specifications.
+AEP is the Execution layer implementation within the five-layer model. Internally it still uses control, execution, and data/learning planes, but those planes are subordinate to ADR-020's repo-wide boundaries.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -126,8 +127,11 @@ The AEP Central Registry is the sole registry authority. Products use these endp
 An agent lifecycle progresses through formal `AgentRelease` records stored in Data Cloud:
 
 ```
-draft → active → deprecated → retired
+DRAFT → VALIDATED → SHADOW → CANARY → ACTIVE → DEPRECATED → RETIRED
+                         ↘ BLOCKED from any live state
 ```
+
+`SHADOW` is runnable for internal evaluation only. `CANARY` and `ACTIVE` may serve responses. Runtime code uses `isRunnable()` and `isResponseServing()` instead of a single ambiguous dispatchability flag.
 
 See [agent-spec.md](./agent-spec.md) for the full YAML schema governing `id`, `name`, `namespace`, `version`, `status`, `owners`, `tags`, and `summary` fields.
 
@@ -139,11 +143,11 @@ From ADR-020 (adopted 2026-04):
 
 | Layer | Responsibility |
 |-------|---------------|
-| **Specification** | `AgentSpec` YAML artifacts — what agents are |
-| **Release** | `AgentRelease` records — which version is deployed where |
+| **Specification and Release** | `AgentSpec` YAML artifacts, `AgentDefinition`, and `AgentRelease` records |
 | **Control/Governance** | `GovernedAgentDispatcher`, policy checks, HITL workflow |
 | **Execution** | AEP engine — runtime dispatch, DAG, checkpoint |
-| **Data/Learning** | Data Cloud — memory, evaluation, audit |
+| **Memory/Context/Evaluation** | Data Cloud — memory, evaluation, audit, learning candidates |
+| **Product Capability** | Product-owned domain behavior, roles, personas, tools |
 
 ---
 

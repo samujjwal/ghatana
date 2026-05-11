@@ -17,7 +17,7 @@ metadata:
   - system-design
   - technical-leadership
 identity:
-  agentType: hybrid
+  agentType: HYBRID
   subtype: rule+llm
   determinismGuarantee: partial
   stateMutability: mutable

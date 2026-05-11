@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: debt_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -45,7 +45,7 @@ generator:
         
         Output as JSON: {debt_items: [{id, type, description, impact, risk, effort, priority}], total_score, trends, recommendations}
     - name: prioritization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Apply prioritization rules
     - name: tracking_update
       type: SERVICE_CALL

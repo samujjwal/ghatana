@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: research_planning
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -39,7 +39,7 @@ generator:
         
         Output as JSON: {research_questions, methods, participant_profile, protocol, analysis_approach, timeline, deliverables}
     - name: findings_synthesis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

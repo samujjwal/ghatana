@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -49,20 +50,22 @@ function renderRoute(
   token?: string,
 ): void {
   render(
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider
-        initialToken={token ?? null}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialRoles={[]}
-      >
-        <MemoryRouter initialEntries={[path]}>
-          <Suspense fallback={<div data-testid="suspense">Loading</div>}>
-            {ui}
-          </Suspense>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider
+          initialToken={token ?? null}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialRoles={[]}
+        >
+          <MemoryRouter initialEntries={[path]}>
+            <Suspense fallback={<div data-testid="suspense">Loading</div>}>
+              {ui}
+            </Suspense>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 

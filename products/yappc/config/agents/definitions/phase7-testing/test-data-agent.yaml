@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: data_requirements
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze data requirements
     - name: data_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.4

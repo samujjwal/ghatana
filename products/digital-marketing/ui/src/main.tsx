@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { ThemeProvider } from '@ghatana/theme';
 import { App } from './App';
 import './index.css';
 
@@ -10,6 +11,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );

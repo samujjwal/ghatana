@@ -16,7 +16,7 @@ generator:
       service: project-service
       endpoint: /projects/analyze
     - name: tech_stack_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: experiment_design
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -43,7 +43,7 @@ generator:
       service: experiment-service
       endpoint: /experiments/fake-door
     - name: results_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze conversion rates and significance
 
 memory:

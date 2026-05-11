@@ -25,7 +25,7 @@ metadata:
   maturity: production
 
 identity:
-  agentType: adaptive                        # demand model updates from sales history
+  agentType: ADAPTIVE                        # demand model updates from sales history
   roles: [inventory-optimizer, demand-forecaster, replenishment-signal-emitter]
   criticality: high
   autonomyLevel: semi-autonomous

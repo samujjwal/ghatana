@@ -16,14 +16,14 @@ generator:
   type: PIPELINE
   steps:
     - name: execution_planning
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Plan test execution
     - name: test_execution
       type: SERVICE_CALL
       service: test-service
       endpoint: /tests/run
     - name: results_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

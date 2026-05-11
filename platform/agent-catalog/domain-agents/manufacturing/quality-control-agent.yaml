@@ -31,7 +31,7 @@ metadata:
     - IEC 61511
 
 identity:
-  agentType: deterministic
+  agentType: DETERMINISTIC
   subtype: threshold                            # SPC control charts are threshold-based rules
   roles: [quality-monitor, defect-detector, spc-evaluator, corrective-action-emitter]
   criticality: critical

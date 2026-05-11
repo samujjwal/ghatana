@@ -16,7 +16,7 @@ generator:
       service: jvm-diagnostics
       endpoint: /heap/analyze
     - name: leak_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

@@ -1,28 +1,35 @@
 // GENERATED CODE - Do not edit manually
 // Regenerate from dmos-route-manifest.yaml
-// Generated at: Sat May 09 14:41:25 PDT 2026
+// Generated at: Mon May 11 08:40:42 PDT 2026
 
 import React from 'react';
 import type { ProductRouteCapability } from '@ghatana/product-shell';
 import { VALID_ROLES, type ValidRole } from '@/lib/role-utils';
 
+function lazyNamedPage<T>(loader: () => Promise<T>, exportName: keyof T): React.LazyExoticComponent<React.ComponentType> {
+  return React.lazy(async () => {
+    const module = await loader();
+    return { default: module[exportName] as React.ComponentType };
+  });
+}
+
 // Page imports
-const DashboardPage = React.lazy(() => import('@/pages/DashboardPage'));
-const ApprovalQueuePage = React.lazy(() => import('@/pages/ApprovalQueuePage'));
-const ApprovalDetailPage = React.lazy(() => import('@/pages/ApprovalDetailPage'));
-const AiActionLogPage = React.lazy(() => import('@/pages/AiActionLogPage'));
-const CampaignsPage = React.lazy(() => import('@/pages/CampaignsPage'));
-const StrategyPage = React.lazy(() => import('@/pages/StrategyPage'));
-const BudgetPage = React.lazy(() => import('@/pages/BudgetPage'));
-const FunnelAnalyticsPage = React.lazy(() => import('@/pages/FunnelAnalyticsPage'));
-const AttributionPage = React.lazy(() => import('@/pages/AttributionPage'));
-const RoiRoasPage = React.lazy(() => import('@/pages/RoiRoasPage'));
-const SelfMarketingFunnelPage = React.lazy(() => import('@/pages/SelfMarketingFunnelPage'));
-const MarketResearchPage = React.lazy(() => import('@/pages/MarketResearchPage'));
-const AdvancedChannelsPage = React.lazy(() => import('@/pages/AdvancedChannelsPage'));
-const LocalizationPage = React.lazy(() => import('@/pages/LocalizationPage'));
-const AgencyOperationsPage = React.lazy(() => import('@/pages/AgencyOperationsPage'));
-const AiOptimizationPage = React.lazy(() => import('@/pages/AiOptimizationPage'));
+const DashboardPage = lazyNamedPage(() => import('@/pages/DashboardPage'), 'DashboardPage');
+const ApprovalQueuePage = lazyNamedPage(() => import('@/pages/ApprovalQueuePage'), 'ApprovalQueuePage');
+const ApprovalDetailPage = lazyNamedPage(() => import('@/pages/ApprovalDetailPage'), 'ApprovalDetailPage');
+const AiActionLogPage = lazyNamedPage(() => import('@/pages/AiActionLogPage'), 'AiActionLogPage');
+const CampaignsPage = lazyNamedPage(() => import('@/pages/CampaignsPage'), 'CampaignsPage');
+const StrategyPage = lazyNamedPage(() => import('@/pages/StrategyPage'), 'StrategyPage');
+const BudgetPage = lazyNamedPage(() => import('@/pages/BudgetPage'), 'BudgetPage');
+const FunnelAnalyticsPage = lazyNamedPage(() => import('@/pages/FunnelAnalyticsPage'), 'FunnelAnalyticsPage');
+const AttributionPage = lazyNamedPage(() => import('@/pages/AttributionPage'), 'AttributionPage');
+const RoiRoasPage = lazyNamedPage(() => import('@/pages/RoiRoasPage'), 'RoiRoasPage');
+const SelfMarketingFunnelPage = lazyNamedPage(() => import('@/pages/SelfMarketingFunnelPage'), 'SelfMarketingFunnelPage');
+const MarketResearchPage = lazyNamedPage(() => import('@/pages/MarketResearchPage'), 'MarketResearchPage');
+const AdvancedChannelsPage = lazyNamedPage(() => import('@/pages/AdvancedChannelsPage'), 'AdvancedChannelsPage');
+const LocalizationPage = lazyNamedPage(() => import('@/pages/LocalizationPage'), 'LocalizationPage');
+const AgencyOperationsPage = lazyNamedPage(() => import('@/pages/AgencyOperationsPage'), 'AgencyOperationsPage');
+const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPage'), 'AiOptimizationPage');
 
 export interface DmosRouteManifestEntry extends ProductRouteCapability {
   readonly element: React.ReactElement;
@@ -47,7 +54,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     actions: ['view-dashboard'],
     iconName: 'layout-dashboard',
     lifecycle: 'stable',
-    element: <DashboardPage />,
+    element: React.createElement(DashboardPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals',
@@ -58,7 +65,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     actions: ['review-approval'],
     iconName: 'shield-check',
     lifecycle: 'stable',
-    element: <ApprovalQueuePage />,
+    element: React.createElement(ApprovalQueuePage),
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals/:requestId',
@@ -70,7 +77,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'file-search',
     lifecycle: 'stable',
     discoverable: false,
-    element: <ApprovalDetailPage />,
+    element: React.createElement(ApprovalDetailPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals/:requestId/decide',
@@ -82,7 +89,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'file-search',
     lifecycle: 'stable',
     discoverable: false,
-    element: <ApprovalDetailPage />,
+    element: React.createElement(ApprovalDetailPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-actions',
@@ -93,7 +100,18 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     actions: ['view-audit-log'],
     iconName: 'sparkles',
     lifecycle: 'stable',
-    element: <AiActionLogPage />,
+    element: React.createElement(AiActionLogPage),
+  },
+  {
+    path: '/v1/workspaces/:workspaceId/ai-actions/:actionId',
+    label: 'AI Action Detail',
+    description: 'Traceable AI decision and recommendation history.',
+    group: 'Governance',
+    minimumRole: 'viewer' as ValidRole,
+    actions: ['view-audit-log'],
+    iconName: 'sparkles',
+    lifecycle: 'stable',
+    element: React.createElement(AiActionLogPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns',
@@ -105,7 +123,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'megaphone',
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns',
@@ -117,7 +135,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'megaphone',
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id',
@@ -130,7 +148,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/launch',
@@ -143,7 +161,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/pause',
@@ -156,7 +174,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/complete',
@@ -169,7 +187,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/archive',
@@ -182,7 +200,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/rollback',
@@ -195,7 +213,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/duplicate',
@@ -208,7 +226,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     lifecycle: 'stable',
     capabilityKey: 'dmos.campaigns',
     discoverable: false,
-    element: <CampaignsPage />,
+    element: React.createElement(CampaignsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy',
@@ -220,7 +238,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'target',
     lifecycle: 'stable',
     capabilityKey: 'dmos.strategy',
-    element: <StrategyPage />,
+    element: React.createElement(StrategyPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy',
@@ -232,7 +250,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'target',
     lifecycle: 'stable',
     capabilityKey: 'dmos.strategy',
-    element: <StrategyPage />,
+    element: React.createElement(StrategyPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy/:strategyId/submit',
@@ -244,7 +262,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'target',
     lifecycle: 'stable',
     capabilityKey: 'dmos.strategy',
-    element: <StrategyPage />,
+    element: React.createElement(StrategyPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy/:strategyId/approve',
@@ -256,7 +274,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'target',
     lifecycle: 'stable',
     capabilityKey: 'dmos.strategy',
-    element: <StrategyPage />,
+    element: React.createElement(StrategyPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/budget',
@@ -268,7 +286,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'wallet',
     lifecycle: 'stable',
     capabilityKey: 'dmos.budget',
-    element: <BudgetPage />,
+    element: React.createElement(BudgetPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation',
@@ -280,7 +298,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'wallet',
     lifecycle: 'stable',
     capabilityKey: 'dmos.budget',
-    element: <BudgetPage />,
+    element: React.createElement(BudgetPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation/:recId/submit',
@@ -292,7 +310,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'wallet',
     lifecycle: 'stable',
     capabilityKey: 'dmos.budget',
-    element: <BudgetPage />,
+    element: React.createElement(BudgetPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation/:recId/approve',
@@ -304,7 +322,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'wallet',
     lifecycle: 'stable',
     capabilityKey: 'dmos.budget',
-    element: <BudgetPage />,
+    element: React.createElement(BudgetPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/funnel-analytics',
@@ -316,7 +334,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'chart-bar',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.reporting',
-    element: <FunnelAnalyticsPage />,
+    element: React.createElement(FunnelAnalyticsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/attribution',
@@ -328,7 +346,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'share-nodes',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.reporting',
-    element: <AttributionPage />,
+    element: React.createElement(AttributionPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/roi-roas',
@@ -340,7 +358,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'trending-up',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.reporting',
-    element: <RoiRoasPage />,
+    element: React.createElement(RoiRoasPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-optimization',
@@ -352,7 +370,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'sparkles',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.ai_optimization',
-    element: <AiOptimizationPage />,
+    element: React.createElement(AiOptimizationPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-optimization',
@@ -364,7 +382,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'sparkles',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.ai_optimization',
-    element: <AiOptimizationPage />,
+    element: React.createElement(AiOptimizationPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/self-marketing-funnel',
@@ -376,7 +394,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'funnel',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.self_marketing',
-    element: <SelfMarketingFunnelPage />,
+    element: React.createElement(SelfMarketingFunnelPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/market-research',
@@ -388,7 +406,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'search',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.market_research',
-    element: <MarketResearchPage />,
+    element: React.createElement(MarketResearchPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/advanced-channels',
@@ -400,7 +418,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'broadcast',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.advanced_channels',
-    element: <AdvancedChannelsPage />,
+    element: React.createElement(AdvancedChannelsPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/localization',
@@ -412,7 +430,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'globe',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.localization',
-    element: <LocalizationPage />,
+    element: React.createElement(LocalizationPage),
   },
   {
     path: '/v1/workspaces/:workspaceId/agency',
@@ -424,6 +442,6 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
     iconName: 'briefcase',
     lifecycle: 'boundary',
     capabilityKey: 'dmos.agency',
-    element: <AgencyOperationsPage />,
+    element: React.createElement(AgencyOperationsPage),
   },
 ];

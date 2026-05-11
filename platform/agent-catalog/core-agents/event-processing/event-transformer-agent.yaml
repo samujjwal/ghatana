@@ -23,7 +23,7 @@ metadata:
   maturity: production
 
 identity:
-  agentType: stream-processor           # stateless per-event schema mapping in ordered stream
+  agentType: STREAM_PROCESSOR           # stateless per-event schema mapping in ordered stream
   subtype: transformation
   roles: [transformer, mapper, schema-adapter]
   criticality: high

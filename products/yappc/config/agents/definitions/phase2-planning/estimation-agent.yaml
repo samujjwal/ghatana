@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: complexity_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {complexity_factors, unknowns, dependencies, optimistic, likely, pessimistic, story_points, duration_days, confidence, assumptions}
     - name: historical_calibration
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calibrate against historical accuracy
     - name: estimate_registration
       type: SERVICE_CALL

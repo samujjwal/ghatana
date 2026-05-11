@@ -24,7 +24,7 @@ generator:
       service: health-service
       endpoint: /check/comprehensive
     - name: validation_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

@@ -4,6 +4,8 @@ import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.application.ai.KernelAgentOrchestrationAdapter;
 import com.ghatana.digitalmarketing.application.ai.AiPolicyCheckServiceImpl;
+import com.ghatana.digitalmarketing.application.analytics.DashboardSummaryService;
+import com.ghatana.digitalmarketing.application.analytics.DashboardSummaryServiceImpl;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowServiceImpl;
@@ -34,6 +36,9 @@ import com.ghatana.digitalmarketing.application.metrics.MicrometerDmosMetricsCol
 import com.ghatana.digitalmarketing.application.strategy.MarketingStrategyRepository;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorServiceImpl;
+import com.ghatana.digitalmarketing.application.suppression.SuppressionRepository;
+import com.ghatana.digitalmarketing.application.suppression.SuppressionService;
+import com.ghatana.digitalmarketing.application.suppression.SuppressionServiceImpl;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogService;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogServiceImpl;
@@ -50,11 +55,15 @@ import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignA
 import com.ghatana.digitalmarketing.connector.googleads.InMemoryDmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.infra.ProductionProfileGuard;
 import com.ghatana.digitalmarketing.infra.approval.InMemoryApprovalSnapshotRepository;
+import com.ghatana.digitalmarketing.infra.audit.InMemoryWebsiteAuditReportRepository;
+import com.ghatana.digitalmarketing.infra.budget.InMemoryBudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.infra.campaign.InMemoryCampaignRepository;
 import com.ghatana.digitalmarketing.infra.connector.DmConnectorInMemoryRepository;
 import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCampaignLinkInMemoryRepository;
 import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCredentialInMemoryRepository;
 import com.ghatana.digitalmarketing.infra.research.InMemoryCompetitorResearchRepository;
+import com.ghatana.digitalmarketing.infra.suppression.InMemorySuppressionRepository;
+import com.ghatana.digitalmarketing.infra.strategy.InMemoryMarketingStrategyRepository;
 import com.ghatana.digitalmarketing.infra.transparency.InMemoryAiActionLogRepository;
 import com.ghatana.digitalmarketing.infra.workspace.InMemoryWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.approval.PostgresApprovalSnapshotRepository;
@@ -67,6 +76,7 @@ import com.ghatana.digitalmarketing.persistence.googleads.PostgresDmGoogleAdsCam
 import com.ghatana.digitalmarketing.persistence.googleads.PostgresDmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.persistence.preflight.PostgresCampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.persistence.strategy.PostgresMarketingStrategyRepository;
+import com.ghatana.digitalmarketing.persistence.suppression.PostgresSuppressionRepository;
 import com.ghatana.digitalmarketing.persistence.transparency.PostgresAiActionLogRepository;
 import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.command.PostgresDmCommandRepository;
@@ -98,7 +108,16 @@ import com.ghatana.plugin.risk.RiskManagementPlugin;
 import com.ghatana.plugin.risk.impl.StandardRiskManagementPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
+import com.ghatana.platform.security.encryption.HashingService;
+import com.ghatana.platform.security.encryption.impl.DefaultHashingProvider;
+import com.ghatana.platform.security.port.HashingPort;
 import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpMethod;
+import io.activej.http.HttpResponse;
+import io.activej.http.HttpServer;
+import io.activej.promise.Promise;
 import io.activej.launcher.Launcher;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import okhttp3.OkHttpClient;
@@ -109,6 +128,7 @@ import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -185,6 +205,17 @@ public final class DmosApiServer extends Launcher {
         return normalized;
     }
 
+    private String resolvePiiHmacKey() {
+        String key = System.getenv("DMOS_PII_HMAC_KEY");
+        if (key != null && !key.isBlank()) {
+            return key;
+        }
+        if (environment.equals(PRODUCTION)) {
+            throw new IllegalStateException("DMOS_PII_HMAC_KEY is required for production hashing");
+        }
+        return "development-dmos-pii-hmac-key";
+    }
+
     /**
      * Validates production-specific requirements.
      *
@@ -233,7 +264,109 @@ public final class DmosApiServer extends Launcher {
         // Build all components
         buildComponents();
 
-        LOG.info("DMOS API server started successfully on port {}", getListenPort());
+        startHttpServer(get(Eventloop.class));
+    }
+
+    private void startHttpServer(Eventloop eventloop) throws Exception {
+        int listenPort = getListenPort();
+        HttpServer server = HttpServer.builder(eventloop, buildHttpRouter(eventloop))
+            .withListenPort(listenPort)
+            .build();
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("Stopping DMOS API server");
+            try {
+                server.close();
+                get(DigitalMarketingKernelAdapter.class).stop();
+            } catch (Exception exception) {
+                LOG.warn("DMOS API server close failed", exception);
+            } finally {
+                eventloop.keepAlive(false);
+                shutdownLatch.countDown();
+            }
+        }, "dmos-api-shutdown"));
+
+        eventloop.keepAlive(true);
+        eventloop.execute(() -> {
+            try {
+                server.listen();
+                LOG.info("DMOS API server started successfully on port {}", listenPort);
+            } catch (Exception exception) {
+                LOG.error("Failed to start DMOS API server", exception);
+                shutdownLatch.countDown();
+                System.exit(1);
+            }
+        });
+        eventloop.run();
+        shutdownLatch.await();
+    }
+
+    private AsyncServlet buildHttpRouter(Eventloop eventloop) {
+        AsyncServlet workspace = get(DmosWorkspaceServlet.class).getServlet();
+        AsyncServlet routeEntitlements = get(DmosRouteEntitlementServlet.class).getServlet();
+        AsyncServlet dashboard = get(DmosDashboardServlet.class).getServlet();
+        AsyncServlet campaigns = get(DmosCampaignServlet.class).getServlet();
+        AsyncServlet approvals = get(DmosApprovalServlet.class).routes();
+        AsyncServlet aiActions = get(DmosAiActionLogServlet.class).routes();
+        AsyncServlet strategy = get(DmosStrategyServlet.class).getServlet();
+        AsyncServlet budget = get(DmosBudgetRecommendationServlet.class).getServlet();
+        AsyncServlet audit = get(DmosWebsiteAuditServlet.class).getServlet();
+        AsyncServlet consent = get(DmosConsentServlet.class).getServlet();
+
+        return request -> {
+            String path = request.getPath();
+            if (request.getMethod() == HttpMethod.OPTIONS) {
+                return Promise.of(corsPreflight(request.getHeader(HttpHeaders.of("Origin"))));
+            }
+            if ("/health/live".equals(path)) {
+                return HttpResponse.ok200().withPlainText("ok").toPromise();
+            }
+            if ("/health/ready".equals(path)) {
+                return HttpResponse.ok200().withPlainText("ready").toPromise();
+            }
+            try {
+                Promise<HttpResponse> response;
+                if (path.equals("/v1/route-entitlements")) {
+                    response = routeEntitlements.serve(request);
+                } else if (path.contains("/dashboard")) {
+                    response = dashboard.serve(request);
+                } else if (path.contains("/campaigns")) {
+                    response = campaigns.serve(request);
+                } else if (path.contains("/approvals")) {
+                    response = approvals.serve(request);
+                } else if (path.contains("/ai-actions")) {
+                    response = aiActions.serve(request);
+                } else if (path.contains("/strategy")) {
+                    response = strategy.serve(request);
+                } else if (path.contains("/budget")) {
+                    response = budget.serve(request);
+                } else if (path.contains("/audit")) {
+                    response = audit.serve(request);
+                } else if (path.contains("/consent") || path.contains("/suppression") || path.contains("/unsubscribe")) {
+                    response = consent.serve(request);
+                } else if (path.startsWith("/v1/workspaces")) {
+                    response = workspace.serve(request);
+                } else {
+                    response = Promise.of(HttpResponse.ofCode(404).build());
+                }
+                return response;
+            } catch (Exception e) {
+                return Promise.ofException(e);
+            }
+        };
+    }
+
+    private static HttpResponse corsPreflight(String origin) {
+        String allowOrigin = origin == null || origin.isBlank() ? "*" : origin;
+        return HttpResponse.ofCode(204)
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), allowOrigin)
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"),
+                "Authorization,Content-Type,X-Tenant-ID,X-Principal-ID,X-Session-ID,X-Roles,X-Permissions,X-Idempotency-Key,X-Correlation-ID")
+            .withHeader(HttpHeaders.of("Access-Control-Max-Age"), "600")
+            .withHeader(HttpHeaders.of("Vary"), "Origin")
+            .build();
     }
 
     private void buildComponents() {
@@ -281,7 +414,9 @@ public final class DmosApiServer extends Launcher {
             riskPlugin,
             notificationPlugin
         );
+        kernelAdapter.start();
         register(DigitalMarketingKernelAdapter.class, kernelAdapter);
+        register(ConsentPlugin.class, consentPlugin);
         register(HumanApprovalPlugin.class, approvalPlugin);
 
         // Wire repositories based on persistence type
@@ -511,6 +646,7 @@ public final class DmosApiServer extends Launcher {
         register(MarketingStrategyRepository.class, new PostgresMarketingStrategyRepository(dataSource, executor));
         register(BudgetRecommendationRepository.class, new PostgresBudgetRecommendationRepository(dataSource, executor));
         register(WebsiteAuditReportRepository.class, new PostgresWebsiteAuditReportRepository(dataSource, executor));
+        register(SuppressionRepository.class, new PostgresSuppressionRepository(dataSource, executor));
 
         LOG.info("PostgreSQL repositories wired successfully");
     }
@@ -522,6 +658,10 @@ public final class DmosApiServer extends Launcher {
         register(CampaignRepository.class, new InMemoryCampaignRepository());
         register(ApprovalSnapshotRepository.class, new InMemoryApprovalSnapshotRepository());
         register(AiActionLogRepository.class, new InMemoryAiActionLogRepository());
+        register(SuppressionRepository.class, new InMemorySuppressionRepository());
+        register(MarketingStrategyRepository.class, new InMemoryMarketingStrategyRepository());
+        register(BudgetRecommendationRepository.class, new InMemoryBudgetRecommendationRepository());
+        register(WebsiteAuditReportRepository.class, new InMemoryWebsiteAuditReportRepository());
 
         LOG.warn("MarketingStrategyRepository, BudgetRecommendationRepository, and WebsiteAuditReportRepository using forward implementations - in-memory adapters pending");
     }
@@ -816,6 +956,22 @@ public final class DmosApiServer extends Launcher {
         BudgetRecommendationService budgetService = new BudgetRecommendationServiceImpl(kernelAdapter, budgetRepo);
         register(BudgetRecommendationService.class, budgetService);
 
+        HashingPort hashingPort = new DefaultHashingProvider(new HashingService(resolvePiiHmacKey(), eventloop));
+        register(HashingPort.class, hashingPort);
+        SuppressionService suppressionService = new SuppressionServiceImpl(
+            kernelAdapter,
+            get(SuppressionRepository.class),
+            hashingPort
+        );
+        register(SuppressionService.class, suppressionService);
+
+        DashboardSummaryService dashboardSummaryService = new DashboardSummaryServiceImpl(
+            campaignRepo,
+            approvalRepo,
+            budgetRepo
+        );
+        register(DashboardSummaryService.class, dashboardSummaryService);
+
         // Website Audit Service
         WebsiteAuditReportRepository auditReportRepo = get(WebsiteAuditReportRepository.class);
         WebsiteAuditService websiteAuditService = new WebsiteAuditServiceImpl(kernelAdapter, auditReportRepo);
@@ -853,6 +1009,16 @@ public final class DmosApiServer extends Launcher {
         WorkspaceService workspaceService = get(WorkspaceService.class);
         register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop, httpContextFactory));
         register(DmosRouteEntitlementServlet.class, new DmosRouteEntitlementServlet(eventloop));
+
+        DashboardSummaryService dashboardSummaryService = get(DashboardSummaryService.class);
+        register(DmosDashboardServlet.class, new DmosDashboardServlet(dashboardSummaryService, eventloop, httpContextFactory));
+
+        register(DmosConsentServlet.class, new DmosConsentServlet(
+            get(ConsentPlugin.class),
+            get(SuppressionService.class),
+            eventloop,
+            httpContextFactory
+        ));
 
         CampaignService campaignService = get(CampaignService.class);
         register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, workspaceService, eventloop, metrics, telemetry, httpContextFactory));

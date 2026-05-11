@@ -49,7 +49,7 @@ spec:
     - operations
     - sre
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: sre-orchestrator
     name: SRE Orchestrator
@@ -86,7 +86,7 @@ spec:
     - sre
     - slo
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: infra-provisioning-orchestrator
     name: Infrastructure Provisioning Orchestrator
@@ -122,7 +122,7 @@ spec:
     - infrastructure
     - provisioning
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: support-orchestrator
     name: Support Orchestrator
@@ -158,7 +158,7 @@ spec:
     - support
     - ticket
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: change-management-orchestrator
     name: Change Management Orchestrator
@@ -192,7 +192,7 @@ spec:
     - change-management
     - cab
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: cost-management-orchestrator
     name: Cost Management Orchestrator
@@ -227,7 +227,7 @@ spec:
     - cost-management
     - cloud-costs
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: on-call-orchestrator
     name: On-Call Orchestrator
@@ -261,7 +261,7 @@ spec:
     - on-call
     - alerting
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: sre-capability-agent
     name: SRE Capability Agent
@@ -300,7 +300,7 @@ spec:
     - sre
     - reliability
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: infra-capability-agent
     name: Infrastructure Capability Agent
@@ -325,7 +325,7 @@ spec:
     - infrastructure
     - terraform
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: support-capability-agent
     name: Support Capability Agent
@@ -360,7 +360,7 @@ spec:
     - support
     - knowledge-base
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: change-management-capability-agent
     name: Change Management Capability Agent
@@ -383,7 +383,7 @@ spec:
     - change-management
     - risk
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: cost-management-capability-agent
     name: Cost Management Capability Agent
@@ -405,7 +405,7 @@ spec:
     - cost-management
     - optimisation
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: slo-management-task-agent
     name: SLO Management Task Agent
@@ -427,7 +427,7 @@ spec:
     - slo
     - management
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: error-budget-task-agent
     name: Error Budget Task Agent
@@ -448,7 +448,7 @@ spec:
     - error-budget
     - slo
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: toil-reduction-task-agent
     name: Toil Reduction Task Agent
@@ -470,7 +470,7 @@ spec:
     - toil
     - automation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: iac-generation-task-agent
     name: IaC Generation Task Agent
@@ -492,7 +492,7 @@ spec:
     - iac
     - terraform
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: auto-scaling-task-agent
     name: Auto Scaling Task Agent
@@ -514,7 +514,7 @@ spec:
     - auto-scaling
     - kubernetes
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: drift-detection-task-agent
     name: Drift Detection Task Agent
@@ -535,7 +535,7 @@ spec:
     - drift-detection
     - configuration
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: ticket-triage-task-agent
     name: Ticket Triage Task Agent
@@ -557,7 +557,7 @@ spec:
     - ticket-triage
     - support
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: runbook-execution-task-agent
     name: Runbook Execution Task Agent
@@ -579,7 +579,7 @@ spec:
     - runbook
     - execution
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: kb-update-task-agent
     name: Knowledge Base Update Task Agent
@@ -600,7 +600,7 @@ spec:
     - knowledge-base
     - documentation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: alert-triage-task-agent
     name: Alert Triage Task Agent
@@ -622,7 +622,7 @@ spec:
     - alert-triage
     - correlation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: change-risk-assessment-task-agent
     name: Change Risk Assessment Task Agent
@@ -644,7 +644,7 @@ spec:
     - change-risk
     - assessment
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: rollback-planning-task-agent
     name: Rollback Planning Task Agent
@@ -667,7 +667,7 @@ spec:
     - rollback
     - planning
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cost-anomaly-task-agent
     name: Cost Anomaly Task Agent
@@ -689,7 +689,7 @@ spec:
     - cost-anomaly
     - detection
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: rightsizing-task-agent
     name: Rightsizing Task Agent
@@ -710,7 +710,7 @@ spec:
     - rightsizing
     - cost-optimisation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: slo-compliance-checker
     name: SLO Compliance Checker
@@ -726,7 +726,7 @@ spec:
     - slo
     - compliance
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: alert-severity-classifier
     name: Alert Severity Classifier
@@ -742,7 +742,7 @@ spec:
     - alert
     - severity
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: resource-tag-validator
     name: Resource Tag Validator
@@ -759,7 +759,7 @@ spec:
     - tagging
     - validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: runbook-step-executor
     name: Runbook Step Executor
@@ -776,7 +776,7 @@ spec:
     - runbook
     - execution
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: ticket-deduplicator
     name: Ticket Deduplicator
@@ -792,7 +792,7 @@ spec:
     - tickets
     - deduplication
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: budget-threshold-monitor
     name: Budget Threshold Monitor
@@ -808,7 +808,7 @@ spec:
     - budget
     - monitoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: config-drift-reporter
     name: Config Drift Reporter
@@ -824,7 +824,7 @@ spec:
     - drift
     - reporting
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: change-window-validator
     name: Change Window Validator
@@ -840,7 +840,7 @@ spec:
     - change-window
     - validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: incident-severity-scorer
     name: Incident Severity Scorer
@@ -857,7 +857,7 @@ spec:
     - incident
     - severity
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: utilisation-percentage-calculator
     name: Utilisation Percentage Calculator
@@ -873,7 +873,7 @@ spec:
     - utilisation
     - calculation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

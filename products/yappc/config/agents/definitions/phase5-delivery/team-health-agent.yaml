@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: health_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {workload_score, morale_score, burnout_risk, collaboration_score, psych_safety_score, cohesion_score, concerns, recommendations, overall_health}
     - name: alert_generation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate alerts for concerning signals
     - name: intervention_recommendation
       type: TEMPLATE

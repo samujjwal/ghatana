@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: onboarding_plan
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {week1, week2_4, month2_3, people, docs, starter_tasks, buddy, checkins}
     - name: progress_tracking
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Track onboarding progress
     - name: content_personalization
       type: TEMPLATE

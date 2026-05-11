@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: adr_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -39,7 +39,7 @@ generator:
         
         Output as JSON: {title, status, context, decision, consequences, alternatives, related_adrs, date, authors}
     - name: adr_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate ADR completeness
     - name: adr_publication
       type: SERVICE_CALL

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: integration_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {integrations: [{system, direction, protocol, auth, schema, rate_limits, sla, error_handling, resilience, monitoring}], dependencies, risks}
     - name: contract_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate against existing contracts
     - name: integration_registration
       type: SERVICE_CALL

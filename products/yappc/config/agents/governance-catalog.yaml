@@ -37,7 +37,7 @@ spec:
     - governance
     - orchestration
     - policy
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: release-governance-agent
     name: Release Governance Agent
@@ -64,7 +64,7 @@ spec:
     - governance
     - release
     - compliance
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: policy-enforcement-agent
     name: Policy Enforcement Agent
@@ -90,7 +90,7 @@ spec:
     - governance
     - policy
     - enforcement
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: approval-workflow-agent
     name: Approval Workflow Agent
@@ -113,7 +113,7 @@ spec:
     - governance
     - approval
     - workflow
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: audit-coordinator
     name: Audit Coordinator Agent
@@ -132,7 +132,7 @@ spec:
     - governance
     - audit
     - coordination
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: budget-gate-agent
     name: Budget Gate Agent
@@ -158,7 +158,7 @@ spec:
     - governance
     - budget
     - cost
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: dependency-gate-agent
     name: Dependency Gate Agent
@@ -180,7 +180,7 @@ spec:
     - governance
     - dependencies
     - security
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: license-compliance-agent
     name: License Compliance Agent
@@ -199,7 +199,7 @@ spec:
     - governance
     - licensing
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: data-sovereignty-agent
     name: Data Sovereignty Agent
@@ -218,7 +218,7 @@ spec:
     - governance
     - data
     - sovereignty
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: access-review-agent
     name: Access Review Agent
@@ -241,7 +241,7 @@ spec:
     - governance
     - access
     - review
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: change-management-agent
     name: Change Management Agent
@@ -267,7 +267,7 @@ spec:
     - governance
     - change
     - management
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: vendor-risk-assessor
     name: Vendor Risk Assessor Agent
@@ -292,7 +292,7 @@ spec:
     - governance
     - vendor
     - risk
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: business-continuity-agent
     name: Business Continuity Agent
@@ -311,7 +311,7 @@ spec:
     - governance
     - business-continuity
     - disaster-recovery
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: ethics-review-agent
     name: Ethics Review Agent
@@ -330,7 +330,7 @@ spec:
     - governance
     - ethics
     - ai
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sustainability-agent
     name: Sustainability Agent
@@ -349,7 +349,7 @@ spec:
     - governance
     - sustainability
     - green
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: quality-gate-agent
     name: Quality Gate Agent
@@ -371,7 +371,7 @@ spec:
     - governance
     - quality
     - gates
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: documentation-gate-agent
     name: Documentation Gate Agent
@@ -390,7 +390,7 @@ spec:
     - governance
     - documentation
     - gates
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: security-gate-agent
     name: Security Gate Agent
@@ -412,7 +412,7 @@ spec:
     - governance
     - security
     - gates
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1:

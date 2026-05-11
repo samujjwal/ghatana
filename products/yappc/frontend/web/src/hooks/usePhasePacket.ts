@@ -25,6 +25,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { LifecycleService } from '../clients/generated/api';
 import type {
   PhaseCockpitPacket,
   PhasePacketRequest,
@@ -65,21 +66,14 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
     setError(null);
 
     try {
-      // TODO: Replace with actual API call to phase packet endpoint
-      // For now, this is a placeholder that will be implemented when the backend endpoint is ready
-      const response = await fetch('/api/v1/phase/packet', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch phase packet: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      // Use generated client with GET method (query parameters)
+      // Task 5.A.2: Ensure GET/POST parity between manifest, OpenAPI, backend, frontend
+      const data = await LifecycleService.getPhasePacket(
+        request.phase as 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'learn' | 'evolve',
+        request.projectId,
+        request.workspaceId,
+        request.correlationId
+      );
       setPacket(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch phase packet'));

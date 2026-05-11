@@ -21,8 +21,8 @@ metadata:
   - signoff
   - level2
 identity:
-  agentType: probabilistic
-  subtype: llm
+  agentType: PROBABILISTIC
+  subtype: LLM
   determinismGuarantee: none
   stateMutability: local-state
   failureMode: retry

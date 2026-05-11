@@ -20,7 +20,7 @@ generator:
       service: tracking-service
       endpoint: /milestones/status
     - name: health_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -44,7 +44,7 @@ generator:
         
         Output as JSON: {milestones: [{id, name, completion, health, days_variance, blockers, actions, predicted_date, confidence}], overall_health, critical_attention}
     - name: alert_generation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate alerts for at-risk milestones
 
 memory:

@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.infra.campaign;
 
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
+import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import io.activej.promise.Promise;
@@ -31,28 +32,32 @@ public final class InMemoryCampaignRepository implements CampaignRepository {
     private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
     @Override
-    public Promise<Campaign> save(Campaign campaign) {
+    public Promise<Campaign> save(DmTenantId tenantId, Campaign campaign) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(campaign, "campaign must not be null");
-        store.put(key(campaign.getWorkspaceId(), campaign.getId()), campaign);
+        store.put(key(tenantId, campaign.getWorkspaceId(), campaign.getId()), campaign);
         return Promise.of(campaign);
     }
 
     @Override
-    public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
+    public Promise<Optional<Campaign>> findById(DmTenantId tenantId, DmWorkspaceId workspaceId, String campaignId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(campaignId, "campaignId must not be null");
-        return Promise.of(Optional.ofNullable(store.get(key(workspaceId, campaignId))));
+        return Promise.of(Optional.ofNullable(store.get(key(tenantId, workspaceId, campaignId))));
     }
 
     @Override
-    public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+    public Promise<List<Campaign>> listByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId, int limit, int offset) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         int boundedLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
         int boundedOffset = Math.max(offset, 0);
 
-        String prefix = workspaceId.getValue() + ":";
-        List<Campaign> results = store.values().stream()
-            .filter(c -> c.getWorkspaceId().equals(workspaceId))
+        String prefix = tenantId.getValue() + ":" + workspaceId.getValue() + ":";
+        List<Campaign> results = store.entrySet().stream()
+            .filter(e -> e.getKey().startsWith(prefix))
+            .map(java.util.Map.Entry::getValue)
             .sorted(Comparator.comparing(Campaign::getCreatedAt).reversed()
                 .thenComparing(Campaign::getId))
             .skip(boundedOffset)
@@ -63,17 +68,19 @@ public final class InMemoryCampaignRepository implements CampaignRepository {
     }
 
     @Override
-    public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+    public Promise<Long> countByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
 
-        long count = store.values().stream()
-            .filter(c -> c.getWorkspaceId().equals(workspaceId))
+        String prefix = tenantId.getValue() + ":" + workspaceId.getValue() + ":";
+        long count = store.keySet().stream()
+            .filter(k -> k.startsWith(prefix))
             .count();
 
         return Promise.of(count);
     }
 
-    private static String key(DmWorkspaceId workspaceId, String campaignId) {
-        return workspaceId.getValue() + ":" + campaignId;
+    private static String key(DmTenantId tenantId, DmWorkspaceId workspaceId, String campaignId) {
+        return tenantId.getValue() + ":" + workspaceId.getValue() + ":" + campaignId;
     }
 }

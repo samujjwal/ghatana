@@ -4,25 +4,28 @@
 
 This document defines the production MVP contract for DMOS. It freezes one complete executable loop that must be fully implemented, tested, and production-ready before DMOS can be deployed to production.
 
-**Last Updated:** 2026-05-09
-**Commit Baseline:** 4b9fff1bf67dd3b75ca393eb6b40a1a7014f8a9b
+**Last Updated:** 2026-05-11
+**Commit Baseline:** current working tree
 
 ## MVP Loop Definition
 
 The production MVP loop is a single end-to-end path:
 
 ```
-Workspace Setup/Intake
+Intake
   → Website Audit/Research
   → Strategy Generation
   → Budget Recommendation
   → Content Generation (Ad Copy + Landing Page)
   → Approval Workflow
-  → Google Search Launch/Export
+  → Google Search Launch/Export (durable command, not direct connector success)
   → Lead Capture
   → Reporting
   → Next-Best Action
 ```
+
+Anything outside this loop is a boundary capability until it has the same route, API,
+service, persistence, authorization, audit, telemetry, tests, and operations proof.
 
 ## Readiness Criteria
 
@@ -56,7 +59,7 @@ Every step in the MVP loop must satisfy ALL of the following:
 - PostgreSQL persistence with unique constraints
 - Tests: create workspace, list workspaces (tenant-scoped), delete workspace
 
-**Status:** ✅ Ready (PostgreSQL adapters exist, audit integration complete)
+**Status:** Partial - Intake/workspace surfaces exist, but production proof is incomplete.
 
 ---
 
@@ -103,7 +106,7 @@ Every step in the MVP loop must satisfy ALL of the following:
 - Strategy versioning with immutable snapshots
 - Tests: generate strategy, submit for approval, approve/reject, retrieve approved
 
-**Status:** ✅ Ready (Service exists, approval workflow integrated, AI provenance tracked)
+**Status:** Partial - Service exists, but full provenance, approval, and real-provider proof is incomplete.
 
 ---
 
@@ -150,7 +153,7 @@ Every step in the MVP loop must satisfy ALL of the following:
 - AI provenance: model version, prompt version, evidence, confidence
 - Tests: generate content, validate, approve, retrieve approved version
 
-**Status:** ✅ Ready (Services exist, validation integrated, approval workflow complete)
+**Status:** Partial - Services exist, but mandatory AI provenance, validation proof, and approval coverage are incomplete.
 
 ---
 
@@ -172,7 +175,7 @@ Every step in the MVP loop must satisfy ALL of the following:
 - Notification integration for pending approvals
 - Tests: create approval, approve, reject, duplicate decision prevention
 
-**Status:** ✅ Ready (Full approval workflow integrated, kernel bridge complete)
+**Status:** Partial - Core workflow exists; immutable snapshot, duplicate-decision, and resume/block proof remain required.
 
 ---
 
@@ -196,13 +199,14 @@ Every step in the MVP loop must satisfy ALL of the following:
 - External ID mapping (DMOS campaign ID ↔ Google Ads campaign ID)
 - Tests: launch success, launch failure with retry, duplicate launch prevention, kill switch, rollback
 
-**Status:** ⚠️ Partial - Connector exists but durable workflow incomplete
+**Status:** Partial - Launch now records explicit `PENDING_LAUNCH`, `LAUNCH_FAILED`, and `EXTERNAL_EXECUTION_BLOCKED` states; workflow replay, sandbox E2E, and external-ID proof remain required.
 
 **Production Blocker:**
-- [ ] Implement durable command execution with outbox
+- [x] Persist a durable command/outbox record before treating paid-search launch as externally executable
+- [x] Represent kill-switch blocked launch as an explicit campaign state
+- [x] Remove hardcoded paid-search launch defaults for missing budget/targeting
 - [ ] Add retry policy with exponential backoff
 - [ ] Add dead-letter queue for failed executions
-- [ ] Add kill switch at all levels
 - [ ] Add rollback support
 - [ ] Add external ID mapping persistence
 - [ ] Add integration tests with real Google Ads sandbox
@@ -255,7 +259,7 @@ Every step in the MVP loop must satisfy ALL of the following:
 - Dashboard/report/export parity
 - Tests: dashboard accuracy, stale data handling, empty state, export parity
 
-**Status:** ⚠️ Partial - Dashboard exists but backend summary incomplete
+**Status:** Partial - Dashboard summary service exists; UI still must consume only this canonical API and stop local KPI aggregation.
 
 **Production Blocker:**
 - [ ] Implement DashboardSummary API contract
@@ -297,26 +301,26 @@ Every step in the MVP loop must satisfy ALL of the following:
 
 | Step | UI Route | API Contract | Backend Service | Persistence | Authorization | Audit | Telemetry | Tests | Status |
 |------|----------|-------------|-----------------|-------------|----------------|-------|-----------|-------|--------|
-| 1. Workspace Setup | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Ready |
-| 2. Website Audit | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ Partial |
-| 3. Strategy Generation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Ready |
-| 4. Budget Recommendation | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ Partial |
-| 5. Content Generation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Ready |
-| 6. Approval Workflow | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Ready |
-| 7. Google Search Launch | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ Partial |
-| 8. Lead Capture | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ Partial |
-| 9. Reporting | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ Partial |
-| 10. Next-Best Action | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ Partial |
+| 1. Intake/Workspace | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 2. Website Audit | Boundary | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 3. Strategy Generation | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 4. Budget Recommendation | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 5. Content Generation | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 6. Approval Workflow | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 7. Google Search Launch | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 8. Lead Capture | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 9. Reporting | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
+| 10. Next-Best Action | Boundary | Boundary | Partial | Boundary | Partial | Partial | Partial | Partial | Boundary |
 
 ## Production Deployment Decision
 
 DMOS is **NOT** production-ready until:
 
-1. All 10 MVP steps are marked ✅ Ready
+1. All 10 MVP steps are marked `Ready`
 2. All production blockers are resolved
 3. Real-backend E2E tests pass for the complete loop
 4. Privacy/consent/DSAR implementation is complete (P1-013)
-5. Release gates are mandatory in CI (Task 9)
+5. Release gates are mandatory in CI and fail on security/privacy/dashboard warnings
 
 ## Boundary Route Policy
 
@@ -332,11 +336,10 @@ Routes marked as **Boundary** in this contract must:
 
 The implementation sequence for resolving production blockers is:
 
-1. **P0-2:** Complete durable workflow execution for campaign launch (Task 4)
-2. **P0-4:** Complete privacy/consent/DSAR implementation (Task 6)
-3. **P0-3:** Implement canonical analytics/reporting runtime (Task 5)
-4. **P0-5:** Complete route/action/capability generation (Task 1 - ✅ Done)
-5. **P0-6:** Govern AI workflows end to end (Task 7)
-6. **P1-8:** Make production release gates mandatory (Task 9)
-7. **P1-7:** Tighten UI/UX into command center (Task 8)
-8. **P1-9:** Repository cleanup and doc consolidation (Task 10)
+1. Complete route/action/capability generation so UI, API, docs, and tests consume one manifest.
+2. Complete durable workflow execution for campaign launch, including replay, DLQ, rollback, and external-ID mapping proof.
+3. Complete privacy/consent/DSAR implementation and enforce it before all contact-data actions.
+4. Move dashboard UI to the canonical `DashboardSummary` API.
+5. Govern AI workflows end to end with mandatory provenance, evidence, risk, redaction, and approval metadata.
+6. Make release gates mandatory and warning-free.
+7. Keep duplicate/stale docs and UI surfaces archived or out of production builds.

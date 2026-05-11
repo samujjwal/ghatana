@@ -16,7 +16,7 @@ generator:
       service: secret-store
       endpoint: /secrets/signing-key
     - name: artifact_signing
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Sign each artifact with the retrieved key.
         JAR: jarsigner / GPG detached signature.
@@ -24,7 +24,7 @@ generator:
         npm: npm publish --provenance.
         Output: signature files + SLSA provenance attestation.
     - name: signature_verification
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Verify produced signatures are valid before publishing
 
 memory:

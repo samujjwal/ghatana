@@ -3,7 +3,6 @@ package com.ghatana.digitalmarketing.application.analytics;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
-import com.ghatana.digitalmarketing.application.lead.LeadRepository;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import io.activej.promise.Promise;
@@ -38,25 +37,22 @@ public final class DashboardSummaryServiceImpl implements DashboardSummaryServic
     private final CampaignRepository campaignRepository;
     private final ApprovalSnapshotRepository approvalRepository;
     private final BudgetRecommendationRepository budgetRepository;
-    private final LeadRepository leadRepository;
 
     public DashboardSummaryServiceImpl(
             CampaignRepository campaignRepository,
             ApprovalSnapshotRepository approvalRepository,
-            BudgetRecommendationRepository budgetRepository,
-            LeadRepository leadRepository) {
+            BudgetRecommendationRepository budgetRepository) {
         this.campaignRepository = Objects.requireNonNull(campaignRepository, "campaignRepository must not be null");
         this.approvalRepository = Objects.requireNonNull(approvalRepository, "approvalRepository must not be null");
         this.budgetRepository = Objects.requireNonNull(budgetRepository, "budgetRepository must not be null");
-        this.leadRepository = Objects.requireNonNull(leadRepository, "leadRepository must not be null");
     }
 
     @Override
     public Promise<DashboardSummary> computeSummary(DmOperationContext ctx) {
         LOG.info("[DMOS-ANALYTICS] Computing dashboard summary for workspace={}", ctx.getWorkspaceId().getValue());
 
-        return campaignRepository.countByWorkspace(ctx.getWorkspaceId())
-            .then(total -> campaignRepository.listByWorkspace(ctx.getWorkspaceId(), 1000, 0)
+        return campaignRepository.countByWorkspace(ctx.getTenantId(), ctx.getWorkspaceId())
+            .then(total -> campaignRepository.listByWorkspace(ctx.getTenantId(), ctx.getWorkspaceId(), 1000, 0)
                 .map(campaigns -> computeCampaignMetrics(campaigns, total)))
             .then(campaignMetrics -> budgetRepository.findLatestByWorkspace(ctx.getWorkspaceId())
                 .map(latest -> computeBudgetMetrics(

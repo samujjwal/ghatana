@@ -47,7 +47,7 @@ spec:
     - discovery
     - research
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: market-research-orchestrator
     name: Market Research Orchestrator
@@ -80,7 +80,7 @@ spec:
     - market-research
     - competitive-intelligence
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: customer-insight-orchestrator
     name: Customer Insight Orchestrator
@@ -114,7 +114,7 @@ spec:
     - customer-insight
     - research
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: opportunity-assessment-orchestrator
     name: Opportunity Assessment Orchestrator
@@ -146,7 +146,7 @@ spec:
     - opportunity
     - assessment
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: trend-monitoring-capability-agent
     name: Trend Monitoring Capability Agent
@@ -181,7 +181,7 @@ spec:
     - trend-monitoring
     - foresight
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: customer-research-capability-agent
     name: Customer Research Capability Agent
@@ -211,7 +211,7 @@ spec:
     - customer-research
     - interviews
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: competitive-intelligence-capability-agent
     name: Competitive Intelligence Capability Agent
@@ -240,7 +240,7 @@ spec:
     - competitive-intelligence
     - market
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: problem-discovery-capability-agent
     name: Problem Discovery Capability Agent
@@ -269,7 +269,7 @@ spec:
     - problem-discovery
     - validation
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: opportunity-scoring-capability-agent
     name: Opportunity Scoring Capability Agent
@@ -291,7 +291,7 @@ spec:
     - opportunity-scoring
     - ranking
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: market-trend-scan-task-agent
     name: Market Trend Scan Task Agent
@@ -311,7 +311,7 @@ spec:
     - market-scan
     - trends
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: competitor-feature-comparison-task-agent
     name: Competitor Feature Comparison Task Agent
@@ -331,7 +331,7 @@ spec:
     - competitor
     - features
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: user-review-mining-task-agent
     name: User Review Mining Task Agent
@@ -352,7 +352,7 @@ spec:
     - review-mining
     - sentiment
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: interview-synthesis-task-agent
     name: Interview Synthesis Task Agent
@@ -374,7 +374,7 @@ spec:
     - interview
     - synthesis
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: support-ticket-clustering-task-agent
     name: Support Ticket Clustering Task Agent
@@ -394,7 +394,7 @@ spec:
     - support-tickets
     - clustering
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: opportunity-hypothesis-task-agent
     name: Opportunity Hypothesis Task Agent
@@ -414,7 +414,7 @@ spec:
     - hypothesis
     - opportunity
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: segment-analysis-task-agent
     name: Segment Analysis Task Agent
@@ -435,7 +435,7 @@ spec:
     - segmentation
     - analysis
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: problem-statement-task-agent
     name: Problem Statement Task Agent
@@ -455,7 +455,7 @@ spec:
     - problem-statement
     - drafting
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: jobs-to-be-done-task-agent
     name: Jobs To Be Done Task Agent
@@ -476,7 +476,7 @@ spec:
     - jtbd
     - customer-jobs
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: regulatory-landscape-task-agent
     name: Regulatory Landscape Task Agent
@@ -496,7 +496,7 @@ spec:
     - regulatory
     - compliance
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: geography-specific-need-task-agent
     name: Geography Specific Need Task Agent
@@ -517,7 +517,7 @@ spec:
     - geo
     - localisation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: demand-signal-detection-task-agent
     name: Demand Signal Detection Task Agent
@@ -537,7 +537,7 @@ spec:
     - demand-signals
     - detection
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: opportunity-backlog-task-agent
     name: Opportunity Backlog Task Agent
@@ -557,7 +557,7 @@ spec:
     - backlog
     - opportunity
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: review-sentiment-unit
     name: Review Sentiment Unit
@@ -573,7 +573,7 @@ spec:
     - sentiment
     - reviews
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: theme-clusterer
     name: Theme Clusterer
@@ -589,7 +589,7 @@ spec:
     - clustering
     - themes
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: competitor-diff-unit
     name: Competitor Diff Unit
@@ -605,7 +605,7 @@ spec:
     - competitor
     - diff
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: support-issue-tagger
     name: Support Issue Tagger
@@ -621,7 +621,7 @@ spec:
     - support
     - tagging
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: jtbd-pattern-extractor
     name: JTBD Pattern Extractor
@@ -637,7 +637,7 @@ spec:
     - jtbd
     - extraction
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: segment-scorer
     name: Segment Scorer
@@ -652,7 +652,7 @@ spec:
     - segment
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: pain-point-normalizer
     name: Pain Point Normalizer
@@ -668,7 +668,7 @@ spec:
     - normalisation
     - pain-points
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: trend-change-detector
     name: Trend Change Detector
@@ -684,7 +684,7 @@ spec:
     - trend
     - change-detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: research-evidence-linker
     name: Research Evidence Linker
@@ -700,7 +700,7 @@ spec:
     - evidence
     - linking
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: opportunity-confidence-unit
     name: Opportunity Confidence Unit
@@ -716,7 +716,7 @@ spec:
     - confidence
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

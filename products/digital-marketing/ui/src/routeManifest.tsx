@@ -1,45 +1,123 @@
-import React from 'react';
 import type { ProductRouteCapability } from '@ghatana/product-shell';
-import { VALID_ROLES, type ValidRole, normalizeRoles } from '@/lib/role-utils';
+import { normalizeRoles, type ValidRole } from '@/lib/role-utils';
+import {
+  dmosRouteManifest as generatedRouteManifest,
+  DMOS_ROLE_ORDER,
+  type DmosRouteManifestEntry,
+} from '@/generated/routeManifest.generated';
 
-function lazyNamedPage<T>(loader: () => Promise<T>, exportName: keyof T): React.LazyExoticComponent<React.ComponentType> {
-  return React.lazy(async () => {
-    const module = await loader();
-    return { default: module[exportName] as React.ComponentType };
-  });
-}
-
-const DashboardPage = lazyNamedPage(() => import('@/pages/DashboardPage'), 'DashboardPage');
-const ApprovalQueuePage = lazyNamedPage(() => import('@/pages/ApprovalQueuePage'), 'ApprovalQueuePage');
-const ApprovalDetailPage = lazyNamedPage(() => import('@/pages/ApprovalDetailPage'), 'ApprovalDetailPage');
-const AiActionLogPage = lazyNamedPage(() => import('@/pages/AiActionLogPage'), 'AiActionLogPage');
-const CampaignsPage = lazyNamedPage(() => import('@/pages/CampaignsPage'), 'CampaignsPage');
-const StrategyPage = lazyNamedPage(() => import('@/pages/StrategyPage'), 'StrategyPage');
-const BudgetPage = lazyNamedPage(() => import('@/pages/BudgetPage'), 'BudgetPage');
-const FunnelAnalyticsPage = lazyNamedPage(() => import('@/pages/FunnelAnalyticsPage'), 'FunnelAnalyticsPage');
-const AttributionPage = lazyNamedPage(() => import('@/pages/AttributionPage'), 'AttributionPage');
-const RoiRoasPage = lazyNamedPage(() => import('@/pages/RoiRoasPage'), 'RoiRoasPage');
-const SelfMarketingFunnelPage = lazyNamedPage(() => import('@/pages/SelfMarketingFunnelPage'), 'SelfMarketingFunnelPage');
-const MarketResearchPage = lazyNamedPage(() => import('@/pages/MarketResearchPage'), 'MarketResearchPage');
-const AdvancedChannelsPage = lazyNamedPage(() => import('@/pages/AdvancedChannelsPage'), 'AdvancedChannelsPage');
-const LocalizationPage = lazyNamedPage(() => import('@/pages/LocalizationPage'), 'LocalizationPage');
-const AgencyOperationsPage = lazyNamedPage(() => import('@/pages/AgencyOperationsPage'), 'AgencyOperationsPage');
-const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPage'), 'AiOptimizationPage');
-
-export interface DmosRouteManifestEntry extends ProductRouteCapability {
-  readonly element: React.ReactElement;
-  readonly capabilityKey?: string;
-}
-
-export const DMOS_ROLE_ORDER: Readonly<Record<ValidRole, number>> = {
-  viewer: 0,
-  'brand-manager': 1,
-  'marketing-director': 2,
-  'exec-sponsor': 3,
-  admin: 4,
-};
+export type { DmosRouteManifestEntry };
+export { DMOS_ROLE_ORDER };
 
 const DEFAULT_AUTHENTICATED_ROLE: ValidRole = 'viewer';
+
+const ROUTE_METADATA: Readonly<Record<string, Pick<DmosRouteManifestEntry, 'personas' | 'tiers' | 'cards'>>> = {
+  '/workspaces/:workspaceId/dashboard': {
+    personas: ['analyst', 'approver', 'executive'],
+    tiers: ['core'],
+    cards: ['launch-readiness', 'approval-queue', 'workflow-health'],
+  },
+  '/workspaces/:workspaceId/approvals': {
+    personas: ['approver', 'executive'],
+    tiers: ['core'],
+    cards: ['pending-approvals', 'decision-sla'],
+  },
+  '/workspaces/:workspaceId/approvals/:requestId': {
+    personas: ['approver', 'executive'],
+    tiers: ['core'],
+    cards: ['approval-context', 'evidence-snapshot'],
+  },
+  '/workspaces/:workspaceId/ai-actions': {
+    personas: ['analyst', 'approver', 'executive'],
+    tiers: ['core'],
+    cards: ['recent-ai-actions', 'audit-filters'],
+  },
+  '/workspaces/:workspaceId/ai-actions/:actionId': {
+    personas: ['analyst', 'approver', 'executive'],
+    tiers: ['core'],
+    cards: ['action-evidence', 'approval-trace'],
+  },
+  '/workspaces/:workspaceId/campaigns': {
+    personas: ['planner', 'approver'],
+    tiers: ['growth'],
+    cards: ['campaign-summary', 'launch-checklist'],
+  },
+  '/workspaces/:workspaceId/strategy': {
+    personas: ['planner', 'approver'],
+    tiers: ['growth'],
+    cards: ['strategy-brief', 'approval-dependencies'],
+  },
+  '/workspaces/:workspaceId/budget': {
+    personas: ['approver', 'executive'],
+    tiers: ['growth'],
+    cards: ['budget-recommendations', 'approval-readiness'],
+  },
+  '/workspaces/:workspaceId/funnel-analytics': {
+    personas: ['planner', 'approver', 'executive'],
+    tiers: ['growth'],
+    cards: ['funnel-overview'],
+  },
+  '/workspaces/:workspaceId/attribution': {
+    personas: ['planner', 'approver', 'executive'],
+    tiers: ['growth'],
+    cards: ['attribution-model'],
+  },
+  '/workspaces/:workspaceId/roi-roas': {
+    personas: ['approver', 'executive'],
+    tiers: ['growth'],
+    cards: ['roi-summary', 'roas-breakdown'],
+  },
+  '/workspaces/:workspaceId/ai-optimization': {
+    personas: ['planner', 'analyst', 'approver'],
+    tiers: ['enterprise'],
+    cards: ['next-best-actions', 'anomaly-detection', 'budget-reallocation'],
+  },
+  '/workspaces/:workspaceId/self-marketing-funnel': {
+    personas: ['planner', 'approver'],
+    tiers: ['enterprise'],
+    cards: ['funnel-stages', 'trial-onboarding'],
+  },
+  '/workspaces/:workspaceId/market-research': {
+    personas: ['planner', 'analyst'],
+    tiers: ['enterprise'],
+    cards: ['trend-analysis', 'buyer-personas'],
+  },
+  '/workspaces/:workspaceId/advanced-channels': {
+    personas: ['planner', 'approver'],
+    tiers: ['enterprise'],
+    cards: ['programmatic-dsp', 'ctv-campaigns', 'influencer-roster'],
+  },
+  '/workspaces/:workspaceId/localization': {
+    personas: ['planner'],
+    tiers: ['enterprise'],
+    cards: ['locale-list', 'translation-status'],
+  },
+  '/workspaces/:workspaceId/agency': {
+    personas: ['approver', 'executive'],
+    tiers: ['enterprise'],
+    cards: ['client-roster', 'white-label-reports'],
+  },
+};
+
+const ROUTE_ACTIONS: Readonly<Record<string, readonly string[]>> = {
+  '/workspaces/:workspaceId/dashboard': ['view-dashboard'],
+  '/workspaces/:workspaceId/approvals': ['review-approval'],
+  '/workspaces/:workspaceId/approvals/:requestId': ['approve', 'reject'],
+  '/workspaces/:workspaceId/ai-actions': ['view-audit-log'],
+  '/workspaces/:workspaceId/ai-actions/:actionId': ['view-audit-log'],
+  '/workspaces/:workspaceId/campaigns': ['launch-campaign'],
+  '/workspaces/:workspaceId/strategy': ['submit-strategy', 'approve-strategy'],
+  '/workspaces/:workspaceId/budget': ['submit-budget', 'approve-budget'],
+  '/workspaces/:workspaceId/funnel-analytics': ['view-funnel'],
+  '/workspaces/:workspaceId/attribution': ['view-attribution'],
+  '/workspaces/:workspaceId/roi-roas': ['view-roi'],
+  '/workspaces/:workspaceId/ai-optimization': ['view-recommendations', 'approve-optimizations'],
+  '/workspaces/:workspaceId/self-marketing-funnel': ['manage-funnel'],
+  '/workspaces/:workspaceId/market-research': ['view-research'],
+  '/workspaces/:workspaceId/advanced-channels': ['manage-channels'],
+  '/workspaces/:workspaceId/localization': ['manage-locales'],
+  '/workspaces/:workspaceId/agency': ['manage-agency'],
+};
 
 function getHighestRole(roles: readonly string[]): ValidRole {
   const normalized = normalizeRoles([...roles]);
@@ -74,258 +152,57 @@ export function resolveDmosRoutePath(path: string, workspaceId: string | null | 
   return path.replaceAll(':workspaceId', resolvedWorkspaceId);
 }
 
-export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
-  {
-    path: '/workspaces/:workspaceId/dashboard',
-    label: 'Dashboard',
-    description: 'Workspace status, approvals, and launch readiness.',
-    group: 'Overview',
-    minimumRole: 'viewer',
-    personas: ['analyst', 'approver', 'executive'],
-    tiers: ['core'],
-    actions: ['view-dashboard'],
-    cards: ['launch-readiness', 'approval-queue', 'workflow-health'],
-    iconName: 'layout-dashboard',
-    lifecycle: 'stable',
-    element: <DashboardPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/approvals',
-    label: 'Approvals',
-    description: 'Pending approvals and decision workflow queue.',
-    group: 'Governance',
-    minimumRole: 'viewer',
-    personas: ['approver', 'executive'],
-    tiers: ['core'],
-    actions: ['review-approval'],
-    cards: ['pending-approvals', 'decision-sla'],
-    iconName: 'shield-check',
-    lifecycle: 'stable',
-    element: <ApprovalQueuePage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/approvals/:requestId',
-    label: 'Approval Detail',
-    description: 'Request detail, snapshot review, and decision flow.',
-    group: 'Governance',
-    minimumRole: 'viewer',
-    personas: ['approver', 'executive'],
-    tiers: ['core'],
-    actions: ['approve', 'reject'],
-    cards: ['approval-context', 'evidence-snapshot'],
-    iconName: 'file-search',
-    lifecycle: 'stable',
-    discoverable: false,
-    element: <ApprovalDetailPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/ai-actions',
-    label: 'AI Action Log',
-    description: 'Traceable AI decision and recommendation history.',
-    group: 'Governance',
-    minimumRole: 'viewer',
-    personas: ['analyst', 'approver', 'executive'],
-    tiers: ['core'],
-    actions: ['view-audit-log'],
-    cards: ['recent-ai-actions', 'audit-filters'],
-    iconName: 'sparkles',
-    lifecycle: 'stable',
-    element: <AiActionLogPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/ai-actions/:actionId',
-    label: 'AI Action Detail',
-    description: 'Single AI action evidence and approval trail.',
-    group: 'Governance',
-    minimumRole: 'viewer',
-    personas: ['analyst', 'approver', 'executive'],
-    tiers: ['core'],
-    actions: ['view-audit-log'],
-    cards: ['action-evidence', 'approval-trace'],
-    iconName: 'sparkles',
-    lifecycle: 'stable',
-    discoverable: false,
-    element: <AiActionLogPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/campaigns',
-    label: 'Campaigns',
-    description: 'Campaign planning and orchestration.',
-    group: 'Execution',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'approver'],
-    tiers: ['growth'],
-    actions: ['launch-campaign'],
-    cards: ['campaign-summary', 'launch-checklist'],
-    iconName: 'megaphone',
-    lifecycle: 'stable',
-    capabilityKey: 'dmos.campaigns',
-    element: <CampaignsPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/strategy',
-    label: 'Strategy',
-    description: 'Strategy generation, review, and approvals.',
-    group: 'Execution',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'approver'],
-    tiers: ['growth'],
-    actions: ['submit-strategy', 'approve-strategy'],
-    cards: ['strategy-brief', 'approval-dependencies'],
-    iconName: 'target',
-    lifecycle: 'stable',
-    capabilityKey: 'dmos.strategy',
-    element: <StrategyPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/budget',
-    label: 'Budget',
-    description: 'Budget recommendations and approval decisions.',
-    group: 'Execution',
-    minimumRole: 'marketing-director',
-    personas: ['approver', 'executive'],
-    tiers: ['growth'],
-    actions: ['submit-budget', 'approve-budget'],
-    cards: ['budget-recommendations', 'approval-readiness'],
-    iconName: 'wallet',
-    lifecycle: 'stable',
-    capabilityKey: 'dmos.budget',
-    element: <BudgetPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/funnel-analytics',
-    label: 'Funnel Analytics',
-    description: 'Full-funnel conversion analytics and stage drop-off reporting.',
-    group: 'Reporting',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'approver', 'executive'],
-    tiers: ['growth'],
-    actions: ['view-funnel'],
-    cards: ['funnel-overview'],
-    iconName: 'chart-bar',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.reporting',
-    element: <FunnelAnalyticsPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/attribution',
-    label: 'Attribution',
-    description: 'Multi-touch attribution models and channel credit distribution.',
-    group: 'Reporting',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'approver', 'executive'],
-    tiers: ['growth'],
-    actions: ['view-attribution'],
-    cards: ['attribution-model'],
-    iconName: 'share-nodes',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.reporting',
-    element: <AttributionPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/roi-roas',
-    label: 'ROI & ROAS',
-    description: 'Return on investment and return on ad spend dashboards.',
-    group: 'Reporting',
-    minimumRole: 'marketing-director',
-    personas: ['approver', 'executive'],
-    tiers: ['growth'],
-    actions: ['view-roi'],
-    cards: ['roi-summary', 'roas-breakdown'],
-    iconName: 'trending-up',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.reporting',
-    element: <RoiRoasPage />,
-  },
-  // ── P3 Roadmap Routes ────────────────────────────────────────────────────
-  {
-    path: '/workspaces/:workspaceId/ai-optimization',
-    label: 'AI Optimization',
-    description: 'AI-driven next-best-action recommendations, anomaly detection, and budget optimization.',
-    group: 'Intelligence',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'analyst', 'approver'],
-    tiers: ['enterprise'],
-    actions: ['view-recommendations', 'approve-optimizations'],
-    cards: ['next-best-actions', 'anomaly-detection', 'budget-reallocation'],
-    iconName: 'sparkles',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.ai_optimization',
-    element: <AiOptimizationPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/self-marketing-funnel',
-    label: 'Self-Marketing Funnel',
-    description: 'Product-led growth funnel management and trial onboarding flows.',
-    group: 'Growth',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'approver'],
-    tiers: ['enterprise'],
-    actions: ['manage-funnel'],
-    cards: ['funnel-stages', 'trial-onboarding'],
-    iconName: 'funnel',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.self_marketing',
-    element: <SelfMarketingFunnelPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/market-research',
-    label: 'Market Research',
-    description: 'Trend analysis, buyer persona generation, and competitive intelligence.',
-    group: 'Intelligence',
-    minimumRole: 'brand-manager',
-    personas: ['planner', 'analyst'],
-    tiers: ['enterprise'],
-    actions: ['view-research'],
-    cards: ['trend-analysis', 'buyer-personas'],
-    iconName: 'search',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.market_research',
-    element: <MarketResearchPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/advanced-channels',
-    label: 'Advanced Channels',
-    description: 'Programmatic advertising, Connected TV, and influencer management.',
-    group: 'Execution',
-    minimumRole: 'marketing-director',
-    personas: ['planner', 'approver'],
-    tiers: ['enterprise'],
-    actions: ['manage-channels'],
-    cards: ['programmatic-dsp', 'ctv-campaigns', 'influencer-roster'],
-    iconName: 'broadcast',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.advanced_channels',
-    element: <AdvancedChannelsPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/localization',
-    label: 'Localization',
-    description: 'Multi-language campaign support and region-specific compliance controls.',
-    group: 'Execution',
-    minimumRole: 'brand-manager',
-    personas: ['planner'],
-    tiers: ['enterprise'],
-    actions: ['manage-locales'],
-    cards: ['locale-list', 'translation-status'],
-    iconName: 'globe',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.localization',
-    element: <LocalizationPage />,
-  },
-  {
-    path: '/workspaces/:workspaceId/agency',
-    label: 'Agency Operations',
-    description: 'Client onboarding, white-label reports, and multi-client workspace management.',
-    group: 'Agency',
-    minimumRole: 'admin',
-    personas: ['approver', 'executive'],
-    tiers: ['enterprise'],
-    actions: ['manage-agency'],
-    cards: ['client-roster', 'white-label-reports'],
-    iconName: 'briefcase',
-    lifecycle: 'boundary',
-    capabilityKey: 'dmos.agency',
-    element: <AgencyOperationsPage />,
-  },
-];
+function toUiPath(apiPath: string): string {
+  const path = apiPath.replace(/^\/v1/, '');
+  if (path.includes('/approvals/:requestId')) {
+    return '/workspaces/:workspaceId/approvals/:requestId';
+  }
+  if (path.includes('/ai-actions')) {
+    return path.includes('/:actionId')
+      ? '/workspaces/:workspaceId/ai-actions/:actionId'
+      : '/workspaces/:workspaceId/ai-actions';
+  }
+  if (path.includes('/campaigns')) {
+    return '/workspaces/:workspaceId/campaigns';
+  }
+  if (path.includes('/strategy')) {
+    return '/workspaces/:workspaceId/strategy';
+  }
+  if (path.includes('/budget')) {
+    return '/workspaces/:workspaceId/budget';
+  }
+  return path;
+}
+
+function mergeRouteActions(
+  existing: DmosRouteManifestEntry,
+  next: DmosRouteManifestEntry,
+): DmosRouteManifestEntry {
+  const actions = Array.from(new Set([...(existing.actions ?? []), ...(next.actions ?? [])]));
+  return { ...existing, actions };
+}
+
+function buildUiRouteManifest(): readonly DmosRouteManifestEntry[] {
+  const byPath = new Map<string, DmosRouteManifestEntry>();
+
+  generatedRouteManifest.forEach((route: DmosRouteManifestEntry) => {
+    const path = toUiPath(route.path);
+    const uiRoute: DmosRouteManifestEntry = {
+      ...route,
+      ...ROUTE_METADATA[path],
+      path,
+      discoverable: route.discoverable ?? (path.includes('/:requestId') || path.includes('/:actionId')),
+    };
+    const existing = byPath.get(path);
+    byPath.set(path, existing ? mergeRouteActions(existing, uiRoute) : uiRoute);
+  });
+
+  return Array.from(byPath.values()).map((route) => ({
+    ...route,
+    actions: ROUTE_ACTIONS[route.path] ?? route.actions,
+  }));
+}
+
+export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = buildUiRouteManifest();
+
+export type DmosRouteCapability = ProductRouteCapability;

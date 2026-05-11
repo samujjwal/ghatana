@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: blocker_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -44,7 +44,7 @@ generator:
       service: action-service
       endpoint: /actions/create
     - name: status_tracking
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Track resolution progress
 
 memory:

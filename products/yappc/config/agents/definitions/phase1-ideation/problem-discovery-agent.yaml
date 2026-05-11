@@ -20,7 +20,7 @@ generator:
       service: research-service
       endpoint: /research/user-insights
     - name: problem_synthesis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.4
@@ -43,7 +43,7 @@ generator:
         
         Output as JSON array: [{problem, root_cause, impact, frequency, workarounds, statement, stakeholders, priority}]
     - name: problem_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate problem significance and solvability
     - name: problem_documentation
       type: TEMPLATE

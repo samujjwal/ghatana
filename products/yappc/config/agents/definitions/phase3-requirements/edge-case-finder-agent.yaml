@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: edge_case_identification
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.4
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {edge_cases: [{id, category, description, input_conditions, expected_behavior, risk_level}], coverage_matrix}
     - name: risk_assessment
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Assess risk of each edge case
     - name: test_case_linkage
       type: SERVICE_CALL

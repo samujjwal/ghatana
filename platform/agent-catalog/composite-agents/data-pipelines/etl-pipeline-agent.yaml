@@ -25,7 +25,7 @@ metadata:
   maturity: production
 
 identity:
-  agentType: composite                     # orchestrates sub-agents in a staged pipeline
+  agentType: COMPOSITE                     # orchestrates sub-agents in a staged pipeline
   roles: [pipeline-orchestrator, etl-coordinator, lineage-tracker]
   criticality: high
   autonomyLevel: autonomous

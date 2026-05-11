@@ -29,8 +29,8 @@ metadata:
     - GDPR (Art. 9 — special category data)
 
 identity:
-  agentType: deterministic
-  subtype: rule-based                           # clinical coding rules, threshold-based adverse-event detection
+  agentType: DETERMINISTIC
+  subtype: RULE_ENGINE                           # clinical coding rules, threshold-based adverse-event detection
   roles: [fhir-processor, clinical-coder, adverse-event-detector, care-pathway-advisor]
   criticality: critical
   autonomyLevel: supervised                     # PHI data — human review gates required

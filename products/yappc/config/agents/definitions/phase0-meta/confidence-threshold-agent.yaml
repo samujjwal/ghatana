@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: context_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze decision context, risk, impact
     - name: threshold_calculation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {autonomous_threshold, review_threshold, risk_factors, routine_factors, recommended, rationale}
     - name: threshold_application
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Compare agent confidence to threshold, decide autonomy level
 
 memory:

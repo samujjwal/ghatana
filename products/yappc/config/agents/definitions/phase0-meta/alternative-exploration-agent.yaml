@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: context_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.5  # Higher for creativity
@@ -45,7 +45,7 @@ generator:
         
         Output as JSON array: [{name, description, pros, cons, resources, risk, novelty}]
     - name: alternative_evaluation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Score alternatives against criteria
     - name: recommendation_synthesis
       type: TEMPLATE

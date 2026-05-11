@@ -20,7 +20,7 @@ generator:
       service: memory-service
       endpoint: /memories/eligible-for-decay
     - name: relevance_scoring
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -40,7 +40,7 @@ generator:
         
         Output as JSON array: [{memory_id, relevance, importance, utility, action, reason}]
     - name: policy_application
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Apply retention policies and compliance rules
     - name: memory_lifecycle_action
       type: SERVICE_CALL

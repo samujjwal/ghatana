@@ -212,10 +212,11 @@ public final class AgentSpecLoader {
             spec.getCapabilities().declaredCapabilities().forEach(cap -> b.addCapability(cap.id()));
         }
 
-        // Reasoning profile → systemPrompt + maxTokens + temperature from LLM reasoner
+        // Reasoning profile -> engine label from probabilistic LLM subtype reasoner.
         if (spec.getReasoningProfile() != null) {
             spec.getReasoningProfile().reasonerPortfolio().stream()
-                .filter(r -> "llm".equalsIgnoreCase(r.type()))
+                .filter(r -> "PROBABILISTIC".equalsIgnoreCase(r.type())
+                        && "LLM".equalsIgnoreCase(r.subtype()))
                 .findFirst()
                 .ifPresent(r -> {
                     // engine reference captured as a label
@@ -402,6 +403,7 @@ public final class AgentSpecLoader {
                     portfolio.add(new AgentSpec.ReasonerDeclaration(
                             nvl(r.id, ""),
                             nvl(r.type, ""),
+                            r.subtype,
                             r.purpose,
                             r.engine,
                             nvlList(r.invocationWhen)
@@ -649,21 +651,11 @@ public final class AgentSpecLoader {
             throw new IllegalStateException(
                     "AgentSpec '" + id + "' from '" + source + "' is missing identity.agentType");
         }
-        // Normalise YAML aliases from pre-v2.1 YAMLs
-        String normalised = switch (raw.toLowerCase()) {
-            case "llm" ->
-                    AgentType.PROBABILISTIC.name(); // deprecated alias: llm → PROBABILISTIC
-            case "rule-based", "rule_based", "policy", "pattern" ->
-                    AgentType.DETERMINISTIC.name(); // deprecated aliases for deterministic agents
-            case "stream-processor", "stream_processor" ->
-                    AgentType.STREAM_PROCESSOR.name();
-            default -> raw.toUpperCase();
-        };
         try {
-            return AgentType.valueOf(normalised);
+            return AgentType.resolve(raw);
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException(
-                    "AgentSpec '" + id + "' has unknown identity.agentType '" + raw
+                    "AgentSpec '" + id + "' has unknown canonical identity.agentType '" + raw
                     + "'. Valid values: " + List.of(AgentType.values()), e);
         }
     }
@@ -675,7 +667,7 @@ public final class AgentSpecLoader {
             try {
                 return DeterminismGuarantee.valueOf(raw.toUpperCase().replace('-', '_'));
             } catch (IllegalArgumentException ignored) {
-                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+                // Fall back to the type-based default when the explicit value is unknown.
             }
         }
         // Sensible defaults per type
@@ -694,7 +686,7 @@ public final class AgentSpecLoader {
             try {
                 return StateMutability.valueOf(raw.toUpperCase().replace('-', '_'));
             } catch (IllegalArgumentException ignored) {
-                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+                // Fall back to the type-based default when the explicit value is unknown.
             }
         }
         return switch (type) {
@@ -712,7 +704,7 @@ public final class AgentSpecLoader {
             try {
                 return FailureMode.valueOf(raw.toUpperCase().replace('-', '_'));
             } catch (IllegalArgumentException ignored) {
-                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+                // Fall back to the type-based default when the explicit value is unknown.
             }
         }
         return switch (type) {
@@ -874,6 +866,7 @@ public final class AgentSpecLoader {
     static final class ReasonerDto {
         @JsonProperty("id")             @Nullable String id;
         @JsonProperty("type")           @Nullable String type;
+        @JsonProperty("subtype")        @Nullable String subtype;
         @JsonProperty("purpose")        @Nullable String purpose;
         @JsonProperty("engine")         @Nullable String engine;
         @JsonProperty("invocationWhen") @Nullable List<String> invocationWhen;

@@ -12,10 +12,10 @@ generator:
   type: PIPELINE
   steps:
     - name: thread_parse
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Parse thread dump into structured thread states (RUNNABLE, WAITING, BLOCKED, TIMED_WAITING) with lock ownership graph
     - name: concurrency_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

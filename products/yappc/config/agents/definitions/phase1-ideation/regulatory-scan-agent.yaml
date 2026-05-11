@@ -20,7 +20,7 @@ generator:
       service: regulatory-service
       endpoint: /regulations/relevant
     - name: compliance_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -44,7 +44,7 @@ generator:
         
         Output as JSON: {applicable_regulations, requirements, compliance_costs, non_compliance_risks, upcoming_changes, uncertainties, compliance_approach}
     - name: risk_assessment
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Score regulatory risk
 
 memory:

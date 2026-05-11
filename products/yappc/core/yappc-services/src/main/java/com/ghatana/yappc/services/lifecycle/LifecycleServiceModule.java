@@ -458,6 +458,27 @@ public class LifecycleServiceModule extends AbstractModule {
         return new ArtifactGraphController(service);
     }
 
+    // ========== Phase Cockpit Packet (Task 5.A.1) ==========
+
+    /**
+     * Provides PhasePacketService for canonical phase cockpit read model.
+     *
+     * <p>Builds phase packets by aggregating project state, blockers, evidence,
+     * governance records, and available actions from DataCloud+AEP integration.</p>
+     */
+    @Provides
+    com.ghatana.yappc.services.phase.PhasePacketService phasePacketService(
+            DataCloudClient dataCloudClient,
+            YappcArtifactRepository artifactRepository,
+            PhaseGateValidator phaseGateValidator,
+            com.ghatana.governance.PolicyEngine policyEngine,
+            @Nullable BusinessMetrics metrics,
+            AuditLogger auditLogger) {
+        logger.info("Creating PhasePacketService (canonical cockpit read model)");
+        return new com.ghatana.yappc.services.phase.PhasePacketServiceImpl(
+            dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, metrics, auditLogger);
+    }
+
     // ========== Lifecycle Transitions ==========
 
     /**

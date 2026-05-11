@@ -314,10 +314,8 @@ export class AuthService {
             if (this.currentSession) {
                 logger.info('Logout attempt', 'auth', { userId: this.currentSession.user.id });
 
-                // Call logout API
-                await yappcApi.auth.logout({
-                    refreshToken: this.currentSession.refreshToken,
-                });
+                // Call logout API - in cookie mode, no refreshToken needed
+                await yappcApi.auth.logout();
             }
         } catch (error) {
             logger.warn('Logout API call failed', 'auth', {
@@ -392,13 +390,14 @@ export class AuthService {
             }
 
             // Call refresh endpoint - server will set new httpOnly cookies
+            // In cookie mode, no refreshToken needed in request body
             const response = await fetch('/api/auth/refresh', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ refreshToken: this.currentSession.refreshToken }),
+                body: JSON.stringify({}),
             });
 
             if (!response.ok) {

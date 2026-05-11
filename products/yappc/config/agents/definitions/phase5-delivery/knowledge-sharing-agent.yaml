@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: knowledge_gap_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -38,7 +38,7 @@ generator:
         
         Output as JSON: {silos, high_bus_factor, documentation_gaps, training_needs, recommendations}
     - name: sharing_content
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.4

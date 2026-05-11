@@ -12,7 +12,7 @@ generator:
   type: PIPELINE
   steps:
     - name: provider_resolution
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Resolve the active feature flag provider from project config.
         Supported: LaunchDarkly, Unleash, in-memory (dev).
@@ -21,7 +21,7 @@ generator:
       service: feature-flag-provider
       endpoint: /flags/sync
     - name: targeting_rules
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Apply targeting rules: percentage rollout, user segment targeting,
         environment-specific overrides. Validate rule consistency.

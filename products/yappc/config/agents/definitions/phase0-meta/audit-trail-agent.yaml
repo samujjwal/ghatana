@@ -17,10 +17,10 @@ generator:
   type: PIPELINE
   steps:
     - name: event_enrichment
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Add metadata (timestamp, agent ID, user, context, classification)
     - name: sensitive_data_redaction
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Redact PII/secrets per governance policy
     - name: log_persistence
       type: SERVICE_CALL
@@ -28,7 +28,7 @@ generator:
       endpoint: /audit/append
       description: Append to immutable event log
     - name: alert_generation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate alerts for high-risk events
 
 memory:

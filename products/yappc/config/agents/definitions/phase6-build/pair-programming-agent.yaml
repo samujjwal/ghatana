@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: context_understanding
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Understand current coding context
     - name: pair_assistance
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: story_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -48,7 +48,7 @@ generator:
         
         Output as JSON: {stories: [{title, statement, context, invest_check, suggested_ac, technical_notes}]}
     - name: invest_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate against INVEST criteria
     - name: story_registration
       type: SERVICE_CALL

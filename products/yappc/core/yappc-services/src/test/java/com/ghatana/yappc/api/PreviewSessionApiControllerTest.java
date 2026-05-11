@@ -37,7 +37,7 @@ class PreviewSessionApiControllerTest extends EventloopTestBase {
         PreviewSessionApiController controller = new PreviewSessionApiController(objectMapper, "test-secret", auditLogger);
 
         HttpRequest request = jsonPost(
-                "http://localhost/api/v1/yappc/preview/sessions",
+                "http://localhost/api/v1/preview/session/create",
                 Map.of("projectId", "proj-1", "artifactId", "artifact-1", "duration", 60)
         );
         request.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
@@ -63,7 +63,7 @@ class PreviewSessionApiControllerTest extends EventloopTestBase {
         PreviewSessionApiController controller = new PreviewSessionApiController(objectMapper, "test-secret", auditLogger);
 
         HttpRequest createRequest = jsonPost(
-                "http://localhost/api/v1/yappc/preview/sessions",
+                "http://localhost/api/v1/preview/session/create",
                 Map.of("projectId", "proj-1", "artifactId", "artifact-1")
         );
         createRequest.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));
@@ -71,7 +71,7 @@ class PreviewSessionApiControllerTest extends EventloopTestBase {
         String sessionToken = stringValue(readJson(createResponse).get("sessionToken"));
 
         HttpRequest validateRequest = jsonPost(
-                "http://localhost/api/v1/yappc/preview/sessions/validate",
+                "http://localhost/api/v1/preview/session/validate",
                 Map.of("sessionToken", sessionToken)
         );
         validateRequest.attach(Principal.class, new Principal("user-1", List.of("builder"), "tenant-1"));

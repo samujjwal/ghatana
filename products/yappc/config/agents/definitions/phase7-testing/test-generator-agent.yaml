@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -35,7 +35,7 @@ generator:
         4. Integration points
         5. Coverage gaps
     - name: test_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

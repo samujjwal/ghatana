@@ -21,8 +21,8 @@ metadata:
   - cuped
   - level3
 identity:
-  agentType: probabilistic
-  subtype: llm
+  agentType: PROBABILISTIC
+  subtype: LLM
   determinismGuarantee: none
   stateMutability: local-state
   failureMode: retry

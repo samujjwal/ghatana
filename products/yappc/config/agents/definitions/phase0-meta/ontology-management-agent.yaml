@@ -20,7 +20,7 @@ generator:
       service: knowledge-graph-service
       endpoint: /ontology/current
     - name: evolution_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

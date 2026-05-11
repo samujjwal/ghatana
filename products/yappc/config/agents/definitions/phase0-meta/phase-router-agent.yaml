@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: task_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -42,7 +42,7 @@ generator:
       service: dependency-service
       endpoint: /dependencies/check
     - name: routing_decision
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Make final routing decision
 
 memory:

@@ -68,7 +68,7 @@ public final class DmosActionPermissionRegistry {
     public static boolean isActionAllowed(Set<String> roles, String action) {
         Objects.requireNonNull(action, "action must not be null");
 
-        String normalizedAction = normalizeAction(action);
+        String normalizedAction = action.trim().toLowerCase(Locale.ROOT);
         String minimumRole = ACTION_MINIMUM_ROLES.get(normalizedAction);
         if (minimumRole == null) {
             throw new IllegalArgumentException("Unknown DMOS action: " + action);
@@ -93,13 +93,6 @@ public final class DmosActionPermissionRegistry {
         }
 
         return role.trim()
-            .toLowerCase(Locale.ROOT)
-            .replace('_', '-')
-            .replace(' ', '-');
-    }
-
-    private static String normalizeAction(String action) {
-        return action.trim()
             .toLowerCase(Locale.ROOT)
             .replace('_', '-')
             .replace(' ', '-');

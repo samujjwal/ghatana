@@ -16,6 +16,14 @@
  * P1-9: Lint rule required to forbid raw fetch outside API infrastructure.
  * All HTTP calls must go through typed helpers (get, post, patch, put, del).
  *
+ * Task 3.2.2: Adapter layer delegating to OpenAPI-generated client
+ * The generated client provides type safety and contract guarantees. This file
+ * maintains an adapter layer for backward compatibility while delegating to the
+ * generated services.
+ *
+ * Note: Generated types use cookie-session mode (no tokens), while existing
+ * types use token-based auth. Adapter needs to handle this difference.
+ *
  * @doc.type module
  * @doc.purpose Typed REST API client (SIMP-Y19)
  * @doc.layer product
@@ -25,6 +33,20 @@
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { authService } from '@/services/auth/AuthService';
 import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
+
+// Task 3.2.2: Import OpenAPI-generated client for adapter layer
+import { OpenAPI, AuthService as GeneratedAuthService } from '../../clients/generated/api';
+import type {
+  LoginRequest as GeneratedLoginRequestType,
+  LoginResponse as GeneratedLoginResponseType,
+  RefreshTokenRequest,
+  LogoutResponse,
+} from '../../clients/generated/api';
+
+// Task 3.2.2: Configure OpenAPI client for cookie-session mode
+OpenAPI.BASE = '/api';
+OpenAPI.WITH_CREDENTIALS = true;
+OpenAPI.CREDENTIALS = 'same-origin';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Domain types (kept lean — callers own the full domain model imports)
@@ -210,6 +232,128 @@ async function del<TResult>(path: string, context: string): Promise<TResult> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Scoped request helper (task 1.2.1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Scope location preference for passing scope to backend.
+ * Backend extraction policy: path > query > header
+ */
+export type ScopeLocation = 'query' | 'header';
+
+/**
+ * Options for scoped requests.
+ */
+export interface ScopedRequestOptions {
+  /** The scope to pass (e.g., 'project:read', 'workspace:write') */
+  scope?: string;
+  /** Where to pass the scope (default: query) */
+  scopeLocation?: ScopeLocation;
+  /** Additional headers to include */
+  headers?: Readonly<Record<string, string>>;
+}
+
+/**
+ * Adds scope to a path or headers based on the specified location.
+ * This implements the backend extraction policy: path > query > header
+ */
+function addScopeToRequest(
+  path: string,
+  options: ScopedRequestOptions,
+): { path: string; headers: Readonly<Record<string, string>> } {
+  const { scope, scopeLocation = 'query', headers = {} } = options;
+
+  if (!scope) {
+    return { path, headers };
+  }
+
+  const resultHeaders = { ...headers };
+
+  switch (scopeLocation) {
+    case 'query':
+      // Add scope as query parameter
+      const url = new URL(path, window.location.origin);
+      url.searchParams.set('scope', scope);
+      return { path: url.pathname + url.search, headers: resultHeaders };
+    case 'header':
+      // Add scope as header
+      resultHeaders['X-Scope'] = scope;
+      return { path, headers: resultHeaders };
+    default:
+      // Default to query for unknown location
+      const defaultUrl = new URL(path, window.location.origin);
+      defaultUrl.searchParams.set('scope', scope);
+      return { path: defaultUrl.pathname + defaultUrl.search, headers: resultHeaders };
+  }
+}
+
+/**
+ * Scoped GET request helper.
+ * Automatically adds scope to query or header based on options.
+ */
+async function getScoped<T>(
+  path: string,
+  context: string,
+  options: ScopedRequestOptions = {},
+): Promise<T> {
+  const { path: scopedPath, headers } = addScopeToRequest(path, options);
+  return getWithHeaders<T>(scopedPath, context, headers);
+}
+
+/**
+ * Scoped POST request helper.
+ * Automatically adds scope to query or header based on options.
+ */
+async function postScoped<TBody, TResult>(
+  path: string,
+  body: TBody,
+  context: string,
+  options: ScopedRequestOptions = {},
+): Promise<TResult> {
+  const { path: scopedPath, headers } = addScopeToRequest(path, options);
+  return postWithHeaders<TBody, TResult>(scopedPath, body, context, headers);
+}
+
+/**
+ * Scoped PATCH request helper.
+ * Automatically adds scope to query or header based on options.
+ */
+async function patchScoped<TBody, TResult>(
+  path: string,
+  body: TBody,
+  context: string,
+  options: ScopedRequestOptions = {},
+): Promise<TResult> {
+  const { path: scopedPath, headers } = addScopeToRequest(path, options);
+  return patchWithHeaders<TBody, TResult>(scopedPath, body, context, headers);
+}
+
+/**
+ * Scoped PUT request helper.
+ * Automatically adds scope to query or header based on options.
+ */
+async function putScoped<TBody, TResult>(
+  path: string,
+  body: TBody,
+  context: string,
+  options: ScopedRequestOptions = {},
+): Promise<TResult> {
+  const { path: scopedPath, headers } = addScopeToRequest(path, options);
+  const response = await fetch(scopedPath, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) return handleError(response, context);
+  if (response.status === 204) return undefined as unknown as TResult;
+  return parseJsonResponse<TResult>(response, context);
+}
+
+// Export scoped helpers for use in other modules (task 1.2.1)
+export { getScoped, postScoped, patchScoped, putScoped };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Auth  (/api/auth/*)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -254,12 +398,12 @@ export interface UserProfile {
 }
 
 export const auth = {
-  login: (body: LoginRequest) => post<LoginRequest, AuthTokenResponse>('/api/auth/login', body, 'auth.login'),
+  login: (body: LoginRequest) =>
+    post<LoginRequest, LoginSessionResponse>('/api/auth/login', body, 'auth.login'),
   loginSession: (body: LoginRequest) =>
     post<LoginRequest, LoginSessionResponse>('/api/auth/login', body, 'auth.loginSession'),
-  refresh: (body: { refreshToken: string }) =>
-    post<{ refreshToken: string }, AuthTokenResponse>('/api/auth/refresh', body, 'auth.refresh'),
-  logout: (body: { refreshToken: string }) => post<{ refreshToken: string }, void>('/api/auth/logout', body, 'auth.logout'),
+  refresh: () => post<Record<string, never>, AuthTokenResponse>('/api/auth/refresh', {}, 'auth.refresh'),
+  logout: () => post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout'),
   updateProfile: (body: AuthProfileUpdateRequest) =>
     put<AuthProfileUpdateRequest, AuthProfileUpdateRequest>('/api/auth/profile', body, 'auth.updateProfile'),
   ssoCallback: (body: { code: string; state?: string | null }) =>
@@ -1385,20 +1529,20 @@ export const phases = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Preview sessions  (/api/v1/yappc/preview/sessions)
+// Preview sessions  (/api/v1/preview/session/*)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const previewSessions = {
   issue: (body: PreviewSessionContext) =>
     postWithHeaders<PreviewSessionContext, PreviewSessionIssueResponse>(
-      '/api/v1/yappc/preview/sessions',
+      '/api/v1/preview/session/create',
       body,
       'previewSessions.issue',
       buildAuthHeaders(),
     ),
   validate: (sessionToken: string) =>
     postWithHeaders<{ sessionToken: string }, PreviewSessionValidateResponse>(
-      '/api/v1/yappc/preview/sessions/validate',
+      '/api/v1/preview/session/validate',
       { sessionToken },
       'previewSessions.validate',
       buildAuthHeaders(),

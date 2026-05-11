@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Agent Executor
  * 
@@ -26,6 +25,8 @@ import {
 
 export class AgentExecutor {
     private auditLogs: AuditLogEntry[] = [];
+
+    constructor(private readonly defaultContract?: AgentExecutionContract) {}
 
     /**
      * Execute an agent within its contract
@@ -86,7 +87,7 @@ export class AgentExecutor {
             return {
                 success: true,
                 actions: contract.allowedActions,
-                artifacts: result,
+                artifacts: result as Record<string, unknown>,
                 metadata: {
                     startTime,
                     endTime,
@@ -147,6 +148,28 @@ export class AgentExecutor {
      */
     exportAuditLogs(): string {
         return JSON.stringify(this.auditLogs, null, 2);
+    }
+
+    /**
+     * Execute with the constructor-supplied contract.
+     */
+    async execute<T>(
+        agentFunction: () => Promise<T>,
+        canvasState: AgentExecutionContext['canvasState'],
+        lifecyclePhase: AgentExecutionContext['lifecyclePhase']
+    ): Promise<T> {
+        if (!this.defaultContract) {
+            throw new Error('No default agent contract configured');
+        }
+        const result = await this.executeAgent(
+            this.defaultContract,
+            { canvasState, lifecyclePhase },
+            agentFunction
+        );
+        if (!result.success) {
+            throw new Error(result.errors?.join(', ') || 'Agent execution failed');
+        }
+        return result.artifacts as T;
     }
 }
 

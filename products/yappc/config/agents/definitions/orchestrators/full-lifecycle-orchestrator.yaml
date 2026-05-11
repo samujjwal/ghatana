@@ -20,7 +20,7 @@ metadata:
   - sdlc
   - strategic
 identity:
-  agentType: planning
+  agentType: PLANNING
   subtype: workflow
   determinismGuarantee: partial
   stateMutability: mutable

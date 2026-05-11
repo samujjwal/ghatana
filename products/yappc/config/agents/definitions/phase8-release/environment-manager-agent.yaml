@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: environment_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze environment requirements
     - name: environment_management
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

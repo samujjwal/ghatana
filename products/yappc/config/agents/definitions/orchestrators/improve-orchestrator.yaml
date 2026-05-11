@@ -21,7 +21,7 @@ metadata:
   - tech-debt
   - performance
 identity:
-  agentType: planning
+  agentType: PLANNING
   subtype: workflow
   determinismGuarantee: partial
   stateMutability: mutable

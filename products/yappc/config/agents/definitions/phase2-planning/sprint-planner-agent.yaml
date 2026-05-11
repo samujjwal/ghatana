@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: sprint_planning
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {sprint_goal, selected_items, total_points, capacity_used, dependencies, risks, stretch_goals, definition_of_done}
     - name: capacity_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate selected work fits capacity
     - name: sprint_creation
       type: SERVICE_CALL

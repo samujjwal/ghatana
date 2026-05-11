@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: threat_modeling
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {threat_model, authentication, authorization, data_protection, network_security, monitoring, incident_response, controls}
     - name: security_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate against security standards
     - name: security_documentation
       type: TEMPLATE

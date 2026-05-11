@@ -4,6 +4,15 @@ plugins {
 
 description = "YAPPC Consolidated Services Module — absorbs services-platform and services-lifecycle (SIMP-Y8)"
 
+// Include generated sources
+sourceSets {
+    main {
+        java {
+            srcDir("src/generated/java")
+        }
+    }
+}
+
 dependencies {
     // Platform modules
     implementation(project(":platform:java:core"))

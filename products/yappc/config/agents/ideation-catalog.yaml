@@ -43,7 +43,7 @@ spec:
     - ideation
     - concepts
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: concept-design-orchestrator
     name: Concept Design Orchestrator
@@ -76,7 +76,7 @@ spec:
     - concept-design
     - creativity
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: product-framing-orchestrator
     name: Product Framing Orchestrator
@@ -111,7 +111,7 @@ spec:
     - product-framing
     - narrative
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: idea-generation-capability-agent
     name: Idea Generation Capability Agent
@@ -141,7 +141,7 @@ spec:
     - idea-generation
     - creativity
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: solution-framing-capability-agent
     name: Solution Framing Capability Agent
@@ -163,7 +163,7 @@ spec:
     - solution-framing
     - value-hypothesis
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: concept-validation-capability-agent
     name: Concept Validation Capability Agent
@@ -193,7 +193,7 @@ spec:
     - concept-validation
     - screening
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: differentiation-capability-agent
     name: Differentiation Capability Agent
@@ -215,7 +215,7 @@ spec:
     - differentiation
     - positioning
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: product-concept-task-agent
     name: Product Concept Task Agent
@@ -235,7 +235,7 @@ spec:
     - product-concept
     - documentation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: value-proposition-task-agent
     name: Value Proposition Task Agent
@@ -255,7 +255,7 @@ spec:
     - value-proposition
     - benefits
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: product-narrative-task-agent
     name: Product Narrative Task Agent
@@ -276,7 +276,7 @@ spec:
     - narrative
     - messaging
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: user-value-mapping-task-agent
     name: User Value Mapping Task Agent
@@ -296,7 +296,7 @@ spec:
     - user-value
     - mapping
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: use-case-expansion-task-agent
     name: Use Case Expansion Task Agent
@@ -316,7 +316,7 @@ spec:
     - use-cases
     - expansion
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: innovation-option-task-agent
     name: Innovation Option Task Agent
@@ -336,7 +336,7 @@ spec:
     - innovation
     - options
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: concept-screening-task-agent
     name: Concept Screening Task Agent
@@ -356,7 +356,7 @@ spec:
     - screening
     - concepts
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: mvp-definition-task-agent
     name: MVP Definition Task Agent
@@ -378,7 +378,7 @@ spec:
     - mvp
     - scope
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: v1-scope-task-agent
     name: V1 Scope Task Agent
@@ -399,7 +399,7 @@ spec:
     - v1
     - scope
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: differentiation-review-task-agent
     name: Differentiation Review Task Agent
@@ -419,7 +419,7 @@ spec:
     - differentiation
     - review
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: product-name-exploration-task-agent
     name: Product Name Exploration Task Agent
@@ -440,7 +440,7 @@ spec:
     - naming
     - branding
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: problem-solution-fit-task-agent
     name: Problem Solution Fit Task Agent
@@ -460,7 +460,7 @@ spec:
     - problem-solution-fit
     - validation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: idea-mutator
     name: Idea Mutator
@@ -476,7 +476,7 @@ spec:
     - mutation
     - ideas
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: value-prop-formatter
     name: Value Prop Formatter
@@ -492,7 +492,7 @@ spec:
     - formatting
     - value-prop
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: concept-deduplicator
     name: Concept Deduplicator
@@ -509,7 +509,7 @@ spec:
     - deduplication
     - concepts
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: benefit-tagger
     name: Benefit Tagger
@@ -525,7 +525,7 @@ spec:
     - tagging
     - benefits
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: scope-boundary-checker
     name: Scope Boundary Checker
@@ -541,7 +541,7 @@ spec:
     - scope
     - boundary
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: mvp-filter-unit
     name: MVP Filter Unit
@@ -557,7 +557,7 @@ spec:
     - mvp
     - filtering
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: narrative-polisher
     name: Narrative Polisher
@@ -574,7 +574,7 @@ spec:
     - narrative
     - polishing
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: differentiation-scorer
     name: Differentiation Scorer
@@ -590,7 +590,7 @@ spec:
     - differentiation
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: use-case-splitter
     name: Use Case Splitter
@@ -606,7 +606,7 @@ spec:
     - splitting
     - use-cases
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: concept-novelty-detector
     name: Concept Novelty Detector
@@ -622,7 +622,7 @@ spec:
     - novelty
     - detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

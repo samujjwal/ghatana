@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: item_scoring
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -46,7 +46,7 @@ generator:
         
         Output as JSON: {scored_items: [{id, scores, final_score, rank}], prioritized_order, rationale}
     - name: priority_assignment
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Assign priorities based on scores
     - name: backlog_update
       type: SERVICE_CALL

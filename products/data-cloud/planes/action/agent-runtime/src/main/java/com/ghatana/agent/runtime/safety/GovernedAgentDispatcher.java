@@ -39,7 +39,7 @@ import java.util.Optional;
  * <p>Wraps an existing dispatcher with:
  * <ul>
  *   <li><b>Release guard</b>: Rejects dispatch if the active {@link AgentRelease} is not
- *       dispatchable (e.g., {@code BLOCKED}) or the linked {@link AgentInstanceConfig}
+ *       response-serving for normal traffic (e.g., {@code BLOCKED}) or the linked {@link AgentInstanceConfig}
  *       has {@code killSwitch=true}.</li>
  *   <li><b>Grant validation</b>: Verifies the execution grant is valid before dispatch</li>
  *   <li><b>Invariant monitoring</b>: Evaluates pre-dispatch invariants</li>
@@ -136,12 +136,22 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
 
         if (optRelease.isPresent()) {
             AgentRelease release = optRelease.get();
-            if (!release.isDispatchable()) {
-                log.warn("Dispatch rejected for agent [{}]: release {} is in non-dispatchable state {}",
-                        agentId, release.agentReleaseId(), release.state());
+            boolean shadowMode = isShadowMode(ctx);
+            boolean allowed = shadowMode ? release.isRunnable() : release.isResponseServing();
+            if (!allowed) {
+                log.warn("Dispatch rejected for agent [{}]: release {} is in state {} for {} path",
+                        agentId, release.agentReleaseId(), release.state(),
+                        shadowMode ? "shadow/evaluation" : "response-serving");
+                String required = shadowMode ? "internal runnable execution" : "response serving";
                 return denyDispatch(agentId, traceId, tenantId,
                         "Release " + release.agentReleaseId() + " is in state " + release.state()
-                        + " which does not permit dispatch");
+                        + " which does not permit " + required);
+            }
+            if (release.state() == com.ghatana.agent.release.AgentReleaseState.SHADOW && !shadowMode) {
+                log.warn("Dispatch rejected for agent [{}]: SHADOW release {} cannot serve caller responses",
+                        agentId, release.agentReleaseId(), release.state());
+                return denyDispatch(agentId, traceId, tenantId,
+                        "Release " + release.agentReleaseId() + " is SHADOW and cannot serve responses");
             }
         }
 
@@ -183,7 +193,10 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
 
         // Enrich context with release metadata when available
         AgentContext enrichedCtx = release != null
-                ? ctx.toBuilder().addConfig("agentReleaseId", release.agentReleaseId()).build()
+                ? ctx.toBuilder()
+                        .addConfig("agentReleaseId", release.agentReleaseId())
+                        .addConfig("specDigest", release.specDigest())
+                        .build()
                 : ctx;
 
         // ── P8-T12: manifest capability guard ─────────────────────────────────
@@ -285,22 +298,32 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         return traceLedger.append(dispatchEvent)
                 .then(v -> delegate.<I, O>dispatch(agentId, input, enrichedCtx))
                 .map(result -> {
+                    AgentResult<O> enrichedResult = result;
+                    if (release != null) {
+                        enrichedResult = enrichedResult.toBuilder()
+                                .agentReleaseId(release.agentReleaseId())
+                                .agentVersion(release.releaseVersion())
+                                .specDigest(release.specDigest())
+                                .traceId(enrichedResult.getTraceId() != null ? enrichedResult.getTraceId() : traceId)
+                                .turnId(enrichedResult.getTurnId() != null ? enrichedResult.getTurnId() : enrichedCtx.getTurnId())
+                                .build();
+                    }
                     // ── P6-T3: close run span on completion ──
                     if (agentRunTracer != null && runSpan != null) {
-                        if (result.getStatus() == AgentResultStatus.DENIED
-                                || result.getStatus() == AgentResultStatus.FAILED) {
-                            runSpan.setStatus(StatusCode.ERROR, result.getExplanation());
+                        if (enrichedResult.getStatus() == AgentResultStatus.DENIED
+                                || enrichedResult.getStatus() == AgentResultStatus.FAILED) {
+                            runSpan.setStatus(StatusCode.ERROR, enrichedResult.getExplanation());
                         }
                         runSpan.close();
                     }
                     // Record completion (fire-and-forget; do not block on ledger append)
                     TraceEvent completionEvent = eventBuilder.build(
                             TraceEventType.TURN_COMPLETED,
-                            "Agent " + agentId + " completed with status " + result.getStatus(),
-                            Map.of("status", result.getStatus().name(),
-                                    "confidence", String.valueOf(result.getConfidence())));
+                            "Agent " + agentId + " completed with status " + enrichedResult.getStatus(),
+                            Map.of("status", enrichedResult.getStatus().name(),
+                                    "confidence", String.valueOf(enrichedResult.getConfidence())));
                     traceLedger.append(completionEvent);
-                    return result;
+                    return enrichedResult;
                 });
     }
 
@@ -352,6 +375,15 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
     private String extractTraceId(AgentContext ctx) {
         Object traceId = ctx.getConfig("__traceId");
         return traceId != null ? traceId.toString() : java.util.UUID.randomUUID().toString();
+    }
+
+    private boolean isShadowMode(AgentContext ctx) {
+        Object shadow = ctx.getConfig("shadowMode");
+        Object eval = ctx.getConfig("evaluationMode");
+        return Boolean.TRUE.equals(shadow)
+                || Boolean.TRUE.equals(eval)
+                || "true".equalsIgnoreCase(String.valueOf(shadow))
+                || "true".equalsIgnoreCase(String.valueOf(eval));
     }
 
     private InvariantContext buildInvariantContext(

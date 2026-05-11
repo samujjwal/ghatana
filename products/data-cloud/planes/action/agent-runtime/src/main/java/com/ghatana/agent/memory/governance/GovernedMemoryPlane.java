@@ -24,17 +24,17 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Privacy gate decorator for {@link MemoryPlane}.
+ * Privacy and write-governance decorator for {@link MemoryPlane}.
  *
  * <p>Enforces {@link DataAccessBroker#checkAccess} before every read operation
- * (query, searchSemantic, getProcedure). Write operations (store*) are allowed
- * unconditionally because they are governed separately at the ingestion boundary.
+ * (query, searchSemantic, getProcedure). Semantic, procedural, and learned typed
+ * artifact writes are gated before they reach the underlying plane.
  *
  * <p>This satisfies Track X TX-1: memory retrieval and context hydration must
  * pass {@code DataAccessBroker} checks before access.
  *
  * @doc.type class
- * @doc.purpose Privacy gate decorator for MemoryPlane
+ * @doc.purpose Privacy and learned-memory write gate decorator for MemoryPlane
  * @doc.layer agent-memory
  * @doc.pattern Decorator
  */
@@ -134,7 +134,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     }
 
     // =========================================================================
-    // Write operations — pass through without access check
+    // Write operations — learned memory policy checks
     // =========================================================================
 
     @NotNull
@@ -146,24 +146,44 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     @NotNull
     @Override
     public Promise<EnhancedFact> storeFact(@NotNull EnhancedFact fact) {
+        try {
+            MemoryWritePolicy.validateFact(fact);
+        } catch (RuntimeException e) {
+            return Promise.ofException(e);
+        }
         return delegate.storeFact(fact);
     }
 
     @NotNull
     @Override
     public Promise<EnhancedProcedure> storeProcedure(@NotNull EnhancedProcedure procedure) {
+        try {
+            MemoryWritePolicy.validateProcedure(procedure);
+        } catch (RuntimeException e) {
+            return Promise.ofException(e);
+        }
         return delegate.storeProcedure(procedure);
     }
 
     @NotNull
     @Override
     public Promise<TypedArtifact> writeArtifact(@NotNull TypedArtifact artifact) {
+        try {
+            MemoryWritePolicy.validateArtifact(artifact);
+        } catch (RuntimeException e) {
+            return Promise.ofException(e);
+        }
         return delegate.writeArtifact(artifact);
     }
 
     @NotNull
     @Override
     public Promise<MemoryItem> store(@NotNull MemoryItem item) {
+        try {
+            MemoryWritePolicy.validate(item);
+        } catch (RuntimeException e) {
+            return Promise.ofException(e);
+        }
         return delegate.store(item);
     }
 

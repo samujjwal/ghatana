@@ -45,23 +45,30 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
     void setUp() {
         intentController = new InMemoryIntentApiController();
         lifecycleController = new InMemoryLifecycleApiController();
-        YappcApiAuthFilter authFilter = new YappcApiAuthFilter(key -> Optional.of(new Principal("api-user", List.of("admin"), "tenant-alpha")));
-        RouteAuthorizationFilter routeAuthorizationFilter = new RouteAuthorizationFilter(
-            new RouteAuthorizationRegistry(
-                new YappcAuthorizationService(
-                    new SyncAuthorizationService(new RolePermissionRegistry() {
-                        @Override
-                        public Set<String> getPermissions(String role) {
-                            return Set.of(Permission.WORKSPACE_READ, Permission.PROJECT_READ, Permission.PROJECT_UPDATE);
-                        }
+        
+        // Create authorization service and registry
+        YappcAuthorizationService authorizationService = new YappcAuthorizationService(
+            new SyncAuthorizationService(new RolePermissionRegistry() {
+                @Override
+                public Set<String> getPermissions(String role) {
+                    return Set.of(Permission.WORKSPACE_READ, Permission.PROJECT_READ, Permission.PROJECT_UPDATE);
+                }
 
-                        @Override
-                        public void registerRole(String role, Set<String> permissions) {
-                        }
-                    })
-                )
-            )
+                @Override
+                public void registerRole(String role, Set<String> permissions) {
+                }
+            })
         );
+        RouteAuthorizationRegistry routeRegistry = new RouteAuthorizationRegistry(authorizationService);
+        
+        // Create authentication filter with route registry for public route bypass
+        YappcAuthenticationFilter authenticationFilter = new YappcAuthenticationFilter(
+            key -> Optional.of(new Principal("api-user", List.of("admin"), "tenant-alpha")),
+            null,
+            routeRegistry
+        );
+        
+        RouteAuthorizationFilter routeAuthorizationFilter = new RouteAuthorizationFilter(routeRegistry);
         Eventloop eventloop = eventloop();
         PhasePacketController phasePacketController = new PhasePacketController(
             new ObjectMapper(),
@@ -96,7 +103,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
         );
         servlet = new YappcHttpServer().servlet(
             eventloop,
-            authFilter,
+            authenticationFilter,
             routeAuthorizationFilter,
             intentController,
             new InMemoryShapeApiController(),

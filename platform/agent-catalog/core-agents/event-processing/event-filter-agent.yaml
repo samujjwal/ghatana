@@ -23,7 +23,7 @@ metadata:
   maturity: production
 
 identity:
-  agentType: stream-processor           # passes/drops events from ordered stream
+  agentType: STREAM_PROCESSOR           # passes/drops events from ordered stream
   subtype: filter
   roles: [filter, gate, deduplicator]
   criticality: high

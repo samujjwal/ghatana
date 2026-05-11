@@ -44,6 +44,53 @@ security:
   - BearerAuth: []
 
 paths:
+  /workspaces/{workspaceId}/dashboard:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The workspace scope for dashboard metrics
+
+    get:
+      summary: Get dashboard summary
+      description: |
+        Returns backend-computed dashboard facts with metric source,
+        formula version, freshness, confidence, partial-data state,
+        and tenant/workspace authorization scope.
+      operationId: getDashboardSummary
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canonical dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /workspaces/{workspaceId}/campaigns:
     parameters:
       - name: workspaceId
@@ -112,6 +159,185 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/consent:
+    post:
+      summary: Record consent
+      operationId: recordConsent
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRecordRequest'
+      responses:
+        '201':
+          description: Consent recorded
+        '400':
+          description: Invalid request
+        '403':
+          description: Not authorized
+
+  /workspaces/{workspaceId}/consent/check:
+    get:
+      summary: Check consent
+      operationId: checkConsent
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: subjectId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: purpose
+          in: query
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Consent check result
+
+  /workspaces/{workspaceId}/consent/revoke:
+    post:
+      summary: Revoke consent
+      operationId: revokeConsent
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRevokeRequest'
+      responses:
+        '200':
+          description: Consent revoked
+
+  /workspaces/{workspaceId}/consent/proof/{subjectId}:
+    get:
+      summary: Export consent proof
+      operationId: exportConsentProof
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Consent proof history
+
+  /workspaces/{workspaceId}/suppression:
+    post:
+      summary: Add suppression
+      operationId: addSuppression
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuppressionRequest'
+      responses:
+        '201':
+          description: Suppression recorded
+
+  /workspaces/{workspaceId}/suppression/check:
+    get:
+      summary: Check suppression
+      operationId: checkSuppression
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Suppression check result
+
+  /workspaces/{workspaceId}/unsubscribe:
+    post:
+      summary: Unsubscribe and suppress contact point
+      operationId: unsubscribeContact
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+      responses:
+        '200':
+          description: Contact point suppressed and consent withdrawn
 
     post:
       summary: Create a campaign
@@ -231,8 +457,10 @@ paths:
     post:
       summary: Launch a campaign
       description: |
-        Transitions a campaign from DRAFT or PAUSED to LAUNCHED status.
-        Requires compliance preflight and human approval gate.
+        Accepts a launch request after compliance preflight and approval checks.
+        Paid-search campaigns return PENDING_LAUNCH after durable Google Ads command creation,
+        EXTERNAL_EXECUTION_BLOCKED when connector governance blocks execution, or LAUNCH_FAILED
+        when required launch inputs are missing.
       operationId: launchCampaign
       parameters:
         - name: X-Tenant-ID
@@ -324,6 +552,120 @@ components:
       description: JWT or OAuth2 Bearer token
 
   schemas:
+    DashboardSummary:
+      type: object
+      required:
+        - workspaceId
+        - campaignMetrics
+        - approvalMetrics
+        - budgetMetrics
+        - leadMetrics
+        - freshness
+        - confidence
+        - metricSource
+        - formulaVersion
+        - authorizationScope
+        - partialData
+      properties:
+        workspaceId:
+          type: string
+        campaignMetrics:
+          $ref: '#/components/schemas/DashboardCampaignMetrics'
+        approvalMetrics:
+          $ref: '#/components/schemas/DashboardApprovalMetrics'
+        budgetMetrics:
+          $ref: '#/components/schemas/DashboardBudgetMetrics'
+        leadMetrics:
+          $ref: '#/components/schemas/DashboardLeadMetrics'
+        freshness:
+          $ref: '#/components/schemas/DashboardFreshness'
+        confidence:
+          type: string
+          enum: [HIGH, MEDIUM, LOW]
+        metricSource:
+          type: string
+          description: Backend source used for dashboard facts
+        formulaVersion:
+          type: string
+          description: Versioned formula contract for dashboard calculations
+        authorizationScope:
+          type: string
+          description: Authorization scope applied to the summary
+        partialData:
+          type: boolean
+          description: True when one or more source domains are stale, unavailable, or incomplete
+
+    DashboardCampaignMetrics:
+      type: object
+      required: [totalCampaigns, activeCampaigns, pausedCampaigns, completedCampaigns, archivedCampaigns]
+      properties:
+        totalCampaigns:
+          type: integer
+        activeCampaigns:
+          type: integer
+        pausedCampaigns:
+          type: integer
+        completedCampaigns:
+          type: integer
+        archivedCampaigns:
+          type: integer
+
+    DashboardApprovalMetrics:
+      type: object
+      required: [pendingApprovals, overdueApprovals, approvalsToday, approvalsThisWeek]
+      properties:
+        pendingApprovals:
+          type: integer
+        overdueApprovals:
+          type: integer
+        approvalsToday:
+          type: integer
+        approvalsThisWeek:
+          type: integer
+
+    DashboardBudgetMetrics:
+      type: object
+      required: [totalBudget, spentBudget, remainingBudget, pacingPercentage, onTrack]
+      properties:
+        totalBudget:
+          type: integer
+        spentBudget:
+          type: integer
+        remainingBudget:
+          type: integer
+        pacingPercentage:
+          type: number
+        onTrack:
+          type: boolean
+
+    DashboardLeadMetrics:
+      type: object
+      required: [totalLeads, qualifiedLeads, conversionRate, leadsToday, leadsThisWeek]
+      properties:
+        totalLeads:
+          type: integer
+        qualifiedLeads:
+          type: integer
+        conversionRate:
+          type: number
+        leadsToday:
+          type: integer
+        leadsThisWeek:
+          type: integer
+
+    DashboardFreshness:
+      type: object
+      required: [lastUpdated, stalenessSeconds, status]
+      properties:
+        lastUpdated:
+          type: string
+          format: date-time
+        stalenessSeconds:
+          type: integer
+        status:
+          type: string
+          enum: [FRESH, STALE, VERY_STALE, CRITICAL]
+
     Campaign:
       type: object
       required:
@@ -351,10 +693,17 @@ components:
           type: string
           enum:
             - DRAFT
+            - PENDING_APPROVAL
+            - APPROVED
+            - PENDING_LAUNCH
+            - LAUNCH_RUNNING
+            - LAUNCH_FAILED
+            - EXTERNAL_EXECUTION_BLOCKED
             - LAUNCHED
             - PAUSED
             - COMPLETED
             - ARCHIVED
+            - ROLLED_BACK
           description: Campaign lifecycle status (P0-010)
         type:
           type: string
@@ -397,6 +746,46 @@ components:
             - PUSH
             - SMS
             - OMNICHANNEL
+
+    ConsentRecordRequest:
+      type: object
+      required: [subjectId, purpose, granted]
+      properties:
+        subjectId:
+          type: string
+        purpose:
+          type: string
+        granted:
+          type: boolean
+
+    ConsentRevokeRequest:
+      type: object
+      required: [consentId]
+      properties:
+        consentId:
+          type: string
+
+    SuppressionRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        reason:
+          type: string
+
+    UnsubscribeRequest:
+      type: object
+      required: [email, subjectId, purpose]
+      properties:
+        email:
+          type: string
+          format: email
+        subjectId:
+          type: string
+        purpose:
+          type: string
 
     CampaignListResponse:
       type: object

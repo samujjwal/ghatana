@@ -7,7 +7,7 @@
 #   make test           # Run all tests
 #   make clean          # Clean build artifacts
 
-.PHONY: help setup verify build build-standalone build-fast clean test dev start-infra start-backend start-frontend stop lint format docker-up docker-down
+.PHONY: help setup verify build build-standalone build-fast clean test dev start-infra start-backend start-frontend stop lint format docker-up docker-down contract-check production-check
 
 # Colors for output
 BLUE := \033[0;34m
@@ -35,43 +35,43 @@ help:
 ## setup: Initial project setup (run once)
 setup:
 	@echo "$(BLUE)═══ Setting up YAPPC development environment ═══$(NC)"
-	@./tools/scripts/verify-dev-environment.sh
+	@$(REPO_ROOT)/tools/scripts/verify-dev-environment.sh
 	@echo "$(BLUE)═══ Installing dependencies ═══$(NC)"
-	@cd frontend && pnpm install
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm install
 	@echo "$(GREEN)✓ Setup complete!$(NC)"
 
 ## verify: Verify development environment
 verify:
-	@./tools/scripts/verify-dev-environment.sh
+	@$(REPO_ROOT)/tools/scripts/verify-dev-environment.sh
 
 ## build: Build all services (Java + Frontend) via monorepo Gradle
 build:
 	@echo "$(BLUE)═══ Building YAPPC with standardized structure ═══$(NC)"
 	@$(GRADLEW) :core:yappc-services:build :core:yappc-api:build :core:scaffold:build --parallel
 	@echo "$(BLUE)═══ Building frontend ═══$(NC)"
-	@cd frontend && pnpm build:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm build:web
 	@echo "$(GREEN)✓ Build complete!$(NC)"
 
 ## build-standalone: Build in standalone mode (from products/yappc/)
 build-standalone:
 	@echo "$(BLUE)═══ Building YAPPC in standalone mode ═══$(NC)"
 	@$(GRADLEW) clean build --parallel
-	@cd frontend && pnpm build:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm build:web
 	@echo "$(GREEN)✓ Standalone build complete!$(NC)"
 
 ## build-fast: Fast build (skip tests and checks)
 build-fast:
 	@echo "$(BLUE)═══ Fast building all services ═══$(NC)"
 	@$(GRADLEW) build -x test -x check --parallel
-	@cd frontend && pnpm build:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm build:web
 	@echo "$(GREEN)✓ Fast build complete!$(NC)"
 
 ## clean: Clean all build artifacts
 clean:
 	@echo "$(BLUE)═══ Cleaning build artifacts ═══$(NC)"
 	@$(GRADLEW) clean
-	@cd frontend && pnpm run clean:generated || true
-	@rm -rf frontend/node_modules/.cache
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm run clean:generated || true
+	@rm -rf $(REPO_ROOT)/products/yappc/frontend/node_modules/.cache
 	@echo "$(GREEN)✓ Clean complete!$(NC)"
 
 ## test: Run all tests (Java + Frontend)
@@ -79,7 +79,7 @@ test:
 	@echo "$(BLUE)═══ Running Java tests ═══$(NC)"
 	@$(GRADLEW) test
 	@echo "$(BLUE)═══ Running frontend tests ═══$(NC)"
-	@cd frontend && pnpm test
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm test
 	@echo "$(GREEN)✓ All tests passed!$(NC)"
 
 ## test-java: Run Java tests only
@@ -88,18 +88,18 @@ test-java:
 
 ## test-frontend: Run frontend tests only
 test-frontend:
-	@cd frontend && pnpm test
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm test
 
 ## test-e2e: Run end-to-end tests
 test-e2e:
-	@cd frontend && pnpm test:e2e
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm test:e2e
 
 ## lint: Lint all code
 lint:
 	@echo "$(BLUE)═══ Linting Java code ═══$(NC)"
 	@$(GRADLEW) checkstyleMain pmdMain || true
 	@echo "$(BLUE)═══ Linting frontend code ═══$(NC)"
-	@cd frontend && pnpm lint
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm lint
 	@echo "$(GREEN)✓ Lint complete!$(NC)"
 
 ## format: Format all code
@@ -107,70 +107,70 @@ format:
 	@echo "$(BLUE)═══ Formatting Java code ═══$(NC)"
 	@$(GRADLEW) spotlessApply
 	@echo "$(BLUE)═══ Formatting frontend code ═══$(NC)"
-	@cd frontend && pnpm format
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm format
 	@echo "$(GREEN)✓ Format complete!$(NC)"
 
 ## start-infra: Start infrastructure services (Postgres, Redis, etc.)
 start-infra:
 	@echo "$(BLUE)═══ Starting infrastructure services ═══$(NC)"
-	@./start-infra.sh || docker compose up -d postgres redis
+	@$(REPO_ROOT)/start-infra.sh || cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose up -d postgres redis
 	@echo "$(GREEN)✓ Infrastructure started!$(NC)"
 
 ## start-backend: Start all backend services
 start-backend:
 	@echo "$(BLUE)═══ Starting backend services ═══$(NC)"
-	@docker compose --profile backend up -d
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose --profile backend up -d
 	@echo "$(GREEN)✓ Backend services started!$(NC)"
 	@echo "$(YELLOW)Services available at:$(NC)"
 	@echo "  • Domain API:         http://localhost:8082"
 	@echo "  • AI Requirements:    http://localhost:8081"
-	@echo "  • Lifecycle API:      http://localhost:8082"
+	@echo "  • Lifecycle API:      http://localhost:8083"
 	@echo "  • Backend API:        http://localhost:8000"
 
 ## start-frontend: Start frontend development server
 start-frontend:
 	@echo "$(BLUE)═══ Starting frontend ═══$(NC)"
-	@cd frontend && pnpm dev:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev:web
 
 ## dev: Start full development environment (infra + backend + frontend in parallel)
 dev: start-infra start-backend
 	@echo "$(GREEN)✓ Backend services started$(NC)"
 	@echo "$(YELLOW)Starting frontend... (press Ctrl+C to stop all)$(NC)"
-	@cd frontend && pnpm dev:web
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm dev:web
 
 ## stop: Stop all services
 stop:
 	@echo "$(BLUE)═══ Stopping all services ═══$(NC)"
-	@docker compose down
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose down
 	@echo "$(GREEN)✓ All services stopped!$(NC)"
 
 ## docker-up: Start all services with Docker Compose
 docker-up:
 	@echo "$(BLUE)═══ Starting all services with Docker Compose ═══$(NC)"
-	@docker compose --profile full up -d
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose --profile full up -d
 	@echo "$(GREEN)✓ All services started!$(NC)"
 
 ## docker-down: Stop and remove all Docker containers
 docker-down:
 	@echo "$(BLUE)═══ Stopping Docker Compose services ═══$(NC)"
-	@docker compose down -v
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose down -v
 	@echo "$(GREEN)✓ Docker services stopped!$(NC)"
 
 ## logs: Show logs from all services
 logs:
-	@docker compose logs -f
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose logs -f
 
 ## logs-java: Show logs from Java services
 logs-java:
-	@docker compose logs -f domain ai-requirements-api lifecycle-api
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose logs -f domain ai-requirements-api lifecycle-api
 
 ## logs-node: Show logs from Node.js services
 logs-node:
-	@docker compose logs -f backend-api
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose logs -f backend-api
 
 ## ps: Show running services
 ps:
-	@docker compose ps
+	@cd $(REPO_ROOT)/products/yappc/deployment/docker && docker compose ps
 
 ## health: Check health of all services
 health:
@@ -181,22 +181,22 @@ health:
 	@echo "AI Requirements API (8081):"
 	@curl -s http://localhost:8081/health || echo "$(RED)✗ Not responding$(NC)"
 	@echo ""
-	@echo "Lifecycle API (8082):"
-	@curl -s http://localhost:8082/health || echo "$(RED)✗ Not responding$(NC)"
+	@echo "Lifecycle API (8083):"
+	@curl -s http://localhost:8083/health || echo "$(RED)✗ Not responding$(NC)"
 	@echo ""
 	@echo "Backend API (8000):"
 	@curl -s http://localhost:8000/health || echo "$(RED)✗ Not responding$(NC)"
 
 ## typecheck: Run TypeScript type checking
 typecheck:
-	@cd frontend && pnpm typecheck
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm typecheck
 
 ## coverage: Run tests with coverage
 coverage:
 	@echo "$(BLUE)═══ Running Java tests with coverage ═══$(NC)"
 	@$(GRADLEW) test jacocoTestReport
 	@echo "$(BLUE)═══ Running frontend tests with coverage ═══$(NC)"
-	@cd frontend && pnpm test:coverage
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm test:coverage
 	@echo "$(GREEN)✓ Coverage reports generated!$(NC)"
 	@echo "Java coverage: build/reports/jacoco/test/html/index.html"
 	@echo "Frontend coverage: frontend/coverage/index.html"
@@ -204,7 +204,7 @@ coverage:
 ## install: Install all dependencies
 install:
 	@echo "$(BLUE)═══ Installing dependencies ═══$(NC)"
-	@cd frontend && pnpm install
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm install
 	@echo "$(GREEN)✓ Dependencies installed!$(NC)"
 
 ## update: Update all dependencies
@@ -212,13 +212,13 @@ update:
 	@echo "$(BLUE)═══ Updating Gradle dependencies ═══$(NC)"
 	@$(GRADLEW) dependencies --write-locks
 	@echo "$(BLUE)═══ Updating npm dependencies ═══$(NC)"
-	@cd frontend && pnpm update
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm update
 	@echo "$(GREEN)✓ Dependencies updated!$(NC)"
 
 ## audit: Run security audit
 audit:
 	@echo "$(BLUE)═══ Auditing npm dependencies ═══$(NC)"
-	@cd frontend && pnpm audit
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm audit
 	@echo "$(BLUE)═══ Checking for outdated dependencies ═══$(NC)"
 	@$(GRADLEW) dependencyUpdates
 
@@ -229,8 +229,7 @@ ports:
 	@echo "  8000 - Backend API (Node.js)"
 	@echo "  8082 - Domain Service (Java)"
 	@echo "  8081 - AI Requirements API (Java)"
-	@echo "  8082 - Lifecycle API (Java)"
-	@echo "  8083 - Canvas AI Service (Java)"
+	@echo "  8083 - Lifecycle API (Java)"
 	@echo "  5432 - PostgreSQL"
 	@echo "  6379 - Redis"
 	@echo ""
@@ -239,13 +238,13 @@ ports:
 	@lsof -i:8000 2>&1 | grep LISTEN || echo "  8000 - $(GREEN)Available$(NC)"
 	@lsof -i:8082 2>&1 | grep LISTEN || echo "  8082 - $(GREEN)Available$(NC)"
 	@lsof -i:8081 2>&1 | grep LISTEN || echo "  8081 - $(GREEN)Available$(NC)"
-	@lsof -i:8082 2>&1 | grep LISTEN || echo "  8082 - $(GREEN)Available$(NC)"
+	@lsof -i:8083 2>&1 | grep LISTEN || echo "  8083 - $(GREEN)Available$(NC)"
 
 ## docs: Generate documentation
 docs:
 	@echo "$(BLUE)═══ Generating documentation ═══$(NC)"
 	@$(GRADLEW) javadoc
-	@cd frontend && pnpm run typedoc || echo "$(YELLOW)TypeDoc not configured$(NC)"
+	@cd $(REPO_ROOT)/products/yappc/frontend && pnpm run typedoc || echo "$(YELLOW)TypeDoc not configured$(NC)"
 	@echo "$(GREEN)✓ Documentation generated!$(NC)"
 
 ## release: Create a release (tags and builds)
@@ -276,3 +275,14 @@ quick-start: verify install start-infra
 	@echo "  2. Start frontend: $(YELLOW)make start-frontend$(NC)"
 	@echo "  3. Open browser:   $(YELLOW)http://localhost:3000$(NC)"
 	@echo ""
+
+## contract-check: Validate route manifest parity with OpenAPI and backend registry (task 2.2.4)
+contract-check:
+	@echo "$(BLUE)═══ Checking route contract parity ═══$(NC)"
+	@$(GRADLEW) checkYappcOpenApiParity
+	@echo "$(GREEN)✓ Contract check complete!$(NC)"
+
+## production-check: Run all production readiness checks (task 2.2.5)
+production-check: contract-check lint test
+	@echo "$(BLUE)═══ Production readiness checks ═══$(NC)"
+	@echo "$(GREEN)✓ All production checks passed!$(NC)"

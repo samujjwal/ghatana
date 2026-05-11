@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: extract_context
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Extract decision context and organizational goals
     - name: alignment_check
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

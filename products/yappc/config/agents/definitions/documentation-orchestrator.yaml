@@ -18,7 +18,7 @@ metadata:
   - knowledge-management
   - orchestration
 identity:
-  agentType: hybrid
+  agentType: HYBRID
   subtype: rule+llm
   determinismGuarantee: partial
   stateMutability: mutable

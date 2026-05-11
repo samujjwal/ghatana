@@ -49,7 +49,7 @@ spec:
     - engineering
     - coordination
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: delivery-planning-orchestrator
     name: Delivery Planning Orchestrator
@@ -83,7 +83,7 @@ spec:
     - delivery-planning
     - sprints
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: agile-execution-orchestrator
     name: Agile Execution Orchestrator
@@ -116,7 +116,7 @@ spec:
     - agile
     - execution
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: frontend-engineering-orchestrator
     name: Frontend Engineering Orchestrator
@@ -152,7 +152,7 @@ spec:
     - frontend
     - ui
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: backend-engineering-orchestrator
     name: Backend Engineering Orchestrator
@@ -188,7 +188,7 @@ spec:
     - backend
     - api
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: work-management-orchestrator
     name: Work Management Orchestrator
@@ -222,7 +222,7 @@ spec:
     - work-management
     - issue-tracking
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: delivery-planning-capability-agent
     name: Delivery Planning Capability Agent
@@ -258,7 +258,7 @@ spec:
     - delivery-planning
     - forecasting
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: engineering-metrics-capability-agent
     name: Engineering Metrics Capability Agent
@@ -292,7 +292,7 @@ spec:
     - metrics
     - dora
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: frontend-capability-agent
     name: Frontend Capability Agent
@@ -322,7 +322,7 @@ spec:
     - frontend
     - react
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: backend-capability-agent
     name: Backend Capability Agent
@@ -352,7 +352,7 @@ spec:
     - backend
     - api
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: code-quality-capability-agent
     name: Code Quality Capability Agent
@@ -376,7 +376,7 @@ spec:
     - code-quality
     - static-analysis
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: devex-capability-agent
     name: Developer Experience Capability Agent
@@ -399,7 +399,7 @@ spec:
     - devex
     - toolchain
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: work-decomposition-task-agent
     name: Work Decomposition Task Agent
@@ -420,7 +420,7 @@ spec:
     - decomposition
     - stories
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: issue-creation-task-agent
     name: Issue Creation Task Agent
@@ -441,7 +441,7 @@ spec:
     - issue-creation
     - github
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: story-point-estimation-task-agent
     name: Story Point Estimation Task Agent
@@ -462,7 +462,7 @@ spec:
     - estimation
     - story-points
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sprint-planning-task-agent
     name: Sprint Planning Task Agent
@@ -484,7 +484,7 @@ spec:
     - sprint-planning
     - capacity
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: component-generation-task-agent
     name: Component Generation Task Agent
@@ -506,7 +506,7 @@ spec:
     - component-generation
     - react
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: a11y-audit-task-agent
     name: Accessibility Audit Task Agent
@@ -528,7 +528,7 @@ spec:
     - accessibility
     - wcag
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: api-implementation-task-agent
     name: API Implementation Task Agent
@@ -551,7 +551,7 @@ spec:
     - api-implementation
     - rest
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: domain-logic-task-agent
     name: Domain Logic Task Agent
@@ -573,7 +573,7 @@ spec:
     - domain-logic
     - ddd
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: data-access-task-agent
     name: Data Access Task Agent
@@ -595,7 +595,7 @@ spec:
     - data-access
     - repositories
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: technical-debt-management-task-agent
     name: Technical Debt Management Task Agent
@@ -617,7 +617,7 @@ spec:
     - technical-debt
     - remediation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: dependency-update-task-agent
     name: Dependency Update Task Agent
@@ -639,7 +639,7 @@ spec:
     - dependencies
     - upgrades
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: code-generation-task-agent
     name: Code Generation Task Agent
@@ -661,7 +661,7 @@ spec:
     - code-generation
     - scaffolding
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: refactoring-task-agent
     name: Refactoring Task Agent
@@ -684,7 +684,7 @@ spec:
     - refactoring
     - transformation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: performance-profiling-task-agent
     name: Performance Profiling Task Agent
@@ -707,7 +707,7 @@ spec:
     - performance
     - profiling
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: velocity-tracker-task-agent
     name: Velocity Tracker Task Agent
@@ -729,7 +729,7 @@ spec:
     - velocity
     - tracking
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: retrospective-analysis-task-agent
     name: Retrospective Analysis Task Agent
@@ -751,7 +751,7 @@ spec:
     - retrospective
     - team-health
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: complexity-scorer
     name: Complexity Scorer
@@ -767,7 +767,7 @@ spec:
     - complexity
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: duplication-detector
     name: Duplication Detector
@@ -783,7 +783,7 @@ spec:
     - duplication
     - detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: import-graph-builder
     name: Import Graph Builder
@@ -799,7 +799,7 @@ spec:
     - imports
     - graph
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: dead-code-finder
     name: Dead Code Finder
@@ -815,7 +815,7 @@ spec:
     - dead-code
     - cleanup
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: test-coverage-reporter
     name: Test Coverage Reporter
@@ -831,7 +831,7 @@ spec:
     - test-coverage
     - reporting
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: build-time-analyzer
     name: Build Time Analyzer
@@ -847,7 +847,7 @@ spec:
     - build
     - performance
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: story-acceptance-formatter
     name: Story Acceptance Formatter
@@ -864,7 +864,7 @@ spec:
     - acceptance-criteria
     - bdd
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: label-classifier
     name: Label Classifier
@@ -880,7 +880,7 @@ spec:
     - labels
     - classification
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

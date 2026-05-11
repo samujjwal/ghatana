@@ -20,7 +20,7 @@ generator:
       service: cost-service
       endpoint: /collect
     - name: cost_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -51,7 +51,7 @@ generator:
           total_potential_savings
         }
     - name: recommendation_prioritization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Prioritize by impact and effort
 
 memory:

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: dependency_extraction
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -42,7 +42,7 @@ generator:
       service: dependency-service
       endpoint: /dependencies/graph
     - name: critical_path_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calculate critical path
 
 memory:

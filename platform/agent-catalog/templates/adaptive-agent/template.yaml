@@ -43,7 +43,7 @@ metadata:
 # REQUIRED — choose the most specific subtype for your use case
 # AdaptiveSubtype values: REINFORCEMENT_LEARNING | ONLINE_LEARNING | BANDIT | META_LEARNING | SELF_OPTIMIZING
 identity:
-  agentType: adaptive               # DO NOT CHANGE — this is the adaptive template
+  agentType: ADAPTIVE               # DO NOT CHANGE — this is the adaptive template
   subtype: "{{SUBTYPE}}"            # e.g. online-learning, reinforcement-learning, bandit
   roles: ["{{ROLE_1}}"]             # e.g. [forecaster, policy-learner, anomaly-detector]
   criticality: "{{CRITICALITY}}"    # critical | high | medium | low

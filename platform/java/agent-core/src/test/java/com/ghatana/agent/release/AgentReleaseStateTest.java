@@ -117,47 +117,55 @@ class AgentReleaseStateTest {
     }
 
     @Nested
-    @DisplayName("Dispatchability")
+    @DisplayName("Runnable and response-serving semantics")
     class Dispatchability {
 
         @Test
-        void activeIsDispatchable() { 
-            assertThat(AgentReleaseState.ACTIVE.isDispatchable()).isTrue(); 
+        void activeCanRunAndServe() { 
+            assertThat(AgentReleaseState.ACTIVE.isRunnable()).isTrue();
+            assertThat(AgentReleaseState.ACTIVE.isResponseServing()).isTrue();
         }
 
         @Test
-        void canaryIsDispatchable() { 
-            assertThat(AgentReleaseState.CANARY.isDispatchable()).isTrue(); 
+        void canaryCanRunAndServe() { 
+            assertThat(AgentReleaseState.CANARY.isRunnable()).isTrue();
+            assertThat(AgentReleaseState.CANARY.isResponseServing()).isTrue();
         }
 
         @Test
-        void shadowIsDispatchable() { 
-            assertThat(AgentReleaseState.SHADOW.isDispatchable()).isTrue(); 
+        void shadowCanRunButCannotServe() { 
+            assertThat(AgentReleaseState.SHADOW.isRunnable()).isTrue();
+            assertThat(AgentReleaseState.SHADOW.isResponseServing()).isFalse();
         }
 
         @Test
-        void draftIsNotDispatchable() { 
-            assertThat(AgentReleaseState.DRAFT.isDispatchable()).isFalse(); 
+        void draftCannotRunOrServe() { 
+            assertThat(AgentReleaseState.DRAFT.isRunnable()).isFalse();
+            assertThat(AgentReleaseState.DRAFT.isResponseServing()).isFalse();
         }
 
         @Test
-        void validatedIsNotDispatchable() { 
-            assertThat(AgentReleaseState.VALIDATED.isDispatchable()).isFalse(); 
+        void validatedCannotRunOrServe() { 
+            assertThat(AgentReleaseState.VALIDATED.isRunnable()).isFalse();
+            assertThat(AgentReleaseState.VALIDATED.isResponseServing()).isFalse();
         }
 
         @Test
-        void blockedIsNotDispatchable() { 
-            assertThat(AgentReleaseState.BLOCKED.isDispatchable()).isFalse(); 
+        void blockedCannotRunOrServe() { 
+            assertThat(AgentReleaseState.BLOCKED.isRunnable()).isFalse();
+            assertThat(AgentReleaseState.BLOCKED.isResponseServing()).isFalse();
         }
 
         @Test
-        void retiredIsNotDispatchable() { 
-            assertThat(AgentReleaseState.RETIRED.isDispatchable()).isFalse(); 
+        void retiredCannotRunOrServe() { 
+            assertThat(AgentReleaseState.RETIRED.isRunnable()).isFalse();
+            assertThat(AgentReleaseState.RETIRED.isResponseServing()).isFalse();
         }
 
         @Test
-        void deprecatedIsNotDispatchable() { 
-            assertThat(AgentReleaseState.DEPRECATED.isDispatchable()).isFalse(); 
+        void deprecatedCannotRunOrServe() { 
+            assertThat(AgentReleaseState.DEPRECATED.isRunnable()).isFalse();
+            assertThat(AgentReleaseState.DEPRECATED.isResponseServing()).isFalse();
         }
     }
 

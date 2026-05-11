@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: retro_preparation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -40,7 +40,7 @@ generator:
         
         Output as JSON: {summary, wins, challenges, themes, previous_action_status, discussion_questions, proposed_experiments}
     - name: synthesis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

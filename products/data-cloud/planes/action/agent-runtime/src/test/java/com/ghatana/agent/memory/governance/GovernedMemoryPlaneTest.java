@@ -5,6 +5,7 @@
 package com.ghatana.agent.memory.governance;
 
 import com.ghatana.agent.memory.model.*;
+import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
 import com.ghatana.agent.memory.store.MemoryPlane;
@@ -21,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -146,7 +148,7 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
         verify(accessBroker).checkAccess(eq(TENANT_ID), eq(SUBJECT_ID), anyString(), anyString()); 
     }
 
-    // ── Write operations bypass gate ──────────────────────────────────────
+    // ── Write operations gate learned memory policy but not read privacy ────
 
     @Test
     void storeEpisode_bypassesAccessCheck() { 
@@ -162,11 +164,50 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
     @Test
     void storeFact_bypassesAccessCheck() { 
         EnhancedFact fact = mock(EnhancedFact.class); 
+        when(fact.getLabels()).thenReturn(Map.of("validationState", "VALIDATED"));
         when(delegate.storeFact(any())).thenReturn(Promise.of(fact)); 
 
         runPromise(() -> governed.storeFact(fact)); 
 
         verifyNoInteractions(accessBroker); 
+    }
+
+    @Test
+    void storeFact_rejectsUnvalidatedSemanticMemory() {
+        EnhancedFact fact = mock(EnhancedFact.class);
+        when(fact.getLabels()).thenReturn(Map.of());
+
+        assertThatThrownBy(() -> runPromise(() -> governed.storeFact(fact)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("semantic memory writes require validationState=VALIDATED");
+
+        verifyNoInteractions(delegate);
+    }
+
+    @Test
+    void storeProcedure_requiresPromotionEvidence() {
+        EnhancedProcedure procedure = mock(EnhancedProcedure.class);
+        when(procedure.getLabels()).thenReturn(Map.of("promotionState", "DRAFT"));
+
+        assertThatThrownBy(() -> runPromise(() -> governed.storeProcedure(procedure)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("procedural memory writes require active promotion evidence");
+
+        verifyNoInteractions(delegate);
+    }
+
+    @Test
+    void storeProcedure_allowsActivePromotedProcedure() {
+        EnhancedProcedure procedure = mock(EnhancedProcedure.class);
+        when(procedure.getLabels()).thenReturn(Map.of(
+                "promotionState", "ACTIVE",
+                "promotionEvidenceId", "evidence-1"));
+        when(delegate.storeProcedure(procedure)).thenReturn(Promise.of(procedure));
+
+        runPromise(() -> governed.storeProcedure(procedure));
+
+        verify(delegate).storeProcedure(procedure);
+        verifyNoInteractions(accessBroker);
     }
 
     // ── Constructor guard ─────────────────────────────────────────────────

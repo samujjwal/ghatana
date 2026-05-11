@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: assignment_optimization
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -39,7 +39,7 @@ generator:
         
         Output as JSON: {assignments: [{task_id, assignee, rationale, skill_match_score, workload_impact}], workload_summary, learning_opportunities, risks}
     - name: workload_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate no one is overloaded
     - name: assignment_notification
       type: SERVICE_CALL

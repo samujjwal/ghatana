@@ -1,796 +1,561 @@
-Executed the pasted **Concise YAPPC Product Audit Prompt** against `samujjwal/ghatana` at commit:
+Below is a **production-grade implementation plan for YAPPC at commit `3dc787e5203034d59132244afc4869eb40a8a880`**, focused on making each area independently shippable while keeping contracts, UI, backend, security, build, and docs coherent.
 
-`0ebf11101100e17adadf5b863d74cd787d1de9e1`
+## Baseline findings from this commit
 
-I audited this as the **complete codebase snapshot at that commit**, not as a commit diff, and did not rely on the previous generated audit/TODO document as truth. The prompt source is the uploaded markdown. 
+This commit moves YAPPC toward stricter product/platform boundaries and contract governance. It introduces or changes: structured route-manifest metadata, cookie-session auth schema changes in OpenAPI, direct-platform-import lint enforcement, Docker artifact verification, and Makefile root-resolution fixes. 
 
-I did not execute the full build/test suite locally; this is a source, contract, docs, and gate-readiness audit based on the repository files available at the target commit.
+The most important new source of truth is now `products/yappc/docs/api/route-manifest.yaml`, which declares each route as structured YAML with `method`, `path`, `auth`, `scopes`, `owner`, `boundary`, and `operationId`.  However, the existing Gradle OpenAPI parity task still parses the old `- GET /path` manifest format, so it will not correctly validate the new manifest shape. 
 
----
+There is also an auth-contract mismatch: OpenAPI now includes browser-oriented cookie-session auth concepts, while the frontend REST client still models login and refresh as token-pair responses.   The backend API auth filter currently resolves only `X-API-Key` and `Authorization: Bearer ...`, not session cookies. 
 
-## 1. Executive summary
+## Implementation strategy
 
-This commit improves several issues from the prior snapshot: the dashboard sorting crash is fixed, cookie plugin setup moved to startup, route manifest now includes auth/scope comments, release readiness now defaults to execution mode, and Docker/Makefile no longer explicitly skip tests in normal production build paths.     
+Do this in **four layers**:
 
-However, YAPPC is still **not production-ready** at this commit. The biggest remaining blockers are:
-
-1. **Auth/session still has contract and runtime inconsistencies.** Backend login sends only `{ user }`, while the frontend API client still types login as returning required `tokens`. Refresh still returns an access token body even though the design says tokens are httpOnly-cookie-only.  
-2. **SessionManager changed `hasSession()` to async, but auth-session provider still treats it synchronously.** This creates a TypeScript/runtime correctness issue in `hasActiveSession()` and `fetchAuthSession()`.  
-3. **Platform token exchange still happens from the browser through raw fetch and now uses an empty bearer token in cookie mode.** This breaks the Data Cloud+AEP typed-contract boundary and leaks platform-auth concerns into YAPPC web code. 
-4. **Dashboard action classification is still heuristic and fallback-driven.** It still classifies action safety through regex/title inspection and still creates `Resume ${phase} phase` fallback actions. 
-5. **Route manifest auth/scope metadata is only comments.** It is not machine-readable and is not validated by the OpenAPI contract test.  
-6. **Data Cloud+AEP boundary is documented but still not enforced.** Canonical docs say YAPPC must consume Data Cloud+AEP through typed contracts only, but route manifest and OpenAPI still expose vector/agent/workflow surfaces inside YAPPC.   
+1. **Contract and governance spine first**: route manifest, OpenAPI, auth mode, generated client, authorization registry, lint gates.
+2. **Build and runtime correctness**: Makefile, Dockerfile, CI, health/readiness, artifact checks.
+3. **Product capability slices**: lifecycle cockpit, dashboard actions, artifact generation, preview, scaffold, canvas/page builder.
+4. **Coherence hardening**: end-to-end tests, docs cleanup, duplicate removal, boundary verification.
 
 ---
 
-## 2. Product boundary assessment
+# Phase 0 — Stabilize the contract spine
 
-The canonical model is correct: **Project** is the persisted workspace-scoped delivery container, **Product** is the business/customer outcome, and **App** is the generated or deployed runtime software. The lifecycle is explicitly defined as Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve. 
+## 0.1 Make `route-manifest.yaml` truly executable
 
-The Data Cloud+AEP boundary is also clearly stated in the canonical model: YAPPC must consume the merged Data Cloud+AEP platform through typed contracts only and must not import internal platform runtime, memory, retrieval, analytics, telemetry, or policy modules. Required request context includes tenant, workspace, project, actor, phase, operation, data classification, requested timestamp, and correlation ID; responses must include status, confidence, trace/evidence/policy metadata, degraded state, and run/memory/search IDs where applicable. 
+**Goal:** `route-manifest.yaml` becomes the canonical machine-readable source for route metadata.
 
-The implementation is still behind the model. YAPPC route manifests and OpenAPI still include vector, agent, workflow, and RAG surfaces under YAPPC API ownership instead of a clearly separated Data Cloud+AEP platform contract boundary.  
+**Current issue:** The manifest is now structured YAML, but `checkYappcOpenApiParity` still uses a regex for old `METHOD /path` lines. 
 
----
+**Implementation tasks:**
 
-## 3. Area-by-area findings
+| Task                                | Where                             | Details                                                                                                        |
+| ----------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Replace old regex parser            | `products/yappc/build.gradle.kts` | Parse structured manifest entries with `method`, `path`, `auth`, `scopes`, `owner`, `boundary`, `operationId`. |
+| Validate required fields            | `checkYappcOpenApiParity`         | Fail if any route lacks `method`, `path`, `auth`, `owner`, `boundary`, or `operationId`.                       |
+| Validate auth/scopes consistency    | same task                         | If `auth: required`, require non-empty `scopes`; if `auth: public`, require empty scopes.                      |
+| Validate OpenAPI method+path parity | same task                         | Check both path and HTTP method, not path only.                                                                |
+| Validate `operationId` parity       | same task                         | OpenAPI route operationId must match manifest `operationId`.                                                   |
+| Validate boundary values            | same task                         | Allow only `YAPPC`, `DATA_CLOUD_AEP`, or explicitly approved values.                                           |
+| Add regression tests                | Gradle test or build logic test   | Include fixture manifest with structured YAML and confirm failures are detected.                               |
 
-### Finding 1 — Login/refresh contract remains inconsistent
+**Acceptance criteria:**
 
-**Severity:** Blocker
-**Area:** Auth/session
-**Owner boundary:** YAPPC
-**Evidence:** `products/yappc/frontend/apps/api/src/routes/auth.ts`, `products/yappc/frontend/web/src/lib/api/client.ts`, `products/yappc/docs/api/openapi.yaml`
-
-The backend login route sets httpOnly cookies and sends only `{ user: result.user }`, but the route schema still documents `tokens`, and the frontend client still declares `LoginSessionResponse.tokens` as required.  
-
-Refresh is also inconsistent: the backend returns `{ accessToken, expiresIn }` in the body even though the stated cookie model says tokens should remain in httpOnly cookies. The frontend client still expects `AuthTokenResponse` with `accessToken`, `refreshToken`, and `expiresIn`.  
-
-**Production-grade fix:**
-Create two explicit response contracts or, preferably, one cookie-mode contract:
-
-```text
-LoginResponse:
-  user
-  session:
-    expiresAt
-    authMode: "COOKIE"
-```
-
-```text
-RefreshTokenResponse:
-  expiresAt
-  authMode: "COOKIE"
-```
-
-Remove access/refresh tokens from web-visible response bodies in cookie mode. Regenerate the OpenAPI client and make runtime responses match the generated types.
+* `./gradlew :products:yappc:checkYappcOpenApiParity --no-configuration-cache` validates all structured manifest entries.
+* The task fails on missing path, wrong method, mismatched `operationId`, missing scopes, invalid boundary, or invalid auth mode.
+* No route can be added without an owner and boundary.
 
 ---
 
-### Finding 2 — Async `hasSession()` breaks sync callers
+## 0.2 Resolve route path drift across manifest, OpenAPI, frontend, and backend registry
 
-**Severity:** Blocker
-**Area:** Auth/session provider
-**Owner boundary:** YAPPC
-**Evidence:** `SessionManager.ts`, `auth-session.ts`
+**Goal:** Every route has one canonical path across manifest, OpenAPI, frontend client, backend registration, and authorization registry.
 
-`SessionManager.hasSession()` now returns `Promise<boolean>` by calling `/api/auth/me`, which is directionally correct for httpOnly cookies. But `auth-session.ts` still has:
+**Current issues to fix:**
 
-```ts
-export function hasActiveSession(): boolean {
-  return hasSession();
-}
-```
+* Manifest has `/api/v1/phase/packet`, but `RouteAuthorizationRegistry` registers `/api/v1/yappc/phase/packet`.  
+* Manifest has `/api/v1/preview/session/create`, but `RouteAuthorizationRegistry` registers `/api/v1/yappc/preview/session/create`.  
+* Manifest has `/api/v1/dashboard/actions`, but the registry shown does not register those dashboard action routes.  
 
-and:
+**Implementation tasks:**
 
-```ts
-if (!hasSession()) {
-  return null;
-}
-```
+| Task                                  | Where                                                                   | Details                                                                                                                              |
+| ------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Create route inventory report         | Script under `products/yappc/scripts/`                                  | Compare `route-manifest.yaml`, `openapi.yaml`, backend route registrations, frontend `client.ts`, and authorization registry.        |
+| Fix phase packet path                 | `RouteAuthorizationRegistry`, controllers, OpenAPI, frontend API client | Pick one canonical path. Prefer `/api/v1/phase/packet` because manifest and OpenAPI use it.                                          |
+| Fix preview path                      | same                                                                    | Prefer `/api/v1/preview/session/create` and `/api/v1/preview/session/validate` unless there is a deliberate `/yappc` namespace rule. |
+| Add dashboard action registry entries | `RouteAuthorizationRegistry`                                            | Register GET/POST `/api/v1/dashboard/actions` if backend serves it.                                                                  |
+| Normalize path param syntax           | all route metadata                                                      | Manifest/OpenAPI use `{id}`; registry uses `:id`. Add conversion in tooling, but keep manifest/OpenAPI canonical.                    |
+| Add contract test                     | backend + frontend                                                      | Assert every frontend-used endpoint exists in OpenAPI and has authorization metadata.                                                |
 
-Because `hasSession()` now returns a Promise, `hasActiveSession()` returns the wrong type/value, and `if (!hasSession())` will never behave as intended because a Promise is truthy.  
+**Acceptance criteria:**
 
-**Production-grade fix:**
-Make session probing consistently async:
-
-```ts
-export async function hasActiveSession(): Promise<boolean> {
-  return hasSession();
-}
-```
-
-and update all callers to `await hasSession()`. Also add a typecheck test or compile gate that catches this class of sync/async contract drift.
+* No route exists in one source without a matching canonical route in the other sources.
+* Route mismatch report is empty.
+* Adding a route requires manifest + OpenAPI + auth registry or generated registry metadata.
 
 ---
 
-### Finding 3 — Browser still performs platform token exchange
+## 0.3 Generate authorization registry from route manifest
 
-**Severity:** High
-**Area:** Data Cloud+AEP platform boundary / security
-**Owner boundary:** YAPPC + Data Cloud+AEP
-**Evidence:** `AuthService.exchangePlatformToken()`
+**Goal:** Stop manually duplicating route/security metadata.
 
-The frontend still calls:
+**Current issue:** The route manifest now has machine-readable `auth`, `scopes`, `owner`, `boundary`, and `operationId`, but `RouteAuthorizationRegistry` still hardcodes route definitions manually.  
 
-```ts
-fetch(`${authGatewayUrl}/auth/exchange`, ...)
-```
+**Implementation tasks:**
 
-with `VITE_AUTH_GATEWAY_URL || 'http://localhost:8081'`, then stores `platformToken` in the session object. In cookie mode, `currentSession.token` is often `''`, so this exchange is likely broken. More importantly, platform token exchange belongs in the backend/BFF or Data Cloud+AEP gateway, not the browser. 
+| Task                                | Where                                        | Details                                                                                       |
+| ----------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Add manifest model                  | Java shared module or build-generated source | Define `RouteManifest`, `RouteEntry`, `AuthMode`, `Boundary`, `Scope`.                        |
+| Generate Java registry data         | Gradle generation task                       | Convert manifest routes into Java route metadata at build time.                               |
+| Refactor registry                   | `RouteAuthorizationRegistry.java`            | Load generated route definitions instead of hardcoding.                                       |
+| Add public-route bypass             | `RouteAuthorizationRegistry` / auth filter   | `auth: public` must not require `Principal`.                                                  |
+| Map scopes to permissions centrally | New mapper                                   | `project:read -> Permission.PROJECT_READ`, `project:write -> Permission.PROJECT_UPDATE`, etc. |
+| Add privacy classification          | Manifest or generated default                | Add `privacyClassification` explicitly or derive from route family.                           |
 
-**Production-grade fix:**
-Delete browser-side platform-token exchange. Add a backend endpoint such as:
+**Acceptance criteria:**
 
-```text
-POST /api/v1/platform/session/exchange
-```
-
-or avoid explicit exchange entirely by using the BFF to call Data Cloud+AEP with server-side credentials. YAPPC web should receive only degraded/status/trace metadata, never platform tokens.
-
----
-
-### Finding 4 — AuthService still carries token-shaped session model
-
-**Severity:** High
-**Area:** Auth/session model
-**Owner boundary:** YAPPC
-**Evidence:** `AuthService.ts`
-
-`AuthSession` still includes `token`, `refreshToken`, and `platformToken`; `getAuthToken()` and `getPlatformToken()` are still public methods. The current implementation sets token fields to empty strings in cookie mode, but the model still encourages token-based flows and feeds `buildAuthHeaders()` in the typed client.  
-
-**Production-grade fix:**
-Split the session model:
-
-```ts
-interface BrowserAuthSession {
-  user: User;
-  expiresAt: string;
-  permissions: string[];
-  authMode: 'COOKIE';
-}
-```
-
-Remove `getAuthToken()` and `getPlatformToken()` from browser services. If some migration code still needs tokens, isolate it in a deprecated adapter behind an explicit non-production feature flag.
+* `RouteAuthorizationRegistry` no longer manually duplicates every route.
+* Public routes `/health`, `/ready`, `/api/v1/yappc/info`, and configured public agent health routes work without credentials.
+* Required routes fail closed.
+* Permission mapping is tested.
 
 ---
 
-### Finding 5 — Onboarding no longer has literal placeholders, but now silently masks DB failures
+## 0.4 Fix route pattern matching bug
 
-**Severity:** Medium
-**Area:** Onboarding / production correctness
-**Owner boundary:** YAPPC
-**Evidence:** `checkUserHasProjects`, `checkUserHasInvitedMembers`
+**Goal:** Parameterized routes should authorize correctly.
 
-The commit replaced placeholder returns with Prisma queries, which is progress. But both helper functions catch errors, log with `console.error`, and return `false`. That makes operational failures indistinguishable from true “no project/no invite” state and can silently corrupt onboarding status. 
+**Current issue:** `RoutePattern.extractParameterNames` increments group indices for non-parameter path segments, but the regex only creates capture groups for parameter segments. This can cause incorrect matcher group lookup for parameterized routes like `/api/v1/yappc/generate/runs/:runId/apply`. 
 
-**Production-grade fix:**
-Return a degraded response or fail the request with correlation-aware error handling:
+**Implementation tasks:**
 
-```text
-onboardingStatus.degraded = true
-onboardingStatus.degradedReason = "project_lookup_failed"
-```
+| Task                         | Where                                     | Details                                                                                                 |
+| ---------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Replace parameter extraction | `RouteAuthorizationRegistry.RoutePattern` | Track only parameter capture groups. First parameter is group 1, second is group 2.                     |
+| Decode query/path params     | `extractQueryParameters`, path matching   | URL-decode values; reject malformed encodings safely.                                                   |
+| Add tests                    | `RouteAuthorizationRegistryTest`          | Cover exact route, single param, multiple params, missing route, query workspaceId, header workspaceId. |
+| Add failure tests            | same                                      | Confirm no `IndexOutOfBoundsException` or silent wrong scope.                                           |
 
-or return `503` for dependency failure. Use structured logging through the app logger, not `console.error`.
+**Acceptance criteria:**
 
----
-
-### Finding 6 — Dashboard action safety is still inferred from text
-
-**Severity:** High
-**Area:** Lifecycle cockpit / dashboard action execution
-**Owner boundary:** YAPPC
-**Evidence:** `classifyDashboardAction`, `buildProjectDashboardActions`
-
-Dashboard actions are still built from `project.aiNextActions` or fallback lifecycle text, then classified by regex terms such as `block`, `failed`, `review`, `approve`, `rollback`, and `audit`. This means a title controls governance semantics. The fallback `Resume ${routePhase} phase` can become a safe-to-run action even when no authoritative action exists. 
-
-**Production-grade fix:**
-Replace this with a backend-owned decision contract:
-
-```text
-ProjectDashboardActionDecision:
-  id
-  kind
-  severity
-  safeToRun
-  requiresReview
-  policyDecisionId
-  evidenceIds
-  reasonCode
-  degraded
-  degradedReason
-  source
-```
-
-The UI should display decisions, not infer them.
+* Parameterized routes extract correct `runId`, `artifactId`, `workflowId`, `jobId`, etc.
+* Authorization failures return clean 403/401 style errors, not server exceptions.
+* Route matching is deterministic and tested.
 
 ---
 
-### Finding 7 — Route manifest metadata is not enforceable
+# Phase 1 — Auth/session contract alignment
 
-**Severity:** High
-**Area:** API contracts / access control
-**Owner boundary:** Shared Library + YAPPC
-**Evidence:** `route-manifest.yaml`, `openapi-contract.test.ts`
+## 1.1 Choose canonical browser auth mode
 
-The route manifest now includes helpful `# @auth` and `# @scopes` comments, but comments are not schema-validated. The OpenAPI contract tests check required paths, client endpoint coverage, generated artifact provenance, and some wording, but they do not parse or enforce route-manifest auth/scope metadata.  
+**Recommendation:** Use **httpOnly cookie sessions for browser UI** and **API key/Bearer tokens for service-to-service**.
 
-**Production-grade fix:**
-Convert manifest entries to structured YAML:
+OpenAPI now includes `CookieAuth` and session-shaped login/refresh responses.  The backend filter currently supports only API key or Bearer.  The frontend client still expects token responses. 
 
-```yaml
-- method: POST
-  path: /api/v1/yappc/generate
-  auth: required
-  scopes:
-    - project:write
-  owner: yappc-services
-  boundary: YAPPC
-  operationId: generateArtifacts
-```
+**Implementation tasks:**
 
-Then add tests that fail when any route lacks `auth`, `scopes`, `owner`, `boundary`, and OpenAPI `operationId`.
+| Task                        | Where                                        | Details                                                                                                                      |
+| --------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Update backend auth filter  | `YappcApiAuthFilter.java`                    | Support session cookie extraction and validation.                                                                            |
+| Add session resolver        | governance/security/auth module              | Resolve `session` cookie into `Principal`.                                                                                   |
+| Keep service auth           | same                                         | Preserve `X-API-Key` and Bearer for internal/service use.                                                                    |
+| Update frontend auth types  | `frontend/web/src/lib/api/client.ts`         | Replace `AuthTokenResponse` for browser login with `LoginSessionResponse { user, session }`.                                 |
+| Update AuthService          | `frontend/web/src/services/auth/AuthService` | Stop relying on local token storage for cookie-session mode.                                                                 |
+| Update refresh/logout calls | frontend client + backend                    | Refresh should use cookie; logout invalidates session.                                                                       |
+| Update OpenAPI text         | `openapi.yaml`                               | Make descriptions precise: browser endpoints use `CookieAuth`; internal service endpoints can use `ApiKeyAuth`/`BearerAuth`. |
 
----
+**Acceptance criteria:**
 
-### Finding 8 — Data Cloud+AEP boundary remains mixed into YAPPC route surfaces
-
-**Severity:** High
-**Area:** Product boundary / platform integration
-**Owner boundary:** Data Cloud+AEP + Shared Library
-**Evidence:** Canonical model, route manifest, OpenAPI
-
-Canonical docs say YAPPC must consume Data Cloud+AEP through typed contracts and must not import or own internal platform runtime/data modules. But the route manifest and OpenAPI still include vector search, RAG, agent execution, copilot chat, agent prediction, and workflow engine endpoints under YAPPC API surfaces.   
-
-**Production-grade fix:**
-Move these to a typed platform contract namespace, for example:
-
-```text
-/platform/data-cloud-aep/contracts/*
-/platform/data-cloud-aep/client/*
-```
-
-YAPPC should call product-level operations such as:
-
-```text
-submitLifecycleRun
-getRunTrace
-searchProjectEvidence
-evaluatePolicyDecision
-writeApprovedMemory
-```
-
-not raw vector/agent/workflow internals.
+* Browser login does not expose access/refresh tokens to JS.
+* Existing frontend flows work with `credentials: 'same-origin'`.
+* Service-to-service calls still support API keys.
+* OpenAPI, frontend client, backend auth filter, and tests agree.
 
 ---
 
-### Finding 9 — OpenAPI still describes JWT/API-key-first semantics while implementation is cookie-first
+## 1.2 Normalize scope propagation
 
-**Severity:** Medium
-**Area:** API contract / auth documentation
-**Owner boundary:** YAPPC
-**Evidence:** `openapi.yaml`, `auth.ts`
+**Goal:** Every project/artifact/lifecycle call carries tenant/workspace/project scope consistently.
 
-OpenAPI description says all `/api/*` endpoints require API key or Bearer token, while the Node auth implementation has shifted to httpOnly cookie-first behavior. Login and refresh descriptions still speak in token terms.  
+**Implementation tasks:**
 
-**Production-grade fix:**
-Update OpenAPI security schemes to include cookie/session auth explicitly. Document browser/BFF cookie auth separately from internal API-key/Bearer service auth.
+| Task                        | Where                                | Details                                                                           |
+| --------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| Add scoped request helper   | `frontend/web/src/lib/api/client.ts` | Central helper to add `X-Workspace-ID`, `X-Project-ID`, optionally `X-Tenant-ID`. |
+| Remove ad hoc scope logic   | frontend client methods              | Replace scattered query/header choices with one policy.                           |
+| Make OpenAPI explicit       | `openapi.yaml`                       | Required header/query scope per route should match backend extraction policy.     |
+| Backend extraction policy   | `RouteAuthorizationRegistry`         | Path > query > header is okay, but document and test it.                          |
+| Controller-level validation | backend controllers                  | Controllers validate body scope matches authorized scope if body includes ids.    |
 
----
+**Acceptance criteria:**
 
-### Finding 10 — Release readiness improved but still has evidence-only gaps
-
-**Severity:** Medium
-**Area:** Tests and quality gates
-**Owner boundary:** YAPPC
-**Evidence:** `verify-release-readiness.mjs`
-
-Release readiness now defaults to execution mode, which is a meaningful improvement. But visual-regression and accessibility gates still have `execute: null`, meaning they remain file-presence checks. The `api-contract` gate executes only `client.telemetry.test.ts`, not the OpenAPI contract test itself. 
-
-**Production-grade fix:**
-Split release gates:
-
-```text
-verify:release-readiness:fast
-verify:release-readiness:full
-verify:release-readiness:ci
-```
-
-CI/full release must run OpenAPI contract tests, accessibility E2E, and visual regression or explicitly require signed artifact evidence from a prior CI job.
+* No route can authorize one project and mutate another from body mismatch.
+* Workspace/project access failures are precise and actionable.
+* UI no longer produces recurring “access denied” due to missing workspace context.
 
 ---
 
-### Finding 11 — Makefile path may be wrong for product-local execution
+# Phase 2 — Build, Docker, and local developer workflow
 
-**Severity:** Medium
-**Area:** Build/deployment
-**Owner boundary:** Docs/Cleanup
-**Evidence:** `products/yappc/Makefile`
+## 2.1 Fix Dockerfile stage verification
 
-The Makefile says “via monorepo Gradle” but uses `./gradlew` from inside `products/yappc`. If the wrapper exists only at the repo root, this will fail when running `make build` from the product directory. Earlier style used `../../gradlew`; this should be verified against actual repo layout. 
+**Current issue:** The runtime stage runs `RUN ls -la /workspace/...` before `COPY --from=backend-builder`. `/workspace` does not exist in the runtime image, so this verification is likely invalid in that stage. 
 
-**Production-grade fix:**
-Use a robust root resolver:
+**Implementation tasks:**
 
-```make
-REPO_ROOT := $(shell git rev-parse --show-toplevel)
-GRADLEW := $(REPO_ROOT)/gradlew
-```
+| Task                                               | Where                       | Details                                                                      |
+| -------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------- |
+| Move builder verification into builder stages only | `products/yappc/Dockerfile` | Keep `RUN test -f` inside backend-builder/frontend-builder.                  |
+| Remove runtime `/workspace` checks                 | runtime stage               | Runtime stage should only verify `/app/yappc-backend.jar` and `/app/public`. |
+| Fix jar path if needed                             | Dockerfile                  | Ensure Gradle module path matches actual built jar location under repo root. |
+| Add image smoke test                               | CI                          | `docker build` then `docker run` and hit `/health` and `/ready`.             |
+| Add non-root write checks                          | runtime image               | Ensure app has access only to required writable dirs.                        |
 
-Then call `$(GRADLEW)` consistently.
+**Acceptance criteria:**
 
----
-
-### Finding 12 — Dockerfile needs path verification for Gradle outputs
-
-**Severity:** Medium
-**Area:** Build/deployment
-**Owner boundary:** Docs/Cleanup
-**Evidence:** `products/yappc/Dockerfile`
-
-Dockerfile now builds `:core:yappc-services`, `:core:yappc-api`, and `:core:scaffold`, then copies from `/workspace/core/yappc-services/build/libs/*.jar`. This must be verified against actual Gradle project directories. If the modules physically live under `products/yappc/core/...`, the runtime copy path will fail. 
-
-**Production-grade fix:**
-Add a Docker build smoke test in CI and avoid hardcoded physical paths by copying from the exact Gradle project buildDir or using a packaging task that produces one known artifact location.
+* `docker build -f products/yappc/Dockerfile .` succeeds from repo root.
+* Runtime image starts with non-root user.
+* `/health` and `/ready` work in container.
+* No build verification depends on files unavailable in that stage.
 
 ---
 
-## 4. Data Cloud+AEP required enhancements for YAPPC
+## 2.2 Harden Makefile commands
 
-YAPPC needs a typed Data Cloud+AEP facade for:
+The Makefile now resolves `REPO_ROOT` and `GRADLEW`, which is good for running commands from subdirectories.  Continue hardening it.
 
-1. **Lifecycle intelligence execution**
+**Implementation tasks:**
 
-   * submit run
-   * get run status
-   * cancel run
-   * fetch trace
-   * return degraded reason
+| Task                           | Where                     | Details                                                                        |
+| ------------------------------ | ------------------------- | ------------------------------------------------------------------------------ |
+| Fix duplicated port docs       | `products/yappc/Makefile` | `8082` is listed for both Domain and Lifecycle; decide canonical mapping.      |
+| Make setup root-safe           | Makefile                  | Use `$(REPO_ROOT)` for scripts like `tools/scripts/verify-dev-environment.sh`. |
+| Make docker commands path-safe | Makefile                  | Use explicit compose file path if required.                                    |
+| Add `make contract-check`      | Makefile                  | Runs route manifest parity, OpenAPI tests, generated-client checks.            |
+| Add `make production-check`    | Makefile                  | Runs build, tests, lint, typecheck, Docker smoke if available.                 |
 
-2. **Evidence and retrieval**
+**Acceptance criteria:**
 
-   * search project evidence
-   * index approved artifacts
-   * attach evidence IDs to Validate/Generate/Review
-
-3. **Memory**
-
-   * read project-scoped memory summaries
-   * write approved lifecycle learning only after governance approval
-
-4. **Policy/guardrails**
-
-   * evaluate high-impact operations
-   * return policy decision IDs
-   * block/review/approve actions explicitly
-
-5. **Telemetry and analytics**
-
-   * emit lifecycle events
-   * return model quality/confidence summaries
-   * support trace/correlation IDs
-
-The canonical model already defines the required context and response metadata; the implementation now needs typed contracts and enforcement. 
+* `make build`, `make test`, `make lint`, `make typecheck`, `make docker-up` work from repo root and `products/yappc`.
+* Port allocation is coherent.
+* New contributors can run `make quick-start` successfully.
 
 ---
 
-## 5. Shared library required enhancements
+# Phase 3 — Frontend architecture gates
 
-1. **Structured route manifest schema**
+## 3.1 Make direct-platform-import lint rule real and enforced
 
-   * Replace comment metadata with typed YAML.
-   * Validate `auth`, `scope`, `owner`, `boundary`, and `operationId`.
+This commit adds a rule intended to block YAPPC from directly importing platform modules that should go through Data Cloud + AEP contract facades.  The frontend ESLint config currently loads custom local rules from `eslint-local-rules/dist/index.js` and enforces broad restrictions, direct fetch bans, and design-system rules. 
 
-2. **Generated API client discipline**
+**Implementation tasks:**
 
-   * Stop maintaining duplicated handwritten frontend response types for auth/session.
-   * Generate from OpenAPI and use thin product wrappers only.
+| Task                         | Where                                                  | Details                                                                    |
+| ---------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Verify custom rule packaging | `products/yappc/frontend/eslint-local-rules`           | Ensure source builds to `dist/index.js`.                                   |
+| Add test fixtures            | local ESLint rule tests                                | Positive/negative cases for `@ghatana/agent-core`, `@ghatana/vector`, etc. |
+| Wire rule in frontend config | `eslint.config.mjs`                                    | Ensure rule name matches plugin namespace actually loaded.                 |
+| Add CI gate                  | frontend package scripts                               | `pnpm lint:architecture` or include in `pnpm lint`.                        |
+| Define allowed facades       | new `@yappc/platform-contracts` or existing API facade | Provide approved import targets so developers have a clear replacement.    |
 
-3. **Platform contract package**
+**Acceptance criteria:**
 
-   * Add a shared Data Cloud+AEP client/DTO package.
-   * Forbid YAPPC imports from internal platform runtime packages.
-
-4. **Auth/session shared contract**
-
-   * Define cookie-mode browser session DTOs centrally.
-   * Remove token-bearing browser session abstractions.
-
-5. **Governance event schema**
-
-   * Standardize actor, tenant, workspace, project, phase, operation, artifact, policy decision, trace ID, and correlation ID.
+* Direct platform imports fail lint.
+* Imports through YAPPC-approved contract facades pass.
+* Rule works in CI, local dev, and pre-commit.
+* There is no ambiguous “blocked but no replacement” developer experience.
 
 ---
 
-## 6. Cross-cutting architectural risks
+## 3.2 Migrate hand-coded REST client toward generated OpenAPI client
 
-The main risk is now **partial fix drift**: several issues have been partially addressed, but implementation, docs, OpenAPI, route manifest, and frontend types do not yet converge into one enforceable contract. Examples include cookie-mode auth, route-scope metadata, dashboard action safety, and Data Cloud+AEP platform boundaries.
+**Current issue:** The frontend client is hand-coded and still has token-oriented auth responses. 
 
-The second major risk is **governance by convention**. Auth scopes are comments, dashboard safety is regex-based, platform usage is documented but not enforced, and release gates still allow important categories to pass through file-presence evidence.
+**Implementation tasks:**
 
----
+| Task                             | Where                       | Details                                                                               |
+| -------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| Generate TS client from OpenAPI  | frontend build tooling      | Use one generated client under `libs/yappc-api` or `web/src/lib/generated`.           |
+| Keep adapter layer               | `web/src/lib/api/client.ts` | Preserve ergonomic `yappcApi.projects.list()` style but delegate to generated client. |
+| Remove duplicate types           | client.ts and domain files  | Replace local response/request interfaces with generated schemas where stable.        |
+| Add OpenAPI client contract test | frontend tests              | Assert all used operations exist in generated client.                                 |
+| Add migration map                | docs/api                    | Document old method → generated operation mapping.                                    |
 
-## 7. Duplicate / DRY / SRP issues
+**Acceptance criteria:**
 
-* `AuthService`, `SessionManager`, `auth-session.ts`, and `client.ts` each define overlapping session/auth semantics.
-* `ProjectDashboardAction` exists in frontend client and backend route code rather than being generated/shared from OpenAPI.
-* Lifecycle phase mapping exists in backend route code and frontend canonical phase service; the compatibility adapter should be centralized or generated from one contract.
-* Route auth/scope metadata is duplicated between route code, OpenAPI, and comment-only manifest.
-
----
-
-## 8. Security/access/governance gaps
-
-* Browser platform-token exchange remains a boundary violation.
-* Refresh still returns access token data to the browser despite cookie-mode intent.
-* Route manifest scopes are comments only.
-* Metrics/internal proxy/catch-all behavior should be reviewed with explicit auth and network-policy tests.
-* Dashboard safe action execution is not policy-decision-driven.
-* Onboarding DB failures are silently converted to false state.
+* No frontend API method drifts from OpenAPI.
+* Auth/session changes are generated and reflected in types.
+* Hand-coded endpoints are gradually removed, not duplicated.
 
 ---
 
-## 9. UI/UX consistency and no-cognitive-load gaps
+# Phase 4 — Backend authorization and governance
 
-The dashboard has improved: the sort crash is fixed and degraded dashboard status messaging is better. 
+## 4.1 Public vs required auth semantics
 
-Remaining UX risk: the dashboard still exposes backend-derived/fallback action states that may not be authoritative. A “safe continuation” should be a product decision from backend policy/readiness, not a result of text classification or absence of blockers. 
+**Current issue:** `RouteAuthorizationRegistry` currently asks for a `Principal` before authorization logic. That conflicts with manifest routes marked `auth: public`, such as `/health`.   Also, `YappcApiAuthFilter.secure` rejects missing credentials before a route can be classified as public. 
 
----
+**Implementation tasks:**
 
-## 10. API/contract mismatches
+| Task                                              | Where                                  | Details                                                                |
+| ------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| Split auth filter from authorization              | `YappcApiAuthFilter`, route middleware | Public routes bypass credential requirement.                           |
+| Add route metadata lookup before auth enforcement | middleware                             | Determine auth mode from manifest/registry before requiring principal. |
+| Add anonymous principal only if needed            | auth filter                            | Optional for telemetry; do not require permissions.                    |
+| Test public routes                                | backend tests                          | `/health`, `/ready`, public info routes.                               |
+| Test required routes                              | backend tests                          | Missing credentials returns 401; insufficient scope returns 403.       |
 
-Highest priority mismatches:
+**Acceptance criteria:**
 
-* Login runtime response vs typed `LoginSessionResponse`.
-* Refresh runtime response vs typed `AuthTokenResponse`.
-* Cookie-based auth implementation vs OpenAPI JWT/API-key wording.
-* Route manifest comment metadata vs enforceable OpenAPI/security metadata.
-* Data Cloud+AEP platform boundary docs vs vector/agent/workflow routes under YAPPC.
-
----
-
-## 11. Test gaps
-
-* Add compile/typecheck coverage for async `hasSession()` call sites.
-* Add auth contract tests for login/refresh runtime shape.
-* Add no-token-in-browser tests for login, refresh, localStorage, and session restore.
-* Add route manifest schema validation tests.
-* Add policy-backed dashboard action tests.
-* Add Data Cloud+AEP boundary lint/architecture tests.
-* Add Docker build smoke test and Makefile path test.
-* Make release readiness execute OpenAPI contract and a11y/visual gates in CI/full mode.
+* Public routes are public.
+* Required routes are fail-closed.
+* Optional auth routes, if any, behave consistently.
 
 ---
 
-## 12. Documentation/cleanup tasks
+## 4.2 Canonical audit and privacy classification
 
-* Update OpenAPI auth wording to reflect cookie-mode web auth and internal service auth separately.
-* Remove or clearly archive audit docs that contain prior generated findings.
-* Replace split Data Cloud/AEP wording wherever it remains in product docs.
-* Convert route manifest comments into structured schema.
-* Update build docs to clarify root vs product-local commands.
+**Implementation tasks:**
 
----
+| Task                           | Where                 | Details                                                                          |
+| ------------------------------ | --------------------- | -------------------------------------------------------------------------------- |
+| Add audit metadata to manifest | `route-manifest.yaml` | Add `auditEventType` and `privacyClassification`, or generate from route family. |
+| Use metadata in registry       | generated route model | No more hardcoded audit event strings.                                           |
+| Standardize privacy classes    | backend + docs        | `PUBLIC`, `INTERNAL`, `CONFIDENTIAL`, `RESTRICTED`.                              |
+| Add audit tests                | backend               | Critical routes create audit records with tenant/workspace/project/actor/phase.  |
 
-## 13. Prioritized implementation roadmap
+**Acceptance criteria:**
 
-### P0 — Fix runtime correctness and auth/session contracts
-
-1. Fix async `hasSession()` call sites.
-2. Align login/refresh runtime responses, OpenAPI, generated client, and AuthService.
-3. Remove browser platform-token exchange.
-4. Remove token-shaped browser session model.
-
-### P1 — Make governance and scope enforceable
-
-1. Convert route manifest metadata to structured schema.
-2. Add OpenAPI/manifest auth-scope parity tests.
-3. Replace dashboard regex action classification with backend policy/readiness decisions.
-4. Add tenant/workspace/project scope validation across project/dashboard routes.
-
-### P2 — Enforce Data Cloud+AEP boundary
-
-1. Create typed Data Cloud+AEP platform contracts.
-2. Move vector/agent/workflow/RAG surfaces out of YAPPC ownership.
-3. Add import-boundary lint/ArchUnit rules.
-
-### P3 — Harden release/build/test gates
-
-1. Run release readiness in CI/full mode.
-2. Add Docker and Makefile smoke tests.
-3. Execute accessibility, visual, and OpenAPI contract gates in production release flow.
+* Every mutation route has an audit event type.
+* Sensitive generation/preview/import routes are confidential or restricted.
+* Audit records are queryable for lifecycle review.
 
 ---
 
-## 14. Detailed TODO list
+# Phase 5 — Product capability implementation plan
 
-```text
-ID: YAPPC-P0-001
-Title: Fix async session contract drift
-Severity: Blocker
-Area: Auth/session
-Owner boundary: YAPPC
-Problem:
-  SessionManager.hasSession() now returns Promise<boolean>, but auth-session.ts still treats it as boolean.
-Evidence:
-  products/yappc/frontend/web/src/services/session/SessionManager.ts
-  products/yappc/frontend/web/src/providers/auth-session.ts
-Implementation:
-  Make hasActiveSession async, await hasSession in fetchAuthSession, update all callers, and add typecheck coverage.
-Files to change:
-  products/yappc/frontend/web/src/providers/auth-session.ts
-  products/yappc/frontend/web/src/services/session/SessionManager.ts
-  all callers of hasActiveSession/hasSession
-Contracts affected:
-  Browser session provider contract
-Tests required:
-  Typecheck test, fetchAuthSession no-cookie test, expired-session test, successful /api/auth/me probe test
-Acceptance criteria:
-  No Promise<boolean> is used as boolean; session probing behaves correctly with httpOnly cookies.
-```
+## Workstream A — Lifecycle cockpit
 
-```text
-ID: YAPPC-P0-002
-Title: Align login response contract with cookie-mode runtime
-Severity: Blocker
-Area: Auth/API contracts
-Owner boundary: YAPPC
-Problem:
-  Backend sends { user } for login, while frontend client and OpenAPI still model token-bearing LoginResponse.
-Evidence:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-  products/yappc/frontend/web/src/lib/api/client.ts
-  products/yappc/docs/api/openapi.yaml
-Implementation:
-  Define cookie-mode LoginResponse with user + session metadata only. Regenerate client. Remove token requirement from LoginSessionResponse.
-Files to change:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-  products/yappc/docs/api/openapi.yaml
-  products/yappc/frontend/web/src/lib/api/client.ts
-  generated OpenAPI client files
-Contracts affected:
-  LoginRequest, LoginResponse, UserInfo
-Tests required:
-  Login route contract test, frontend login test, generated-client parity test
-Acceptance criteria:
-  Runtime login response, OpenAPI, generated client, and AuthService all agree.
-```
+**Scope:** Intent, Shape, Validate, Generate, Run, Observe, Learn, Evolve cockpit.
 
-```text
-ID: YAPPC-P0-003
-Title: Remove access token from refresh response body
-Severity: High
-Area: Auth/security
-Owner boundary: YAPPC
-Problem:
-  Refresh route sets httpOnly cookies but also returns accessToken in response body.
-Evidence:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-Implementation:
-  Return only non-sensitive session metadata from refresh. Keep tokens exclusively in httpOnly cookies.
-Files to change:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-  products/yappc/docs/api/openapi.yaml
-  products/yappc/frontend/web/src/services/auth/AuthService.ts
-Contracts affected:
-  RefreshTokenResponse
-Tests required:
-  Refresh response shape test, no-token-body test, cookie-set test
-Acceptance criteria:
-  No accessToken or refreshToken is visible to browser JavaScript in cookie mode.
-```
+**Tasks:**
 
-```text
-ID: YAPPC-P0-004
-Title: Delete browser-side platform token exchange
-Severity: High
-Area: Data Cloud+AEP integration/security
-Owner boundary: YAPPC | Data Cloud+AEP
-Problem:
-  AuthService exchanges platform tokens from browser using raw fetch and stores platformToken in session.
-Evidence:
-  products/yappc/frontend/web/src/services/auth/AuthService.ts
-Implementation:
-  Move platform exchange to backend/BFF or eliminate it behind server-side Data Cloud+AEP client.
-Files to change:
-  products/yappc/frontend/web/src/services/auth/AuthService.ts
-  products/yappc/frontend/apps/api/src/routes/platform-session.ts or equivalent
-  Data Cloud+AEP typed contract package
-Contracts affected:
-  Platform session/execution contract
-Tests required:
-  No platform token in browser test, backend platform call test, degraded platform unavailable test
-Acceptance criteria:
-  Browser never receives or stores platform tokens.
-```
+1. Make `/api/v1/phase/packet` the canonical cockpit read model.
+2. Add GET and POST parity between manifest, OpenAPI, backend, and frontend.
+3. Include project snapshot, phase readiness, blockers, required artifacts, activity, suggestions, and governance actions.
+4. Remove route-local phase calculations from UI where backend packet should own classification.
+5. Add E2E route test for each mounted phase.
+6. Add role/tier gating tests for read-only, editor, admin, owner.
 
-```text
-ID: YAPPC-P1-005
-Title: Replace dashboard regex classification with backend policy decision contract
-Severity: High
-Area: Dashboard/lifecycle governance
-Owner boundary: YAPPC
-Problem:
-  Dashboard action kind and safety are inferred from action title text and fallback lifecycle labels.
-Evidence:
-  products/yappc/frontend/apps/api/src/routes/projects.ts
-Implementation:
-  Introduce ProjectDashboardActionDecision with policyDecisionId, reasonCode, evidenceIds, safeToRun, requiresReview, degraded fields.
-Files to change:
-  products/yappc/frontend/apps/api/src/routes/projects.ts
-  products/yappc/docs/api/openapi.yaml
-  products/yappc/frontend/web/src/lib/api/client.ts
-  products/yappc/frontend/web/src/routes/dashboard.tsx
-Contracts affected:
-  ProjectDashboardAction, ProjectDashboardActionsResponse
-Tests required:
-  Blocker/review/safe matrix, no-fallback-safe-action test, included-read-only action test
-Acceptance criteria:
-  UI never infers action safety from text.
-```
+**Acceptance criteria:**
 
-```text
-ID: YAPPC-P1-006
-Title: Make route manifest metadata machine-readable and enforced
-Severity: High
-Area: API contracts/access control
-Owner boundary: Shared Library | YAPPC
-Problem:
-  Auth/scope metadata exists only as YAML comments and is not validated.
-Evidence:
-  products/yappc/docs/api/route-manifest.yaml
-  products/yappc/frontend/apps/api/src/__tests__/openapi-contract.test.ts
-Implementation:
-  Convert route entries to structured objects and validate auth/scope/owner/boundary/operationId parity with OpenAPI.
-Files to change:
-  products/yappc/docs/api/route-manifest.yaml
-  products/yappc/frontend/apps/api/src/__tests__/openapi-contract.test.ts
-  Gradle OpenAPI parity task
-Contracts affected:
-  Route manifest schema
-Tests required:
-  Missing auth metadata failure, missing scope failure, OpenAPI operationId mismatch failure
-Acceptance criteria:
-  Every route has enforced auth/scope metadata.
-```
+* Every phase page can load from the same packet contract.
+* No phase page invents its own backend contract.
+* Blockers/review/safe-to-continue actions are consistent between dashboard and phase cockpit.
 
-```text
-ID: YAPPC-P1-007
-Title: Stop silently masking onboarding dependency failures
-Severity: Medium
-Area: Onboarding/operations
-Owner boundary: YAPPC
-Problem:
-  Onboarding helper DB failures are logged to console and returned as false, hiding operational failure.
-Evidence:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-Implementation:
-  Use structured logger and return degraded status or 503 on dependency failure.
-Files to change:
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-Contracts affected:
-  OnboardingStatusResponse
-Tests required:
-  DB failure test, degraded response test, no-project true-empty test
-Acceptance criteria:
-  Onboarding state distinguishes empty state from dependency failure.
-```
+---
 
-```text
-ID: YAPPC-P1-008
-Title: Enforce Data Cloud+AEP product boundary
-Severity: High
-Area: Product boundary/platform integration
-Owner boundary: Data Cloud+AEP | Shared Library | YAPPC
-Problem:
-  YAPPC docs require typed platform contracts, but route manifest/OpenAPI expose vector, RAG, agent, and workflow internals under YAPPC.
-Evidence:
-  products/yappc/docs/architecture/YAPPC_CANONICAL_MODELS.md
-  products/yappc/docs/api/route-manifest.yaml
-  products/yappc/docs/api/openapi.yaml
-Implementation:
-  Move platform-like APIs behind Data Cloud+AEP typed contract facade and forbid internal imports from YAPPC.
-Files to change:
-  products/yappc/docs/api/route-manifest.yaml
-  products/yappc/docs/api/openapi.yaml
-  Data Cloud+AEP contract/client package
-  lint/architecture rules
-Contracts affected:
-  PlatformRunRequest, PlatformRunStatus, EvidenceSearchRequest, PolicyEvaluateRequest
-Tests required:
-  Boundary lint test, platform degraded test, typed contract parity test
-Acceptance criteria:
-  YAPPC consumes Data Cloud+AEP only through typed/generated product-facing contracts.
-```
+## Workstream B — Dashboard actions
 
-```text
-ID: YAPPC-P2-009
-Title: Update OpenAPI security model for cookie-mode browser auth
-Severity: Medium
-Area: API documentation/contracts
-Owner boundary: YAPPC
-Problem:
-  OpenAPI still describes JWT/API-key auth as the general /api model while implementation is cookie-first for browser auth.
-Evidence:
-  products/yappc/docs/api/openapi.yaml
-  products/yappc/frontend/apps/api/src/routes/auth.ts
-Implementation:
-  Add cookie/session auth scheme and separate browser auth from internal service auth.
-Files to change:
-  products/yappc/docs/api/openapi.yaml
-Contracts affected:
-  securitySchemes, auth endpoint descriptions
-Tests required:
-  OpenAPI security scheme test, auth route contract test
-Acceptance criteria:
-  Auth docs accurately match runtime behavior.
-```
+**Scope:** Workspace dashboard action groups: blocked work, review required, safe to continue.
 
-```text
-ID: YAPPC-P2-010
-Title: Strengthen release readiness full gate
-Severity: Medium
-Area: Tests/quality gates
-Owner boundary: YAPPC
-Problem:
-  Release readiness defaults to execution mode, but visual/accessibility gates remain execute:null and API contract gate does not execute openapi-contract.test.ts.
-Evidence:
-  products/yappc/frontend/web/scripts/verify-release-readiness.mjs
-Implementation:
-  Add full/CI mode that executes OpenAPI, accessibility, visual, and performance gates or validates signed CI artifacts.
-Files to change:
-  products/yappc/frontend/web/scripts/verify-release-readiness.mjs
-  products/yappc/frontend/web/package.json
-  CI workflow files
-Contracts affected:
-  Release readiness gate
-Tests required:
-  Script mode tests, CI command tests
-Acceptance criteria:
-  Full release cannot pass by evidence presence for critical UX/security/contract gates.
-```
+**Tasks:**
 
-```text
-ID: YAPPC-P2-011
-Title: Make product Makefile root-safe
-Severity: Medium
-Area: Build/deployment
-Owner boundary: Docs/Cleanup
-Problem:
-  Makefile uses ./gradlew for monorepo Gradle commands from products/yappc; this may fail if wrapper is only at repo root.
-Evidence:
-  products/yappc/Makefile
-Implementation:
-  Resolve repo root with git rev-parse and call $(REPO_ROOT)/gradlew.
-Files to change:
-  products/yappc/Makefile
-Tests required:
-  make build smoke test from products/yappc and repo root
-Acceptance criteria:
-  Product-local and repo-root build commands both work.
-```
+1. Decide whether canonical endpoint is `/api/projects/dashboard-actions` or `/api/v1/dashboard/actions`; remove duplicate semantics.
+2. Generate backend-derived actions only; mark degraded/fallback explicitly if client-derived actions remain.
+3. Route every action to `/p/:projectId/:phase`.
+4. Ensure execute action records audit and enforces scope.
+5. Add UI states: empty, loading, unauthorized, partial degradation, action failed.
 
-```text
-ID: YAPPC-P2-012
-Title: Add Docker build artifact path verification
-Severity: Medium
-Area: Build/deployment
-Owner boundary: YAPPC
-Problem:
-  Dockerfile builds :core:* Gradle projects and copies /workspace/core/yappc-services/build/libs/*.jar; path must be verified against actual Gradle project dirs.
-Evidence:
-  products/yappc/Dockerfile
-Implementation:
-  Add packaging task that emits one known runtime JAR path or update copy path to actual Gradle buildDir.
-Files to change:
-  products/yappc/Dockerfile
-  Gradle packaging task
-  CI Docker build workflow
-Tests required:
-  docker build smoke test
-Acceptance criteria:
-  Docker image builds reproducibly from clean checkout.
-```
+**Acceptance criteria:**
+
+* Dashboard tells user exactly what to do next with no cognitive load.
+* No hidden action requires manual route guessing.
+* Actions are permission-aware and audit-backed.
+
+---
+
+## Workstream C — Artifact generation/diff/review/rollback
+
+**Scope:** `/api/v1/yappc/generate`, `/generate/diff`, apply/reject/rollback.
+
+**Tasks:**
+
+1. Persist generation runs and generated files with provenance.
+2. Replace placeholder/fallback generated content with deterministic fallback artifacts only when explicitly marked degraded.
+3. Implement real diff regions with line ranges and ownership.
+4. Add review decision model: apply, reject, rollback.
+5. Preserve user edits and provenance across review.
+6. Add rollback safety checks.
+7. Add frontend review UI with side-by-side diffs, risk, provenance, and action buttons.
+
+**Acceptance criteria:**
+
+* Generated output is not anonymous file blobs.
+* Every generated artifact has requirement/source/canvas/actor provenance.
+* Rollback is tested.
+* Review-required states are visible to operator.
+
+---
+
+## Workstream D — Preview/session security
+
+**Scope:** Preview session create/validate and preview trust policy.
+
+**Tasks:**
+
+1. Align preview route paths across manifest, OpenAPI, registry, and frontend.
+2. Implement artifact/project/workspace scope enforcement.
+3. Support preview trust levels: trusted local, trusted controlled, semi-trusted, untrusted.
+4. Add sandbox policy for semi/untrusted artifacts.
+5. Add session expiry, revocation, and audit.
+6. Add UI states for blocked preview, degraded preview, and policy-required review.
+
+**Acceptance criteria:**
+
+* Untrusted artifacts never execute directly.
+* Preview sessions cannot cross tenant/workspace/project/artifact boundaries.
+* Policy blocks appear in Observe/governance surfaces, not hidden debug panels.
+
+---
+
+## Workstream E — Scaffold/packs/templates/dependencies
+
+**Scope:** Pack catalogue, scaffold project creation, feature add, update, template render, dependency conflict detection.
+
+**Tasks:**
+
+1. Keep scaffold routes under `scaffold-api` owner in manifest.
+2. Add generated API client coverage for scaffold routes.
+3. Validate pack metadata schema.
+4. Add dependency conflict result model with actionable resolution.
+5. Add dry-run mode for create/update/add-feature.
+6. Add UI flow: choose pack → configure variables → preview generated files → confirm → generate.
+7. Add tests with real pack fixtures.
+
+**Acceptance criteria:**
+
+* Scaffold operations are deterministic and previewable.
+* No destructive operation runs without explicit confirmation or safe mode.
+* Dependency conflicts are explained, not just listed.
+
+---
+
+## Workstream F — Data Cloud + AEP boundary facades
+
+**Scope:** Vector, agents, workflows, RAG, copilot.
+
+**Current state:** Manifest marks vector/agent/workflow routes as `boundary: DATA_CLOUD_AEP`. 
+
+**Tasks:**
+
+1. Create typed YAPPC-facing facades for Data Cloud + AEP.
+2. Move direct imports behind those facades.
+3. Keep route ownership clear while migration is in progress.
+4. Add lint rule enforcement and fixtures.
+5. Add boundary tests: YAPPC cannot import internal Data Cloud/AEP runtime modules.
+6. Add contract tests for facade request/response models.
+
+**Acceptance criteria:**
+
+* YAPPC consumes platform capabilities through typed contracts only.
+* No direct platform runtime import exists in YAPPC.
+* Agent/vector/workflow failures degrade gracefully in the UI.
+
+---
+
+# Phase 6 — Testing and CI gates
+
+## Required test tiers
+
+| Tier          | Required coverage                                                                      |
+| ------------- | -------------------------------------------------------------------------------------- |
+| Unit          | Route parser, auth scope extraction, permission mapping, generated client adapters     |
+| Contract      | route manifest ↔ OpenAPI ↔ frontend client ↔ backend registry                          |
+| Integration   | auth/session, project/workspace scope, phase packet, dashboard actions                 |
+| E2E           | dashboard → phase cockpit → generate → review → preview/run                            |
+| Security      | public vs required routes, cross-tenant denial, missing scope, wrong role              |
+| Build/runtime | Makefile, Docker build, container health/readiness                                     |
+| Architecture  | no direct platform imports, no raw fetch outside API infra, no deleted compat packages |
+
+## CI pipeline order
+
+1. Format/check generated files.
+2. Route manifest schema validation.
+3. OpenAPI parity validation.
+4. Generate TypeScript API client.
+5. Typecheck frontend.
+6. Lint frontend architecture rules.
+7. Backend unit/integration tests.
+8. Frontend unit/component tests.
+9. E2E smoke tests.
+10. Docker build and health smoke.
+11. Repo cleanup/dead-code check.
+
+---
+
+# Phase 7 — Documentation and cleanup
+
+## Canonical docs to update
+
+| Doc                                           | Update                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------- |
+| `products/yappc/docs/api/route-manifest.yaml` | Add strict schema docs and examples.                              |
+| `products/yappc/docs/api/openapi.yaml`        | Align auth/session, route paths, operationIds, security schemes.  |
+| YAPPC canonical architecture docs             | Document route manifest as source of truth.                       |
+| Frontend API docs                             | Document generated-client migration.                              |
+| Security docs                                 | Browser cookie session vs service API key/Bearer policy.          |
+| Developer guide                               | `make quick-start`, `make contract-check`, Docker smoke workflow. |
+
+## Cleanup tasks
+
+* Remove stale route formats from docs and scripts.
+* Remove duplicate route paths with and without `/yappc` prefix unless explicitly supported.
+* Remove token-oriented browser auth docs once cookie session is canonical.
+* Remove or archive old audit docs that are no longer canonical.
+* Add “source of truth” section to each major doc so future audits do not repeat old findings.
+
+---
+
+# Suggested execution order
+
+## Sprint 1 — Contract spine and auth correctness
+
+1. Fix structured route manifest parsing.
+2. Add manifest schema validation.
+3. Fix OpenAPI path/method/operationId parity.
+4. Align cookie-session auth across OpenAPI, backend filter, frontend client.
+5. Fix public route behavior.
+6. Fix route pattern parameter extraction.
+7. Add route/auth contract tests.
+
+## Sprint 2 — Frontend/backend client coherence
+
+1. Generate TS client from OpenAPI.
+2. Refactor `client.ts` into adapter over generated client.
+3. Remove token-response assumptions from browser login.
+4. Add scoped request helper.
+5. Add lint and test gates for no raw fetch and no direct platform imports.
+6. Add route drift report.
+
+## Sprint 3 — Lifecycle and dashboard productionization
+
+1. Canonicalize phase packet endpoint.
+2. Canonicalize dashboard actions endpoint.
+3. Build complete role/tier/workspace-scoped dashboard behavior.
+4. Add phase cockpit E2E for all mounted phases.
+5. Add degraded/fallback action semantics.
+
+## Sprint 4 — Generate, preview, scaffold hardening
+
+1. Productionize generation runs/diffs/provenance.
+2. Implement apply/reject/rollback workflow.
+3. Align preview session routes and trust policy.
+4. Harden scaffold pack/template/dependency flows.
+5. Add Docker image smoke test.
+
+## Sprint 5 — Boundary and cleanup
+
+1. Introduce Data Cloud + AEP typed facades.
+2. Remove direct platform imports.
+3. Clean stale docs and duplicated route references.
+4. Run full production-check gate.
+5. Create final implementation tracker with remaining capability-specific tasks.
+
+---
+
+# Highest-priority TODO list
+
+1. **Fix `checkYappcOpenApiParity` to parse structured YAML.**
+2. **Resolve auth mismatch: OpenAPI cookie session vs frontend token client vs backend API-key/Bearer-only filter.**
+3. **Fix public route handling; `/health` must not require credentials.**
+4. **Fix parameterized route matching in `RouteAuthorizationRegistry`.**
+5. **Align `/api/v1/phase/packet`, preview session paths, and dashboard action paths across all layers.**
+6. **Generate authorization registry metadata from `route-manifest.yaml` instead of duplicating routes manually.**
+7. **Move Docker runtime-stage `/workspace` verification into builder stages.**
+8. **Enforce direct-platform-import rule with tests and approved Data Cloud + AEP facades.**
+9. **Migrate frontend REST client toward generated OpenAPI client.**
+10. **Add end-to-end lifecycle smoke: dashboard → phase packet → generate → review → preview/run.**
+
+This sequence keeps YAPPC moving toward production grade without fragmenting the product: every area can be tackled independently, but all work is forced through the same route manifest, OpenAPI, auth, scope, audit, design, and test gates.

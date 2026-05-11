@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: technology_evaluation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -43,7 +43,7 @@ generator:
         
         Output as JSON: {evaluations: [{technology, scores, pros, cons, risks, fit_assessment}], recommendation, rationale, migration_considerations}
     - name: scoring_aggregation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Aggregate scores and rank technologies
     - name: recommendation_generation
       type: TEMPLATE

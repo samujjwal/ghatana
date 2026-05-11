@@ -12,10 +12,10 @@ generator:
   type: PIPELINE
   steps:
     - name: explain_parse
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Parse EXPLAIN ANALYZE output into structured plan tree with costs, rows, and timings
     - name: plan_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

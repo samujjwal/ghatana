@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: requirements_planning
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -42,7 +42,7 @@ generator:
       service: agent-registry
       endpoint: /agents/delegate
     - name: requirements_synthesis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Synthesize into requirements package
 
 memory:

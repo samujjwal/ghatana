@@ -20,7 +20,7 @@ generator:
       service: feedback-service
       endpoint: /feedback/recent
     - name: pain_point_extraction
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -46,7 +46,7 @@ generator:
       service: embedding-service
       endpoint: /embeddings/cluster
     - name: prioritization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Score and rank pain points
 
 memory:

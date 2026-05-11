@@ -1,19 +1,29 @@
 package com.ghatana.agent.framework.runtime;
 
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.AgentResultStatus;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.resilience.ResiliencePolicy;
+import com.ghatana.agent.lifecycle.AgentLifecyclePhase;
+import com.ghatana.agent.lifecycle.AgentPhaseTrace;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Encapsulates the standard GAA agent turn lifecycle as a discrete, reusable pipeline.
  *
- * <p>Phases: PERCEIVE → REASON → ACT → CAPTURE → REFLECT
+ * <p>Operational phases: ADMIT → PERCEIVE → REASON → VERIFY → ACT → CAPTURE → REFLECT → COMPLETE
  *
  * <p>This class decouples the lifecycle orchestration from {@link BaseAgent}, making
  * it testable, composable, and overridable without subclassing the agent itself.
@@ -21,7 +31,7 @@ import java.util.Objects;
  * <p><b>Usage:</b>
  * <pre>{@code
  * AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline.of(myAgent);
- * Promise<String> result = pipeline.execute("input", context);
+ * Promise<AgentResult<String>> result = pipeline.executeResult("input", context);
  * }</pre>
  *
  * @param <TInput>  Turn input type
@@ -47,8 +57,9 @@ public class AgentTurnPipeline<TInput, TOutput> {
 
     private final String agentId;
     private final PhaseHandler<TInput, TInput> perceive;
-    private final PhaseHandler<TInput, TOutput> reason;
+    private final PhaseHandler<TInput, AgentResult<TOutput>> reason;
     private final PhaseHandler<TOutput, TOutput> act;
+    private final PhaseHandler<AgentResult<TOutput>, AgentResult<TOutput>> verify;
     private final CaptureHandler<TInput, TOutput> capture;
     private final CaptureHandler<TInput, TOutput> reflect;
 
@@ -63,13 +74,15 @@ public class AgentTurnPipeline<TInput, TOutput> {
     private AgentTurnPipeline(
             @NotNull String agentId,
             @NotNull PhaseHandler<TInput, TInput> perceive,
-            @NotNull PhaseHandler<TInput, TOutput> reason,
+            @NotNull PhaseHandler<TInput, AgentResult<TOutput>> reason,
+            @NotNull PhaseHandler<AgentResult<TOutput>, AgentResult<TOutput>> verify,
             @NotNull PhaseHandler<TOutput, TOutput> act,
             @NotNull CaptureHandler<TInput, TOutput> capture,
             @NotNull CaptureHandler<TInput, TOutput> reflect) {
         this.agentId = Objects.requireNonNull(agentId);
         this.perceive = Objects.requireNonNull(perceive);
         this.reason = Objects.requireNonNull(reason);
+        this.verify = Objects.requireNonNull(verify);
         this.act = Objects.requireNonNull(act);
         this.capture = Objects.requireNonNull(capture);
         this.reflect = Objects.requireNonNull(reflect);
@@ -86,7 +99,15 @@ public class AgentTurnPipeline<TInput, TOutput> {
         return new AgentTurnPipeline<>(
             agent.getAgentId(),
             (input, ctx) -> Promise.of(agent.perceive(input, ctx)),
-            (input, ctx) -> agent.getOutputGenerator().generate(input, ctx),
+            (input, ctx) -> {
+                Instant start = Instant.now();
+                return agent.getOutputGenerator().generate(input, ctx)
+                        .map(output -> AgentResult.success(
+                                output,
+                                agent.getAgentId(),
+                                Duration.between(start, Instant.now())));
+            },
+            (result, ctx) -> Promise.of(result),
             agent::act,
             agent::capture,
             agent::reflect
@@ -105,7 +126,10 @@ public class AgentTurnPipeline<TInput, TOutput> {
     }
 
     /**
-     * Executes the full lifecycle pipeline.
+     * Executes the full lifecycle pipeline and returns the raw output.
+     *
+     * <p>Use {@link #executeResult(Object, AgentContext)} for governed runtime
+     * calls that need trace and policy metadata.
      *
      * @param input   Turn input
      * @param context Execution context
@@ -113,39 +137,72 @@ public class AgentTurnPipeline<TInput, TOutput> {
      */
     @NotNull
     public Promise<TOutput> execute(@NotNull TInput input, @NotNull AgentContext context) {
+        return executeResult(input, context).map(AgentResult::getOutput);
+    }
+
+    /**
+     * Executes the full governed lifecycle pipeline.
+     *
+     * @param input   Turn input
+     * @param context Execution context
+     * @return Promise of the enriched result envelope
+     */
+    @NotNull
+    public Promise<AgentResult<TOutput>> executeResult(@NotNull TInput input, @NotNull AgentContext context) {
         Objects.requireNonNull(input, "input cannot be null");
         Objects.requireNonNull(context, "context cannot be null");
 
         context.getLogger().info("Pipeline for agent {} starting turn {}", agentId, context.getTurnId());
         context.addTraceTag("agent.id", agentId);
 
-        long startTime = System.currentTimeMillis();
+        Instant startedAt = Instant.now();
+        List<AgentPhaseTrace> phaseTraces = new ArrayList<>();
 
         return Promise.complete()
-            // Phase 1: PERCEIVE
-            .then(() -> timed("perceive", context, () -> perceive.execute(input, context)))
-            // Phase 2: REASON
-            .then(perceived -> timed("reason", context, () -> reason.execute(perceived, context)))
-            // Phase 3: ACT
-            .then(output -> timed("act", context, () -> act.execute(output, context)))
-            // Phase 4: CAPTURE
-            .then(output -> {
-                TOutput captured = output;
-                return timed("capture", context, () -> capture.execute(input, output, context))
-                    .map(ignored -> captured);
+            .then(() -> timed(AgentLifecyclePhase.ADMIT, context, phaseTraces, () -> Promise.of(input)))
+            .then(ignored -> timed(AgentLifecyclePhase.PERCEIVE, context, phaseTraces,
+                    () -> perceive.execute(input, context)))
+            .then(perceived -> timed(AgentLifecyclePhase.REASON, context, phaseTraces,
+                    () -> reason.execute(perceived, context)))
+            .then(result -> timed(AgentLifecyclePhase.VERIFY, context, phaseTraces,
+                    () -> verify.execute(result, context)))
+            .then(result -> {
+                if (result.isFailed() || result.getStatus() == AgentResultStatus.DENIED) {
+                    return Promise.of(result);
+                }
+                TOutput output = result.getOutput();
+                if (output == null) {
+                    return Promise.of(result);
+                }
+                return timed(AgentLifecyclePhase.ACT, context, phaseTraces, () -> act.execute(output, context))
+                        .map(actedOutput -> result.toBuilder().output(actedOutput).build());
             })
-            // Phase 5: REFLECT (fire and forget)
-            .whenResult(output -> {
-                reflect.execute(input, output, context)
+            .then(result -> {
+                TOutput captured = result.getOutput();
+                if (captured == null) {
+                    return Promise.of(result);
+                }
+                return timed(AgentLifecyclePhase.CAPTURE, context, phaseTraces,
+                        () -> capture.execute(input, captured, context))
+                    .map(ignored -> result);
+            })
+            .whenResult(result -> {
+                TOutput output = result.getOutput();
+                if (output == null) {
+                    return;
+                }
+                timed(AgentLifecyclePhase.REFLECT, context, phaseTraces,
+                        () -> reflect.execute(input, output, context))
                     .whenComplete((ignored, error) -> {
                         if (error != null) {
                             context.getLogger().error("REFLECT phase failed (non-blocking)", error);
                         }
                     });
             })
-            // Final metrics
-            .whenComplete((output, error) -> {
-                long duration = System.currentTimeMillis() - startTime;
+            .then(result -> timed(AgentLifecyclePhase.COMPLETE, context, phaseTraces,
+                    () -> Promise.of(enrichResult(result, context, startedAt, phaseTraces))))
+            .whenComplete((result, error) -> {
+                long duration = Duration.between(startedAt, Instant.now()).toMillis();
                 context.recordMetric("agent.turn.duration", duration);
                 context.recordMetric(
                     error == null ? "agent.turn.success" : "agent.turn.failure", 1);
@@ -155,16 +212,62 @@ public class AgentTurnPipeline<TInput, TOutput> {
     /**
      * Wraps a phase with timing metrics.
      */
-    private <R> Promise<R> timed(String phase, AgentContext context, java.util.function.Supplier<Promise<R>> supplier) {
-        long start = System.currentTimeMillis();
-        context.getLogger().debug("Phase: {}", phase.toUpperCase());
+    private <R> Promise<R> timed(
+            AgentLifecyclePhase phase,
+            AgentContext context,
+            List<AgentPhaseTrace> phaseTraces,
+            java.util.function.Supplier<Promise<R>> supplier) {
+        Instant startedAt = Instant.now();
+        context.getLogger().debug("Phase: {}", phase);
         return supplier.get()
             .whenComplete((r, e) -> {
-                context.recordMetric("agent.phase." + phase + ".duration", System.currentTimeMillis() - start);
+                Instant endedAt = Instant.now();
+                context.recordMetric("agent.phase." + phase.name().toLowerCase() + ".duration",
+                        Duration.between(startedAt, endedAt).toMillis());
+                phaseTraces.add(new AgentPhaseTrace(
+                        phaseTraceId(context, phase),
+                        phase,
+                        startedAt,
+                        endedAt,
+                        e == null ? "SUCCESS" : "FAILED",
+                        e == null ? null : e.getMessage(),
+                        Map.of()));
                 if (e != null) {
-                    context.getLogger().error("{} phase failed", phase.toUpperCase(), e);
+                    context.getLogger().error("{} phase failed", phase, e);
                 }
             });
+    }
+
+    private AgentResult<TOutput> enrichResult(
+            AgentResult<TOutput> result,
+            AgentContext context,
+            Instant startedAt,
+            List<AgentPhaseTrace> phaseTraces) {
+        List<String> phaseTraceRefs = phaseTraces.stream()
+                .map(AgentPhaseTrace::phaseTraceId)
+                .toList();
+        Object releaseId = context.getConfig("agentReleaseId");
+        Object specDigest = context.getConfig("specDigest");
+        String traceId = String.valueOf(context.getConfig("__traceId"));
+        if (traceId == null || "null".equals(traceId)) {
+            traceId = UUID.randomUUID().toString();
+        }
+        return result.toBuilder()
+                .agentId(result.getAgentId() != null ? result.getAgentId() : agentId)
+                .agentReleaseId(releaseId != null ? releaseId.toString() : result.getAgentReleaseId())
+                .specDigest(specDigest != null ? specDigest.toString() : result.getSpecDigest())
+                .traceId(result.getTraceId() != null ? result.getTraceId() : traceId)
+                .turnId(result.getTurnId() != null ? result.getTurnId() : context.getTurnId())
+                .startedAt(result.getStartedAt() != null ? result.getStartedAt() : startedAt)
+                .processingTime(result.getProcessingTime() != null
+                        ? result.getProcessingTime()
+                        : Duration.between(startedAt, Instant.now()))
+                .phaseTraceRefs(phaseTraceRefs)
+                .build();
+    }
+
+    private String phaseTraceId(AgentContext context, AgentLifecyclePhase phase) {
+        return agentId + ":" + context.getTurnId() + ":" + phase.name().toLowerCase();
     }
 
     // ── Resilience-wrapped execution ─────────────────────────────────────
@@ -223,7 +326,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
     public static class Builder<I, O> {
         private final String agentId;
         private PhaseHandler<I, I> perceive = (input, ctx) -> Promise.of(input);
-        private PhaseHandler<I, O> reason;
+        private PhaseHandler<I, AgentResult<O>> reason;
+        private PhaseHandler<AgentResult<O>, AgentResult<O>> verify = (result, ctx) -> Promise.of(result);
         private PhaseHandler<O, O> act = (output, ctx) -> Promise.of(output);
         private CaptureHandler<I, O> capture = (in, out, ctx) -> Promise.complete();
         private CaptureHandler<I, O> reflect = (in, out, ctx) -> Promise.complete();
@@ -233,7 +337,19 @@ public class AgentTurnPipeline<TInput, TOutput> {
         }
 
         public Builder<I, O> perceive(@NotNull PhaseHandler<I, I> handler) { this.perceive = handler; return this; }
-        public Builder<I, O> reason(@NotNull PhaseHandler<I, O> handler) { this.reason = handler; return this; }
+        public Builder<I, O> reason(@NotNull PhaseHandler<I, O> handler) {
+            this.reason = (input, ctx) -> {
+                Instant start = Instant.now();
+                return handler.execute(input, ctx)
+                        .map(output -> AgentResult.success(
+                                output,
+                                agentId,
+                                Duration.between(start, Instant.now())));
+            };
+            return this;
+        }
+        public Builder<I, O> reasonResult(@NotNull PhaseHandler<I, AgentResult<O>> handler) { this.reason = handler; return this; }
+        public Builder<I, O> verify(@NotNull PhaseHandler<AgentResult<O>, AgentResult<O>> handler) { this.verify = handler; return this; }
         public Builder<I, O> act(@NotNull PhaseHandler<O, O> handler) { this.act = handler; return this; }
         public Builder<I, O> capture(@NotNull CaptureHandler<I, O> handler) { this.capture = handler; return this; }
         public Builder<I, O> reflect(@NotNull CaptureHandler<I, O> handler) { this.reflect = handler; return this; }
@@ -241,7 +357,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
         @NotNull
         public AgentTurnPipeline<I, O> build() {
             Objects.requireNonNull(reason, "reason phase handler is required");
-            return new AgentTurnPipeline<>(agentId, perceive, reason, act, capture, reflect);
+            return new AgentTurnPipeline<>(agentId, perceive, reason, verify, act, capture, reflect);
         }
     }
 }

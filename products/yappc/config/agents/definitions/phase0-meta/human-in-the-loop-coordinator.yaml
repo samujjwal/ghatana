@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: intervention_classification
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Classify type of human intervention needed
     - name: request_formulation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -46,7 +46,7 @@ generator:
       service: human-interface-service
       endpoint: /requests/create
     - name: response_processing
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Process human response and route to requesting agent
 
 memory:

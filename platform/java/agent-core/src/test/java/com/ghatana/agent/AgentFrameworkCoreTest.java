@@ -67,6 +67,17 @@ class AgentFrameworkCoreTest {
                 assertThat(AgentType.valueOf(type.name())).isSameAs(type); 
             }
         }
+
+        @Test
+        @DisplayName("resolve rejects noncanonical type names")
+        void resolveRejectsAliases() {
+            assertThatThrownBy(() -> AgentType.resolve("llm"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Unknown canonical agent type");
+            assertThatThrownBy(() -> AgentType.resolve("rule-based"))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThat(AgentType.resolve("PROBABILISTIC")).isEqualTo(AgentType.PROBABILISTIC);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

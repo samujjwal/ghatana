@@ -262,7 +262,7 @@ governance:
 
 | Deprecated         | Replacement                  | Removal Target    |
 | ------------------ | ---------------------------- | ----------------- |
-| `AgentType.LLM`    | `PROBABILISTIC` + subtype    | v3.0.0            |
+| LLM agents | `PROBABILISTIC` + subtype `LLM` | current |
 | `platform.agent.*` | `platform.java.agent-core.*` | Q2 2026           |
 | `Agent` (untyped)  | `TypedAgent`                 | Ongoing migration |
 

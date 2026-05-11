@@ -17,6 +17,7 @@ import type { LifecyclePhase } from './PhaseCockpitDataService';
 import { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
 import { yappcApi } from '@/lib/api/client';
 import { projectGuidanceRole } from '@/services/workspace/accessControl';
+import { usePhasePacket } from '@/hooks/usePhasePacket';
 import type {
   PhaseFeatureFlag,
   MountedPhase,
@@ -27,6 +28,7 @@ import type {
   PhaseTransitionPreviewSnapshot,
   TenantTier,
 } from './types';
+import type { PhaseCockpitPacket, PhaseAction } from '@/types/phasePacket';
 
 export interface UsePhaseCockpitDataParams {
   readonly phase: MountedPhase;
@@ -94,6 +96,14 @@ export function usePhaseCockpitData({
   workspaceId,
   onSuggestionAction,
 }: UsePhaseCockpitDataParams): UsePhaseCockpitDataResult {
+  // Task 5.A.4: Use phase packet endpoint as canonical data source instead of local calculations
+  const { packet, isLoading: packetLoading, error: packetError, refetch: refetchPacket } = usePhasePacket({
+    phase,
+    projectId: projectId ?? '',
+    workspaceId: workspaceId ?? '',
+  });
+
+  // Fallback to local queries if packet endpoint fails (for backward compatibility during transition)
   const projectQuery = useQuery<PhaseProjectSnapshot>({
     queryKey: ['project', projectId, workspaceId],
     queryFn: async () => {
@@ -106,7 +116,7 @@ export function usePhaseCockpitData({
       }
       return fetchProjectSnapshot(projectId, workspaceId);
     },
-    enabled: Boolean(projectId),
+    enabled: Boolean(projectId) && packetError !== null,
     retry: false,
   });
 
@@ -122,7 +132,7 @@ export function usePhaseCockpitData({
 
       return yappcApi.projects.activity(projectId, workspaceId);
     },
-    enabled: Boolean(projectId && workspaceId),
+    enabled: Boolean(projectId && workspaceId) && packetError !== null,
     retry: false,
   });
 
@@ -138,19 +148,197 @@ export function usePhaseCockpitData({
 
       return fetchPhaseTransitionPreview(lifecyclePhase, projectId);
     },
-    enabled: Boolean(projectId && lifecyclePhase),
+    enabled: Boolean(projectId && lifecyclePhase) && packetError !== null,
     retry: false,
   });
 
-  const project = projectQuery.data;
+  // Use packet data as primary source, fallback to local queries if packet unavailable
+  const project = useMemo(() => {
+    if (packet) {
+      // Map PhaseCockpitPacket to PhaseProjectSnapshot
+      return {
+        id: packet.projectId,
+        name: packet.projectName,
+        lifecyclePhase: packet.lifecyclePhase || packet.phase as any,
+        tenantId: packet.tenantId,
+        tenantTier: packet.tenantTier as any,
+        enabledPhaseFlags: Array.from(packet.enabledPhaseFlags),
+        aiHealthScore: packet.healthSignals?.preview?.status === 'healthy' ? 100 : 50,
+        aiNextActions: packet.availableActions.map((a: PhaseAction) => a.label),
+        updatedAt: new Date(packet.timestamp).toISOString(),
+        ownerWorkspaceId: packet.workspaceId,
+        ownerWorkspace: { id: packet.workspaceId, name: packet.workspaceName },
+      } as PhaseProjectSnapshot;
+    }
+    return projectQuery.data;
+  }, [packet, projectQuery.data]);
+
   const projectRole = projectGuidanceRole(project);
-  const activity = useMemo<PhaseActivityEvent[]>(
-    () => activityQuery.data?.activity ?? [],
-    [activityQuery.data],
+
+  // Map packet activity to PhaseActivityEvent
+  const activity = useMemo<PhaseActivityEvent[]>(() => {
+    if (packet?.activityFeed) {
+      return packet.activityFeed.map(entry => ({
+        id: entry.id,
+        source: 'lifecycle' as const,
+        action: entry.action,
+        summary: entry.summary,
+        timestamp: new Date(entry.timestamp).toISOString(),
+        actor: entry.actor,
+        severity: entry.severity as any,
+        success: true,
+      }));
+    }
+    return activityQuery.data?.activity ?? [];
+  }, [packet, activityQuery.data]);
+
+  // Map packet readiness to PhaseTransitionPreviewSnapshot
+  const preview = useMemo<PhaseTransitionPreviewSnapshot | null>(() => {
+    if (packet?.readiness) {
+      return {
+        projectId: packet.projectId,
+        currentPhase: packet.lifecyclePhase || packet.phase as any,
+        nextPhase: packet.readiness.nextPhase as any,
+        canAdvance: packet.readiness.canAdvance,
+        readiness: Math.round(packet.readiness.completenessScore * 100),
+        blockers: Array.from(packet.readiness.missingPrerequisites),
+        requiredArtifacts: packet.requiredArtifacts.map(a => a.artifactId),
+        completedArtifacts: packet.completedArtifacts.map(a => a.artifactId),
+        estimatedReadyIn: packet.readiness.canAdvance ? 'Ready now' : 'Blocked',
+        estimatedReadyInHours: packet.readiness.canAdvance ? 0 : 24,
+        predictionConfidence: packet.readiness.completenessScore,
+        decisionSupport: null,
+        checkedAt: new Date(packet.timestamp).toISOString(),
+      } as PhaseTransitionPreviewSnapshot;
+    }
+    return previewQuery.data ?? null;
+  }, [packet, previewQuery.data]);
+
+  // Map packet blockers to local blocker format
+  const blockers = useMemo(() => {
+    if (packet?.blockers) {
+      return packet.blockers.map(b => ({
+        id: b.id,
+        title: b.title,
+        severity: (b.severity === 'CRITICAL' ? 'critical' : b.severity === 'WARNING' ? 'medium' : 'low') as 'critical' | 'medium' | 'high' | 'low',
+        description: b.description,
+        source: b.type,
+      }));
+    }
+    return project ? buildPhaseBlockers(phase, project, preview) : [];
+  }, [packet, project, preview, phase]);
+
+  // Map packet evidence to local evidence format
+  const evidence = useMemo(() => {
+    if (packet?.evidence) {
+      return packet.evidence.map(e => ({
+        id: e.id,
+        type: (e.type as 'metric' | 'log' | 'artifact' | 'observation' | 'recommendation') || 'observation',
+        title: e.title,
+        description: e.description,
+        timestamp: new Date(e.timestamp).toISOString(),
+        metadata: e.metadata,
+      }));
+    }
+    return project ? buildPhaseEvidence(phase, project, activity, preview) : [];
+  }, [packet, project, activity, preview, phase]);
+
+  // Map packet governance to local governance format
+  const governance = useMemo(() => {
+    if (packet?.governance) {
+      return packet.governance.map(g => ({
+        id: g.id,
+        artifactId: g.id,
+        action: g.type,
+        actor: g.actor,
+        source: (g.type as 'preview' | 'backed' | 'derived' | 'suggested' | 'unavailable') || 'derived',
+        summary: g.outcome,
+        timestamp: new Date(g.timestamp).toISOString(),
+        decision: g.outcome,
+      }));
+    }
+    return buildPhaseGovernanceRecords(activity);
+  }, [packet, activity]);
+
+  // Map packet actions to local suggestions format
+  const suggestions = useMemo(() => {
+    if (packet?.availableActions) {
+      return packet.availableActions.map((a: PhaseAction) => ({
+        id: a.actionId,
+        title: a.label,
+        type: 'suggestion' as const,
+        label: a.label,
+        description: a.description,
+        confidence: 0.5,
+        evidence: [] as any,
+        action: onSuggestionAction,
+        priority: a.enabled ? 'high' : 'low',
+        kind: 'suggestion' as const,
+        enabled: a.enabled,
+        metadata: a.parameters,
+      })) as any;
+    }
+    return project
+      ? buildPhaseSuggestedSteps(phase, project, onSuggestionAction, {
+          blockers,
+          preview,
+          role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
+        })
+      : [];
+  }, [packet, project, blockers, preview, phase, projectRole, onSuggestionAction]);
+
+  // Build contract from packet data
+  const contract = useMemo(() => {
+    if (!project) return null;
+    return buildPhaseCockpitContract({
+      phase,
+      project,
+      activity,
+      preview,
+      blockers,
+      evidence,
+      governance,
+      suggestions,
+    });
+  }, [activity, blockers, evidence, governance, phase, preview, project, suggestions]);
+
+  const tier = useMemo(() => {
+    if (packet) return packet.tenantTier as any;
+    return resolveTenantTier(project);
+  }, [packet, project]);
+
+  const enabledFlags = useMemo(() => {
+    if (packet) return new Set(packet.enabledPhaseFlags) as any;
+    return resolveEnabledFlags(project);
+  }, [packet, project]);
+
+  const config = useMemo(
+    () =>
+      getAdaptivePhaseCockpitConfig(phase, {
+        role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
+        tier,
+        enabledFlags,
+        hasBlockers: blockers.length > 0,
+        gatesPassed: preview?.canAdvance ?? true,
+        currentLifecyclePhase: phase,
+      }),
+    [blockers.length, enabledFlags, phase, preview?.canAdvance, projectRole, tier],
   );
-  const preview = previewQuery.data ?? null;
+
   const dataWarnings = useMemo<readonly PhaseCockpitDataWarning[]>(() => {
     const warnings: PhaseCockpitDataWarning[] = [];
+
+    if (packetError) {
+      warnings.push({
+        source: 'activity',
+        title: 'Phase packet endpoint unavailable',
+        message: describeQueryError(packetError, 'The cockpit is using fallback data sources.'),
+        retryLabel: 'Retry phase packet',
+        retry: () => {
+          void refetchPacket();
+        },
+      });
+    }
 
     if (activityQuery.isError) {
       warnings.push({
@@ -181,64 +369,12 @@ export function usePhaseCockpitData({
     activityQuery.error,
     activityQuery.isError,
     activityQuery.refetch,
+    packetError,
     previewQuery.error,
     previewQuery.isError,
     previewQuery.refetch,
+    refetchPacket,
   ]);
-
-  const blockers = useMemo(
-    () => (project ? buildPhaseBlockers(phase, project, preview) : []),
-    [phase, project, preview],
-  );
-  const evidence = useMemo(
-    () => (project ? buildPhaseEvidence(phase, project, activity, preview) : []),
-    [activity, phase, preview, project],
-  );
-  const governance = useMemo(
-    () => buildPhaseGovernanceRecords(activity),
-    [activity],
-  );
-  const suggestions = useMemo(
-    () =>
-      project
-        ? buildPhaseSuggestedSteps(phase, project, onSuggestionAction, {
-            blockers,
-            preview,
-            role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
-          })
-        : [],
-    [blockers, phase, preview, project, projectRole, onSuggestionAction],
-  );
-  const contract = useMemo(
-    () =>
-      project
-        ? buildPhaseCockpitContract({
-            phase,
-            project,
-            activity,
-            preview,
-            blockers,
-            evidence,
-            governance,
-            suggestions,
-          })
-        : null,
-    [activity, blockers, evidence, governance, phase, preview, project, suggestions],
-  );
-  const tier = useMemo(() => resolveTenantTier(project), [project]);
-  const enabledFlags = useMemo(() => resolveEnabledFlags(project), [project]);
-  const config = useMemo(
-    () =>
-      getAdaptivePhaseCockpitConfig(phase, {
-        role: projectRole === 'owner' ? 'owner' : projectRole === 'collaborator' ? 'contributor' : 'viewer',
-        tier,
-        enabledFlags,
-        hasBlockers: blockers.length > 0,
-        gatesPassed: preview?.canAdvance ?? true,
-        currentLifecyclePhase: phase,
-      }),
-    [blockers.length, enabledFlags, phase, preview?.canAdvance, projectRole, tier],
-  );
 
   return {
     config,

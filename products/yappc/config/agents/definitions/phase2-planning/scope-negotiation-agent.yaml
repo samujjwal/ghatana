@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: constraint_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze capacity, timeline, scope triangle
     - name: trade_off_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

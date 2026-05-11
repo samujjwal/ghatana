@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Unit tests for {@link AgentSpecLoader}.
  *
- * <p>Covers: minimal spec loading, full 18-section spec loading, type alias
- * resolution, smart defaults, required-field validation, directory scanning,
+ * <p>Covers: minimal spec loading, full 18-section spec loading, strict canonical
+ * type parsing, smart defaults, required-field validation, directory scanning,
  * and {@link AgentSpecLoader#extractDefinition(AgentSpec)} bridge. 
  *
  * @doc.type class
@@ -55,7 +55,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: A minimal test agent
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [rule-evaluator]
                       criticality: low
                       autonomyLevel: advisory
@@ -98,7 +98,7 @@ class AgentSpecLoaderTest {
                       status: draft
                       summary: Test
                     identity:
-                      agentType: probabilistic
+                      agentType: PROBABILISTIC
                       roles: [llm]
                       criticality: medium
                       autonomyLevel: assisted
@@ -113,58 +113,61 @@ class AgentSpecLoaderTest {
     }
 
     // =========================================================================
-    //  Type alias resolution
+    //  Canonical type parsing
     // =========================================================================
 
     @Nested
-    @DisplayName("Agent type alias resolution")
-    class TypeAliasResolution {
+    @DisplayName("Canonical agent type parsing")
+    class CanonicalTypeParsing {
 
         @Test
-        @DisplayName("'llm' resolves to PROBABILISTIC")
-        void llmAlias() throws IOException { 
-            assertThat(loadType("llm")).isEqualTo(AgentType.PROBABILISTIC);
+        @DisplayName("'LLM' is rejected as a top-level agent type")
+        void llmNoncanonicalRejected() {
+            assertThatThrownBy(() -> loadType("LLM"))
+                    .hasMessageContaining("unknown canonical identity.agentType");
         }
 
         @Test
-        @DisplayName("'rule-based' resolves to DETERMINISTIC")
-        void ruleBasedAlias() throws IOException { 
-            assertThat(loadType("rule-based")).isEqualTo(AgentType.DETERMINISTIC);
+        @DisplayName("'rule-based' is rejected as a top-level agent type")
+        void ruleBasedNoncanonicalRejected() {
+            assertThatThrownBy(() -> loadType("rule-based"))
+                    .hasMessageContaining("unknown canonical identity.agentType");
         }
 
         @Test
-        @DisplayName("'policy' resolves to DETERMINISTIC")
-        void policyAlias() throws IOException { 
-            assertThat(loadType("policy")).isEqualTo(AgentType.DETERMINISTIC);
+        @DisplayName("'policy' is rejected as a top-level agent type")
+        void policyNoncanonicalRejected() {
+            assertThatThrownBy(() -> loadType("policy"))
+                    .hasMessageContaining("unknown canonical identity.agentType");
         }
 
         @Test
-        @DisplayName("'stream-processor' resolves to STREAM_PROCESSOR")
-        void streamProcessorAlias() throws IOException { 
-            assertThat(loadType("stream-processor")).isEqualTo(AgentType.STREAM_PROCESSOR);
+        @DisplayName("'STREAM_PROCESSOR' resolves as canonical")
+        void streamProcessorCanonical() throws IOException { 
+            assertThat(loadType("STREAM_PROCESSOR")).isEqualTo(AgentType.STREAM_PROCESSOR);
         }
 
         @Test
-        @DisplayName("'planning' resolves to PLANNING")
-        void planningAlias() throws IOException { 
-            assertThat(loadType("planning")).isEqualTo(AgentType.PLANNING);
+        @DisplayName("'PLANNING' resolves as canonical")
+        void planningCanonical() throws IOException { 
+            assertThat(loadType("PLANNING")).isEqualTo(AgentType.PLANNING);
         }
 
         @Test
-        @DisplayName("'hybrid' resolves to HYBRID")
+        @DisplayName("'HYBRID' resolves as canonical")
         void hybridType() throws IOException { 
-            assertThat(loadType("hybrid")).isEqualTo(AgentType.HYBRID);
+            assertThat(loadType("HYBRID")).isEqualTo(AgentType.HYBRID);
         }
 
-        private AgentType loadType(String alias) throws IOException { 
+        private AgentType loadType(String typeName) throws IOException { 
             String yaml = """
                     metadata:
-                      id: agent.test.alias
-                      name: Alias Agent
+                      id: agent.test.type
+                      name: Type Agent
                       namespace: ns
                       version: "1.0.0"
                       status: active
-                      summary: alias test
+                      summary: type test
                     identity:
                       agentType: %s
                       roles: [test]
@@ -173,7 +176,7 @@ class AgentSpecLoaderTest {
                       determinismGuarantee: full
                       stateMutability: stateless
                       failureMode: fail-fast
-                    """.formatted(alias); 
+                    """.formatted(typeName); 
             return loader.loadFromString(yaml).getIdentity().agentType(); 
         }
     }
@@ -198,7 +201,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: defaults test
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [evaluator]
                       criticality: low
                       autonomyLevel: advisory
@@ -222,7 +225,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: reactive defaults
                     identity:
-                      agentType: reactive
+                      agentType: REACTIVE
                       roles: [event-handler]
                       criticality: low
                       autonomyLevel: advisory
@@ -245,7 +248,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: stream defaults
                     identity:
-                      agentType: stream-processor
+                      agentType: STREAM_PROCESSOR
                       roles: [processor]
                       criticality: medium
                       autonomyLevel: autonomous
@@ -280,7 +283,7 @@ class AgentSpecLoaderTest {
                     - team: platform
                       role: maintainer
                 identity:
-                  agentType: probabilistic
+                  agentType: PROBABILISTIC
                   agentSubtype: llm-rag
                   roles: [retriever, responder]
                   criticality: high
@@ -309,14 +312,16 @@ class AgentSpecLoaderTest {
                       name: Generate Answer
                       requiresHumanApproval: false
                 reasoningProfile:
-                  primaryReasoner: llm
+                  primaryReasoner: probabilistic
                   reasonerPortfolio:
                     - id: retriever
-                      type: llm
+                      type: PROBABILISTIC
+                      subtype: LLM
                       engine: text-embedding-3-small
                       purpose: dense retrieval
                     - id: generator
-                      type: llm
+                      type: PROBABILISTIC
+                      subtype: LLM
                       engine: gpt-4o
                       purpose: answer synthesis
                   reasoningStrategy: retrieve-then-generate
@@ -456,7 +461,7 @@ class AgentSpecLoaderTest {
 
             // ReasoningProfile
             assertThat(spec.getReasoningProfile()).isNotNull(); 
-            assertThat(spec.getReasoningProfile().primaryReasoner()).isEqualTo("llm");
+            assertThat(spec.getReasoningProfile().primaryReasoner()).isEqualTo("probabilistic");
             assertThat(spec.getReasoningProfile().reasonerPortfolio()).hasSize(2); 
             assertThat(spec.getReasoningProfile().reasonerPortfolio().get(1).engine()).isEqualTo("gpt-4o");
             assertThat(spec.getReasoningProfile().confidenceModel()).isNotNull(); 
@@ -548,7 +553,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: Bridge test
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [evaluator]
                       criticality: low
                       autonomyLevel: advisory
@@ -595,7 +600,7 @@ class AgentSpecLoaderTest {
                       id: agent.iocontract.test
                       version: "1.0.0"
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                     interfaces:
                       inputs:
                         - name: IncomingEvent
@@ -623,7 +628,7 @@ class AgentSpecLoaderTest {
                       id: agent.proto.test
                       version: "1.0.0"
                     identity:
-                      agentType: stream-processor
+                      agentType: STREAM_PROCESSOR
                     interfaces:
                       inputs:
                         - name: KafkaMessage
@@ -645,7 +650,7 @@ class AgentSpecLoaderTest {
                       id: agent.cost.test
                       version: "1.0.0"
                     identity:
-                      agentType: probabilistic
+                      agentType: PROBABILISTIC
                     governance:
                       policyRefs: []
                       dataHandling:
@@ -668,7 +673,7 @@ class AgentSpecLoaderTest {
                       id: agent.labels.test
                       version: "1.0.0"
                     identity:
-                      agentType: planning
+                      agentType: PLANNING
                       criticality: high
                       autonomyLevel: autonomous
                     """;
@@ -693,7 +698,7 @@ class AgentSpecLoaderTest {
         void throwsOnMissingMetadata() { 
             String yaml = """
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [test]
                       criticality: low
                       autonomyLevel: advisory
@@ -714,7 +719,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: No id
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [test]
                       criticality: low
                       autonomyLevel: advisory
@@ -763,7 +768,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: loaded from file
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [processor]
                       criticality: low
                       autonomyLevel: advisory
@@ -789,7 +794,7 @@ class AgentSpecLoaderTest {
                           status: active
                           summary: dir agent %d
                         identity:
-                          agentType: deterministic
+                          agentType: DETERMINISTIC
                           roles: [test]
                           criticality: low
                           autonomyLevel: advisory
@@ -817,7 +822,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: valid
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [test]
                       criticality: low
                       autonomyLevel: advisory
@@ -853,7 +858,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: test
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [test]
                       criticality: low
                       autonomyLevel: advisory
@@ -891,7 +896,7 @@ class AgentSpecLoaderTest {
                       status: active
                       summary: test
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       roles: [test]
                       criticality: low
                       autonomyLevel: advisory
@@ -934,7 +939,7 @@ class AgentSpecLoaderTest {
                   version: "1.0.0"
                   status: active
                 identity:
-                  agentType: deterministic
+                  agentType: DETERMINISTIC
                   autonomyLevel: supervised
                 """;
 
@@ -957,7 +962,7 @@ class AgentSpecLoaderTest {
                       version: "1.0.0"
                       status: active
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       autonomyLevel: supervised
                     """;
             AgentSpec spec = loader.loadFromString(yaml); 
@@ -974,7 +979,7 @@ class AgentSpecLoaderTest {
                       version: "1.0.0"
                       status: active
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       autonomyLevel: supervised
                     """;
             assertThatThrownBy(() -> loader.loadFromString(yaml)) 
@@ -993,7 +998,7 @@ class AgentSpecLoaderTest {
                       version: "1.0.0"
                       status: active
                     identity:
-                      agentType: deterministic
+                      agentType: DETERMINISTIC
                       autonomyLevel: supervised
                     """;
             assertThatExceptionOfType(UnsupportedSpecVersionException.class) 

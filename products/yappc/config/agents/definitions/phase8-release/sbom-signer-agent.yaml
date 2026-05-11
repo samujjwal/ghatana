@@ -12,7 +12,7 @@ generator:
   type: PIPELINE
   steps:
     - name: sbom_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Validate SBOM completeness — all components have PURL, license,
         and SHA-256 hash. Reject incomplete SBOMs before signing.
@@ -21,7 +21,7 @@ generator:
       service: secret-store
       endpoint: /secrets/sbom-signing-key
     - name: sbom_signing
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Sign SBOM using cosign with Sigstore transparency log.
         Produce: detached signature (.sig), certificate (.cert),

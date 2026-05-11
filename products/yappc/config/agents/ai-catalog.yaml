@@ -51,7 +51,7 @@ spec:
     - ai
     - llm
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: search-orchestrator
     name: Search Orchestrator
@@ -87,7 +87,7 @@ spec:
     - search
     - vector
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: agent-runtime-orchestrator
     name: Agent Runtime Orchestrator
@@ -121,7 +121,7 @@ spec:
     - agent-runtime
     - execution
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: memory-orchestrator
     name: Memory Orchestrator
@@ -157,7 +157,7 @@ spec:
     - memory
     - episodic
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: search-capability-agent
     name: Search Capability Agent
@@ -195,7 +195,7 @@ spec:
     - search
     - relevance
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: agent-runtime-capability-agent-ai
     name: Agent Runtime Capability Agent
@@ -226,7 +226,7 @@ spec:
     - agent-runtime
     - prompt-engineering
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: memory-capability-agent
     name: Memory Capability Agent
@@ -262,7 +262,7 @@ spec:
     - memory
     - event-sourcing
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: data-pipeline-capability-agent
     name: Data Pipeline Capability Agent
@@ -286,7 +286,7 @@ spec:
     - data-pipeline
     - etl
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: llm-integration-capability-agent
     name: LLM Integration Capability Agent
@@ -311,7 +311,7 @@ spec:
     - llm
     - provider-abstraction
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: vector-search-task-agent
     name: Vector Search Task Agent
@@ -333,7 +333,7 @@ spec:
     - vector-search
     - similarity
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: hybrid-search-task-agent
     name: Hybrid Search Task Agent
@@ -356,7 +356,7 @@ spec:
     - hybrid-search
     - fusion
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: re-ranking-task-agent
     name: Re-ranking Task Agent
@@ -378,7 +378,7 @@ spec:
     - re-ranking
     - relevance
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: context-window-task-agent
     name: Context Window Task Agent
@@ -400,7 +400,7 @@ spec:
     - context-window
     - tokens
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: tool-invocation-task-agent
     name: Tool Invocation Task Agent
@@ -423,7 +423,7 @@ spec:
     - tool-invocation
     - execution
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: episodic-memory-task-agent
     name: Episodic Memory Task Agent
@@ -446,7 +446,7 @@ spec:
     - episodic-memory
     - event-log
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: semantic-memory-task-agent
     name: Semantic Memory Task Agent
@@ -468,7 +468,7 @@ spec:
     - semantic-memory
     - vector-store
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: procedural-memory-task-agent
     name: Procedural Memory Task Agent
@@ -490,7 +490,7 @@ spec:
     - procedural-memory
     - policy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: embedding-generation-task-agent
     name: Embedding Generation Task Agent
@@ -512,7 +512,7 @@ spec:
     - embeddings
     - generation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: prompt-optimisation-task-agent
     name: Prompt Optimisation Task Agent
@@ -534,7 +534,7 @@ spec:
     - prompt
     - optimisation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: feature-extraction-task-agent
     name: Feature Extraction Task Agent
@@ -556,7 +556,7 @@ spec:
     - feature-extraction
     - nlp
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: model-evaluation-task-agent
     name: Model Evaluation Task Agent
@@ -578,7 +578,7 @@ spec:
     - model-evaluation
     - ragas
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: token-counter
     name: Token Counter
@@ -594,7 +594,7 @@ spec:
     - tokens
     - counting
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: embedding-similarity-scorer
     name: Embedding Similarity Scorer
@@ -610,7 +610,7 @@ spec:
     - embeddings
     - similarity
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: memory-event-appender
     name: Memory Event Appender
@@ -626,7 +626,7 @@ spec:
     - memory
     - event-log
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: pii-redactor
     name: PII Redactor
@@ -643,7 +643,7 @@ spec:
     - pii
     - privacy
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: model-router
     name: Model Router
@@ -660,7 +660,7 @@ spec:
     - routing
     - model-selection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: safety-scorer
     name: Safety Scorer
@@ -677,7 +677,7 @@ spec:
     - safety
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: confidence-calibrator
     name: Confidence Calibrator
@@ -693,7 +693,7 @@ spec:
     - confidence
     - calibration
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: hallucination-detector
     name: Hallucination Detector
@@ -710,7 +710,7 @@ spec:
     - hallucination
     - detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: context-compressor
     name: Context Compressor
@@ -727,7 +727,7 @@ spec:
     - context
     - compression
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

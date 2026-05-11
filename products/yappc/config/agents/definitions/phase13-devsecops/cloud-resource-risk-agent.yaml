@@ -12,14 +12,14 @@ generator:
   type: PIPELINE
   steps:
     - name: config_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       rules:
         - Check public accessibility (S3, RDS, EC2)
         - Check encryption at rest / in transit
         - Check IAM overpermissions
         - Check open security groups
     - name: risk_scoring
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

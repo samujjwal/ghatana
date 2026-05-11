@@ -20,7 +20,7 @@ generator:
       service: metrics-service
       endpoint: /collect
     - name: anomaly_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -49,7 +49,7 @@ generator:
           insights
         }
     - name: alert_management
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Apply alerting rules
 
 memory:

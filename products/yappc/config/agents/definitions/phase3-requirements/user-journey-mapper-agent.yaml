@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: journey_mapping
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -44,7 +44,7 @@ generator:
       service: visualization-service
       endpoint: /journey-map/create
     - name: opportunity_prioritization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Prioritize improvement opportunities
 
 memory:

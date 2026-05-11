@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: smell_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -38,7 +38,7 @@ generator:
         
         Output as JSON: {smells: [{type, location, severity, impact}], duplication, complexity_hotspots, recommendations}
     - name: refactoring_plan
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

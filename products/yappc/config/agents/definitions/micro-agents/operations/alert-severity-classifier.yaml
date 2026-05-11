@@ -19,7 +19,7 @@ metadata:
   - level3
   - micro
 identity:
-  agentType: deterministic
+  agentType: DETERMINISTIC
   subtype: rule-engine
   determinismGuarantee: full
   stateMutability: stateless

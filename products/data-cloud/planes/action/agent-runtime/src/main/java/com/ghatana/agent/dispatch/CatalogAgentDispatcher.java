@@ -17,6 +17,8 @@ import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.runtime.GaaAgentExecutor;
+import com.ghatana.agent.runtime.TypedAgentExecutor;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -58,6 +60,7 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
     private final CatalogRegistry catalogRegistry;
     private final LlmExecutionPlan llmPlan;
     private final ServiceOrchestrationPlan servicePlan;
+    private final TypedAgentExecutor typedAgentExecutor;
 
     // Tier-J registry: agentId → TypedAgent bean
     private final Map<String, TypedAgent<?, ?>> javaAgents = new ConcurrentHashMap<>();
@@ -69,6 +72,7 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
         this.catalogRegistry = Objects.requireNonNull(catalogRegistry, "catalogRegistry");
         this.llmPlan = Objects.requireNonNull(llmPlan, "llmPlan");
         this.servicePlan = Objects.requireNonNull(servicePlan, "servicePlan");
+        this.typedAgentExecutor = new GaaAgentExecutor();
     }
 
     /**
@@ -100,7 +104,7 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
             case JAVA_IMPLEMENTED -> {
                 TypedAgent<I, O> agent = (TypedAgent<I, O>) javaAgents.get(agentId);
                 log.debug("Dispatching {} via Tier-J (Java)", agentId);
-                yield agent.process(ctx, input);
+                yield typedAgentExecutor.execute(agent, ctx, input);
             }
 
             case SERVICE_ORCHESTRATED -> {

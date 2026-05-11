@@ -40,7 +40,7 @@ metadata:
 # REQUIRED — choose the most specific subtype for your use case
 # DeterministicSubtype values: RULE_BASED | THRESHOLD | PATTERN | FSM | EXACT_MATCH | POLICY | OPERATOR | TEMPLATE
 identity:
-  agentType: deterministic          # DO NOT CHANGE — this is the deterministic template
+  agentType: DETERMINISTIC          # DO NOT CHANGE — this is the deterministic template
   subtype: "{{SUBTYPE}}"            # e.g. rule-based, threshold, policy, pattern
   roles: ["{{ROLE_1}}"]             # e.g. [parser, validator, classifier]
   criticality: "{{CRITICALITY}}"    # critical | high | medium | low

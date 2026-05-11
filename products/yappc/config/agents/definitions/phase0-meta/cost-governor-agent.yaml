@@ -16,14 +16,14 @@ generator:
   type: PIPELINE
   steps:
     - name: cost_calculation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calculate estimated cost of operation (LLM tokens, compute, storage)
     - name: budget_check
       type: SERVICE_CALL
       service: cost-tracking-service
       endpoint: /budgets/check
     - name: optimization_recommendation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -44,7 +44,7 @@ generator:
         
         Output as JSON: {approved, budget_impact, optimizations, alternatives, confidence}
     - name: decision_gate
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Allow/deny based on budget and cost
 
 memory:

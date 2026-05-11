@@ -40,9 +40,20 @@ try {
 }
 // repoRoot is the parent of app-creator (workspace root)
 const repoRoot = path.resolve(projectRoot, '..');
+const ghatanaRepoRoot = path.resolve(repoRoot, '..');
 const storybookFlatConfig = storybook
   ? storybook.configs?.['flat/recommended']
   : null;
+
+// Import repo-level architecture rules (task 3.1.3)
+let ghatanaArchitectureRules;
+try {
+  ghatanaArchitectureRules = await import(path.join(ghatanaRepoRoot, 'eslint-rules', 'ghatana-architecture-rules.js'));
+  ghatanaArchitectureRules = ghatanaArchitectureRules.default || ghatanaArchitectureRules;
+} catch (e) {
+  console.warn('Warning: Ghatana architecture ESLint rules not loaded:', e.message);
+  ghatanaArchitectureRules = null;
+}
 
 export default tseslint.config(
   {
@@ -216,6 +227,7 @@ export default tseslint.config(
       jsdoc,
       ...(storybook ? { storybook } : {}),
       ...(yappcDesignSystem ? { 'yappc-design-system': yappcDesignSystem } : {}),
+      ...(ghatanaArchitectureRules ? { 'ghatana-architecture-rules': ghatanaArchitectureRules } : {}),
     },
     rules: {
       'react-hooks/exhaustive-deps': 'error',
@@ -449,10 +461,14 @@ export default tseslint.config(
         'yappc-design-system/prefer-tailwind-over-inline': 'warn',
         'yappc-design-system/require-cn-utility': 'warn',
         'yappc-design-system/no-arbitrary-tailwind': 'warn',
-        
+
         // Legacy rules (MUI migration - being phased out)
         'yappc-design-system/no-magic-spacing': 'off',
         'yappc-design-system/prefer-sx-over-style': 'off',
+      } : {}),
+      // Ghatana architecture rules (task 3.1.3)
+      ...(ghatanaArchitectureRules ? {
+        'ghatana-architecture-rules/no-yappc-direct-platform-imports': 'error',
       } : {}),
     },
   },

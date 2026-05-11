@@ -34,7 +34,7 @@ spec:
     - integration
     - orchestration
     - hub
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: notification-coordinator
     name: Notification Coordinator Agent
@@ -57,7 +57,7 @@ spec:
     - integration
     - notifications
     - coordination
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: webhook-manager
     name: Webhook Manager Agent
@@ -76,7 +76,7 @@ spec:
     - integration
     - webhooks
     - events
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: api-gateway-coordinator
     name: API Gateway Coordinator Agent
@@ -95,7 +95,7 @@ spec:
     - integration
     - api-gateway
     - management
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: notification-agent
     name: Notification Agent
@@ -119,7 +119,7 @@ spec:
     - integration
     - notifications
     - delivery
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: feature-flag-integration-agent
     name: Feature Flag Integration Agent
@@ -138,7 +138,7 @@ spec:
     - integration
     - feature-flags
     - toggles
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: slack-integration-agent
     name: Slack Integration Agent
@@ -157,7 +157,7 @@ spec:
     - integration
     - slack
     - messaging
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: teams-integration-agent
     name: Microsoft Teams Integration Agent
@@ -176,7 +176,7 @@ spec:
     - integration
     - teams
     - microsoft
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: discord-integration-agent
     name: Discord Integration Agent
@@ -195,7 +195,7 @@ spec:
     - integration
     - discord
     - gaming
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: github-integration-agent
     name: GitHub Integration Agent
@@ -214,7 +214,7 @@ spec:
     - integration
     - github
     - git
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: gitlab-integration-agent
     name: GitLab Integration Agent
@@ -233,7 +233,7 @@ spec:
     - integration
     - gitlab
     - git
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: jira-integration-agent
     name: Jira Integration Agent
@@ -252,7 +252,7 @@ spec:
     - integration
     - jira
     - project-management
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: confluence-integration-agent
     name: Confluence Integration Agent
@@ -271,7 +271,7 @@ spec:
     - integration
     - confluence
     - documentation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: datadog-integration-agent
     name: Datadog Integration Agent
@@ -290,7 +290,7 @@ spec:
     - integration
     - datadog
     - monitoring
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: pagerduty-integration-agent
     name: PagerDuty Integration Agent
@@ -309,7 +309,7 @@ spec:
     - integration
     - pagerduty
     - incident-management
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: opsgenie-integration-agent
     name: OpsGenie Integration Agent
@@ -328,7 +328,7 @@ spec:
     - integration
     - opsgenie
     - alerting
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: stripe-integration-agent
     name: Stripe Integration Agent
@@ -347,7 +347,7 @@ spec:
     - integration
     - stripe
     - payments
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: twilio-integration-agent
     name: Twilio Integration Agent
@@ -366,7 +366,7 @@ spec:
     - integration
     - twilio
     - messaging
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sendgrid-integration-agent
     name: SendGrid Integration Agent
@@ -385,7 +385,7 @@ spec:
     - integration
     - sendgrid
     - email
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: s3-integration-agent
     name: S3 Integration Agent
@@ -404,7 +404,7 @@ spec:
     - integration
     - s3
     - storage
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1:

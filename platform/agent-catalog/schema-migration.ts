@@ -1,297 +1,218 @@
 /**
- * Agent Catalog Schema Migration Tool
- * Migrates agent definitions from v1.0.0 to v2.0.0
- * 
- * Usage: npx tsx schema-migration.ts <agent-file.yaml>
+ * Strict AgentSpec canonicalization and validation tool.
+ *
+ * Usage:
+ *   pnpm tsx platform/agent-catalog/schema-migration.ts --check products
+ *   pnpm tsx platform/agent-catalog/schema-migration.ts --fix products
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 
-const SCHEMA_V1 = '1.0.0';
-const SCHEMA_V2 = '2.0.0';
+const CANONICAL_TYPES = new Set([
+  'DETERMINISTIC',
+  'PROBABILISTIC',
+  'STREAM_PROCESSOR',
+  'PLANNING',
+  'HYBRID',
+  'ADAPTIVE',
+  'COMPOSITE',
+  'REACTIVE',
+  'CUSTOM',
+]);
 
-interface AgentIdentity {
+const TYPE_FIXES: Record<string, { agentType: string; subtype?: string }> = {
+  LLM: { agentType: 'PROBABILISTIC', subtype: 'LLM' },
+  'LLM-BASED': { agentType: 'PROBABILISTIC', subtype: 'LLM' },
+  ML_BASED: { agentType: 'PROBABILISTIC', subtype: 'ML_MODEL' },
+  'ML-BASED': { agentType: 'PROBABILISTIC', subtype: 'ML_MODEL' },
+  RULE_BASED: { agentType: 'DETERMINISTIC', subtype: 'RULE_ENGINE' },
+  'RULE-BASED': { agentType: 'DETERMINISTIC', subtype: 'RULE_ENGINE' },
+  POLICY: { agentType: 'DETERMINISTIC', subtype: 'POLICY_ENGINE' },
+  PATTERN: { agentType: 'DETERMINISTIC', subtype: 'PATTERN_MATCHER' },
+};
+
+export interface AgentIdentity {
   agentType?: string;
   subtype?: string;
-  roles?: string[];
-  criticality?: string;
-  autonomyLevel?: string;
-  determinismGuarantee?: string;
-  stateMutability?: string;
-  failureMode?: string;
+  [key: string]: unknown;
 }
 
-interface Generator {
-  type?: string;
-}
-
-interface Owner {
-  team: string;
-  role: string;
-  contact: string;
-}
-
-interface AgentDefinition {
-  id: string;
-  name: string;
+export interface AgentDefinition {
+  id?: string;
+  agentId?: string;
+  name?: string;
   namespace?: string;
   version?: string;
   status?: string;
-  owners?: Owner[];
-  summary?: string;
-  schemaVersion?: string;
+  type?: string;
+  subtype?: string;
   identity?: AgentIdentity;
-  generator?: Generator;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-interface MigrationResult {
-  migrated: string[];
+export interface CanonicalizationResult {
+  checked: string[];
+  changed: string[];
   failed: string[];
-  skipped: string[];
+  errors: string[];
 }
 
-class SchemaMigrator {
-  errors: string[] = [];
-  warnings: string[] = [];
-
-  /**
-   * Migrate agent definition from v1 to v2
-   */
-  migrate(agentDef: AgentDefinition): AgentDefinition | null {
-    const version = agentDef.schemaVersion || SCHEMA_V1;
-    
-    if (version === SCHEMA_V2) {
-      this.warnings.push('Agent already at schema v2.0.0');
-      return agentDef;
-    }
-    
-    if (version !== SCHEMA_V1) {
-      this.errors.push(`Unknown schema version: ${version}`);
-      return null;
-    }
-    
-    console.log(`Migrating ${agentDef.id} from v${SCHEMA_V1} to v${SCHEMA_V2}`);
-    
-    const migrated: AgentDefinition = { ...agentDef };
-    
-    // Update schema version
-    migrated.schemaVersion = SCHEMA_V2;
-    
-    // Migrate generator.type to identity.agentType
-    if (migrated.generator && migrated.generator.type) {
-      if (!migrated.identity) {
-        migrated.identity = {};
-      }
-      
-      migrated.identity.agentType = migrated.generator.type;
-      
-      this.warnings.push(
-        `Migrated generator.type="${migrated.generator.type}" to identity.agentType`
-      );
-      
-      delete migrated.generator.type;
-    }
-    
-    // Ensure required v2.0.0 fields exist
-    this.ensureRequiredFields(migrated);
-    
-    // Validate migrated definition
-    this.validate(migrated);
-    
-    return migrated;
-  }
-  
-  /**
-   * Ensure all required v2.0.0 fields are present
-   */
-  ensureRequiredFields(agentDef: AgentDefinition): void {
-    const required: Partial<AgentDefinition> = {
-      id: agentDef.id,
-      name: agentDef.name,
-      namespace: agentDef.namespace || 'default',
-      version: agentDef.version || '1.0.0',
-      status: agentDef.status || 'active',
-      owners: agentDef.owners || [],
-      summary: agentDef.summary || '',
-      identity: agentDef.identity || {}
-    };
-    
-    Object.keys(required).forEach(field => {
-      if (!agentDef[field]) {
-        this.warnings.push(`Missing required field: ${field}, using default`);
-        agentDef[field] = required[field];
-      }
-    });
-    
-    // Ensure identity has required subfields
-    if (!agentDef.identity!.agentType) {
-      this.errors.push('identity.agentType is required in v2.0.0');
-    }
-  }
-  
-  /**
-   * Validate migrated agent definition
-   */
-  validate(agentDef: AgentDefinition): void {
-    // Validate agent type
-    const validTypes = [
-      'deterministic',
-      'probabilistic',
-      'hybrid',
-      'rule-based',
-      'ml-based',
-      'llm-based'
-    ];
-    
-    if (agentDef.identity!.agentType && 
-        !validTypes.includes(agentDef.identity!.agentType!.toLowerCase())) {
-      this.warnings.push(
-        `Unknown agentType: ${agentDef.identity!.agentType}`
-      );
-    }
-    
-    // Check for legacy type names
-    if (agentDef.identity!.agentType === 'DETERMINISTIC_LEGACY') {
-      this.errors.push(
-        'DETERMINISTIC_LEGACY is deprecated, use DETERMINISTIC instead'
-      );
-    }
-    if (agentDef.identity!.agentType === 'PROBABILISTIC_LEGACY') {
-      this.errors.push(
-        'PROBABILISTIC_LEGACY is deprecated, use PROBABILISTIC instead'
-      );
-    }
-  }
-  
-  /**
-   * Migrate all agents in a directory
-   */
-  migrateDirectory(dirPath: string): MigrationResult {
-    const files = fs.readdirSync(dirPath);
-    const results: MigrationResult = {
-      migrated: [],
-      failed: [],
-      skipped: []
-    };
-    
-    files.forEach(file => {
-      if (!file.endsWith('.yaml') && !file.endsWith('.yml')) {
-        return;
-      }
-      
-      const filePath = path.join(dirPath, file);
-      console.log(`\nProcessing: ${file}`);
-      
-      try {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const agentDef = yaml.load(content) as AgentDefinition;
-        
-        this.errors = [];
-        this.warnings = [];
-        
-        const migrated = this.migrate(agentDef);
-        
-        if (this.errors.length > 0) {
-          console.error('  ❌ Errors:');
-          this.errors.forEach(err => console.error(`     - ${err}`));
-          results.failed.push(file);
-          return;
-        }
-        
-        if (this.warnings.length > 0) {
-          console.warn('  ⚠️  Warnings:');
-          this.warnings.forEach(warn => console.warn(`     - ${warn}`));
-        }
-        
-        if (migrated) {
-          // Write migrated file
-          const backupPath = `${filePath}.v1.backup`;
-          fs.copyFileSync(filePath, backupPath);
-          
-          const migratedYaml = yaml.dump(migrated, {
-            indent: 2,
-            lineWidth: 100,
-            noRefs: true
-          });
-          
-          fs.writeFileSync(filePath, migratedYaml, 'utf8');
-          
-          console.log(`  ✅ Migrated (backup: ${path.basename(backupPath)})`);
-          results.migrated.push(file);
-        } else {
-          results.skipped.push(file);
-        }
-      } catch (error) {
-        console.error(`  ❌ Error: ${(error as Error).message}`);
-        results.failed.push(file);
-      }
-    });
-    
-    return results;
-  }
+function normalizeType(value: string): string {
+  return value.trim().toUpperCase().replace(/-/g, '_');
 }
 
-// CLI
-const args = process.argv.slice(2);
+function isYamlFile(filePath: string): boolean {
+  return filePath.endsWith('.yaml') || filePath.endsWith('.yml');
+}
+
+function collectYamlFiles(target: string): string[] {
+  const stat = fs.statSync(target);
+  if (stat.isFile()) {
+    return isYamlFile(target) ? [target] : [];
+  }
+
+  const files: string[] = [];
+  for (const entry of fs.readdirSync(target)) {
+    const fullPath = path.join(target, entry);
+    const entryStat = fs.statSync(fullPath);
+    if (entryStat.isDirectory()) {
+      files.push(...collectYamlFiles(fullPath));
+    } else if (isYamlFile(fullPath)) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+function canonicalizeType(
+  obj: Record<string, unknown>,
+  key: 'type' | 'agentType',
+  fix: boolean,
+  errors: string[],
+  location: string,
+): boolean {
+  const raw = obj[key];
+  if (typeof raw !== 'string') return false;
+  if (raw.includes('{{') || raw.includes('${')) return false;
+
+  const normalized = normalizeType(raw);
+  if (CANONICAL_TYPES.has(normalized)) {
+    if (raw !== normalized && fix) {
+      obj[key] = normalized;
+      return true;
+    }
+    if (raw !== normalized) {
+      errors.push(`${location}: ${key} must use uppercase canonical value ${normalized}`);
+    }
+    return false;
+  }
+
+  const mapped = TYPE_FIXES[normalized];
+  if (!mapped) {
+    errors.push(`${location}: unknown canonical agent type '${raw}'`);
+    return false;
+  }
+
+  if (!fix) {
+    errors.push(`${location}: noncanonical agent type '${raw}' must be ${mapped.agentType}` +
+      (mapped.subtype ? ` with subtype ${mapped.subtype}` : ''));
+    return false;
+  }
+
+  obj[key] = mapped.agentType;
+  if (mapped.subtype && typeof obj.subtype !== 'string') {
+    obj.subtype = mapped.subtype;
+  }
+  return true;
+}
+
+function visit(value: unknown, fix: boolean, errors: string[], location: string): boolean {
+  let changed = false;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      changed = visit(item, fix, errors, `${location}[${index}]`) || changed;
+    });
+    return changed;
+  }
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+  changed = canonicalizeType(obj, 'agentType', fix, errors, location) || changed;
+
+  const hasAgentShape = typeof obj.id === 'string'
+    || typeof obj.agentId === 'string'
+    || typeof obj.identity === 'object'
+    || typeof obj.subtype === 'string';
+  if (hasAgentShape && typeof obj.agentType !== 'string') {
+    changed = canonicalizeType(obj, 'type', fix, errors, location) || changed;
+  }
+
+  if (obj.identity && typeof obj.identity === 'object') {
+    changed = visit(obj.identity, fix, errors, `${location}.identity`) || changed;
+  }
+
+  for (const [key, child] of Object.entries(obj)) {
+    if (key === 'identity') continue;
+    changed = visit(child, fix, errors, `${location}.${key}`) || changed;
+  }
+  return changed;
+}
+
+function orderedDump(doc: unknown): string {
+  return yaml.dump(doc, {
+    indent: 2,
+    lineWidth: 120,
+    noRefs: true,
+    sortKeys: false,
+  });
+}
+
+export function canonicalize(target: string, fix: boolean): CanonicalizationResult {
+  const result: CanonicalizationResult = { checked: [], changed: [], failed: [], errors: [] };
+  for (const filePath of collectYamlFiles(target)) {
+    result.checked.push(filePath);
+    try {
+      const original = fs.readFileSync(filePath, 'utf8');
+      const doc = yaml.load(original);
+      const errors: string[] = [];
+      const changed = visit(doc, fix, errors, filePath);
+
+      if (errors.length > 0) {
+        result.failed.push(filePath);
+        result.errors.push(...errors);
+        continue;
+      }
+
+      if (fix && changed) {
+        fs.writeFileSync(filePath, orderedDump(doc), 'utf8');
+        result.changed.push(filePath);
+      }
+    } catch (error) {
+      result.failed.push(filePath);
+      result.errors.push(`${filePath}: ${(error as Error).message}`);
+    }
+  }
+  return result;
+}
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  if (args.length === 0) {
-    console.error('Usage: npx tsx schema-migration.ts <agent-file.yaml|directory>');
-    console.error('');
-    console.error('Examples:');
-    console.error('  npx tsx schema-migration.ts my-agent.yaml');
-    console.error('  npx tsx schema-migration.ts ./core-agents/');
-    process.exit(1);
-  }
-  
-  const target = args[0];
-  const migrator = new SchemaMigrator();
-  
-  if (fs.statSync(target).isDirectory()) {
-    console.log(`Migrating all agents in: ${target}\n`);
-    const results = migrator.migrateDirectory(target);
-    
-    console.log('\n=== Migration Summary ===');
-    console.log(`✅ Migrated: ${results.migrated.length}`);
-    console.log(`⚠️  Skipped: ${results.skipped.length}`);
-    console.log(`❌ Failed: ${results.failed.length}`);
-    
-    if (results.failed.length > 0) {
-      process.exit(1);
-    }
-  } else {
-    // Single file migration
-    const content = fs.readFileSync(target, 'utf8');
-    const agentDef = yaml.load(content) as AgentDefinition;
-    
-    const migrated = migrator.migrate(agentDef);
-    
-    if (migrator.errors.length > 0) {
-      console.error('Errors:');
-      migrator.errors.forEach(err => console.error(`  - ${err}`));
-      process.exit(1);
-    }
-    
-    if (migrator.warnings.length > 0) {
-      console.warn('Warnings:');
-      migrator.warnings.forEach(warn => console.warn(`  - ${warn}`));
-    }
-    
-    if (migrated) {
-      const migratedYaml = yaml.dump(migrated, {
-        indent: 2,
-        lineWidth: 100,
-        noRefs: true
-      });
-      
-      console.log('\nMigrated YAML:');
-      console.log('---');
-      console.log(migratedYaml);
-    }
-  }
-}
+  const args = process.argv.slice(2);
+  const mode = args[0];
+  const target = args[1];
 
-export { SchemaMigrator, AgentDefinition, MigrationResult };
+  if ((mode !== '--check' && mode !== '--fix') || !target) {
+    console.error('Usage: pnpm tsx platform/agent-catalog/schema-migration.ts --check|--fix <file-or-directory>');
+    process.exit(2);
+  }
+
+  const result = canonicalize(target, mode === '--fix');
+  for (const error of result.errors) {
+    console.error(error);
+  }
+  console.log(`checked=${result.checked.length} changed=${result.changed.length} failed=${result.failed.length}`);
+  process.exit(result.failed.length > 0 ? 1 : 0);
+}

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: persona_creation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {name, demographics, goals, pain_points, behaviors, tech_proficiency, quote, decision_factors, channels, day_in_life, evidence_sources}
     - name: persona_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate against research evidence
     - name: persona_registration
       type: SERVICE_CALL

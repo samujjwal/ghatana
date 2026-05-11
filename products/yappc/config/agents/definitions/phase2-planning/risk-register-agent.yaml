@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: risk_identification
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {risks: [{id, name, description, category, probability, impact, score, triggers, mitigations, contingency, owner}], top_risks, total_exposure}
     - name: risk_scoring
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calculate risk scores and rank
     - name: register_update
       type: SERVICE_CALL

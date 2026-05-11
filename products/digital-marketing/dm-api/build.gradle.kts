@@ -94,6 +94,14 @@ tasks.register<JavaExec>("generateOpenApiSpec") {
     }
 }
 
+tasks.register<JavaExec>("runDmosApiServer") {
+    group = "application"
+    description = "Run the DMOS API server for local and CI real-backend checks"
+    dependsOn("classes")
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.digitalmarketing.api.DmosApiServer")
+}
+
 // P0-009: Validate OpenAPI spec is up-to-date
 tasks.register("validateOpenApiSpec") {
     group = "verification"
@@ -117,4 +125,3 @@ tasks.named("check").configure {
 }
 
 // dm-api tests are enabled to enforce servlet/API validation coverage.
-

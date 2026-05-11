@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: accessibility_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {requirements: [{wcag_criterion, category, statement, guidance, testing}], priority_order, testing_checklist}
     - name: compliance_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Check against WCAG criteria
     - name: a11y_registration
       type: SERVICE_CALL

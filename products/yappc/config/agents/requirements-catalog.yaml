@@ -47,7 +47,7 @@ spec:
     - requirements
     - lifecycle
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: specification-orchestrator
     name: Specification Orchestrator
@@ -81,7 +81,7 @@ spec:
     - specification
     - authoring
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: traceability-orchestrator
     name: Traceability Orchestrator
@@ -115,7 +115,7 @@ spec:
     - traceability
     - coverage
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: requirement-intake-capability-agent
     name: Requirement Intake Capability Agent
@@ -146,7 +146,7 @@ spec:
     - intake
     - requirements
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: requirement-analysis-capability-agent
     name: Requirement Analysis Capability Agent
@@ -176,7 +176,7 @@ spec:
     - analysis
     - requirements
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: requirement-quality-capability-agent
     name: Requirement Quality Capability Agent
@@ -200,7 +200,7 @@ spec:
     - quality
     - requirements
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: requirement-governance-capability-agent
     name: Requirement Governance Capability Agent
@@ -231,7 +231,7 @@ spec:
     - governance
     - approval
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: traceability-capability-agent
     name: Traceability Capability Agent
@@ -253,7 +253,7 @@ spec:
     - traceability
     - links
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: spec-authoring-capability-agent
     name: Spec Authoring Capability Agent
@@ -276,7 +276,7 @@ spec:
     - spec-authoring
     - documentation
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: requirement-capture-task-agent
     name: Requirement Capture Task Agent
@@ -298,7 +298,7 @@ spec:
     - capture
     - requirements
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: nl-requirement-parsing-task-agent
     name: Natural Language Requirement Parsing Task Agent
@@ -319,7 +319,7 @@ spec:
     - parsing
     - nlp
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-normalisation-task-agent
     name: Requirement Normalisation Task Agent
@@ -339,7 +339,7 @@ spec:
     - normalisation
     - requirements
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-type-classification-task-agent
     name: Requirement Type Classification Task Agent
@@ -359,7 +359,7 @@ spec:
     - classification
     - typing
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-priority-task-agent
     name: Requirement Priority Task Agent
@@ -382,7 +382,7 @@ spec:
     - moscow
     - wsjf
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-source-linking-task-agent
     name: Requirement Source Linking Task Agent
@@ -402,7 +402,7 @@ spec:
     - source-linking
     - provenance
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-conflict-detection-task-agent
     name: Requirement Conflict Detection Task Agent
@@ -422,7 +422,7 @@ spec:
     - conflict
     - detection
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-deduplication-task-agent
     name: Requirement Deduplication Task Agent
@@ -444,7 +444,7 @@ spec:
     - deduplication
     - requirements
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-completeness-task-agent
     name: Requirement Completeness Task Agent
@@ -464,7 +464,7 @@ spec:
     - completeness
     - coverage
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: functional-requirement-drafting-task-agent
     name: Functional Requirement Drafting Task Agent
@@ -486,7 +486,7 @@ spec:
     - functional-requirements
     - drafting
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: nfr-drafting-task-agent
     name: NFR Drafting Task Agent
@@ -506,7 +506,7 @@ spec:
     - nfr
     - quality-attributes
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: constraint-capture-task-agent
     name: Constraint Capture Task Agent
@@ -526,7 +526,7 @@ spec:
     - constraints
     - capture
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: acceptance-criteria-task-agent
     name: Acceptance Criteria Task Agent
@@ -547,7 +547,7 @@ spec:
     - acceptance-criteria
     - gherkin
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: definition-of-done-task-agent
     name: Definition of Done Task Agent
@@ -568,7 +568,7 @@ spec:
     - definition-of-done
     - quality
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-dependency-task-agent
     name: Requirement Dependency Task Agent
@@ -588,7 +588,7 @@ spec:
     - dependencies
     - requirements
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-approval-task-agent
     name: Requirement Approval Task Agent
@@ -611,7 +611,7 @@ spec:
     - approval
     - workflow
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-versioning-task-agent
     name: Requirement Versioning Task Agent
@@ -633,7 +633,7 @@ spec:
     - versioning
     - history
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: spec-section-generation-task-agent
     name: Spec Section Generation Task Agent
@@ -654,7 +654,7 @@ spec:
     - spec-sections
     - documentation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-to-story-trace-task-agent
     name: Requirement To Story Trace Task Agent
@@ -674,7 +674,7 @@ spec:
     - traceability
     - stories
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-to-test-trace-task-agent
     name: Requirement To Test Trace Task Agent
@@ -694,7 +694,7 @@ spec:
     - traceability
     - testing
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-gap-analysis-task-agent
     name: Requirement Gap Analysis Task Agent
@@ -714,7 +714,7 @@ spec:
     - gap-analysis
     - coverage
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: persona-aligned-requirement-task-agent
     name: Persona Aligned Requirement Task Agent
@@ -734,7 +734,7 @@ spec:
     - persona
     - alignment
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: requirement-sentence-splitter
     name: Requirement Sentence Splitter
@@ -750,7 +750,7 @@ spec:
     - splitting
     - requirements
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: requirement-classifier
     name: Requirement Classifier
@@ -766,7 +766,7 @@ spec:
     - classification
     - requirements
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: requirement-tagger
     name: Requirement Tagger
@@ -782,7 +782,7 @@ spec:
     - tagging
     - requirements
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: requirement-template-applier
     name: Requirement Template Applier
@@ -798,7 +798,7 @@ spec:
     - template
     - formatting
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: duplicate-detector
     name: Duplicate Detector
@@ -814,7 +814,7 @@ spec:
     - duplicate
     - detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: dependency-extractor
     name: Dependency Extractor
@@ -830,7 +830,7 @@ spec:
     - dependency
     - extraction
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: ambiguity-detector
     name: Ambiguity Detector
@@ -846,7 +846,7 @@ spec:
     - ambiguity
     - quality
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: measurability-checker
     name: Measurability Checker
@@ -862,7 +862,7 @@ spec:
     - measurability
     - quality
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: testability-checker
     name: Testability Checker
@@ -877,7 +877,7 @@ spec:
     - testability
     - quality
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: priority-normalizer
     name: Priority Normalizer
@@ -893,7 +893,7 @@ spec:
     - priority
     - normalisation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: source-evidence-linker
     name: Source Evidence Linker
@@ -909,7 +909,7 @@ spec:
     - evidence
     - linking
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: requirement-diff-unit
     name: Requirement Diff Unit
@@ -925,7 +925,7 @@ spec:
     - diff
     - versioning
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: acceptance-verb-normalizer
     name: Acceptance Verb Normalizer
@@ -941,7 +941,7 @@ spec:
     - gherkin
     - normalisation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: constraint-parser
     name: Constraint Parser
@@ -957,7 +957,7 @@ spec:
     - constraint
     - parsing
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: trace-link-builder
     name: Trace Link Builder
@@ -973,7 +973,7 @@ spec:
     - traceability
     - links
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

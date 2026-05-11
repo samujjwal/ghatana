@@ -28,7 +28,7 @@ spec:
     - security
     - release
     - supply-chain
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: supply-chain-verifier-agent
     name: Supply Chain Verifier Agent
@@ -47,7 +47,7 @@ spec:
     - security
     - supply-chain
     - verification
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: canary-analysis-agent
     name: Canary Analysis Agent
@@ -67,7 +67,7 @@ spec:
     - deployment
     - release
     - monitoring
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: rollback-coordinator-agent
     name: Rollback Coordinator Agent
@@ -90,7 +90,7 @@ spec:
     - deployment
     - rollback
     - incident-response
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: vulnerability-scoring-agent
     name: Vulnerability Scoring Agent
@@ -109,7 +109,7 @@ spec:
     - security
     - vulnerability
     - scoring
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: security-scan-coordinator
     name: Security Scan Coordinator
@@ -123,7 +123,7 @@ spec:
     - security
     - coordination
     - scanning
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: penetration-testing-agent
     name: Penetration Testing Agent
@@ -139,7 +139,7 @@ spec:
     - security
     - testing
     - pentest
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: infrastructure-as-code-scanner
     name: IaC Security Scanner
@@ -155,7 +155,7 @@ spec:
     - security
     - iac
     - scanning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: secrets-detection-agent
     name: Secrets Detection Agent
@@ -171,7 +171,7 @@ spec:
     - security
     - secrets
     - detection
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: compliance-scan-agent
     name: Compliance Scan Agent
@@ -185,7 +185,7 @@ spec:
     - security
     - compliance
     - scanning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: container-security-agent
     name: Container Security Agent
@@ -201,7 +201,7 @@ spec:
     - security
     - containers
     - scanning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: dast-agent
     name: DAST Agent
@@ -217,7 +217,7 @@ spec:
     - security
     - dast
     - testing
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sast-agent
     name: SAST Agent
@@ -233,7 +233,7 @@ spec:
     - security
     - sast
     - code-analysis
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: network-security-agent
     name: Network Security Agent
@@ -247,7 +247,7 @@ spec:
     - security
     - network
     - configuration
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: incident-response-agent
     name: Incident Response Agent
@@ -268,7 +268,7 @@ spec:
     - security
     - incident-response
     - coordination
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: threat-modeling-agent
     name: Threat Modeling Agent
@@ -288,7 +288,7 @@ spec:
     - security
     - threat-modeling
     - design
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1: []

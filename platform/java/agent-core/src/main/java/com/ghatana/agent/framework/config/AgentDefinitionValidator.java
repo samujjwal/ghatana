@@ -5,6 +5,7 @@
 package com.ghatana.agent.framework.config;
 
 import com.ghatana.agent.AgentType;
+import com.ghatana.agent.validation.AgentSpecValidator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -188,100 +189,8 @@ public final class AgentDefinitionValidator {
      * </ul>
      */
     private static void validateTypeSpecific(AgentDefinition def, List<String> errors) {
-        AgentType type = def.getType();
-        if (type == null) return;
-
-        switch (type) {
-            case DETERMINISTIC -> {
-                // Must not reference stochastic reasoning tools
-                for (AgentDefinition.ToolDeclaration tool : def.getTools()) {
-                    String tn = tool.name().toLowerCase();
-                    if (tn.contains("llm") || tn.contains("gpt") || tn.contains("claude")) {
-                        errors.add("[type:deterministic] tool '" + tool.name()
-                                + "' references an LLM; DETERMINISTIC agents must be stochastic-free");
-                    }
-                }
-                // subtype should be one of the deterministic subtypes
-                String sub = def.getSubtype();
-                if (sub != null) {
-                    Set<String> validSubs = Set.of("rule-engine", "fsm", "pattern-matcher",
-                            "policy-engine", "threshold-evaluator", "operator", "template", "rule-based");
-                    if (!validSubs.contains(sub.toLowerCase())) {
-                        errors.add("[type:deterministic] invalid subtype '" + sub
-                                + "'; expected one of: " + validSubs);
-                    }
-                }
-            }
-            case PROBABILISTIC -> {
-                // Must declare subtype
-                if (def.getSubtype() == null || def.getSubtype().isBlank()) {
-                    errors.add("[type:probabilistic] subtype is required (e.g. 'llm', 'ml-model', 'bayesian', 'classifier')");
-                }
-                // Confidence mechanism: either systemPrompt (LLM) or declared confidence tool
-                if ((def.getSystemPrompt() == null || def.getSystemPrompt().isBlank())
-                        && def.getTools().stream().noneMatch(t -> t.name().contains("confidence") || t.name().contains("score"))) {
-                    errors.add("[type:probabilistic] agent must declare a confidence mechanism (systemPrompt or confidence-scoring tool)");
-                }
-            }
-            case STREAM_PROCESSOR -> {
-                // Must have explicit I/O contracts (event bindings)
-                if (def.getInputContract() == null) {
-                    errors.add("[type:stream_processor] inputContract is required (event type declarations)");
-                }
-                if (def.getOutputContract() == null) {
-                    errors.add("[type:stream_processor] outputContract is required (event type declarations)");
-                }
-            }
-            case PLANNING -> {
-                // Multi-step lifecycle is enforced by PlanningAgent base class;
-                // validate that no cost cap is unreasonably low for long-running planning
-                if (def.getMaxCostPerCall() > 0 && def.getMaxCostPerCall() < 0.01) {
-                    errors.add("[type:planning] maxCostPerCall=" + def.getMaxCostPerCall()
-                            + " is very low for a planning agent; planning may require multiple LLM calls");
-                }
-            }
-            case HYBRID -> {
-                // Must have both a deterministic and a probabilistic reasoning path
-                // Proxied via: at least 2 tools of different types, or systemPrompt + tools
-                boolean hasPrompt = def.getSystemPrompt() != null && !def.getSystemPrompt().isBlank();
-                boolean hasTools = !def.getTools().isEmpty();
-                if (!hasPrompt || !hasTools) {
-                    errors.add("[type:hybrid] HYBRID agents must declare both a systemPrompt "
-                            + "(probabilistic path) and at least one tool (deterministic path)");
-                }
-            }
-            case ADAPTIVE -> {
-                // Declared learningLevel must be L2 or higher (in metadata.learningLevel)
-                Object llObj = def.getMetadata().get("learningLevel");
-                if (llObj != null) {
-                    String ll = llObj.toString();
-                    if (ll.equals("L0") || ll.equals("L1")) {
-                        errors.add("[type:adaptive] learningLevel must be L2 or higher; found: " + ll);
-                    }
-                }
-            }
-            case COMPOSITE -> {
-                // Must be able to delegate to sub-agents (at least one tool or contract)
-                if (def.getTools().isEmpty() && def.getInputContract() == null) {
-                    errors.add("[type:composite] COMPOSITE agents must declare tools or input contracts for sub-agent delegation");
-                }
-            }
-            case REACTIVE -> {
-                // Must be stateless
-                if (def.getStateMutability() != null
-                        && def.getStateMutability() != com.ghatana.agent.StateMutability.STATELESS) {
-                    errors.add("[type:reactive] REACTIVE agents must be STATELESS (stateMutability must be STATELESS)");
-                }
-            }
-            case CUSTOM -> {
-                // Must declare customTypeRef label
-                if (!def.getLabels().containsKey("customTypeRef")) {
-                    errors.add("[type:custom] CUSTOM agents must declare a 'customTypeRef' label pointing to their registered type");
-                }
-            }
-            default -> {
-                // No additional type-specific rules for other types
-            }
+        if (def.getType() != null) {
+            errors.addAll(AgentSpecValidator.validateTypeSpecific(def));
         }
     }
 

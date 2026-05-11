@@ -20,7 +20,7 @@ generator:
       service: metrics-service
       endpoint: /capacity/collect
     - name: capacity_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -50,7 +50,7 @@ generator:
           cost_opportunities
         }
     - name: alerting
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate capacity alerts
 
 memory:

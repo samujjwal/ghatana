@@ -105,16 +105,90 @@ The `YappcEnvironmentConfig` validates that:
 - Secret is not a default placeholder value
 - Secret meets minimum length requirements
 
+## Authorization Scope Extraction (task 1.2.4)
+
+### Scope Extraction Policy
+
+The backend extracts authorization scopes from requests using a priority-based extraction policy:
+
+**Priority Order:** `path > query > header`
+
+1. **Path Parameters (Highest Priority)**
+   - For routes with path parameters (e.g., `/api/v1/projects/{projectId}`), scope is inferred from the resource context
+   - Example: `/api/v1/projects/{projectId}` → infers `project:read` scope
+   - Path-based extraction is automatic and preferred when available
+
+2. **Query Parameters (Medium Priority)**
+   - Explicit scope can be passed as a query parameter: `?scope=project:read`
+   - Used when path-based inference is not available or when explicit scope is required
+   - Example: `/api/v1/projects?scope=project:read`
+
+3. **Headers (Lowest Priority)**
+   - Scope can be passed via the `X-Scope` header: `X-Scope: project:read`
+   - Used as a fallback when query parameter passing is not practical
+   - Example: `X-Scope: project:read`
+
+### Common Authorization Scopes
+
+- `workspace:read` - Read access to workspace resources
+- `workspace:write` - Write access to workspace resources
+- `project:read` - Read access to project resources
+- `project:write` - Write access to project resources
+- `admin` - Administrative access across resources
+
+### Frontend Usage
+
+The frontend provides scoped request helpers to pass scopes according to this policy:
+
+```typescript
+import { getScoped, postScoped, ScopedRequestOptions } from '@/lib/api/client';
+
+// Query parameter scope (default)
+getScoped('/api/v1/projects', 'context', {
+  scope: 'project:read',
+  scopeLocation: 'query'
+});
+
+// Header-based scope
+getScoped('/api/v1/projects', 'context', {
+  scope: 'project:read',
+  scopeLocation: 'header'
+});
+```
+
+### Backend Implementation
+
+The `YappcApiAuthFilter` implements the scope extraction logic:
+
+1. First attempts to extract scope from path parameters using route metadata
+2. Falls back to query parameter extraction (`?scope=...`)
+3. Finally checks for `X-Scope` header
+4. If no scope is found, uses default scope from route registry or session context
+
+### OpenAPI Documentation
+
+The OpenAPI specification (`docs/api/openapi.yaml`) defines reusable parameter definitions for scope passing:
+
+- `ScopeQuery` - Query parameter definition with enum values
+- `ScopeHeader` - Header parameter definition
+- Both include documentation of the extraction policy
+
 ## Related Components
 
 - **Java:** `com.ghatana.platform.security.port.JwtTokenProvider`
 - **Java:** `com.ghatana.yappc.services.security.LifecycleLoginController`
 - **Java:** `com.ghatana.yappc.services.security.JwtAuthController`
+- **Java:** `com.ghatana.yappc.api.filter.YappcApiAuthFilter`
+- **Java:** `com.ghatana.yappc.governance.route.RouteAuthorizationRegistry`
 - **Node:** `frontend/apps/api/src/services/auth/jwt-config.ts`
 - **Node:** `frontend/apps/api/src/middleware/auth.middleware.ts`
+- **Frontend:** `frontend/web/src/lib/api/client.ts` (scoped request helpers)
 
 ## References
 
 - P0-3: Align JWT secret between Node BFF and Java service
 - P1-1: Migrate JWT from localStorage to httpOnly secure cookie
+- P1-2: Add scoped request helpers for authorization scope passing
+- P1-3: Make OpenAPI explicit about required header/query scope per route
+- P1-4: Document backend extraction policy (path > query > header)
 - Platform module: `platform:java:security`

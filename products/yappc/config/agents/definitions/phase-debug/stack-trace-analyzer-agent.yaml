@@ -12,12 +12,12 @@ generator:
   type: PIPELINE
   steps:
     - name: stack_parse
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Parse stack trace into structured frames (class, method, line, file).
         Identify exception chain (caused-by). Flag project frames vs library frames.
     - name: relevance_scoring
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Score each frame by relevance: project code > test code > framework > library.
         Identify the top-ranked project frame as the most likely failure point.

@@ -25,7 +25,7 @@ metadata:
   maturity: production
 
 identity:
-  agentType: stream-processor             # stateful; routes ordered event stream
+  agentType: STREAM_PROCESSOR             # stateful; routes ordered event stream
   subtype: routing
   roles: [router, multiplexer, dispatcher]
   criticality: high

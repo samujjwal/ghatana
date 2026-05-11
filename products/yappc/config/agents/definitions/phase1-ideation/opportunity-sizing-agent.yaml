@@ -20,7 +20,7 @@ generator:
       service: market-data-service
       endpoint: /market/data
     - name: sizing_calculation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -44,7 +44,7 @@ generator:
         
         Output as JSON: {tam, sam, som, revenue_y1, revenue_y3, revenue_y5, acquisition_assumptions, market_share, confidence, sources}
     - name: roi_projection
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calculate ROI based on estimated costs
     - name: report_generation
       type: TEMPLATE

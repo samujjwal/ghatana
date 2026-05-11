@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: domain_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -40,7 +40,7 @@ generator:
         
         Output as JSON: {bounded_contexts, ubiquitous_language, aggregates, entities, value_objects, events, services, context_map}
     - name: model_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate DDD model consistency
     - name: model_documentation
       type: TEMPLATE

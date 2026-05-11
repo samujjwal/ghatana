@@ -16,7 +16,7 @@ generator:
       service: build-service
       endpoint: /dependencies/resolve
     - name: sbom_generation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Generate CycloneDX 1.4 JSON and SPDX 2.3 tag-value from resolved
         dependency graph. Include transitive deps, licenses, hashes (SHA-256).

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: value_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -46,7 +46,7 @@ generator:
         Categories: QUICK_WIN (high value, low effort), STRATEGIC_BET (high value, high effort), 
                     FILL_IN (low value, low effort), MONEY_PIT (low value, high effort)
     - name: matrix_positioning
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Position on value/effort matrix
     - name: prioritization
       type: TEMPLATE

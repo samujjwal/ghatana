@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: cost_estimation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Estimate total cost for the requested orchestration:
         - Count agents in delegation chain
@@ -24,14 +24,14 @@ generator:
         - Calculate compute cost for deterministic agents
         - Sum total projected cost
     - name: budget_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Compare estimated cost against remaining project budget.
         If estimated > remaining: BLOCK with explanation.
         If estimated > 80% of remaining: WARN.
         If estimated <= 80% of remaining: ALLOW.
     - name: alternative_routing
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         If BLOCK or WARN, suggest cost-saving alternatives:
         - Smaller LLM model for non-critical agents

@@ -249,7 +249,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
 
-        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.PENDING_LAUNCH);
 
         // Verify command was issued
         Long pendingCount = runPromise(() -> commandService.countByStatus(
@@ -300,8 +300,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
 
         Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
 
-        // Campaign should still be launched internally
-        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.EXTERNAL_EXECUTION_BLOCKED);
 
         // Verify no commands were issued due to kill switch
         Long pendingCount = runPromise(() -> commandService.countByStatus(
@@ -310,6 +309,18 @@ class CampaignServiceImplTest extends EventloopTestBase {
     }
 
     private static CampaignService.CreateCampaignCommand createCampaignCommand(String name, CampaignType type) {
+        if (type == CampaignType.PAID_SEARCH) {
+            return new CampaignService.CreateCampaignCommand(
+                name,
+                type,
+                "LEADS",
+                50000L,
+                null,
+                null,
+                "B2B SaaS buyers in California",
+                "https://example.com/landing"
+            );
+        }
         return new CampaignService.CreateCampaignCommand(name, type, null, null, null, null, null, null);
     }
 
@@ -317,20 +328,21 @@ class CampaignServiceImplTest extends EventloopTestBase {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override
-        public Promise<Campaign> save(Campaign campaign) {
-            store.put(campaign.getWorkspaceId().getValue() + ":" + campaign.getId(), campaign);
+        public Promise<Campaign> save(DmTenantId tenantId, Campaign campaign) {
+            store.put(tenantId.getValue() + ":" + campaign.getWorkspaceId().getValue() + ":" + campaign.getId(), campaign);
             return Promise.of(campaign);
         }
 
         @Override
-        public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
-            return Promise.of(Optional.ofNullable(store.get(workspaceId.getValue() + ":" + campaignId)));
+        public Promise<Optional<Campaign>> findById(DmTenantId tenantId, DmWorkspaceId workspaceId, String campaignId) {
+            return Promise.of(Optional.ofNullable(store.get(tenantId.getValue() + ":" + workspaceId.getValue() + ":" + campaignId)));
         }
 
         @Override
-        public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+        public Promise<List<Campaign>> listByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId, int limit, int offset) {
+            String prefix = tenantId.getValue() + ":" + workspaceId.getValue() + ":";
             List<Campaign> results = store.entrySet().stream()
-                .filter(e -> e.getKey().startsWith(workspaceId.getValue() + ":"))
+                .filter(e -> e.getKey().startsWith(prefix))
                 .map(Map.Entry::getValue)
                 .sorted(Comparator.comparing(Campaign::getCreatedAt).reversed())
                 .skip(offset)
@@ -340,9 +352,10 @@ class CampaignServiceImplTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+        public Promise<Long> countByWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId) {
+            String prefix = tenantId.getValue() + ":" + workspaceId.getValue() + ":";
             long count = store.keySet().stream()
-                .filter(k -> k.startsWith(workspaceId.getValue() + ":"))
+                .filter(k -> k.startsWith(prefix))
                 .count();
             return Promise.of(count);
         }

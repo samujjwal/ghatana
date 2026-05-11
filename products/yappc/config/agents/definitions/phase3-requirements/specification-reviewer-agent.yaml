@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: specification_review
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -39,7 +39,7 @@ generator:
         
         Output as JSON: {issues: [{type, severity, location, description, suggestion}], score, completeness_gaps, clarity_issues, conflicts, recommendations}
     - name: issue_prioritization
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Prioritize issues by severity
     - name: review_report
       type: TEMPLATE

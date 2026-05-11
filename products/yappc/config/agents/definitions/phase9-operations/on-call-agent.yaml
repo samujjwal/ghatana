@@ -20,7 +20,7 @@ generator:
       service: context-service
       endpoint: /gather
     - name: oncall_assistance
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -53,7 +53,7 @@ generator:
           escalation
         }
     - name: automation_trigger
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Trigger automated responses
 
 memory:

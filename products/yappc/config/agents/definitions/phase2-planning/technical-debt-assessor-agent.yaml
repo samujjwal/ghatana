@@ -20,7 +20,7 @@ generator:
       service: code-analysis-service
       endpoint: /analysis/tech-debt
     - name: debt_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -43,7 +43,7 @@ generator:
         
         Output as JSON: {debt_items: [{id, type, severity, interest_rate, effort, velocity_impact, business_risk, recommendation}], total_debt_score, priority_paydown, integration_plan}
     - name: planning_integration
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Integrate debt paydown into planning
 
 memory:

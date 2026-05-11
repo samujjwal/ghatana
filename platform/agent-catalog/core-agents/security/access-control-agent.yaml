@@ -17,8 +17,8 @@ metadata:
   tags: [access-control, authentication, authorization, rbac, policy]
 
 identity:
-  agentType: deterministic
-  subtype: policy                           # DeterministicSubtype.POLICY — rule-based RBAC enforcement
+  agentType: DETERMINISTIC
+  subtype: POLICY_ENGINE                           # DeterministicSubtype.POLICY — rule-based RBAC enforcement
   roles: [access-enforcer, policy-evaluator, auth-gate]
   criticality: critical
   autonomyLevel: autonomous

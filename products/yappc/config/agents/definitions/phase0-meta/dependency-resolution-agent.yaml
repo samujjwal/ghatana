@@ -16,13 +16,13 @@ generator:
   type: PIPELINE
   steps:
     - name: dependency_graph_construction
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Build dependency graph from task dependencies
     - name: cycle_detection
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Detect circular dependencies
     - name: resolution_strategy
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

@@ -132,12 +132,22 @@ public record AgentRelease(
     }
 
     /**
-     * Returns {@code true} if this release is eligible for dispatch.
+     * Returns {@code true} if this release may execute internally.
      *
-     * @return {@code true} iff the current state is dispatchable
-     * @see AgentReleaseState#isDispatchable()
+     * @return {@code true} iff the current state is runnable
+     * @see AgentReleaseState#isRunnable()
      */
-    public boolean isDispatchable() {
-        return state.isDispatchable();
+    public boolean isRunnable() {
+        return state.isRunnable();
+    }
+
+    /**
+     * Returns {@code true} if this release may serve responses to callers.
+     *
+     * @return {@code true} iff the current state is response-serving
+     * @see AgentReleaseState#isResponseServing()
+     */
+    public boolean isResponseServing() {
+        return state.isResponseServing();
     }
 }

@@ -17,8 +17,8 @@ metadata:
   tags: [validation, schema, json, xml, protobuf, data-quality]
 
 identity:
-  agentType: deterministic
-  subtype: rule-based                        # schema validation is purely rule-driven
+  agentType: DETERMINISTIC
+  subtype: RULE_ENGINE                        # schema validation is purely rule-driven
   roles: [schema-validator, data-quality-gate]
   criticality: high
   autonomyLevel: autonomous

@@ -12,10 +12,10 @@ generator:
   type: PIPELINE
   steps:
     - name: log_parsing
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Parse and structure raw log entries by timestamp, level, source
     - name: pattern_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

@@ -17,7 +17,7 @@ metadata:
   tags: [cost, optimization, finops, resource, savings, efficiency]
 
 identity:
-  agentType: hybrid                         # SERVICE_CALL for data + LLM for reasoning
+  agentType: HYBRID                         # SERVICE_CALL for data + LLM for reasoning
   roles: [cost-analyzer, recommendation-engine, finops-advisor]
   criticality: medium
   autonomyLevel: semi-autonomous
@@ -33,7 +33,7 @@ pipeline:
       service: cost-analyzer
       endpoint: /platform/cost/analyze
     - name: optimization_recommendations
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

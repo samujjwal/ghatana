@@ -84,6 +84,8 @@ HITL escalation.
 - `GovernedAgentDispatcher` is the single entry gate: it checks release state, kill switch,
   manifest interaction modes, supervision contracts, and telemetry before delegating to any
   agent implementation.
+- Every `TypedAgent` invocation in AEP routes through the governed lifecycle executor:
+  `ADMIT → PERCEIVE → REASON → VERIFY → ACT → CAPTURE → REFLECT → COMPLETE`.
 - Agent packages are loaded and hot-swapped through `AgentPackageLoader` backed by
   `KernelPluginRuntimeManager`. No direct class-loading bypasses this facade.
 

@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: pi_planning
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -45,7 +45,7 @@ generator:
       service: coordination-service
       endpoint: /release-train/sync
     - name: progress_tracking
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Track PI execution
 
 memory:

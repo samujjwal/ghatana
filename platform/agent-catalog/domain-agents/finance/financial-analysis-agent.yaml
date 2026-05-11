@@ -29,8 +29,8 @@ metadata:
     - GDPR
 
 identity:
-  agentType: deterministic
-  subtype: rule-based                            # financial rules + threshold checks (auditable)
+  agentType: DETERMINISTIC
+  subtype: RULE_ENGINE                            # financial rules + threshold checks (auditable)
   roles: [financial-analyzer, fraud-scorer, risk-evaluator, compliance-reporter]
   criticality: critical
   autonomyLevel: supervised                      # regulatory submissions require human approval

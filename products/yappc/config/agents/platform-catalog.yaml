@@ -40,7 +40,7 @@ spec:
     - orchestrator
     - lifecycle
     - strategic
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: security-posture-orchestrator
     name: Security Posture Orchestrator
@@ -68,7 +68,7 @@ spec:
     - orchestrator
     - security
     - devsecops
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: agent-dispatcher
     name: Agent Dispatcher
@@ -96,7 +96,7 @@ spec:
     - dispatcher
     - routing
     - coordination
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: event-coordinator
     name: Event Coordinator
@@ -119,7 +119,7 @@ spec:
     - events
     - coordination
     - workflow
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: platform-health-monitor
     name: Platform Health Monitor
@@ -142,7 +142,7 @@ spec:
     - monitoring
     - health
     - observability
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: context-gathering-agent
     name: Context Gathering Agent
@@ -165,7 +165,7 @@ spec:
     - context
     - research
     - analysis
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: institutionalize-agent
     name: Institutionalize Agent
@@ -191,7 +191,7 @@ spec:
     - knowledge
     - templates
     - standards
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1:

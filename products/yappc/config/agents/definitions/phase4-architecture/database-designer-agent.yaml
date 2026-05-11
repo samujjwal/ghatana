@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: schema_design
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {tables, indexes, relationships, partitioning, query_support, migrations, rationale}
     - name: performance_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze query performance implications
     - name: ddl_generation
       type: SERVICE_CALL

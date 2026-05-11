@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: architecture_planning
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -42,7 +42,7 @@ generator:
       service: agent-registry
       endpoint: /agents/delegate
     - name: architecture_synthesis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Synthesize architecture deliverables
 
 memory:

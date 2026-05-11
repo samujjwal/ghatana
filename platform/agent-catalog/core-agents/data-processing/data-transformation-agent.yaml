@@ -22,7 +22,7 @@ metadata:
   tags: [transformation, mapping, conversion, etl, batch, structured-data]
 
 identity:
-  agentType: hybrid                         # deterministic parsing + LLM mapping reasoning
+  agentType: HYBRID                         # deterministic parsing + LLM mapping reasoning
   roles: [data-transformer, schema-converter, etl-processor]
   criticality: medium
   autonomyLevel: supervised
@@ -38,7 +38,7 @@ pipeline:
       service: data-parser
       endpoint: /platform/transform/parse
     - name: apply_transformation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

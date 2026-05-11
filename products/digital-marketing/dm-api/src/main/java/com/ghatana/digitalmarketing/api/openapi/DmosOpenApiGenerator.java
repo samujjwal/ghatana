@@ -48,7 +48,20 @@ public final class DmosOpenApiGenerator {
         ));
         schemas.put("CampaignStatus", Map.of(
             "type", "string",
-            "enum", java.util.List.of("DRAFT", "LAUNCHED", "PAUSED", "COMPLETED", "ARCHIVED"),
+            "enum", java.util.List.of(
+                "DRAFT",
+                "PENDING_APPROVAL",
+                "APPROVED",
+                "PENDING_LAUNCH",
+                "LAUNCH_RUNNING",
+                "LAUNCH_FAILED",
+                "EXTERNAL_EXECUTION_BLOCKED",
+                "LAUNCHED",
+                "PAUSED",
+                "COMPLETED",
+                "ARCHIVED",
+                "ROLLED_BACK"
+            ),
             "description", "Lifecycle status of a DMOS campaign"
         ));
         schemas.put("ErrorBody", Map.of(

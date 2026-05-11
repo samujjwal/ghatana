@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: flaky_detection
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Identify flaky test patterns
     - name: root_cause_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -49,7 +49,7 @@ generator:
         
         Output as JSON: {pattern, root_cause, env_factors, code_issues, recommendations, confidence, quarantine_recommendation}
     - name: fix_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

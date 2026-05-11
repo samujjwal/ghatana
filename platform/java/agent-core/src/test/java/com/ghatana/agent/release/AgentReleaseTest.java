@@ -155,12 +155,12 @@ class AgentReleaseTest {
     }
 
     @Nested
-    @DisplayName("Dispatchability")
+    @DisplayName("Runnable and response-serving semantics")
     class Dispatchability {
 
         @Test
-        @DisplayName("ACTIVE release is dispatchable")
-        void activeIsDispatchable() { 
+        @DisplayName("ACTIVE release can run and serve")
+        void activeCanRunAndServe() { 
             AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
@@ -171,19 +171,21 @@ class AgentReleaseTest {
                     .capabilityMaturityProfile("L1")
                     .build(); 
 
-            assertThat(release.isDispatchable()).isTrue(); 
+            assertThat(release.isRunnable()).isTrue();
+            assertThat(release.isResponseServing()).isTrue();
         }
 
         @Test
-        @DisplayName("DRAFT release is not dispatchable")
-        void draftNotDispatchable() { 
+        @DisplayName("DRAFT release cannot run or serve")
+        void draftNotRunnable() { 
             AgentRelease release = minimalRelease(); 
-            assertThat(release.isDispatchable()).isFalse(); 
+            assertThat(release.isRunnable()).isFalse();
+            assertThat(release.isResponseServing()).isFalse();
         }
 
         @Test
-        @DisplayName("BLOCKED release is not dispatchable")
-        void blockedNotDispatchable() { 
+        @DisplayName("BLOCKED release cannot run or serve")
+        void blockedNotRunnable() { 
             AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
@@ -194,7 +196,8 @@ class AgentReleaseTest {
                     .capabilityMaturityProfile("L1")
                     .build(); 
 
-            assertThat(release.isDispatchable()).isFalse(); 
+            assertThat(release.isRunnable()).isFalse();
+            assertThat(release.isResponseServing()).isFalse();
         }
     }
 

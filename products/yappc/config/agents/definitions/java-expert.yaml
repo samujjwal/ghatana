@@ -18,7 +18,7 @@ metadata:
   - activej
   - rest-api
 identity:
-  agentType: hybrid
+  agentType: HYBRID
   subtype: rule+llm
   determinismGuarantee: partial
   stateMutability: mutable

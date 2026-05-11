@@ -62,9 +62,8 @@ export function useCreateCampaign(
 ): UseCreateCampaignReturn {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<Campaign, ApiError, CreateCampaignRequest>({
-    mutationFn: (body) => {
-      const idempotencyKey = crypto.randomUUID();
+  const mutation = useMutation<Campaign, ApiError, { body: CreateCampaignRequest; idempotencyKey: string }>({
+    mutationFn: ({ body, idempotencyKey }) => {
       return createCampaign(workspaceId!, body, idempotencyKey);
     },
     onSuccess: () => {
@@ -76,7 +75,7 @@ export function useCreateCampaign(
   });
 
   return {
-    create: mutation.mutateAsync,
+    create: (body) => mutation.mutateAsync({ body, idempotencyKey: crypto.randomUUID() }),
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -97,11 +96,10 @@ export function useLaunchCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, string>({
-    mutationFn: async (campaignId) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        const idempotencyKey = crypto.randomUUID();
         const result = await launchCampaign(workspaceId!, campaignId, idempotencyKey);
         return result;
       } finally {
@@ -117,13 +115,13 @@ export function useLaunchCampaign(
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
-    onError: (error, campaignId) => {
+    onError: (error, { campaignId }) => {
       onError?.(error, campaignId);
     },
   });
 
   return {
-    launch: mutation.mutateAsync,
+    launch: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
     // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
@@ -145,11 +143,10 @@ export function usePauseCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, string>({
-    mutationFn: async (campaignId) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        const idempotencyKey = crypto.randomUUID();
         const result = await pauseCampaign(workspaceId!, campaignId, idempotencyKey);
         return result;
       } finally {
@@ -163,13 +160,13 @@ export function usePauseCampaign(
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] });
     },
-    onError: (error, campaignId) => {
+    onError: (error, { campaignId }) => {
       onError?.(error, campaignId);
     },
   });
 
   return {
-    pause: mutation.mutateAsync,
+    pause: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
     // Row-specific pending state allows concurrent mutations on different rows.
     isPendingFor: useCallback((campaignId: string) => pendingIds.has(campaignId), [pendingIds]),
     isError: mutation.isError,
@@ -191,21 +188,21 @@ export function useCompleteCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, string>({
-    mutationFn: async (campaignId) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        return await completeCampaign(workspaceId!, campaignId, crypto.randomUUID());
+        return await completeCampaign(workspaceId!, campaignId, idempotencyKey);
       } finally {
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
-    onError: (error, campaignId) => { onError?.(error, campaignId); },
+    onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: mutation.mutateAsync,
+    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -219,21 +216,21 @@ export function useArchiveCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, string>({
-    mutationFn: async (campaignId) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        return await archiveCampaign(workspaceId!, campaignId, crypto.randomUUID());
+        return await archiveCampaign(workspaceId!, campaignId, idempotencyKey);
       } finally {
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
-    onError: (error, campaignId) => { onError?.(error, campaignId); },
+    onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: mutation.mutateAsync,
+    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -247,21 +244,21 @@ export function useRollbackCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, string>({
-    mutationFn: async (campaignId) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        return await rollbackCampaign(workspaceId!, campaignId, crypto.randomUUID());
+        return await rollbackCampaign(workspaceId!, campaignId, idempotencyKey);
       } finally {
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['campaigns', workspaceId] }); },
-    onError: (error, campaignId) => { onError?.(error, campaignId); },
+    onError: (error, { campaignId }) => { onError?.(error, campaignId); },
   });
 
   return {
-    execute: mutation.mutateAsync,
+    execute: (campaignId) => mutation.mutateAsync({ campaignId, idempotencyKey: crypto.randomUUID() }),
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,
@@ -282,11 +279,11 @@ export function useDuplicateCampaign(
   const queryClient = useQueryClient();
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  const mutation = useMutation<Campaign, ApiError, { campaignId: string; newName: string }>({
-    mutationFn: async ({ campaignId, newName }) => {
+  const mutation = useMutation<Campaign, ApiError, { campaignId: string; newName: string; idempotencyKey: string }>({
+    mutationFn: async ({ campaignId, newName, idempotencyKey }) => {
       setPendingIds((prev) => new Set(prev).add(campaignId));
       try {
-        return await duplicateCampaign(workspaceId!, campaignId, newName, crypto.randomUUID());
+        return await duplicateCampaign(workspaceId!, campaignId, newName, idempotencyKey);
       } finally {
         setPendingIds((prev) => { const n = new Set(prev); n.delete(campaignId); return n; });
       }
@@ -296,7 +293,11 @@ export function useDuplicateCampaign(
   });
 
   return {
-    execute: (campaignId: string, newName: string) => mutation.mutateAsync({ campaignId, newName }),
+    execute: (campaignId: string, newName: string) => mutation.mutateAsync({
+      campaignId,
+      newName,
+      idempotencyKey: crypto.randomUUID(),
+    }),
     isPendingFor: useCallback((id: string) => pendingIds.has(id), [pendingIds]),
     isError: mutation.isError,
     error: mutation.error ?? null,

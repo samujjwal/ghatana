@@ -117,7 +117,7 @@ allowedValues:
 #   Rule-based logic           → deterministic (subtype: rule-engine)
 #   Policy/governance check    → deterministic (subtype: policy-engine)
 #   Template rendering         → deterministic (subtype: template)
-#   LLM/GPT/Claude agent       → probabilistic (subtype: llm)      ← NOT top-level "llm" (deprecated)
+#   LLM/GPT/Claude agent       → PROBABILISTIC (subtype: LLM)      ← NOT a top-level type
 #   ML model inference         → probabilistic (subtype: ml-model)
 #   AEP operator               → stream-processor
 #   Orchestrator/planner       → planning
@@ -127,24 +127,23 @@ allowedValues:
 #   Alert/circuit-breaker      → reactive
 #
 # JAVA ALIGNMENT: com.ghatana.agent.AgentType (9 canonical values)
-#   deterministic  → AgentType.DETERMINISTIC
-#   probabilistic  → AgentType.PROBABILISTIC
-#   stream-processor → AgentType.STREAM_PROCESSOR
-#   planning       → AgentType.PLANNING
-#   hybrid         → AgentType.HYBRID
-#   adaptive       → AgentType.ADAPTIVE
-#   composite      → AgentType.COMPOSITE
-#   reactive       → AgentType.REACTIVE
-#   custom         → AgentType.CUSTOM
-#   (llm, rule-based, policy, pattern are YAML aliases → resolved via AgentType.resolve())
+#   DETERMINISTIC    → AgentType.DETERMINISTIC
+#   PROBABILISTIC    → AgentType.PROBABILISTIC
+#   STREAM_PROCESSOR → AgentType.STREAM_PROCESSOR
+#   PLANNING         → AgentType.PLANNING
+#   HYBRID           → AgentType.HYBRID
+#   ADAPTIVE         → AgentType.ADAPTIVE
+#   COMPOSITE        → AgentType.COMPOSITE
+#   REACTIVE         → AgentType.REACTIVE
+#   CUSTOM           → AgentType.CUSTOM
 #
 purpose: >
   Primary processing identity of the agent. This field communicates the dominant computational
   model — even when the agent internally uses multiple mechanisms. Use exactly ONE canonical type.
   Finer-grained classification is expressed via the companion "subtype" field in the identity section
   and the corresponding Java enum (DeterministicSubtype, ProbabilisticSubtype, StreamProcessorSubtype,
-  PlanningSubtype). AgentType.resolve() handles deprecated aliases (llm, rule-based, policy, pattern)
-  for backward compatibility with pre-2.1 YAML files.
+  PlanningSubtype). AgentType.resolve() accepts only canonical taxonomy names and registered custom
+  type names. Repo-local fix tooling must update old specs before runtime.
 useCases: - Runtime routing - Review criteria selection - Testing strategy definition - Safety expectation setting - Validator type-specific rules
 example: "stream-processor"
 
@@ -821,16 +820,16 @@ supportsHandoff: true
 supportsDelegation: true
 returnContract: "structured-result-with-evidence"
 
-compatibility:
+runtimeCompatibility:
 type: object
 required: false
 purpose: >
-Lists compatibility guarantees and constraints.
+Lists runtime version guarantees and constraints.
 useCases: - Upgrade safety - Version negotiation - Consumer assurance
 example:
-backwardCompatibleFrom: "2.1.0"
-schemaCompatibility: "minor-version-compatible"
-deprecatedFields: - "legacyReasoner"
+minimumRuntimeVersion: "2.1.0"
+schemaVersionPolicy: "minor-version-compatible"
+removedFieldPolicy: "reject"
 
 security:
 authn:

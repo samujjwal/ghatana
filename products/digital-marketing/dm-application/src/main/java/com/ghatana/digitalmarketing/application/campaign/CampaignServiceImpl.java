@@ -135,7 +135,7 @@ public final class CampaignServiceImpl implements CampaignService {
                     .createdBy(ctx.getActor().getPrincipalId())
                     .build();
 
-                return repository.save(campaign)
+                return repository.save(ctx.getTenantId(), campaign)
                     .then(saved -> eventSourcingAdapter.publishCreated(ctx, saved)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx.withIdempotencyKey(DmIdempotencyKey.forCommand("CreateCampaign", saved.getId())),
@@ -172,7 +172,7 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to launch campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
@@ -180,34 +180,37 @@ public final class CampaignServiceImpl implements CampaignService {
             .then(campaign -> runCompliancePreflight(ctx, campaign))
             .then(campaign -> runLaunchRiskEvaluation(ctx, campaign))
             .then(campaign -> {
-                Campaign launched = campaign.launch();
-                return repository.save(launched)
-                    .then(saved -> eventSourcingAdapter.publishLaunched(ctx, saved)
-                        .then(offset -> issueGoogleAdsCommandIfNeeded(ctx, saved))
-                        .then(ignored -> kernelAdapter.recordAudit(
+                Campaign pendingLaunch = campaign.requestLaunch();
+                return repository.save(ctx.getTenantId(), pendingLaunch)
+                    .then(saved -> issueGoogleAdsCommandIfNeeded(ctx, saved)
+                        .then(commandState -> persistLaunchState(ctx, saved, commandState))
+                        .then(updated -> publishLaunchEventIfExternallyLive(ctx, updated))
+                        .then(updated -> kernelAdapter.recordAudit(
                             ctx,
-                            saved.getId(),
+                            updated.getId(),
                             "launch",
                             Map.of(
                                 "previousStatus", campaign.getStatus().name(),
+                                "newStatus", updated.getStatus().name(),
                                 "riskModel", CAMPAIGN_LAUNCH_RISK_MODEL,
-                                "campaignType", saved.getType().name()
+                                "campaignType", updated.getType().name()
                             )
-                        ))
+                        ).map(auditId -> updated))
                     .then(auditId -> kernelAdapter.notifyUser(
                         ctx,
                         ctx.getActor().getPrincipalId(),
                         "dmos.campaign.launched",
-                        Map.of("campaignId", saved.getId(), "campaignName", saved.getName())
+                        Map.of("campaignId", auditId.getId(), "campaignName", auditId.getName())
                     ).map(ignored -> {
                         metrics.increment(DmosMetricsCollector.CAMPAIGN_LAUNCHED, Map.of(
                             "tenantId",    ctx.getTenantId().getValue(),
                             "workspaceId", ctx.getWorkspaceId().getValue(),
-                            "campaignType", saved.getType().name()
+                            "campaignType", auditId.getType().name(),
+                            "campaignStatus", auditId.getStatus().name()
                         ));
-                        LOG.info("[DMOS] Campaign launched: id={}, tenant={}, type={}",
-                            saved.getId(), ctx.getTenantId().getValue(), saved.getType().name());
-                        return saved;
+                        LOG.info("[DMOS] Campaign launch accepted: id={}, tenant={}, type={}, status={}",
+                            auditId.getId(), ctx.getTenantId().getValue(), auditId.getType().name(), auditId.getStatus());
+                        return auditId;
                     })));
             });
     }
@@ -228,14 +231,14 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to pause campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
             )))
             .then(campaign -> {
                 Campaign paused = campaign.pause();
-                return repository.save(paused)
+                return repository.save(ctx.getTenantId(), paused)
                     .then(saved -> eventSourcingAdapter.publishPaused(ctx, saved)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx,
@@ -271,14 +274,14 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to complete campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
             )))
             .then(campaign -> {
                 Campaign completed = campaign.complete();
-                return repository.save(completed)
+                return repository.save(ctx.getTenantId(), completed)
                     .then(saved -> eventSourcingAdapter.publishCompleted(ctx, saved)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx,
@@ -314,14 +317,14 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to archive campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
             )))
             .then(campaign -> {
                 Campaign archived = campaign.archive();
-                return repository.save(archived)
+                return repository.save(ctx.getTenantId(), archived)
                     .then(saved -> eventSourcingAdapter.publishArchived(ctx, saved)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx,
@@ -357,7 +360,7 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to rollback campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
@@ -365,7 +368,7 @@ public final class CampaignServiceImpl implements CampaignService {
             .then(campaign -> {
                 CampaignStatus previousStatus = campaign.getStatus();
                 Campaign rolledBack = campaign.rollback();
-                return repository.save(rolledBack)
+                return repository.save(ctx.getTenantId(), rolledBack)
                     .then(saved -> eventSourcingAdapter.publishRolledBack(ctx, saved, previousStatus)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx,
@@ -405,7 +408,7 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to read campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
@@ -429,7 +432,7 @@ public final class CampaignServiceImpl implements CampaignService {
                     .createdBy(ctx.getActor().getPrincipalId())
                     .build();
 
-                return repository.save(duplicate)
+                return repository.save(ctx.getTenantId(), duplicate)
                     .then(saved -> eventSourcingAdapter.publishCreated(ctx, saved)
                         .then(offset -> kernelAdapter.recordAudit(
                             ctx.withIdempotencyKey(DmIdempotencyKey.forCommand("DuplicateCampaign", saved.getId())),
@@ -472,7 +475,7 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to read campaign " + campaignId
                     ));
                 }
-                return repository.findById(ctx.getWorkspaceId(), campaignId);
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
             })
             .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
@@ -490,8 +493,8 @@ public final class CampaignServiceImpl implements CampaignService {
                         "Not authorized to list campaigns in workspace " + ctx.getWorkspaceId().getValue()
                     ));
                 }
-                return repository.listByWorkspace(ctx.getWorkspaceId(), limit, offset)
-                    .then(campaigns -> repository.countByWorkspace(ctx.getWorkspaceId())
+                return repository.listByWorkspace(ctx.getTenantId(), ctx.getWorkspaceId(), limit, offset)
+                    .then(campaigns -> repository.countByWorkspace(ctx.getTenantId(), ctx.getWorkspaceId())
                         .map(totalCount -> new CampaignListResult(campaigns, totalCount, limit, offset)));
             })
             .map(result -> {
@@ -580,12 +583,12 @@ public final class CampaignServiceImpl implements CampaignService {
      * @param campaign the launched campaign
      * @return Promise that completes when command is issued (or immediately if not applicable)
      */
-    private Promise<Void> issueGoogleAdsCommandIfNeeded(DmOperationContext ctx, Campaign campaign) {
+    private Promise<LaunchCommandState> issueGoogleAdsCommandIfNeeded(DmOperationContext ctx, Campaign campaign) {
         // Only PAID_SEARCH campaigns need Google Ads external creation
         if (campaign.getType() != CampaignType.PAID_SEARCH) {
             LOG.debug("[DMOS] Campaign {} is type {}, skipping Google Ads command",
                 campaign.getId(), campaign.getType());
-            return Promise.of(null);
+            return Promise.of(LaunchCommandState.notRequired());
         }
 
         LOG.info("[DMOS] Checking kill switch for Google Ads campaign creation: campaignId={}",
@@ -600,14 +603,13 @@ public final class CampaignServiceImpl implements CampaignService {
                 if (isBlocked) {
                     LOG.warn("[DMOS-KILLSWITCH] Google Ads campaign creation blocked for campaignId={}",
                         campaign.getId());
-                    // Record audit but don't fail the launch - campaign is launched internally
                     return killSwitchService.recordKillSwitchAudit(
                             ctx.getTenantId().getValue(),
                             ctx.getWorkspaceId().getValue(),
                             DmKillSwitchService.Features.GOOGLE_ADS_PUBLISH,
                             true,
                             ctx.getCorrelationId().getValue()
-                        ).map(ignored -> null);
+                        ).map(ignored -> LaunchCommandState.blocked());
                 }
 
                 // P1-023: Issue Google Ads campaign creation command to outbox
@@ -615,26 +617,28 @@ public final class CampaignServiceImpl implements CampaignService {
                     campaign.getId());
 
                 try {
-                    // P1-2: Build command payload with real campaign data
-                    // Use campaign budget, objective, and audience instead of hardcoded defaults
-                    String dailyBudget = campaign.getBudgetCents() != null
-                        ? String.format("%.2f", campaign.getBudgetCents() / 100.0)
-                        : "50.00"; // Fallback to default if not set
+                    if (campaign.getBudgetCents() == null || campaign.getBudgetCents() <= 0) {
+                        return Promise.of(LaunchCommandState.failed("Paid-search launch requires explicit positive budget"));
+                    }
+                    if (isBlank(campaign.getAudience())) {
+                        return Promise.of(LaunchCommandState.failed("Paid-search launch requires explicit targeting/audience"));
+                    }
+                    if (isBlank(campaign.getObjective())) {
+                        return Promise.of(LaunchCommandState.failed("Paid-search launch requires explicit objective/keyword theme"));
+                    }
+                    if (isBlank(campaign.getLandingPageUrl())) {
+                        return Promise.of(LaunchCommandState.failed("Paid-search launch requires explicit landing page URL"));
+                    }
 
-                    // Default to US until targeting config provides explicit service area.
-                    String serviceArea = "US";
-
-                    // Derive keyword theme from objective or audience
-                    String keywordTheme = campaign.getObjective() != null
-                        ? campaign.getObjective().toLowerCase()
-                        : (campaign.getAudience() != null ? campaign.getAudience() : "general");
+                    String dailyBudget = String.format("%.2f", campaign.getBudgetCents() / 100.0);
 
                     Map<String, Object> payload = Map.of(
                         "internalCampaignId", campaign.getId(),
                         "campaignName", campaign.getName(),
                         "dailyBudget", dailyBudget,
-                        "serviceArea", serviceArea,
-                        "keywordTheme", keywordTheme
+                        "targetingCriteria", List.of(campaign.getAudience()),
+                        "keywordTheme", campaign.getObjective().toLowerCase(),
+                        "landingPageUrl", campaign.getLandingPageUrl()
                     );
                     String serializedPayload = objectMapper.writeValueAsString(payload);
 
@@ -647,13 +651,74 @@ public final class CampaignServiceImpl implements CampaignService {
                         .then(cmd -> {
                             LOG.info("[DMOS] GOOGLE_ADS_CAMPAIGN_CREATE command issued: commandId={} campaignId={}",
                                 cmd.getId(), campaign.getId());
-                            return Promise.<Void>of(null);
+                            return Promise.of(LaunchCommandState.pending(cmd.getId()));
                         });
                 } catch (JsonProcessingException e) {
                     LOG.error("[DMOS] Failed to serialize Google Ads command payload: {}", e.getMessage(), e);
-                    // Don't fail the campaign launch, but log the error
-                    return Promise.<Void>of(null);
+                    return Promise.of(LaunchCommandState.failed("Failed to serialize Google Ads command payload"));
                 }
             });
+    }
+
+    private Promise<Campaign> persistLaunchState(
+            DmOperationContext ctx,
+            Campaign campaign,
+            LaunchCommandState commandState) {
+        Campaign updated = switch (commandState.outcome()) {
+            case NOT_REQUIRED -> campaign.markLaunched();
+            case PENDING -> campaign;
+            case BLOCKED -> campaign.markExternalExecutionBlocked();
+            case FAILED -> campaign.markLaunchFailed();
+        };
+        if (updated.getStatus() == CampaignStatus.LAUNCH_FAILED) {
+            LOG.warn("[DMOS] Campaign launch failed before external execution: campaignId={} reason={}",
+                campaign.getId(), commandState.reason());
+        }
+        return repository.save(ctx.getTenantId(), updated).then(saved -> kernelAdapter.recordAudit(
+            ctx,
+            saved.getId(),
+            "launch-state",
+            Map.of(
+                "status", saved.getStatus().name(),
+                "commandId", commandState.commandId() != null ? commandState.commandId() : "",
+                "reason", commandState.reason() != null ? commandState.reason() : ""
+            )
+        ).map(auditId -> saved));
+    }
+
+    private Promise<Campaign> publishLaunchEventIfExternallyLive(DmOperationContext ctx, Campaign campaign) {
+        if (campaign.getStatus() != CampaignStatus.LAUNCHED) {
+            return Promise.of(campaign);
+        }
+        return eventSourcingAdapter.publishLaunched(ctx, campaign).map(offset -> campaign);
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private record LaunchCommandState(LaunchCommandOutcome outcome, String commandId, String reason) {
+        static LaunchCommandState notRequired() {
+            return new LaunchCommandState(LaunchCommandOutcome.NOT_REQUIRED, null, null);
+        }
+
+        static LaunchCommandState pending(String commandId) {
+            return new LaunchCommandState(LaunchCommandOutcome.PENDING, commandId, null);
+        }
+
+        static LaunchCommandState blocked() {
+            return new LaunchCommandState(LaunchCommandOutcome.BLOCKED, null, "Google Ads publish kill switch active");
+        }
+
+        static LaunchCommandState failed(String reason) {
+            return new LaunchCommandState(LaunchCommandOutcome.FAILED, null, reason);
+        }
+    }
+
+    private enum LaunchCommandOutcome {
+        NOT_REQUIRED,
+        PENDING,
+        BLOCKED,
+        FAILED
     }
 }

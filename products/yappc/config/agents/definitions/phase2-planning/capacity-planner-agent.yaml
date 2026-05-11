@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: capacity_calculation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1
@@ -41,7 +41,7 @@ generator:
         
         Output as JSON: {total_hours, deductions, net_capacity, confidence, by_skill, by_person, optimization_recommendations}
     - name: forecast_generation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Generate capacity forecast
     - name: capacity_registration
       type: SERVICE_CALL

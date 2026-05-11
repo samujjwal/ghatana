@@ -5,7 +5,7 @@
 #
 # Format: structured YAML objects with machine-readable metadata
 # Required fields: method, path, auth, owner, boundary, operationId
-# Optional fields: scopes (if auth is required)
+# Optional fields: scopes (if auth is required), auditEventType, privacyClassification
 #
 # Auth levels:
 # - public: No authentication required
@@ -18,6 +18,34 @@
 # - project:read: Read access to project data
 # - project:write: Write access to project data
 # - admin: Administrative operations
+#
+# Privacy classification (defaults to INTERNAL for required auth, PUBLIC for public):
+# - PUBLIC: No sensitive data, can be exposed publicly
+# - INTERNAL: Internal use only, not for public exposure
+# - CONFIDENTIAL: Sensitive data requiring access control
+# - RESTRICTED: Highly sensitive, strict access control required
+#
+# Audit event types (derived from operationId if not specified):
+# - INTENT_CAPTURE, INTENT_ANALYZE, INTENT_READ
+# - SHAPE_DERIVE, SHAPE_MODEL, SHAPE_READ
+# - VALIDATE_ARTIFACTS, VALIDATE_WITH_CONFIG, VALIDATE_WITH_POLICY
+# - GENERATE_ARTIFACTS, GENERATE_DIFF, ARTIFACTS_READ
+# - RUN_ARTIFACTS, RUN_WITH_OBSERVATION, RUN_ROLLBACK, RUN_PROMOTE
+# - OBSERVE_RUN, LEARN_FROM_RUN, LEARN_WITH_CONTEXT
+# - EVOLVE_SYSTEM, EVOLVE_WITH_CONSTRAINTS
+# - LIFECYCLE_EXECUTE
+# - ARTIFACT_GRAPH_INGEST, ARTIFACT_GRAPH_ANALYZE, ARTIFACT_GRAPH_MERGE, ARTIFACT_GRAPH_QUERY
+# - RESIDUAL_ANALYZE, SOURCE_IMPORT
+# - PREVIEW_SESSION_CREATE, PREVIEW_SESSION_VALIDATE
+# - CAPABILITIES_QUERY, CAPABILITIES_GET
+# - PHASE_PACKET_REQUEST, PHASE_PACKET_GET
+# - DASHBOARD_ACTIONS_REQUEST, DASHBOARD_ACTIONS_GET
+# - VECTOR_SEARCH, VECTOR_INDEX, VECTOR_DELETE, VECTOR_RAG
+# - AGENTS_LIST, AGENTS_EXECUTE, COPILOT_CHAT
+# - WORKFLOW_CREATE, WORKFLOW_START, WORKFLOW_PAUSE, WORKFLOW_RESUME, WORKFLOW_CANCEL
+# - PACK_LIST, PACK_VALIDATE, SCAFFOLD_CREATE, SCAFFOLD_UPDATE
+# - TEMPLATE_RENDER, DEPENDENCY_ANALYZE
+# - REFACTOR_JOB_CREATE, REFACTOR_JOB_START, REFACTOR_JOB_STOP
 
 # ─── yappc-services (YappcHttpServer) ─────────────────────────────────────────
 yappc-services:
@@ -28,6 +56,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: liveness
+    auditEventType: LIVENESS_CHECK
+    privacyClassification: PUBLIC
   - method: GET
     path: /api/v1/yappc/info
     auth: public
@@ -35,6 +65,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: serviceInfo
+    auditEventType: SERVICE_INFO_READ
+    privacyClassification: PUBLIC
   - method: POST
     path: /api/v1/yappc/intent/capture
     auth: required
@@ -42,6 +74,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: captureIntent
+    auditEventType: INTENT_CAPTURE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/intent/analyze
     auth: required
@@ -49,6 +83,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: analyzeIntent
+    auditEventType: INTENT_ANALYZE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/yappc/intent/{id}
     auth: required
@@ -56,6 +92,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getIntent
+    auditEventType: INTENT_READ
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/shape/derive
     auth: required
@@ -63,6 +101,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: deriveShape
+    auditEventType: SHAPE_DERIVE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/shape/model
     auth: required
@@ -70,6 +110,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: modelShape
+    auditEventType: SHAPE_MODEL
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/yappc/shape/{id}
     auth: required
@@ -77,6 +119,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getShape
+    auditEventType: SHAPE_READ
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/validate
     auth: required
@@ -84,6 +128,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: validateArtifacts
+    auditEventType: VALIDATE_ARTIFACTS
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/validate/with-config
     auth: required
@@ -91,6 +137,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: validateWithConfig
+    auditEventType: VALIDATE_WITH_CONFIG
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/validate/with-policy
     auth: required
@@ -98,6 +146,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: validateWithPolicy
+    auditEventType: VALIDATE_WITH_POLICY
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/generate
     auth: required
@@ -105,6 +155,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: generateArtifacts
+    auditEventType: GENERATE_ARTIFACTS
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/generate/diff
     auth: required
@@ -112,6 +164,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: generateDiff
+    auditEventType: GENERATE_DIFF
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/yappc/generate/artifacts/{id}
     auth: required
@@ -119,6 +173,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getArtifacts
+    auditEventType: ARTIFACTS_READ
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/run
     auth: required
@@ -126,13 +182,17 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: runArtifacts
+    auditEventType: RUN_ARTIFACTS
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/run/with-observation
     auth: required
     scopes: [project:write]
     owner: yappc-services
     boundary: YAPPC
-    operationId:RunWithObservation
+    operationId: RunWithObservation
+    auditEventType: RUN_WITH_OBSERVATION
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/run/rollback
     auth: required
@@ -140,6 +200,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: rollbackRun
+    auditEventType: RUN_ROLLBACK
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/run/promote
     auth: required
@@ -147,6 +209,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: promoteRun
+    auditEventType: RUN_PROMOTE
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/observe
     auth: required
@@ -154,6 +218,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: observeRun
+    auditEventType: OBSERVE_RUN
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/learn
     auth: required
@@ -161,6 +227,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: learnFromRun
+    auditEventType: LEARN_FROM_RUN
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/learn/with-context
     auth: required
@@ -168,6 +236,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: learnWithContext
+    auditEventType: LEARN_WITH_CONTEXT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/evolve
     auth: required
@@ -175,6 +245,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: evolveSystem
+    auditEventType: EVOLVE_SYSTEM
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/evolve/with-constraints
     auth: required
@@ -182,6 +254,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: evolveWithConstraints
+    auditEventType: EVOLVE_WITH_CONSTRAINTS
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/yappc/lifecycle/execute
     auth: required
@@ -189,6 +263,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: executeLifecycle
+    auditEventType: LIFECYCLE_EXECUTE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/graph/ingest
     auth: required
@@ -196,6 +272,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: ingestArtifactGraph
+    auditEventType: ARTIFACT_GRAPH_INGEST
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/graph/analyze
     auth: required
@@ -203,6 +281,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: analyzeArtifactGraph
+    auditEventType: ARTIFACT_GRAPH_ANALYZE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/graph/merge
     auth: required
@@ -210,6 +290,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: mergeArtifactGraph
+    auditEventType: ARTIFACT_GRAPH_MERGE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/graph/query
     auth: required
@@ -217,6 +299,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: queryArtifactGraph
+    auditEventType: ARTIFACT_GRAPH_QUERY
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/residual/analyze
     auth: required
@@ -224,6 +308,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: analyzeResidual
+    auditEventType: RESIDUAL_ANALYZE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/artifact/import-source
     auth: required
@@ -231,6 +317,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: importSource
+    auditEventType: SOURCE_IMPORT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/preview/session/create
     auth: required
@@ -238,6 +326,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: createPreviewSession
+    auditEventType: PREVIEW_SESSION_CREATE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/preview/session/validate
     auth: required
@@ -245,6 +335,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: validatePreviewSession
+    auditEventType: PREVIEW_SESSION_VALIDATE
+    privacyClassification: CONFIDENTIAL
   # Authorization and Capabilities
   - method: POST
     path: /api/v1/capabilities
@@ -253,6 +345,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: queryCapabilities
+    auditEventType: CAPABILITIES_QUERY
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/capabilities
     auth: required
@@ -260,6 +354,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getCapabilities
+    auditEventType: CAPABILITIES_GET
+    privacyClassification: INTERNAL
   # Phase Cockpit
   - method: POST
     path: /api/v1/phase/packet
@@ -268,6 +364,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: requestPhasePacket
+    auditEventType: PHASE_PACKET_REQUEST
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/phase/packet
     auth: required
@@ -275,6 +373,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getPhasePacket
+    auditEventType: PHASE_PACKET_GET
+    privacyClassification: CONFIDENTIAL
   # Dashboard Actions
   - method: POST
     path: /api/v1/dashboard/actions
@@ -283,6 +383,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: requestDashboardActions
+    auditEventType: DASHBOARD_ACTIONS_REQUEST
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/dashboard/actions
     auth: required
@@ -290,6 +392,8 @@ yappc-services:
     owner: yappc-services
     boundary: YAPPC
     operationId: getDashboardActions
+    auditEventType: DASHBOARD_ACTIONS_GET
+    privacyClassification: CONFIDENTIAL
 
 # ─── yappc-api (VectorRoutes / AgentRoutes / WorkflowRoutes) ──────────────────
 # NOTE: These routes should be moved to Data Cloud+AEP boundary
@@ -303,6 +407,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorSearch
+    auditEventType: VECTOR_SEARCH
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/vector/search/hybrid
     auth: required
@@ -310,6 +416,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorSearchHybrid
+    auditEventType: VECTOR_SEARCH_HYBRID
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/vector/similar/{id}
     auth: required
@@ -317,6 +425,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorSimilar
+    auditEventType: VECTOR_SIMILAR
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/vector/index
     auth: required
@@ -324,6 +434,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorIndex
+    auditEventType: VECTOR_INDEX
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/vector/index/batch
     auth: required
@@ -331,6 +443,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorIndexBatch
+    auditEventType: VECTOR_INDEX_BATCH
+    privacyClassification: CONFIDENTIAL
   - method: DELETE
     path: /api/v1/vector/index/{id}
     auth: required
@@ -338,6 +452,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorIndexDelete
+    auditEventType: VECTOR_INDEX_DELETE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/vector/rag
     auth: required
@@ -345,6 +461,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorRag
+    auditEventType: VECTOR_RAG
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/vector/rag/chat
     auth: required
@@ -352,6 +470,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: vectorRagChat
+    auditEventType: VECTOR_RAG_CHAT
+    privacyClassification: CONFIDENTIAL
   # Agents
   - method: GET
     path: /api/v1/agents
@@ -360,6 +480,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: listAgents
+    auditEventType: AGENTS_LIST
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/agents/health
     auth: public
@@ -367,6 +489,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: agentsHealth
+    auditEventType: AGENTS_HEALTH
+    privacyClassification: PUBLIC
   - method: GET
     path: /api/v1/agents/capabilities
     auth: required
@@ -374,6 +498,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: agentsCapabilities
+    auditEventType: AGENTS_CAPABILITIES
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/agents/by-capability/{capability}
     auth: required
@@ -381,6 +507,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: agentsByCapability
+    auditEventType: AGENTS_BY_CAPABILITY
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/agents/{name}
     auth: required
@@ -388,6 +516,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: getAgent
+    auditEventType: AGENT_GET
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/agents/{name}/health
     auth: public
@@ -395,6 +525,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: agentHealth
+    auditEventType: AGENT_HEALTH
+    privacyClassification: PUBLIC
   - method: POST
     path: /api/v1/agents/{name}/execute
     auth: required
@@ -402,6 +534,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: executeAgent
+    auditEventType: AGENTS_EXECUTE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/agents/copilot/chat
     auth: required
@@ -409,6 +543,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: copilotChat
+    auditEventType: COPILOT_CHAT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/agents/search
     auth: required
@@ -416,6 +552,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: searchAgents
+    auditEventType: AGENTS_SEARCH
+    privacyClassification: INTERNAL
   - method: POST
     path: /api/v1/agents/predict
     auth: required
@@ -423,6 +561,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: predictAgent
+    auditEventType: AGENTS_PREDICT
+    privacyClassification: INTERNAL
   # Workflows
   - method: POST
     path: /api/v1/workflows
@@ -431,6 +571,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: createWorkflow
+    auditEventType: WORKFLOW_CREATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/workflows
     auth: required
@@ -438,6 +580,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: listWorkflows
+    auditEventType: WORKFLOW_LIST
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/workflows/{id}
     auth: required
@@ -445,6 +589,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: getWorkflow
+    auditEventType: WORKFLOW_GET
+    privacyClassification: CONFIDENTIAL
   - method: DELETE
     path: /api/v1/workflows/{id}
     auth: required
@@ -452,6 +598,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: deleteWorkflow
+    auditEventType: WORKFLOW_DELETE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/start
     auth: required
@@ -459,6 +607,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: startWorkflow
+    auditEventType: WORKFLOW_START
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/pause
     auth: required
@@ -466,6 +616,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: pauseWorkflow
+    auditEventType: WORKFLOW_PAUSE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/resume
     auth: required
@@ -473,6 +625,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: resumeWorkflow
+    auditEventType: WORKFLOW_RESUME
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/cancel
     auth: required
@@ -480,6 +634,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: cancelWorkflow
+    auditEventType: WORKFLOW_CANCEL
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/steps/advance
     auth: required
@@ -487,6 +643,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: advanceWorkflowStep
+    auditEventType: WORKFLOW_STEP_ADVANCE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/steps/{stepId}/goto
     auth: required
@@ -494,6 +652,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: gotoWorkflowStep
+    auditEventType: WORKFLOW_STEP_GOTO
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/plans/generate
     auth: required
@@ -501,6 +661,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: generateWorkflowPlan
+    auditEventType: WORKFLOW_PLAN_GENERATE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{workflowId}/plans/{planId}/approve
     auth: required
@@ -508,6 +670,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: approveWorkflowPlan
+    auditEventType: WORKFLOW_PLAN_APPROVE
+    privacyClassification: RESTRICTED
   - method: POST
     path: /api/v1/workflows/{workflowId}/plans/{planId}/reject
     auth: required
@@ -515,6 +679,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: rejectWorkflowPlan
+    auditEventType: WORKFLOW_PLAN_REJECT
+    privacyClassification: RESTRICTED
   - method: PUT
     path: /api/v1/workflows/{workflowId}/plans/{planId}/steps
     auth: required
@@ -522,6 +688,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: updateWorkflowPlanSteps
+    auditEventType: WORKFLOW_PLAN_STEPS_UPDATE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/workflows/{id}/route
     auth: required
@@ -529,6 +697,8 @@ yappc-api:
     owner: yappc-api
     boundary: DATA_CLOUD_AEP
     operationId: routeWorkflow
+    auditEventType: WORKFLOW_ROUTE
+    privacyClassification: CONFIDENTIAL
 
 # ─── scaffold/api (YappcServer) ───────────────────────────────────────────────
 scaffold-api:
@@ -539,6 +709,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: listPacks
+    auditEventType: PACK_LIST
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/languages
     auth: required
@@ -546,6 +718,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPackLanguages
+    auditEventType: PACK_LANGUAGES_GET
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/categories
     auth: required
@@ -553,6 +727,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPackCategories
+    auditEventType: PACK_CATEGORIES_GET
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/platforms
     auth: required
@@ -560,6 +736,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPackPlatforms
+    auditEventType: PACK_PLATFORMS_GET
+    privacyClassification: INTERNAL
   - method: POST
     path: /api/v1/packs/refresh
     auth: required
@@ -567,6 +745,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: refreshPacks
+    auditEventType: PACKS_REFRESH
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/{name}
     auth: required
@@ -574,6 +754,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPack
+    auditEventType: PACK_GET
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/{name}/validate
     auth: required
@@ -581,6 +763,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: validatePack
+    auditEventType: PACK_VALIDATE
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/{name}/templates
     auth: required
@@ -588,6 +772,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPackTemplates
+    auditEventType: PACK_TEMPLATES_GET
+    privacyClassification: INTERNAL
   - method: GET
     path: /api/v1/packs/{name}/variables
     auth: required
@@ -595,6 +781,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getPackVariables
+    auditEventType: PACK_VARIABLES_GET
+    privacyClassification: INTERNAL
   - method: POST
     path: /api/v1/scaffold/projects
     auth: required
@@ -602,6 +790,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: createScaffoldProject
+    auditEventType: SCAFFOLD_CREATE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/scaffold/projects/add-feature
     auth: required
@@ -609,6 +799,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: addFeatureToProject
+    auditEventType: SCAFFOLD_ADD_FEATURE
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/scaffold/projects/update
     auth: required
@@ -616,6 +808,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: updateScaffoldProject
+    auditEventType: SCAFFOLD_UPDATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/scaffold/projects/info
     auth: required
@@ -623,6 +817,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getScaffoldProjectInfo
+    auditEventType: SCAFFOLD_INFO_GET
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/scaffold/projects/state
     auth: required
@@ -630,6 +826,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getScaffoldProjectState
+    auditEventType: SCAFFOLD_STATE_GET
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/scaffold/projects/validate
     auth: required
@@ -637,6 +835,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: validateScaffoldProject
+    auditEventType: SCAFFOLD_VALIDATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/scaffold/projects/check-updates
     auth: required
@@ -644,6 +844,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: checkScaffoldUpdates
+    auditEventType: SCAFFOLD_CHECK_UPDATES
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/scaffold/projects/preview-update
     auth: required
@@ -651,6 +853,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: previewScaffoldUpdate
+    auditEventType: SCAFFOLD_PREVIEW_UPDATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/scaffold/projects/features
     auth: required
@@ -658,6 +862,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getScaffoldFeatures
+    auditEventType: SCAFFOLD_FEATURES_GET
+    privacyClassification: INTERNAL
   - method: POST
     path: /api/v1/scaffold/projects/export
     auth: required
@@ -665,6 +871,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: exportScaffoldProject
+    auditEventType: SCAFFOLD_EXPORT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/scaffold/projects/import
     auth: required
@@ -672,6 +880,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: importScaffoldProject
+    auditEventType: SCAFFOLD_IMPORT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/templates/render
     auth: required
@@ -679,6 +889,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: renderTemplate
+    auditEventType: TEMPLATE_RENDER
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/templates/helpers
     auth: required
@@ -686,6 +898,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: getTemplateHelpers
+    auditEventType: TEMPLATE_HELPERS_GET
+    privacyClassification: INTERNAL
   - method: POST
     path: /api/v1/templates/validate
     auth: required
@@ -693,6 +907,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: validateTemplate
+    auditEventType: TEMPLATE_VALIDATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/dependencies/analyze/pack/{name}
     auth: required
@@ -700,6 +916,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: analyzePackDependencies
+    auditEventType: DEPENDENCY_ANALYZE_PACK
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/dependencies/analyze/project
     auth: required
@@ -707,6 +925,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: analyzeProjectDependencies
+    auditEventType: DEPENDENCY_ANALYZE_PROJECT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/dependencies/conflicts
     auth: required
@@ -714,6 +934,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: detectDependencyConflicts
+    auditEventType: DEPENDENCY_CONFLICTS_DETECT
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/dependencies/add-conflicts
     auth: required
@@ -721,6 +943,8 @@ scaffold-api:
     owner: scaffold-api
     boundary: YAPPC
     operationId: addDependencyConflicts
+    auditEventType: DEPENDENCY_CONFLICTS_ADD
+    privacyClassification: CONFIDENTIAL
 
 # ─── refactorer/api (RefactorerHttpServer) ────────────────────────────────────
 refactorer-api:
@@ -731,6 +955,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: createRefactorJob
+    auditEventType: REFACTOR_JOB_CREATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/jobs/{jobId}
     auth: required
@@ -738,6 +964,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: getRefactorJob
+    auditEventType: REFACTOR_JOB_GET
+    privacyClassification: CONFIDENTIAL
   - method: DELETE
     path: /api/v1/jobs/{jobId}
     auth: required
@@ -745,6 +973,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: deleteRefactorJob
+    auditEventType: REFACTOR_JOB_DELETE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/jobs/{jobId}/report
     auth: required
@@ -752,6 +982,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: getRefactorJobReport
+    auditEventType: REFACTOR_JOB_REPORT_GET
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/jobs/{jobId}/start
     auth: required
@@ -759,6 +991,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: startRefactorJob
+    auditEventType: REFACTOR_JOB_START
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/jobs/{jobId}/stop
     auth: required
@@ -766,6 +1000,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: stopRefactorJob
+    auditEventType: REFACTOR_JOB_STOP
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/jobs/{jobId}/runs
     auth: required
@@ -773,6 +1009,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: createRefactorJobRun
+    auditEventType: REFACTOR_JOB_RUN_CREATE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/jobs/{jobId}/runs
     auth: required
@@ -780,6 +1018,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: listRefactorJobRuns
+    auditEventType: REFACTOR_JOB_RUNS_LIST
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/jobs/{jobId}/runs/{runId}
     auth: required
@@ -787,6 +1027,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: getRefactorJobRun
+    auditEventType: REFACTOR_JOB_RUN_GET
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/jobs/{jobId}/runs/{runId}/logs
     auth: required
@@ -794,6 +1036,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: getRefactorJobRunLogs
+    auditEventType: REFACTOR_JOB_RUN_LOGS_GET
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /v1/diagnose
     auth: required
@@ -801,6 +1045,8 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: diagnoseRefactorer
+    auditEventType: REFACTORER_DIAGNOSE
+    privacyClassification: INTERNAL
   - method: GET
     path: /v1/config
     auth: public
@@ -808,3 +1054,5 @@ refactorer-api:
     owner: refactorer-api
     boundary: YAPPC
     operationId: getRefactorerConfig
+    auditEventType: REFACTORER_CONFIG_GET
+    privacyClassification: PUBLIC

@@ -147,9 +147,11 @@ public final class DmosRouteManifestGenerator {
         sb.append("    private static final Map<String, Integer> ROLE_ORDER = Map.of(\n");
         List<String> roleNames = new ArrayList<>(manifest.roles.keySet());
         Collections.sort(roleNames);
-        for (String role : roleNames) {
+        for (int i = 0; i < roleNames.size(); i++) {
+            String role = roleNames.get(i);
             Role roleDef = manifest.roles.get(role);
-            sb.append("        \"").append(role).append("\", ").append(roleDef.level).append(",\n");
+            sb.append("        \"").append(role).append("\", ").append(roleDef.level);
+            sb.append(i == roleNames.size() - 1 ? "\n" : ",\n");
         }
         sb.append("    );\n\n");
 
@@ -170,8 +172,10 @@ public final class DmosRouteManifestGenerator {
 
         List<String> actions = new ArrayList<>(actionToRole.keySet());
         Collections.sort(actions);
-        for (String action : actions) {
-            sb.append("        Map.entry(\"").append(action).append("\", \"").append(actionToRole.get(action)).append("\"),\n");
+        for (int i = 0; i < actions.size(); i++) {
+            String action = actions.get(i);
+            sb.append("        Map.entry(\"").append(action).append("\", \"").append(actionToRole.get(action)).append("\")");
+            sb.append(i == actions.size() - 1 ? "\n" : ",\n");
         }
         sb.append("    );\n\n");
 
@@ -222,24 +226,31 @@ public final class DmosRouteManifestGenerator {
         sb.append("import type { ProductRouteCapability } from '@ghatana/product-shell';\n");
         sb.append("import { VALID_ROLES, type ValidRole } from '@/lib/role-utils';\n\n");
 
+        sb.append("function lazyNamedPage<T>(loader: () => Promise<T>, exportName: keyof T): React.LazyExoticComponent<React.ComponentType> {\n");
+        sb.append("  return React.lazy(async () => {\n");
+        sb.append("    const module = await loader();\n");
+        sb.append("    return { default: module[exportName] as React.ComponentType };\n");
+        sb.append("  });\n");
+        sb.append("}\n\n");
+
         // Page imports (placeholder - needs to be aligned with actual pages)
         sb.append("// Page imports\n");
-        sb.append("const DashboardPage = React.lazy(() => import('@/pages/DashboardPage'));\n");
-        sb.append("const ApprovalQueuePage = React.lazy(() => import('@/pages/ApprovalQueuePage'));\n");
-        sb.append("const ApprovalDetailPage = React.lazy(() => import('@/pages/ApprovalDetailPage'));\n");
-        sb.append("const AiActionLogPage = React.lazy(() => import('@/pages/AiActionLogPage'));\n");
-        sb.append("const CampaignsPage = React.lazy(() => import('@/pages/CampaignsPage'));\n");
-        sb.append("const StrategyPage = React.lazy(() => import('@/pages/StrategyPage'));\n");
-        sb.append("const BudgetPage = React.lazy(() => import('@/pages/BudgetPage'));\n");
-        sb.append("const FunnelAnalyticsPage = React.lazy(() => import('@/pages/FunnelAnalyticsPage'));\n");
-        sb.append("const AttributionPage = React.lazy(() => import('@/pages/AttributionPage'));\n");
-        sb.append("const RoiRoasPage = React.lazy(() => import('@/pages/RoiRoasPage'));\n");
-        sb.append("const SelfMarketingFunnelPage = React.lazy(() => import('@/pages/SelfMarketingFunnelPage'));\n");
-        sb.append("const MarketResearchPage = React.lazy(() => import('@/pages/MarketResearchPage'));\n");
-        sb.append("const AdvancedChannelsPage = React.lazy(() => import('@/pages/AdvancedChannelsPage'));\n");
-        sb.append("const LocalizationPage = React.lazy(() => import('@/pages/LocalizationPage'));\n");
-        sb.append("const AgencyOperationsPage = React.lazy(() => import('@/pages/AgencyOperationsPage'));\n");
-        sb.append("const AiOptimizationPage = React.lazy(() => import('@/pages/AiOptimizationPage'));\n\n");
+        sb.append("const DashboardPage = lazyNamedPage(() => import('@/pages/DashboardPage'), 'DashboardPage');\n");
+        sb.append("const ApprovalQueuePage = lazyNamedPage(() => import('@/pages/ApprovalQueuePage'), 'ApprovalQueuePage');\n");
+        sb.append("const ApprovalDetailPage = lazyNamedPage(() => import('@/pages/ApprovalDetailPage'), 'ApprovalDetailPage');\n");
+        sb.append("const AiActionLogPage = lazyNamedPage(() => import('@/pages/AiActionLogPage'), 'AiActionLogPage');\n");
+        sb.append("const CampaignsPage = lazyNamedPage(() => import('@/pages/CampaignsPage'), 'CampaignsPage');\n");
+        sb.append("const StrategyPage = lazyNamedPage(() => import('@/pages/StrategyPage'), 'StrategyPage');\n");
+        sb.append("const BudgetPage = lazyNamedPage(() => import('@/pages/BudgetPage'), 'BudgetPage');\n");
+        sb.append("const FunnelAnalyticsPage = lazyNamedPage(() => import('@/pages/FunnelAnalyticsPage'), 'FunnelAnalyticsPage');\n");
+        sb.append("const AttributionPage = lazyNamedPage(() => import('@/pages/AttributionPage'), 'AttributionPage');\n");
+        sb.append("const RoiRoasPage = lazyNamedPage(() => import('@/pages/RoiRoasPage'), 'RoiRoasPage');\n");
+        sb.append("const SelfMarketingFunnelPage = lazyNamedPage(() => import('@/pages/SelfMarketingFunnelPage'), 'SelfMarketingFunnelPage');\n");
+        sb.append("const MarketResearchPage = lazyNamedPage(() => import('@/pages/MarketResearchPage'), 'MarketResearchPage');\n");
+        sb.append("const AdvancedChannelsPage = lazyNamedPage(() => import('@/pages/AdvancedChannelsPage'), 'AdvancedChannelsPage');\n");
+        sb.append("const LocalizationPage = lazyNamedPage(() => import('@/pages/LocalizationPage'), 'LocalizationPage');\n");
+        sb.append("const AgencyOperationsPage = lazyNamedPage(() => import('@/pages/AgencyOperationsPage'), 'AgencyOperationsPage');\n");
+        sb.append("const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPage'), 'AiOptimizationPage');\n\n");
 
         // Type definitions
         sb.append("export interface DmosRouteManifestEntry extends ProductRouteCapability {\n");
@@ -276,10 +287,10 @@ public final class DmosRouteManifestGenerator {
                 sb.append("    capabilityKey: '").append(route.capability).append("',\n");
             }
             if (!route.path.contains("/:requestId") && !route.path.contains("/:id")) {
-                sb.append("    element: <").append(pageName).append(" />,\n");
+                sb.append("    element: React.createElement(").append(pageName).append("),\n");
             } else {
                 sb.append("    discoverable: false,\n");
-                sb.append("    element: <").append(pageName).append(" />,\n");
+                sb.append("    element: React.createElement(").append(pageName).append("),\n");
             }
             sb.append("  },\n");
         }
@@ -315,6 +326,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/dashboard")) return "Dashboard";
         if (path.contains("/approvals/:requestId")) return "Approval Detail";
         if (path.contains("/approvals")) return "Approvals";
+        if (path.contains("/ai-actions/:actionId")) return "AI Action Detail";
         if (path.contains("/ai-actions")) return "AI Action Log";
         if (path.contains("/campaigns")) return "Campaigns";
         if (path.contains("/strategy")) return "Strategy";

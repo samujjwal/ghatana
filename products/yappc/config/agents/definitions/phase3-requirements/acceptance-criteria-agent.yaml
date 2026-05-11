@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: ac_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {acceptance_criteria: [{id, title, given, when, then, priority, edge_case}], coverage_analysis}
     - name: testability_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate testability and completeness
     - name: ac_attachment
       type: SERVICE_CALL

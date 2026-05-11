@@ -1,12 +1,12 @@
 /**
  * Preview Host
  *
- * Config-driven preview host for rendering PageConfig.
+ * Config-driven preview host for rendering PageConfig with security states.
  *
  * @packageDocumentation
  */
 
-import { Play as PlayIcon, RefreshCw as RefreshIcon, Settings as SettingsIcon } from 'lucide-react';
+import { Play as PlayIcon, RefreshCw as RefreshIcon, Settings as SettingsIcon, ShieldAlert as ShieldAlertIcon, AlertTriangle as AlertTriangleIcon, FileCheck as FileCheckIcon } from 'lucide-react';
 import {
   Box,
   Stack,
@@ -14,6 +14,8 @@ import {
   Button,
   Paper,
   Divider,
+  Alert,
+  AlertTitle,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
@@ -25,8 +27,13 @@ import { AccessibilityChecker } from './AccessibilityChecker';
 import { VisualRegression } from './VisualRegression';
 
 /**
+ * Preview state enum for security and policy enforcement.
+ */
+type PreviewState = 'active' | 'blocked' | 'degraded' | 'policy-required';
+
+/**
  * @doc.type component
- * @doc.purpose Config-driven preview host for rendering PageConfig
+ * @doc.purpose Config-driven preview host for rendering PageConfig with security states
  * @doc.layer product
  * @doc.pattern Container Component
  */
@@ -34,6 +41,10 @@ interface PreviewHostProps {
   config: PageConfig;
   onConfigChange?: (config: PageConfig) => void;
   readOnly?: boolean;
+  previewState?: PreviewState;
+  trustLevel?: 'TRUSTED_LOCAL' | 'TRUSTED_CONTROLLED' | 'SEMI_TRUSTED' | 'UNTRUSTED';
+  policyMessage?: string;
+  onPolicyAction?: () => void;
 }
 
 type PreviewPanel = 'preview' | 'mock-data' | 'a11y' | 'visual-regression';
@@ -42,6 +53,10 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
   config,
   onConfigChange,
   readOnly = false,
+  previewState = 'active',
+  trustLevel = 'TRUSTED_LOCAL',
+  policyMessage,
+  onPolicyAction,
 }) => {
   const [activePanel, setActivePanel] = useState<PreviewPanel>('preview');
   const [mockData, setMockData] = useState<Record<string, unknown>>({});
@@ -53,6 +68,68 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
   const handleMockDataChange = useCallback((data: Record<string, unknown>) => {
     setMockData(data);
   }, []);
+
+  const renderSecurityState = () => {
+    switch (previewState) {
+      case 'blocked':
+        return (
+          <Alert severity="error" className="mb-4">
+            <ShieldAlertIcon className="size-4" />
+            <AlertTitle>Preview Blocked</AlertTitle>
+            <Typography variant="body2">
+              {policyMessage || 'This preview has been blocked due to security policy violations.'}
+            </Typography>
+            <Box className="mt-2">
+              <Typography variant="caption" color="text.secondary">
+                Trust Level: {trustLevel}
+              </Typography>
+            </Box>
+          </Alert>
+        );
+      case 'degraded':
+        return (
+          <Alert severity="warning" className="mb-4">
+            <AlertTriangleIcon className="size-4" />
+            <AlertTitle>Degraded Preview</AlertTitle>
+            <Typography variant="body2">
+              {policyMessage || 'This preview is running in degraded mode with limited functionality.'}
+            </Typography>
+            <Box className="mt-2">
+              <Typography variant="caption" color="text.secondary">
+                Trust Level: {trustLevel}
+              </Typography>
+            </Box>
+          </Alert>
+        );
+      case 'policy-required':
+        return (
+          <Alert severity="info" className="mb-4">
+            <FileCheckIcon className="size-4" />
+            <AlertTitle>Policy Review Required</AlertTitle>
+            <Typography variant="body2">
+              {policyMessage || 'This preview requires policy review before proceeding.'}
+            </Typography>
+            <Box className="mt-2">
+              <Typography variant="caption" color="text.secondary">
+                Trust Level: {trustLevel}
+              </Typography>
+            </Box>
+            {onPolicyAction && (
+              <Button
+                size="small"
+                variant="contained"
+                onClick={onPolicyAction}
+                className="mt-2"
+              >
+                Request Review
+              </Button>
+            )}
+          </Alert>
+        );
+      default:
+        return null;
+    }
+  };
 
   const renderPanel = () => {
     switch (activePanel) {
@@ -86,6 +163,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
               variant={activePanel === 'preview' ? 'contained' : 'outlined'}
               onClick={() => setActivePanel('preview')}
               startIcon={<PlayIcon size={14} />}
+              disabled={previewState === 'blocked'}
             >
               Preview
             </Button>
@@ -94,6 +172,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
               variant={activePanel === 'mock-data' ? 'contained' : 'outlined'}
               onClick={() => setActivePanel('mock-data')}
               startIcon={<SettingsIcon size={14} />}
+              disabled={previewState === 'blocked'}
             >
               Mock Data
             </Button>
@@ -101,6 +180,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
               size="small"
               variant={activePanel === 'a11y' ? 'contained' : 'outlined'}
               onClick={() => setActivePanel('a11y')}
+              disabled={previewState === 'blocked'}
             >
               A11y
             </Button>
@@ -108,6 +188,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
               size="small"
               variant={activePanel === 'visual-regression' ? 'contained' : 'outlined'}
               onClick={() => setActivePanel('visual-regression')}
+              disabled={previewState === 'blocked'}
             >
               Visual
             </Button>
@@ -119,8 +200,18 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
         </Box>
       </Paper>
 
+      {renderSecurityState()}
+
       <Box className="flex-1 overflow-auto">
-        {renderPanel()}
+        {previewState === 'blocked' ? (
+          <Box className="flex h-full items-center justify-center">
+            <Typography variant="body2" color="text.secondary">
+              Preview is blocked. See details above.
+            </Typography>
+          </Box>
+        ) : (
+          renderPanel()
+        )}
       </Box>
     </Box>
   );

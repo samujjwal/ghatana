@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: ethical_framework_application
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -37,7 +37,7 @@ generator:
         
         Output as JSON: {ethical_score, stakeholder_impact, bias_flags, risk_level, mitigations, recommendation}
     - name: risk_quantification
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Calculate risk scores using framework
     - name: recommendation_generation
       type: TEMPLATE

@@ -25,7 +25,7 @@ generator:
       endpoint: /embeddings/similarity
       description: Find duplicate/similar knowledge entries
     - name: canonical_form_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * <h2>Checks performed</h2>
  * <ul>
- *   <li>{@code identity.agentType} — must resolve to a non-deprecated {@link AgentType}</li>
+ *   <li>{@code identity.agentType} — must resolve to a canonical {@link AgentType}</li>
  *   <li>{@code identity.autonomyLevel} — must be a canonical {@link AutonomyLevel} value</li>
  *   <li>{@code identity.stateMutability} — must be a canonical {@link StateMutability} value</li>
  *   <li>{@code identity.determinismGuarantee} — must be a canonical {@link DeterminismGuarantee} value</li>
@@ -113,8 +113,7 @@ public final class AgentSpecValidator {
                     "identity.autonomyLevel",
                     rawAutonomy,
                     "Unknown autonomyLevel '" + rawAutonomy + "'. "
-                            + "Canonical values: ADVISORY, DRAFT, SUPERVISED, BOUNDED_AUTONOMOUS, AUTONOMOUS. "
-                            + "Legacy aliases: manual → DRAFT, semi-autonomous → SUPERVISED, assisted → DRAFT."));
+                            + "Canonical values: ADVISORY, DRAFT, SUPERVISED, BOUNDED_AUTONOMOUS, AUTONOMOUS."));
         }
     }
 

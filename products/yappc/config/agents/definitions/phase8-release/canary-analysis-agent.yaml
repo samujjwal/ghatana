@@ -16,7 +16,7 @@ generator:
       service: observability-service
       endpoint: /metrics/canary
     - name: baseline_comparison
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Compare canary cohort metrics against baseline cohort:
         - Error rate (5xx, client errors)
@@ -25,14 +25,14 @@ generator:
         - Traffic (request rate, throughput)
         Use Mann-Whitney U test for statistical significance.
     - name: decision_scoring
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Score canary health on 0-100 scale.
         >=90: PROCEED (promote canary to full rollout)
         70-89: HOLD (extend canary window for more data)
         <70: ROLLBACK (revert canary deployment)
     - name: anomaly_detection
-      type: LLM
+      type: PROBABILISTIC
       model: claude-3-5-sonnet
       max_tokens: 1000
       prompt: >

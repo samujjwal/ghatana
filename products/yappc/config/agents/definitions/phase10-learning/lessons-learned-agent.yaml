@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: lesson_extraction
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

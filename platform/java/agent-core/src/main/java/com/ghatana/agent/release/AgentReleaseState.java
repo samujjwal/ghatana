@@ -116,14 +116,19 @@ public enum AgentReleaseState {
     }
 
     /**
-     * Returns {@code true} if this state allows the agent to be dispatched.
+     * Returns {@code true} if this state allows internal execution.
      *
-     * <p>Only {@code ACTIVE} and {@code CANARY} releases are eligible for dispatch.
-     * Shadow releases process traffic internally but are not eligible for response serving.
-     *
-     * @return {@code true} iff dispatch is permitted in this state
+     * <p>SHADOW releases may run for evaluation or shadow processing, while
+     * CANARY and ACTIVE releases may run for response-serving traffic.
      */
-    public boolean isDispatchable() {
-        return this == ACTIVE || this == CANARY || this == SHADOW;
+    public boolean isRunnable() {
+        return this == SHADOW || this == CANARY || this == ACTIVE;
+    }
+
+    /**
+     * Returns {@code true} if this state may serve responses to callers.
+     */
+    public boolean isResponseServing() {
+        return this == CANARY || this == ACTIVE;
     }
 }

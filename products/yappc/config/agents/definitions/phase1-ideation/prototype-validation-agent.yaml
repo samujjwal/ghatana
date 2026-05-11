@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: testing_plan
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -44,7 +44,7 @@ generator:
       service: user-testing-service
       endpoint: /sessions/schedule
     - name: feedback_synthesis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2

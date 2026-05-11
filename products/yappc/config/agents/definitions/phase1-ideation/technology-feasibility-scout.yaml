@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: technology_assessment
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -40,7 +40,7 @@ generator:
         
         Output as JSON: {trl, technologies, complexity, risks, skill_gaps, integration_challenges, scalability, time_estimate, feasibility_score, recommendation}
     - name: proof_of_concept_design
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3

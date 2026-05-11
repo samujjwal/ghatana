@@ -20,7 +20,7 @@ generator:
       service: analytics-service
       endpoint: /analytics/user-behavior
     - name: jtbd_extraction
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.3
@@ -45,7 +45,7 @@ generator:
         
         Output as JSON array: [{jtbd_statement, functional, emotional, social, context, success_criteria, current_solutions, unmet_needs, priority}]
     - name: jtbd_validation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Validate completeness and actionability
 
 memory:

@@ -46,7 +46,7 @@ spec:
     - portfolio
     - strategic
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: product-strategy-orchestrator
     name: Product Strategy Orchestrator
@@ -82,7 +82,7 @@ spec:
     - strategy
     - okr
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: investment-planning-orchestrator
     name: Investment Planning Orchestrator
@@ -115,7 +115,7 @@ spec:
     - investment
     - budget
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: portfolio-analysis-capability-agent
     name: Portfolio Analysis Capability Agent
@@ -137,7 +137,7 @@ spec:
     - portfolio
     - analysis
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: strategic-planning-capability-agent
     name: Strategic Planning Capability Agent
@@ -166,7 +166,7 @@ spec:
     - strategy
     - planning
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: initiative-prioritization-capability-agent
     name: Initiative Prioritization Capability Agent
@@ -188,7 +188,7 @@ spec:
     - prioritization
     - scoring
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: goal-management-capability-agent
     name: Goal Management Capability Agent
@@ -219,7 +219,7 @@ spec:
     - okr
     - kpi
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: business-case-capability-agent
     name: Business Case Capability Agent
@@ -241,7 +241,7 @@ spec:
     - business-case
     - roi
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: governance-review-capability-agent
     name: Governance Review Capability Agent
@@ -263,7 +263,7 @@ spec:
     - governance
     - review
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: portfolio-scoring-task-agent
     name: Portfolio Scoring Task Agent
@@ -283,7 +283,7 @@ spec:
     - scoring
     - portfolio
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: business-case-drafting-task-agent
     name: Business Case Drafting Task Agent
@@ -303,7 +303,7 @@ spec:
     - business-case
     - drafting
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: strategy-option-comparison-task-agent
     name: Strategy Option Comparison Task Agent
@@ -323,7 +323,7 @@ spec:
     - strategy
     - comparison
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: budget-envelope-task-agent
     name: Budget Envelope Task Agent
@@ -343,7 +343,7 @@ spec:
     - budget
     - planning
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: initiative-sequencing-task-agent
     name: Initiative Sequencing Task Agent
@@ -363,7 +363,7 @@ spec:
     - sequencing
     - planning
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: executive-status-synthesis-task-agent
     name: Executive Status Synthesis Task Agent
@@ -383,7 +383,7 @@ spec:
     - reporting
     - synthesis
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: investment-risk-review-task-agent
     name: Investment Risk Review Task Agent
@@ -403,7 +403,7 @@ spec:
     - risk
     - investment
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: okr-definition-task-agent
     name: OKR Definition Task Agent
@@ -423,7 +423,7 @@ spec:
     - okr
     - definition
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: kpi-selection-task-agent
     name: KPI Selection Task Agent
@@ -443,7 +443,7 @@ spec:
     - kpi
     - metrics
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: strategic-dependency-review-task-agent
     name: Strategic Dependency Review Task Agent
@@ -463,7 +463,7 @@ spec:
     - dependency
     - strategy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: weighted-scoring-unit
     name: Weighted Scoring Unit
@@ -478,7 +478,7 @@ spec:
     - scoring
     - atomic
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: priority-ranker
     name: Priority Ranker
@@ -493,7 +493,7 @@ spec:
     - ranking
     - atomic
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: cost-benefit-calculator
     name: Cost Benefit Calculator
@@ -509,7 +509,7 @@ spec:
     - finance
     - calculation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: scenario-comparator
     name: Scenario Comparator
@@ -524,7 +524,7 @@ spec:
     - scenario
     - comparison
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: budget-variance-checker
     name: Budget Variance Checker
@@ -539,7 +539,7 @@ spec:
     - budget
     - variance
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: strategic-theme-tagger
     name: Strategic Theme Tagger
@@ -555,7 +555,7 @@ spec:
     - tagging
     - themes
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: objective-normalizer
     name: Objective Normalizer
@@ -571,7 +571,7 @@ spec:
     - normalisation
     - objectives
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: investment-threshold-checker
     name: Investment Threshold Checker
@@ -587,7 +587,7 @@ spec:
     - threshold
     - validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: portfolio-conflict-detector
     name: Portfolio Conflict Detector
@@ -603,7 +603,7 @@ spec:
     - conflict
     - detection
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: governance-checklist-unit
     name: Governance Checklist Unit
@@ -619,7 +619,7 @@ spec:
     - checklist
     - governance
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

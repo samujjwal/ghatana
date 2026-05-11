@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Shape Agent Implementation
  * 
@@ -61,7 +60,7 @@ export class ShapeAgent {
             throw new Error(`Shape agent failed: ${result.errors?.join(', ')}`);
         }
 
-        return result.artifacts;
+        return result.artifacts as unknown as ShapeAgentResult;
     }
 
     /**

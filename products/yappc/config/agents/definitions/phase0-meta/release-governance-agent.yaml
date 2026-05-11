@@ -29,7 +29,7 @@ generator:
       service: quality-guard
       endpoint: /evaluate/release
     - name: gate_decision
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Aggregate security, compliance, and quality results.
         ALL must pass for ALLOW.

@@ -47,7 +47,7 @@ spec:
     - ux
     - design
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: ui-orchestrator
     name: UI Orchestrator
@@ -83,7 +83,7 @@ spec:
     - ui
     - screens
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: interaction-design-orchestrator
     name: Interaction Design Orchestrator
@@ -117,7 +117,7 @@ spec:
     - interaction-design
     - canvas
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: design-system-orchestrator
     name: Design System Orchestrator
@@ -150,7 +150,7 @@ spec:
     - design-system
     - tokens
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: persona-modelling-capability-agent
     name: Persona Modelling Capability Agent
@@ -185,7 +185,7 @@ spec:
     - persona
     - modelling
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: journey-design-capability-agent
     name: Journey Design Capability Agent
@@ -214,7 +214,7 @@ spec:
     - journey
     - mapping
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: flow-design-capability-agent
     name: Flow Design Capability Agent
@@ -236,7 +236,7 @@ spec:
     - flow-design
     - navigation
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: screen-design-capability-agent
     name: Screen Design Capability Agent
@@ -258,7 +258,7 @@ spec:
     - screen-design
     - visual
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: accessibility-capability-agent
     name: Accessibility Capability Agent
@@ -282,7 +282,7 @@ spec:
     - accessibility
     - wcag
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: design-consistency-capability-agent
     name: Design Consistency Capability Agent
@@ -304,7 +304,7 @@ spec:
     - design-consistency
     - system
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: canvas-interaction-capability-agent
     name: Canvas Interaction Capability Agent
@@ -327,7 +327,7 @@ spec:
     - canvas
     - interaction
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: persona-definition-task-agent
     name: Persona Definition Task Agent
@@ -347,7 +347,7 @@ spec:
     - persona
     - definition
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: user-journey-task-agent
     name: User Journey Task Agent
@@ -368,7 +368,7 @@ spec:
     - journey-map
     - ux
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: task-flow-task-agent
     name: Task Flow Task Agent
@@ -388,7 +388,7 @@ spec:
     - task-flow
     - ux
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: navigation-model-task-agent
     name: Navigation Model Task Agent
@@ -409,7 +409,7 @@ spec:
     - navigation
     - information-architecture
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: information-architecture-task-agent
     name: Information Architecture Task Agent
@@ -431,7 +431,7 @@ spec:
     - information-architecture
     - taxonomy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: wireframe-task-agent
     name: Wireframe Task Agent
@@ -451,7 +451,7 @@ spec:
     - wireframe
     - design
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: screen-state-task-agent
     name: Screen State Task Agent
@@ -471,7 +471,7 @@ spec:
     - screen-states
     - ui
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: empty-state-task-agent
     name: Empty State Task Agent
@@ -492,7 +492,7 @@ spec:
     - empty-state
     - ui
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: error-state-task-agent
     name: Error State Task Agent
@@ -512,7 +512,7 @@ spec:
     - error-state
     - copy
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: interaction-pattern-task-agent
     name: Interaction Pattern Task Agent
@@ -532,7 +532,7 @@ spec:
     - interaction-patterns
     - standardisation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: form-ux-task-agent
     name: Form UX Task Agent
@@ -554,7 +554,7 @@ spec:
     - forms
     - ux
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: table-ux-task-agent
     name: Table UX Task Agent
@@ -576,7 +576,7 @@ spec:
     - tables
     - data-grid
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: dashboard-ux-task-agent
     name: Dashboard UX Task Agent
@@ -597,7 +597,7 @@ spec:
     - dashboard
     - layout
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: search-page-ux-task-agent
     name: Search Page UX Task Agent
@@ -618,7 +618,7 @@ spec:
     - search
     - ux
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: canvas-tooling-ux-task-agent
     name: Canvas Tooling UX Task Agent
@@ -639,7 +639,7 @@ spec:
     - canvas
     - tooling
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: drag-drop-interaction-task-agent
     name: Drag Drop Interaction Task Agent
@@ -660,7 +660,7 @@ spec:
     - drag-drop
     - interaction
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: pan-zoom-task-agent
     name: Pan Zoom Task Agent
@@ -681,7 +681,7 @@ spec:
     - pan-zoom
     - canvas
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: keyboard-shortcut-task-agent
     name: Keyboard Shortcut Task Agent
@@ -704,7 +704,7 @@ spec:
     - keyboard
     - shortcuts
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: design-token-alignment-task-agent
     name: Design Token Alignment Task Agent
@@ -726,7 +726,7 @@ spec:
     - design-tokens
     - alignment
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: accessibility-review-task-agent
     name: Accessibility Review Task Agent
@@ -747,7 +747,7 @@ spec:
     - accessibility
     - review
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: responsive-layout-task-agent
     name: Responsive Layout Task Agent
@@ -768,7 +768,7 @@ spec:
     - responsive
     - layout
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: component-composition-task-agent
     name: Component Composition Task Agent
@@ -789,7 +789,7 @@ spec:
     - component
     - composition
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: content-hierarchy-task-agent
     name: Content Hierarchy Task Agent
@@ -810,7 +810,7 @@ spec:
     - content-hierarchy
     - typography
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: visual-density-review-task-agent
     name: Visual Density Review Task Agent
@@ -830,7 +830,7 @@ spec:
     - visual-density
     - review
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cognitive-load-reduction-task-agent
     name: Cognitive Load Reduction Task Agent
@@ -851,7 +851,7 @@ spec:
     - cognitive-load
     - ux
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: label-clarity-checker
     name: Label Clarity Checker
@@ -867,7 +867,7 @@ spec:
     - labels
     - clarity
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: focus-order-validator
     name: Focus Order Validator
@@ -883,7 +883,7 @@ spec:
     - focus-order
     - accessibility
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: contrast-checker
     name: Contrast Checker
@@ -899,7 +899,7 @@ spec:
     - contrast
     - accessibility
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: layout-spacing-unit
     name: Layout Spacing Unit
@@ -915,7 +915,7 @@ spec:
     - spacing
     - grid
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: icon-consistency-unit
     name: Icon Consistency Unit
@@ -931,7 +931,7 @@ spec:
     - icons
     - consistency
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: navigation-depth-checker
     name: Navigation Depth Checker
@@ -947,7 +947,7 @@ spec:
     - navigation
     - depth
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: drag-handle-validator
     name: Drag Handle Validator
@@ -964,7 +964,7 @@ spec:
     - drag-handle
     - validation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: drop-zone-resolver
     name: Drop Zone Resolver
@@ -981,7 +981,7 @@ spec:
     - drop-zone
     - resolution
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: canvas-snap-unit
     name: Canvas Snap Unit
@@ -998,7 +998,7 @@ spec:
     - snap
     - canvas
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: zoom-boundary-unit
     name: Zoom Boundary Unit
@@ -1014,7 +1014,7 @@ spec:
     - zoom
     - boundaries
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: empty-state-generator
     name: Empty State Generator
@@ -1030,7 +1030,7 @@ spec:
     - empty-state
     - copy
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: error-copy-generator
     name: Error Copy Generator
@@ -1046,7 +1046,7 @@ spec:
     - error-copy
     - messaging
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: table-column-priority-unit
     name: Table Column Priority Unit
@@ -1062,7 +1062,7 @@ spec:
     - column-priority
     - tables
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: form-field-grouping-unit
     name: Form Field Grouping Unit
@@ -1079,7 +1079,7 @@ spec:
     - form-fields
     - grouping
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: shortcut-conflict-detector
     name: Shortcut Conflict Detector
@@ -1095,7 +1095,7 @@ spec:
     - shortcuts
     - conflict
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

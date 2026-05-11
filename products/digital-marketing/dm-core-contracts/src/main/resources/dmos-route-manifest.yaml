@@ -122,6 +122,15 @@ routes:
     lifecycle: stable
     servlet: DmosAiActionLogServlet
 
+  - path: /v1/workspaces/:workspaceId/ai-actions/:actionId
+    method: GET
+    capability: null
+    actions:
+      - view-audit-log
+    minimumRole: viewer
+    lifecycle: stable
+    servlet: DmosAiActionLogServlet
+
   - path: /v1/workspaces/:workspaceId/campaigns
     method: GET
     capability: dmos.campaigns

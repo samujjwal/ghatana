@@ -88,8 +88,8 @@ public enum AgentType {
      * No stochastic components. Fully testable with exact-match assertions.
      *
      * <p>Subtypes ({@link com.ghatana.agent.deterministic.DeterministicSubtype}):
-     * {@code RULE_BASED}, {@code THRESHOLD}, {@code FSM}, {@code PATTERN},
-     * {@code POLICY}, {@code OPERATOR}, {@code EXACT_MATCH}, {@code TEMPLATE}.
+     * {@code RULE_ENGINE}, {@code THRESHOLD}, {@code FSM}, {@code PATTERN_MATCHER},
+     * {@code POLICY_ENGINE}, {@code OPERATOR}, {@code EXACT_MATCH}, {@code TEMPLATE}.
      */
     DETERMINISTIC,
 
@@ -102,8 +102,7 @@ public enum AgentType {
      * <p>Subtypes ({@link com.ghatana.agent.probabilistic.ProbabilisticSubtype}):
      * {@code ML_MODEL}, {@code BAYESIAN}, {@code STATISTICAL}, {@code LLM}, {@code CLASSIFIER}.
      *
-     * <p><b>For LLM agents</b>: use this type with subtype {@code "LLM"} instead of
-     * the deprecated {@link #LLM}.
+     * <p><b>For LLM agents</b>: use this type with subtype {@code "LLM"}.
      */
     PROBABILISTIC,
 
@@ -238,16 +237,12 @@ public enum AgentType {
     }
 
     /**
-     * Resolves a type string to an {@code AgentType}.
+     * Resolves a canonical type string to an {@code AgentType}.
      *
-     * <p>Handles aliases for forward-compatibility:
-     * <ul>
-     *   <li>{@code "LLM"} / {@code "llm"} → {@link #PROBABILISTIC}</li>
-     *   <li>{@code "RULE_BASED"} / {@code "rule-based"} → {@link #DETERMINISTIC}</li>
-     *   <li>{@code "POLICY"} / {@code "PATTERN"} → {@link #DETERMINISTIC}</li>
-     *   <li>{@code "STREAM_PROCESSOR"} / {@code "stream-processor"} → {@link #STREAM_PROCESSOR}</li>
-     *   <li>{@code "PLANNING"} → {@link #PLANNING}</li>
-     * </ul>
+     * <p>Only the nine built-in taxonomy names and registered custom type names
+     * are accepted. Noncanonical values such as {@code LLM}, {@code RULE_BASED},
+     * {@code POLICY}, and {@code PATTERN} are intentionally rejected by runtime
+     * parsing. Repo-local fix tooling may canonicalize specs before runtime.
      *
      * @param typeName the type name string (case-insensitive)
      * @return the resolved AgentType
@@ -256,28 +251,14 @@ public enum AgentType {
     public static AgentType resolve(String typeName) {
         Objects.requireNonNull(typeName, "typeName must not be null");
         String normalized = typeName.trim().toUpperCase().replace('-', '_');
-        // Backward-compat aliases
-        switch (normalized) {
-            case "LLM":
-                return PROBABILISTIC;
-            case "RULE_BASED":
-            case "POLICY":
-            case "PATTERN":
-                return DETERMINISTIC;
-            case "STREAM_PROCESSOR":
-                return STREAM_PROCESSOR;
-            case "PLANNING":
-                return PLANNING;
-        }
         try {
-            AgentType resolved = valueOf(normalized);
-            return resolved;
+            return valueOf(normalized);
         } catch (IllegalArgumentException e) {
             if (isCustomTypeRegistered(normalized)) {
                 return CUSTOM;
             }
             throw new IllegalArgumentException(
-                    "Unknown agent type: '" + typeName + "'. Built-in types: " +
+                    "Unknown canonical agent type: '" + typeName + "'. Built-in types: " +
                             java.util.Arrays.toString(values()) +
                             ", registered custom types: " + CUSTOM_TYPES);
         }

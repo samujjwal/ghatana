@@ -3,6 +3,8 @@ package com.ghatana.agent.workflow;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.agent.runtime.GaaAgentExecutor;
+import com.ghatana.agent.runtime.TypedAgentExecutor;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
@@ -72,6 +74,7 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
     private final LLMGateway llmGateway;
     private final WorkflowAgentMetrics metrics;
     private final Tracer tracer;
+    private final TypedAgentExecutor typedAgentExecutor = new GaaAgentExecutor();
 
     /**
      * Tracks execution status for pending requests.
@@ -206,13 +209,13 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
                                 (TypedAgent<Map<String, Object>, Object>) optionalAgent.get();
                         AgentContext agentContext = createAgentContext(request);
 
-                        // Execute the agent via TypedAgent.process()
+                        // Execute the agent through the governed lifecycle executor.
                         Span agentProcessSpan = tracer.spanBuilder("workflow.agent.process")
                                 .setParent(Context.current())
                                 .setAttribute("agent_id", request.agentId())
                                 .startSpan();
 
-                        return agent.process(agentContext, request.input())
+                        return typedAgentExecutor.execute(agent, agentContext, request.input())
                                 .map(agentResult -> {
                                     long durationMs = System.currentTimeMillis() - startTime.toEpochMilli();
 

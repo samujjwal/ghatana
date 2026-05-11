@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: data_requirements_extraction
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -42,7 +42,7 @@ generator:
         
         Output as JSON: {entities, sources, transformations, storage, retention, access_patterns, quality_requirements, privacy, flows, volume_estimates}
     - name: compliance_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Check against data governance policies
     - name: data_spec_registration
       type: SERVICE_CALL

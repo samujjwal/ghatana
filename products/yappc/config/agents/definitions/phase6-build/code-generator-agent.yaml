@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: spec_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Parse specification for generation
     - name: code_generation
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -49,7 +49,7 @@ generator:
         
         Output as JSON: {files: [{path, content, type}], dependencies, integration_notes}
     - name: quality_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Static analysis pre-check
 
 memory:

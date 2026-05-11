@@ -12,6 +12,7 @@
 
 package com.ghatana.yappc.services.import_;
 
+import com.ghatana.audit.AuditLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,36 +28,58 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class PreviewSessionEnforcementServiceImpl implements PreviewSessionEnforcementService {
 
     private static final Logger log = LoggerFactory.getLogger(PreviewSessionEnforcementServiceImpl.class);
+    private final AuditLogger auditLogger;
 
     private static final long SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-    private static final Set<String> TRUSTED_ACTIONS = Set.of(
-            "view",
-            "navigate",
-            "inspect"
+    
+    // Actions allowed at each trust level
+    private static final Set<String> TRUSTED_LOCAL_ACTIONS = Set.of(
+            "view", "navigate", "inspect", "export", "download", "share", "modify", "execute"
+    );
+    private static final Set<String> TRUSTED_CONTROLLED_ACTIONS = Set.of(
+            "view", "navigate", "inspect", "export", "download"
+    );
+    private static final Set<String> SEMI_TRUSTED_ACTIONS = Set.of(
+            "view", "navigate", "inspect"
     );
     private static final Set<String> UNTRUSTED_ACTIONS = Set.of(
-            "export",
-            "download",
-            "share",
-            "modify"
+            "view"
     );
 
     // In-memory storage for demonstration - replace with distributed cache in production
     private final Map<String, PreviewSession> sessions = new ConcurrentHashMap<>();
 
+    public PreviewSessionEnforcementServiceImpl(AuditLogger auditLogger) {
+        this.auditLogger = auditLogger;
+    }
+
     @Override
-    public String createPreviewSession(String projectId, String importJobId, String userId) {
+    public String createPreviewSession(String projectId, String importJobId, String userId, Map<String, Object> metadata) {
+        return createPreviewSession(projectId, importJobId, userId, TrustLevel.SEMI_TRUSTED, metadata);
+    }
+
+    /**
+     * Creates a preview session with a specified trust level.
+     * 
+     * @param projectId The project ID
+     * @param importJobId The import job ID
+     * @param userId The user ID
+     * @param trustLevel The trust level for the session
+     * @param metadata Audit metadata for session creation
+     * @return Preview session ID
+     */
+    public String createPreviewSession(String projectId, String importJobId, String userId, TrustLevel trustLevel, Map<String, Object> metadata) {
         String sessionId = "preview-" + java.util.UUID.randomUUID().toString();
 
-        log.info("Creating preview session: sessionId={}, projectId={}, userId={}", 
-                sessionId, projectId, userId);
+        log.info("Creating preview session: sessionId={}, projectId={}, userId={}, trustLevel={}", 
+                sessionId, projectId, userId, trustLevel);
 
         PreviewSession session = new PreviewSession(
                 sessionId,
                 projectId,
                 importJobId,
                 userId,
-                TrustLevel.UNTRUSTED,
+                trustLevel,
                 PreviewSessionStatus.ACTIVE,
                 Instant.now(),
                 Instant.now().plusMillis(SESSION_TIMEOUT_MS),
@@ -65,7 +88,21 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
 
         sessions.put(sessionId, session);
 
-        log.info("Preview session created successfully: sessionId={}", sessionId);
+        // Log audit event for session creation
+        Map<String, Object> auditEvent = new java.util.HashMap<>();
+        auditEvent.put("type", "preview.session.create");
+        auditEvent.put("outcome", "succeeded");
+        auditEvent.put("actor", userId);
+        auditEvent.put("sessionId", sessionId);
+        auditEvent.put("projectId", projectId);
+        auditEvent.put("importJobId", importJobId);
+        auditEvent.put("trustLevel", trustLevel.name());
+        if (metadata != null) {
+            auditEvent.put("metadata", metadata);
+        }
+        auditLogger.log(auditEvent);
+
+        log.info("Preview session created successfully: sessionId={}, trustLevel={}", sessionId, trustLevel);
         return sessionId;
     }
 
@@ -85,7 +122,33 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
 
         if (Instant.now().isAfter(session.expiresAt())) {
             log.warn("Preview session has expired: sessionId={}", sessionId);
-            sessions.remove(sessionId);
+            
+            // Update session status to expired
+            PreviewSession expiredSession = new PreviewSession(
+                    session.sessionId(),
+                    session.projectId(),
+                    session.importJobId(),
+                    session.userId(),
+                    session.trustLevel(),
+                    PreviewSessionStatus.EXPIRED,
+                    session.createdAt(),
+                    session.expiresAt(),
+                    "Session expired due to timeout"
+            );
+            sessions.put(sessionId, expiredSession);
+            
+            // Log audit event for session expiry
+            Map<String, Object> auditEvent = new java.util.HashMap<>();
+            auditEvent.put("type", "preview.session.expired");
+            auditEvent.put("outcome", "succeeded");
+            auditEvent.put("actor", "system");
+            auditEvent.put("sessionId", sessionId);
+            auditEvent.put("projectId", session.projectId());
+            auditEvent.put("importJobId", session.importJobId());
+            auditEvent.put("trustLevel", session.trustLevel().name());
+            auditEvent.put("expiredAt", session.expiresAt().toString());
+            auditLogger.log(auditEvent);
+            
             return false;
         }
 
@@ -106,20 +169,32 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
         }
 
         TrustLevel trustLevel = session.trustLevel();
+        Set<String> allowedActions = getAllowedActionsForTrustLevel(trustLevel);
 
-        // Allow trusted actions for all trust levels
-        if (TRUSTED_ACTIONS.contains(action)) {
+        if (allowedActions.contains(action)) {
+            log.debug("Action allowed by trust policy: sessionId={}, action={}, trustLevel={}", 
+                    sessionId, action, trustLevel);
             return true;
         }
 
-        // Block untrusted actions for untrusted sessions
-        if (UNTRUSTED_ACTIONS.contains(action) && trustLevel != TrustLevel.TRUSTED) {
-            log.warn("Action not allowed due to trust policy: sessionId={}, action={}, trustLevel={}", 
-                    sessionId, action, trustLevel);
-            return false;
-        }
+        log.warn("Action not allowed due to trust policy: sessionId={}, action={}, trustLevel={}", 
+                sessionId, action, trustLevel);
+        return false;
+    }
 
-        return true;
+    /**
+     * Gets the set of allowed actions for a given trust level.
+     * 
+     * @param trustLevel the trust level
+     * @return set of allowed actions
+     */
+    private Set<String> getAllowedActionsForTrustLevel(TrustLevel trustLevel) {
+        return switch (trustLevel) {
+            case TRUSTED_LOCAL -> TRUSTED_LOCAL_ACTIONS;
+            case TRUSTED_CONTROLLED -> TRUSTED_CONTROLLED_ACTIONS;
+            case SEMI_TRUSTED -> SEMI_TRUSTED_ACTIONS;
+            case UNTRUSTED -> UNTRUSTED_ACTIONS;
+        };
     }
 
     @Override
@@ -132,7 +207,7 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
     }
 
     @Override
-    public void revokeSession(String sessionId, String reason) {
+    public void revokeSession(String sessionId, String reason, Map<String, Object> metadata) {
         log.info("Revoking preview session: sessionId={}, reason={}", sessionId, reason);
 
         PreviewSession session = sessions.get(sessionId);
@@ -156,6 +231,21 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
 
         sessions.put(sessionId, revokedSession);
 
+        // Log audit event for session revocation
+        Map<String, Object> auditEvent = new java.util.HashMap<>();
+        auditEvent.put("type", "preview.session.revoke");
+        auditEvent.put("outcome", "succeeded");
+        auditEvent.put("actor", session.userId());
+        auditEvent.put("sessionId", sessionId);
+        auditEvent.put("projectId", session.projectId());
+        auditEvent.put("importJobId", session.importJobId());
+        auditEvent.put("reason", reason);
+        auditEvent.put("trustLevel", session.trustLevel().name());
+        if (metadata != null) {
+            auditEvent.put("metadata", metadata);
+        }
+        auditLogger.log(auditEvent);
+
         log.info("Preview session revoked successfully: sessionId={}", sessionId);
     }
 
@@ -164,8 +254,8 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
         PreviewSession session = sessions.get(sessionId);
 
         if (session == null) {
-            log.warn("Preview session not found: sessionId={}", sessionId);
-            return TrustLevel.UNKNOWN;
+            log.warn("Preview session not found: sessionId={}, returning SEMI_TRUSTED as default", sessionId);
+            return TrustLevel.SEMI_TRUSTED;
         }
 
         return session.trustLevel();
@@ -202,6 +292,30 @@ public final class PreviewSessionEnforcementServiceImpl implements PreviewSessio
         sessions.put(sessionId, updatedSession);
 
         log.info("Trust level set successfully: sessionId={}, trustLevel={}", sessionId, trustLevel);
+    }
+
+    /**
+     * Determines the appropriate trust level based on artifact source and validation.
+     * 
+     * @param isLocalArtifact true if artifact was generated locally in the workspace
+     * @param isFromControlledSource true if artifact is from a controlled source
+     * @param isValidationPassed true if artifact passed security validation
+     * @return appropriate trust level
+     */
+    public TrustLevel determineTrustLevel(boolean isLocalArtifact, boolean isFromControlledSource, boolean isValidationPassed) {
+        if (isLocalArtifact) {
+            return TrustLevel.TRUSTED_LOCAL;
+        }
+        
+        if (isFromControlledSource && isValidationPassed) {
+            return TrustLevel.TRUSTED_CONTROLLED;
+        }
+        
+        if (isValidationPassed) {
+            return TrustLevel.SEMI_TRUSTED;
+        }
+        
+        return TrustLevel.UNTRUSTED;
     }
 
     /**

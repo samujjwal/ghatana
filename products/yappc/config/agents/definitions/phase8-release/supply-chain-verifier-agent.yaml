@@ -12,22 +12,22 @@ generator:
   type: PIPELINE
   steps:
     - name: artifact_signature_verify
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Verify artifact signatures produced by artifact-signer-agent.
         Check cosign/GPG signature validity and certificate chain.
     - name: sbom_signature_verify
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Verify SBOM signatures against Sigstore transparency log.
         Validate in-toto attestation format and content.
     - name: provenance_chain_verify
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Walk the full provenance chain: source → build → artifact → SBOM.
         Verify each link has valid attestation. Flag any gaps.
     - name: policy_compliance_check
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         Check provenance against configured SLSA level requirements.
         Level 2: signed provenance from hosted build platform.

@@ -20,10 +20,10 @@ generator:
       service: monitoring-service
       endpoint: /metrics/agents
     - name: health_analysis
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Analyze latency, error rates, availability
     - name: anomaly_detection
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.0

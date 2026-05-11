@@ -50,7 +50,7 @@ spec:
     - product-intelligence
     - analytics
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: feedback-orchestrator
     name: Feedback Orchestrator
@@ -86,7 +86,7 @@ spec:
     - feedback
     - sentiment
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: experimentation-orchestrator
     name: Experimentation Orchestrator
@@ -122,7 +122,7 @@ spec:
     - experimentation
     - ab-testing
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: enhancement-orchestrator
     name: Enhancement Orchestrator
@@ -159,7 +159,7 @@ spec:
     - enhancement
     - planning
     - level1
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: feedback-analytics-capability-agent
     name: Feedback Analytics Capability Agent
@@ -197,7 +197,7 @@ spec:
     - feedback
     - nlp
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: experimentation-capability-agent
     name: Experimentation Capability Agent
@@ -234,7 +234,7 @@ spec:
     - experimentation
     - statistics
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: enhancement-capability-agent
     name: Enhancement Capability Agent
@@ -263,7 +263,7 @@ spec:
     - enhancement
     - prioritisation
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: analytics-capability-agent
     name: Analytics Capability Agent
@@ -300,7 +300,7 @@ spec:
     - analytics
     - metrics
     - level2
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: feedback-theme-clustering-task-agent
     name: Feedback Theme Clustering Task Agent
@@ -321,7 +321,7 @@ spec:
     - feedback
     - clustering
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sentiment-analysis-task-agent
     name: Sentiment Analysis Task Agent
@@ -343,7 +343,7 @@ spec:
     - sentiment
     - analysis
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: feedback-prioritisation-task-agent
     name: Feedback Prioritisation Task Agent
@@ -365,7 +365,7 @@ spec:
     - prioritisation
     - feedback
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: ab-test-design-task-agent
     name: A/B Test Design Task Agent
@@ -387,7 +387,7 @@ spec:
     - ab-test
     - design
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: statistical-analysis-task-agent
     name: Statistical Analysis Task Agent
@@ -410,7 +410,7 @@ spec:
     - statistics
     - hypothesis-testing
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: experiment-results-task-agent
     name: Experiment Results Task Agent
@@ -432,7 +432,7 @@ spec:
     - experiment-results
     - interpretation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: opportunity-scoping-task-agent
     name: Opportunity Scoping Task Agent
@@ -454,7 +454,7 @@ spec:
     - opportunity
     - scoping
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: enhancement-prioritisation-task-agent
     name: Enhancement Prioritisation Task Agent
@@ -476,7 +476,7 @@ spec:
     - prioritisation
     - rice
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: impact-estimation-task-agent
     name: Impact Estimation Task Agent
@@ -498,7 +498,7 @@ spec:
     - impact
     - estimation
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: funnel-analysis-task-agent
     name: Funnel Analysis Task Agent
@@ -520,7 +520,7 @@ spec:
     - funnel
     - conversion
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cohort-analysis-task-agent
     name: Cohort Analysis Task Agent
@@ -542,7 +542,7 @@ spec:
     - cohort
     - retention
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: competitive-intelligence-task-agent
     name: Competitive Intelligence Task Agent
@@ -564,7 +564,7 @@ spec:
     - competitive
     - intelligence
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: churn-prediction-task-agent
     name: Churn Prediction Task Agent
@@ -586,7 +586,7 @@ spec:
     - churn
     - prediction
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: feature-adoption-task-agent
     name: Feature Adoption Task Agent
@@ -608,7 +608,7 @@ spec:
     - feature-adoption
     - analytics
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: nps-analysis-task-agent
     name: NPS Analysis Task Agent
@@ -630,7 +630,7 @@ spec:
     - nps
     - customer-satisfaction
     - level3
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: sentiment-scorer
     name: Sentiment Scorer
@@ -647,7 +647,7 @@ spec:
     - sentiment
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: rice-calculator
     name: RICE Calculator
@@ -663,7 +663,7 @@ spec:
     - rice
     - prioritisation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: p-value-interpreter
     name: P-Value Interpreter
@@ -680,7 +680,7 @@ spec:
     - statistics
     - significance
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: sample-size-calculator
     name: Sample Size Calculator
@@ -697,7 +697,7 @@ spec:
     - sample-size
     - statistics
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: feature-flag-recommender
     name: Feature Flag Recommender
@@ -714,7 +714,7 @@ spec:
     - feature-flags
     - rollout
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: retention-rate-calculator
     name: Retention Rate Calculator
@@ -731,7 +731,7 @@ spec:
     - retention
     - calculation
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: theme-label-generator
     name: Theme Label Generator
@@ -748,7 +748,7 @@ spec:
     - themes
     - labelling
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: north-star-contributor-scorer
     name: North Star Contributor Scorer
@@ -764,7 +764,7 @@ spec:
     - north-star
     - scoring
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: engagement-index-calculator
     name: Engagement Index Calculator
@@ -781,7 +781,7 @@ spec:
     - engagement
     - index
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   - id: churn-risk-classifier
     name: Churn Risk Classifier
@@ -797,7 +797,7 @@ spec:
     - churn-risk
     - classification
     - level3
-    agentType: deterministic
+    agentType: DETERMINISTIC
     agentSubtype: rule-engine
   hierarchy:
     level1:

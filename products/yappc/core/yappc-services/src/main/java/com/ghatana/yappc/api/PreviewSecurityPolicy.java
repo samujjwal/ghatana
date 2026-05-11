@@ -50,44 +50,94 @@ public final class PreviewSecurityPolicy {
      * Creates a production-safe preview security policy with strict defaults.
      */
     public static PreviewSecurityPolicy productionDefaults() {
-        ContentSecurityPolicy csp = new ContentSecurityPolicy(
-            true,  // enable CSP
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
-        );
-
-        SandboxPolicy sandbox = new SandboxPolicy(
-            true,  // enable sandbox
-            true,  // allow-scripts
-            false, // allow-modals
-            false, // allow-popups
-            false, // allow-forms
-            false, // allow-same-origin
-            true   // allow-downloads
-        );
-
-        return new PreviewSecurityPolicy(csp, sandbox, TrustLevel.SEMI_TRUSTED);
+        return policyForTrustLevel(TrustLevel.SEMI_TRUSTED);
     }
 
     /**
      * Creates a development preview security policy with relaxed defaults.
      */
     public static PreviewSecurityPolicy developmentDefaults() {
-        ContentSecurityPolicy csp = new ContentSecurityPolicy(
-            false, // disable CSP in dev
-            ""
-        );
+        return policyForTrustLevel(TrustLevel.TRUSTED_LOCAL);
+    }
 
-        SandboxPolicy sandbox = new SandboxPolicy(
-            false, // disable sandbox in dev
-            true,
-            true,
-            true,
-            true,
-            true,
-            true
-        );
+    /**
+     * Gets the appropriate security policy for a given trust level.
+     * 
+     * @param trustLevel the trust level
+     * @return security policy configured for the trust level
+     */
+    public static PreviewSecurityPolicy policyForTrustLevel(TrustLevel trustLevel) {
+        ContentSecurityPolicy csp = getCspForTrustLevel(trustLevel);
+        SandboxPolicy sandbox = getSandboxForTrustLevel(trustLevel);
+        return new PreviewSecurityPolicy(csp, sandbox, trustLevel);
+    }
 
-        return new PreviewSecurityPolicy(csp, sandbox, TrustLevel.TRUSTED);
+    /**
+     * Gets the CSP policy for a given trust level.
+     */
+    private static ContentSecurityPolicy getCspForTrustLevel(TrustLevel trustLevel) {
+        return switch (trustLevel) {
+            case TRUSTED_LOCAL -> new ContentSecurityPolicy(
+                false, // minimal CSP for local trusted artifacts
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: wss:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';"
+            );
+            case TRUSTED_CONTROLLED -> new ContentSecurityPolicy(
+                true, // moderate CSP for controlled sources
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
+            );
+            case SEMI_TRUSTED -> new ContentSecurityPolicy(
+                true, // strict CSP for semi-trusted artifacts
+                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
+            );
+            case UNTRUSTED -> new ContentSecurityPolicy(
+                true, // maximum CSP for untrusted artifacts
+                "default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';"
+            );
+        };
+    }
+
+    /**
+     * Gets the sandbox policy for a given trust level.
+     */
+    private static SandboxPolicy getSandboxForTrustLevel(TrustLevel trustLevel) {
+        return switch (trustLevel) {
+            case TRUSTED_LOCAL -> new SandboxPolicy(
+                false, // minimal sandbox for local trusted artifacts
+                true,  // allow-scripts
+                true,  // allow-modals
+                true,  // allow-popups
+                true,  // allow-forms
+                true,  // allow-same-origin
+                true   // allow-downloads
+            );
+            case TRUSTED_CONTROLLED -> new SandboxPolicy(
+                true,  // moderate sandbox for controlled sources
+                true,  // allow-scripts
+                false, // allow-modals
+                false, // allow-popups
+                true,  // allow-forms
+                true,  // allow-same-origin
+                true   // allow-downloads
+            );
+            case SEMI_TRUSTED -> new SandboxPolicy(
+                true,  // strict sandbox for semi-trusted artifacts
+                true,  // allow-scripts
+                false, // allow-modals
+                false, // allow-popups
+                false, // allow-forms
+                false, // allow-same-origin
+                true   // allow-downloads
+            );
+            case UNTRUSTED -> new SandboxPolicy(
+                true,  // maximum sandbox for untrusted artifacts
+                false, // allow-scripts - disabled for untrusted
+                false, // allow-modals
+                false, // allow-popups
+                false, // allow-forms
+                false, // allow-same-origin
+                false  // allow-downloads - disabled for untrusted
+            );
+        };
     }
 
     /**
@@ -122,19 +172,26 @@ public final class PreviewSecurityPolicy {
      */
     public enum TrustLevel {
         /**
-         * Fully trusted artifacts from verified sources within the tenant.
+         * Trusted local - artifacts generated locally by the user's workspace.
+         * Minimal sandbox restrictions, full feature access.
          */
-        TRUSTED,
+        TRUSTED_LOCAL,
 
         /**
-         * Semi-trusted artifacts generated by AI or imported from tenant-approved sources.
-         * Requires sandbox and CSP enforcement.
+         * Trusted controlled - artifacts from controlled sources with validation.
+         * Moderate sandbox restrictions, limited external network access.
+         */
+        TRUSTED_CONTROLLED,
+
+        /**
+         * Semi-trusted - artifacts from external sources with partial validation.
+         * Strict sandbox restrictions, no external network access, limited APIs.
          */
         SEMI_TRUSTED,
 
         /**
-         * Untrusted artifacts from external or unknown sources.
-         * Requires strict sandbox, CSP, and limited permissions.
+         * Untrusted - artifacts from unknown or unvalidated sources.
+         * Maximum sandbox restrictions, isolated execution, no external access.
          */
         UNTRUSTED
     }

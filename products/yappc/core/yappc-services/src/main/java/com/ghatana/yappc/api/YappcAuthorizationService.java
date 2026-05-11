@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * <p>Usage in controllers:
  * <pre>{@code
- * // Get principal from request (attached by YappcApiAuthFilter)
+ * // Get principal from request (attached by YappcAuthenticationFilter)
  * Principal principal = request.getAttached(Principal.class);
  * if (principal == null) {
  *   return Promise.of(unauthorized());

@@ -12,13 +12,13 @@ generator:
   type: PIPELINE
   steps:
     - name: gap_aggregation
-      type: RULE_BASED
+      type: DETERMINISTIC
       rules:
         - Aggregate FAIL and partial-PASS controls
         - Weight by control criticality
         - Map gaps to risk categories
     - name: gap_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: OPENAI
       model: gpt-4
       temperature: 0.2

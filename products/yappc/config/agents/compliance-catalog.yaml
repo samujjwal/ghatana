@@ -34,7 +34,7 @@ spec:
     - compliance
     - audit
     - orchestration
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: soc2-compliance-agent
     name: SOC 2 Compliance Agent
@@ -59,7 +59,7 @@ spec:
     - soc2
     - compliance
     - audit
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: gdpr-compliance-agent
     name: GDPR Compliance Agent
@@ -84,7 +84,7 @@ spec:
     - gdpr
     - privacy
     - compliance
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: hipaa-compliance-agent
     name: HIPAA Compliance Agent
@@ -102,7 +102,7 @@ spec:
     - hipaa
     - healthcare
     - compliance
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: pci-dss-compliance-agent
     name: PCI DSS Compliance Agent
@@ -120,7 +120,7 @@ spec:
     - pci-dss
     - payments
     - compliance
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: compliance-control-evaluation-agent
     name: Compliance Control Evaluation Agent
@@ -139,7 +139,7 @@ spec:
     - compliance
     - controls
     - evaluation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: compliance-gap-analysis-agent
     name: Compliance Gap Analysis Agent
@@ -158,7 +158,7 @@ spec:
     - compliance
     - gap-analysis
     - remediation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: iso-27001-compliance-agent
     name: ISO 27001 Compliance Agent
@@ -176,7 +176,7 @@ spec:
     - iso27001
     - isms
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: nist-compliance-agent
     name: NIST Compliance Agent
@@ -194,7 +194,7 @@ spec:
     - nist
     - cybersecurity
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: audit-evidence-collector
     name: Audit Evidence Collector Agent
@@ -213,7 +213,7 @@ spec:
     - audit
     - evidence
     - collection
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: policy-validator
     name: Policy Validator Agent
@@ -232,7 +232,7 @@ spec:
     - compliance
     - policies
     - validation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: data-classification-agent
     name: Data Classification Agent
@@ -251,7 +251,7 @@ spec:
     - data
     - classification
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: retention-policy-enforcer
     name: Retention Policy Enforcer Agent
@@ -270,7 +270,7 @@ spec:
     - retention
     - compliance
     - lifecycle
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: access-control-reviewer
     name: Access Control Reviewer Agent
@@ -289,7 +289,7 @@ spec:
     - access-control
     - compliance
     - review
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: encryption-compliance-agent
     name: Encryption Compliance Agent
@@ -307,7 +307,7 @@ spec:
     - encryption
     - compliance
     - security
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: breach-notification-agent
     name: Breach Notification Agent
@@ -326,7 +326,7 @@ spec:
     - breach
     - notification
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: third-party-risk-assessor
     name: Third Party Risk Assessor Agent
@@ -345,7 +345,7 @@ spec:
     - third-party
     - risk
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: continuous-monitoring-agent
     name: Continuous Monitoring Agent
@@ -365,7 +365,7 @@ spec:
     - monitoring
     - compliance
     - continuous
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: audit-report-generator
     name: Audit Report Generator Agent
@@ -384,7 +384,7 @@ spec:
     - audit
     - reports
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: privacy-impact-assessor
     name: Privacy Impact Assessor Agent
@@ -403,7 +403,7 @@ spec:
     - privacy
     - impact
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: consent-management-agent
     name: Consent Management Agent
@@ -421,7 +421,7 @@ spec:
     - consent
     - privacy
     - compliance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1:

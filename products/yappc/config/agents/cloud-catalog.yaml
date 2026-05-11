@@ -34,7 +34,7 @@ spec:
     - cloud
     - orchestration
     - multi-cloud
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: cloud-security-audit-orchestrator
     name: Cloud Security Audit Orchestrator
@@ -57,7 +57,7 @@ spec:
     - cloud
     - security
     - audit
-    agentType: planning
+    agentType: PLANNING
     agentSubtype: workflow
   - id: aws-specialist
     name: AWS Specialist Agent
@@ -82,7 +82,7 @@ spec:
     - cloud
     - aws
     - specialist
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: azure-specialist
     name: Azure Specialist Agent
@@ -106,7 +106,7 @@ spec:
     - cloud
     - azure
     - specialist
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: gcp-specialist
     name: GCP Specialist Agent
@@ -130,7 +130,7 @@ spec:
     - cloud
     - gcp
     - specialist
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: kubernetes-specialist
     name: Kubernetes Specialist Agent
@@ -149,7 +149,7 @@ spec:
     - cloud
     - kubernetes
     - containers
-    agentType: hybrid
+    agentType: HYBRID
     agentSubtype: rule+llm
   - id: cloud-resource-discovery-agent
     name: Cloud Resource Discovery Agent
@@ -168,7 +168,7 @@ spec:
     - cloud
     - discovery
     - inventory
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cloud-resource-risk-agent
     name: Cloud Resource Risk Agent
@@ -187,7 +187,7 @@ spec:
     - cloud
     - risk
     - security
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cost-optimization-agent
     name: Cost Optimization Agent
@@ -210,7 +210,7 @@ spec:
     - cloud
     - cost
     - optimization
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: auto-scaling-configurator
     name: Auto Scaling Configurator Agent
@@ -229,7 +229,7 @@ spec:
     - cloud
     - scaling
     - automation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: infrastructure-as-code-generator
     name: IaC Generator Agent
@@ -249,7 +249,7 @@ spec:
     - cloud
     - iac
     - generation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cloud-migration-planner
     name: Cloud Migration Planner Agent
@@ -268,7 +268,7 @@ spec:
     - cloud
     - migration
     - planning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: disaster-recovery-agent
     name: Disaster Recovery Agent
@@ -287,7 +287,7 @@ spec:
     - cloud
     - disaster-recovery
     - backup
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: network-architecture-agent
     name: Network Architecture Agent
@@ -306,7 +306,7 @@ spec:
     - cloud
     - network
     - architecture
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: serverless-optimizer
     name: Serverless Optimizer Agent
@@ -325,7 +325,7 @@ spec:
     - cloud
     - serverless
     - optimization
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: storage-optimizer
     name: Storage Optimizer Agent
@@ -344,7 +344,7 @@ spec:
     - cloud
     - storage
     - optimization
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: database-migration-agent
     name: Database Migration Agent
@@ -363,7 +363,7 @@ spec:
     - cloud
     - database
     - migration
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: cloud-monitoring-aggregator
     name: Cloud Monitoring Aggregator Agent
@@ -382,7 +382,7 @@ spec:
     - cloud
     - monitoring
     - aggregation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: iam-governance-agent
     name: IAM Governance Agent
@@ -401,7 +401,7 @@ spec:
     - cloud
     - iam
     - governance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: compliance-scanner
     name: Cloud Compliance Scanner Agent
@@ -420,7 +420,7 @@ spec:
     - cloud
     - compliance
     - scanning
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: spot-instance-manager
     name: Spot Instance Manager Agent
@@ -439,7 +439,7 @@ spec:
     - cloud
     - spot
     - cost-optimization
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: container-registry-manager
     name: Container Registry Manager Agent
@@ -458,7 +458,7 @@ spec:
     - cloud
     - containers
     - registry
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: edge-deployment-agent
     name: Edge Deployment Agent
@@ -477,7 +477,7 @@ spec:
     - cloud
     - edge
     - cdn
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: secrets-manager
     name: Cloud Secrets Manager Agent
@@ -496,7 +496,7 @@ spec:
     - cloud
     - secrets
     - security
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: backup-automation-agent
     name: Backup Automation Agent
@@ -515,7 +515,7 @@ spec:
     - cloud
     - backup
     - automation
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: tagging-governance-agent
     name: Tagging Governance Agent
@@ -534,7 +534,7 @@ spec:
     - cloud
     - tagging
     - governance
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   - id: service-mesh-configurator
     name: Service Mesh Configurator Agent
@@ -553,7 +553,7 @@ spec:
     - cloud
     - service-mesh
     - networking
-    agentType: probabilistic
+    agentType: PROBABILISTIC
     agentSubtype: llm
   hierarchy:
     level1:

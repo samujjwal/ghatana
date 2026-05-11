@@ -17,7 +17,7 @@ metadata:
   tags: [sustainability, green-computing, carbon, energy, efficiency, esg]
 
 identity:
-  agentType: adaptive                       # continuously updates sustainability model from metric feedback
+  agentType: ADAPTIVE                       # continuously updates sustainability model from metric feedback
   roles: [carbon-monitor, efficiency-advisor, esg-reporter]
   criticality: low
   autonomyLevel: semi-autonomous

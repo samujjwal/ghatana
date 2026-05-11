@@ -46,6 +46,63 @@ public final class PhasePacketController {
         this.phasePacketService = phasePacketService;
     }
 
+    /**
+     * Handles GET requests with query parameters.
+     * Expected query params: phase, projectId, workspaceId (optional), correlationId (optional)
+     */
+    public Promise<HttpResponse> getPhasePacketWithQuery(HttpRequest request) {
+        try {
+            // Extract query parameters
+            String phase = request.getQueryParameter("phase");
+            String projectId = request.getQueryParameter("projectId");
+            String workspaceId = request.getQueryParameter("workspaceId");
+            String correlationId = request.getQueryParameter("correlationId");
+
+            // Validate required fields
+            if (phase == null || phase.isBlank()) {
+                return Promise.of(badRequest400("phase is required"));
+            }
+            if (projectId == null || projectId.isBlank()) {
+                return Promise.of(badRequest400("projectId is required"));
+            }
+
+            // Extract principal for authorization context
+            Principal principal = request.getAttachment(Principal.class);
+            if (principal == null) {
+                return Promise.of(HttpResponse.ofCode(401)
+                    .withJson("{\"error\":\"Unauthenticated\"}")
+                    .build());
+            }
+
+            // Validate tenant scope (from principal, not query param for GET)
+            String tenantId = principal.getTenantId();
+
+            // Build phase packet
+            return phasePacketService.buildPhasePacket(
+                phase,
+                projectId,
+                workspaceId != null ? workspaceId : "default-workspace",
+                principal,
+                correlationId
+            )
+            .map(packet -> {
+                try {
+                    return ok200Json(objectMapper.writeValueAsString(packet));
+                } catch (Exception e) {
+                    log.error("Error serializing phase packet", e);
+                    return error500("Internal server error");
+                }
+            });
+
+        } catch (Exception e) {
+            log.error("Error processing phase packet GET request", e);
+            return Promise.of(badRequest400("Invalid request format"));
+        }
+    }
+
+    /**
+     * Handles POST requests with JSON body.
+     */
     public Promise<HttpResponse> getPhasePacket(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
@@ -95,11 +152,11 @@ public final class PhasePacketController {
                     });
 
                 } catch (Exception e) {
-                    log.error("Error processing phase packet request", e);
+                    log.error("Error processing phase packet POST request", e);
                     return Promise.of(badRequest400("Invalid request format"));
                 }
             })
-            .whenException(e -> log.error("Phase packet request failed", e));
+            .whenException(e -> log.error("Phase packet POST request failed", e));
     }
 
     public record PhasePacketRequest(

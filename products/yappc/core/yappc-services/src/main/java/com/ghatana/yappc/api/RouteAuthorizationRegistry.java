@@ -7,6 +7,9 @@ package com.ghatana.yappc.api;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.rbac.AccessDeniedException;
 import com.ghatana.platform.security.rbac.Permission;
+import com.ghatana.yappc.api.generated.GeneratedRouteRegistry;
+import com.ghatana.yappc.governance.route.AuthMode;
+import com.ghatana.yappc.governance.route.RouteEntry;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -15,6 +18,9 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -81,6 +87,12 @@ public final class RouteAuthorizationRegistry {
             }
             definition = match.definition();
             pathParameters = match.parameters();
+        }
+
+        // Bypass authentication for public routes
+        if (definition.authMode() == AuthMode.PUBLIC) {
+            log.debug("Public route accessed: {} {} - bypassing authentication", method, path);
+            return;
         }
 
         Principal principal = request.getAttachment(Principal.class);
@@ -162,156 +174,96 @@ public final class RouteAuthorizationRegistry {
 
     /**
      * Registers all canonical YAPPC routes with their authorization requirements.
+     * Routes are loaded from the generated route registry based on route-manifest.yaml.
      */
     private void registerCanonicalRoutes() {
-        // Intent phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/intent/capture",
-            "intent.capture", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.intent.capture", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/intent/analyze",
-            "intent.analyze", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.intent.analyze", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.GET, "/api/v1/yappc/intent/:id",
-            "intent.get", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.intent.get", PrivacyClassification.INTERNAL);
+        var manifest = GeneratedRouteRegistry.getManifest();
+        var yappcServicesRoutes = manifest.getRoutesForServer("yappc-services");
+        
+        for (RouteEntry route : yappcServicesRoutes) {
+            try {
+                HttpMethod method = HttpMethod.valueOf(route.method());
+                String permission = mapScopeToPermission(route.scopes());
+                ResourceScope resourceScope = mapScopeToResourceScope(route.scopes());
+                String action = route.operationId();
+                String auditEventType = "yappc." + route.operationId();
+                PrivacyClassification privacy = mapDefaultPrivacy(route.auth());
+                AuthMode authMode = route.auth();
+                
+                registerRoute(method, route.path(), action, permission, resourceScope, auditEventType, privacy, authMode);
+            } catch (Exception e) {
+                log.error("Failed to register route {} {}: {}", route.method(), route.path(), e.getMessage());
+                throw new RuntimeException("Failed to register route from manifest", e);
+            }
+        }
+        
+        log.info("Registered {} routes from generated manifest", routes.size());
+    }
 
-        // Shape phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/shape/derive",
-            "shape.derive", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.shape.derive", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/shape/model",
-            "shape.generate_model", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.shape.generate_model", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.GET, "/api/v1/yappc/shape/:id",
-            "shape.get", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.shape.get", PrivacyClassification.INTERNAL);
+    /**
+     * Maps scope strings to Permission enum values.
+     * Default to PROJECT_READ if no scopes defined.
+     */
+    private String mapScopeToPermission(Set<String> scopes) {
+        if (scopes == null || scopes.isEmpty()) {
+            return Permission.ADMIN_SYSTEM; // Public routes get system permission
+        }
+        
+        // Map common scope patterns to permissions
+        for (String scope : scopes) {
+            if (scope.contains(":read")) {
+                if (scope.startsWith("workspace")) return Permission.WORKSPACE_READ;
+                if (scope.startsWith("project")) return Permission.PROJECT_READ;
+                if (scope.startsWith("artifact")) return Permission.PROJECT_READ; // Use project read for artifacts
+                if (scope.startsWith("tenant")) return Permission.ADMIN_SYSTEM;
+            }
+            if (scope.contains(":write") || scope.contains(":update")) {
+                if (scope.startsWith("workspace")) return Permission.WORKSPACE_UPDATE;
+                if (scope.startsWith("project")) return Permission.PROJECT_UPDATE;
+                if (scope.startsWith("artifact")) return Permission.PROJECT_UPDATE;
+                if (scope.startsWith("tenant")) return Permission.ADMIN_SYSTEM;
+            }
+            if (scope.contains(":delete")) {
+                if (scope.startsWith("workspace")) return Permission.WORKSPACE_DELETE;
+                if (scope.startsWith("project")) return Permission.PROJECT_DELETE;
+                if (scope.startsWith("artifact")) return Permission.PROJECT_DELETE;
+            }
+            if (scope.contains(":admin")) {
+                return Permission.ADMIN_SYSTEM;
+            }
+        }
+        
+        // Default to project read if unknown scope
+        return Permission.PROJECT_READ;
+    }
 
-        // Validation phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/validate",
-            "validate.execute", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.validate.execute", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/validate/with-config",
-            "validate.with_config", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.validate.with_config", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/validate/with-policy",
-            "validate.with_policy", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.validate.with_policy", PrivacyClassification.INTERNAL);
+    /**
+     * Maps scope strings to ResourceScope enum values.
+     */
+    private ResourceScope mapScopeToResourceScope(Set<String> scopes) {
+        if (scopes == null || scopes.isEmpty()) {
+            return ResourceScope.SYSTEM;
+        }
+        
+        for (String scope : scopes) {
+            if (scope.startsWith("workspace")) return ResourceScope.WORKSPACE;
+            if (scope.startsWith("project")) return ResourceScope.PROJECT;
+            if (scope.startsWith("artifact")) return ResourceScope.ARTIFACT;
+            if (scope.startsWith("tenant")) return ResourceScope.TENANT;
+        }
+        
+        return ResourceScope.SYSTEM;
+    }
 
-        // Generation phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/generate",
-            "generate.execute", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.generate.execute", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/generate/diff",
-            "generate.diff", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.generate.diff", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/apply",
-            "generate.apply", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.generate.apply", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/reject",
-            "generate.reject", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.generate.reject", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/generate/runs/:runId/rollback",
-            "generate.rollback", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.generate.rollback", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id",
-            "generate.artifacts", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.generate.artifacts", PrivacyClassification.INTERNAL);
-
-        // Run phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/run",
-            "run.execute", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.run.execute", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/run/with-observation",
-            "run.with_observation", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.run.with_observation", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/run/rollback",
-            "run.rollback", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.run.rollback", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/run/promote",
-            "run.promote", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.run.promote", PrivacyClassification.CONFIDENTIAL);
-
-        // Observe phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/observe",
-            "observe.collect", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.observe.collect", PrivacyClassification.INTERNAL);
-
-        // Learn phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/learn",
-            "learn.analyze", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.learn.analyze", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/learn/with-context",
-            "learn.with_context", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.learn.with_context", PrivacyClassification.INTERNAL);
-
-        // Evolve phase
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/evolve",
-            "evolve.propose", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.evolve.propose", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/evolve/with-constraints",
-            "evolve.with_constraints", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.evolve.with_constraints", PrivacyClassification.INTERNAL);
-
-        // Full lifecycle
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/lifecycle/execute",
-            "lifecycle.execute", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.lifecycle.execute", PrivacyClassification.CONFIDENTIAL);
-
-        // Artifact compiler
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/artifact/graph/ingest",
-            "artifact.ingest", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.artifact.ingest", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/artifact/graph/analyze",
-            "artifact.analyze", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.artifact.analyze", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/artifact/graph/merge",
-            "artifact.merge", Permission.PROJECT_UPDATE, ResourceScope.PROJECT,
-            "yappc.artifact.merge", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/artifact/graph/query",
-            "artifact.query", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.artifact.query", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/artifact/residual/analyze",
-            "artifact.residual", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.artifact.residual", PrivacyClassification.INTERNAL);
-
-        // Preview sessions
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/preview/session/create",
-            "preview.create", Permission.PROJECT_READ, ResourceScope.ARTIFACT,
-            "yappc.preview.create", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/preview/session/validate",
-            "preview.validate", Permission.PROJECT_READ, ResourceScope.ARTIFACT,
-            "yappc.preview.validate", PrivacyClassification.INTERNAL);
-
-        // Phase cockpit packet
-        registerRoute(HttpMethod.POST, "/api/v1/yappc/phase/packet",
-            "phase.packet", Permission.PROJECT_READ, ResourceScope.PROJECT,
-            "yappc.phase.packet", PrivacyClassification.INTERNAL);
-
-        // Page artifacts
-        registerRoute(HttpMethod.PUT, "/api/v1/page-artifacts/:artifactId/document",
-            "page_artifact.save", Permission.PROJECT_UPDATE, ResourceScope.ARTIFACT,
-            "yappc.page_artifact.save", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/document",
-            "page_artifact.load", Permission.PROJECT_READ, ResourceScope.ARTIFACT,
-            "yappc.page_artifact.load", PrivacyClassification.INTERNAL);
-        registerRoute(HttpMethod.POST, "/api/v1/page-artifacts/:artifactId/review-decisions",
-            "page_artifact.review", Permission.PROJECT_UPDATE, ResourceScope.ARTIFACT,
-            "yappc.page_artifact.review", PrivacyClassification.CONFIDENTIAL);
-        registerRoute(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/operation-log/export",
-            "page_artifact.export", Permission.PROJECT_READ, ResourceScope.ARTIFACT,
-            "yappc.page_artifact.export", PrivacyClassification.INTERNAL);
-
-        // Health check (public)
-        registerRoute(HttpMethod.GET, "/health",
-            "health.check", Permission.ADMIN_SYSTEM, ResourceScope.SYSTEM,
-            "yappc.health.check", PrivacyClassification.PUBLIC);
-
-        // API info (public)
-        registerRoute(HttpMethod.GET, "/api/v1/yappc/info",
-            "api.info", Permission.ADMIN_SYSTEM, ResourceScope.SYSTEM,
-            "yappc.api.info", PrivacyClassification.PUBLIC);
-
-        log.info("Registered {} routes in authorization registry", routes.size());
+    /**
+     * Maps auth mode to default privacy classification.
+     */
+    private PrivacyClassification mapDefaultPrivacy(AuthMode auth) {
+        return switch (auth) {
+            case PUBLIC -> PrivacyClassification.PUBLIC;
+            case REQUIRED -> PrivacyClassification.INTERNAL;
+            case OPTIONAL -> PrivacyClassification.INTERNAL;
+        };
     }
 
     private void registerRoute(
@@ -321,16 +273,17 @@ public final class RouteAuthorizationRegistry {
             String requiredPermission,
             ResourceScope resourceScope,
             String auditEventType,
-            PrivacyClassification privacyClassification
+            PrivacyClassification privacyClassification,
+            AuthMode authMode
     ) {
         RouteKey key = new RouteKey(method, path);
         RouteDefinition definition = new RouteDefinition(
-            action, requiredPermission, resourceScope, auditEventType, privacyClassification
+            action, requiredPermission, resourceScope, auditEventType, privacyClassification, authMode
         );
         routes.put(key, definition);
         
         // Register pattern for parameterized routes
-        if (path.contains(":")) {
+        if (path.contains("{")) {
             RoutePattern pattern = new RoutePattern(path, definition);
             routePatterns.computeIfAbsent(method, k -> new ArrayList<>()).add(pattern);
         }
@@ -407,6 +360,47 @@ public final class RouteAuthorizationRegistry {
      * @param path the request path
      * @return the route pattern match with extracted parameters, or null if no match
      */
+    /**
+     * Checks if a route is public (bypasses authentication).
+     *
+     * @param method the HTTP method
+     * @param path the request path
+     * @return true if the route is public, false otherwise
+     */
+    public boolean isPublicRoute(@NotNull HttpMethod method, @NotNull String path) {
+        try {
+            RouteDefinition definition = getRouteDefinition(method, path);
+            return definition != null && definition.authMode() == AuthMode.PUBLIC;
+        } catch (Exception e) {
+            // On error, fail closed (not public)
+            return false;
+        }
+    }
+
+    /**
+     * Gets the route definition for a given method and path.
+     *
+     * @param method the HTTP method
+     * @param path the request path
+     * @return the route definition, or null if not found
+     */
+    @Nullable
+    public RouteDefinition getRouteDefinition(@NotNull HttpMethod method, @NotNull String path) {
+        // Try exact match first
+        RouteKey key = new RouteKey(method, path);
+        RouteDefinition definition = routes.get(key);
+        
+        // If no exact match, try pattern matching for parameterized routes
+        if (definition == null) {
+            RoutePatternMatch match = findMatchingRoute(method, path);
+            if (match != null) {
+                definition = match.definition();
+            }
+        }
+        
+        return definition;
+    }
+
     @Nullable
     private RoutePatternMatch findMatchingRoute(@NotNull HttpMethod method, @NotNull String path) {
         List<RoutePattern> patterns = routePatterns.get(method);
@@ -423,7 +417,15 @@ public final class RouteAuthorizationRegistry {
                     int groupIndex = entry.getValue();
                     String value = matcher.group(groupIndex);
                     if (value != null) {
-                        parameters.put(paramName, value);
+                        try {
+                            // Decode URL-encoded path parameter values
+                            String decodedValue = URLDecoder.decode(value, StandardCharsets.UTF_8);
+                            parameters.put(paramName, decodedValue);
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Failed to decode path parameter {}: {}", paramName, value, e);
+                            // Use raw value if decoding fails
+                            parameters.put(paramName, value);
+                        }
                     }
                 }
                 return new RoutePatternMatch(pattern.definition(), parameters);
@@ -446,9 +448,23 @@ public final class RouteAuthorizationRegistry {
             for (String param : query.split("&")) {
                 String[] parts = param.split("=", 2);
                 if (parts.length == 2) {
-                    queryParams.put(parts[0], parts[1]);
+                    try {
+                        String key = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
+                        String value = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
+                        queryParams.put(key, value);
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Failed to decode query parameter: {}", param, e);
+                        // Use raw value if decoding fails
+                        queryParams.put(parts[0], parts[1]);
+                    }
                 } else if (parts.length == 1) {
-                    queryParams.put(parts[0], "");
+                    try {
+                        String key = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
+                        queryParams.put(key, "");
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Failed to decode query parameter key: {}", parts[0], e);
+                        queryParams.put(parts[0], "");
+                    }
                 }
             }
         }
@@ -488,8 +504,19 @@ public final class RouteAuthorizationRegistry {
             String requiredPermission,
             ResourceScope resourceScope,
             String auditEventType,
-            PrivacyClassification privacyClassification
-    ) {}
+            PrivacyClassification privacyClassification,
+            AuthMode authMode
+    ) {
+        public RouteDefinition(
+                String action,
+                String requiredPermission,
+                ResourceScope resourceScope,
+                String auditEventType,
+                PrivacyClassification privacyClassification
+        ) {
+            this(action, requiredPermission, resourceScope, auditEventType, privacyClassification, AuthMode.REQUIRED);
+        }
+    }
 
     /**
      * Composite key for route lookup.
@@ -509,7 +536,7 @@ public final class RouteAuthorizationRegistry {
         }
 
         private static Pattern compilePattern(String path) {
-            String regex = path.replaceAll(":([^/]+)", "([^/]+)");
+            String regex = path.replaceAll("\\{([^/]+)\\}", "([^/]+)");
             return Pattern.compile("^" + regex + "$");
         }
 
@@ -518,10 +545,8 @@ public final class RouteAuthorizationRegistry {
             String[] segments = path.split("/");
             int groupIndex = 1;
             for (String segment : segments) {
-                if (segment.startsWith(":")) {
-                    names.put(segment.substring(1), groupIndex++);
-                } else if (!segment.isEmpty()) {
-                    groupIndex++;
+                if (segment.startsWith("{") && segment.endsWith("}")) {
+                    names.put(segment.substring(1, segment.length() - 1), groupIndex++);
                 }
             }
             return names;
@@ -535,4 +560,144 @@ public final class RouteAuthorizationRegistry {
             RouteDefinition definition,
             Map<String, String> parameters
     ) {}
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Controller-level validation helpers (task 1.2.5)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Validates that a scope provided in a request body matches the authorized scope.
+     * This prevents scope escalation attacks where a user attempts to override their
+     * authorized scope by passing a different scope in the request body.
+     *
+     * @param bodyScope the scope provided in the request body (e.g., "project:read")
+     * @param authorizedScopes the set of scopes the principal is authorized for
+     * @throws AccessDeniedException if bodyScope is not in authorizedScopes
+     */
+    public static void validateBodyScopeAgainstAuthorized(
+            @Nullable String bodyScope,
+            @NotNull Set<String> authorizedScopes
+    ) {
+        if (bodyScope == null || bodyScope.isBlank()) {
+            // No scope in body, nothing to validate
+            return;
+        }
+
+        if (authorizedScopes == null || authorizedScopes.isEmpty()) {
+            throw new AccessDeniedException(
+                String.format("Scope '%s' provided in request body but no authorized scopes available", bodyScope)
+            );
+        }
+
+        // Check if body scope matches any authorized scope
+        boolean isAuthorized = authorizedScopes.stream()
+            .anyMatch(authorized -> scopeMatches(bodyScope, authorized));
+
+        if (!isAuthorized) {
+            throw new AccessDeniedException(
+                String.format("Scope '%s' in request body is not authorized. Authorized scopes: %s",
+                    bodyScope, authorizedScopes)
+            );
+        }
+    }
+
+    /**
+     * Validates that multiple scopes provided in a request body match authorized scopes.
+     *
+     * @param bodyScopes the scopes provided in the request body
+     * @param authorizedScopes the set of scopes the principal is authorized for
+     * @throws AccessDeniedException if any bodyScope is not in authorizedScopes
+     */
+    public static void validateBodyScopesAgainstAuthorized(
+            @Nullable Set<String> bodyScopes,
+            @NotNull Set<String> authorizedScopes
+    ) {
+        if (bodyScopes == null || bodyScopes.isEmpty()) {
+            // No scopes in body, nothing to validate
+            return;
+        }
+
+        if (authorizedScopes == null || authorizedScopes.isEmpty()) {
+            throw new AccessDeniedException(
+                String.format("Scopes %s provided in request body but no authorized scopes available", bodyScopes)
+            );
+        }
+
+        for (String bodyScope : bodyScopes) {
+            if (bodyScope != null && !bodyScope.isBlank()) {
+                validateBodyScopeAgainstAuthorized(bodyScope, authorizedScopes);
+            }
+        }
+    }
+
+    /**
+     * Checks if two scope strings match for authorization purposes.
+     * A scope matches if it is exactly equal or if it's a wildcard/admin scope.
+     *
+     * @param requested the requested scope
+     * @param authorized the authorized scope
+     * @return true if the scopes match for authorization
+     */
+    private static boolean scopeMatches(String requested, String authorized) {
+        if (requested.equals(authorized)) {
+            return true;
+        }
+
+        // Admin scope grants all other scopes
+        if ("admin".equalsIgnoreCase(authorized)) {
+            return true;
+        }
+
+        // Check resource-level wildcard (e.g., project:* matches project:read)
+        if (authorized.endsWith(":*")) {
+            String resource = authorized.substring(0, authorized.length() - 2);
+            if (requested.startsWith(resource + ":")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets the authorized scopes for a given route and principal.
+     * This can be used by controllers to determine what scopes are authorized
+     * before validating body scope.
+     *
+     * @param method the HTTP method
+     * @param path the request path
+     * @param principal the authenticated principal
+     * @return the set of authorized scopes for this route
+     * @throws AccessDeniedException if the route is not registered or principal is null
+     */
+    public Set<String> getAuthorizedScopesForRoute(
+            @NotNull HttpMethod method,
+            @NotNull String path,
+            @NotNull Principal principal
+    ) {
+        RouteKey key = new RouteKey(method, path);
+        RouteDefinition definition = routes.get(key);
+        
+        if (definition == null) {
+            RoutePatternMatch match = findMatchingRoute(method, path);
+            if (match == null) {
+                throw new AccessDeniedException(
+                    String.format("Route %s %s is not registered in the authorization registry", method, path)
+                );
+            }
+            definition = match.definition();
+        }
+
+        // Get the route entry from generated registry to extract scopes
+        RouteEntry routeEntry = GeneratedRouteRegistry.getManifest()
+            .getRoutesForServer("yappc-lifecycle")
+            .stream()
+            .filter(r -> r.method().equals(method.name()) && r.path().equals(path))
+            .findFirst()
+            .orElseThrow(() -> new AccessDeniedException(
+                String.format("Route %s %s not found in generated registry", method, path)
+            ));
+
+        return routeEntry.scopes();
+    }
 }

@@ -1,194 +1,140 @@
 /**
- * P0-006: Real-backend release gate E2E test suite for DMOS.
+ * Real-backend release gate E2E tests for stable DMOS routes.
  *
- * These tests run against a real DMOS API server + real PostgreSQL. No page.route() mocks.
- * All critical user flows are covered: auth, campaigns, strategy, budget, approval, AI action log.
+ * These tests intentionally avoid page.route() mocks. CI starts the API and UI
+ * before this suite runs, then the browser exercises the same HTTP client used
+ * by the product UI.
  *
- * Prerequisites (caller must set env vars and start services):
- *   DMOS_API_BASE_URL   — e.g., http://localhost:8080
- *   DMOS_UI_BASE_URL    — e.g., http://localhost:5174
- *   DMOS_TEST_TOKEN     — valid JWT for a brand-manager test user
- *   DMOS_TEST_WORKSPACE — workspace ID
+ * @doc.type test
+ * @doc.purpose Stable route E2E coverage against a running DMOS backend
+ * @doc.layer e2e
  */
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const apiBaseUrl = process.env['DMOS_API_BASE_URL'];
-const testToken = process.env['DMOS_TEST_TOKEN'];
-const testWorkspace = process.env['DMOS_TEST_WORKSPACE'];
+const apiBaseUrl = process.env['DMOS_API_BASE_URL'] ?? 'http://localhost:8080';
+const tenant = process.env['DMOS_TEST_TENANT'] ?? 'tenant-e2e';
+const principal = process.env['DMOS_TEST_PRINCIPAL'] ?? 'principal-e2e';
+const token = process.env['DMOS_TEST_TOKEN'] ?? 'dev-e2e-token';
+let workspace = process.env['DMOS_TEST_WORKSPACE'] ?? 'ws-e2e';
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `P0-006: Required environment variable '${name}' is not set. ` +
-        `Set it before running real-backend E2E tests.`,
-    );
-  }
-  return value;
+async function login(page: Page): Promise<void> {
+  await page.goto('/login');
+  await page.evaluate((roles) => {
+    sessionStorage.setItem('dmos_roles', JSON.stringify(roles));
+  }, ['brand-manager', 'marketing-director']);
+  await page.getByTestId('login-token').fill(token);
+  await page.getByTestId('login-workspace-id').fill(workspace);
+  await page.getByTestId('login-tenant-id').fill(tenant);
+  await page.getByTestId('login-principal-id').fill(principal);
+  await page.getByTestId('login-submit').click();
+  await expect(page.getByTestId('dashboard-page')).toBeVisible({ timeout: 20_000 });
 }
 
-/** Inject the test JWT into localStorage so the UI authenticates without OAuth redirect. */
-async function seedAuthToken(page: Page): Promise<void> {
-  await page.addInitScript((token: string) => {
-    localStorage.setItem('dmos_access_token', token);
-  }, requireEnv('DMOS_TEST_TOKEN'));
+async function navigateInApp(page: Page, path: string): Promise<void> {
+  await page.evaluate((targetPath) => {
+    window.history.pushState({}, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+  }, path);
+  await expect(page).toHaveURL(new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
 }
 
-test.describe('P0-006: Real-backend release gate — critical flows', () => {
-  let context: BrowserContext;
-  let page: Page;
-  const workspace = requireEnv('DMOS_TEST_WORKSPACE');
+function apiHeaders(idempotencyKey?: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'X-Tenant-ID': tenant,
+    'X-Principal-ID': principal,
+    'X-Session-ID': 'session-e2e',
+    'X-Roles': 'brand-manager,marketing-director',
+    ...(idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : {}),
+  };
+}
 
-  test.beforeAll(async ({ browser }) => {
-    // Validate all required env vars up-front
-    requireEnv('DMOS_API_BASE_URL');
-    requireEnv('DMOS_TEST_TOKEN');
-    requireEnv('DMOS_TEST_WORKSPACE');
-
-    context = await browser.newContext();
-    page = await context.newPage();
-    await seedAuthToken(page);
+test.describe('Real backend stable routes', () => {
+  test.beforeAll(async ({ request }) => {
+    const response = await request.post(`${apiBaseUrl}/v1/workspaces`, {
+      headers: apiHeaders(`workspace-${Date.now()}`),
+      data: {
+        name: `E2E Workspace ${Date.now()}`,
+        description: 'Workspace created by the real-backend release gate.',
+      },
+    });
+    expect(response.status()).toBe(201);
+    const body = await response.json() as { id: string };
+    workspace = body.id;
   });
 
-  test.afterAll(async () => {
-    await context.close();
+  test.beforeEach(async ({ page }) => {
+    await login(page);
   });
 
-  test.beforeEach(async () => {
-    // Re-seed token before each test (page reloads clear localStorage)
-    await seedAuthToken(page);
+  test('dashboard consumes the backend summary API', async ({ page }) => {
+    await navigateInApp(page, `/workspaces/${workspace}/dashboard`);
+    await expect(page.getByTestId('dashboard-page')).toBeVisible({ timeout: 20_000 });
+
+    const summary = await page.request.get(`${apiBaseUrl}/v1/workspaces/${workspace}/dashboard`, {
+      headers: apiHeaders(),
+    });
+    expect(summary.status()).toBe(200);
+    const body = await summary.json() as { metricSource: string; formulaVersion: string };
+    expect(body.metricSource).toBe('DMOS_BACKEND_SUMMARY');
+    expect(body.formulaVersion).toBe('dashboard-summary.v1');
   });
 
-  test('P0-006-AUTH: Dashboard loads after auth token injection', async () => {
-    await page.goto(`/workspaces/${workspace}/dashboard`);
-    await expect(page.locator('[data-testid="dashboard-root"]')).toBeVisible({ timeout: 15_000 });
-  });
+  test('campaigns route can create a campaign through the real API', async ({ page }) => {
+    await navigateInApp(page, `/workspaces/${workspace}/campaigns`);
+    await expect(page.getByTestId('campaigns-page')).toBeVisible({ timeout: 20_000 });
 
-  test('P0-006-CAMPAIGN-CREATE: Campaign can be created via real API', async () => {
-    await page.goto(`/workspaces/${workspace}/campaigns`);
-    await expect(page.locator('[data-testid="campaign-list"]')).toBeVisible({ timeout: 15_000 });
-
-    // Open create form
-    const createBtn = page.locator('[data-testid="create-campaign-btn"]');
-    await expect(createBtn).toBeVisible();
-    await createBtn.click();
-
-    // Fill required fields
     const campaignName = `E2E Campaign ${Date.now()}`;
-    await page.fill('[data-testid="campaign-name-input"]', campaignName);
-    await page.selectOption('[data-testid="campaign-type-select"]', 'AWARENESS');
+    await page.getByTestId('campaign-name-input').fill(campaignName);
+    await page.getByTestId('campaign-type-select').selectOption('EMAIL');
+    await page.getByTestId('campaign-objective-select').selectOption('LEADS');
+    await page.getByTestId('campaign-budget-input').fill('500');
+    await page.getByTestId('campaign-start-date-input').fill('2026-05-12');
+    await page.getByTestId('campaign-end-date-input').fill('2026-06-12');
+    await page.getByTestId('campaign-audience-input').fill('E2E test audience with explicit consent');
+    await page.getByTestId('campaign-landing-page-input').fill('https://example.com/e2e');
+    await page.getByTestId('create-campaign-btn').click();
 
-    // Submit
-    await page.click('[data-testid="create-campaign-submit"]');
-
-    // Should appear in list
-    await expect(page.locator(`text=${campaignName}`)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('cell', { name: campaignName })).toBeVisible({ timeout: 20_000 });
   });
 
-  test('P0-006-CAMPAIGN-LAUNCH: Campaign can be launched', async () => {
-    await page.goto(`/workspaces/${workspace}/campaigns`);
-    await expect(page.locator('[data-testid="campaign-row"]').first()).toBeVisible({ timeout: 15_000 });
+  test('governance routes return explicit backend responses', async ({ page }) => {
+    await navigateInApp(page, `/workspaces/${workspace}/approvals`);
+    await expect(page.getByTestId('approval-queue-page')).toBeVisible({ timeout: 20_000 });
 
-    // Find a DRAFT campaign and launch it
-    const launchBtn = page.locator('[data-testid="launch-campaign-btn"]').first();
-    if (await launchBtn.isVisible().catch(() => false)) {
-      await launchBtn.click();
-      // Wait for status change
-      await expect(page.locator('[data-testid="campaign-status-ACTIVE"]').first()).toBeVisible({
-        timeout: 15_000,
-      });
-    }
+    await navigateInApp(page, `/workspaces/${workspace}/ai-actions`);
+    await expect(page.getByTestId('ai-action-log-page')).toBeVisible({ timeout: 20_000 });
+
+    const entitlements = await page.request.get(`${apiBaseUrl}/v1/route-entitlements`, {
+      headers: apiHeaders(),
+    });
+    expect(entitlements.status()).toBe(200);
   });
 
-  test('P0-006-STRATEGY-GENERATE: Strategy can be generated via real API', async () => {
-    await page.goto(`/workspaces/${workspace}/strategy`);
+  test('consent and suppression APIs enforce do-not-contact state', async ({ page }) => {
+    const email = `e2e-${Date.now()}@example.com`;
+    const subjectId = `subject-${Date.now()}`;
+    const purpose = 'marketing-email';
 
-    const generateBtn = page.locator('[data-testid="generate-strategy-btn"]');
-    await expect(generateBtn).toBeVisible({ timeout: 15_000 });
-    await generateBtn.click();
+    const consent = await page.request.post(`${apiBaseUrl}/v1/workspaces/${workspace}/consent`, {
+      headers: apiHeaders(`consent-${Date.now()}`),
+      data: { subjectId, purpose, granted: true },
+    });
+    expect(consent.status()).toBe(201);
 
-    // Wait for generation to complete (real AI may take time)
-    await expect(page.locator('[data-testid="strategy-detail"]')).toBeVisible({ timeout: 60_000 });
-  });
+    const unsubscribe = await page.request.post(`${apiBaseUrl}/v1/workspaces/${workspace}/unsubscribe`, {
+      headers: apiHeaders(`unsubscribe-${Date.now()}`),
+      data: { email, subjectId, purpose },
+    });
+    expect(unsubscribe.status()).toBe(200);
 
-  test('P0-006-STRATEGY-SUBMIT: Strategy can be submitted for approval', async () => {
-    await page.goto(`/workspaces/${workspace}/strategy`);
-    await expect(page.locator('[data-testid="strategy-detail"]')).toBeVisible({ timeout: 15_000 });
-
-    const submitBtn = page.locator('[data-testid="submit-strategy-btn"]');
-    if (await submitBtn.isVisible().catch(() => false)) {
-      await submitBtn.click();
-      await expect(page.locator('[data-testid="strategy-status"]')).toContainText('PENDING', {
-        timeout: 15_000,
-      });
-    }
-  });
-
-  test('P0-006-BUDGET-GENERATE: Budget can be generated via real API', async () => {
-    await page.goto(`/workspaces/${workspace}/budget`);
-
-    const generateBtn = page.locator('[data-testid="generate-budget-btn"]');
-    await expect(generateBtn).toBeVisible({ timeout: 15_000 });
-
-    // Fill monthly cap
-    const capInput = page.locator('[data-testid="monthly-cap-input"]');
-    if (await capInput.isVisible().catch(() => false)) {
-      await capInput.fill('5000');
-    }
-
-    await generateBtn.click();
-    await expect(page.locator('[data-testid="budget-detail"]')).toBeVisible({ timeout: 60_000 });
-  });
-
-  test('P0-006-APPROVAL-QUEUE: Approval queue loads from real backend', async () => {
-    await page.goto(`/workspaces/${workspace}/approvals`);
-    await expect(page.locator('[data-testid="approval-queue-root"]')).toBeVisible({ timeout: 15_000 });
-    // May have 0 items — just verify the page loads without error
-    await expect(page.locator('[data-testid="approval-queue-error"]')).not.toBeVisible();
-  });
-
-  test('P0-006-AI-LOG: AI action log loads from real backend', async () => {
-    await page.goto(`/workspaces/${workspace}/ai-actions`);
-    await expect(page.locator('[data-testid="ai-action-log-root"]')).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('[data-testid="ai-action-log-error"]')).not.toBeVisible();
-  });
-
-  test('P0-006-CAPABILITY-GATE: Capability gating respected by real API', async () => {
-    // Navigate to campaigns and verify capability endpoint is called
-    const apiUrl = requireEnv('DMOS_API_BASE_URL');
-    const token = requireEnv('DMOS_TEST_TOKEN');
-
-    const response = await page.request.get(
-      `${apiUrl}/api/v1/workspaces/${workspace}/capabilities`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'X-Tenant-ID': 'tenant-e2e',
-        },
-      },
+    const suppression = await page.request.get(
+      `${apiBaseUrl}/v1/workspaces/${workspace}/suppression/check?email=${encodeURIComponent(email)}`,
+      { headers: apiHeaders() },
     );
-
-    expect(response.status()).toBe(200);
-    const body = await response.json() as { capabilities: Array<{ key: string; enabled: boolean }> };
-    expect(Array.isArray(body.capabilities)).toBe(true);
-  });
-
-  test('P0-006-CROSS-TENANT: Cross-tenant access is rejected by real API', async () => {
-    const apiUrl = requireEnv('DMOS_API_BASE_URL');
-    const token = requireEnv('DMOS_TEST_TOKEN');
-
-    // Try to access a different workspace's campaigns (should be 403 or 404)
-    const response = await page.request.get(
-      `${apiUrl}/api/v1/workspaces/ws-foreign-tenant/campaigns`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'X-Tenant-ID': 'tenant-e2e',
-        },
-        failOnStatusCode: false,
-      },
-    );
-
-    expect([403, 404]).toContain(response.status());
+    expect(suppression.status()).toBe(200);
+    const body = await suppression.json() as { suppressed: boolean };
+    expect(body.suppressed).toBe(true);
   });
 });

@@ -1,9 +1,8 @@
-// @ts-nocheck
 /**
  * Agent Execution Contracts
- * 
+ *
  * Defines contracts for autonomous agents with safety guarantees
- * 
+ *
  * @doc.type types
  * @doc.purpose Define agent execution contracts and guarantees
  * @doc.layer product
@@ -14,15 +13,26 @@ import { LifecyclePhase } from '../../../types/lifecycle';
 import type { CanvasState } from '../../../components/canvas/workspace/canvasAtoms';
 
 // ============================================================================
-// Agent Types
+// Agent Types and Product Roles
 // ============================================================================
 
-export type AgentType =
-    | 'IntentAgent'          // Helps understand user intent
-    | 'ShapeAgent'           // Suggests architectural patterns
-    | 'ValidationAgent'      // Validates design completeness
-    | 'GenerationAgent'      // Generates code artifacts
-    | 'ImprovementAgent';    // Suggests optimizations
+export type CanonicalAgentType =
+    | 'DETERMINISTIC'
+    | 'PROBABILISTIC'
+    | 'STREAM_PROCESSOR'
+    | 'PLANNING'
+    | 'HYBRID'
+    | 'ADAPTIVE'
+    | 'COMPOSITE'
+    | 'REACTIVE'
+    | 'CUSTOM';
+
+export type YappcAgentRole =
+    | 'intent'
+    | 'shape'
+    | 'validation'
+    | 'generation'
+    | 'improvement';
 
 export type AgentAction =
     | 'suggest_node'         // Suggest adding a node
@@ -60,8 +70,14 @@ export interface Guarantee {
 // ============================================================================
 
 export interface AgentExecutionContract {
-    /** Type of agent */
-    agentType: AgentType;
+    /** Canonical platform computational type */
+    agentType: CanonicalAgentType;
+
+    /** Product-specific role/capability identity */
+    role: YappcAgentRole;
+
+    /** Optional product persona name */
+    persona?: string;
 
     /** Lifecycle phases where agent can operate */
     allowedPhases: LifecyclePhase[];
@@ -153,7 +169,8 @@ export interface AgentExecutionResult {
 
 export interface AuditLogEntry {
     timestamp: number;
-    agentType: AgentType;
+    agentType: CanonicalAgentType;
+    role: YappcAgentRole;
     action: AgentAction;
     input: unknown;
     output: unknown;
@@ -170,7 +187,8 @@ export interface AuditLogEntry {
  * Suggests architectural patterns and connections during SHAPE phase
  */
 export const ShapeAgentContract: AgentExecutionContract = {
-    agentType: 'ShapeAgent',
+    agentType: 'PROBABILISTIC',
+    role: 'shape',
     allowedPhases: [LifecyclePhase.SHAPE],
     allowedActions: [
         'suggest_node',
@@ -205,7 +223,8 @@ export const ShapeAgentContract: AgentExecutionContract = {
  * Validates design completeness and identifies risks
  */
 export const ValidationAgentContract: AgentExecutionContract = {
-    agentType: 'ValidationAgent',
+    agentType: 'DETERMINISTIC',
+    role: 'validation',
     allowedPhases: [LifecyclePhase.VALIDATE],
     allowedActions: [
         'validate_design',
@@ -236,7 +255,8 @@ export const ValidationAgentContract: AgentExecutionContract = {
  * Generates code artifacts from canvas design
  */
 export const GenerationAgentContract: AgentExecutionContract = {
-    agentType: 'GenerationAgent',
+    agentType: 'PROBABILISTIC',
+    role: 'generation',
     allowedPhases: [LifecyclePhase.GENERATE],
     allowedActions: [
         'generate_code',
@@ -270,7 +290,8 @@ export const GenerationAgentContract: AgentExecutionContract = {
  * Analyzes metrics and suggests optimizations
  */
 export const ImprovementAgentContract: AgentExecutionContract = {
-    agentType: 'ImprovementAgent',
+    agentType: 'PROBABILISTIC',
+    role: 'improvement',
     allowedPhases: [LifecyclePhase.IMPROVE],
     allowedActions: [
         'analyze_metrics',
@@ -343,6 +364,7 @@ export function createAuditLogEntry(
     return {
         timestamp: Date.now(),
         agentType: contract.agentType,
+        role: contract.role,
         action,
         input,
         output,

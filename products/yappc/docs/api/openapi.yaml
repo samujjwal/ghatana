@@ -1016,7 +1016,7 @@ paths:
     post:
       tags: [shape]
       summary: Generate system model (domain entities, APIs)
-      operationId: generateSystemModel
+      operationId: modelShape
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -1099,7 +1099,7 @@ paths:
     post:
       tags: [generate]
       summary: Regenerate artifacts with a change diff
-      operationId: regenerateWithDiff
+      operationId: generateDiff
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -1258,7 +1258,7 @@ paths:
     post:
       tags: [artifact-graph]
       summary: Start a governed source import job
-      operationId: importSourceArtifact
+      operationId: importSource
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -1495,7 +1495,7 @@ paths:
     post:
       tags: [validate]
       summary: Run default validation suite
-      operationId: validate
+      operationId: validateArtifacts
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3012,7 +3012,7 @@ paths:
     post:
       tags: [run]
       summary: Execute a YAPPC run
-      operationId: executeRun
+      operationId: runArtifacts
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3045,7 +3045,7 @@ paths:
     post:
       tags: [run]
       summary: Execute a run with embedded observation collection
-      operationId: executeRunWithObservation
+      operationId: RunWithObservation
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3078,7 +3078,7 @@ paths:
     post:
       tags: [run]
       summary: Rollback the last executed run
-      operationId: rollback
+      operationId: rollbackRun
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3111,7 +3111,7 @@ paths:
     post:
       tags: [run]
       summary: Promote the last validated run to the next environment
-      operationId: promote
+      operationId: promoteRun
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3146,7 +3146,7 @@ paths:
     post:
       tags: [observe]
       summary: Collect an observation for a run
-      operationId: collectObservation
+      operationId: observeRun
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3175,13 +3175,73 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  # ── Preview Sessions ───────────────────────────────────────────────────────────
+
+  /api/v1/preview/session/create:
+    post:
+      tags: [preview]
+      summary: Create a preview session for artifact inspection
+      operationId: createPreviewSession
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Project-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePreviewSessionRequest"
+      responses:
+        "200":
+          description: Preview session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePreviewSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/preview/session/validate:
+    post:
+      tags: [preview]
+      summary: Validate a preview session token
+      operationId: validatePreviewSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidatePreviewSessionRequest"
+      responses:
+        "200":
+          description: Session validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidatePreviewSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   # ── Learn ─────────────────────────────────────────────────────────────────────
 
   /api/v1/yappc/learn:
     post:
       tags: [learn]
       summary: Analyze a completed run and record learning signals
-      operationId: analyze
+      operationId: learnFromRun
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3214,7 +3274,7 @@ paths:
     post:
       tags: [learn]
       summary: Analyze with explicit contextual metadata
-      operationId: analyzeWithContext
+      operationId: learnWithContext
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3249,7 +3309,7 @@ paths:
     post:
       tags: [evolve]
       summary: Propose evolutions based on accumulated learning signals
-      operationId: propose
+      operationId: evolveSystem
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3282,7 +3342,7 @@ paths:
     post:
       tags: [evolve]
       summary: Propose evolutions within explicit architectural constraints
-      operationId: proposeWithConstraints
+      operationId: evolveWithConstraints
       parameters:
         - name: X-Tenant-ID
           in: header
@@ -3317,7 +3377,7 @@ paths:
     post:
       tags: [lifecycle]
       summary: Execute the full YAPPC lifecycle pipeline (intent → shape → generate → validate → run)
-      operationId: executeFullLifecycle
+      operationId: executeLifecycle
       requestBody:
         required: true
         content:
@@ -3510,7 +3570,7 @@ paths:
     post:
       tags: [vector]
       summary: Hybrid keyword + semantic vector search
-      operationId: vectorHybridSearch
+      operationId: vectorSearchHybrid
       requestBody:
         required: true
         content:
@@ -3540,7 +3600,7 @@ paths:
     post:
       tags: [vector]
       summary: Index a single document
-      operationId: vectorIndexDocument
+      operationId: vectorIndex
       requestBody:
         required: true
         content:
@@ -3555,7 +3615,7 @@ paths:
     post:
       tags: [vector]
       summary: Batch-index multiple documents
-      operationId: vectorBatchIndex
+      operationId: vectorIndexBatch
       requestBody:
         required: true
         content:
@@ -3572,7 +3632,7 @@ paths:
     delete:
       tags: [vector]
       summary: Remove a document from the vector index
-      operationId: vectorDeleteIndex
+      operationId: vectorIndexDelete
       parameters:
         - $ref: "#/components/parameters/ResourceId"
       responses:
@@ -3630,7 +3690,7 @@ paths:
     get:
       tags: [agents]
       summary: Health summary for all agents
-      operationId: getAllAgentsHealth
+      operationId: agentsHealth
       responses:
         "200":
           description: Aggregated health status
@@ -3639,7 +3699,7 @@ paths:
     get:
       tags: [agents]
       summary: List all declared agent capabilities
-      operationId: listCapabilities
+      operationId: agentsCapabilities
       responses:
         "200":
           description: Capability descriptors
@@ -3648,7 +3708,7 @@ paths:
     get:
       tags: [agents]
       summary: Find agents matching a capability
-      operationId: findByCapability
+      operationId: agentsByCapability
       parameters:
         - name: capability
           in: path
@@ -3695,7 +3755,7 @@ paths:
     post:
       tags: [agents]
       summary: Run a prediction via the best-matching agent
-      operationId: predictViaAgent
+      operationId: predictAgent
       requestBody:
         required: true
         content:
@@ -3729,7 +3789,7 @@ paths:
     get:
       tags: [agents]
       summary: Health status for a specific agent
-      operationId: getAgentHealth
+      operationId: agentHealth
       parameters:
         - name: name
           in: path
@@ -4059,7 +4119,7 @@ paths:
     get:
       tags: [scaffold-packs]
       summary: List templates provided by a pack
-      operationId: listPackTemplates
+      operationId: getPackTemplates
       parameters:
         - name: name
           in: path
@@ -4189,7 +4249,7 @@ paths:
     get:
       tags: [scaffold-projects]
       summary: List features in the current scaffold project
-      operationId: getScaffoldProjectFeatures
+      operationId: getScaffoldFeatures
       responses:
         "200":
           description: Feature list
@@ -4198,7 +4258,7 @@ paths:
     post:
       tags: [scaffold-projects]
       summary: Export scaffold project state
-      operationId: exportScaffoldState
+      operationId: exportScaffoldProject
       responses:
         "200":
           description: Exported state
@@ -4207,7 +4267,7 @@ paths:
     post:
       tags: [scaffold-projects]
       summary: Import scaffold project state
-      operationId: importScaffoldState
+      operationId: importScaffoldProject
       requestBody:
         required: true
         content:
@@ -4267,7 +4327,7 @@ paths:
     get:
       tags: [scaffold-dependencies]
       summary: Analyze dependencies for a pack
-      operationId: analyzeDependenciesForPack
+      operationId: analyzePackDependencies
       parameters:
         - name: name
           in: path
@@ -4282,7 +4342,7 @@ paths:
     post:
       tags: [scaffold-dependencies]
       summary: Analyze dependencies for a project
-      operationId: analyzeDependenciesForProject
+      operationId: analyzeProjectDependencies
       requestBody:
         required: true
         content:
@@ -4297,7 +4357,7 @@ paths:
     post:
       tags: [scaffold-dependencies]
       summary: Check for dependency conflicts
-      operationId: checkDependencyConflicts
+      operationId: detectDependencyConflicts
       requestBody:
         required: true
         content:
@@ -4312,7 +4372,7 @@ paths:
     post:
       tags: [scaffold-dependencies]
       summary: Check for conflicts introduced by adding new dependencies
-      operationId: checkAddDependencyConflicts
+      operationId: addDependencyConflicts
       requestBody:
         required: true
         content:
@@ -4329,7 +4389,7 @@ paths:
     post:
       tags: [refactorer]
       summary: Create and submit a refactoring job
-      operationId: createRefactorerJob
+      operationId: createRefactorJob
       requestBody:
         required: true
         content:
@@ -4346,7 +4406,7 @@ paths:
     get:
       tags: [refactorer]
       summary: Get job status
-      operationId: getRefactorerJobStatus
+      operationId: getRefactorJob
       parameters:
         - name: jobId
           in: path
@@ -4361,7 +4421,7 @@ paths:
     delete:
       tags: [refactorer]
       summary: Cancel a refactoring job
-      operationId: cancelRefactorerJob
+      operationId: deleteRefactorJob
       parameters:
         - name: jobId
           in: path
@@ -4378,7 +4438,7 @@ paths:
     get:
       tags: [refactorer]
       summary: Get the full report for a completed job
-      operationId: getRefactorerJobReport
+      operationId: getRefactorJobReport
       parameters:
         - name: jobId
           in: path
@@ -4395,7 +4455,7 @@ paths:
     post:
       tags: [refactorer]
       summary: Start a paused job (not yet implemented — returns 501)
-      operationId: startRefactorerJob
+      operationId: startRefactorJob
       parameters:
         - name: jobId
           in: path
@@ -4410,7 +4470,7 @@ paths:
     post:
       tags: [refactorer]
       summary: Stop a running job (not yet implemented — returns 501)
-      operationId: stopRefactorerJob
+      operationId: stopRefactorJob
       parameters:
         - name: jobId
           in: path
@@ -4425,7 +4485,7 @@ paths:
     post:
       tags: [refactorer]
       summary: Create a new run for an existing job
-      operationId: createJobRun
+      operationId: createRefactorJobRun
       parameters:
         - name: jobId
           in: path
@@ -4444,7 +4504,7 @@ paths:
     get:
       tags: [refactorer]
       summary: List runs for a job
-      operationId: listJobRuns
+      operationId: listRefactorJobRuns
       parameters:
         - name: jobId
           in: path
@@ -4459,7 +4519,7 @@ paths:
     get:
       tags: [refactorer]
       summary: Get a specific run
-      operationId: getJobRun
+      operationId: getRefactorJobRun
       parameters:
         - name: jobId
           in: path
@@ -4481,7 +4541,7 @@ paths:
     get:
       tags: [refactorer]
       summary: Stream logs for a specific job run
-      operationId: getJobRunLogs
+      operationId: getRefactorJobRunLogs
       parameters:
         - name: jobId
           in: path
@@ -4503,7 +4563,7 @@ paths:
     post:
       tags: [refactorer]
       summary: Diagnose repository or workspace issues
-      operationId: diagnose
+      operationId: diagnoseRefactorer
       requestBody:
         required: true
         content:
@@ -4533,17 +4593,17 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
-      description: API key for internal service-to-service authentication
+      description: API key for internal service-to-service authentication. Use for backend services and automated tools. Not for browser clients.
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT Bearer token for internal service authentication
+      description: JWT Bearer token for internal service authentication. Use for backend services and automated tools. Not for browser clients.
     CookieAuth:
       type: apiKey
       in: cookie
-      name: session
-      description: Cookie-based session authentication for browser clients (httpOnly cookies)
+      name: yappc_session
+      description: Cookie-based session authentication for browser clients. Use for web UI and browser-based access. The session cookie is httpOnly and managed by the server.
 
   parameters:
     ResourceId:
@@ -4553,6 +4613,48 @@ components:
       schema:
         type: string
         format: uuid
+    # Authorization scope parameter (task 1.2.3)
+    # Backend extraction policy: path > query > header
+    # For routes with path parameters (e.g., /api/v1/projects/{projectId}), scope is extracted from path
+    # For other routes, pass scope as query parameter (?scope=project:read)
+    # Header-based scope passing (X-Scope: project:read) is supported but has lowest priority
+    ScopeQuery:
+      name: scope
+      in: query
+      required: false
+      description: |
+        Authorization scope for the request (e.g., project:read, workspace:write, admin).
+        
+        Scope determines what permissions are required to access the resource.
+        Common scopes:
+        - workspace:read - read access to workspace resources
+        - workspace:write - write access to workspace resources
+        - project:read - read access to project resources
+        - project:write - write access to project resources
+        - admin - administrative access
+        
+        Backend extraction policy (priority order):
+        1. Path parameters (e.g., /api/v1/projects/{projectId} extracts project:read)
+        2. Query parameter (?scope=project:read)
+        3. Header (X-Scope: project:read)
+        
+        For most routes, scope is optional and inferred from the session/credentials.
+        Explicit scope is required for cross-tenant or elevated operations.
+      schema:
+        type: string
+        enum: [workspace:read, workspace:write, project:read, project:write, admin]
+      example: project:read
+    ScopeHeader:
+      name: X-Scope
+      in: header
+      required: false
+      description: |
+        Authorization scope header (alternative to query parameter).
+        See ScopeQuery parameter for full documentation.
+        Has lowest priority in extraction policy (path > query > header).
+      schema:
+        type: string
+        example: project:read
 
   responses:
     BadRequest:
@@ -5768,6 +5870,18 @@ components:
         error:
           type: string
           nullable: true
+
+    WorkflowDefinition:
+      type: object
+      required: [templateId]
+      properties:
+        templateId:
+          type: string
+          description: The ID of the workflow template to execute
+        variables:
+          type: object
+          description: Variables to pass to the workflow template
+          additionalProperties: true
 
     # ── Intent schemas ────────────────────────────────────────────────────────
 
@@ -7309,58 +7423,11 @@ components:
         correlationId:
           type: string
 
-security:
-  - ApiKeyAuth: []
-  - BearerAuth: []
-        variables:
-          type: object
-          additionalProperties: true
-
-    AddFeatureRequest:
+    Error:
       type: object
-      required: [featureName]
+      description: Standard error response
       properties:
-        featureName:
+        code:
           type: string
-        variables:
-          type: object
-          additionalProperties: true
-
-    TemplateRenderRequest:
-      type: object
-      required: [templateId, variables]
-      properties:
-        templateId:
+        message:
           type: string
-        variables:
-          type: object
-          additionalProperties: true
-
-    # ── Refactorer ────────────────────────────────────────────────────────────
-
-    RefactorerJobRequest:
-      type: object
-      required: [repositoryPath]
-      properties:
-        repositoryPath:
-          type: string
-        rules:
-          type: array
-          items:
-            type: string
-        config:
-          type: object
-          additionalProperties: true
-
-    ErrorResponse:
-      type: object
-      description: Legacy error response; new code should use ProblemDetail (RFC-7807)
-      properties:
-        error:
-          type: string
-        correlationId:
-          type: string
-
-security:
-  - ApiKeyAuth: []
-  - BearerAuth: []

@@ -18,10 +18,17 @@ export type CampaignType =
 /** P0-010: Campaign lifecycle statuses - aligned with backend enum */
 export type CampaignStatus =
   | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'PENDING_LAUNCH'
+  | 'LAUNCH_RUNNING'
+  | 'LAUNCH_FAILED'
+  | 'EXTERNAL_EXECUTION_BLOCKED'
   | 'LAUNCHED'
   | 'PAUSED'
   | 'COMPLETED'
-  | 'ARCHIVED';
+  | 'ARCHIVED'
+  | 'ROLLED_BACK';
 
 export interface Campaign {
   id: string;

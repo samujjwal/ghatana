@@ -15,9 +15,8 @@ import React from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
-import { useCampaigns } from '@/hooks/useCampaigns';
 import { useStrategy } from '@/hooks/useStrategy';
-import { useBudgetRecommendation } from '@/hooks/useBudget';
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 import { ApprovalWidget } from '@/components/dashboard/ApprovalWidget';
 import { GrowthGoalWidget } from '@/components/dashboard/GrowthGoalWidget';
 import { RiskComplianceWidget } from '@/components/dashboard/RiskComplianceWidget';
@@ -40,22 +39,16 @@ export function DashboardPage(): React.ReactElement {
     tenantId ?? 'unknown',
   );
   const aiActions = useAiActionLog(workspaceId ?? null);
-  
-  // P0-1: Fetch real campaign data for dashboard metrics
-  const { campaigns, isLoading: campaignsLoading, isError: campaignsError } = useCampaigns(
-    workspaceId ?? null,
-    { limit: 100 } // Fetch all campaigns to calculate accurate metrics
-  );
+  const {
+    summary: dashboardSummary,
+    isLoading: dashboardSummaryLoading,
+    isError: dashboardSummaryError,
+  } = useDashboardSummary(workspaceId ?? null);
   
   // P0-1: Fetch real strategy data for dashboard metrics
   const { strategy: latestStrategy, isLoading: strategyLoading, isError: strategyError } = useStrategy(
     workspaceId ?? null
   );
-  const {
-    recommendation: latestBudgetRecommendation,
-    isLoading: budgetLoading,
-    isError: budgetError,
-  } = useBudgetRecommendation(workspaceId ?? null);
   const connectorHealth = useConnectorHealth(workspaceId ?? null);
 
   // P0-5.3: Handle loading state separately from early return
@@ -66,49 +59,39 @@ export function DashboardPage(): React.ReactElement {
   const pendingCount = approvals.filter((a) => a.status === 'PENDING').length;
   const setupComplete = approvals.length > 0 || !isLoading;
 
-  // P0-1: Calculate real campaign status metrics from API data
-  const activeCount = campaigns.filter((c) => c.status === 'LAUNCHED').length;
-  const pausedCount = campaigns.filter((c) => c.status === 'PAUSED').length;
-  const pendingCampaignCount = campaigns.filter((c) => c.status === 'DRAFT').length;
+  const campaignMetrics = dashboardSummary?.campaignMetrics;
+  const budgetMetrics = dashboardSummary?.budgetMetrics;
+  const freshness = dashboardSummary?.freshness;
+  const activeCount = campaignMetrics?.activeCampaigns ?? 0;
+  const pausedCount = campaignMetrics?.pausedCampaigns ?? 0;
+  const pendingCampaignCount = campaignMetrics
+    ? Math.max(
+        campaignMetrics.totalCampaigns
+          - campaignMetrics.activeCampaigns
+          - campaignMetrics.pausedCampaigns
+          - campaignMetrics.completedCampaigns
+          - campaignMetrics.archivedCampaigns,
+        0,
+      )
+    : 0;
   
   // P0-1: Calculate real strategy metrics from API data
   const strategyCount = latestStrategy ? 1 : 0;
   const strategyStatus = latestStrategy?.status ?? 'NONE';
   const strategyBudgetCap = latestStrategy?.budgetCap ?? 0;
-  const budgetTotal = latestBudgetRecommendation?.totalMonthlyCap ?? null;
-  const isBudgetApproved = latestBudgetRecommendation?.status === 'APPROVED';
-  const committedCampaignSpend = campaigns
-    .filter((campaign) => campaign.status === 'LAUNCHED' || campaign.status === 'COMPLETED')
-    .reduce((sum, campaign) => sum + ((campaign.budgetCents ?? 0) / 100), 0);
-  const budgetSpent =
-    budgetTotal !== null && isBudgetApproved && !campaignsError
-      ? committedCampaignSpend
-      : null;
-  const budgetRemaining =
-    budgetTotal !== null && budgetSpent !== null
-      ? budgetTotal - budgetSpent
-      : null;
-  const budgetUtilization =
-    budgetTotal !== null && budgetSpent !== null && budgetTotal > 0
-      ? (budgetSpent / budgetTotal) * 100
-      : null;
-  const budgetGeneratedAt = latestBudgetRecommendation?.approvedAt ?? latestBudgetRecommendation?.generatedAt ?? null;
-  const budgetSource =
-    latestBudgetRecommendation === null
-      ? 'Budget Recommendation API'
-      : isBudgetApproved
-      ? 'Budget Recommendation API + Campaign Spend Model'
-      : 'Budget Recommendation API (draft recommendation)';
+  const budgetTotal = budgetMetrics?.totalBudget ?? null;
+  const budgetSpent = budgetMetrics ? budgetMetrics.spentBudget : null;
+  const budgetRemaining = budgetMetrics ? budgetMetrics.remainingBudget : null;
+  const budgetUtilization = budgetMetrics ? budgetMetrics.pacingPercentage * 100 : null;
+  const budgetGeneratedAt = freshness?.lastUpdated ?? null;
+  const budgetSource = dashboardSummary
+    ? `${dashboardSummary.metricSource} (${dashboardSummary.formulaVersion})`
+    : 'Dashboard Summary API';
   const budgetUnavailableReason =
-    latestBudgetRecommendation === null
+    dashboardSummary === null
       ? 'No budget recommendation is available yet.'
-      : campaignsError
-      ? 'Campaign spend telemetry is temporarily unavailable.'
-      : !isBudgetApproved
-      ? 'Budget recommendation is not approved yet. Spend utilization is hidden until approval.'
       : undefined;
-  const isBudgetPartial =
-    latestBudgetRecommendation !== null && (!isBudgetApproved || campaignsError);
+  const isBudgetPartial = Boolean(dashboardSummary?.partialData);
 
   return (
     <section
@@ -173,8 +156,8 @@ export function DashboardPage(): React.ReactElement {
           activeCount={activeCount}
           pausedCount={pausedCount}
           pendingCount={pendingCampaignCount}
-          isLoading={campaignsLoading}
-          isError={campaignsError}
+          isLoading={dashboardSummaryLoading}
+          isError={dashboardSummaryError}
         />
         <BudgetTrackingWidget
           workspaceId={workspaceId ?? ''}
@@ -182,8 +165,8 @@ export function DashboardPage(): React.ReactElement {
           spent={budgetSpent}
           remaining={budgetRemaining}
           utilizationPercent={budgetUtilization}
-          isLoading={budgetLoading}
-          isError={budgetError}
+          isLoading={dashboardSummaryLoading}
+          isError={dashboardSummaryError}
           isPartial={isBudgetPartial}
           source={budgetSource}
           lastUpdated={budgetGeneratedAt}

@@ -17,7 +17,7 @@ metadata:
   - roadmap
   - requirements
 identity:
-  agentType: hybrid
+  agentType: HYBRID
   subtype: rule+llm
   determinismGuarantee: partial
   stateMutability: mutable

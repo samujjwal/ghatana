@@ -21,10 +21,10 @@ generator:
       service: quality-metrics
       endpoint: /metrics/collect
     - name: threshold_evaluation
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Evaluate collected metrics against configured thresholds
     - name: gate_decision
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: >
         PASS if all thresholds met.
         WARN if soft thresholds breached.

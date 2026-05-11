@@ -16,7 +16,7 @@ generator:
   type: PIPELINE
   steps:
     - name: wtp_research_design
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.2
@@ -43,7 +43,7 @@ generator:
       service: research-service
       endpoint: /research/pricing
     - name: results_analysis
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

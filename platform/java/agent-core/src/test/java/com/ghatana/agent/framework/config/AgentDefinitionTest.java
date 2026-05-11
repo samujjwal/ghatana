@@ -240,8 +240,11 @@ class AgentDefinitionTest {
                     .id("test-agent")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .systemPrompt("You are helpful.")
+                    .metadata("confidenceModel", "calibrated-logprob")
+                    .metadata("uncertaintyBehavior", "return-low-confidence")
+                    .metadata("lowConfidenceStatusPolicy", "LOW_CONFIDENCE")
                     .build(); 
 
             ValidationResult result = AgentDefinitionValidator.validate(def); 
@@ -255,7 +258,7 @@ class AgentDefinitionTest {
                     .id("test-agent")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .build(); 
 
             ValidationResult result = AgentDefinitionValidator.validate(def); 
@@ -285,7 +288,7 @@ class AgentDefinitionTest {
                     .id("expensive")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .systemPrompt("Costly agent")
                     .maxCostPerCall(50.0) 
                     .build(); 
@@ -302,7 +305,7 @@ class AgentDefinitionTest {
                     .id("dangerous")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
                     .build(); 
@@ -320,10 +323,13 @@ class AgentDefinitionTest {
                     .id("safe-executor")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
                     .label("security.reviewed", "true") 
+                    .metadata("confidenceModel", "calibrated-logprob")
+                    .metadata("uncertaintyBehavior", "return-low-confidence")
+                    .metadata("lowConfidenceStatusPolicy", "LOW_CONFIDENCE")
                     .build(); 
 
             ValidationResult result = AgentDefinitionValidator.validate(def); 
@@ -337,7 +343,7 @@ class AgentDefinitionTest {
                     .id("test")
                     .version("1.0.0")
                     .type(AgentType.PROBABILISTIC) 
-                    .subtype("llm")
+                    .subtype("LLM")
                     .systemPrompt("test")
                     .build(); 
 

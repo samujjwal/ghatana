@@ -16,10 +16,10 @@ generator:
   type: PIPELINE
   steps:
     - name: decision_detection
-      type: RULE_BASED
+      type: DETERMINISTIC
       description: Identify decision points in interactions
     - name: decision_structuring
-      type: LLM
+      type: PROBABILISTIC
       provider: ANTHROPIC
       model: claude-3-5-sonnet-20241022
       temperature: 0.1

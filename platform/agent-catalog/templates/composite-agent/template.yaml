@@ -44,7 +44,7 @@ metadata:
 
 # REQUIRED — composite agents orchestrate; they do not contain business logic
 identity:
-  agentType: composite              # DO NOT CHANGE — this is the composite template
+  agentType: COMPOSITE              # DO NOT CHANGE — this is the composite template
   roles: ["{{ROLE_1}}"]             # e.g. [orchestrator, coordinator, pipeline-manager]
   criticality: "{{CRITICALITY}}"    # critical | high | medium | low
   autonomyLevel: autonomous         # composites execute deterministically once triggered

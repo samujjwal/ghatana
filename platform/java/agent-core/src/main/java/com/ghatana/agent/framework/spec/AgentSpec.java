@@ -263,7 +263,7 @@ public final class AgentSpec {
     }
 
     /**
-     * A single reasoner in the portfolio (e.g., rule-engine, llm, pattern).
+     * A single reasoner in the portfolio (e.g., PROBABILISTIC subtype LLM).
      *
      * @doc.type record
      * @doc.purpose Declares a single reasoning engine with its purpose and invocation conditions
@@ -273,6 +273,7 @@ public final class AgentSpec {
     public record ReasonerDeclaration(
             @NotNull String id,
             @NotNull String type,
+            @Nullable String subtype,
             @Nullable String purpose,
             @Nullable String engine,
             @NotNull List<String> invocationWhen

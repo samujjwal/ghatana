@@ -21,6 +21,7 @@ import lombok.Value;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -90,6 +91,53 @@ public class AgentResult<O> {
     /** Optional trace ID for distributed tracing correlation. */
     String traceId;
 
+    /** Runtime turn identifier. */
+    String turnId;
+
+    /** Agent implementation or spec version that produced this result. */
+    String agentVersion;
+
+    /** Immutable release identifier, when dispatch was governed by a release. */
+    String agentReleaseId;
+
+    /** Canonical AgentSpec digest used for the release or execution. */
+    String specDigest;
+
+    /** Policy decision references emitted during the turn. */
+    @Builder.Default
+    List<String> policyDecisionRefs = List.of();
+
+    /** Evaluation result references used or produced during the turn. */
+    @Builder.Default
+    List<String> evaluationRefs = List.of();
+
+    /** Memory references read or written during the turn. */
+    @Builder.Default
+    List<String> memoryRefs = List.of();
+
+    /** Tool call references emitted during the turn. */
+    @Builder.Default
+    List<String> toolCallRefs = List.of();
+
+    /** Lifecycle phase trace references emitted during the turn. */
+    @Builder.Default
+    List<String> phaseTraceRefs = List.of();
+
+    /** Non-fatal warnings that should be visible to governance and callers. */
+    @Builder.Default
+    List<String> warnings = List.of();
+
+    /** Rollback reference for reversible side effects or promoted artifacts. */
+    String rollbackRef;
+
+    /** Evidence references or embedded audit material supporting the result. */
+    @Builder.Default
+    Map<String, Object> evidence = Map.of();
+
+    /** Diagnostics for replay, debugging, and evaluation. */
+    @Builder.Default
+    Map<String, Object> diagnostics = Map.of();
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Predicates
     // ═══════════════════════════════════════════════════════════════════════════
@@ -149,6 +197,7 @@ public class AgentResult<O> {
                 .agentId(agentId)
                 .explanation(error.getClass().getSimpleName() + ": " + error.getMessage())
                 .processingTime(time)
+                .warnings(List.of(error.getClass().getSimpleName()))
                 .build();
     }
 
