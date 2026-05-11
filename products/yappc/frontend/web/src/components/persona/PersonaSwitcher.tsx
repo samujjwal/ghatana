@@ -18,7 +18,7 @@ import {
   ALL_PERSONA_TYPES,
   type PersonaType
 } from '../../context/PersonaContext';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 
@@ -35,7 +35,7 @@ export function PersonaSwitcher({
   showInSidebar = true,
   className = '',
 }: PersonaSwitcherProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const {
     activePersonas,
     primaryPersona,

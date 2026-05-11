@@ -12,7 +12,7 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, Chip, IconButton, Button, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Tooltip, Collapse, Divider, Spinner as CircularProgress, Alert, Menu } from '@ghatana/design-system';
 import { Search as SearchIcon, Download as DownloadIcon, RefreshCw as RefreshIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, Info as InfoIcon, User as PersonIcon, Bot as AgentIcon, Settings as SystemIcon, Clock as AutomationIcon, ChevronDown as MenuIcon } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types (Inline for module independence)
@@ -131,7 +131,7 @@ export function AuditTrail({
     onExport,
     onRefresh,
 }: AuditTrailProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [searchQuery, setSearchQuery] = React.useState('');
     const [categoryFilter, setCategoryFilter] = React.useState<AuditEventCategory | 'all'>('all');
     const [severityFilter, setSeverityFilter] = React.useState<AuditEventSeverity | 'all'>('all');

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { Folder, GitBranch as AccountTree, Plus as Add, Search, Building as Business, Code, ExternalLink as Launch } from 'lucide-react';
 import { Card, CardContent, Typography, Button, Box, Grid, Surface as Paper, IconButton, Input as InputBase, Chip, Avatar, Stack } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import { PriorityTasksList, type PriorityTask } from './PriorityTasksList';
 import { ProjectCard } from '../project/ProjectCard';
@@ -53,7 +53,7 @@ export function DashboardView({
     onCreateWorkspace,
     onViewAllWorkspaces
 }: DashboardViewProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (!onSearchClick) return;
         if (event.key === 'Enter' || event.key === ' ') {

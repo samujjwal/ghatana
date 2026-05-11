@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -51,7 +51,7 @@ const INITIAL_VARS: EnvVar[] = [
 // ============================================================================
 
 const EnvironmentSetupPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [activeEnv, setActiveEnv] = useState<Environment>('development');
   const [envVars, setEnvVars] = useState<EnvVar[]>(INITIAL_VARS);
   const [newKey, setNewKey] = useState('');

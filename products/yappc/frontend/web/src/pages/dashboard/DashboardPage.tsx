@@ -27,7 +27,7 @@ import {
 import { cn } from '../../utils/cn';
 import { currentUserAtom, projectsAtom } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // =============================================================================
 // Types
@@ -59,7 +59,7 @@ interface QuickStat {
 const DashboardPage: React.FC = () => {
   const currentUser = useAtomValue(currentUserAtom);
   const projects = useAtomValue(projectsAtom);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // Get time-based greeting
   const getGreeting = () => {

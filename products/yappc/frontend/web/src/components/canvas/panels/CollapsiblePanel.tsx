@@ -18,7 +18,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { ChevronLeft as CollapseLeftIcon, ChevronRight as ExpandLeftIcon, X as CloseIcon } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -120,7 +120,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     sx = {},
     keyboardShortcut,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // Initialize collapsed state from localStorage or default
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const stored = getStoredCollapseState(panelId);

@@ -123,6 +123,29 @@ async function del<T>(path: string, context: string): Promise<T> {
 // Artifacts
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Lineage information tracing an artifact back to its generation origin
+ * @doc.type interface
+ * @doc.purpose Trace generated artifacts to intent and plan
+ * @doc.layer product
+ */
+export interface ArtifactLineage {
+  readonly runId?: string;
+  readonly intentId?: string;
+  readonly planId?: string;
+  readonly requirementId?: string;
+  readonly phase?: string;
+  readonly canvasNodeId?: string;
+  readonly sourceArtifactId?: string;
+  readonly confidence?: number; // 0-1 score from AI generation
+  readonly reviewActorId?: string;
+  readonly reviewActorName?: string;
+  readonly approvalTime?: string;
+  readonly rejectionTime?: string;
+  readonly rejectionReason?: string;
+  readonly correlationId?: string;
+}
+
 export interface Artifact {
   id: string;
   projectId: string;
@@ -130,6 +153,8 @@ export interface Artifact {
   status: string;
   content: unknown;
   createdAt: string;
+  // TODO-016: Add lineage tracking to trace artifacts to intent and plan
+  lineage?: ArtifactLineage;
 }
 
 export const artifacts = {

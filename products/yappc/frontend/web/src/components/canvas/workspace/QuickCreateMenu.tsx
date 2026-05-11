@@ -15,7 +15,7 @@ import { Menu, MenuItem, ListItemIcon, ListItemText, Typography, Divider, Box, T
 import { Search as SearchIcon } from 'lucide-react';
 import { ARTIFACT_TEMPLATES, type ArtifactTemplate } from './artifact-templates';
 import { LifecyclePhase } from '@/types/lifecycle';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface QuickCreateMenuProps {
     open: boolean;
@@ -34,7 +34,7 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
 }) => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const searchInputRef = React.useRef<HTMLInputElement>(null);
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
 
     // Focus search input when menu opens
     React.useEffect(() => {

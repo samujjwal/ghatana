@@ -12,7 +12,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X as Close, Play as PlayArrow, CheckCircle, XCircle as Cancel, AlertTriangle as Warning, Hourglass as HourglassEmpty } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ValidationRunStep {
     id: string;
@@ -55,7 +55,7 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
     progress,
     title = 'Run Validation',
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [hasStarted, setHasStarted] = useState(false);
 
     useEffect(() => {

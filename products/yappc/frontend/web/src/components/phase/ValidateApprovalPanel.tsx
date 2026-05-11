@@ -14,7 +14,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type ApprovalDecision = 'approved' | 'changes-requested' | 'rejected' | 'pending';
 
@@ -101,7 +101,7 @@ export const ValidateApprovalPanel: React.FC<ValidateApprovalPanelProps> = ({
   cannotDecideReason,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -9,6 +9,8 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability.ExecutionSnapshot;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability.ExecutionLogEntry;
+import com.ghatana.datacloud.feature.DataCloudFeature;
+import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,6 +85,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
     }
 
     private void startServer() throws Exception {
+        DataCloudFeatureFlags.override(DataCloudFeature.LEGACY_ACTION_ROUTES, true);
         server = new DataCloudHttpServer(mockClient, port)
                 .withWorkflowExecutionCapability(mockCapability)
                 .withDeploymentMode("local");
@@ -154,10 +157,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
 
-    // ==================== POST /api/v1/pipelines/{pipelineId}/execute ====================
+    // ==================== POST /api/v1/action/pipelines/{pipelineId}/execute ====================
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/{pipelineId}/execute – execute pipeline")
+    @DisplayName("POST /api/v1/action/pipelines/{pipelineId}/execute – execute pipeline")
     class ExecutePipelineTests {
 
         @Test
@@ -169,7 +172,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/execute",
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/execute",
                     Map.of("param1", "value1"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
@@ -187,22 +190,22 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/pipelines/" + PIPELINE_ID + "/execute");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/pipelines/" + PIPELINE_ID + "/execute");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             verify(mockCapability).execute(eq(TENANT_ID), eq(PIPELINE_ID), eq(Map.of()));
         }
 
         @Test
-        @DisplayName("returns 501 when capability not present")
+        @DisplayName("returns 503 when capability not present")
         void executePipeline_noCapability_returns501() throws Exception {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/execute",
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/execute",
                     Map.of());
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(503);
         }
 
         @Test
@@ -212,7 +215,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             HttpRequest req = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString("{}"))
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/pipelines/" + PIPELINE_ID + "/execute"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/action/pipelines/" + PIPELINE_ID + "/execute"))
                     .header("Content-Type", "application/json")
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
@@ -221,10 +224,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== GET /api/v1/pipelines/{pipelineId}/executions ====================
+    // ==================== GET /api/v1/action/pipelines/{pipelineId}/executions ====================
 
     @Nested
-    @DisplayName("GET /api/v1/pipelines/{pipelineId}/executions – list executions")
+    @DisplayName("GET /api/v1/action/pipelines/{pipelineId}/executions – list executions")
     class ListExecutionsTests {
 
         @Test
@@ -237,7 +240,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions");
+            HttpResponse<String> resp = get("/api/v1/action/pipelines/" + PIPELINE_ID + "/executions");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -251,7 +254,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
         void listExecutions_noCapability_returnsEmptyList() throws Exception {
             startServerWithoutCapability();
 
-            HttpResponse<String> resp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions");
+            HttpResponse<String> resp = get("/api/v1/action/pipelines/" + PIPELINE_ID + "/executions");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -260,10 +263,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== GET /api/v1/pipelines/{pipelineId}/executions/{executionId} ====================
+    // ==================== GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId} ====================
 
     @Nested
-    @DisplayName("GET /api/v1/pipelines/{pipelineId}/executions/{id} – get execution")
+    @DisplayName("GET /api/v1/action/pipelines/{pipelineId}/executions/{id} – get execution")
     class GetPipelineExecutionTests {
 
         @Test
@@ -275,7 +278,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = get(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID);
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID);
 
             assertThat(resp.statusCode()).isEqualTo(200);
         }
@@ -289,16 +292,16 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = get(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID);
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID);
 
             assertThat(resp.statusCode()).isEqualTo(404);
         }
     }
 
-    // ==================== POST /api/v1/pipelines/{pipelineId}/executions/{executionId}/cancel ====================
+    // ==================== POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel ====================
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/{pipelineId}/executions/{id}/cancel – cancel execution")
+    @DisplayName("POST /api/v1/action/pipelines/{pipelineId}/executions/{id}/cancel – cancel execution")
     class CancelPipelineExecutionTests {
 
         @Test
@@ -310,7 +313,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = postEmpty(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -324,16 +327,16 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = postEmpty(
-                    "/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
+                    "/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
 
             assertThat(resp.statusCode()).isEqualTo(501);
         }
     }
 
-    // ==================== POST /api/v1/executions/{executionId}/cancel ====================
+    // ==================== POST /api/v1/action/executions/{executionId}/cancel ====================
 
     @Nested
-    @DisplayName("POST /api/v1/executions/{id}/cancel – cancel execution (flat route)")
+    @DisplayName("POST /api/v1/action/executions/{id}/cancel – cancel execution (flat route)")
     class CancelExecutionFlatTests {
 
         @Test
@@ -344,7 +347,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/cancel");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/cancel");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -352,10 +355,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== POST /api/v1/executions/{executionId}/retry ====================
+    // ==================== POST /api/v1/action/executions/{executionId}/retry ====================
 
     @Nested
-    @DisplayName("POST /api/v1/executions/{id}/retry – retry execution")
+    @DisplayName("POST /api/v1/action/executions/{id}/retry – retry execution")
     class RetryExecutionTests {
 
         @Test
@@ -366,7 +369,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/retry");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/retry");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -379,16 +382,16 @@ class DataCloudHttpServerWorkflowExecutionTest {
         void retryExecution_noCapability_returns501() throws Exception {
             startServerWithoutCapability();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/retry");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/retry");
 
             assertThat(resp.statusCode()).isEqualTo(501);
         }
     }
 
-    // ==================== POST /api/v1/executions/{executionId}/rollback ====================
+    // ==================== POST /api/v1/action/executions/{executionId}/rollback ====================
 
     @Nested
-    @DisplayName("POST /api/v1/executions/{id}/rollback – rollback execution")
+    @DisplayName("POST /api/v1/action/executions/{id}/rollback – rollback execution")
     class RollbackExecutionTests {
 
         @Test
@@ -399,7 +402,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/rollback");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/rollback");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -416,7 +419,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/executions/" + EXECUTION_ID + "/rollback",
+                    "/api/v1/action/executions/" + EXECUTION_ID + "/rollback",
                     Map.of("reason", "data-corruption", "targetVersion", "v1.2"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
@@ -425,10 +428,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== POST /api/v1/executions/{executionId}/checkpoint ====================
+    // ==================== POST /api/v1/action/executions/{executionId}/checkpoint ====================
 
     @Nested
-    @DisplayName("POST /api/v1/executions/{id}/checkpoint – create checkpoint")
+    @DisplayName("POST /api/v1/action/executions/{id}/checkpoint – create checkpoint")
     class CheckpointExecutionTests {
 
         @Test
@@ -441,7 +444,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/executions/" + EXECUTION_ID + "/checkpoint",
+                    "/api/v1/action/executions/" + EXECUTION_ID + "/checkpoint",
                     Map.of("state", "after-step-3"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
@@ -460,7 +463,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/checkpoint");
+            HttpResponse<String> resp = postEmpty("/api/v1/action/executions/" + EXECUTION_ID + "/checkpoint");
 
             assertThat(resp.statusCode()).isEqualTo(200);
         }
@@ -473,7 +476,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpRequest req = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString("{}"))
                     .uri(URI.create("http://127.0.0.1:" + port
-                            + "/api/v1/executions/" + EXECUTION_ID + "/checkpoint"))
+                            + "/api/v1/action/executions/" + EXECUTION_ID + "/checkpoint"))
                     .header("Content-Type", "application/json")
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
@@ -482,10 +485,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== GET /api/v1/executions/{executionId}/checkpoints ====================
+    // ==================== GET /api/v1/action/executions/{executionId}/checkpoints ====================
 
     @Nested
-    @DisplayName("GET /api/v1/executions/{id}/checkpoints – list checkpoints")
+    @DisplayName("GET /api/v1/action/executions/{id}/checkpoints – list checkpoints")
     class ListExecutionCheckpointsTests {
 
         @Test
@@ -502,7 +505,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/checkpoints");
+            HttpResponse<String> resp = get("/api/v1/action/executions/" + EXECUTION_ID + "/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -519,7 +522,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/checkpoints");
+            HttpResponse<String> resp = get("/api/v1/action/executions/" + EXECUTION_ID + "/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -527,10 +530,10 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
     }
 
-    // ==================== POST /api/v1/executions/{executionId}/restore ====================
+    // ==================== POST /api/v1/action/executions/{executionId}/restore ====================
 
     @Nested
-    @DisplayName("POST /api/v1/executions/{id}/restore – restore execution")
+    @DisplayName("POST /api/v1/action/executions/{id}/restore – restore execution")
     class RestoreExecutionTests {
 
         @Test
@@ -542,7 +545,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServer();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/executions/" + EXECUTION_ID + "/restore",
+                    "/api/v1/action/executions/" + EXECUTION_ID + "/restore",
                     Map.of("checkpointId", "cp-99"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
@@ -556,17 +559,17 @@ class DataCloudHttpServerWorkflowExecutionTest {
             startServerWithoutCapability();
 
             HttpResponse<String> resp = post(
-                    "/api/v1/executions/" + EXECUTION_ID + "/restore",
+                    "/api/v1/action/executions/" + EXECUTION_ID + "/restore",
                     Map.of("checkpointId", "cp-99"));
 
             assertThat(resp.statusCode()).isEqualTo(501);
         }
     }
 
-    // ==================== GET /api/v1/executions/{executionId}/logs ====================
+    // ==================== GET /api/v1/action/executions/{executionId}/logs ====================
 
     @Nested
-    @DisplayName("GET /api/v1/executions/{id}/logs – get execution logs")
+    @DisplayName("GET /api/v1/action/executions/{id}/logs – get execution logs")
     class GetExecutionLogsTests {
 
         @Test
@@ -580,7 +583,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/logs");
+            HttpResponse<String> resp = get("/api/v1/action/executions/" + EXECUTION_ID + "/logs");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
@@ -593,7 +596,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
         void getLogs_noCapability_returnsEmptyLogs() throws Exception {
             startServerWithoutCapability();
 
-            HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/logs");
+            HttpResponse<String> resp = get("/api/v1/action/executions/" + EXECUTION_ID + "/logs");
 
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);

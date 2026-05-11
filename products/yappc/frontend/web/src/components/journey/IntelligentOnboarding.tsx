@@ -9,14 +9,14 @@
 import React, { useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, Stepper, Step, StepLabel, TextField, Chip, Avatar } from '@ghatana/design-system';
 import { Sparkles as AutoAwesome, ArrowRight as ArrowForward, ArrowLeft as ArrowBack, CheckCircle } from 'lucide-react';
-import { useI18n } from '@/i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface IntelligentOnboardingProps {
     onComplete: () => void;
 }
 
 export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [currentStep, setCurrentStep] = useState(0);
     const [userData, setUserData] = useState({
         name: '',

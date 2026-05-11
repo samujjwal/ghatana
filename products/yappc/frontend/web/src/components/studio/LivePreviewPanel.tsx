@@ -16,7 +16,7 @@ import {
 } from '@/services/preview/PreviewSessionApi';
 import { type PreviewSessionContext } from '@/lib/api/client';
 import { getPreviewLocaleFixture, getPreviewLocaleFixtures } from '@/services/preview/PreviewLocaleFixtures';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Live Preview Panel component.
@@ -65,7 +65,7 @@ export function LivePreviewPanel({
   onElementClick,
   onElementHover,
 }: LivePreviewPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -313,8 +313,8 @@ export function LivePreviewPanel({
   const currentViewportSpec = PRESET_VIEWPORTS[currentViewport];
   const currentLocaleFixture = getPreviewLocaleFixture(currentLocale);
   const previewLocaleOptions = getPreviewLocaleFixtures().map((fixture) => ({
-    value: fixture.locale,
-    label: `${fixture.locale} · ${fixture.label}`,
+    value: fixture.i18n.language,
+    label: `${fixture.i18n.language} · ${fixture.label}`,
   }));
 
   return (
@@ -392,7 +392,7 @@ export function LivePreviewPanel({
         className="border-b border-border bg-surface px-3 py-2 text-xs text-fg-muted"
         data-testid="live-preview-locale-fixture"
         dir={currentLocaleFixture.direction}
-        lang={currentLocaleFixture.locale}
+        lang={currentLocaleFixture.i18n.language}
       >
         <span className="font-semibold text-fg">{currentLocaleFixture.headline}</span>
         <span className="ml-2">{currentLocaleFixture.primaryCta}</span>

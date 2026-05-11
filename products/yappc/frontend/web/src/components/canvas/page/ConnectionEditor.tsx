@@ -20,7 +20,7 @@ import {
   Paper,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type {
   EventConnection,
@@ -55,7 +55,7 @@ export const ConnectionEditor: React.FC<ConnectionEditorProps> = ({
   onConnectionsChange,
   availableComponents = [],
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [activeTab, setActiveTab] = useState<ConnectionType>('event');
   const [editingConnection, setEditingConnection] = useState<
     EventConnection | DataConnection | NavigationConnection | null

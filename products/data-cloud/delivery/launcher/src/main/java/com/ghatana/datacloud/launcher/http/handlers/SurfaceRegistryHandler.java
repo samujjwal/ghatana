@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.SurfaceRecord;
+import com.ghatana.datacloud.launcher.http.security.RequestContext;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -23,11 +24,16 @@ import java.util.function.Supplier;
  * <p>Also serves the unified surface schema which is the single source of truth
  * for all surface-based feature gates, preventing drift between docs/UI/runtime.
  *
+ * <p>P0-10: The canonical GET /api/v1/surfaces endpoint now returns typed
+ * {@link SurfaceRecord} instances instead of raw capability maps. This provides
+ * a single, typed contract for Runtime Truth including surface id, state, owner,
+ * dependencies, dependency probe results, tenant scope, runtime profile, evidence,
+ * limitations, action gates, and runtime posture metadata.
+ *
  * <h2>Endpoints</h2>
  * <ul>
- *   <li>{@code GET /api/v1/surfaces} — raw capability map (backward-compatible)</li>
- *   <li>{@code GET /api/v1/surfaces/typed} — typed {@link SurfaceRecord} list with
- *       dependency-probe evidence (DC-P1-5)</li>
+ *   <li>{@code GET /api/v1/surfaces} — canonical Runtime Truth endpoint returning
+ *       typed {@link SurfaceRecord} list with full metadata</li>
  *   <li>{@code GET /api/v1/surfaces/schema} — canonical surface schema</li>
  * </ul>
  *
@@ -40,74 +46,37 @@ public final class SurfaceRegistryHandler {
 
     private final HttpHandlerSupport httpSupport;
     private final ObjectMapper objectMapper;
-    private final Supplier<Map<String, Object>> surfaceSnapshotSupplier;
     private final Supplier<List<SurfaceRecord>> typedSurfaceSupplier;
 
     /**
-     * Constructs a handler with both raw-map and typed-surface suppliers.
+     * Constructs a handler with typed surface supplier.
      *
-     * @param httpSupport            shared HTTP helper
-     * @param objectMapper           JSON mapper
-     * @param surfaceSnapshotSupplier raw capability map supplier for legacy endpoint
-     * @param typedSurfaceSupplier   typed {@link SurfaceRecord} list supplier for typed endpoint
+     * @param httpSupport          shared HTTP helper
+     * @param objectMapper         JSON mapper
+     * @param typedSurfaceSupplier typed {@link SurfaceRecord} list supplier
      */
     public SurfaceRegistryHandler(HttpHandlerSupport httpSupport,
                                   ObjectMapper objectMapper,
-                                  Supplier<Map<String, Object>> surfaceSnapshotSupplier,
                                   Supplier<List<SurfaceRecord>> typedSurfaceSupplier) {
         this.httpSupport = httpSupport;
         this.objectMapper = objectMapper;
-        this.surfaceSnapshotSupplier = surfaceSnapshotSupplier;
         this.typedSurfaceSupplier = typedSurfaceSupplier;
     }
 
     /**
-     * Legacy constructor retained for callers that have not yet wired a typed supplier.
-     * The typed endpoint will return an empty list in this case.
-     */
-    public SurfaceRegistryHandler(HttpHandlerSupport httpSupport,
-                                  ObjectMapper objectMapper,
-                                  Supplier<Map<String, Object>> surfaceSnapshotSupplier) {
-        this(httpSupport, objectMapper, surfaceSnapshotSupplier, List::of);
-    }
-
-    private Promise<HttpResponse> handleRuntimeTruthSnapshot(HttpRequest request) {
-        String tenantId = httpSupport.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
-        }
-        String requestId = httpSupport.resolveCorrelationId(request);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("surfaces", surfaceSnapshotSupplier.get());
-        response.put("generatedAt", Instant.now().toString());
-
-        return Promise.of(httpSupport.envelopeResponse(
-            ApiResponse.success(response, tenantId, requestId),
-            objectMapper));
-    }
-
-    /**
      * Handle GET /api/v1/surfaces - canonical Runtime Truth endpoint.
-     * DC-P1.12: Removed compatibility /api/v1/capabilities handler; use this canonical endpoint only.
+     *
+     * <p>P0-10: Returns typed {@link SurfaceRecord} instances that include the required
+     * surface id, state, owner, dependencies, dependency probe results, tenant scope,
+     * runtime profile, evidence, limitations, action gates, and runtime posture metadata.
+     * This is the single typed canonical contract for Runtime Truth.
      */
     public Promise<HttpResponse> handleSurfaces(HttpRequest request) {
-        return handleRuntimeTruthSnapshot(request);
-    }
-
-    /**
-     * Handle GET /api/v1/surfaces/typed — typed surface list with dependency-probe evidence.
-     *
-     * <p>DC-P1-5: Returns {@link SurfaceRecord} instances that include the required
-     * dependencies, per-dependency probe results, tenant scope, runtime profile, evidence,
-     * and action gates for each surface. Consumers should prefer this endpoint over the
-     * raw /api/v1/surfaces when gate logic depends on probe evidence.
-     */
-    public Promise<HttpResponse> handleTypedSurfaces(HttpRequest request) {
-        String tenantId = httpSupport.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = httpSupport.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = httpSupport.resolveCorrelationId(request);
 
         List<SurfaceRecord> records = typedSurfaceSupplier.get();
@@ -123,6 +92,21 @@ public final class SurfaceRegistryHandler {
     }
 
     /**
+     * Handle GET /api/v1/surfaces/typed — deprecated, redirects to canonical endpoint.
+     *
+     * <p>P0-10: This endpoint is deprecated. Consumers should use the canonical
+     * {@code GET /api/v1/surfaces} endpoint which now returns typed surface records
+     * with full metadata. This method remains for backward compatibility and will be
+     * removed in a future release.
+     *
+     * @deprecated Use {@link #handleSurfaces(HttpRequest)} instead
+     */
+    @Deprecated
+    public Promise<HttpResponse> handleTypedSurfaces(HttpRequest request) {
+        return handleSurfaces(request);
+    }
+
+    /**
      * Handle GET /api/v1/surfaces/schema - canonical Runtime Truth schema endpoint.
      * DC-P1.12: Removed compatibility /api/v1/capabilities/schema handler; use this canonical endpoint only.
      *
@@ -131,10 +115,11 @@ public final class SurfaceRegistryHandler {
      * docs/UI/runtime.
      */
     public Promise<HttpResponse> handleSurfaceSchema(HttpRequest request) {
-        String tenantId = httpSupport.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = httpSupport.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(httpSupport.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = httpSupport.resolveCorrelationId(request);
 
         SurfaceSchemaGenerator.SurfaceSchema schema = SurfaceSchemaGenerator.generateSchema();

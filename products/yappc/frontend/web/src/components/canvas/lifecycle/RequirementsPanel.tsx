@@ -17,7 +17,7 @@ import { Textarea } from '../../ui/Textarea';
 import React, { useState, useCallback } from 'react';
 import { Plus as Add, Minus as Remove, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Sparkles as AutoAwesome, Save, Check } from 'lucide-react';
 import type { RequirementsPayload } from '@/shared/types/lifecycle-artifacts';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface RequirementsPanelProps {
     data?: RequirementsPayload;
@@ -90,7 +90,7 @@ export const RequirementsPanel: React.FC<RequirementsPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [epics, setEpics] = useState<Epic[]>(
         data?.epics?.length ? data.epics : [defaultEpic()]
     );

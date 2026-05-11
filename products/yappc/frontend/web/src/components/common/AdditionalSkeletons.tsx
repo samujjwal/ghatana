@@ -11,7 +11,7 @@
  */
 
 import { Skeleton } from './SkeletonLoaders';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Table Skeleton - For data tables
@@ -28,7 +28,7 @@ export function TableSkeleton({
     showCheckbox?: boolean;
     showActions?: boolean;
 }) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             className="w-full bg-bg-paper rounded-lg border border-divider overflow-hidden"

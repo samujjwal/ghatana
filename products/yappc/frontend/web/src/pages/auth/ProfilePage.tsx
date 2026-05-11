@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface UserProfile {
   id: string;
@@ -24,7 +24,7 @@ const ProfilePage: React.FC = () => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [name_, setName] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: profile, isLoading } = useQuery<UserProfile>({
     queryKey: ['profile'],

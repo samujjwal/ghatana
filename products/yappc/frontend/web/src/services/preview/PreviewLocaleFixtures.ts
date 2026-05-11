@@ -67,7 +67,7 @@ export function getPreviewLocaleFixtures(): readonly PreviewLocaleFixture[] {
 }
 
 export function getPreviewLocaleFixture(locale: string): PreviewLocaleFixture {
-  return PREVIEW_LOCALE_FIXTURES.find((fixture) => fixture.locale === locale) ?? PREVIEW_LOCALE_FIXTURES[0];
+  return PREVIEW_LOCALE_FIXTURES.find((fixture) => fixture.i18n.language === locale) ?? PREVIEW_LOCALE_FIXTURES[0];
 }
 
 export function getPreviewTextDirection(locale: string): PreviewTextDirection {

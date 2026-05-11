@@ -14,7 +14,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { readStorage, writeStorage } from '../../services/storage';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface FeatureHighlight {
     id: string;
@@ -67,7 +67,7 @@ export function FeatureDiscoveryTooltip({
     isOpen = false,
     onDismiss,
 }: FeatureDiscoveryProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
     const feature = FEATURE_HIGHLIGHTS.find(f => f.id === featureId);
 

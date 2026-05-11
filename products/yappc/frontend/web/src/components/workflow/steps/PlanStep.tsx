@@ -18,7 +18,7 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface PlanTask {
     id: string;
@@ -56,7 +56,7 @@ const RISK_LEVELS: { value: RiskAssessment['level']; label: string; color: 'succ
 // ============================================================================
 
 export function PlanStep() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as PlanStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);

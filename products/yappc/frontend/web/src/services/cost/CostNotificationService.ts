@@ -292,7 +292,7 @@ export class CostNotificationService {
     }
 
     const dailyCosts = Object.entries(dailyMap)
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => a[0].i18n.languageCompare(b[0]))
       .map(([, cost]) => cost);
 
     // Calculate average and std dev
@@ -370,7 +370,7 @@ export class CostNotificationService {
     }
 
     const months = Object.entries(monthlyCosts)
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => a[0].i18n.languageCompare(b[0]))
       .map(([, cost]) => cost);
 
     if (months.length < 2) {

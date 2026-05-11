@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -13,8 +15,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * @doc.type class
@@ -43,13 +51,13 @@ class AlertingHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new AlertingHandler(client, http); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("list alerts rejects missing tenant before query access")
     void listAlertsRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleListAlerts(request)); 
 
@@ -60,7 +68,7 @@ class AlertingHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("create alert rule rejects missing tenant before loading body")
     void createAlertRuleRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleCreateAlertRule(request)); 
 

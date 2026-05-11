@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { InsightStreamItem } from '@/hooks/useInsightStream';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface InsightPanelProps {
   open: boolean;
@@ -34,7 +34,7 @@ export function InsightPanel({
   onDismiss,
   onMarkAllRead,
 }: InsightPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   if (!open) {
     return null;
   }

@@ -17,7 +17,7 @@ import {
   Alert,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import { IntentParser } from 'yappc-config-compiler';
 import type { IntentConfig } from 'yappc-config-schema';
@@ -41,7 +41,7 @@ export const IntentEditor: React.FC<IntentEditorProps> = ({
   author,
   tags = [],
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [intent, setIntent] = useState(initialIntent);
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.QueryPlan;
@@ -22,6 +24,8 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -65,8 +69,8 @@ class StorageCostHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new StorageCostHandler(http, analyticsEngine, metrics); 
-        lenient().when(http.requireTenantIdOrFail(request)).thenReturn("tenant-1");
-        lenient().when(http.errorResponse(eq(400), anyString())).thenReturn(errorResponse); 
+        lenient().when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-1", null));
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
@@ -103,12 +107,12 @@ class StorageCostHandlerTest extends EventloopTestBase {
     @DisplayName("rejects collection cost report when tenant header is missing")
     void rejectsCollectionCostReportWhenTenantHeaderMissing() { 
         when(request.getPathParameter("id")).thenReturn("orders_2026");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleCollectionCostReport(request)); 
 
         assertThat(response).isSameAs(errorResponse); 
         verify(analyticsEngine, never()).submitQuery(anyString(), anyString(), anyMap()); 
-        verify(http).errorResponse(400, "X-Tenant-Id header is required"); 
+        verify(http).errorResponse(401, "Unauthorized"); 
     }
 }

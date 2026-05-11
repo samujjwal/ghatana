@@ -8,7 +8,7 @@
 import { CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { Box, Stack, Typography, IconButton, Button, Surface as Paper } from '@ghatana/design-system';
 import React, { useCallback } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { RegistryCandidatePromotionResponse } from '../../../services/canvas/commands/RegistryCandidatePromotionService';
 
@@ -37,7 +37,7 @@ export const RegistryCandidatePanel: React.FC<RegistryCandidatePanelProps> = ({
   onRemove,
   onClose,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const handlePromote = useCallback(
     async (candidateId: string) => {

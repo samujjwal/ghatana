@@ -17,7 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ChangeRecord {
     id: string;
@@ -56,7 +56,7 @@ const CHANGE_STATUSES: { value: ChangeRecord['status']; label: string; color: 'd
 // ============================================================================
 
 export function ExecuteStep() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as ExecuteStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);

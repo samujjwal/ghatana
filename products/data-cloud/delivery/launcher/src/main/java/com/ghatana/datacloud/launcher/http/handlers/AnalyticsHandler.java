@@ -90,7 +90,11 @@ public class AnalyticsHandler {
                 "Query execution will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true and ensure database connectivity to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -283,7 +287,11 @@ public class AnalyticsHandler {
                 "Aggregate query execution will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -365,7 +373,11 @@ public class AnalyticsHandler {
                 "Query explain will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -421,7 +433,11 @@ public class AnalyticsHandler {
                         log.warn("[DC-10] invalid report definition: {}", e.getMessage());
                         return Promise.of(http.errorResponse(400, "Invalid report definition"));
                     }
-                    String tenantId = http.requireTenantIdOrFail(request);
+                    HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
                     if (tenantId == null) {
                         return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
                     }
@@ -508,7 +524,11 @@ public class AnalyticsHandler {
      */
     public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
         String queryId = request.getPathParameter("queryId");
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         String traceId = http.resolveCorrelationId(request);
 
         if (!cancellationSupported) {

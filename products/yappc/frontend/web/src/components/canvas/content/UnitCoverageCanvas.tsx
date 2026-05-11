@@ -19,7 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ComponentCoverage {
     id: string;
@@ -102,7 +102,7 @@ const getCoverageColor = (coverage: number) => {
 };
 
 export const UnitCoverageCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [coverage] = useState<ComponentCoverage[]>(MOCK_COVERAGE);
     const [searchQuery, setSearchQuery] = useState('');
 

@@ -69,10 +69,11 @@ public class EntityExportHandler {
         }
 
         String collection = request.getPathParameter("collection");
-        String tenantId   = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -138,7 +139,11 @@ public class EntityExportHandler {
         }
 
         String collection = request.getPathParameter("collection");
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

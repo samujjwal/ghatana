@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '@ghatana/design-system';
 import {
     LifecyclePhase,
@@ -63,7 +63,7 @@ export const LifecyclePhaseNavigator: React.FC<LifecyclePhaseNavigatorProps> = (
     variant = 'compact',
     className = '',
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const {
         currentPhase,
         projectPhase,
@@ -148,7 +148,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
     onClick,
     disabled,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const label = PHASE_LABELS[phase];
     const description = PHASE_DESCRIPTIONS[phase];
 

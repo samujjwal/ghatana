@@ -50,7 +50,7 @@ import { createPortal } from 'react-dom';
 import { X as Close } from 'lucide-react';
 import { TRANSITIONS, Z_INDEX } from '../../styles/design-tokens';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface StandardDrawerProps {
     /** Whether drawer is open */
@@ -123,7 +123,7 @@ export function StandardDrawer({
     className = '',
     testId = 'standard-drawer',
 }: StandardDrawerProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const drawerRef = useRef<HTMLDivElement>(null);
     const previousActiveElement = useRef<HTMLElement | null>(null);
 

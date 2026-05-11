@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface DMUser {
   id: string;
@@ -46,7 +46,7 @@ const DirectMessagePage: React.FC = () => {
   const [draft, setDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: conversation, isLoading, error } = useQuery<DMConversation>({
     queryKey: ['dm', userId],

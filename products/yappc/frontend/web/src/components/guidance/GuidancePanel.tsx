@@ -18,7 +18,7 @@ import { Tooltip, Collapse, IconButton } from '@ghatana/design-system';
 import { useGuidanceContext, usePhaseContext } from '../../context/WorkflowContextProvider';
 import { LifecyclePhase, PHASE_LABELS, PHASE_DESCRIPTIONS } from '../../types/lifecycle';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -153,7 +153,7 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
  * Tip item with dismiss
  */
 const TipItem: React.FC<TipItemProps> = ({ tip, onDismiss }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div className="relative flex items-start gap-2 p-3 bg-warning-bg dark:bg-warning-bg/20 rounded-lg border border-warning-border dark:border-warning-border">
             <TipIcon className="flex-shrink-0 w-4 h-4 text-warning-color mt-0.5" />
@@ -246,7 +246,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
     className = '',
     onToggle,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
     const [dismissedTipIds, setDismissedTipIds] = useState<string[]>([]);
     const { currentPhase } = usePhaseContext();

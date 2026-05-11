@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -98,7 +98,7 @@ async function fetchActivities(): Promise<ActivityFeedResponse> {
  */
 const ActivityFeedPage: React.FC = () => {
   const [filter, setFilter] = useState<ActivityType | 'all'>('all');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data, isLoading, error } = useQuery<ActivityFeedResponse>({
     queryKey: ['activityfeedpage'],

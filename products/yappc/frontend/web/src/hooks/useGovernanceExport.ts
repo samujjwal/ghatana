@@ -19,6 +19,7 @@ import {
   GovernanceExportError,
 } from '../services/canvas/commands/GovernanceExportService';
 import type { GovernanceExportFormat, GovernanceExportResult } from '../services/canvas/commands/GovernanceExportService';
+import { checkExportApplyEligibility, type ExportApplyGuardContext } from '../services/generation/GenerationRunGuard';
 
 // ============================================================================
 // Types
@@ -37,6 +38,11 @@ export interface UseGovernanceExportResult {
   clearError: () => void;
 }
 
+export interface UseGovernanceExportOptions {
+  /** Generation run context for eligibility checking */
+  guardContext?: ExportApplyGuardContext;
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -45,9 +51,11 @@ export interface UseGovernanceExportResult {
  * @param artifactId - The page artifact ID to export audit records for.
  *                     Pass null/undefined to disable exports (isExporting stays false,
  *                     exportAudit is a no-op that sets an error).
+ * @param options     - Optional guard context for checking export eligibility
  */
 export function useGovernanceExport(
-  artifactId: string | null | undefined
+  artifactId: string | null | undefined,
+  options?: UseGovernanceExportOptions
 ): UseGovernanceExportResult {
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -58,6 +66,15 @@ export function useGovernanceExport(
       if (!artifactId) {
         setExportError('No artifact selected for export.');
         return;
+      }
+
+      // TODO-017: Check export/apply eligibility before proceeding
+      if (options?.guardContext) {
+        const eligibility = await checkExportApplyEligibility(options.guardContext);
+        if (!eligibility.allowed) {
+          setExportError(eligibility.reason || 'Export not allowed');
+          return;
+        }
       }
 
       setIsExporting(true);
@@ -76,7 +93,7 @@ export function useGovernanceExport(
         setIsExporting(false);
       }
     },
-    [artifactId]
+    [artifactId, options]
   );
 
   const clearError = useCallback(() => {

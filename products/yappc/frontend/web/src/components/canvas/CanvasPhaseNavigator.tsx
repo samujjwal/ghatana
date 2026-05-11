@@ -24,7 +24,7 @@ import { Button } from '../ui/Button';
 import { LifecyclePhase, PHASE_LABELS, PHASE_DESCRIPTIONS } from '../../types/lifecycle';
 import { useLifecyclePhase } from '../../hooks/useLifecyclePhase';
 import { TRANSITIONS } from '../../styles/design-tokens';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface CanvasPhaseNavigatorProps {
     /** Callback when phase is clicked */
@@ -138,7 +138,7 @@ function PhaseItem({ phase, isActive, isAccessible, isPast, onClick }: PhaseItem
  * Compact vertical navigation for lifecycle phases within the canvas sidebar.
  */
 export function CanvasPhaseNavigator({ onPhaseClick, className = '' }: CanvasPhaseNavigatorProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const { currentPhase, projectPhase, navigateToPhase, canTransitionTo } = useLifecyclePhase();
 
     // Use project phase if available, otherwise route phase

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -56,7 +56,7 @@ const TemplateGalleryPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category>('all');
   const [sortBy, setSortBy] = useState<'stars' | 'name'>('stars');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: templates } = useQuery<Template[]>({
     queryKey: ['template-gallery'],
@@ -79,7 +79,7 @@ const TemplateGalleryPage: React.FC = () => {
       );
     }
     return [...list].sort((a, b) =>
-      sortBy === 'stars' ? b.stars - a.stars : a.name.localeCompare(b.name),
+      sortBy === 'stars' ? b.stars - a.stars : a.name.i18n.languageCompare(b.name),
     );
   }, [templates, category, search, sortBy]);
 

@@ -11,7 +11,7 @@
  */
 
 import React, { useState } from 'react';
-import { useCapabilityGate } from '../hooks/useCapabilityGate';
+import { useSurfaceGate, useSurfaceSignal } from '../hooks/useSurfaceGate';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   memoryService,
@@ -75,7 +75,7 @@ function MemoryDeleteButton({
   itemId: string;
   onDelete: (id: string) => void;
 }): React.ReactElement | null {
-  const canDelete = useCapabilityGate(['memory-plane', 'context'], 'active');
+  const canDelete = useSurfaceGate(['memory-plane', 'context'], 'active');
   if (!canDelete) return null;
   return (
     <button

@@ -13,7 +13,7 @@
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Select } from '../ui/Select';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type RoadmapPhase =
   | 'intent'
@@ -139,7 +139,7 @@ export const EvolveRoadmapPanel: React.FC<EvolveRoadmapPanelProps> = ({
   cannotApproveReason,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [promotingId, setPromotingId] = useState<string | null>(null);
   const [promotePhase, setPromotePhase] = useState<RoadmapPhase>('intent');
   const [promotePriority, setPromotePriority] = useState<RoadmapItemPriority>('medium');

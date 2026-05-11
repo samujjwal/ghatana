@@ -5,7 +5,7 @@ import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type WidgetType = 'chart' | 'metric' | 'table' | 'log' | 'status';
 
@@ -53,7 +53,7 @@ const GRID_COLS = 12;
 const DashboardEditorPage: React.FC = () => {
   const { dashboardId } = useParams<{ dashboardId: string }>();
   const queryClient = useQueryClient();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: savedDashboard, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['dashboard-editor', dashboardId],

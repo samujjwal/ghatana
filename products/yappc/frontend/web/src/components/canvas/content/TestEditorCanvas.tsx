@@ -21,7 +21,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface TestCase {
     id: string;
@@ -99,7 +99,7 @@ const getStatusColor = (status: TestCase['status']) => {
 };
 
 export const TestEditorCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [tests] = useState<TestCase[]>(MOCK_TESTS);
     const [selectedTest, setSelectedTest] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

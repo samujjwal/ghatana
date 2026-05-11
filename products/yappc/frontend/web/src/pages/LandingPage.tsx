@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router';
-import { useI18n } from '../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * LandingPage — unauthenticated marketing/entry page.
@@ -10,7 +10,7 @@ import { useI18n } from '../i18n/I18nProvider';
  * @doc.layer product
  */
 const LandingPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div className="flex min-h-screen flex-col bg-surface text-fg-muted">
       {/* Nav */}

@@ -1,13 +1,11 @@
-/*
- * Copyright (c) 2026 Ghatana Inc.
- * All rights reserved.
- */
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -42,6 +40,7 @@ public class WorkflowExecutionHandler {
     private final HttpHandlerSupport http;
     private WorkflowExecutionCapability executionCapability;
     private DataCloudHttpMetrics metrics = DataCloudHttpMetrics.noop();
+    private IdempotencyStore idempotencyStore;
 
     public WorkflowExecutionHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
@@ -72,6 +71,84 @@ public class WorkflowExecutionHandler {
         return this;
     }
 
+    /**
+     * P0-07: Wires an {@link IdempotencyStore} for idempotent workflow operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public WorkflowExecutionHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
+    }
+
+    // ─── Helper Methods (P0-07) ─────────────────────────────────────────────
+
+    /**
+     * P0-07: Check idempotency for workflow operations.
+     */
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String pipelineId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "workflow:" + routeAction + ":" + pipelineId;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(hasConflict -> {
+                if (hasConflict) {
+                    log.warn("[P0-07] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cachedResponse -> {
+                        if (cachedResponse != null) {
+                            log.info("[P0-07] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            if (cachedResponse instanceof HttpResponse) {
+                                return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cachedResponse, "replay"));
+                            }
+                            if (cachedResponse instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) cachedResponse;
+                                return Promise.of(http.jsonResponse(map));
+                            }
+                            return Promise.of(http.jsonResponse(Map.of("data", cachedResponse)));
+                        }
+                        return Promise.of((HttpResponse) null);
+                    });
+            });
+    }
+
+    /**
+     * P0-07: Store response for idempotent workflow operations.
+     */
+    private Promise<Void> storeIdempotency(String tenantId, String pipelineId, String routeAction,
+                                          HttpRequest request, Object response) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "workflow:" + routeAction + ":" + pipelineId;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
+    }
+
     // ==================== Pipeline Execution Routes ====================
 
     public Promise<HttpResponse> handleExecutePipeline(HttpRequest request) {
@@ -85,45 +162,59 @@ public class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
         }
 
-        if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
-        }
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(tenantId, pipelineId, "execute", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
 
-        String correlationId = http.resolveCorrelationId(request);
-        long startMs = System.currentTimeMillis();
-        return request.loadBody().then(buf -> {
-            Map<String, Object> input;
-            try {
-                String body = buf.getString(StandardCharsets.UTF_8);
-                input = parseJsonMap(body);
-            } catch (Exception e) {
-                log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
-                        correlationId, tenantId, pipelineId, e.getMessage());
-                metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
-                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
-            }
-            return executionCapability.execute(tenantId, pipelineId, input)
-                .map(snapshot -> {
-                    long latency = System.currentTimeMillis() - startMs;
-                    log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
-                            correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
-                    metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
-                    metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
-                    return http.jsonResponse(Map.of(
-                        "executionId", snapshot.id(),
-                        "pipelineId", snapshot.workflowId(),
-                        "tenantId", tenantId,
-                        "status", snapshot.status(),
-                        "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
-                    ));
-                })
-                .then(Promise::of, e -> {
-                    log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
-                            correlationId, tenantId, pipelineId, e.getMessage());
-                    metrics.recordError(HANDLER_NAME, "executePipeline", e);
-                    return Promise.of(http.errorResponse(500, "Pipeline execution failed"));
+                if (executionCapability == null) {
+                    return Promise.of(http.errorResponse(503, "Workflow execution capability is not configured"));
+                }
+
+                String correlationId = http.resolveCorrelationId(request);
+                long startMs = System.currentTimeMillis();
+                return request.loadBody().then(buf -> {
+                    Map<String, Object> input;
+                    try {
+                        String body = buf.getString(StandardCharsets.UTF_8);
+                        input = parseJsonMap(body);
+                    } catch (Exception e) {
+                        log.warn("[correlation={} tenant={} pipeline={}] Invalid execute pipeline request body: {}",
+                                correlationId, tenantId, pipelineId, e.getMessage());
+                        metrics.recordError(HANDLER_NAME, "executePipeline", "InvalidRequest");
+                        return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+                    }
+                    return executionCapability.execute(tenantId, pipelineId, input)
+                        .map(snapshot -> {
+                            long latency = System.currentTimeMillis() - startMs;
+                            log.info("[correlation={} tenant={} pipeline={} execution={}] Workflow execution started, status={}",
+                                    correlationId, tenantId, pipelineId, snapshot.id(), snapshot.status());
+                            metrics.recordRequest(HANDLER_NAME, "executePipeline", tenantId, 200);
+                            metrics.recordLatency(HANDLER_NAME, "executePipeline", latency);
+                            Map<String, Object> responseBody = Map.of(
+                                "executionId", snapshot.id(),
+                                "pipelineId", snapshot.workflowId(),
+                                "tenantId", tenantId,
+                                "status", snapshot.status(),
+                                "startedAt", snapshot.startedAt() != null ? snapshot.startedAt() : Instant.now().toString()
+                            );
+                            storeIdempotency(tenantId, pipelineId, "execute", request, responseBody);
+                            return http.jsonResponse(responseBody);
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[correlation={} tenant={} pipeline={}] Failed to execute pipeline: {}",
+                                    correlationId, tenantId, pipelineId, e.getMessage());
+                            metrics.recordError(HANDLER_NAME, "executePipeline", e);
+                            return Promise.of(http.errorResponse(500, "Pipeline execution failed"));
+                        });
                 });
-        });
+            })
+            .then(Promise::of, e -> {
+                log.error("[executePipeline] tenant={} pipeline={} failed: {}", tenantId, pipelineId, e.getMessage());
+                return Promise.of(http.errorResponse(500, "Failed to execute pipeline: " + e.getMessage()));
+            });
     }
 
     public Promise<HttpResponse> handleListPipelineExecutions(HttpRequest request) {
@@ -571,7 +662,11 @@ public class WorkflowExecutionHandler {
         if (tenantId != null && !tenantId.isBlank()) {
             return tenantId;
         }
-        return http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return null;
+        }
+        return resolutionResult.tenantId();
     }
 
     private HttpResponse missingTenantResponse() {

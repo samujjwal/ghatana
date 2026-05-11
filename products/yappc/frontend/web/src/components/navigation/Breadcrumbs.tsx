@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 
 import { breadcrumbItemsAtom } from '../../state/atoms/breadcrumbAtom';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface BreadcrumbsProps {
   /** Whether to show the home icon at the start */
@@ -53,7 +53,7 @@ function buildVisibleItems(
 }
 
 export function Breadcrumbs({ showHome = false, maxItems, className }: BreadcrumbsProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const breadcrumbs = useAtomValue(breadcrumbItemsAtom) as BreadcrumbEntry[];
 

@@ -852,25 +852,30 @@ module.exports = {
      */
     "prefer-design-system-primitives": {
       meta: {
-        type: "suggestion",
+        type: "error",
         docs: {
           description:
-            "Prefer @ghatana/design-system components over raw HTML elements",
+            "Require @ghatana/design-system components over raw HTML elements in production UI",
           category: "Best Practices",
           recommended: true,
         },
         schema: [],
         messages: {
           rawPrimitive:
-            "⚠️ Raw <{{tag}}> element detected. " +
-            "Consider using '{{dsComponent}}' from '@ghatana/design-system' for consistent accessibility and styling.",
+            "🚨 Raw <{{tag}}> element detected in production UI. " +
+            "Use '{{dsComponent}}' from '@ghatana/design-system' for consistent accessibility and styling.",
         },
       },
 
       create(context) {
         const currentFilePath = context.getFilename();
-        // Skip design-system package itself
-        if (currentFilePath.includes("/platform/typescript/design-system/")) {
+        // Skip design-system package itself and test files
+        if (
+          currentFilePath.includes("/platform/typescript/design-system/") ||
+          currentFilePath.includes("__tests__") ||
+          currentFilePath.includes(".test.") ||
+          currentFilePath.includes(".spec.")
+        ) {
           return {};
         }
 
@@ -941,6 +946,161 @@ module.exports = {
                 node,
                 messageId: "dataGridImport",
               });
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-hardcoded-color
+     *
+     * Prevents hardcoded color values in production UI. Colors must come from
+     * @ghatana/tokens for consistent theming and accessibility.
+     */
+    "no-hardcoded-color": {
+      meta: {
+        type: "error",
+        docs: {
+          description: "Disallow hardcoded color values in production UI",
+          category: "Best Practices",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          hardcodedColor:
+            "🎨 Hardcoded color '{{color}}' detected. " +
+            "Use tokens from @ghatana/tokens for consistent theming and accessibility.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+        // Skip test files and design-system package
+        if (
+          currentFilePath.includes("/platform/typescript/design-system/") ||
+          currentFilePath.includes("/platform/typescript/tokens/") ||
+          currentFilePath.includes("__tests__") ||
+          currentFilePath.includes(".test.") ||
+          currentFilePath.includes(".spec.")
+        ) {
+          return {};
+        }
+
+        // Color patterns to detect
+        const COLOR_PATTERNS = [
+          /#[0-9a-fA-F]{3,8}/, // #fff, #ffffff, #ffffff80
+          /rgb\s*\([^)]+\)/i, // rgb(0, 0, 0), rgba(0, 0, 0, 0.5)
+          /hsl\s*\([^)]+\)/i, // hsl(0, 0%, 0%), hsla(0, 0%, 0%, 0.5)
+        ];
+
+        return {
+          Literal(node) {
+            if (typeof node.value !== "string") return;
+            for (const pattern of COLOR_PATTERNS) {
+              if (pattern.test(node.value)) {
+                context.report({
+                  node,
+                  messageId: "hardcodedColor",
+                  data: { color: node.value },
+                });
+              }
+            }
+          },
+          TemplateElement(node) {
+            if (typeof node.value.raw !== "string") return;
+            for (const pattern of COLOR_PATTERNS) {
+              if (pattern.test(node.value.raw)) {
+                context.report({
+                  node,
+                  messageId: "hardcodedColor",
+                  data: { color: node.value.raw },
+                });
+              }
+            }
+          },
+          JSXAttribute(node) {
+            if (
+              node.name.type === "JSXIdentifier" &&
+              (node.name.name === "style" || node.name.name === "color" || node.name.name === "backgroundColor")
+            ) {
+              if (node.value && node.value.type === "Literal") {
+                const value = node.value.value;
+                for (const pattern of COLOR_PATTERNS) {
+                  if (pattern.test(value)) {
+                    context.report({
+                      node,
+                      messageId: "hardcodedColor",
+                      data: { color: value },
+                    });
+                  }
+                }
+              }
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-ad-hoc-card
+     *
+     * Prevents ad-hoc card implementations that should use the canonical Card
+     * component from @ghatana/design-system.
+     */
+    "no-ad-hoc-card": {
+      meta: {
+        type: "error",
+        docs: {
+          description: "Disallow ad-hoc card implementations in production UI",
+          category: "Best Practices",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          adHocCard:
+            "🃏 Ad-hoc card implementation detected. " +
+            "Use the canonical Card component from '@ghatana/design-system' for consistent styling.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+        // Skip test files and design-system package
+        if (
+          currentFilePath.includes("/platform/typescript/design-system/") ||
+          currentFilePath.includes("__tests__") ||
+          currentFilePath.includes(".test.") ||
+          currentFilePath.includes(".spec.")
+        ) {
+          return {};
+        }
+
+        return {
+          JSXOpeningElement(node) {
+            const tag = node.name.name;
+            // Check for div with card-like styling patterns
+            if (tag === "div") {
+              const hasCardLikeAttributes = node.attributes.some((attr) => {
+                if (attr.type === "JSXAttribute") {
+                  const name = attr.name.name;
+                  return (
+                    name === "border" ||
+                    name === "shadow" ||
+                    name === "rounded" ||
+                    name === "p" ||
+                    name === "padding"
+                  );
+                }
+                return false;
+              });
+
+              if (hasCardLikeAttributes) {
+                context.report({
+                  node,
+                  messageId: "adHocCard",
+                });
+              }
             }
           },
         };

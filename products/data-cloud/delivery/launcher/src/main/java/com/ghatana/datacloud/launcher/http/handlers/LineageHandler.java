@@ -72,7 +72,11 @@ public final class LineageHandler {
             return Promise.of(http.errorResponse(400, "Missing path parameter: collection"));
         }
 
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -165,7 +169,11 @@ public final class LineageHandler {
             return Promise.of(http.errorResponse(400, "Missing path parameter: collection"));
         }
 
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

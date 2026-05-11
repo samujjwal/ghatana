@@ -14,7 +14,7 @@ import { GitBranch as AccountTree, Activity as Timeline, Table as TableChart, Li
 import { LifecyclePhase } from '@/types/lifecycle';
 import { LifecycleArtifactKind, getArtifactsForPhase, LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../../ui/Button';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ArtifactNode {
     id: string;
@@ -63,7 +63,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
     onAIAnalyze,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [viewMode, setViewMode] = useState<ViewMode>('graph');
     const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
     const [linkingFrom, setLinkingFrom] = useState<string | null>(null);

@@ -9,7 +9,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface StickyNoteData {
   text: string;
@@ -37,7 +37,7 @@ const fontSizeMap = {
  */
 export const StickyNoteNode = React.memo(
   ({ data, selected, id }: NodeProps<StickyNoteData>) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const {
       text = '',
       color = 'yellow',

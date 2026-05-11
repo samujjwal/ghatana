@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
@@ -84,7 +86,7 @@ class WorkflowExecutionHandlerMetricsTest extends EventloopTestBase {
 
         // Common stubs used by most tests
         lenient().when(http.resolveCorrelationId(any())).thenReturn(CORRELATION_ID);
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn(TENANT);
+        lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success(TENANT, null));
         lenient().when(http.objectMapper()).thenReturn(new ObjectMapper());
         lenient().when(http.errorResponse(anyInt(), anyString()))
                 .thenReturn(mock(HttpResponse.class));

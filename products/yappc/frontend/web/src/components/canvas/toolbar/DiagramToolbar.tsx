@@ -25,7 +25,7 @@ import {
 import { executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
 import { MERMAID_TEMPLATES } from '../diagram/MermaidDiagram';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface DiagramToolbarProps {
     /** Optional additional class names for the toolbar wrapper */
@@ -43,7 +43,7 @@ export interface DiagramToolbarProps {
  *   (avoids stacking-context bugs inside CSS transform contexts).
  */
 export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // ── Global atoms (type + zoom are per-session config, not per-node) ──
     const [diagramType, setDiagramType] = useAtom(diagramTypeAtom);
     const [zoom, setZoom] = useAtom(diagramZoomAtom);

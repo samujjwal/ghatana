@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.entity.storage.FilterCriteria;
@@ -86,7 +88,7 @@ class EntityQuerySortFilterPaginationTest extends EventloopTestBase {
         handler = new EntityCrudHandler(client, http, wsBroadcaster)
             .withTraceSupport(TraceSpanSupport.disabled());
 
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn(TENANT);
+        lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success(TENANT, null));
         lenient().when(request.getPathParameter("collection")).thenReturn(COLLECTION);
         lenient().when(request.getQueryParameter("limit")).thenReturn("100");
         lenient().when(request.getQueryParameter("offset")).thenReturn("0");
@@ -413,9 +415,9 @@ class EntityQuerySortFilterPaginationTest extends EventloopTestBase {
         @Test
         @DisplayName("Missing tenant ID returns HTTP 400 before any client access")
         void missingTenant_returns400() {
-            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized"));
             HttpResponse errorResp = mock(HttpResponse.class);
-            when(http.errorResponse(eq(400), anyString())).thenReturn(errorResp);
+            when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResp);
 
             HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
 

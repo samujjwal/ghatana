@@ -29,7 +29,7 @@ import { EnhancedSketchLayer } from './sketch/EnhancedSketchLayer';
 import { SketchToolbar } from './toolbar/SketchToolbar';
 import { DiagramToolbar } from './toolbar/DiagramToolbar';
 import { type CanvasInteractionMode, type SketchTool } from './workspace/canvasSharedState';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
     handleGhostNodeCreate,
     setIsAIModalOpen,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
 
     return (<Box
         id="canvas-surface"

@@ -20,7 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface MindMapNode {
     id: string;
@@ -304,7 +304,7 @@ const ConnectionLine = ({
 };
 
 export const MindMapCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [nodes] = useState<MindMapNode[]>(MOCK_NODES);
     const [selectedNode, setSelectedNode] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

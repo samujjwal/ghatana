@@ -84,7 +84,11 @@ public final class StorageCostHandler {
         if (sql == null || sql.isBlank()) {
             return Promise.of(http.errorResponse(400, "Missing required query parameter: sql"));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -125,7 +129,11 @@ public final class StorageCostHandler {
             return Promise.of(http.errorResponse(400,
                     "Invalid collection ID. Allowed characters: letters, numbers, underscore, hyphen."));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

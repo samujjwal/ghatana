@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
@@ -85,7 +87,7 @@ class SemanticSearchSafetyTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper());
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn(CALLER_TENANT);
+        lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success(CALLER_TENANT, null));
         lenient().when(http.resolveCorrelationId(any())).thenReturn(CORRELATION);
         lenient().when(request.getPathParameter("collection")).thenReturn(COLLECTION);
         lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(mock(HttpResponse.class));

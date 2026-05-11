@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { yappcApi } from '@/lib/api/client';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * SSOCallbackPage — SSO/OAuth callback handler.
@@ -13,7 +13,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 const SSOCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     const code = searchParams.get('code');

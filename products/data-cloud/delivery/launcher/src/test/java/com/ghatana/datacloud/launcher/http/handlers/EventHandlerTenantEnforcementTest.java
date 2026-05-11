@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -12,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,13 +48,13 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new EventHandler(client, http); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("append rejects missing tenant before reading body")
     void appendRejectsMissingTenantBeforeReadingBody() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleAppendEvent(request)); 
 
@@ -62,7 +66,7 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("query rejects missing tenant before querying events")
     void queryRejectsMissingTenantBeforeQueryingEvents() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleQueryEvents(request)); 
 
@@ -73,7 +77,7 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("get-by-offset rejects missing tenant before querying events")
     void getByOffsetRejectsMissingTenantBeforeQueryingEvents() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request)); 
 

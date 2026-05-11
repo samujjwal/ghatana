@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -62,7 +62,7 @@ async function fetchChannelMessages(channelId: string): Promise<ChannelMessages>
 const MessagesPage: React.FC = () => {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: channels, isLoading, error } = useQuery<Channel[]>({
     queryKey: ['messages-channels'],

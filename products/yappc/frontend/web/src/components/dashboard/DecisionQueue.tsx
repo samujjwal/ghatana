@@ -14,7 +14,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Check, X, Clock, AlertTriangle, Shield, FileText } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { DecisionQueueItem } from '../../clients/dashboard';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface DecisionQueueProps {
   items: DecisionQueueItem[];
@@ -44,7 +44,7 @@ export function DecisionQueue({
   onViewAll,
   projectId,
 }: DecisionQueueProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set());
 

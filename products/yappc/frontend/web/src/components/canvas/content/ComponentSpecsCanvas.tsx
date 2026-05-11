@@ -20,7 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ComponentSpec {
     id: string;
@@ -221,7 +221,7 @@ const getStatusColor = (status: ComponentSpec['status']) => {
 };
 
 export const ComponentSpecsCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [specs] = useState<ComponentSpec[]>(MOCK_SPECS);
     const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

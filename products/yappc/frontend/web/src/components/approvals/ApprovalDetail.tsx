@@ -10,7 +10,7 @@
 import React from 'react';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
 import { AISourceChip } from '../ai/AISourceChip';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { ApprovalDecisionStatus, ApprovalRecord } from './ApprovalInbox';
 
@@ -78,7 +78,7 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
   onReject,
   onRequestChanges,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const isPending = approval.status === 'PENDING';
   const showActions = isPending && isAuthorizedApprover;
 

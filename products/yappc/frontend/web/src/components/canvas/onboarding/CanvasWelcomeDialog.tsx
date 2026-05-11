@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import type { ReactNode } from 'react';
 import {
   Dialog,
@@ -130,7 +130,7 @@ export function CanvasWelcomeDialog({
     onSkip,
     steps = DEFAULT_STEPS,
 }: CanvasWelcomeDialogProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [activeStep, setActiveStep] = useState(0);
     const [neverShowAgain, setNeverShowAgain] = useState(false);
 

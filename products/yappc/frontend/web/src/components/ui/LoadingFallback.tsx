@@ -1,5 +1,5 @@
 import React from 'react';
-import { useI18n } from '../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Loading fallback component.
@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/I18nProvider';
  * Simple centered spinner and label used as a generic loading state.
  */
 export default function LoadingFallback() {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>

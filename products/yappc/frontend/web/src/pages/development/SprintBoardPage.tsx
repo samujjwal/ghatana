@@ -28,7 +28,7 @@ import {
   activeSprintAtom,
   sprintStoriesAtom,
 } from '../../state/atoms';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // =============================================================================
 // Types
@@ -61,7 +61,7 @@ const FilterPanel: React.FC<{
   onFiltersChange: (filters: FilterState) => void;
   onClose: () => void;
 }> = ({ filters, onFiltersChange, onClose }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const stories = useAtomValue(sprintStoriesAtom);
 
   // Extract unique values from stories
@@ -299,7 +299,7 @@ const SprintSelector: React.FC<{
 // =============================================================================
 
 const SprintBoardPage: React.FC = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
   const { projectId, sprintId } = useParams<{ projectId: string; sprintId: string }>();
   
   // State

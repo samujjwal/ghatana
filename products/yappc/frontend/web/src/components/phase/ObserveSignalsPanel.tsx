@@ -12,7 +12,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
 
@@ -138,7 +138,7 @@ export const ObserveSignalsPanel: React.FC<ObserveSignalsPanelProps> = ({
   isRefreshing = false,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showResolved, setShowResolved] = useState(false);
 
   const activeIncidents = incidents.filter((i) => i.status !== 'resolved');

@@ -14,7 +14,7 @@ import { useParams, useNavigate, Link } from 'react-router';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -459,7 +459,7 @@ export const CodeReviewDetailPage: React.FC = () => {
     prId: string;
   }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // State
   const [pr, setPr] = useState<PullRequest | null>(null);

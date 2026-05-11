@@ -49,7 +49,11 @@ public class SovereignProfileHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleGetSovereignProfile(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -96,7 +100,11 @@ public class SovereignProfileHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdateSovereignProfile(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -154,7 +162,11 @@ public class SovereignProfileHandler {
      * Returns the allowed and forbidden model lists for a tenant.
      */
     public Promise<HttpResponse> handleGetModelPolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -185,7 +197,11 @@ public class SovereignProfileHandler {
      * Returns sovereign policy audit events for a tenant.
      */
     public Promise<HttpResponse> handleGetSovereignAudit(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -231,7 +247,11 @@ public class SovereignProfileHandler {
      * Returns offline backup status including scheduled snapshot, integrity hash.
      */
     public Promise<HttpResponse> handleGetBackupStatus(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -257,7 +277,11 @@ public class SovereignProfileHandler {
      * Triggers an offline backup with integrity hash and encrypted transport.
      */
     public Promise<HttpResponse> handleTriggerBackup(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -284,7 +308,11 @@ public class SovereignProfileHandler {
      * Validates and restores from an offline backup snapshot.
      */
     public Promise<HttpResponse> handleRestoreBackup(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -312,7 +340,11 @@ public class SovereignProfileHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleGetDataSubjectControls(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -337,7 +369,11 @@ public class SovereignProfileHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdateDataSubjectControls(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -375,7 +411,11 @@ public class SovereignProfileHandler {
      * Runs sovereign conformance tests: no-network boot, offline query, audit-only event logging.
      */
     public Promise<HttpResponse> handleRunConformanceTests(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -411,7 +451,11 @@ public class SovereignProfileHandler {
      * Returns data residency audit: where tenant data lives vs where policy allows (P3.2).
      */
     public Promise<HttpResponse> handleGetDataResidencyAudit(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -443,7 +487,11 @@ public class SovereignProfileHandler {
      * Validates cross-border transfer rules before export/connector push (P3.2).
      */
     public Promise<HttpResponse> handleValidateTransfer(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -487,7 +535,11 @@ public class SovereignProfileHandler {
      * Returns per-tenant region policy enforcement configuration (P3.2).
      */
     public Promise<HttpResponse> handleGetRegionPolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

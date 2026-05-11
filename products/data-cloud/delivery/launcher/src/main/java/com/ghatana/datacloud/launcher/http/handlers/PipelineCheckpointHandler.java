@@ -279,7 +279,11 @@ public class PipelineCheckpointHandler {
         if (tenantId != null && !tenantId.isBlank()) {
             return tenantId;
         }
-        return http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return null;
+        }
+        return resolutionResult.tenantId();
     }
 
     private HttpResponse missingTenantResponse() {

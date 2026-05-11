@@ -17,7 +17,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -59,7 +59,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
   onNodeClick,
   className,
 }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { data, isLoading, isError, error } = useQuery<RunLineageData, Error>({
     queryKey: ['run-lineage', runId],
     queryFn: () => fetchLineage(runId),

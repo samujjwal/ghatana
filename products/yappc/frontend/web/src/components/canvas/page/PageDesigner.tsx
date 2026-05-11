@@ -60,7 +60,7 @@ import {
   type PageBuilderCommandAuditContext,
 } from '../../../services/canvas/commands/PageBuilderCommandAuditService';
 import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { ComponentData } from './schemas';
 import {
@@ -332,7 +332,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   readOnlyReason,
   auditContext,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const canEdit = phaseConfig?.allowEditing ?? true;
   const canAdd = phaseConfig?.allowAddComponent ?? true;
   const canDelete = phaseConfig?.allowDelete ?? true;

@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
@@ -17,9 +19,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * @doc.type class
@@ -61,13 +71,13 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     void setUp() { 
         handler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, http) 
             .withOpenSearchConnector(openSearchConnector); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("entity CDC rejects missing tenant before event log access")
     void entityCdcRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleEntityCdcStream(request)); 
 
@@ -78,7 +88,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("general SSE rejects missing tenant before event log access")
     void generalSseRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleSseStream(request)); 
 
@@ -89,7 +99,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("brain workspace SSE rejects missing tenant before workspace access")
     void brainWorkspaceRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainWorkspaceStream(request)); 
 
@@ -100,7 +110,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("learning SSE rejects missing tenant before stream setup")
     void learningStreamRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleLearningStream(request)); 
 
@@ -113,7 +123,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     void streamingQueryRejectsMissingTenant() { 
         when(request.getPathParameter("collection")).thenReturn("orders");
         when(request.getQueryParameter("q")).thenReturn("status:open");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleStreamingQuerySse(request)); 
 

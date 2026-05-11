@@ -47,7 +47,11 @@ public final class McpToolsHandler {
     }
 
     public Promise<HttpResponse> handleListTools(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         String requestId = http.resolveCorrelationId(request);
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));
@@ -62,7 +66,11 @@ public final class McpToolsHandler {
     }
 
     public Promise<HttpResponse> handleToolCall(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         String requestId = http.resolveCorrelationId(request);
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));

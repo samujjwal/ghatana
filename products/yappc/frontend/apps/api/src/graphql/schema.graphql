@@ -358,64 +358,8 @@ type FlowDefinition {
 # ============================================================================
 # REQUIREMENT LIFECYCLE TYPES
 # ============================================================================
-
-type Requirement {
-  id: ID!
-  projectId: ID!
-  title: String!
-  description: String
-  status: String!
-  type: String
-  priority: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  versions: [RequirementVersion!]!
-  approvalRequests: [ApprovalRequest!]!
-  agentRuns: [AgentRun!]!
-}
-
-type RequirementVersion {
-  id: ID!
-  requirementId: ID!
-  version: Int!
-  title: String!
-  description: String
-  metadata: JSON
-  changeSummary: String
-  createdAt: DateTime!
-}
-
-type ApprovalRequest {
-  id: ID!
-  projectId: ID!
-  requirementId: ID
-  requesterId: ID!
-  reviewerId: ID
-  requestedAction: String!
-  status: String!
-  decisionReason: String
-  createdAt: DateTime!
-  reviewedAt: DateTime
-  updatedAt: DateTime!
-}
-
-type AgentRun {
-  id: ID!
-  projectId: ID!
-  requirementId: ID
-  triggeredById: ID!
-  agentName: String!
-  status: String!
-  stage: String!
-  retryCount: Int!
-  input: JSON
-  output: JSON
-  errorMessage: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  startedAt: DateTime
-  completedAt: DateTime
-}
+# Note: Requirement, RequirementVersion, ApprovalRequest, AgentRun types
+# are defined in requirements-approvals.graphql with proper enum typing
 
 # ============================================================================
 # EXPORT TYPES

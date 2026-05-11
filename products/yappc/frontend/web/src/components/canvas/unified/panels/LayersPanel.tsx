@@ -67,7 +67,7 @@ export function LayersPanel({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [localSearch, setLocalSearch] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const canvasNodes = useMemo(
     () => nodes.filter(isCanvasNodeRecord),

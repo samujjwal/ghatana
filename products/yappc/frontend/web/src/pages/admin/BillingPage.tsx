@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -96,7 +96,7 @@ const BillingPage: React.FC = () => {
     queryKey: ['billing'],
     queryFn: fetchBilling,
   });
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const plan = data?.plan;
   const usage = data?.usage ?? [];

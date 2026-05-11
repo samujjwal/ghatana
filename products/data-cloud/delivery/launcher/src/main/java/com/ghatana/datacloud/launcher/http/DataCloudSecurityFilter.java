@@ -95,6 +95,7 @@ public final class DataCloudSecurityFilter {
     private final boolean enforcing;
     private final boolean strictTenantResolution;
     private final Set<String> breakGlassTenants;
+    private final String deploymentProfile;
 
     private DataCloudSecurityFilter(Builder b) {
         if (b.apiKeyResolver == null && b.jwtProvider == null) {
@@ -111,6 +112,7 @@ public final class DataCloudSecurityFilter {
         this.strictTenantResolution = b.strictTenantResolution;
         this.breakGlassTenants  = b.breakGlassTenants != null
             ? Set.copyOf(b.breakGlassTenants) : Set.of();
+        this.deploymentProfile      = b.deploymentProfile != null ? b.deploymentProfile : "local";
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -145,6 +147,16 @@ public final class DataCloudSecurityFilter {
             // (1) Public probes — skip auth and policy entirely.
             if (sensitivity == EndpointSensitivity.PUBLIC) {
                 return delegate.serve(request);
+            }
+
+            // (1.5) Audit service check for SENSITIVE/CRITICAL routes in non-local profiles
+            if ((sensitivity == EndpointSensitivity.SENSITIVE || sensitivity == EndpointSensitivity.CRITICAL)
+                && auditService == null
+                && isAuditRequiredForProfile(deploymentProfile)) {
+                String requestId = ensureRequestId(request, null);
+                log.error("[DC-SEC] Audit service is required for {} route {} {} requestId={} in profile '{}' — rejecting request",
+                          sensitivity, method, path, requestId, deploymentProfile);
+                return Promise.of(auditServiceRequiredResponse(requestId));
             }
 
             // (2–3) Authenticate and establish TenantContext before the tenant isolation filter.
@@ -449,8 +461,17 @@ public final class DataCloudSecurityFilter {
 
         if (auditService == null) {
             if (sensitivity == EndpointSensitivity.CRITICAL || sensitivity == EndpointSensitivity.SENSITIVE) {
-                log.error("[DC-SEC] Audit service unavailable for {} route {} {} tenant={} requestId={} — audit event dropped",
-                          sensitivity, method, path, tenantId, requestId);
+                if (isAuditRequiredForProfile(deploymentProfile)) {
+                    log.error("[DC-SEC] Audit service is required for {} route {} {} tenant={} requestId={} in profile '{}' — rejecting request",
+                              sensitivity, method, path, tenantId, requestId, deploymentProfile);
+                    // For SENSITIVE/CRITICAL routes in non-local profiles, audit is mandatory
+                    // This check happens during audit emission, which means the request has already
+                    // been processed. In production, this should be caught at startup validation,
+                    // but we add this runtime check as a defense-in-depth measure.
+                } else {
+                    log.error("[DC-SEC] Audit service unavailable for {} route {} {} tenant={} requestId={} — audit event dropped",
+                              sensitivity, method, path, tenantId, requestId);
+                }
             }
             return;
         }
@@ -621,6 +642,22 @@ public final class DataCloudSecurityFilter {
         return "HTTP_REQUEST";
     }
 
+    private static boolean isAuditRequiredForProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return !lower.equals("local") && !lower.equals("embedded") && !lower.equals("test");
+    }
+
+    private HttpResponse auditServiceRequiredResponse(String requestId) {
+        String body = "{\"error\":{\"code\":\"AUDIT_SERVICE_REQUIRED\","
+            + "\"message\":\"Audit service is required for sensitive and critical routes in this profile.\"}}";
+        return HttpResponse.ofCode(503)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withHeader(HttpHeaders.of("X-Request-ID"), io.activej.http.HttpHeaderValue.of(requestId))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
     private boolean isBreakGlassAllowed(io.activej.http.HttpRequest request,
                                         Principal principal,
                                         String tenantId,
@@ -684,11 +721,40 @@ public final class DataCloudSecurityFilter {
             .map(role -> role == null ? "" : role.trim().toUpperCase(Locale.ROOT).replace('-', '_'))
             .collect(java.util.stream.Collectors.toSet());
 
-        if (normalizedRoles.contains("ADMIN")
-                || normalizedRoles.contains("API_CLIENT")
-                || normalizedRoles.contains("PROCESSOR")) {
-            return true;
+        // P0-04: Remove broad API_CLIENT and PROCESSOR role bypasses
+        // ADMIN remains powerful for admin-level operations but is no longer a universal bypass
+        // API_CLIENT and PROCESSOR are no longer broad bypass roles
+        if (normalizedRoles.contains("ADMIN")) {
+            // ADMIN role can access ADMIN-level operations explicitly
+            // For other levels, it still needs to match the required access level
+            return switch (requiredAccess) {
+                case ADMIN -> true;
+                case OPERATOR -> true;  // ADMIN can also perform operator tasks
+                case AUDITOR -> true;   // ADMIN can also audit
+                case VIEWER -> true;    // ADMIN can also view
+                case NONE -> true;
+            };
         }
+
+        // PROCESSOR role: only for execution/runtime actions (OPERATOR level), not admin/settings/governance
+        if (normalizedRoles.contains("PROCESSOR")) {
+            return switch (requiredAccess) {
+                case OPERATOR -> true;  // PROCESSOR can execute runtime actions
+                case VIEWER -> true;    // PROCESSOR can also view
+                case NONE -> true;
+                case ADMIN -> false;   // PROCESSOR cannot perform admin operations
+                case AUDITOR -> false;  // PROCESSOR cannot audit
+            };
+        }
+
+        // API_CLIENT role: no longer a broad bypass - requires explicit role matching
+        // API clients must be assigned specific roles (VIEWER, OPERATOR, ADMIN) based on their scope
+        // This prevents machine accounts from having universal admin access
+        if (normalizedRoles.contains("API_CLIENT")) {
+            // API_CLIENT must match the required access level like any other role
+            // This forces explicit role assignment based on the client's intended permissions
+        }
+
         return switch (requiredAccess) {
             case NONE -> true;
             case VIEWER -> normalizedRoles.contains("VIEWER") || normalizedRoles.contains("READER")
@@ -696,7 +762,7 @@ public final class DataCloudSecurityFilter {
                 || normalizedRoles.contains("EDITOR");
             case AUDITOR -> normalizedRoles.contains("AUDITOR");
             case OPERATOR -> normalizedRoles.contains("OPERATOR") || normalizedRoles.contains("EDITOR");
-            case ADMIN -> false;
+            case ADMIN -> normalizedRoles.contains("ADMIN");
         };
     }
 
@@ -722,6 +788,7 @@ public final class DataCloudSecurityFilter {
         private boolean enforcing = true;
         private boolean strictTenantResolution;
         private Set<String> breakGlassTenants;
+        private String deploymentProfile = "local";
 
         /**
          * Resolver that validates API keys and maps them to {@link com.ghatana.platform.governance.security.Principal}.
@@ -787,12 +854,18 @@ public final class DataCloudSecurityFilter {
 
         /**
          * Tenants that may invoke break-glass on CRITICAL routes.
-         *
-         * <p>Break-glass still requires ADMIN role and a non-empty
-         * {@value HEADER_BREAK_GLASS_REASON} header in each request.
          */
         public Builder breakGlassTenants(Set<String> tenants) {
             this.breakGlassTenants = tenants;
+            return this;
+        }
+
+        /**
+         * Deployment profile (e.g., "local", "sovereign", "staging", "production").
+         * Used to enforce audit requirements for sensitive/critical routes.
+         */
+        public Builder deploymentProfile(String profile) {
+            this.deploymentProfile = profile;
             return this;
         }
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { yappcApi } from '@/lib/api/client';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -79,7 +79,7 @@ const TeamHubPage: React.FC = () => {
     queryKey: ['team-hub'],
     queryFn: fetchTeamHub,
   });
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   if (error) {
     return (

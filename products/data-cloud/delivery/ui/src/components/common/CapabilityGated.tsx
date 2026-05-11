@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { useCapabilityGate, type GateMode } from '../../hooks/useCapabilityGate';
+import { useSurfaceGate, type GateMode } from '../../hooks/useSurfaceGate';
 import { useSurfaceRegistry } from '../../api/surfaces.service';
 import { Loader2 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export const CapabilityGated: React.FC<CapabilityGatedProps> = ({
   children,
 }) => {
   const { data: registry, isLoading } = useSurfaceRegistry();
-  const allowed = useCapabilityGate(aliases, mode);
+  const allowed = useSurfaceGate(aliases, mode);
 
   if (isLoading && !registry) {
     if (loadingFallback !== undefined) {

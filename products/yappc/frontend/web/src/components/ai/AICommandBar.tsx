@@ -27,7 +27,7 @@ import { LifecyclePhase, PHASE_LABELS } from '../../types/lifecycle';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -134,7 +134,7 @@ export function AICommandBar({
     recentPrompts = [],
     className = '',
 }: AICommandBarProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [value, setValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
     const [showHistory, setShowHistory] = useState(false);

@@ -15,7 +15,7 @@ import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type LessonCategory =
   | 'design'
@@ -118,7 +118,7 @@ export const LearnRetrospectivePanel: React.FC<LearnRetrospectivePanelProps> = (
   canAddLessons = true,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<NewLessonDraft>(EMPTY_DRAFT);
   const [formError, setFormError] = useState<string | null>(null);

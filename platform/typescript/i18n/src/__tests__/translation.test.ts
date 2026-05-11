@@ -117,7 +117,7 @@ describe('translation key resolution', () => {
       ['delete', 'Delete'],
       ['edit', 'Edit'],
       ['search', 'Search'],
-    ] as const)('resolves actions.%s to %s', (action, expected) => {
+    ] as const)('resolves actions.%s to %s', (action: string, expected: string) => {
       expect(resolve(en as unknown as Record<string, unknown>, `actions.${action}`)).toBe(expected);
     });
   });

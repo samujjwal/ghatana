@@ -16,7 +16,7 @@ import { TextField } from '@ghatana/design-system';
 
 import { Search as SearchIcon, ChevronDown as ExpandMoreIcon, Plus as AddIcon } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Component definition for the palette.
@@ -432,7 +432,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
   // Debug marker for DOM identification
   // eslint-disable-next-line no-console
   console.debug('[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [searchQuery, setSearchQuery] = useState('');
   const [automationSafe, setAutomationSafe] = useState<boolean>(detectAutomationEnvironment);
   const [recentlyUsed, setRecentlyUsed] = useState<ComponentDef[]>([]);

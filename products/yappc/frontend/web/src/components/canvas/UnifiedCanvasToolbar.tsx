@@ -41,7 +41,7 @@ import {
 
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import type { MessageKey } from '../../i18n/messages';
 
 // =============================================================================
@@ -126,7 +126,7 @@ interface ToolButtonProps {
 
 const ToolButton: React.FC<ToolButtonProps> = ({ tool, isActive, onClick }) => {
   const Icon = tool.icon;
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const label = t(tool.labelKey);
 
   return (
@@ -171,7 +171,7 @@ const ToolDropdown: React.FC<ToolDropdownProps> = ({
   labelKey,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const activeToolConfig = tools.find((t) => t.id === activeTool);
   const ActiveIcon = activeToolConfig?.icon || tools[0].icon;
 
@@ -263,7 +263,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
   onToggleGrid,
   className,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Keyboard shortcuts

@@ -22,7 +22,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Search, Download, RefreshCw as Refresh, Play as PlayArrow, Pause } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -148,7 +148,7 @@ const LogEntryItem = ({ log }: { log: LogEntry }) => {
 };
 
 export const LogViewerCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [logs, setLogs] = useState<LogEntry[]>(generateMockLogs());
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLevels, setSelectedLevels] = useState<Set<LogLevel>>(new Set(['info', 'warn', 'error']));

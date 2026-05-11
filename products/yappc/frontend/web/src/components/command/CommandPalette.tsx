@@ -13,7 +13,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Dialog, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Box, Chip, Typography } from '@ghatana/design-system';
 import { Search as SearchIcon, Keyboard as KeyboardIcon } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import { useActions, type ActionState, type ActionDefinition, type GroupedActions } from '../../services/ActionRegistry';
 import { Input } from '../ui/Input';
@@ -128,7 +128,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     open: controlledOpen,
     onOpenChange,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = useCallback((value: boolean) => {

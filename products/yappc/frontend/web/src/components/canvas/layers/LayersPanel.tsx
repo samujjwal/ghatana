@@ -12,7 +12,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import React, { useState } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { Layer } from '../../../services/export/types';
 
@@ -36,7 +36,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   onToggleLock,
   onReorder,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [newLayerName, setNewLayerName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 

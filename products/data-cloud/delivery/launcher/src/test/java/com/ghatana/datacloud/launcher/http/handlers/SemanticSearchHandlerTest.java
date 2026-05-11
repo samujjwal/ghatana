@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
@@ -24,6 +26,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,13 +62,13 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper()); 
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("similar-entities rejects missing tenant before vector lookup")
     void similarEntitiesRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleSimilarEntities(request)); 
 
@@ -75,7 +79,7 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("collection rag rejects missing tenant before reading body")
     void collectionRagRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleCollectionRag(request)); 
 

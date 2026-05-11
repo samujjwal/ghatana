@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -123,7 +123,7 @@ interface StatusStepperProps {
 }
 
 const StatusStepper: React.FC<StatusStepperProps> = ({ current }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const forwardSteps: AdrLifecycleStatus[] = ['DRAFT', 'IN_REVIEW', 'ACCEPTED', 'SUPERSEDED'];
   const currentIndex = STATUS_ORDER.indexOf(current);
   return (
@@ -181,7 +181,7 @@ const TransitionForm: React.FC<TransitionFormProps> = ({
   onCancel,
   isBusy,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [note, setNote] = useState('');
   return (
     <Box
@@ -260,7 +260,7 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
   currentUser,
   onTransition,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [adr, setAdr] = useState<AdrLifecycleRecord>(initialAdr);
   const [pendingTransition, setPendingTransition] = useState<AdrLifecycleStatus | null>(null);
   const [isBusy, setIsBusy] = useState(false);

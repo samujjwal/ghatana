@@ -30,7 +30,7 @@ import {
     canvasInteractionModeAtom,
 } from '../workspace/canvasAtoms';
 import { Input } from '../../ui/Input';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface SketchToolbarProps {
     className?: string;
@@ -42,7 +42,7 @@ type ToolbarTool = SketchTool | 'ellipse' | 'eraser';
  * SketchToolbar - Contextual toolbar for sketch mode
  */
 export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [tool, setTool] = useAtom(sketchToolAtom);
     const [color, setColor] = useAtom(sketchColorAtom);
     const [strokeWidth, setStrokeWidth] = useAtom(sketchStrokeWidthAtom);

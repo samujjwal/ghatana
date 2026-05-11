@@ -43,7 +43,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { NodeResizer } from '@xyflow/react';
 import { useAtomValue } from 'jotai';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { cameraZoomAtom } from '../workspace';
 
 // ============================================================================
@@ -76,7 +76,7 @@ export interface GroupNodeData {
 type GroupCanvasNode = Node<GroupNodeData, 'group'>;
 
 export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const zoom = useAtomValue(cameraZoomAtom);
 
     const [label, setLabel] = useState(data.label ?? 'Group');

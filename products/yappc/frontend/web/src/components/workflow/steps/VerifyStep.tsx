@@ -17,7 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface VerificationEvidence {
     id: string;
@@ -54,7 +54,7 @@ const EVIDENCE_TYPES: { value: VerificationEvidence['type']; label: string; icon
 // ============================================================================
 
 export function VerifyStep() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as VerifyStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);

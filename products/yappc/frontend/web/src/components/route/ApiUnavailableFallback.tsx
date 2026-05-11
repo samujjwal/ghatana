@@ -12,7 +12,7 @@
 
 import { CloudOff, RefreshCw as Refresh, AlertTriangle as WarningAmber } from 'lucide-react';
 import { Box, Container, Typography, Stack, Button, Surface as Paper, Alert } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ApiUnavailableFallbackProps {
     /** Error message to display */
@@ -34,7 +34,7 @@ export function ApiUnavailableFallback({
   onRetry,
   isRetrying = false,
 }: ApiUnavailableFallbackProps): React.JSX.Element {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <Box
       className="flex min-h-screen items-center justify-center p-4"

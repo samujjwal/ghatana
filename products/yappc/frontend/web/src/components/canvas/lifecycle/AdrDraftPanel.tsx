@@ -35,7 +35,7 @@ import { Loader2, AlertCircle, FileText, Sparkles } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
 import { Button } from '../../ui/Button';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,7 +93,7 @@ type GenerationState = 'idle' | 'loading' | 'done' | 'error';
  * to trigger the model, then reviews and optionally accepts the result.
  */
 export function AdrDraftPanel({ nodeId, onAcceptDraft, className }: AdrDraftPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [state, setState] = useState<GenerationState>('idle');
   const [draft, setDraft] = useState<AdrDraft | null>(null);
 

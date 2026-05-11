@@ -12,7 +12,7 @@
 
 import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react';
 import React, { useRef, useEffect } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import { Button } from '@ghatana/design-system';
 import { Textarea } from '../ui/Textarea';
@@ -125,7 +125,7 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   isLoading = false,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

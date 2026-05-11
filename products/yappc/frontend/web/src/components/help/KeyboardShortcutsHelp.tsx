@@ -18,7 +18,7 @@ import type { ReactNode } from 'react';
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import ActionRegistry, { type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -77,7 +77,7 @@ export function KeyboardShortcutsHelp({
     actionState,
 }: KeyboardShortcutsHelpProps) {
     const [searchQuery, setSearchQuery] = useState('');
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
 
     // Reset search when modal closes
     useEffect(() => {

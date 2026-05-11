@@ -36,12 +36,17 @@ export class RedisCanvasRoomStore {
   constructor() {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.redis = new Redis(redisUrl, {
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 0,
       lazyConnect: true,
+      enableOfflineQueue: false,
     });
 
     this.redis.on('error', (err) => {
+      // Silently ignore Redis errors - canvas features will be degraded but API will still work
+      if (err.message?.includes('NOAUTH')) {
+        // Ignore auth errors in development
+        return;
+      }
       console.error('[RedisCanvasRoomStore] Redis connection error:', err);
     });
 

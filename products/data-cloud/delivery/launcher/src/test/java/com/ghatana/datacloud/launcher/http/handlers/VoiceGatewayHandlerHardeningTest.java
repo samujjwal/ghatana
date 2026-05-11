@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionService;
@@ -24,6 +26,8 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -210,8 +214,8 @@ class VoiceGatewayHandlerHardeningTest {
         void handleListIntents_returns400WhenTenantMissing() { 
             HttpRequest request = mock(HttpRequest.class); 
             HttpResponse badRequest = mock(HttpResponse.class); 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
+            when(http.errorResponse(anyInt(), anyString())).thenReturn(badRequest); 
 
             HttpResponse response = handler.handleListIntents(request).getResult(); 
 
@@ -223,8 +227,8 @@ class VoiceGatewayHandlerHardeningTest {
         void handleVoiceIntent_returns400WhenTenantMissing() { 
             HttpRequest request = mock(HttpRequest.class); 
             HttpResponse badRequest = mock(HttpResponse.class); 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
+            when(http.errorResponse(anyInt(), anyString())).thenReturn(badRequest); 
 
             HttpResponse response = handler.handleVoiceIntent(request).getResult(); 
 
@@ -237,8 +241,8 @@ class VoiceGatewayHandlerHardeningTest {
         void handleClassifyOnly_returns400WhenTenantMissing() { 
             HttpRequest request = mock(HttpRequest.class); 
             HttpResponse badRequest = mock(HttpResponse.class); 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
+            when(http.errorResponse(anyInt(), anyString())).thenReturn(badRequest); 
 
             HttpResponse response = handler.handleClassifyOnly(request).getResult(); 
 

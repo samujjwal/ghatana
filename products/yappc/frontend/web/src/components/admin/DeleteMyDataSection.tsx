@@ -18,7 +18,7 @@
 import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { userData } from '@/lib/api';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '../ui/Button';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ type Stage = 'idle' | 'confirm' | 'submitting' | 'requested' | 'error';
  * delete-my-data request. Two-step confirmation prevents accidental data loss.
  */
 const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [stage, setStage] = useState<Stage>('idle');
   const [statusUrl, setStatusUrl] = useState<string>('');
 

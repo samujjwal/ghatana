@@ -1193,7 +1193,11 @@ public final class AlertingHandler {
         if (queryTenant != null && !queryTenant.isBlank()) {
             return queryTenant;
         }
-        return http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return null;
+        }
+        return resolutionResult.tenantId();
     }
 
     private static void putIfPresent(Map<String, Object> target, String key, Object value) {

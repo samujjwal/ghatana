@@ -11,7 +11,7 @@
  */
 
 import type { CSSProperties, ReactNode } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // BASE SKELETON
@@ -148,7 +148,7 @@ export function SkeletonCard({
  * Dashboard skeleton with KPI cards and content area
  */
 export function SkeletonDashboard() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
@@ -193,7 +193,7 @@ export function SkeletonDashboard() {
  * Project list skeleton
  */
 export function SkeletonProjectList() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
@@ -223,7 +223,7 @@ export function SkeletonProjectList() {
  * Canvas skeleton with toolbar and main area
  */
 export function SkeletonCanvas() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
@@ -270,7 +270,7 @@ export function SkeletonCanvas() {
  * Table skeleton
  */
 export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
@@ -322,7 +322,7 @@ export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
  * Page Designer skeleton
  */
 export function SkeletonPageDesigner() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
@@ -371,7 +371,7 @@ export function SkeletonPageDesigner() {
  * Workflow skeleton
  */
 export function SkeletonWorkflow() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"

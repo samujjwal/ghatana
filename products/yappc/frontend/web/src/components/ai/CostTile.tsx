@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { useProjectAiCost } from '@/hooks/useProjectAiCost';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ function formatCost(usd: number): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { data, isLoading, isError } = useProjectAiCost(projectId);
 
   if (isLoading) {

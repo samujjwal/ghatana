@@ -12,7 +12,7 @@
 
 import React, { forwardRef } from 'react';
 import type { SelectHTMLAttributes, ReactNode } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type SelectSize = 'sm' | 'md' | 'lg';
 type SelectState = 'default' | 'error' | 'success' | 'warning';
@@ -73,7 +73,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
     children,
     ...props
 }, ref) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // Determine select state based on props
     const selectState = state || (error ? 'error' : success ? 'success' : warning ? 'warning' : 'default');
 

@@ -15,7 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Package as Inventory, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, Download, BadgeCheck as Verified, User as Person, Clock as Schedule, FileText as Description, Shield as Security } from 'lucide-react';
 import type { ReleasePacketPayload, EvidencePackPayload } from '@/shared/types/lifecycle-artifacts';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ApprovalGate {
     id: string;
@@ -70,7 +70,7 @@ export const ReleasePacketPanel: React.FC<ReleasePacketPanelProps> = ({
     currentUserId,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [activeTab, setActiveTab] = useState<'overview' | 'artifacts' | 'evidence' | 'approvals'>('overview');
     const [approvalComments, setApprovalComments] = useState<Record<string, string>>({});
     const [processingGate, setProcessingGate] = useState<string | null>(null);

@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionService;
@@ -56,13 +58,13 @@ class AiAssistHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new AiAssistHandler(completionService, objectMapper, http, blockingExecutor, AiRecommendationMetrics.NOOP); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse);
     }
 
     @Test
     @DisplayName("entity suggest rejects missing tenant before loading body")
     void entitySuggestRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleEntitySuggest(request)); 
 
@@ -73,7 +75,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("analytics suggest rejects missing tenant before loading body")
     void analyticsSuggestRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleAnalyticsSuggest(request)); 
 
@@ -84,7 +86,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("pipeline hint rejects missing tenant before loading body")
     void pipelineHintRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handlePipelineOptimiseHint(request)); 
 
@@ -95,7 +97,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("pipeline draft rejects missing tenant before loading body")
     void pipelineDraftRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handlePipelineDraft(request)); 
 
@@ -106,7 +108,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("brain explain rejects missing tenant before loading body")
     void brainExplainRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainExplain(request)); 
 

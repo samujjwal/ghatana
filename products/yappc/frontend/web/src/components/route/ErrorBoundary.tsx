@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useRouteError, Link } from "react-router";
 import { removeStorage, writeFlag } from '../../services/storage';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type RouteErrorLike = Error & { status?: number; statusText?: string };
 
@@ -42,7 +42,7 @@ export function RouteErrorBoundary({
     showNavigation = true
 }: RouteErrorBoundaryProps) {
     const error = useRouteError() as RouteErrorLike;
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
 
     // Log error for the configured monitoring path when available.
     useEffect(() => {

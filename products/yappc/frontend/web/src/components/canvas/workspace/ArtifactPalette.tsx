@@ -21,7 +21,7 @@ import {
     type ArtifactTemplate,
     type ArtifactType,
 } from './artifact-templates';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // Re-export for backward compatibility
 export type { ArtifactTemplate, ArtifactType };
@@ -32,7 +32,7 @@ export interface ArtifactPaletteProps {
 }
 
 export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, onQuickCreate }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [expandedPhases, setExpandedPhases] = React.useState<Set<LifecyclePhase>>(
         new Set([LifecyclePhase.INTENT, LifecyclePhase.SHAPE])
     );

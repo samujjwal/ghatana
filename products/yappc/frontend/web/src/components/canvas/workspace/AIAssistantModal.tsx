@@ -13,7 +13,7 @@
 import * as React from 'react';
 import { Dialog, DialogTitle, DialogContent, TextField, Box, Typography, Chip, Stack, IconButton, Spinner as CircularProgress, Surface as Paper, Divider } from '@ghatana/design-system';
 import { X as CloseIcon, Sparkles as AIIcon, Lightbulb as LightbulbIcon, AlertTriangle as WarningIcon, TrendingUp as TrendingUpIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface AISuggestion {
     id: string;
@@ -63,7 +63,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
     context,
     onSubmit,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [query, setQuery] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
     const [suggestions, setSuggestions] = React.useState<AISuggestion[]>([]);

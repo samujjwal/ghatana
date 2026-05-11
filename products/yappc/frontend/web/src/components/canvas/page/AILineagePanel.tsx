@@ -8,7 +8,7 @@
 import { CheckCircle, XCircle, Clock, Undo2, Eye } from 'lucide-react';
 import { Box, Stack, Typography, IconButton, Button, Surface as Paper } from '@ghatana/design-system';
 import React, { useCallback } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { AIActionLineage } from './pageArtifactDocument';
 
@@ -29,7 +29,7 @@ export const AILineagePanel: React.FC<AILineagePanelProps> = ({
   onReview,
   onClose,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const handleAccept = useCallback(
     (actionId: string) => {

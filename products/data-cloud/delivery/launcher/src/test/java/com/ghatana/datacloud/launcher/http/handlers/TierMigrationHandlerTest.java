@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
@@ -14,8 +16,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * @doc.type class
@@ -47,13 +55,13 @@ class TierMigrationHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new TierMigrationHandler(http, tierMigrationScheduler, archiveMigrationScheduler); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("migration rejects missing tenant before scheduler access")
     void migrationRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleMigrateCollection(request)); 
 

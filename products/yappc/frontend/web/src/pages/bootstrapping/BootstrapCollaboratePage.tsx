@@ -42,7 +42,7 @@ import { MenuItem } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
 import { ROUTES } from '../../router/paths';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const NativeButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) =>
   React.createElement('button', { ...props, ref }),
@@ -421,7 +421,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 const BootstrapCollaboratePage: React.FC = () => {
   const navigate = useNavigate();
   const { projectId, sessionId } = useParams<{ projectId: string; sessionId: string }>();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // Local UI state
   const [showInviteDialog, setShowInviteDialog] = useState(false);

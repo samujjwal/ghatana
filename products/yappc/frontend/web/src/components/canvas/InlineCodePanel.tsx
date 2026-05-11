@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Inline Code Panel component.
@@ -40,7 +40,7 @@ export function InlineCodePanel({
   onToggle,
   className,
 }: InlineCodePanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [height, setHeight] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);

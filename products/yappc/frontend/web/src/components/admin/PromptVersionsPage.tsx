@@ -30,7 +30,7 @@ import {
   updatePromptWeights,
   type PromptVersion,
 } from '../../services/admin/promptVersioningApi';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -39,7 +39,7 @@ interface PromptVersionsPageProps {
 }
 
 export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const queryClient = useQueryClient();
 
   const [selectedPrompt, setSelectedPrompt] = useState<PromptVersion | null>(null);

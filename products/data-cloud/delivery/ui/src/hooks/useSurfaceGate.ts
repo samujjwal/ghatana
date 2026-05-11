@@ -32,7 +32,7 @@ function isAllowed(status: SurfaceSignal['status'], mode: GateMode): boolean {
  * @param mode - Gate strictness (default: 'active')
  * @returns boolean indicating whether the runtime surface is available
  */
-export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'): boolean {
+export function useSurfaceGate(aliases: string[], mode: GateMode = 'active'): boolean {
   const { data, isLoading } = useSurfaceRegistry();
 
   if (isLoading || !data) {
@@ -51,8 +51,12 @@ export function useCapabilityGate(aliases: string[], mode: GateMode = 'active'):
 /**
  * Get the live runtime surface signal for display / diagnostics.
  */
-export function useCapabilitySignal(aliases: string[]): SurfaceSignal | undefined {
+export function useSurfaceSignal(aliases: string[]): SurfaceSignal | undefined {
   const { data } = useSurfaceRegistry();
   if (!data) return undefined;
   return getSurfaceSignal(data.surfaces, aliases);
 }
+
+// Backward compatibility aliases (deprecated)
+export const useCapabilityGate = useSurfaceGate;
+export const useCapabilitySignal = useSurfaceSignal;

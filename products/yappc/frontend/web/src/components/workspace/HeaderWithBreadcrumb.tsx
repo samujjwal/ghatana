@@ -15,7 +15,7 @@ import { Breadcrumb } from '../ui';
 import { breadcrumbItemsAtom, navigationContextAtom } from '../../state/atoms/breadcrumbAtom';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface HeaderWithBreadcrumbProps {
     onCreateWorkspace?: () => void;
@@ -30,7 +30,7 @@ export function HeaderWithBreadcrumb({
     onThemeToggle,
     className = '',
 }: HeaderWithBreadcrumbProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [breadcrumbItems] = useAtom(breadcrumbItemsAtom);
     const [navContext] = useAtom(navigationContextAtom);
 

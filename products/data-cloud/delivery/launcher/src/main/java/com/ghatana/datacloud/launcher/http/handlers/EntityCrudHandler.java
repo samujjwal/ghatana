@@ -3,6 +3,9 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.EntityWriteOutbox;
+import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
+import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
@@ -80,6 +83,9 @@ public class EntityCrudHandler {
     /** DC-BE-003: Transaction manager for atomic multi-step writes (entity + event + audit). */
     private TransactionManager transactionManager;
 
+    /** P0-06: Outbox processor for atomic entity write lifecycle. */
+    private EntityWriteOutboxProcessor outboxProcessor;
+
     private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
     /**
@@ -114,6 +120,17 @@ public class EntityCrudHandler {
 
     public EntityCrudHandler withTenantQuotaService(TenantQuotaService service) {
         this.tenantQuotaService = service;
+        return this;
+    }
+
+    /**
+     * P0-06: Wires an outbox processor for atomic entity write lifecycle.
+     *
+     * @param outboxProcessor the outbox processor; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public EntityCrudHandler withOutboxProcessor(EntityWriteOutboxProcessor outboxProcessor) {
+        this.outboxProcessor = outboxProcessor;
         return this;
     }
 
@@ -181,10 +198,11 @@ public class EntityCrudHandler {
     // ==================== Transaction Support (DC-BE-003) ====================
 
     /**
-     * DC-BE-003: Executes entity save + event append + semantic indexing in a transaction.
+     * P0-06: Executes entity save + event append in a transaction with outbox pattern.
      *
      * <p>When transactionManager is available, this method wraps the multi-step write operation
-     * in a transaction to ensure atomicity. If any step fails, all operations are rolled back.
+     * in a transaction to ensure atomicity. WebSocket broadcast and semantic indexing are moved
+     * to an outbox pattern for asynchronous processing after the transaction commits.
      *
      * @param tenantId the tenant ID
      * @param collection the collection name
@@ -212,14 +230,10 @@ public class EntityCrudHandler {
                 Map.of("collection", collection),
                 () -> client.save(tenantId, collection, provenanced))
                 .then(entity -> {
-                    // Register rollback handler for entity save (delete the saved entity)
-                    context.registerRollbackHandler(() -> {
-                        log.debug("[DC-BE-003] Rolling back entity save: {}", entity.id());
-                        // Best-effort rollback in sync rollback hook; keep this non-blocking for ActiveJ event loop discipline.
-                        client.delete(tenantId, collection, entity.id());
-                    });
+                    // P0-06: Create outbox entry for async processing instead of direct websocket/semantic operations
+                    String correlationId = http.resolveCorrelationId(request);
                     
-                    // Event append operation
+                    // Event append operation (within transaction)
                     DataCloudClient.Event cdcEvent = DataCloudClient.Event.builder()
                         .type("entity.saved")
                         .payload(buildCdcEnvelope(tenantId, handlerSpan.spanId(), entity, "upsert", null))
@@ -234,25 +248,34 @@ public class EntityCrudHandler {
                         Map.of("collection", entity.collection(), "event.type", "entity.saved"),
                         () -> client.appendEvent(tenantId, cdcEvent))
                         .then(savedEvent -> {
-                            // Register rollback handler for event append (delete the appended event)
-                            context.registerRollbackHandler(() -> {
-                                log.debug("[DC-BE-003] Rolling back event append for entity: {}", entity.id());
-                                // Note: Event rollback may not be fully supported by all EventLogStore implementations
-                                // This is a best-effort rollback
-                            });
-                            
-                            // WebSocket broadcast (non-critical, outside transaction)
-                            wsBroadcaster.accept("collection.saved", Map.of(
-                                "entityId",  entity.id(),
-                                "collection", entity.collection(),
-                                "tenantId",  tenantId
-                            ));
-                            
-                            // Semantic indexing (non-critical, outside transaction)
-                            if (semanticIndexPort != null) {
-                                return semanticIndexPort.index(tenantId, collection, entity)
-                                        .map(indexedEntity -> entity);
+                            // P0-06: Create outbox entry for async websocket broadcast and semantic indexing
+                            if (outboxProcessor != null) {
+                                EntityWriteOutbox outbox = EntityWriteOutbox.builder()
+                                    .tenantId(tenantId)
+                                    .collection(collection)
+                                    .entityId(entity.id())
+                                    .operationType("entity.saved")
+                                    .entitySnapshot(Map.of(
+                                        "id", entity.id(),
+                                        "collection", entity.collection(),
+                                        "version", entity.version(),
+                                        "createdAt", entity.createdAt().toString()
+                                    ))
+                                    .eventPayload(Map.of(
+                                        "eventType", "entity.saved",
+                                        "source", "datacloud.launcher.entity-crud"
+                                    ))
+                                    .correlationId(correlationId)
+                                    .build();
+                                
+                                // Store outbox entry (will be processed asynchronously)
+                                // Note: For production, this should be persisted in the transaction
+                                // For now, we add it to the in-memory processor if available
+                                if (outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
+                                    ((InMemoryEntityWriteOutboxProcessor) outboxProcessor).addPending(outbox);
+                                }
                             }
+                            
                             return Promise.of(entity);
                         });
                 })
@@ -332,11 +355,11 @@ public class EntityCrudHandler {
         if (collection == null) {
             return Promise.of(http.errorResponse(400, "collection path parameter is required"));
         }
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
-        final String resolvedTenantId = tenantId;
+        final String resolvedTenantId = resolutionResult.tenantId();
         final String finalCollection = collection;
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
@@ -443,10 +466,11 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleGetEntity(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -488,10 +512,11 @@ public class EntityCrudHandler {
 
     public Promise<HttpResponse> handleQueryEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -688,11 +713,11 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleDeleteEntity(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
-        final String resolvedTenantId = tenantId;
+        final String resolvedTenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -793,10 +818,11 @@ public class EntityCrudHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchSaveEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -928,10 +954,11 @@ public class EntityCrudHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchDeleteEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -1190,10 +1217,11 @@ public class EntityCrudHandler {
      * <p>Route: {@code POST /api/v1/collections/:collection/metadata}</p>
      */
     public Promise<HttpResponse> handleUpsertCollectionMetadata(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String collection = request.getPathParameter("collection");
         if (collection == null || collection.isBlank()) {
             return Promise.of(http.errorResponse(400, "collection path parameter is required"));
@@ -1251,10 +1279,11 @@ public class EntityCrudHandler {
      * levels consistently across surfaces.
      */
     public Promise<HttpResponse> handleGetDataQualityTrustScores(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) {
@@ -1378,10 +1407,11 @@ public class EntityCrudHandler {
         Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
         if (qErr.isPresent()) return Promise.of(http.errorResponse(400, qErr.get()));
 
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
@@ -1451,10 +1481,11 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleGetEntityAsOf(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String asOfParam = request.getQueryParameter("asOf");
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
@@ -1624,10 +1655,11 @@ public class EntityCrudHandler {
      * can drive navigation without assuming hard-coded names.</p>
      */
     public Promise<HttpResponse> handleListCollections(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         // Prefer the backing EntityStore if it supports listCollections
         try {

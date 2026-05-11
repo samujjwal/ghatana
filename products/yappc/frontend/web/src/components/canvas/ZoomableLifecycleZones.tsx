@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useCallback } from 'react';
 import { FileText as Description } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Zoomable Lifecycle Zones component.
@@ -185,7 +185,7 @@ export function ZoomableLifecycleZones({
   onPhaseClick,
   className,
 }: ZoomableLifecycleZonesProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   // Stable callback ref to avoid re-creating click handlers each render
   const onPhaseClickRef = useRef(onPhaseClick);
   onPhaseClickRef.current = onPhaseClick;

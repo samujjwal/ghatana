@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Studio Mode Layout component.
@@ -34,7 +34,7 @@ export function StudioLayout({
   onClose,
   className,
 }: StudioLayoutProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { toggleStudioMode } = useStudioMode();
   const [leftPanelWidth, setLeftPanelWidth] = useState(250);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);

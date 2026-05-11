@@ -76,7 +76,11 @@ public final class CollectionContextHandler {
 
     public Promise<HttpResponse> handleGetCollectionContext(HttpRequest request) {
         final String requestId = http.resolveCorrelationId(request);
-        final String tenantId = http.requireTenantIdOrFail(request);
+        final HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         final int relationshipDepth = parseRelationshipDepth(request.getQueryParameter("depth"));
         final String collection = Optional.ofNullable(request.getPathParameter("collection"))
             .map(String::trim)
@@ -599,7 +603,11 @@ public final class CollectionContextHandler {
      */
     public Promise<HttpResponse> handleTrustCenterLineage(HttpRequest request) {
         String requestId = http.resolveCorrelationId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));
         }
@@ -664,7 +672,11 @@ public final class CollectionContextHandler {
      */
     public Promise<HttpResponse> handleRagPolicyCheck(HttpRequest request) {
         String requestId = http.resolveCorrelationId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "tenantId is required", requestId));
         }

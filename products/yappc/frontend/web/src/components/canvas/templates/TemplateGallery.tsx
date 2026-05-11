@@ -28,7 +28,7 @@ import {
 } from '@ghatana/design-system';
 import { CardMedia, TextField } from '@ghatana/design-system';
 import type { CanvasState } from '../../../components/canvas/workspace/canvasAtoms';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -201,7 +201,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTemplate, setSelectedTemplate] = useState<AppTemplate | null>(null);
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
 
     // Filter templates
     const filteredTemplates = useMemo(() => {

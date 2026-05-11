@@ -24,6 +24,8 @@ export interface ResidualIslandReviewRequest {
   readonly decision: ResidualIslandDecision;
   /** Optional reviewer note explaining the decision rationale. */
   readonly notes?: string;
+  /** Clear documentation of downstream impact of this decision. */
+  readonly downstreamImpact?: string;
 }
 
 /** Response from the backend after persisting the review. */
@@ -38,6 +40,8 @@ export interface ResidualIslandReviewResponse {
   readonly auditRecordId: string;
   /** ISO-8601 timestamp at which the decision was recorded. */
   readonly reviewedAt: string;
+  /** Echoed downstream impact documentation. */
+  readonly downstreamImpact?: string;
 }
 
 const REVIEW_ENDPOINT_TEMPLATE =
@@ -58,7 +62,8 @@ function isResidualIslandReviewResponse(value: unknown): value is ResidualIsland
     typeof v['residualIslandId'] === 'string' &&
     (v['decision'] === 'ACCEPTED' || v['decision'] === 'REJECTED' || v['decision'] === 'PROMOTED') &&
     typeof v['auditRecordId'] === 'string' &&
-    typeof v['reviewedAt'] === 'string'
+    typeof v['reviewedAt'] === 'string' &&
+    (v['downstreamImpact'] === undefined || typeof v['downstreamImpact'] === 'string')
   );
 }
 
@@ -70,11 +75,18 @@ function isResidualIslandReviewResponse(value: unknown): value is ResidualIsland
 export async function persistResidualIslandReview(
   request: ResidualIslandReviewRequest,
 ): Promise<ResidualIslandReviewResponse> {
-  const { artifactId, residualIslandId, decision, notes } = request;
+  const { artifactId, residualIslandId, decision, notes, downstreamImpact } = request;
 
   if (!artifactId || !residualIslandId) {
     throw new Error(
       'persistResidualIslandReview: artifactId and residualIslandId are required',
+    );
+  }
+
+  // Require downstream impact documentation for PROMOTED decisions
+  if (decision === 'PROMOTED' && !downstreamImpact) {
+    throw new Error(
+      'persistResidualIslandReview: downstreamImpact is required for PROMOTED decisions',
     );
   }
 
@@ -86,7 +98,7 @@ export async function persistResidualIslandReview(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ decision, notes }),
+      body: JSON.stringify({ decision, notes, downstreamImpact }),
     });
   } catch (networkError) {
     throw new Error(
@@ -109,4 +121,18 @@ export async function persistResidualIslandReview(
   }
 
   return payload;
+}
+
+/**
+ * Generate default downstream impact descriptions for residual island decisions.
+ */
+export function generateDefaultDownstreamImpact(decision: ResidualIslandDecision): string {
+  switch (decision) {
+    case 'ACCEPTED':
+      return 'Residual island accepted as-is. Island will be included in the page document without further governance.';
+    case 'REJECTED':
+      return 'Residual island rejected. Island will be removed from the page document and not included in production artifacts.';
+    case 'PROMOTED':
+      return 'Residual island promoted to registry candidate. Will undergo review for inclusion in the component registry as a reusable contract.';
+  }
 }

@@ -66,7 +66,7 @@ import { CanvasReactFlowSurface } from './CanvasReactFlowSurface';
 import { CanvasOverlays } from './CanvasOverlays';
 import { deriveCanvasAccessPolicy } from './canvasAccessPolicy';
 import type { ProjectAccessFields } from '@/services/workspace/accessControl';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -113,7 +113,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     flowStage,
     projectAccess,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // ── Jotai atoms (UI state only – no domain logic) ──────────────────
     const [activePersona, setActivePersona] = useAtom(activePersonaAtom);
     const [isAIModalOpen, setIsAIModalOpen] = useAtom(isAIModalOpenAtom);

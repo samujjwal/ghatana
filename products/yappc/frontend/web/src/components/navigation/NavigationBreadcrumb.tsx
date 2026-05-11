@@ -18,7 +18,7 @@ import { LayoutDashboard as Dashboard, Folder, ChevronDown as KeyboardArrowDown,
 import { Box, MenuItem, ListItemIcon, ListItemText, Divider, Typography } from '@ghatana/design-system';
 import { Button } from '../design-system';
 import { cn } from '../../lib/utils';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type CanvasMode = 'design' | 'architecture' | 'code' | 'deploy';
 
@@ -81,7 +81,7 @@ export function NavigationBreadcrumb({
     onCanvasModeChange,
     className,
 }: NavigationBreadcrumbProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [workspaceMenuAnchor, setWorkspaceMenuAnchor] = useState<null | HTMLElement>(null);
     const [projectMenuAnchor, setProjectMenuAnchor] = useState<null | HTMLElement>(null);

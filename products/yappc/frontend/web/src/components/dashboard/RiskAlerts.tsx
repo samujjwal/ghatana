@@ -14,7 +14,7 @@ import React, { useState } from 'react';
 import { ChevronRight, AlertTriangle, Shield, Zap, Activity, FileCheck, ArrowUp, MoreVertical } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 import type { RiskAlert, RiskSeverity, RiskCategory } from '../../clients/dashboard';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface RiskAlertsProps {
   alerts: RiskAlert[];
@@ -42,7 +42,7 @@ export function RiskAlerts({
   onViewAll,
   projectId,
 }: RiskAlertsProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
   const [showEscalationDialog, setShowEscalationDialog] = useState<string | null>(null);
 

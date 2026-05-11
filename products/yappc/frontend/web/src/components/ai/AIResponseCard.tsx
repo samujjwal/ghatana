@@ -15,7 +15,7 @@ import { useState } from 'react';
 import type { AIResponse } from '../../hooks/useAICommand';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -44,7 +44,7 @@ export function AIResponseCard({
     isConfirming = false,
     className = '',
 }: AIResponseCardProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const { type, summary, details, confidence } = response;
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(details.name || '');

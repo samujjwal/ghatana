@@ -84,7 +84,7 @@ export const normalizeNodesForCompare = (nodes: Node[]) =>
       position: n.position,
       data: n.data || {},
     }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => a.id.i18n.languageCompare(b.id));
 
 export const normalizeElementsForCompare = (elements: CanvasElement[]) =>
   elements
@@ -94,7 +94,7 @@ export const normalizeElementsForCompare = (elements: CanvasElement[]) =>
       position: e.position,
       data: e.data || {},
     }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => a.id.i18n.languageCompare(b.id));
 
 export const normalizeEdgesForCompare = (edges: Edge[]) =>
   edges
@@ -105,7 +105,7 @@ export const normalizeEdgesForCompare = (edges: Edge[]) =>
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
     }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => a.id.i18n.languageCompare(b.id));
 
 export const normalizeConnectionsForCompare = (conns: CanvasConnection[]) =>
   conns
@@ -116,4 +116,4 @@ export const normalizeConnectionsForCompare = (conns: CanvasConnection[]) =>
       sourceHandle: c.sourceHandle,
       targetHandle: c.targetHandle,
     }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => a.id.i18n.languageCompare(b.id));

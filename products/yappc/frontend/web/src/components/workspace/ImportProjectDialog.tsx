@@ -20,7 +20,7 @@ import {
 } from '../../state/atoms/workspaceAtom';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ImportProjectDialogProps {
     isOpen: boolean;
@@ -44,7 +44,7 @@ export function ImportProjectDialog({
     onClose,
     onImported
 }: ImportProjectDialogProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [state] = useAtom(workspaceAtom);
     const addIncludedProject = useSetAtom(addIncludedProjectAtom);
 

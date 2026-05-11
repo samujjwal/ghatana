@@ -14,7 +14,7 @@ import { Box, ListItemText, ListItemButton, Button, Typography, Chip, IconButton
 import { Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, X as CloseIcon, ExternalLink as OpenIcon, Trash2 as DeleteIcon } from 'lucide-react';
 import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
 import { getAssociationColor } from '../../../hooks/useCodeAssociations';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface CodePreviewPopoverProps {
     /** Anchor element for popover */
@@ -83,7 +83,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
     isLoading = false,
     error = null,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [selectedAssociation, setSelectedAssociation] = useState<CodeAssociation | null>(
         associations[0] || null
     );

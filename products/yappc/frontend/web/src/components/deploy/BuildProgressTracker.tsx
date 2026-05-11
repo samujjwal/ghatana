@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Hammer as Build, CheckCircle, XCircle as Cancel, Hourglass as HourglassEmpty, RefreshCw as Refresh, Terminal, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface BuildStep {
     id: string;
@@ -104,7 +104,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
     onDownloadArtifact,
     isPolling = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
 

@@ -11,7 +11,7 @@
 
 import { AlertCircle, RefreshCw, XCircle } from 'lucide-react';
 import { Button } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ErrorStateProps {
   /** Error title */
@@ -69,7 +69,7 @@ export function ErrorState({
   variant = 'card',
   className = '',
 }: ErrorStateProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const Icon = iconMap[type];
   const sizeClass = sizeClasses[size];
 

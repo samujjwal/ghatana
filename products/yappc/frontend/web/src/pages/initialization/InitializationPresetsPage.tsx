@@ -13,7 +13,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type PresetCategory =
   | 'frontend'
@@ -371,7 +371,7 @@ const CATEGORY_FILTERS: { value: PresetCategory | 'all'; label: string }[] = [
 export const InitializationPresetsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const [filter, setFilter] = useState<PresetFilter>({
     category: 'all',

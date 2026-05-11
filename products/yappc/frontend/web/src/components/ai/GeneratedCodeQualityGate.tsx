@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { useGeneratedCodeQualityGate } from '@/hooks/useGeneratedCodeQualityGate';
 import type { QualityCheckResult, QualityCheckStatus } from '@/hooks/useGeneratedCodeQualityGate';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ export function GeneratedCodeQualityGate({
   onAccept,
   className,
 }: GeneratedCodeQualityGateProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { canAccept, isLoading, isError, quality, refetch } =
     useGeneratedCodeQualityGate({ artifactId });
 

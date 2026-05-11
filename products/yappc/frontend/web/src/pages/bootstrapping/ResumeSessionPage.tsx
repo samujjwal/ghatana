@@ -38,7 +38,7 @@ import { Menu } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
 import { Dialog } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import { savedSessionsAtom, type BootstrapSession as StateSession } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
@@ -267,7 +267,7 @@ const EmptyState: React.FC<{ onCreateNew: () => void }> = ({ onCreateNew }) => (
 
 const ResumeSessionPage: React.FC = () => {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [sessions, setSessions] = useAtom(savedSessionsAtom);
 
   // Local state
@@ -328,7 +328,7 @@ const ResumeSessionPage: React.FC = () => {
         });
         break;
       case 'alphabetical':
-        result.sort((a, b) => a.projectName.localeCompare(b.projectName));
+        result.sort((a, b) => a.projectName.i18n.languageCompare(b.projectName));
         break;
     }
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Keyboard Shortcuts Manager component.
@@ -320,7 +320,7 @@ export function KeyboardShortcutsHelp({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const shortcuts = DEFAULT_SHORTCUTS;
 
   const categorizedShortcuts = {

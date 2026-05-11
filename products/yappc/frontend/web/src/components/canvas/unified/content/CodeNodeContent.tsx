@@ -15,7 +15,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Box, IconButton, Tooltip, Select, MenuItem, FormControl, Typography } from '@ghatana/design-system';
 import { Pencil as Edit, Play as PlayArrow, Copy as ContentCopy } from 'lucide-react';
 import { Textarea } from '../../../ui/Textarea';
-import { useI18n } from '../../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface CodeNodeContentProps {
     data?: {
@@ -41,7 +41,7 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
     onChange,
     readonly = false
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(data?.content || DEFAULT_CODE.content);
     const [language, setLanguage] = useState(data?.language || DEFAULT_CODE.language);

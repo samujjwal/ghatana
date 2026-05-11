@@ -17,7 +17,7 @@ import {
     draftStepDataAtom,
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ContextReference {
     id: string;
@@ -49,7 +49,7 @@ const REFERENCE_TYPES: { value: ContextReference['type']; label: string; icon: R
 // ============================================================================
 
 export function ContextStep() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as ContextStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);

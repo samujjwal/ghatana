@@ -13,7 +13,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface Shortcut {
   keys: string[];
@@ -77,7 +77,7 @@ interface KeyboardShortcutsPanelProps {
 
 export function KeyboardShortcutsPanel({ open, onClose }: KeyboardShortcutsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // Filter shortcuts by search query
   const filteredShortcuts = useMemo(() => {

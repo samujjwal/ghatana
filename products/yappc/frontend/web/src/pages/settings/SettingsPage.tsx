@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -103,7 +103,7 @@ function ToggleSwitch({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div className="flex items-center justify-between py-3">
       <div>
@@ -135,7 +135,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
   const [description, setDescription] = useState(settings.general.description);
   const [timezone, setTimezone] = useState(settings.general.timezone);
   const [language, setLanguage] = useState(settings.general.language);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="space-y-6">
@@ -199,7 +199,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
 function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
   const [prefs, setPrefs] = useState(settings.notifications);
   const toggle = (key: keyof typeof prefs) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="divide-y divide-zinc-800">
@@ -250,7 +250,7 @@ function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
 
 function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
   const sec = settings.security;
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="space-y-6">
@@ -326,7 +326,7 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
 }
 
 function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div className="grid gap-3">
       {settings.integrations.length === 0 ? (
@@ -369,7 +369,7 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
 
 function DangerZonePanel() {
   const [confirmText, setConfirmText] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="space-y-6">
@@ -424,7 +424,7 @@ function DangerZonePanel() {
  */
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('General');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data, isLoading, error } = useQuery<WorkspaceSettings>({
     queryKey: ['workspace-settings'],

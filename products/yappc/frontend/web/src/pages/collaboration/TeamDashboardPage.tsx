@@ -50,7 +50,7 @@ import {
   type Activity as ActivityType,
   type TeamRole,
 } from '@ghatana/yappc-api-app';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -259,7 +259,7 @@ const TeamDashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'members' | 'channels' | 'activity'>('members');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // Data queries
   const { data: teamData, loading: teamLoading } = useTeam(teamId ?? '');

@@ -26,7 +26,7 @@ import {
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface OnboardingStep {
   id: string;
@@ -43,7 +43,7 @@ interface EndToEndOnboardingProps {
 export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   const steps: OnboardingStep[] = [

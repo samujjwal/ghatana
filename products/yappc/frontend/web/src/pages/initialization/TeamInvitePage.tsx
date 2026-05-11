@@ -3,7 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -49,7 +49,7 @@ const STATUS_BADGES: Record<InviteStatus, { label: string; className: string }> 
 // ============================================================================
 
 const TeamInvitePage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [members, setMembers] = useState(INITIAL_MEMBERS);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('developer');

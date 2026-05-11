@@ -34,7 +34,7 @@ import { Loader2, AlertCircle, ShieldPlus } from 'lucide-react';
 import { AIAssistLabel } from '../../ai/AIAssistLabel';
 import type { AIAssistSource } from '../../ai/AIAssistLabel';
 import { Button } from '../../ui/Button';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ function SuggestionItem({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function StrideSuggestionPanel({ modelId, onAddThreat, className }: StrideSuggestionPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { data, isLoading, isError } = useQuery<StrideSuggestionData>({
     queryKey: ['stride-suggestions', modelId],
     queryFn: () => fetchSuggestions(modelId),

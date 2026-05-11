@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import type { AIAssistSource } from '../ai/AIAssistLabel';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ function RiskItem({ risk }: { risk: SprintRisk }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function SprintPlanningAidPanel({ projectId, sprintId, className }: SprintPlanningAidPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const enabled = Boolean(projectId) && Boolean(sprintId);
 
   const { data, isLoading, isError } = useQuery<SprintPlanningAidData>({

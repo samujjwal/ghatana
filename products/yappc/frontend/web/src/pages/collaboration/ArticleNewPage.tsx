@@ -15,7 +15,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const templates = [
   { id: 'blank', label: 'Blank', icon: FileText, description: 'Start from scratch' },
@@ -27,7 +27,7 @@ const ArticleNewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [title, setTitle] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('blank');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">

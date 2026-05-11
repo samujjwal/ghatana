@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ArticleAuthor {
   id: string;
@@ -55,7 +55,7 @@ const authHeaders = (): Record<string, string> => ({
  */
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: article, isLoading, error } = useQuery<ArticleData>({
     queryKey: ['article', articleId],

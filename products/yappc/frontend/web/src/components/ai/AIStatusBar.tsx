@@ -4,7 +4,7 @@ import type { OperationState } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
 import { AITypeChip, type AITypeChipProps } from './AITypeChip';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * AI Status Bar component.
@@ -95,7 +95,7 @@ export function AIStatusBar({
   aiRationale,
   aiSources,
 }: AIStatusBarProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showPhaseSelector, setShowPhaseSelector] = React.useState(false);
   const { setCurrentPhase } = useAIStatusBar();
   const prefersReducedMotion = React.useMemo(

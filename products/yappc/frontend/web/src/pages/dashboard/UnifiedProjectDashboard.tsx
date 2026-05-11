@@ -34,7 +34,7 @@ import {
 import { cn } from '../../utils/cn';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import {
   currentProjectAtom,
@@ -143,7 +143,7 @@ function NativeButton({ children, type = 'button', ...props }: NativeButtonProps
 const UnifiedProjectDashboard: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const currentProject = useAtomValue(currentProjectAtom);
   const breadcrumbs = useAtomValue(breadcrumbsAtom);

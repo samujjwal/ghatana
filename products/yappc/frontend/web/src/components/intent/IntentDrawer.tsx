@@ -17,7 +17,7 @@ import { IdeaBriefForm } from './IdeaBriefForm';
 import { ResearchPackEditor } from './ResearchPackEditor';
 import { ProblemStatementEditor } from './ProblemStatementEditor';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
     LifecycleArtifactKind,
     LIFECYCLE_ARTIFACT_CATALOG,
@@ -85,7 +85,7 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
     onAIAssist,
     existingData = {},
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = React.useState(false);

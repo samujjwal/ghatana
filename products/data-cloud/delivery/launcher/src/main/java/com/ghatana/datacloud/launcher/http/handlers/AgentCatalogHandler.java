@@ -64,7 +64,11 @@ public final class AgentCatalogHandler {
      * Returns the full list of agent definitions.
      */
     public Promise<HttpResponse> handleListCatalog(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -91,7 +95,11 @@ public final class AgentCatalogHandler {
     public Promise<HttpResponse> handleGetAgent(HttpRequest request) {
         String rawId = request.getPathParameter("id");
         String agentId = URLDecoder.decode(rawId, StandardCharsets.UTF_8);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

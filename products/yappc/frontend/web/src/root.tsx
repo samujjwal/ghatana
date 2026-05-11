@@ -14,9 +14,18 @@ import { ToastProvider } from './components/common';
 import { AuthProvider } from './providers/AuthProvider';
 import { FeatureFlagProvider } from './providers/FeatureFlagProvider';
 import { AppThemeProvider } from './theme';
-import { I18nProvider } from './i18n/I18nProvider';
+import { I18nProvider } from '@ghatana/i18n';
+import { initI18n } from '@ghatana/i18n';
 import './index.css';
 import '@xyflow/react/dist/style.css';
+
+// Initialize i18n with HTTP backend (loads from /locales/{lng}/{ns}.json)
+const i18nInstance = await initI18n({
+  defaultNS: 'common',
+  ns: ['common'],
+  fallbackLng: 'en',
+  loadPath: '/locales/{{lng}}/{{ns}}.json',
+});
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -81,7 +90,7 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <I18nProvider>
+    <I18nProvider instance={i18nInstance}>
       <AppThemeProvider>
         <QueryClientProvider client={queryClient}>
           <GraphQLProvider>

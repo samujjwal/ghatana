@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, IconButton, Input } from '@ghatana/design-system';
-import { useCapabilityGate } from '../hooks/useCapabilityGate';
+import { useSurfaceGate, useSurfaceSignal } from '../hooks/useSurfaceGate';
 import { useOperationHistory } from '../hooks/useOperationHistory';
 import { OperationHistory, OperationHistoryAlert } from '../components/common/OperationHistory';
 import { useOperations } from '../contexts/OperationsContext';
@@ -614,7 +614,7 @@ export function TrustCenter() {
   const [actionSummary, setActionSummary] = useState<GovernanceActionSummary | null>(null);
   const [purgePreview, setPurgePreview] = useState<RetentionPurgePreview | null>(null);
 
-  const canWriteGovernance = useCapabilityGate(
+  const canWriteGovernance = useSurfaceGate(
     ['governance.write', 'governance.policy.write', 'policy.write'],
     'active',
   );

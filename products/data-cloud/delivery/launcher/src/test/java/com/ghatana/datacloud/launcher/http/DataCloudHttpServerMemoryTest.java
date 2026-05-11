@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * is mocked so tests do not touch real storage.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/memory/** HTTP endpoints (DC-4) 
+ * @doc.purpose Integration tests for /api/v1/action/memory/** HTTP endpoints (DC-4) 
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -60,7 +60,7 @@ class DataCloudHttpServerMemoryTest {
         if (server != null) server.stop(); 
     }
 
-    // ==================== GET /api/v1/memory/:agentId ====================
+    // ==================== GET /api/v1/action/memory/:agentId ====================
 
     @Test
     @DisplayName("storeMemory: persists AGENT_MEMORY item with ttl-derived expiresAt")
@@ -78,7 +78,7 @@ class DataCloudHttpServerMemoryTest {
         startServer(); 
 
         HttpResponse<String> resp = post( 
-            "/api/v1/memory/bot-writer",
+            "/api/v1/action/memory/bot-writer",
             """
             {
               "type": "episodic",
@@ -129,7 +129,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-order?limit=2");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-order?limit=2");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -163,7 +163,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-exp");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-exp");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -191,7 +191,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory?agentId=bot-root&type=semantic&limit=10");
+        HttpResponse<String> resp = get("/api/v1/action/memory?agentId=bot-root&type=semantic&limit=10");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -225,7 +225,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-1");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-1");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -248,7 +248,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-empty");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-empty");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -271,7 +271,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-meta");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-meta");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -282,7 +282,7 @@ class DataCloudHttpServerMemoryTest {
         assertThat(body.get("timestamp")).isNotNull();
     }
 
-    // ==================== GET /api/v1/memory/:agentId/:tier ====================
+    // ==================== GET /api/v1/action/memory/:agentId/:tier ====================
 
     @Test
     @DisplayName("getAgentMemoryByTier(episodic): returns only EPISODIC items")
@@ -298,7 +298,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-2/episodic");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-2/episodic");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -320,7 +320,7 @@ class DataCloudHttpServerMemoryTest {
 
         // All four casing variants should return 200
         for (String tier : List.of("SEMANTIC", "semantic", "Semantic")) { 
-            HttpResponse<String> resp = get("/api/v1/memory/bot-3/" + tier); 
+            HttpResponse<String> resp = get("/api/v1/action/memory/bot-3/" + tier); 
             assertThat(resp.statusCode()) 
                 .as("tier='%s' should be accepted", tier) 
                 .isEqualTo(200); 
@@ -332,7 +332,7 @@ class DataCloudHttpServerMemoryTest {
     void getAgentMemoryByTier_invalidTier_returns400() throws Exception { 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-4/FLASHBACK");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-4/FLASHBACK");
 
         assertThat(resp.statusCode()).isEqualTo(400); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -347,7 +347,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-5/procedural?limit=20&offset=10");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-5/procedural?limit=20&offset=10");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -367,7 +367,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-6/preference?limit=9999");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-6/preference?limit=9999");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -387,7 +387,7 @@ class DataCloudHttpServerMemoryTest {
 
         startServer(); 
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-7/preference");
+        HttpResponse<String> resp = get("/api/v1/action/memory/bot-7/preference");
 
         assertThat(resp.statusCode()).isEqualTo(200); 
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -414,6 +414,7 @@ class DataCloudHttpServerMemoryTest {
         HttpRequest req = HttpRequest.newBuilder() 
             .GET() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("X-Tenant-Id", "default") 
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
@@ -422,6 +423,7 @@ class DataCloudHttpServerMemoryTest {
         HttpRequest req = HttpRequest.newBuilder() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
+            .header("X-Tenant-Id", "default") 
             .POST(HttpRequest.BodyPublishers.ofString(body)) 
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 

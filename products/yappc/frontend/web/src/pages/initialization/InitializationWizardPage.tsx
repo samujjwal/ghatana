@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
   ConfigurationWizard,
   CostEstimator,
@@ -106,7 +106,7 @@ function toValidationErrors(errors: Record<string, string>): StepValidation {
 export const InitializationWizardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

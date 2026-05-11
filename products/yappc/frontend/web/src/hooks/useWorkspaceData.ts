@@ -301,7 +301,7 @@ async function suggestProjectName(
   throw new Error('Unexpected response shape for project name suggestion');
 }
 
-async function suggestProjectSetup(data: {
+async function fetchProjectSetupFromBackend(data: {
   workspaceId: string;
   description?: string;
   preferredType?: ProjectTypeContract;
@@ -697,28 +697,14 @@ export function useNameSuggestions() {
     []
   );
 
-  const suggestProjectSetupWithFallback = useCallback(
+  const suggestProjectSetup = useCallback(
     async (workspaceId: string, description?: string, preferredType?: ProjectTypeContract) => {
-      try {
-        return await suggestProjectSetup({ workspaceId, description, preferredType });
-      } catch {
-        return {
-          suggestion: await suggestProject(workspaceId, preferredType),
-          inferredType: (preferredType ?? 'FULL_STACK') as Project['type'],
-          rationale:
-            'The server-side setup suggestion is unavailable, so the dialog is using the currently selected project type.',
-          summary: 'Fallback suggestion generated from the current workspace context.',
-          recommendations: [
-            'Add a richer project description to improve the initial setup suggestion.',
-          ],
-          relatedProjects: [],
-        } satisfies ProjectSetupSuggestion;
-      }
+      return await fetchProjectSetupFromBackend({ workspaceId, description, preferredType });
     },
-    [suggestProject]
+    []
   );
 
-  return { suggestWorkspace, suggestProject, suggestProjectSetup: suggestProjectSetupWithFallback };
+  return { suggestWorkspace, suggestProject, suggestProjectSetup };
 }
 
 /**

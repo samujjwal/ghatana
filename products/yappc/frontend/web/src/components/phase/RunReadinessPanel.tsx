@@ -13,7 +13,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
 import { Select } from '../ui/Select';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type DeploymentMode = 'planning' | 'preview' | 'production';
 
@@ -114,7 +114,7 @@ export const RunReadinessPanel: React.FC<RunReadinessPanelProps> = ({
   cannotDeployReason,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [planExpanded, setPlanExpanded] = useState(false);
 
   const failedRequiredGates = gates.filter((g) => g.required && g.status === 'failed');

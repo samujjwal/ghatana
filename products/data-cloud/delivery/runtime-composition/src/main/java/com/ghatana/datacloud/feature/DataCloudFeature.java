@@ -57,7 +57,20 @@ public enum DataCloudFeature {
      * <p>When disabled, all {@code /api/v1/connectors} and {@code /data-fabric/connectors}
      * routes return {@code 503 Service Unavailable}.
      */
-    DATA_CLOUD_CONNECTORS(true);
+    DATA_CLOUD_CONNECTORS(true),
+
+    /**
+     * Legacy Action Plane route aliases at root level (off by default; P1-01).
+     *
+     * <p>When disabled, only canonical {@code /api/v1/action/*} routes are registered.
+     * Legacy routes at {@code /api/v1/pipelines}, {@code /api/v1/executions},
+     * {@code /api/v1/learning}, and {@code /api/v1/memory} return {@code 404 Not Found}.
+     * This encourages migration to the canonical Action Plane namespace.
+     *
+     * <p>Enable temporarily for backward compatibility during migration:
+     * {@code DC_FEATURE_LEGACY_ACTION_ROUTES=true}
+     */
+    LEGACY_ACTION_ROUTES(false);
 
     private final boolean defaultEnabled;
 

@@ -25,7 +25,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Alert severity level
@@ -53,7 +53,7 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
   onViewDetails,
   onDismiss,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [isDismissed, setIsDismissed] = useState(false);
   const [severity, setSeverity] = useState<AlertSeverity>('info');
 

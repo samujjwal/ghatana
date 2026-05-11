@@ -15,7 +15,7 @@ import { BaseCanvasContent } from '../BaseCanvasContent';
 import { Accordion, AccordionSummary, AccordionDetails, Box, Typography, Chip } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Settings, Search, ChevronDown as ExpandMore, Cloud, Hammer as Build, Shield as Security, Braces as DataObject } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ConfigFile {
     name: string;
@@ -236,7 +236,7 @@ const ConfigFileItem = ({
 };
 
 export const ConfigBrowserCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [configFiles] = useState<ConfigFile[]>(MOCK_CONFIG_FILES);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState<ConfigFile['category'] | 'all'>('all');

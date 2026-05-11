@@ -477,12 +477,12 @@ export default defineConfig({
     // Frontend is unaware of multiple backend services and always talks to a single gateway
     proxy: {
       '/api': {
-        target: `http://localhost:${process.env.VITE_API_PORT || '7003'}`,
+        target: `http://localhost:${process.env.VITE_API_PORT || '7002'}`,
         changeOrigin: true,
         secure: false,
       },
       '/graphql': {
-        target: `http://localhost:${process.env.VITE_API_PORT || '7003'}`,
+        target: `http://localhost:${process.env.VITE_API_PORT || '7002'}`,
         changeOrigin: true,
         secure: false,
         ws: true,

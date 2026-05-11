@@ -7,7 +7,10 @@ import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import com.ghatana.platform.security.annotation.RequiresRole;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -73,6 +76,40 @@ public final class DataSourceRegistryHandler {
     private final HttpHandlerSupport http;
     private final DataFabricConnector fabric;
     private final AuditService auditService;
+    private final String deploymentProfile;
+    private final IdempotencyStore idempotencyStore;
+
+    /**
+     * @param client       entity store client for persisting connection metadata
+     * @param http         shared HTTP helper
+     * @param fabric       optional DataFabricConnector implementation; may be null
+     * @param auditService optional audit service; when null audit emissions are skipped
+     * @param deploymentProfile deployment profile (e.g., "local", "sovereign", "staging", "production")
+     * @param idempotencyStore idempotency store for connector operations
+     */
+    public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http,
+                                     DataFabricConnector fabric, AuditService auditService,
+                                     String deploymentProfile, IdempotencyStore idempotencyStore) {
+        this.client = client;
+        this.http = http;
+        this.fabric = fabric;
+        this.auditService = auditService;
+        this.deploymentProfile = deploymentProfile != null ? deploymentProfile : "local";
+        this.idempotencyStore = idempotencyStore;
+    }
+
+    /**
+     * @param client       entity store client for persisting connection metadata
+     * @param http         shared HTTP helper
+     * @param fabric       optional DataFabricConnector implementation; may be null
+     * @param auditService optional audit service; when null audit emissions are skipped
+     * @param deploymentProfile deployment profile (e.g., "local", "sovereign", "staging", "production")
+     */
+    public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http,
+                                     DataFabricConnector fabric, AuditService auditService,
+                                     String deploymentProfile) {
+        this(client, http, fabric, auditService, deploymentProfile, null);
+    }
 
     /**
      * @param client       entity store client for persisting connection metadata
@@ -82,19 +119,107 @@ public final class DataSourceRegistryHandler {
      */
     public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http,
                                      DataFabricConnector fabric, AuditService auditService) {
-        this.client = client;
-        this.http = http;
-        this.fabric = fabric;
-        this.auditService = auditService;
+        this(client, http, fabric, auditService, "local");
+    }
+
+    // ─── Helper Methods (P0-09) ─────────────────────────────────────────────────
+
+    /**
+     * P0-09: Check if connector runtime is required for the current deployment profile.
+     * In production/staging/sovereign profiles, connector runtime must be available.
+     */
+    private boolean isConnectorRuntimeRequired() {
+        if (deploymentProfile == null) return false;
+        String lower = deploymentProfile.trim().toLowerCase();
+        return !lower.equals("local") && !lower.equals("embedded") && !lower.equals("test");
+    }
+
+    /**
+     * P0-09: Return 503 error if connector runtime is required but unavailable.
+     */
+    private Promise<HttpResponse> connectorRuntimeUnavailableResponse(String operation) {
+        log.error("[P0-09] Connector runtime is required for {} operation in profile '{}' but is unavailable - rejecting request",
+                  operation, deploymentProfile);
+        return Promise.of(http.errorResponse(503,
+            "Connector runtime is required for " + operation + " operations in this deployment profile. " +
+            "This deployment does not have a configured connector runtime."));
+    }
+
+    // ─── Helper Methods (P0-07) ─────────────────────────────────────────────────
+
+    /**
+     * P0-07: Check idempotency for connector operations.
+     */
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String connectionId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "connector:" + routeAction + ":" + connectionId;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(hasConflict -> {
+                if (hasConflict) {
+                    log.warn("[P0-07] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cachedResponse -> {
+                        if (cachedResponse != null) {
+                            log.info("[P0-07] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            if (cachedResponse instanceof HttpResponse) {
+                                return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cachedResponse, "replay"));
+                            }
+                            if (cachedResponse instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) cachedResponse;
+                                return Promise.of(http.jsonResponse(map));
+                            }
+                            return Promise.of(http.jsonResponse(Map.of("data", cachedResponse)));
+                        }
+                        return Promise.of((HttpResponse) null);
+                    });
+            });
+    }
+
+    /**
+     * P0-07: Store response for idempotent connector operations.
+     */
+    private Promise<Void> storeIdempotency(String tenantId, String connectionId, String routeAction,
+                                          HttpRequest request, Object response) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "connector:" + routeAction + ":" + connectionId;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
     }
 
     // ─── GET /api/v1/connectors ───────────────────────────────────────────────
 
     public Promise<HttpResponse> handleListConnections(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         return client.query(tenantId, DC_CONNECTIONS, DataCloudClient.Query.limit(500))
             .map(entities -> {
                 List<Map<String, Object>> items = entities.stream()
@@ -113,10 +238,13 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors ──────────────────────────────────────────────
 
     public Promise<HttpResponse> handleRegisterConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+
+        // P0-07: Check idempotency before processing
         return request.loadBody().then(buf -> {
             try {
                 @SuppressWarnings("unchecked")
@@ -129,27 +257,41 @@ public final class DataSourceRegistryHandler {
                 }
 
                 String id = payload.containsKey("id") ? (String) payload.get("id") : java.util.UUID.randomUUID().toString();
-                Map<String, Object> data = new LinkedHashMap<>(payload);
-                applyCredentialStoragePolicy(data, payload);
-                data.put("tenantId", tenantId);
-                data.put("id", id);
-                data.put("createdAt", Instant.now().toString());
-                data.put("updatedAt", Instant.now().toString());
-                data.put("state", data.getOrDefault("state", "INACTIVE"));
-                if (!data.containsKey("healthStatus")) {
-                    data.put("healthStatus", "unknown");
-                }
 
-                return client.save(tenantId, DC_CONNECTIONS, data)
-                    .map(saved -> {
-                        emitConnectorAudit(tenantId, saved.id(), "CONNECTOR_CREATED", true);
-                        return http.jsonResponse(201, Map.of(
-                            "tenantId", tenantId,
-                            "connectionId", saved.id(),
-                            "state", data.get("state"),
-                            "created", true,
-                            "timestamp", Instant.now().toString()
-                        ));
+                // P0-07: Check idempotency for register operation
+                return checkIdempotency(tenantId, id, "register", request)
+                    .then(idempotencyResponse -> {
+                        if (idempotencyResponse != null) {
+                            return Promise.of(idempotencyResponse);
+                        }
+
+                        Map<String, Object> data = new LinkedHashMap<>(payload);
+                        applyCredentialStoragePolicy(data, payload);
+                        data.put("tenantId", tenantId);
+                        data.put("id", id);
+                        data.put("createdAt", Instant.now().toString());
+                        data.put("updatedAt", Instant.now().toString());
+                        data.put("state", data.getOrDefault("state", "INACTIVE"));
+                        if (!data.containsKey("healthStatus")) {
+                            data.put("healthStatus", "unknown");
+                        }
+
+                        return client.save(tenantId, DC_CONNECTIONS, data)
+                            .map(saved -> {
+                                emitConnectorAudit(tenantId, saved.id(), "CONNECTOR_CREATED", true);
+                                Map<String, Object> responseBody = Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", saved.id(),
+                                    "state", data.get("state"),
+                                    "created", true,
+                                    "timestamp", Instant.now().toString()
+                                );
+                                
+                                // P0-07: Store response for idempotency
+                                storeIdempotency(tenantId, saved.id(), "register", request, responseBody);
+                                
+                                return http.jsonResponse(201, responseBody);
+                            });
                     });
             } catch (Exception e) {
                 log.error("[registerConnection] tenant={} failed: {}", tenantId, e.getMessage(), e);
@@ -161,10 +303,11 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId ─────────────────────────────────
 
     public Promise<HttpResponse> handleGetConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -177,17 +320,25 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/test ───────────────────────────
 
     public Promise<HttpResponse> handleTestConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
+
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("connector test");
+        }
+
         if (fabric == null) {
             // DC-P2-006: When no fabric connector is available, do NOT mutate the connection state.
             // Setting state to TESTING creates a phantom state that never resolves; return pending instead.
+            // This path is only allowed in local/test profiles where connector runtime is optional.
             return Promise.of(http.jsonResponse(Map.of(
                 "tenantId", tenantId,
                 "connectionId", connectionId,
@@ -234,127 +385,155 @@ public final class DataSourceRegistryHandler {
      * @return Promise with enable result
      */
     public Promise<HttpResponse> handleEnableConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
 
-        // P1-6: Require fabric connector for production-grade enable
-        if (fabric == null) {
-            log.warn("[enableConnection] tenant={} id={} - Cannot enable without DataFabricConnector", tenantId, connectionId);
-            return Promise.of(http.errorResponse(503,
-                "Connector enable requires DataFabricConnector. " +
-                "This deployment does not have a configured connector runtime."));
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("connector enable");
         }
 
-        // Set state to TESTING during validation
-        return updateConnectionState(tenantId, connectionId, "TESTING", "validating")
-            .then(e -> fabric.testConnection(connectionId))
-            .map(result -> {
-                if (result.success()) {
-                    // Validation passed - mark ACTIVE
-                    updateConnectionStateAsync(tenantId, connectionId, "ACTIVE", "healthy");
-                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLED", true);
-                    return http.jsonResponse(Map.of(
-                        "tenantId", tenantId,
-                        "connectionId", connectionId,
-                        "state", "ACTIVE",
-                        "enabled", true,
-                        "validated", true,
-                        "latencyMs", result.latencyMs(),
-                        "timestamp", Instant.now().toString()
-                    ));
-                } else {
-                    // Validation failed - mark ERROR and reject enable
-                    updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
-                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLE_REJECTED", false);
-                    return http.jsonResponse(422, Map.of(
-                        "tenantId", tenantId,
-                        "connectionId", connectionId,
-                        "state", "ERROR",
-                        "enabled", false,
-                        "validated", false,
-                        "validationError", result.message(),
-                        "timestamp", Instant.now().toString()
-                    ));
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(tenantId, connectionId, "enable", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
                 }
+
+                // P1-6: Require fabric connector for production-grade enable
+                if (fabric == null) {
+                    log.warn("[enableConnection] tenant={} id={} - Cannot enable without DataFabricConnector", tenantId, connectionId);
+                    return Promise.of(http.errorResponse(503,
+                        "Connector enable requires DataFabricConnector. " +
+                        "This deployment does not have a configured connector runtime."));
+                }
+
+                // Set state to TESTING during validation
+                return updateConnectionState(tenantId, connectionId, "TESTING", "validating")
+                    .then(e -> fabric.testConnection(connectionId))
+                    .map(result -> {
+                        if (result.success()) {
+                            // Validation passed - mark ACTIVE
+                            updateConnectionStateAsync(tenantId, connectionId, "ACTIVE", "healthy");
+                            emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLED", true);
+                            Map<String, Object> responseBody = Map.of(
+                                "tenantId", tenantId,
+                                "connectionId", connectionId,
+                                "state", "ACTIVE",
+                                "enabled", true,
+                                "timestamp", Instant.now().toString()
+                            );
+                            storeIdempotency(tenantId, connectionId, "enable", request, responseBody);
+                            return http.jsonResponse(responseBody);
+                        } else {
+                            // Validation failed - mark ERROR
+                            updateConnectionStateAsync(tenantId, connectionId, "ERROR", "validation_failed");
+                            return http.jsonResponse(400, Map.of(
+                                "tenantId", tenantId,
+                                "connectionId", connectionId,
+                                "state", "ERROR",
+                                "enabled", false,
+                                "error", result.message(),
+                                "timestamp", Instant.now().toString()
+                            ));
+                        }
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("[enableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                        updateConnectionStateAsync(tenantId, connectionId, "ERROR", "internal_error");
+                        return Promise.of(http.errorResponse(500, "Failed to enable connection: " + e.getMessage()));
+                    });
             })
-            .then(
-                r -> Promise.of(r),
-                e -> {
-                    log.error("[enableConnection] tenant={} id={} validation failed: {}",
-                        tenantId, connectionId, e.getMessage(), e);
-                    updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
-                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLE_FAILED", false);
-                    return Promise.of(http.errorResponse(502,
-                        "Enable validation failed: " + e.getMessage()));
-                });
+            .then(Promise::of, e -> {
+                log.error("[enableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to enable connection: " + e.getMessage()));
+            });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/disable ──────────────────────────
 
     public Promise<HttpResponse> handleDisableConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
-        if (fabric != null) {
-            return fabric.disconnect(connectionId)
-                .then(() -> updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled"))
-                .map(e -> {
-                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
-                    return http.jsonResponse(Map.of(
-                        "tenantId", tenantId,
-                        "connectionId", connectionId,
-                        "state", "INACTIVE",
-                        "enabled", false,
-                        "timestamp", Instant.now().toString()
-                    ));
-                })
-                .then(
-                    r -> Promise.of(r),
-                    e -> {
-                        log.error("[disableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
-                        return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
-                            .map(updated -> http.jsonResponse(Map.of(
+
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(tenantId, connectionId, "disable", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                if (fabric != null) {
+                    return fabric.disconnect(connectionId)
+                        .then(() -> updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled"))
+                        .map(e -> {
+                            emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
+                            Map<String, Object> responseBody = Map.of(
                                 "tenantId", tenantId,
                                 "connectionId", connectionId,
                                 "state", "INACTIVE",
                                 "enabled", false,
-                                "warning", "Disconnect failed but state set to inactive: " + e.getMessage(),
                                 "timestamp", Instant.now().toString()
-                            )));
+                            );
+                            storeIdempotency(tenantId, connectionId, "disable", request, responseBody);
+                            return http.jsonResponse(responseBody);
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[disableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                            return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
+                                .map(updated -> http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "state", "INACTIVE",
+                                    "enabled", false,
+                                    "timestamp", Instant.now().toString(),
+                                    "message", "Connector disabled (fabric error, state updated)"
+                                )));
+                        });
+                }
+                return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
+                    .map(e -> {
+                        emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
+                        Map<String, Object> responseBody = Map.of(
+                            "tenantId", tenantId,
+                            "connectionId", connectionId,
+                            "state", "INACTIVE",
+                            "enabled", false,
+                            "timestamp", Instant.now().toString()
+                        );
+                        storeIdempotency(tenantId, connectionId, "disable", request, responseBody);
+                        return http.jsonResponse(responseBody);
                     });
-        }
-        return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
-            .map(e -> {
-                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
-                return http.jsonResponse(Map.of(
-                    "tenantId", tenantId,
-                    "connectionId", connectionId,
-                    "state", "INACTIVE",
-                    "enabled", false,
-                    "timestamp", Instant.now().toString()
-                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[disableConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to disable connection: " + e.getMessage()));
             });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/rotate-credentials ───────────────
 
     public Promise<HttpResponse> handleRotateCredentials(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
@@ -403,11 +582,12 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId/health ──────────────────────────
 
     public Promise<HttpResponse> handleGetHealth(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
@@ -462,15 +642,23 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/connectors/:connectionId/schema ───────────────────────────
 
     public Promise<HttpResponse> handleGetSchema(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
+
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("connector schema retrieval");
+        }
+
         if (fabric == null) {
+            // This path is only allowed in local/test profiles where connector runtime is optional.
             return Promise.of(http.errorResponse(503, "Data fabric connector not available"));
         }
         return fabric.getSchema(connectionId)
@@ -491,28 +679,33 @@ public final class DataSourceRegistryHandler {
     // ─── POST /api/v1/connectors/:connectionId/sync ────────────────────────────
 
     public Promise<HttpResponse> handleTriggerSync(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
-        if (fabric == null) {
-            return Promise.of(http.jsonResponse(Map.of(
-                "tenantId", tenantId,
-                "connectionId", connectionId,
-                "syncStatus", "pending",
-                "message", "Data fabric connector not available; sync queued",
-                "timestamp", Instant.now().toString()
-            )));
+
+        // P0-09: Fail closed when connector runtime is unavailable in production/staging/sovereign profiles
+        if (isConnectorRuntimeRequired() && fabric == null) {
+            return connectorRuntimeUnavailableResponse("connector sync");
         }
-        return request.loadBody().then(buf -> {
-            try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> payload = buf == null || buf.readRemaining() == 0
-                    ? Map.of()
+
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(tenantId, connectionId, "sync", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
+                }
+
+                try {
+                    var buf = request.getBody();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> payload = buf == null || buf.readRemaining() == 0
+                        ? Map.of()
                     : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
                 // Build a minimal SyncConfig from payload
                 @SuppressWarnings("unchecked")
@@ -528,42 +721,49 @@ public final class DataSourceRegistryHandler {
                     columns
                 );
                 return updateConnectionState(tenantId, connectionId, "SYNCING", "syncing")
-                    .then(e -> fabric.sync(connectionId, config))
-                    .map(result -> {
-                        String postState = result.success() ? "ACTIVE" : "ERROR";
-                        String postHealth = result.success() ? "healthy" : "unhealthy";
-                        updateConnectionStateAsync(tenantId, connectionId, postState, postHealth);
-                        return http.jsonResponse(Map.of(
-                            "tenantId", tenantId,
-                            "connectionId", connectionId,
-                            "syncStatus", result.success() ? "completed" : "failed",
-                            "recordsSynced", result.recordsSynced(),
-                            "recordsFailed", result.recordsFailed(),
-                            "message", result.errorMessage(),
-                            "timestamp", Instant.now().toString()
-                        ));
-                    })
-                    .then(
-                        r -> Promise.of(r),
-                        ex -> {
-                            updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
-                            log.error("[triggerSync] tenant={} id={} failed: {}", tenantId, connectionId, ex.getMessage(), ex);
-                            return Promise.of(http.errorResponse(502, "Sync failed: " + ex.getMessage()));
-                        });
-            } catch (Exception e) {
-                return Promise.of(http.errorResponse(400, "Invalid sync payload: " + e.getMessage()));
-            }
-        });
+                        .then(e -> fabric.sync(connectionId, config))
+                        .map(result -> {
+                            String postState = result.success() ? "ACTIVE" : "ERROR";
+                            String postHealth = result.success() ? "healthy" : "unhealthy";
+                            updateConnectionStateAsync(tenantId, connectionId, postState, postHealth);
+                            Map<String, Object> responseBody = Map.of(
+                                "tenantId", tenantId,
+                                "connectionId", connectionId,
+                                "syncStatus", result.success() ? "completed" : "failed",
+                                "recordsSynced", result.recordsSynced(),
+                                "recordsFailed", result.recordsFailed(),
+                                "message", result.errorMessage(),
+                                "timestamp", Instant.now().toString()
+                            );
+                            storeIdempotency(tenantId, connectionId, "sync", request, responseBody);
+                            return http.jsonResponse(responseBody);
+                        })
+                        .then(
+                            r -> Promise.of(r),
+                            ex -> {
+                                updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                                log.error("[triggerSync] tenant={} id={} failed: {}", tenantId, connectionId, ex.getMessage(), ex);
+                                return Promise.of(http.errorResponse(502, "Sync failed: " + ex.getMessage()));
+                            });
+                } catch (Exception e) {
+                    return Promise.of(http.errorResponse(400, "Invalid sync payload: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[triggerSync] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to trigger sync: " + e.getMessage()));
+            });
     }
 
     // ─── GET /api/v1/connectors/:connectionId/sync/status ──────────────────────
 
     public Promise<HttpResponse> handleGetSyncStatus(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        String connectionId = request.getPathParameter("connectionId");
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
+        String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
@@ -713,10 +913,11 @@ public final class DataSourceRegistryHandler {
      * @return Promise with fabric metrics response
      */
     public Promise<HttpResponse> handleGetFabricMetrics(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
 
         // DC-P1-002: Gate behind DATA_CLOUD_DATA_FABRIC feature flag (disabled by default).
         // Live fabric metrics require a real DataFabricConnector implementation.
@@ -965,10 +1166,11 @@ public final class DataSourceRegistryHandler {
      * @return a Promise resolving to the HTTP response
      */
     public Promise<HttpResponse> handleDeleteConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
@@ -979,21 +1181,34 @@ public final class DataSourceRegistryHandler {
         final String finalTenantId = tenantId;
         final String finalConnectionId = connectionId;
 
-        return client.findById(finalTenantId, DC_CONNECTIONS, finalConnectionId)
-            .then(opt -> {
-                if (opt.isEmpty()) {
-                    return Promise.of(http.errorResponse(404, "Connection not found: " + finalConnectionId));
+        // P0-07: Check idempotency before processing
+        return checkIdempotency(finalTenantId, finalConnectionId, "delete", request)
+            .then(idempotencyResponse -> {
+                if (idempotencyResponse != null) {
+                    return Promise.of(idempotencyResponse);
                 }
-                return client.delete(finalTenantId, DC_CONNECTIONS, finalConnectionId)
-                    .map(ignored -> {
-                        log.info("[deleteConnection] tenant={} connectionId={} deleted", finalTenantId, finalConnectionId);
-                        emitConnectorAudit(finalTenantId, finalConnectionId, "CONNECTOR_DELETED", true);
-                        return http.noContentResponse();
+
+                return client.findById(finalTenantId, DC_CONNECTIONS, finalConnectionId)
+                    .then(opt -> {
+                        if (opt.isEmpty()) {
+                            return Promise.of(http.errorResponse(404, "Connection not found: " + finalConnectionId));
+                        }
+                        return client.delete(finalTenantId, DC_CONNECTIONS, finalConnectionId)
+                            .map(ignored -> {
+                                log.info("[deleteConnection] tenant={} connectionId={} deleted", finalTenantId, finalConnectionId);
+                                emitConnectorAudit(finalTenantId, finalConnectionId, "CONNECTOR_DELETED", true);
+                                
+                                // P0-07: Store response for idempotency (204 No Content)
+                                HttpResponse response = http.noContentResponse();
+                                storeIdempotency(finalTenantId, finalConnectionId, "delete", request, response);
+                                
+                                return response;
+                            })
+                            .then(Promise::of, e -> {
+                                log.error("[deleteConnection] tenant={} connectionId={} failed: {}", finalTenantId, finalConnectionId, e.getMessage(), e);
+                                return Promise.of(http.errorResponse(500, "Failed to delete connection: " + e.getMessage()));
+                            });
                     });
-            })
-            .then(Promise::of, e -> {
-                log.error("[deleteConnection] tenant={} connectionId={} failed: {}", finalTenantId, finalConnectionId, e.getMessage(), e);
-                return Promise.of(http.errorResponse(500, "Failed to delete connection: " + e.getMessage()));
             });
     }
 
@@ -1012,10 +1227,11 @@ public final class DataSourceRegistryHandler {
      * @return a Promise resolving to the HTTP response
      */
     public Promise<HttpResponse> handleUpdateConnection(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String connectionId = request.getPathParameter("connectionId");
         if (connectionId == null || connectionId.isBlank()) {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));

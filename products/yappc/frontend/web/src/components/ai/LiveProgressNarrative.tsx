@@ -20,7 +20,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ export function LiveProgressNarrative({
 }: LiveProgressNarrativeProps) {
   const [events, setEvents] = useState<NarrativeEvent[]>([]);
   const [status, setStatus] = useState<NarrativeStreamStatus>('idle');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const sseRef = useRef<EventSource | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);

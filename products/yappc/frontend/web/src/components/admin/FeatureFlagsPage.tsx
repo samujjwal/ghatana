@@ -39,7 +39,7 @@ import {
   type FeatureFlag,
   type FeatureFlagAuditEntry,
 } from '../../services/admin/featureFlagsApi';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { useAtomValue } from 'jotai';
 import { currentWorkspaceIdAtom } from '../../state/atoms/workspaceAtom';
 import { Button } from '../ui/Button';
@@ -71,7 +71,7 @@ const ToggleConfirmDialog: React.FC<ToggleConfirmDialogProps> = ({
   onCancel,
   isBusy,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [reason, setReason] = useState('');
   const action = flag.enabled ? 'disable' : 'enable';
 
@@ -159,7 +159,7 @@ interface AuditDrawerProps {
 }
 
 const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { data: entries = [], isLoading } = useQuery<FeatureFlagAuditEntry[]>({
     queryKey: ['flag-audit', tenantId, flagKey],
     queryFn: () => getFeatureFlagAuditLog(tenantId, flagKey),
@@ -293,7 +293,7 @@ const FlagRow: React.FC<FlagRowProps> = ({ flag, onToggle, onShowAudit }) => {
  * ```
  */
 export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const tenantId = useAtomValue(currentWorkspaceIdAtom) ?? 'default';
   const queryClient = useQueryClient();
 

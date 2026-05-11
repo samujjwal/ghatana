@@ -36,7 +36,7 @@ import {
 } from '../rail-config';
 import { SHAPE_TEMPLATES } from '../ShapeLibrary';
 import { Button } from '../../../ui/Button';
-import { useI18n } from '../../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
   basic: 'basic',
@@ -50,7 +50,7 @@ const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
  * Enhanced Assets Panel Component
  */
 export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<
     Set<AssetCategory>
@@ -118,7 +118,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
       if (aPriority !== -1) return -1;
       if (bPriority !== -1) return 1;
 
-      return a.localeCompare(b);
+      return a.i18n.languageCompare(b);
     });
   }, [assetsByCategory, prioritizedCategories]);
 

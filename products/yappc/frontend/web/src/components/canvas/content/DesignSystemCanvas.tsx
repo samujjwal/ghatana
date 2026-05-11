@@ -20,7 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface DesignToken {
     id: string;
@@ -259,7 +259,7 @@ const getCategoryIcon = (category: DesignToken['category']) => {
 };
 
 export const DesignSystemCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [tokens] = useState<DesignToken[]>(MOCK_DESIGN_TOKENS);
     const [selectedToken, setSelectedToken] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

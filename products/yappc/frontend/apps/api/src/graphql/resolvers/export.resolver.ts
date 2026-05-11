@@ -12,10 +12,10 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../../database/client';
 import type { ResolverContext } from '../types';
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 // ---------------------------------------------------------------------------
 // Arg shapes

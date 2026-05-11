@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
@@ -15,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,15 +56,15 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
-        lenient().when(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance")) 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(anyInt(), anyString())) 
             .thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("list rejects missing tenant before plugin registry access")
     void listRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleListPlugins(request)); 
 
@@ -73,7 +77,7 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     @DisplayName("get rejects missing tenant before plugin lookup")
     void getRejectsMissingTenant() { 
         when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetPlugin(request)); 
 
@@ -88,7 +92,7 @@ class PluginInstallHandlerTest extends EventloopTestBase {
         // Enable upgrade path so tenant validation is exercised before body loading.
         handler.withPluginUpgradeEnabled(true); 
         when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request)); 
 

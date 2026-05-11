@@ -14,7 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { AlertTriangle as Warning, CheckCircle, XCircle as Cancel, Plus as Add, User as Person, Clock as Schedule, FileText as Description, ChevronDown as ExpandMore, ChevronUp as ExpandLess, Link as LinkIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface IncidentEvent {
     timestamp: string;
@@ -92,7 +92,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
     onAssign,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [expandedIncident, setExpandedIncident] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
     const [newNote, setNewNote] = useState<Record<string, string>>({});

@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import type { Conflict, ResolutionSuggestion } from 'yappc-collab/crdt';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ManualConflictResolution {
   conflictId: string;
@@ -152,7 +152,7 @@ export function ConflictResolver({
   onResolve,
   onCancel,
 }: ConflictResolverProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const mergeInputId = useId();
   const notesInputId = useId();
   const [mergeValue, setMergeValue] = useState<string>(() =>

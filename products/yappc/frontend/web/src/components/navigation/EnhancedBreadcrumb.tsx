@@ -27,7 +27,7 @@ import { LifecyclePhase } from '../../types/lifecycle';
 import { PHASE_LABELS } from '../../styles/design-tokens';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface BreadcrumbSegment {
     type: 'home' | 'workspace' | 'project' | 'section';
@@ -380,7 +380,7 @@ export function EnhancedBreadcrumb({
     onCreateWorkspace,
     onCreateProject,
 }: EnhancedBreadcrumbProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [anchorElements, setAnchorElements] = useState<Record<string, HTMLElement>>({});

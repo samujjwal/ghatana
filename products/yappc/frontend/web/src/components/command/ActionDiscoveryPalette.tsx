@@ -1,4 +1,4 @@
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 /**
  * Action Discovery Palette
  *
@@ -62,7 +62,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
   initialQuery = '',
   loading = false,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);

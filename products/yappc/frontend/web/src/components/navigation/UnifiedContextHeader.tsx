@@ -49,7 +49,7 @@ import { NewButton } from './QuickActionsPanel';
 import { AgentActivityBadge } from '../workspace/AgentActivityBadge';
 import type { HeaderRoleInfo } from '../../state/atoms/layoutAtom';
 import { cn } from '../../lib/utils';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface UserInfo {
   id: string;
@@ -161,7 +161,7 @@ export function UnifiedContextHeader({
   onCreateWorkflow,
   className,
 }: UnifiedContextHeaderProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [userMenuAnchor, setUserMenuAnchor] =
     React.useState<null | HTMLElement>(null);
 

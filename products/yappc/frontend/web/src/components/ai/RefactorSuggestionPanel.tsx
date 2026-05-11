@@ -30,7 +30,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
   applyRefactorSuggestion,
   listRefactorSuggestions,
@@ -108,7 +108,7 @@ interface SuggestionRowProps {
 }
 
 function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRowProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
 
@@ -286,7 +286,7 @@ export function RefactorSuggestionPanel({
   open,
   onClose,
 }: RefactorSuggestionPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [activeSimResult, setActiveSimResult] = useState<SimulateResult | null>(null);
 
   const handleSimulateSuccess = useCallback((result: SimulateResult) => {

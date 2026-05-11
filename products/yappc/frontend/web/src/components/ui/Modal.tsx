@@ -1,4 +1,4 @@
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
@@ -83,7 +83,7 @@ export function Modal({
   footer,
   className = '',
 }: ModalProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

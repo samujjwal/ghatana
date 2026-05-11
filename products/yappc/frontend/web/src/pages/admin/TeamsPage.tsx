@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -57,7 +57,7 @@ async function fetchTeams(search: string): Promise<Team[]> {
 const TeamsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: teams, isLoading, error } = useQuery<Team[]>({
     queryKey: ['admin-teams', search],

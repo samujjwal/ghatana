@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, CheckCircle2, Info, Lightbulb, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Validation Panel component.
@@ -55,7 +55,7 @@ function ValidationIssueItem({
   issue: ValidationIssue;
   onClick?: (issue: ValidationIssue) => void;
 }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div
       className={cn(
@@ -101,7 +101,7 @@ export function ValidationPanel({
   onFixAll,
   className,
 }: ValidationPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const stats = React.useMemo(() => {
     return {

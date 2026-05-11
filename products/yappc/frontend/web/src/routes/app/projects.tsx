@@ -106,12 +106,12 @@ export default function ProjectsRoute() {
         result.sort((a, b) => {
             switch (sortBy) {
                 case 'name':
-                    return a.name.localeCompare(b.name);
+                    return a.name.i18n.languageCompare(b.name);
                 case 'phase':
-                    return (a.currentPhase || 'INTENT').localeCompare(b.currentPhase || 'INTENT');
+                    return (a.currentPhase || 'INTENT').i18n.languageCompare(b.currentPhase || 'INTENT');
                 case 'updated':
                 default:
-                    return (b.lastActivityAt || '').localeCompare(a.lastActivityAt || '');
+                    return (b.lastActivityAt || '').i18n.languageCompare(a.lastActivityAt || '');
             }
         });
 

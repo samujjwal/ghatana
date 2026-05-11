@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -93,7 +93,7 @@ function healthBarColor(score: number): string {
 const ServiceMapPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data, isLoading, error } = useQuery<TopologyData>({
     queryKey: ['service-topology'],

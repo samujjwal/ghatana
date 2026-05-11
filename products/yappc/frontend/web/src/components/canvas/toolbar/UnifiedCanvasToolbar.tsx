@@ -25,7 +25,7 @@ import type { CanvasMode } from '../../../types/canvasMode';
 import type { AbstractionLevel } from '../../../types/canvas';
 import { type AutoSaveStatus } from '../versioning/AutoSaveIndicator';
 import { TOOLBAR, TRANSITIONS, RADIUS, Z_INDEX } from '../../../styles/design-tokens';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -328,7 +328,7 @@ export function UnifiedCanvasToolbar({
     onSketchToolChange: _onSketchToolChange,
     className = '',
 }: UnifiedCanvasToolbarProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // Media query for mobile responsiveness
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));

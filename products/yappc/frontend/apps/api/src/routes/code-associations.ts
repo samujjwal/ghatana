@@ -10,10 +10,10 @@
  */
 
 import { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '../generated/prisma';
+import { getPrismaClient } from '../database/client';
 import { requirePermission } from '../middleware/rbac.middleware';
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 const codeAssociationsRoutes: FastifyPluginAsync = async (fastify) => {
   /**

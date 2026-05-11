@@ -29,7 +29,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { RotateCcw as Restore, Eye as Visibility, Trash2 as Delete, Save } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { CanvasSnapshot } from '../../../services/canvas/CanvasPersistence';
 
@@ -95,7 +95,7 @@ export const VersionHistoryList: React.FC<{
     onDelete?: (snapshotId: string) => void;
     onViewDiff?: (snapshot: CanvasSnapshot) => void;
 }> = ({ snapshots, currentVersion, onRestore, onDelete, onViewDiff }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const sortedSnapshots = [...snapshots].sort((a, b) => b.timestamp - a.timestamp);
 
     if (sortedSnapshots.length === 0) {
@@ -199,7 +199,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
     open,
     onClose,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [newSnapshotLabel, setNewSnapshotLabel] = useState('');
     const [newSnapshotDescription, setNewSnapshotDescription] = useState('');

@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
@@ -83,7 +85,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         handler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, http)
                 .withOpenSearchConnector(openSearchConnector)
                 .withTenantQuotaService(quotaService);
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required"))
+        lenient().when(http.errorResponse(anyInt(), anyString()))
                 .thenReturn(mock(HttpResponse.class));
         lenient().when(http.errorResponse(eq(429), anyString()))
                 .thenReturn(mock(HttpResponse.class));
@@ -98,7 +100,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         @Test
         @DisplayName("entity CDC stream returns 429 when quota service rejects the connection")
         void entityCdcStream_returns429WhenQuotaExceeded() {
-            when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-a", null));
             when(request.getPathParameter("collection")).thenReturn("orders");
             when(quotaService.checkQuota("tenant-a", "CONNECTION", 1))
                     .thenReturn(QuotaCheckResult.reject("max connections reached", 10, 10));
@@ -113,7 +115,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         @Test
         @DisplayName("entity CDC stream proceeds when quota service permits the connection")
         void entityCdcStream_proceedsWhenQuotaAllowed() {
-            when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-a", null));
             when(request.getPathParameter("collection")).thenReturn("events");
             when(quotaService.checkQuota("tenant-a", "CONNECTION", 1))
                     .thenReturn(QuotaCheckResult.permit());
@@ -141,7 +143,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
             SseStreamingHandler handlerWithoutQuota = new SseStreamingHandler(
                     client, brain, learningBridge, objectMapper, http)
                     .withOpenSearchConnector(openSearchConnector);
-            when(http.requireTenantIdOrFail(request)).thenReturn("tenant-b");
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-b", null));
             when(request.getPathParameter("collection")).thenReturn("products");
 
             EventLogStore mockEventLogStore = mock(EventLogStore.class);
@@ -164,7 +166,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         @Test
         @DisplayName("missing tenant header is always rejected before any stream is opened")
         void missingTenantIsAlwaysRejected() {
-            when(http.requireTenantIdOrFail(request)).thenReturn(null);
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized"));
 
             runPromise(() -> handler.handleEntityCdcStream(request));
 
@@ -177,9 +179,9 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         @DisplayName("tenant-A cannot trigger tenant-B CDC stream via header manipulation")
         void tenantACannotOpenTenantBStream() {
             // Simulate tenant resolution returning tenant-a regardless of caller manipulation.
-            // The contract is: the resolved tenantId (from requireTenantIdOrFail) is passed to
+            // The contract is: the resolved tenantId (from requireTenantIdWithError) is passed to
             // TenantContext; callers cannot inject a foreign tenantId after the header check.
-            when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-a", null));
             when(request.getPathParameter("collection")).thenReturn("secrets");
             when(quotaService.checkQuota("tenant-a", "CONNECTION", 1))
                     .thenReturn(QuotaCheckResult.permit());
@@ -214,7 +216,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
         @DisplayName("shutdown() after adding a mock subscription cancels it")
         void shutdownCancelsMockSubscription() {
             // Open a stream so a subscription is registered
-            when(http.requireTenantIdOrFail(request)).thenReturn("tenant-s");
+            when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.success("tenant-s", null));
             when(request.getPathParameter("collection")).thenReturn("audit-log");
             when(quotaService.checkQuota("tenant-s", "CONNECTION", 1))
                     .thenReturn(QuotaCheckResult.permit());

@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
@@ -30,6 +32,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -194,7 +198,7 @@ class EntityAnomalyHandlerP361Test {
         @BeforeEach
         void setUp() { 
             handlerWithStore = new EntityAnomalyHandler(anomalyDetector, http, eventLogStore, objectMapper); 
-            lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant42");
+            lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant42", null));
             // No 'since' param — return null to trigger 24h default
             lenient().when(sharedRequest.getQueryParameter("since")).thenReturn(null);
             lenient().when(sharedRequest.getQueryParameter("limit")).thenReturn(null);
@@ -231,9 +235,9 @@ class EntityAnomalyHandlerP361Test {
         @Test
         @DisplayName("returns 400 when tenant header is missing")
         void returns400WhenTenantMissing() { 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
-            HttpResponse badRequest = HttpResponse.ofCode(400).build(); 
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized"));
+            HttpResponse badRequest = HttpResponse.ofCode(400).build();
+            when(http.errorResponse(anyInt(), anyString())).thenReturn(badRequest); 
 
             HttpResponse response = handlerWithStore.handleQueryAnomalies(sharedRequest).getResult(); 
 

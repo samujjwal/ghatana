@@ -10,6 +10,8 @@ import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
+import com.ghatana.platform.observability.idempotency.IdempotencyHelper;
+import com.ghatana.platform.observability.idempotency.IdempotencyStore;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -104,6 +106,9 @@ public class AiAssistHandler {
     /** Optional Data Cloud client for persisting AI action audit records (P2.1). */
     private DataCloudClient client;
 
+    /** P0-07: Idempotency store for AI assist operations. */
+    private IdempotencyStore idempotencyStore;
+
     /**
      * DC-P0-007: When {@code true}, AI assist routes return HTTP 503 instead of heuristic
      * fallback when no real {@link CompletionService} is configured. Must be {@code true}
@@ -174,6 +179,84 @@ public class AiAssistHandler {
     }
 
     /**
+     * P0-07: Wires an {@link IdempotencyStore} for idempotent AI assist operations.
+     *
+     * @param idempotencyStore the idempotency store; may be {@code null}
+     * @return this handler (fluent)
+     */
+    public AiAssistHandler withIdempotencyStore(IdempotencyStore idempotencyStore) {
+        this.idempotencyStore = idempotencyStore;
+        return this;
+    }
+
+    // ─── Helper Methods (P0-07) ─────────────────────────────────────────────
+
+    /**
+     * P0-07: Check idempotency for AI assist operations.
+     */
+    private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "aiassist:" + routeAction;
+
+        return IdempotencyHelper.checkConflict(idempotencyStore, tenantId, scope, idempotencyKey, principalId,
+            IdempotencyHelper.computePayloadHash(request))
+            .then(hasConflict -> {
+                if (hasConflict) {
+                    log.warn("[P0-07] Idempotency conflict for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                    return Promise.of(http.errorResponse(409,
+                        "Idempotency key conflict: same key used with different payload"));
+                }
+
+                return IdempotencyHelper.checkIdempotency(idempotencyStore, tenantId, scope, idempotencyKey, principalId)
+                    .then(cachedResponse -> {
+                        if (cachedResponse != null) {
+                            log.info("[P0-07] Returning cached response for tenant={}, scope={}, key={}", tenantId, scope, idempotencyKey);
+                            if (cachedResponse instanceof HttpResponse) {
+                                return Promise.of(IdempotencyHelper.addIdempotencyHeaders((HttpResponse) cachedResponse, "replay"));
+                            }
+                            if (cachedResponse instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) cachedResponse;
+                                return Promise.of(http.jsonResponse(map));
+                            }
+                            return Promise.of(http.jsonResponse(Map.of("data", cachedResponse)));
+                        }
+                        return Promise.of((HttpResponse) null);
+                    });
+            });
+    }
+
+    /**
+     * P0-07: Store response for idempotent AI assist operations.
+     */
+    private Promise<Void> storeIdempotency(String tenantId, String routeAction,
+                                          HttpRequest request, Object response) {
+        if (idempotencyStore == null) {
+            return Promise.of(null);
+        }
+
+        String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(null);
+        }
+
+        String principalId = http.resolvePrincipalId(request);
+        String scope = "aiassist:" + routeAction;
+        String payloadHash = IdempotencyHelper.computePayloadHash(request);
+
+        return IdempotencyHelper.storeResponse(idempotencyStore, tenantId, scope, idempotencyKey, principalId, payloadHash, response);
+    }
+
+    /**
      * DC-P1.16: AI advisory/fail-closed semantics alignment.
      * Returns a 503 promise when production mode is active and no CompletionService
      * is available. Returns {@code null} when heuristic fallback is permitted or AI is wired.
@@ -237,10 +320,11 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handleEntitySuggest(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId   = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -314,7 +398,11 @@ public class AiAssistHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleInferSchema(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -413,10 +501,11 @@ public class AiAssistHandler {
      * @return 200 with recommended queries and AI confidence metadata
      */
     public Promise<HttpResponse> handleAnalyticsSuggest(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -495,10 +584,11 @@ public class AiAssistHandler {
      * @return 200 with automated query improvements, safety analysis, and AI confidence metadata
      */
     public Promise<HttpResponse> handleAnalyticsAutomate(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -572,7 +662,11 @@ public class AiAssistHandler {
      * @return 200 with draft payload and AI confidence metadata
      */
     public Promise<HttpResponse> handlePipelineDraft(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -667,7 +761,11 @@ public class AiAssistHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handlePipelineDraftRefine(HttpRequest request) {
         String draftId = request.getPathParameter("draftId");
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -748,7 +846,11 @@ public class AiAssistHandler {
      * completions from heuristic fallback behavior without scraping raw metrics endpoints.
      */
     public Promise<HttpResponse> handleAiQualitySummary(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -800,10 +902,11 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handlePipelineOptimiseHint(HttpRequest request) {
         String pipelineId = request.getPathParameter("pipelineId");
-        String tenantId   = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -871,10 +974,11 @@ public class AiAssistHandler {
      * @return 200 with explanation, remediation hints, and AI confidence metadata
      */
     public Promise<HttpResponse> handleBrainExplain(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -946,7 +1050,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleNaturalLanguageQuery(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1156,7 +1264,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleGovernanceRecommend(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2059,7 +2171,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAiSuggestions(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2162,7 +2278,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleApplyAiSuggestion(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2235,7 +2355,11 @@ public class AiAssistHandler {
      * with a boundary flag since the unified operation event model is not yet available.
      */
     public Promise<HttpResponse> handleAiCorrelations(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2258,7 +2382,11 @@ public class AiAssistHandler {
      * when the workflowId maps to a known pipeline; otherwise returns heuristic.
      */
     public Promise<HttpResponse> handleAiWorkflowAdvisory(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2313,7 +2441,11 @@ public class AiAssistHandler {
      * <p>Returns heuristic data-quality advisory for a collection.
      */
     public Promise<HttpResponse> handleAiQualityAdvisory(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2357,7 +2489,11 @@ public class AiAssistHandler {
      * patterns until full policy-aware optimization lands.
      */
     public Promise<HttpResponse> handleAiFabricAdvisory(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2430,7 +2566,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnalyzeWorkflowRisk(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2557,7 +2697,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleWorkflowValidate(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2712,7 +2856,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnomalyGroup(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2774,7 +2922,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCapacityForecast(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2848,7 +3000,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleNextBestAction(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2923,7 +3079,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSuggestConnectorMapping(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -2992,7 +3152,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleConnectorSyncHealth(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3077,7 +3241,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleContextRank(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3165,7 +3333,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleContractDrift(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3304,7 +3476,11 @@ public class AiAssistHandler {
      * with optional domain filter and limit.
      */
     public Promise<HttpResponse> handleListAiActions(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3358,7 +3534,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAiSuggestionFeedback(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3438,7 +3618,11 @@ public class AiAssistHandler {
      * Supports optional sentiment filter and limit.
      */
     public Promise<HttpResponse> handleListAiFeedback(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3492,7 +3676,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleRagFeedback(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -3544,7 +3732,11 @@ public class AiAssistHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleMemoryRetention(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

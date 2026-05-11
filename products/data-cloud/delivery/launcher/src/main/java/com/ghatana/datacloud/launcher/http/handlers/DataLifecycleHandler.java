@@ -190,7 +190,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleClassifyRetention(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -305,7 +309,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleGetRetentionPolicy(HttpRequest request) {
         String requestId  = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -354,7 +362,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handlePurge(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -612,7 +624,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleRedact(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -846,7 +862,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleListPiiFields(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -921,7 +941,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleVerifyRedaction(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -996,7 +1020,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleComplianceSummary(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1040,7 +1068,11 @@ public class DataLifecycleHandler {
      */
     public Promise<HttpResponse> handleGovernanceInventory(HttpRequest request) {
         String requestId = resolveRequestId(request);
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
@@ -1738,7 +1770,11 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreatePolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1780,7 +1816,11 @@ public class DataLifecycleHandler {
      * GET /api/v1/governance/policies - List all policies for the tenant.
      */
     public Promise<HttpResponse> handleListPolicies(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1803,7 +1843,11 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSimulatePolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1882,7 +1926,11 @@ public class DataLifecycleHandler {
      * GET /api/v1/governance/policies/:id - Get a specific policy by ID.
      */
     public Promise<HttpResponse> handleGetPolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1902,7 +1950,11 @@ public class DataLifecycleHandler {
      */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdatePolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1949,7 +2001,11 @@ public class DataLifecycleHandler {
      * DELETE /api/v1/governance/policies/:id - Delete a policy.
      */
     public Promise<HttpResponse> handleDeletePolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
@@ -1985,7 +2041,11 @@ public class DataLifecycleHandler {
      * POST /api/v1/governance/policies/:id/toggle - Toggle policy enabled/disabled status.
      */
     public Promise<HttpResponse> handleTogglePolicy(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }

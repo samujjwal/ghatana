@@ -26,7 +26,7 @@ import type { ArtifactSummary, LifecycleArtifact } from '../../services/canvas/l
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { IncidentReportPayload } from '@/shared/types/lifecycle-artifacts';
 import { useCurrentUser } from '../../providers/AuthProvider';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface IncidentManagementPanelProps {
     projectId: string;
@@ -145,7 +145,7 @@ function getIncidentPayload(artifact: LifecycleArtifact): IncidentArtifactPayloa
 }
 
 export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = ({ projectId }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const { artifacts, createArtifact, updateArtifact, service } = useLifecycleArtifacts(projectId);
     const currentUser = useCurrentUser();
 

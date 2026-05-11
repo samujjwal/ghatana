@@ -28,7 +28,7 @@ import {
   Drawer,
 } from '@ghatana/design-system';
 import { Upload, X, AlertTriangle } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import type { ImportSourceType } from '../../../services/compiler/ImportSourceWorkflow';
 import {
   checkArtifactCompilerRuntimeHealth,
@@ -108,7 +108,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
   onImport,
   artifactRuntimeHealth,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [templateId, setTemplateId] = useState<ImportWizardTemplate['id']>('paste-code');
   const [input, setInput] = useState('');
   const [workflowMode, setWorkflowMode] = useState<ImportWorkflowMode>('semantic-model');

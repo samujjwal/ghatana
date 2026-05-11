@@ -31,7 +31,7 @@ import {
 
 import type { AiReadinessAssessment, IaPhase } from '@/hooks/usePhaseGate';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import { useI18n } from '@/i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import type { MessageKey } from '@/i18n/messages';
 import { Button } from '../ui/Button';
 
@@ -120,7 +120,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
   onRequestAiAssessment,
   onClose,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const phaseLabel = t(PHASE_LABEL[targetPhase]);
 
   return (

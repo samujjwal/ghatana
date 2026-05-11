@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
@@ -134,7 +136,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("valid query → delegates to engine and returns 200")
-        void validQuery_delegatesToEngineAndReturns200() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void validQuery_delegatesToEngineAndReturns200() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            QueryResult result = buildResult("qid-001", 2);
             when(analyticsEngine.submitQuery(eq("tenant-test"), eq("SELECT * FROM events"), anyMap()))
@@ -152,7 +154,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("missing 'query' field → 400 without calling engine")
-        void missingQueryField_returns400() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void missingQueryField_returns400() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            HttpResponse err400 = mock(HttpResponse.class);
             when(err400.getCode()).thenReturn(400);
@@ -167,7 +169,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("blank 'query' field → 400 without calling engine")
-        void blankQueryField_returns400() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void blankQueryField_returns400() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            HttpResponse err400 = mock(HttpResponse.class);
             when(err400.getCode()).thenReturn(400);
@@ -182,7 +184,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("invalid JSON body → 400 without calling engine")
-        void invalidJson_returns400() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void invalidJson_returns400() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            HttpResponse err400 = mock(HttpResponse.class);
             when(err400.getCode()).thenReturn(400);
@@ -197,7 +199,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("invalid limit type → returns 400 with validation error")
-        void invalidLimit_usesDefault_returns200() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void invalidLimit_usesDefault_returns200() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);
             HttpResponse err400 = mock(HttpResponse.class);
@@ -213,7 +215,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("engine throws exception → 500 with sanitized message and traceId (DC-P1-007)")
-        void engineThrows_returns500() {            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+        void engineThrows_returns500() {            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);            when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                     .thenReturn(Promise.ofException(new RuntimeException("db connection lost")));
@@ -232,7 +234,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @Test
         @DisplayName("missing tenant ID → 400 without calling engine")
         void missingTenantId_returns400() {
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null);
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(400, "X-Tenant-Id header is required"));
             HttpResponse err400 = mock(HttpResponse.class);
             when(err400.getCode()).thenReturn(400);
             when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(err400);
@@ -247,7 +249,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @Test
         @DisplayName("row limit is enforced at MAX_ROW_LIMIT boundary")
         void rowLimitCappedAtMax() {
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);
             QueryResult result = buildResult("qid-max", 0);
@@ -268,7 +270,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @Test
         @DisplayName("DC-P1-005: defensive row cap — engine returning more rows than limit is capped (DC-P1-005)")
         void submitQuery_defensiveRowCap_engineOverage() {
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-005");
             when(httpSupport.objectMapper()).thenReturn(mapper);
 
@@ -312,7 +314,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @Test
         @DisplayName("truncated uses totalRows from engine result")
         void submitQuery_truncatedUsesTotalRows() {
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn("trace-unit-001");
             when(httpSupport.objectMapper()).thenReturn(mapper);
 
@@ -358,6 +360,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
                     contains("analytics.cancellation"),
                     eq(traceId)))
                     .thenReturn(err501);
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-123", null));
 
             HttpRequest req = mockRequest("");
             when(req.getPathParameter("queryId")).thenReturn("q-cancel");
@@ -375,7 +378,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
             HttpResponse ok200 = mock(HttpResponse.class);
             when(ok200.getCode()).thenReturn(200);
             when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-123");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-123", null));
             when(analyticsEngine.cancelQuery(eq("q-cancel-supported"), eq("tenant-123")))
                 .thenReturn(Promise.of(DistributedQueryTracker.CancellationResult.cancelled("q-cancel-supported")));
             when(httpSupport.jsonResponse(anyMap())).thenReturn(ok200);
@@ -571,7 +574,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
         void engineException_returns500() {
             String traceId = "trace-agg-fail";
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
             when(httpSupport.objectMapper()).thenReturn(mapper);
             when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
@@ -599,7 +602,7 @@ class AnalyticsHandlerTest extends EventloopTestBase {
         @DisplayName("engine exception → 500 with sanitized message and traceId (DC-P1-007)")
         void engineException_returns500() {
             String traceId = "trace-explain-fail";
-            when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-test");
+            when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-test", null));
             when(httpSupport.resolveCorrelationId(any())).thenReturn(traceId);
             when(httpSupport.objectMapper()).thenReturn(mapper);
             when(analyticsEngine.explainQuery(anyString(), anyString(), anyMap()))

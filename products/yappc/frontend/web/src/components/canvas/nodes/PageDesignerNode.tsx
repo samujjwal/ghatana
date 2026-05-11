@@ -49,7 +49,7 @@ import {
   type PageArtifactDocument,
 } from '../page/pageArtifactDocument';
 import { type BuilderDocument, type ValidationResult } from '@ghatana/ui-builder';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
   HttpPageArtifactPersistenceAdapter,
   LocalStoragePageArtifactPersistenceAdapter,
@@ -194,7 +194,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   positionAbsoluteY,
   selected,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const executeCommand = useSetAtom(executeCommandAtom);
   const { projectId } = useParams<{ projectId: string }>();
   const currentUser = useAtomValue(currentUserAtom);

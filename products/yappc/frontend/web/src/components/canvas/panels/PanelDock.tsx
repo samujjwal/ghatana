@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { Box, Tooltip, IconButton } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface PanelDockProps {
     panels: Array<{
@@ -25,7 +25,7 @@ interface PanelDockProps {
 }
 
 export const PanelDock: React.FC<PanelDockProps> = ({ panels, onToggle }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     return (
         <Box
             className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1300] flex gap-1 bg-white dark:bg-surface rounded-xl shadow-lg px-2 py-1.5 border border-border dark:border-border"

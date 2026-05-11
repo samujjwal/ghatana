@@ -68,7 +68,7 @@ class DataCloudHttpServerLearningTest {
         @DisplayName("POST /trigger → 503 when bridge is null")
         void trigger_noBridge_returns503() throws Exception { 
             startWithoutBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/trigger", "{}"); 
             assertThat(resp.statusCode()).isEqualTo(503); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("message").toString()).containsIgnoringCase("not available");
@@ -78,7 +78,7 @@ class DataCloudHttpServerLearningTest {
         @DisplayName("GET /status → 503 when bridge is null")
         void status_noBridge_returns503() throws Exception { 
             startWithoutBridge(); 
-            HttpResponse<String> resp = get("/api/v1/learning/status");
+            HttpResponse<String> resp = get("/api/v1/action/learning/status");
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
@@ -86,7 +86,7 @@ class DataCloudHttpServerLearningTest {
         @DisplayName("GET /review → 503 when bridge is null")
         void review_noBridge_returns503() throws Exception { 
             startWithoutBridge(); 
-            HttpResponse<String> resp = get("/api/v1/learning/review");
+            HttpResponse<String> resp = get("/api/v1/action/learning/review");
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
@@ -94,7 +94,7 @@ class DataCloudHttpServerLearningTest {
         @DisplayName("POST /review/:id/approve → 503 when bridge is null")
         void approve_noBridge_returns503() throws Exception { 
             startWithoutBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/approve", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-1/approve", ""); 
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
@@ -102,15 +102,15 @@ class DataCloudHttpServerLearningTest {
         @DisplayName("POST /review/:id/reject → 503 when bridge is null")
         void reject_noBridge_returns503() throws Exception { 
             startWithoutBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/reject", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-1/reject", ""); 
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
     }
 
-    // ==================== POST /api/v1/learning/trigger ====================
+    // ==================== POST /api/v1/action/learning/trigger ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/trigger")
+    @DisplayName("POST /api/v1/action/learning/trigger")
     class TriggerTests {
 
         @Test
@@ -130,7 +130,7 @@ class DataCloudHttpServerLearningTest {
                 .thenReturn(result); 
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/trigger", "{}"); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -146,7 +146,7 @@ class DataCloudHttpServerLearningTest {
                 .thenReturn(Map.of("status", "SKIPPED", "reason", "already running")); 
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/trigger", "{}"); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -154,10 +154,10 @@ class DataCloudHttpServerLearningTest {
         }
     }
 
-    // ==================== GET /api/v1/learning/status ====================
+    // ==================== GET /api/v1/action/learning/status ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/status")
+    @DisplayName("GET /api/v1/action/learning/status")
     class StatusTests {
 
         @Test
@@ -173,7 +173,7 @@ class DataCloudHttpServerLearningTest {
             ));
 
             startWithBridge(); 
-            HttpResponse<String> resp = get("/api/v1/learning/status");
+            HttpResponse<String> resp = get("/api/v1/action/learning/status");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -185,23 +185,23 @@ class DataCloudHttpServerLearningTest {
         }
     }
 
-    // ==================== GET /api/v1/learning/review ====================
+    // ==================== GET /api/v1/action/learning/review ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/review")
+    @DisplayName("GET /api/v1/action/learning/review")
     class ReviewQueueTests {
 
         @Test
-        @DisplayName("returns 200 with items and count")
-        void reviewQueue_returns200WithItemsAndCount() throws Exception { 
+        @DisplayName("returns 200 with review queue items")
+        void reviewQueue_wiredBridge_returns200WithItems() throws Exception { 
             Map<String, Map<String, Object>> items = Map.of( 
-                "rev-1", Map.of("reviewId", "rev-1", "status", "PENDING", "confidence", 0.3f), 
-                "rev-2", Map.of("reviewId", "rev-2", "status", "APPROVED", "confidence", 0.5f) 
+                "review-1", Map.of("status", "PENDING", "pattern", "email validation"),
+                "review-2", Map.of("status", "PENDING", "pattern", "url detection")
             );
             when(mockBridge.getReviewQueue()).thenReturn(items); 
 
             startWithBridge(); 
-            HttpResponse<String> resp = get("/api/v1/learning/review");
+            HttpResponse<String> resp = get("/api/v1/action/learning/review");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -216,7 +216,7 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.getReviewQueue()).thenReturn(Map.of()); 
 
             startWithBridge(); 
-            HttpResponse<String> resp = get("/api/v1/learning/review");
+            HttpResponse<String> resp = get("/api/v1/action/learning/review");
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -224,10 +224,10 @@ class DataCloudHttpServerLearningTest {
         }
     }
 
-    // ==================== POST /api/v1/learning/review/:id/approve ====================
+    // ==================== POST /api/v1/action/learning/review/:id/approve ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/review/:id/approve")
+    @DisplayName("POST /api/v1/action/learning/review/:id/approve")
     class ApproveTests {
 
         @Test
@@ -236,7 +236,7 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.approveReview("rev-abc")).thenReturn(true);
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-abc/approve", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-abc/approve", ""); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -250,16 +250,16 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.approveReview("no-such")).thenReturn(false);
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/no-such/approve", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/no-such/approve", ""); 
 
             assertThat(resp.statusCode()).isEqualTo(404); 
         }
     }
 
-    // ==================== POST /api/v1/learning/review/:id/reject ====================
+    // ==================== POST /api/v1/action/learning/review/:id/reject ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/review/:id/reject")
+    @DisplayName("POST /api/v1/action/learning/review/:id/reject")
     class RejectTests {
 
         @Test
@@ -268,7 +268,7 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.rejectReview("rev-xyz")).thenReturn(true);
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-xyz/reject", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/rev-xyz/reject", ""); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
@@ -282,7 +282,7 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.rejectReview("ghost")).thenReturn(false);
 
             startWithBridge(); 
-            HttpResponse<String> resp = post("/api/v1/learning/review/ghost/reject", ""); 
+            HttpResponse<String> resp = post("/api/v1/action/learning/review/ghost/reject", ""); 
 
             assertThat(resp.statusCode()).isEqualTo(404); 
         }
@@ -306,6 +306,7 @@ class DataCloudHttpServerLearningTest {
         HttpRequest req = HttpRequest.newBuilder() 
             .GET() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("X-Tenant-Id", "default") 
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
@@ -315,6 +316,7 @@ class DataCloudHttpServerLearningTest {
             .POST(HttpRequest.BodyPublishers.ofString(body)) 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
+            .header("X-Tenant-Id", "default") 
             .build(); 
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }

@@ -22,7 +22,7 @@ import {
 import { Command } from 'cmdk';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RADIUS, TRANSITIONS } from '../../../styles/design-tokens';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -382,7 +382,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onShowHelp,
   onShowShortcuts,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [search, setSearch] = useState('');
 
   // Reset search when closed
@@ -469,7 +469,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const sortedCategories = Object.keys(groupedActions).sort((a, b) => {
     const aIndex = categoryOrder.indexOf(a);
     const bIndex = categoryOrder.indexOf(b);
-    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1 && bIndex === -1) return a.i18n.languageCompare(b);
     if (aIndex === -1) return 1;
     if (bIndex === -1) return -1;
     return aIndex - bIndex;

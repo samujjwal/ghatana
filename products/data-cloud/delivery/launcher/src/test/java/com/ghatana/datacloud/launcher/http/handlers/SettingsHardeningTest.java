@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
@@ -67,7 +69,7 @@ class SettingsHardeningTest extends EventloopTestBase {
 
     @BeforeEach
     void setUpCommon() {
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn(TENANT);
+        lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success(TENANT, null));
         lenient().when(http.jsonResponse(any())).thenReturn(mock(HttpResponse.class));
         lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(mock(HttpResponse.class));
     }

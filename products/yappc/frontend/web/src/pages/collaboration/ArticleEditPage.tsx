@@ -16,13 +16,13 @@ import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const ArticleEditPage: React.FC = () => {
   const { projectId, articleId } = useParams<{ projectId: string; articleId: string }>();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">

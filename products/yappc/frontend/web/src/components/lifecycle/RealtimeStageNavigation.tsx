@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { Button, StageNavigation, type StageNavigationProps } from '../ui';
 import { useRealtimeLifecycle } from '../../hooks/useRealtimeLifecycle';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // Define lifecycle stage type locally to avoid import issues
 type LifecycleStageId = 'intent' | 'context' | 'plan' | 'execute' | 'verify' | 'observe' | 'learn' | 'institutionalize';
@@ -46,7 +46,7 @@ export function RealtimeStageNavigation({
   onProjectAdvance,
   onProjectGoBack
 }: RealtimeStageNavigationProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const {
     project,
     phases,

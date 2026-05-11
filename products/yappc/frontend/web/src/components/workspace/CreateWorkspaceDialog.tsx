@@ -21,7 +21,7 @@ import { useCreateWorkspace, useNameSuggestions } from '../../hooks/useWorkspace
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface CreateWorkspaceDialogProps {
     isOpen: boolean;
@@ -34,7 +34,7 @@ export function CreateWorkspaceDialog({
     onClose,
     onCreated
 }: CreateWorkspaceDialogProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const state = useAtomValue(workspaceAtom);
     const setCurrentWorkspaceId = useSetAtom(currentWorkspaceIdAtom);
     const createWorkspace = useCreateWorkspace();

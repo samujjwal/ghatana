@@ -218,7 +218,7 @@ export default function Component() {
     const isGuest = !currentUser.isAuthenticated;
     const isEmpty = !isLoading && !isGuest && allProjects.length === 0;
     const recentProjects = useMemo(
-        () => [...allProjects].sort((left, right) => getProjectUpdatedAt(right).localeCompare(getProjectUpdatedAt(left))).slice(0, 3),
+        () => [...allProjects].sort((left, right) => getProjectUpdatedAt(right).i18n.languageCompare(getProjectUpdatedAt(left))).slice(0, 3),
         [allProjects]
     );
 

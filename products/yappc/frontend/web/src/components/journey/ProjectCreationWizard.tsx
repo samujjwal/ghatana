@@ -9,14 +9,14 @@
 import React, { useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, TextField, Stepper, Step, StepLabel, Avatar } from '@ghatana/design-system';
 import { Plus as Add, ArrowRight as ArrowForward, ArrowLeft as ArrowBack, CheckCircle, Sparkles as AutoAwesome } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ProjectCreationWizardProps {
     onComplete: (projectId: string) => void;
 }
 
 export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [currentStep, setCurrentStep] = useState(0);
     const [projectData, setProjectData] = useState({
         name: '',

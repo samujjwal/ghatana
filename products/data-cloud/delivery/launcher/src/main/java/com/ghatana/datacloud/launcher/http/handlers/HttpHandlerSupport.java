@@ -8,6 +8,7 @@ import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import com.ghatana.datacloud.launcher.http.security.RequestContext;
 import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
+import com.ghatana.datacloud.spi.ErrorEnvelope;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
@@ -99,6 +100,20 @@ public class HttpHandlerSupport {
         String fromCorrelationId = request.getHeader(HttpHeaders.of("X-Correlation-Id"));
         if (fromCorrelationId != null && !fromCorrelationId.isBlank()) return fromCorrelationId.trim();
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Resolves the principal ID from the request headers.
+     *
+     * @param request inbound HTTP request
+     * @return principal ID, or null if not present
+     */
+    public String resolvePrincipalId(HttpRequest request) {
+        String fromUserId = request.getHeader(HttpHeaders.of("X-User-ID"));
+        if (fromUserId != null && !fromUserId.isBlank()) return fromUserId.trim();
+        String fromPrincipal = request.getHeader(HttpHeaders.of("X-Principal-ID"));
+        if (fromPrincipal != null && !fromPrincipal.isBlank()) return fromPrincipal.trim();
+        return null;
     }
 
     /**
@@ -388,26 +403,6 @@ public class HttpHandlerSupport {
      *
      * <p><strong>Recommended:</strong> Use {@link #resolveRequestContext(HttpRequest)} for new code
      * to get the full authenticated context including roles and audit trail.
-     *
-     * @param request inbound HTTP request
-     * @return tenant ID if present and valid; {@code null} if absent, invalid, or spoofed
-     * @deprecated Use {@link #resolveRequestContext(HttpRequest)} for production-grade resolution
-     */
-    @Deprecated
-    public String requireTenantIdOrFail(HttpRequest request) {
-        // Try canonical resolver first (enforces production rules)
-        RequestContextResolver.ResolutionResult result = requestContextResolver.resolve(request);
-        if (result.isSuccess()) {
-            return result.context().map(RequestContext::tenantId).orElse(null);
-        }
-
-        // Resolution failed - return null (caller should check and return appropriate error)
-        return null;
-    }
-
-    /**
-     * Requires tenant ID and returns error response details if unavailable.
-     * This is the production-safe method that properly handles spoofing attempts.
      *
      * @param request inbound HTTP request
      * @return Resolution result with either tenant ID or error code/message
@@ -719,5 +714,86 @@ public class HttpHandlerSupport {
             return null;
         }
         return candidate;
+    }
+
+    // ─── P1-11: Canonical Error Envelope Methods ───────────────────────────────
+
+    /**
+     * P1-11: Builds an error response using the canonical error envelope.
+     *
+     * <p>This method uses the canonical ErrorEnvelope structure to ensure
+     * consistent error reporting across all handlers.
+     *
+     * @param code HTTP status code
+     * @param errorCode canonical error code (e.g., SURFACE_UNAVAILABLE)
+     * @param message human-readable error message
+     * @param correlationId request correlation ID for tracing
+     * @param tenantId tenant ID for multi-tenant context
+     * @param surface surface identifier (e.g., "data.entities.write")
+     * @param retryable whether the error is retryable
+     * @param details additional error details
+     * @return HTTP response with canonical error envelope
+     */
+    public HttpResponse canonicalErrorResponse(int code, String errorCode, String message,
+                                                String correlationId, String tenantId, String surface,
+                                                boolean retryable, Map<String, Object> details) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
+
+        ErrorEnvelope envelope = ErrorEnvelope.builder()
+            .code(errorCode)
+            .message(message)
+            .correlationId(traceId)
+            .tenantId(tenantId)
+            .surface(surface)
+            .retryable(retryable)
+            .details(details)
+            .build();
+
+        try {
+            String json = objectMapper.writeValueAsString(envelope);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * P1-11: Builds a canonical error response with minimal parameters.
+     *
+     * @param code HTTP status code
+     * @param errorCode canonical error code
+     * @param message human-readable error message
+     * @return HTTP response with canonical error envelope
+     */
+    public HttpResponse canonicalErrorResponse(int code, String errorCode, String message) {
+        return canonicalErrorResponse(code, errorCode, message, null, null, null, false, null);
+    }
+
+    /**
+     * P1-11: Builds a canonical error response with context.
+     *
+     * @param code HTTP status code
+     * @param errorCode canonical error code
+     * @param message human-readable error message
+     * @param correlationId request correlation ID
+     * @param tenantId tenant ID
+     * @return HTTP response with canonical error envelope
+     */
+    public HttpResponse canonicalErrorResponse(int code, String errorCode, String message,
+                                                String correlationId, String tenantId) {
+        return canonicalErrorResponse(code, errorCode, message, correlationId, tenantId, null, false, null);
     }
 }

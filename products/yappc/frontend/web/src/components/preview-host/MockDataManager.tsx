@@ -17,7 +17,7 @@ import {
   IconButton,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -33,7 +33,7 @@ interface MockDataManagerProps {
 }
 
 export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onDataChange }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [mockData, setMockData] = useState<Record<string, unknown>>({});
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');

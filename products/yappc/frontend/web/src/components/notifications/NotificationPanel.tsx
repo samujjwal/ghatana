@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Bell, X, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -29,7 +29,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [panelPosition, setPanelPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // Calculate panel position when opening
   const updatePanelPosition = useCallback(() => {

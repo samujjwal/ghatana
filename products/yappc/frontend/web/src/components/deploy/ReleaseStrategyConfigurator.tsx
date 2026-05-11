@@ -15,7 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Rocket as RocketLaunch, Cloud, Settings, Shield as Security } from 'lucide-react';
 import type { ReleaseStrategyPayload } from '@/shared/types/lifecycle-artifacts';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ReleaseStrategyConfiguratorProps {
     data?: ReleaseStrategyPayload;
@@ -89,7 +89,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
     onAIAssist,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [strategy, setStrategy] = useState<ReleaseStrategyPayload>({
         ...defaultData,
         ...data,

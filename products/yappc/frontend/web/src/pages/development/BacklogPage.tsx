@@ -25,7 +25,7 @@ import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -48,7 +48,7 @@ const priorityColors: Record<Priority, string> = {
 };
 
 const BacklogPage: React.FC = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
   const { projectId } = useParams<{ projectId: string }>();
   const [search, setSearch] = useState('');
   const [items] = useState<BacklogItem[]>([]);

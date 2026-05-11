@@ -33,7 +33,7 @@ import {
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import type { BacklogItem, ItemStatus } from './BacklogBoard';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -153,7 +153,7 @@ async function fetchSprint(projectId: string, sprintId: string): Promise<Sprint 
  * SprintView — Detailed view of a sprint with items, metrics, and capacity tracking.
  */
 export function SprintView({ projectId, sprintId, className = '' }: SprintViewProps): ReactNode {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const queryClient: QueryClient = useQueryClient();
 
   const {

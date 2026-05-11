@@ -11,10 +11,10 @@ import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 function NotFoundPage(): React.ReactElement {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div

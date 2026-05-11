@@ -6,7 +6,7 @@
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import React, { useCallback, useState, useRef, useMemo } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { BaseItem } from '../core/types';
 
@@ -496,7 +496,7 @@ export const HistoryVisualization: React.FC<{
     onSwitchBranch: (branchId: string) => void;
     onCreateBranch: (name: string) => void;
 }> = ({ branches, activeBranchId, currentPosition, onSwitchBranch, onCreateBranch }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [newBranchName, setNewBranchName] = useState('');
 
     return (

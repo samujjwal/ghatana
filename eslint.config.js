@@ -16,6 +16,7 @@
  * @type {import('eslint').Linter.FlatConfig[]}
  */
 const ghatanaArchitectureRules = require("./eslint-rules/ghatana-architecture-rules");
+const i18nCoverageRule = require("./eslint-rules/i18n-coverage-rule");
 
 module.exports = [
   {
@@ -47,6 +48,7 @@ module.exports = [
     ],
     plugins: {
       ghatana: ghatanaArchitectureRules,
+      i18n: i18nCoverageRule,
     },
     rules: {
       "ghatana/no-cross-product-imports": "error",
@@ -55,8 +57,9 @@ module.exports = [
       "ghatana/no-deleted-v41-packages": "error",
       "ghatana/no-design-system-internal-reimplementation": "error",
       "ghatana/no-dev-auth-in-prod": "error",
-      "ghatana/no-duplicate-utilities": "warn",
-      "ghatana/no-duplicate-components": "warn",
+      "ghatana/no-duplicate-utilities": "error",
+      "ghatana/no-duplicate-components": "error",
+      "i18n/i18n-coverage": "warn",
       "no-restricted-imports": [
         "error",
         {

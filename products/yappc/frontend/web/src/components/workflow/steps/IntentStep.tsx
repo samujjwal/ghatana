@@ -19,7 +19,7 @@ import {
 } from '../../../stores/workflow.store';
 import { CategoryContextPanel } from '../CategoryContextPanel';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { IntentStepData, WorkflowType, WorkflowCategory } from 'yappc-core/types';
 import { WORKFLOW_TYPE_TO_CATEGORY } from 'yappc-core/types';
@@ -109,7 +109,7 @@ const CATEGORY_LABELS: Record<WorkflowCategory, string> = {
 // ============================================================================
 
 export function IntentStep() {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const workflow = useAtomValue(currentWorkflowAtom);
     const draftData = useAtomValue(draftStepDataAtom) as IntentStepData | null;
     const updateDraft = useSetAtom(updateDraftStepDataAtom);

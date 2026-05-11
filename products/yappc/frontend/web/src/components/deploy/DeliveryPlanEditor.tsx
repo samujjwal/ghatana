@@ -15,7 +15,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../ui/Button';
 import { Plus as Add, Minus as Remove, Save, Sparkles as AutoAwesome, Flag, ClipboardList as Assignment, Calendar as CalendarToday, GripVertical as DragIndicator } from 'lucide-react';
 import type { DeliveryPlanPayload } from '@/shared/types/lifecycle-artifacts';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface DeliveryPlanEditorProps {
     data?: DeliveryPlanPayload;
@@ -72,7 +72,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
     onAIAssist,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [plan, setPlan] = useState<DeliveryPlanPayload>({
         ...defaultData,
         ...data,

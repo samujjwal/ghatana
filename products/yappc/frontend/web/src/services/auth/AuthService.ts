@@ -101,7 +101,10 @@ export class AuthService {
      */
     private initializeFromStorage(): void {
         try {
-            const storedSession = localStorage.getItem('auth-session');
+            if (typeof window === 'undefined' || !window.localStorage) {
+                return;
+            }
+            const storedSession = window.localStorage.getItem('auth-session');
             if (storedSession) {
                 const session = parseStoredSession(storedSession);
                 if (this.isSessionValid(session)) {
@@ -530,7 +533,9 @@ export class AuthService {
             this.sessionTimeout = null;
         }
         try {
-            localStorage.removeItem('auth-session');
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.removeItem('auth-session');
+            }
         } catch (error) {
             logger.warn('Failed to clear session from storage', 'auth', {
                 error: error instanceof Error ? error.message : String(error)

@@ -14,7 +14,7 @@ import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router';
 import { X as Close, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 async function loadArtifactsPanel() {
     const module = await import('./ArtifactsPanel');
@@ -152,7 +152,7 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
     onToggleCollapse,
     dataContext = {},
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPanel = (searchParams.get('panel') as PanelType) || null;
 

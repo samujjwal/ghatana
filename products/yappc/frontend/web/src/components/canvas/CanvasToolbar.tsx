@@ -21,7 +21,7 @@ import {
   Button,
   Paper,
 } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { MenuItem } from '@ghatana/design-system';
 import { RefreshCw as Autorenew, Code, Download as FileDownload, Image, FileType as PictureAsPdf, Redo2 as Redo, Undo2 as Undo, AlertTriangle, X } from 'lucide-react';
 import { CanvasHistoryManager, useCanvasHistory } from '../../utils/canvasHistory';
@@ -52,7 +52,7 @@ export function CanvasToolbar<T>({
     showExport = true,
     showHistory = true,
 }: CanvasToolbarProps<T>) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
     const [exporting, setExporting] = useState(false);
     const [exportError, setExportError] = useState<ExportError | null>(null);

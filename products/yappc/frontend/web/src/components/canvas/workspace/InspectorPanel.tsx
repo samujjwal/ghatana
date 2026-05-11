@@ -15,7 +15,7 @@ import { Drawer, Box, Typography, IconButton, Divider, TextField, Stack, Chip, B
 import { X as CloseIcon, Pencil as EditIcon, Save as SaveIcon, Link as LinkIcon, AlertTriangle as WarningIcon, History as HistoryIcon, MessageSquare as CommentIcon, User as PersonIcon } from 'lucide-react';
 import { PersonaBadge, StatusBadge } from './PersonaBadge';
 import { type ArtifactType } from './ArtifactPalette';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface InspectorArtifact {
     id: string;
@@ -124,7 +124,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     canComment = true,
     readOnlyReason,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [isEditing, setIsEditing] = React.useState(false);
     const [editedTitle, setEditedTitle] = React.useState('');
     const [editedDescription, setEditedDescription] = React.useState('');

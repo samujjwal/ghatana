@@ -63,7 +63,7 @@ import {
   type Thread,
   type UserPresence,
 } from '@ghatana/yappc-api-app';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -139,7 +139,7 @@ const MessageBubble: React.FC<{
 }> = ({ message, isOwn, onReply, onEdit, onDelete, onPin, onReact }) => {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const reactions = [
     { emoji: '👍', icon: ThumbsUp },
@@ -315,7 +315,7 @@ const TypingIndicator: React.FC<{ users: string[] }> = ({ users }) => {
 const TeamChatPage: React.FC = () => {
   const { teamId, channelId } = useParams<{ teamId: string; channelId?: string }>();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // State
   const [messageText, setMessageText] = useState('');

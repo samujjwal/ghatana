@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router';
 import { Plus as Add, Folder, Briefcase as WorkOutline, Grid3x3 as GridView, Settings, Share2 as Share, Download as GetApp, History, HelpCircle as HelpOutline, MoreVertical as MoreVert } from 'lucide-react';
 
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface QuickAction {
     id: string;
@@ -47,7 +47,7 @@ export function QuickActionsPanel({
     projectId,
     className = '',
 }: QuickActionsPanelProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -307,7 +307,7 @@ export function NewButton({
     variant = 'default',
     className = '',
 }: NewButtonProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });

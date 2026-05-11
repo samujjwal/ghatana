@@ -12,14 +12,14 @@ import { useState } from 'react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 function ErrorPage(): React.ReactElement {
   const rawError = useRouteError();
   const error = rawError instanceof Error ? rawError : null;
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const handleCopyError = async () => {
     if (error) {

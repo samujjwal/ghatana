@@ -28,7 +28,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { X as Close, Lightbulb, Keyboard as KeyboardOutlined, CheckCircle } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { LifecyclePhase } from '../../../types/lifecycle';
 
@@ -77,7 +77,7 @@ export function ContextualHelpTooltip({
     position = 'bottom',
     anchor,
 }: ContextualHelpTooltipProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [coordinates, setCoordinates] = useState({ top: 0, left: 0 });
     const tooltipRef = useRef<HTMLDivElement>(null);
 

@@ -21,7 +21,11 @@ import org.slf4j.LoggerFactory;
  * @Override
  * public Promise<HttpResponse> handleCreate(HttpRequest request) {
  *     String correlationId = http.resolveCorrelationId(request);
- *     String tenantId      = http.requireTenantIdOrFail(request);
+ *     HttpHandlerSupport.TenantResolutionResult tenantResult = http.requireTenantIdWithError(request);
+ *     if (!tenantResult.isSuccess()) {
+ *         return Promise.of(http.errorResponse(tenantResult.errorCode(), tenantResult.errorMessage()));
+ *     }
+ *     String tenantId = tenantResult.tenantId();
  *
  *     try (RequestContext ctx = RequestContext.bind(correlationId, tenantId)) {
  *         return entityService.create(tenantId, payload)

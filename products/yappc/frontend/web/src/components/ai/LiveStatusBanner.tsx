@@ -19,7 +19,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -98,7 +98,7 @@ export const LiveStatusBanner = React.memo<LiveStatusBannerProps>(function LiveS
   autoDismissMs = 3000,
   className,
 }) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [dismissed, setDismissed] = useState(false);
 
   // Reset dismissed state when status changes back to an active state.

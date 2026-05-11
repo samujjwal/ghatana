@@ -23,7 +23,7 @@ import {
   Drawer,
 } from '@ghatana/design-system';
 import { Check, X, AlertTriangle, ChevronRight } from 'lucide-react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ResidualReviewPanelProps {
   readonly open: boolean;
@@ -50,7 +50,7 @@ export const ResidualReviewPanel: React.FC<ResidualReviewPanelProps> = ({
   isReviewing = false,
   isPromoting = false,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [notes, setNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [proposedContractName, setProposedContractName] = useState('');

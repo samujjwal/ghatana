@@ -19,7 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface Span {
     id: string;
@@ -108,7 +108,7 @@ const getServiceColor = (service: string) => {
 };
 
 export const TraceExplorerCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [traces] = useState<Trace[]>(MOCK_TRACES);
     const [selectedTrace, setSelectedTrace] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

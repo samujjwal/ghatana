@@ -24,7 +24,7 @@ import { PHASE_LABELS } from '../../../types/lifecycle';
 import { PANELS, TRANSITIONS, RADIUS } from '../../../styles/design-tokens';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -63,7 +63,7 @@ export function CanvasTaskPanel({
     hoverExpand = true,
     className = '',
 }: CanvasTaskPanelProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const { currentPhase } = useLifecyclePhase();
     const {
         tasks,

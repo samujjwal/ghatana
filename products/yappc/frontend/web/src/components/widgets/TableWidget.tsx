@@ -10,7 +10,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { Button, Input, Checkbox } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ColumnDef<T = Record<string, unknown>> {
   key: string;
@@ -43,7 +43,7 @@ export function TableWidget<T extends Record<string, unknown>>({
   onSelectionChange,
   onExport,
 }: TableWidgetProps<T>): React.ReactElement {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortAsc, setSortAsc] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
@@ -63,7 +63,7 @@ export function TableWidget<T extends Record<string, unknown>>({
     return [...filtered].sort((a, b) => {
       const av = a[sortKey] ?? '';
       const bv = b[sortKey] ?? '';
-      const cmp = String(av).localeCompare(String(bv));
+      const cmp = String(av).i18n.languageCompare(String(bv));
       return sortAsc ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortAsc]);

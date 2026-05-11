@@ -10,7 +10,7 @@ import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import type { Binding, ComponentInstance, ResponsiveVariant, StateVariant } from '@ghatana/ui-builder';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import {
   getConfiguratorGroups,
@@ -287,7 +287,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   readOnly = false,
   readOnlyReason,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const fields = useMemo(() => getRegistryFields(contractName), [contractName]);
   const configuratorGroups = useMemo(
     () => getConfiguratorGroups(contractName),

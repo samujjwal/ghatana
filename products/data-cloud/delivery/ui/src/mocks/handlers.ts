@@ -20,8 +20,14 @@
  */
 
 import { http, HttpResponse, delay } from 'msw';
-import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from '../lib/mock-data';
-import { buildDeprecatedRouteHeaders, warnDeprecatedRoute } from './deprecatedRoutes';
+import {
+  COLLECTION_RUNTIME_OPENAPI_PATHS,
+  DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
+  DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
+  buildDeprecatedRouteHeaders,
+  formatDeprecatedRouteWarning,
+  warnDeprecatedRoute,
+} from '../../test-fixtures/deprecatedRoutes';
 import {
   StorageProfileSchema,
   ConnectorSchema,

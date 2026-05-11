@@ -44,7 +44,7 @@ import { Input } from '@ghatana/design-system';
 
 import { selectedTemplateAtom } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // =============================================================================
 // Types
@@ -454,7 +454,7 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, onUse }) => {
 const TemplateSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const setSelectedTemplate = useSetAtom(selectedTemplateAtom);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | null>(

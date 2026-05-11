@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.QueryResult;
@@ -68,7 +70,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
 
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.of(queryResult));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-dc", null));
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class);
         when(successResponse.getCode()).thenReturn(200);
@@ -103,7 +105,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
     void handleAnalyticsQueryShouldEmitErrorMetricWhenEngineFails() {
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.ofException(new RuntimeException("engine down")));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-dc", null));
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         io.activej.http.HttpResponse errorResponse = mock(io.activej.http.HttpResponse.class);
         when(httpSupport.errorResponse(anyInt(), anyString(), any()))
@@ -130,7 +132,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
     @DisplayName("handleAnalyticsQuery rejects missing tenant header")
     void handleAnalyticsQueryRejectsMissingTenantHeader() {
         io.activej.http.HttpResponse badRequest = mock(io.activej.http.HttpResponse.class);
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null);
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(400, "X-Tenant-Id header is required"));
         when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
 
         io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class);
@@ -176,7 +178,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.ofException(
                         new RuntimeException("syntax error near: " + sensitiveQuery)));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-dc", null));
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
 
         io.activej.http.HttpResponse errorResponse = mock(io.activej.http.HttpResponse.class);
@@ -225,7 +227,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
 
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.of(queryResult));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-dc", null));
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
 
         io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class);
@@ -282,7 +284,7 @@ class AnalyticsHandlerMetricsTest extends EventloopTestBase {
 
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.of(queryResult));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-dc", null));
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
 
         io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class);

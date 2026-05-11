@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Global search bar with autocomplete.
@@ -25,7 +25,7 @@ import { useI18n } from '../../i18n/I18nProvider';
  */
 export function SearchBar({ tenantId }: { tenantId: string }) {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
   const [results, setResults] = React.useState<SearchResult[]>([]);

@@ -17,7 +17,7 @@ import {
   Chip,
 } from '@ghatana/design-system';
 import React, { useState, useMemo, useCallback } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface RequirementConfig {
   id: string;
@@ -46,7 +46,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
   onRequirementSelect,
   selectedId,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');

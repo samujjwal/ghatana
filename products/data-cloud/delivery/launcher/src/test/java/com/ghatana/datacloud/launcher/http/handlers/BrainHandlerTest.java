@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.brain.DataCloudBrain;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -14,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,13 +48,13 @@ class BrainHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new BrainHandler(brain, http); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("brain stats rejects missing tenant before stats lookup")
     void brainStatsRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainStats(request)); 
 
@@ -62,7 +65,7 @@ class BrainHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("attention elevate rejects missing tenant before manager or body access")
     void attentionElevateRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainAttentionElevate(request)); 
 
@@ -74,7 +77,7 @@ class BrainHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("patterns rejects missing tenant before pattern lookup")
     void patternsRejectMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainPatterns(request)); 
 
@@ -85,7 +88,7 @@ class BrainHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("pattern match rejects missing tenant before body access")
     void patternMatchRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBrainPatternsMatch(request)); 
 

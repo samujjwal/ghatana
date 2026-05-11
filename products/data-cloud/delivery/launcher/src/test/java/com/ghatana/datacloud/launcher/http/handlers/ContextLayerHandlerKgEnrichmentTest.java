@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
@@ -28,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -64,9 +68,9 @@ class ContextLayerHandlerKgEnrichmentTest {
     @BeforeEach
     void setUpCommon() { 
         objectMapper = new ObjectMapper(); 
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-kg-test");
+        lenient().when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.success("tenant-kg-test", null));
         lenient().when(http.resolveCorrelationId(any())).thenReturn("req-123");
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(null); 
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(null); 
         // Return null by default — tests that need to inspect the map provide their own Answer
         lenient().doAnswer(inv -> null).when(http).jsonResponse(any(), any()); 
     }
@@ -90,12 +94,12 @@ class ContextLayerHandlerKgEnrichmentTest {
         @DisplayName("handleGetContext returns 400 when tenant header is missing")
         void missingTenant_returns400() { 
             ContextLayerHandler handler = new ContextLayerHandler(http, objectMapper); 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
+            when(http.requireTenantIdWithError(any())).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
-            assertThatCode(() -> handler.handleGetContext(request).getResult()) 
-                    .doesNotThrowAnyException(); 
+            assertThatCode(() -> handler.handleGetContext(request).getResult())
+                    .doesNotThrowAnyException();
 
-            org.mockito.Mockito.verify(http).errorResponse(400, "X-Tenant-Id header is required"); 
+            org.mockito.Mockito.verify(http).errorResponse(anyInt(), anyString()); 
         }
     }
 

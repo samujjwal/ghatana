@@ -1,7 +1,7 @@
 import { Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { Divider, InteractiveList as List, ListItem, ListItemText, Surface as Paper, type PaperProps } from '@ghatana/design-system';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type * as FeatureStories from './data';
 
@@ -127,7 +127,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
     },
     ref
   ) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const cardTitleId = useMemo(() => `${story.slug}-title`, [story.slug]);
 
     const interactive = typeof onStorySelect === 'function';

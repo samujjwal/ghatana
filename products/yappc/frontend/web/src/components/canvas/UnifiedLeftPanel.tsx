@@ -28,7 +28,7 @@ import { AuditTimeline, type AuditEvent } from './audit/AuditTimeline';
 import { GovernancePanel } from './governance/GovernancePanel';
 import { GraphVisualizer } from './visualizer/GraphVisualizer';
 import { TRANSITIONS } from '../../styles/design-tokens';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import type { CanvasAccessPolicy } from './canvasAccessPolicy';
 
 // ============================================================================
@@ -73,7 +73,7 @@ export function UnifiedLeftPanel({
   edges = [],
   className = '',
 }: UnifiedLeftPanelProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(320);

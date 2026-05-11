@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * Test bodies will be implemented in Week 3.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/pipelines/** HTTP endpoints
+ * @doc.purpose Integration tests for /api/v1/action/pipelines/** HTTP endpoints
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -69,16 +69,16 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // POST /api/v1/pipelines  — create pipeline
+    // POST /api/v1/action/pipelines  — create pipeline
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines – create pipeline")
+    @DisplayName("POST /api/v1/action/pipelines – create pipeline")
     class CreatePipelineTests {
 
         /**
          * Requirement C001: Create Pipeline with Valid Configuration
-         * Route: POST /api/v1/pipelines
+         * Route: POST /api/v1/action/pipelines
          * Success: Returns 201 with pipeline ID and status 'draft'
          */
         @Test
@@ -92,7 +92,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/pipelines", 
+            HttpResponse<String> resp = postJson("/api/v1/action/pipelines", 
                     Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT), 
                     withTenant(TestConstants.TENANT_DEFAULT)); 
 
@@ -104,7 +104,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
         /**
          * Requirement C002: Reject Invalid Pipeline Names
-         * Route: POST /api/v1/pipelines
+         * Route: POST /api/v1/action/pipelines
          * Failure: Returns 400 when name is empty or too long
          */
         @Test
@@ -112,7 +112,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
         void createPipeline_emptyName_returns400() throws Exception { 
             startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/pipelines", 
+            HttpResponse<String> resp = postJson("/api/v1/action/pipelines", 
                     Map.of("name", ""), 
                     withTenant(TestConstants.TENANT_DEFAULT)); 
 
@@ -121,7 +121,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
         /**
          * Requirement C008: Tenant Isolation in Pipelines
-         * Route: POST /api/v1/pipelines
+         * Route: POST /api/v1/action/pipelines
          * Success: Pipeline is created in correct tenant via X-Tenant-ID header
          */
         @Test
@@ -135,7 +135,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/pipelines", 
+            HttpResponse<String> resp = postJson("/api/v1/action/pipelines", 
                     Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT), 
                     withTenant(TestConstants.TENANT_ALPHA)); 
 
@@ -151,7 +151,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                         startServer(); 
 
                         HttpResponse<String> resp = postJsonWithoutTenant( 
-                                        "/api/v1/pipelines",
+                                        "/api/v1/action/pipelines",
                                         Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT)); 
 
                         assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST); 
@@ -161,16 +161,16 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GET /api/v1/pipelines/{pipelineId}  — get pipeline by ID
+    // GET /api/v1/action/pipelines/{pipelineId}  — get pipeline by ID
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/pipelines/{pipelineId} – get pipeline")
+    @DisplayName("GET /api/v1/action/pipelines/{pipelineId} – get pipeline")
     class GetPipelineTests {
 
         /**
          * Requirement C005: Retrieve Pipeline Configuration
-         * Route: GET /api/v1/pipelines/{pipelineId}
+         * Route: GET /api/v1/action/pipelines/{pipelineId}
          * Success: Returns 200 with full pipeline config
          */
         @Test
@@ -184,7 +184,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1, "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
+            HttpResponse<String> resp = getWithHeader("/api/v1/action/pipelines/" + TestConstants.PIPELINE_ID_1, "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
 
             assertStatusCode(resp, TestConstants.HTTP_OK); 
             Map<String, Object> body = parseJsonResponse(resp); 
@@ -193,7 +193,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
         /**
          * Requirement C006: Handle Missing Pipeline Gracefully
-         * Route: GET /api/v1/pipelines/{pipelineId}
+         * Route: GET /api/v1/action/pipelines/{pipelineId}
          * Failure: Returns 404 with error message when pipeline does not exist
          */
         @Test
@@ -204,7 +204,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines/missing-pipeline-id", "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
+            HttpResponse<String> resp = getWithHeader("/api/v1/action/pipelines/missing-pipeline-id", "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
 
             assertStatusCode(resp, TestConstants.HTTP_NOT_FOUND); 
             Map<String, Object> body = parseJsonResponse(resp); 
@@ -213,16 +213,16 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GET /api/v1/pipelines  — list all pipelines
+    // GET /api/v1/action/pipelines  — list all pipelines
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/pipelines – list pipelines")
+    @DisplayName("GET /api/v1/action/pipelines – list pipelines")
     class ListPipelinesTests {
 
         /**
          * Requirement C004: List Pipelines
-         * Route: GET /api/v1/pipelines
+         * Route: GET /api/v1/action/pipelines
          * Success: Returns 200 with paginated pipeline list
          */
         @Test
@@ -236,7 +236,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines", "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
+            HttpResponse<String> resp = getWithHeader("/api/v1/action/pipelines", "X-Tenant-ID", TestConstants.TENANT_DEFAULT); 
 
             assertStatusCode(resp, TestConstants.HTTP_OK); 
             Map<String, Object> body = parseJsonResponse(resp); 
@@ -246,7 +246,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
         /**
          * Requirement C008: Tenant Isolation in Pipelines
-         * Route: GET /api/v1/pipelines
+         * Route: GET /api/v1/action/pipelines
          * Success: Returns only pipelines in tenant from X-Tenant-ID header
          */
         @Test
@@ -260,7 +260,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines", "X-Tenant-ID", TestConstants.TENANT_GAMMA); 
+            HttpResponse<String> resp = getWithHeader("/api/v1/action/pipelines", "X-Tenant-ID", TestConstants.TENANT_GAMMA); 
 
             assertStatusCode(resp, TestConstants.HTTP_OK); 
             Map<String, Object> body = parseJsonResponse(resp); 
@@ -276,7 +276,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
                         startServer(); 
 
-                        HttpResponse<String> resp = getWithoutTenant("/api/v1/pipelines");
+                        HttpResponse<String> resp = getWithoutTenant("/api/v1/action/pipelines");
 
                         assertStatusCode(resp, TestConstants.HTTP_OK); // DC-AUD-014
                         Map<String, Object> body = parseJsonResponse(resp); 
@@ -285,16 +285,16 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DELETE /api/v1/pipelines/{pipelineId}  — delete pipeline
+    // DELETE /api/v1/action/pipelines/{pipelineId}  — delete pipeline
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DELETE /api/v1/pipelines/{pipelineId} – delete pipeline")
+    @DisplayName("DELETE /api/v1/action/pipelines/{pipelineId} – delete pipeline")
     class DeletePipelineTests {
 
         /**
          * Requirement C003: Delete Pipeline
-         * Route: DELETE /api/v1/pipelines/{pipelineId}
+         * Route: DELETE /api/v1/action/pipelines/{pipelineId}
          * Success: Returns 204 No Content when pipeline is deleted
          */
         @Test
@@ -305,14 +305,14 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-            HttpResponse<String> resp = delete("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT); 
+            HttpResponse<String> resp = delete("/api/v1/action/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT); 
 
             assertStatusCode(resp, 204); // No Content 
         }
 
         /**
          * Requirement C003: Handle Deleting Non-Existent Pipeline
-         * Route: DELETE /api/v1/pipelines/{pipelineId}
+         * Route: DELETE /api/v1/action/pipelines/{pipelineId}
          * Failure: Returns 404 when pipeline does not exist
          */
         @Test
@@ -323,7 +323,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer(); 
 
-                        HttpResponse<String> resp = delete("/api/v1/pipelines/missing-id?tenantId=" + TestConstants.TENANT_DEFAULT); 
+                        HttpResponse<String> resp = delete("/api/v1/action/pipelines/missing-id?tenantId=" + TestConstants.TENANT_DEFAULT); 
 
                         assertStatusCode(resp, 204); 
         }

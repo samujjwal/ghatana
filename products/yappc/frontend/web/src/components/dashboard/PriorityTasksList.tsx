@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type CheckboxControlProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
 
@@ -103,7 +103,7 @@ export function PriorityTasksList({
     onBulkApprove, 
     onBulkReject 
 }: PriorityTasksListProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
     const [processingTasks, setProcessingTasks] = useState<Set<string>>(new Set());
 

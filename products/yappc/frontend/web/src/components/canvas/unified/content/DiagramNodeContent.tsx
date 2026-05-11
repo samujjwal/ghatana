@@ -15,7 +15,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Box, IconButton, Tooltip, TextField, Select, MenuItem, FormControl } from '@ghatana/design-system';
 import { Pencil as Edit, Maximize2 as Fullscreen, Play as PlayArrow } from 'lucide-react';
 import { MermaidDiagram } from '../../diagram/MermaidDiagram';
-import { useI18n } from '../../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface DiagramNodeContentProps {
     data?: {
@@ -36,7 +36,7 @@ export const DiagramNodeContent: React.FC<DiagramNodeContentProps> = ({
     onChange,
     readonly = false
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(data?.content || DEFAULT_DIAGRAM.content);
     const [diagramType, setDiagramType] = useState(data?.type || DEFAULT_DIAGRAM.type);

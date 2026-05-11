@@ -111,7 +111,12 @@ public class SettingsHandler {
     }
 
     private String resolveTenantId(HttpRequest request) {
-        String tenantId = http.requireTenantIdOrFail(request);
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            // Return anonymous for errors - this is a settings handler that should be permissive
+            return "anonymous";
+        }
+        String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
             return "anonymous";
         }

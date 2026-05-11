@@ -17,7 +17,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Button, IconButton, Divider } from '@ghatana/design-system';
 import { AlertTriangle, RefreshCw as Refresh, GitCompare as Compare, Trash2 as Discard, X, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ArtifactVersionConflict {
   artifactId: string;
@@ -53,7 +53,7 @@ export function ArtifactVersionConflictResolver({
   onDismiss,
   className = '',
 }: ArtifactVersionConflictResolverProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [showDetails, setShowDetails] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
 

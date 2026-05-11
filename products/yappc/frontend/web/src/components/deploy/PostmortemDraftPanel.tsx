@@ -37,7 +37,7 @@ import { Loader2, AlertCircle, FileWarning, Sparkles } from 'lucide-react';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import type { AIAssistSource } from '../ai/AIAssistLabel';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ type GenState = 'idle' | 'loading' | 'done' | 'error';
 export function PostmortemDraftPanel({ incidentId, onAccept, className }: PostmortemDraftPanelProps) {
   const [state, setState] = useState<GenState>('idle');
   const [draft, setDraft] = useState<PostmortemDraft | null>(null);
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   if (!incidentId) return null;
 

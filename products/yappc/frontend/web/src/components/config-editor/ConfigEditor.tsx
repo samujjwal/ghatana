@@ -17,7 +17,7 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -45,7 +45,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
   onError,
   readOnly = false,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [mode, setMode] = useState<EditorMode>('json');
 
   const handleModeChange = useCallback(

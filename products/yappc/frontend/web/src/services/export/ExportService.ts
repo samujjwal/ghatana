@@ -1,5 +1,10 @@
 /**
  * Export Service - Handle canvas exports to various formats
+ *
+ * @doc.type service
+ * @doc.purpose Handle canvas exports with user-visible error feedback and correlation IDs
+ * @doc.layer product
+ * @doc.pattern Service
  */
 
 import { ExportFormat } from './types';
@@ -10,6 +15,13 @@ import type {
   CanvasElement,
   CanvasState,
 } from '../../components/canvas/workspace/canvasAtoms';
+
+/**
+ * Generate a correlation ID for error tracking
+ */
+function generateCorrelationId(): string {
+  return `export-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
 
 type RenderableData = Record<string, unknown>;
 
@@ -36,26 +48,29 @@ class ExportServiceClass {
     canvasState: CanvasState,
     options: ExportOptions,
   ): Promise<ExportResult> {
+    const correlationId = generateCorrelationId();
     try {
       switch (options.format) {
         case 'json':
-          return this.exportJSON(canvasState, options);
+          return this.exportJSON(canvasState, options, correlationId);
         case 'jsx':
-          return this.exportJSX(canvasState, options);
+          return this.exportJSX(canvasState, options, correlationId);
         case 'png':
-          return this.exportPNG(canvasState, options);
+          return this.exportPNG(canvasState, options, correlationId);
         case 'svg':
-          return this.exportSVG(canvasState, options);
+          return this.exportSVG(canvasState, options, correlationId);
         default:
           return {
             success: false,
             error: `Unsupported format: ${options.format}`,
+            correlationId,
           };
       }
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Export failed',
+        correlationId,
       };
     }
   }
@@ -66,6 +81,7 @@ class ExportServiceClass {
   private exportJSON(
     canvasState: CanvasState,
     options: ExportOptions,
+    correlationId: string,
   ): ExportResult {
     const data = JSON.stringify(canvasState, null, 2);
     const filename = options.filename || `canvas-${Date.now()}.json`;
@@ -74,6 +90,7 @@ class ExportServiceClass {
       success: true,
       data,
       filename,
+      correlationId,
     };
   }
 
@@ -83,6 +100,7 @@ class ExportServiceClass {
   private exportJSX(
     canvasState: CanvasState,
     options: ExportOptions,
+    correlationId: string,
   ): ExportResult {
     // Filter page designer components
     const components = canvasState.elements.filter(
@@ -93,6 +111,7 @@ class ExportServiceClass {
       return {
         success: false,
         error: 'No components to export',
+        correlationId,
       };
     }
 
@@ -112,6 +131,7 @@ class ExportServiceClass {
       success: true,
       data: jsx,
       filename,
+      correlationId,
     };
   }
 
@@ -121,6 +141,7 @@ class ExportServiceClass {
   private async exportPNG(
     canvasState: CanvasState,
     options: ExportOptions,
+    correlationId: string,
   ): Promise<ExportResult> {
     try {
       // Create a temporary canvas element for rendering
@@ -169,13 +190,14 @@ class ExportServiceClass {
           scale,
           elementCount: canvasState.elements.length,
           timestamp: new Date().toISOString(),
-        }
+        },
+        correlationId,
       };
     } catch (error) {
-      console.error('[ExportService] PNG export failed:', error);
       return {
         success: false,
         error: `PNG export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        correlationId,
       };
     }
   }
@@ -459,8 +481,7 @@ class ExportServiceClass {
         });
         ctx.drawImage(img, x, y, width, height);
       } catch (error) {
-        console.warn('[ExportService] Failed to load image:', error);
-        // Draw placeholder
+        // Draw placeholder - image load failure is non-critical for export
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(x, y, width, height);
         ctx.strokeStyle = '#ddd';
@@ -551,6 +572,7 @@ class ExportServiceClass {
   private async exportSVG(
     canvasState: CanvasState,
     options: ExportOptions,
+    correlationId: string,
   ): Promise<ExportResult> {
     const width = 1200;
     const height = 800;
@@ -578,6 +600,7 @@ class ExportServiceClass {
       success: true,
       data: svg,
       filename,
+      correlationId,
     };
   }
 

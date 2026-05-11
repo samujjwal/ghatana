@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
@@ -60,13 +62,13 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
         handler = new EntityCrudHandler(client, http, wsBroadcaster) 
             .withTraceSupport(TraceSpanSupport.disabled()) 
             .withOpenSearchConnector(openSearchConnector); 
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("save rejects missing tenant before loading body")
     void saveRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
         when(request.getPathParameter("collection")).thenReturn("test_collection"); 
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request)); 
@@ -78,7 +80,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("get rejects missing tenant before store access")
     void getRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetEntity(request)); 
 
@@ -89,7 +91,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("query rejects missing tenant before store access")
     void queryRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleQueryEntities(request)); 
 
@@ -100,7 +102,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("delete rejects missing tenant before store access")
     void deleteRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleDeleteEntity(request)); 
 
@@ -111,7 +113,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("batch save rejects missing tenant before loading body")
     void batchSaveRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBatchSaveEntities(request)); 
 
@@ -122,7 +124,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("batch delete rejects missing tenant before loading body")
     void batchDeleteRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request)); 
 
@@ -135,7 +137,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     void fullTextSearchRejectsMissingTenant() { 
         when(request.getPathParameter("collection")).thenReturn("orders");
         when(request.getQueryParameter("q")).thenReturn("status:open");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleFullTextSearch(request)); 
 
@@ -146,7 +148,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     @Test
     @DisplayName("as-of query rejects missing tenant before store access")
     void asOfRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetEntityAsOf(request)); 
 

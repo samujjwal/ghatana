@@ -24,7 +24,7 @@ import { Loader2, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useTemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 import type { TemplateRecommendationContext, TemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export function TemplateRecommendationCard({
   selectedTemplateId,
   className,
 }: TemplateRecommendationCardProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { recommendations, isLoading, isError } = useTemplateRecommendation(context);
 
   // Nothing to show without context

@@ -17,7 +17,7 @@ import { Brain, Database, Search, RefreshCw, AlertCircle, Loader2 } from 'lucide
 import { cn } from '../../lib/utils';
 import { AIAssistLabel } from '../ai/AIAssistLabel';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export function CodebaseKnowledgeSurface({
 }: CodebaseKnowledgeSurfaceProps): React.ReactElement | null {
   if (!projectId) return null;
 
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data, isLoading, isError, refetch } = useQuery<CodebaseKnowledgeData>({
     queryKey: ['codebase-knowledge', projectId],

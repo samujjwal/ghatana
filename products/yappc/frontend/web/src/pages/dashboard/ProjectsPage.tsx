@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { yappcApi, type Project as ApiProject } from '@/lib/api';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
-import { useI18n } from '@/i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface ProjectSummary {
   id: string;
@@ -41,7 +41,7 @@ function toProjectSummary(project: ApiProject): ProjectSummary {
  * @doc.layer product
  */
 const ProjectsPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
   const { data: projects, isLoading, error } = useQuery<ProjectSummary[]>({
     queryKey: ['projects', currentWorkspaceId],

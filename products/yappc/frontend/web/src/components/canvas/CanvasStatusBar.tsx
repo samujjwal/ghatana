@@ -73,7 +73,7 @@ const PHASE_LABELS: Record<LifecyclePhase, string> = {
 
 const PHASE_ORDER: LifecyclePhase[] = [
     LifecyclePhase.INTENT,
-    import { useI18n } from '../../i18n/I18nProvider';
+    import { useTranslation } from '@ghatana/i18n';
     LifecyclePhase.SHAPE,
     LifecyclePhase.VALIDATE,
     LifecyclePhase.GENERATE,
@@ -84,7 +84,7 @@ const PHASE_ORDER: LifecyclePhase[] = [
 
 // ============================================================================
 // Sub-components
-        const { t } = useI18n();
+        const { t } = useTranslation('common');
 // ============================================================================
 
 interface PhaseDotProps {

@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
@@ -15,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,14 +56,14 @@ class AiModelHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new AiModelHandler(aiModelManager, featureStoreService, http); 
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
         lenient().when(http.objectMapper()).thenReturn(objectMapper); 
     }
 
     @Test
     @DisplayName("list models rejects missing tenant before manager access")
     void listModelsRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleListAiModels(request)); 
 
@@ -70,7 +74,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("register model rejects missing tenant before loading body")
     void registerModelRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleRegisterAiModel(request)); 
 
@@ -81,7 +85,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("promote model rejects missing tenant before loading body")
     void promoteModelRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handlePromoteAiModel(request)); 
 
@@ -92,7 +96,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("ingest feature rejects missing tenant before loading body")
     void ingestFeatureRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleIngestFeature(request)); 
 
@@ -103,7 +107,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("get features rejects missing tenant before feature lookup")
     void getFeaturesRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetFeatures(request)); 
 

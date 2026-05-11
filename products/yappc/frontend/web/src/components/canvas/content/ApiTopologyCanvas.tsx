@@ -19,7 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface APIEndpoint {
     id: string;
@@ -238,7 +238,7 @@ const EndpointCard = ({
 };
 
 export const ApiTopologyCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [endpoints] = useState<APIEndpoint[]>(MOCK_ENDPOINTS);
     const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

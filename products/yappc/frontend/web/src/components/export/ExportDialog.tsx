@@ -1,4 +1,4 @@
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 /**
  * ExportDialog
  *
@@ -130,7 +130,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   pastExports = [],
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('MARKDOWN');
   const [includeRequirements, setIncludeRequirements] = useState(true);
   const [includeDiagrams, setIncludeDiagrams] = useState(true);

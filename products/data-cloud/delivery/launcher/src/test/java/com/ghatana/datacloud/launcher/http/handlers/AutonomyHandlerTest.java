@@ -1,4 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport.TenantResolutionResult;
 
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -12,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,13 +47,13 @@ class AutonomyHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         handler = new AutonomyHandler(autonomyController, http); 
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        when(http.errorResponse(anyInt(), anyString())).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("set global level rejects missing tenant before loading body")
     void setGlobalLevelRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleSetGlobalLevel(request)); 
 
@@ -60,7 +64,7 @@ class AutonomyHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("get global level rejects missing tenant before controller access")
     void getGlobalLevelRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleGetGlobalLevel(request)); 
 
@@ -71,7 +75,7 @@ class AutonomyHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("list domains rejects missing tenant before controller access")
     void listDomainsRejectsMissingTenant() { 
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
+        when(http.requireTenantIdWithError(request)).thenReturn(TenantResolutionResult.error(401, "Unauthorized")); 
 
         HttpResponse response = runPromise(() -> handler.handleListDomains(request)); 
 

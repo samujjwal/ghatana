@@ -400,7 +400,7 @@ export function createPageArtifactOperationLogExport(
   },
 ): PageArtifactOperationLogExport {
   const records = [...(pageDocument.operationLog ?? [])].sort((left, right) =>
-    left.createdAt.localeCompare(right.createdAt)
+    left.createdAt.i18n.languageCompare(right.createdAt)
   );
   const byOperation: Record<PageArtifactOperationKind, number> = { ...EMPTY_OPERATION_COUNTS };
   const byStatus: Record<PageArtifactOperationStatus, number> = { ...EMPTY_STATUS_COUNTS };

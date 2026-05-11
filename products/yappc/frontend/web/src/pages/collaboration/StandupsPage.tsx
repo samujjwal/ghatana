@@ -13,11 +13,11 @@ import React from 'react';
 import { useParams } from 'react-router';
 import { MessageSquare, Plus, Users, Clock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const StandupsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   return (
     <div className="min-h-screen bg-surface text-white p-8">

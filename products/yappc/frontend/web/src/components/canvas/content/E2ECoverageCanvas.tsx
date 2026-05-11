@@ -19,7 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface E2ETestSuite {
     id: string;
@@ -98,7 +98,7 @@ const getCoverageColor = (coverage: number) => {
 };
 
 export const E2ECoverageCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [suites] = useState<E2ETestSuite[]>(MOCK_SUITES);
     const [searchQuery, setSearchQuery] = useState('');
 

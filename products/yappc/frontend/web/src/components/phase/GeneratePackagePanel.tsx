@@ -12,7 +12,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button, Card, CardContent } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type GenerationStatus =
   | 'idle'
@@ -105,7 +105,7 @@ export const GeneratePackagePanel: React.FC<GeneratePackagePanelProps> = ({
   cannotGenerateReason,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
 
   const badge = STATUS_BADGE[status];

@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const palette = {
     primary: { '500': '#3b82f6' },
@@ -54,7 +54,7 @@ export function RouteProgressBar({
     color = palette.primary['500'],
     simulationDuration = 1000,
 }: RouteProgressBarProps) {
-     const { t } = useI18n();
+     const { t } = useTranslation('common');
     const [progress, setProgress] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);

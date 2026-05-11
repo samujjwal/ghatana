@@ -17,7 +17,7 @@ import { Plus as Add, Search, Bell as Notifications, Share2 as Share, Settings, 
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip } from '@ghatana/design-system';
 import { Button, Badge } from '../design-system';
 import { cn } from '../../lib/utils';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type ActionContext = 'global' | 'project' | 'canvas';
 
@@ -67,7 +67,7 @@ export function ActionsToolbar({
     onNotifications,
     className,
 }: ActionsToolbarProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [moreMenuAnchor, setMoreMenuAnchor] = React.useState<null | HTMLElement>(null);
 
     // Show more actions inline on desktop to match visual guide density

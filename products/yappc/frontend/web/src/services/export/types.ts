@@ -34,6 +34,7 @@ export interface ExportResult {
   format?: ExportFormat;
   metadata?: Record<string, unknown>;
   error?: string;
+  correlationId?: string;
 }
 
 /**

@@ -20,7 +20,7 @@ type CanvasFeatureStory = FeatureStories.CanvasFeatureStory;
 type CanvasFeatureStoryCategory = FeatureStories.CanvasFeatureStoryCategory;
 
 import { CanvasFeatureStoryCard } from './CanvasFeatureStoryCard';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 const ALL_TAB_VALUE = 'all';
 const ALL_PROGRESS_VALUE = 'all-progress';
@@ -143,7 +143,7 @@ export function CanvasFeatureStoryList({
   initialProgressFilter,
   'data-testid': dataTestId = 'canvas-feature-story-list',
 }: CanvasFeatureStoryListProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [activeCategoryId, setActiveCategoryId] = useState(
     defaultCategoryId ?? categories[0]?.id ?? ALL_TAB_VALUE
   );
@@ -209,7 +209,7 @@ export function CanvasFeatureStoryList({
     });
     return Array.from(statusMap.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => a.label.i18n.languageCompare(b.label));
   }, [categories]);
 
   const filteredStories = useMemo(() => {

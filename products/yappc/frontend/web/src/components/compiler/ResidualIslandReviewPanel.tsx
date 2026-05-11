@@ -13,7 +13,7 @@
 import React from 'react';
 
 import { Alert, Button, Card, CardContent, TextArea } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export type ResidualIslandSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -119,7 +119,7 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
   compact = false,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [selectedIsland, setSelectedIsland] = React.useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = React.useState<Map<string, string>>(new Map());
 

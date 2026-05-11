@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,7 +88,7 @@ class PipelineConcurrencyTest {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch completeLatch = new CountDownLatch(2);
         
-        List<PipelineSpec> results = new ArrayList<>();
+        List<PipelineSpec> results = new CopyOnWriteArrayList<>();
         AtomicInteger conflictCount = new AtomicInteger(0);
 
         // WHEN - Two threads try to update the same pipeline concurrently

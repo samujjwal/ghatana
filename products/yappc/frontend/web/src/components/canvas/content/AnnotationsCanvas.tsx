@@ -20,7 +20,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface Annotation {
     id: string;
@@ -238,7 +238,7 @@ const AnnotationCard = ({
 };
 
 export const AnnotationsCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [annotations] = useState<Annotation[]>(MOCK_ANNOTATIONS);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<Annotation['type'] | 'all'>('all');

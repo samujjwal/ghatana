@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import DeleteMyDataSection from '@/components/admin/DeleteMyDataSection';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -105,7 +105,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }
  */
 const ProfilePage: React.FC = () => {
   const queryClient = useQueryClient();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const { data: profile, isLoading, error } = useQuery<UserProfile>({

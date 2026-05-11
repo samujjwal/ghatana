@@ -30,7 +30,7 @@ import {
 import { cn } from '../../utils/cn';
 import { Input } from '@ghatana/design-system';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
   globalSearchOpenAtom,
   globalSearchQueryAtom,
@@ -113,7 +113,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   maxResults = 10,
   recentSearchesLimit = 5,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   
   const isOpen = useAtomValue(globalSearchOpenAtom);

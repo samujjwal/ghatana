@@ -199,10 +199,11 @@ public class VoiceGatewayHandler {
      * a {@code requiresConfirmation} flag and does NOT execute the command.
      */
     public Promise<HttpResponse> handleVoiceIntent(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
 
         if (isRateLimited(tenantId)) {
@@ -387,10 +388,11 @@ public class VoiceGatewayHandler {
      * speech-to-intent model training.
      */
     public Promise<HttpResponse> handleListIntents(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
 
         List<Map<String, Object>> catalog = VoiceIntentCatalog.ALL.stream()
@@ -419,10 +421,11 @@ public class VoiceGatewayHandler {
      * {@link #handleVoiceIntent}.
      */
     public Promise<HttpResponse> handleClassifyOnly(HttpRequest request) {
-        String tenantId  = http.requireTenantIdOrFail(request);
-        if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        HttpHandlerSupport.TenantResolutionResult resolutionResult = http.requireTenantIdWithError(request);
+        if (!resolutionResult.isSuccess()) {
+            return Promise.of(http.errorResponse(resolutionResult.errorCode(), resolutionResult.errorMessage()));
         }
+        String tenantId = resolutionResult.tenantId();
         String requestId = resolveRequestId(request);
 
         return request.loadBody(1024 * 64)

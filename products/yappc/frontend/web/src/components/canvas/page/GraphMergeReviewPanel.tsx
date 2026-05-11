@@ -8,7 +8,7 @@
 import { AlertTriangle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Box, Stack, Typography, IconButton, Button, Surface as Paper } from '@ghatana/design-system';
 import React, { useCallback } from 'react';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 import type { PageArtifactGraphSnapshot } from './pageArtifactDocument';
 import type { ArtifactGraphMergeReviewResult } from '../../../services/canvas/commands/ArtifactGraphMergeReviewService';
@@ -37,7 +37,7 @@ export const GraphMergeReviewPanel: React.FC<GraphMergeReviewPanelProps> = ({
   onRunReview,
   onClose,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const handleRunReview = useCallback(async () => {
     await onRunReview();

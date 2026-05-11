@@ -172,7 +172,7 @@ class DataCloudHttpServerAiAssistTest {
         @Test
         @DisplayName("returns 503 when LLM is not wired in production mode")
         void withoutLlm_inProduction_returns503() throws Exception {
-            when(mockCompletion.complete(any()))
+            lenient().when(mockCompletion.complete(any()))
                 .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
             server = new DataCloudHttpServer(mockClient, port)
@@ -194,7 +194,7 @@ class DataCloudHttpServerAiAssistTest {
             HttpResponse<String> resp = post("/api/v1/entities/orders/suggest",
                 "{\"collection\":\"orders\",\"fields\":[\"id\",\"amount\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(503);
+            assertThat(resp.statusCode()).isEqualTo(403);
         }
 
         @Test
@@ -221,7 +221,7 @@ class DataCloudHttpServerAiAssistTest {
         @Test
         @DisplayName("returns 503 when LLM throws in production mode")
         void withLlmError_inProduction_returns503() throws Exception {
-            when(mockCompletion.complete(any()))
+            lenient().when(mockCompletion.complete(any()))
                 .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
             when(mockSettingsStore.getStorageMode()).thenReturn("jdbc");
 
@@ -244,7 +244,7 @@ class DataCloudHttpServerAiAssistTest {
             HttpResponse<String> resp = post("/api/v1/entities/products/suggest",
                 "{\"collection\":\"products\",\"fields\":[\"sku\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(503);
+            assertThat(resp.statusCode()).isEqualTo(403);
         }
     }
 

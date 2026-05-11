@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { yappcApi } from '@/lib/api/client';
 import { Button } from '../../components/ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -86,7 +86,7 @@ const CalendarPage: React.FC = () => {
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data, isLoading, error } = useQuery<CalendarResponse>({
     queryKey: ['calendar-events'],
@@ -138,7 +138,7 @@ const CalendarPage: React.FC = () => {
     const todayStr = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
     return events
       .filter((e) => e.date.slice(0, 10) >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date))
+      .sort((a, b) => a.date.i18n.languageCompare(b.date))
       .slice(0, 8);
   }, [events, today]);
 

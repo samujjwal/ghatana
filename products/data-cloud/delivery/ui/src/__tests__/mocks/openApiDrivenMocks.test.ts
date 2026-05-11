@@ -4,8 +4,7 @@ import path from 'node:path';
 import {
   COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
-  DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
-} from '../../mocks/deprecatedRoutes';
+} from '../../../test-fixtures/deprecatedRoutes';
 
 const canonicalOpenApi = readFileSync(
   path.resolve(__dirname, '../../../../../contracts/openapi/data-cloud.yaml'),

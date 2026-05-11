@@ -16,7 +16,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { HelpCircle, Database } from 'lucide-react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ function ScoreChip({ score }: { score: number }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RetrievalExplanation({ runId, className }: RetrievalExplanationProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { data, isLoading, isError } = useQuery({
     queryKey: ['retrieval-explanation', runId],
     queryFn: () => fetchRetrievalExplanation(runId),

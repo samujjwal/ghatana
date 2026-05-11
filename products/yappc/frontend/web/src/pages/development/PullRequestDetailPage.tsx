@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type PRState = 'open' | 'closed' | 'merged' | 'draft';
 type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
@@ -91,7 +91,7 @@ const PullRequestDetailPage: React.FC = () => {
   const { prId } = useParams<{ prId: string }>();
   const queryClient = useQueryClient();
   const [mergeMethod, setMergeMethod] = useState<MergeMethod>('squash');
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   const { data: pr, isLoading, error } = useQuery<PullRequestData>({
     queryKey: ['pull-request', prId],

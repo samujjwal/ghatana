@@ -13,7 +13,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import {
   Box,
   TextField,
@@ -87,7 +87,7 @@ interface Props {
  * - Entity exploration
  */
 export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNode, setSelectedNode] = useState<KnowledgeNode | null>(null);
 

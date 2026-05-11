@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -190,7 +190,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
   onRefresh,
   className = '',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const overallStatus: HealthStatus = metrics.some((m) => m.status === 'down')
     ? 'down'
     : metrics.some((m) => m.status === 'degraded')

@@ -14,7 +14,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Sparkles as AutoAwesome, Send, X as Close } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -59,7 +59,7 @@ export function CommandInput({
     onCancel,
     className = '',
 }: CommandInputProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     // Internal state for uncontrolled mode
     const [internalValue, setInternalValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);

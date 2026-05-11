@@ -1,3 +1,9 @@
+# ARCHIVED - NOT CANONICAL
+
+**Archived. Not canonical. Do not use for current audits.**
+
+---
+
 ## Scope and evidence note
 
 I executed this as a **current-snapshot audit** of `samujjwal/ghatana` at commit `0f4b6eb1c28f13fd9ae3341b15fb6659a436d595`, focused on `products/data-cloud` and shared/platform libraries used by Data Cloud. The commit itself is a YAPPC changelog-only commit, so the audit treats the SHA as the full repository state at that point, not as a diff-only review. 

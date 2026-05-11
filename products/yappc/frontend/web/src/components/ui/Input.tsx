@@ -12,7 +12,7 @@
 
 import React, { forwardRef, useState } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 type InputSize = 'sm' | 'md' | 'lg';
 type InputState = 'default' | 'error' | 'success' | 'warning';
@@ -66,7 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
     disabled = false,
     ...props
 }, ref) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [focused, setFocused] = useState(false);
 
     // Determine input state based on props

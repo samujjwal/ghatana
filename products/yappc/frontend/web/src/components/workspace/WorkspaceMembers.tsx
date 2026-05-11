@@ -39,7 +39,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -121,7 +121,7 @@ interface InvitePanelProps {
 }
 
 function InvitePanel({ workspaceId, onInvited, onClose }: InvitePanelProps): ReactNode {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [userSearch, setUserSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<WorkspaceMemberRole>('EDITOR');
 
@@ -301,7 +301,7 @@ function MemberRow({
   onRemove,
   isMutating,
 }: MemberRowProps): ReactNode {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const handleRoleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       onUpdateRole(member.userId, e.target.value as WorkspaceMemberRole);
@@ -397,7 +397,7 @@ export function WorkspaceMembers({
   currentUserRole,
   className = '',
 }: WorkspaceMembersProps): ReactNode {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const queryClient: QueryClient = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
 

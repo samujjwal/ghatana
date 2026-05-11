@@ -1,11 +1,12 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
   buildDeprecatedRouteHeaders,
+  formatDeprecatedRouteWarning,
   warnDeprecatedRoute,
   COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
   DEPRECATED_RUNTIME_TRUTH_ROUTE_REDIRECTS,
-} from '../../mocks/deprecatedRoutes';
+} from '../../../test-fixtures/deprecatedRoutes';
 
 describe('deprecatedRoutes', () => {
   afterEach(() => {

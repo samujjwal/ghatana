@@ -8,7 +8,7 @@ import { Undo2 as Undo, Redo2 as Redo } from 'lucide-react';
 import React from 'react';
 
 import { useCanvasHistory } from './hooks/useCanvasHistory';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Props for HistoryToolbar component.
@@ -63,7 +63,7 @@ export const HistoryToolbar: React.FC<HistoryToolbarProps> = ({
   size = 'medium',
   orientation = 'horizontal',
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { canUndo, canRedo, undo, redo, historySize } = useCanvasHistory(
     projectId,
     canvasId

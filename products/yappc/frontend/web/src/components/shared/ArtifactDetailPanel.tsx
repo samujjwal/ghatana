@@ -16,7 +16,7 @@ import { Button, IconButton, Checkbox, Input } from '@ghatana/design-system';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import { LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
 import { Textarea } from '../ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface ArtifactDetailPanelProps {
     artifactId: string;
@@ -43,7 +43,7 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
     onSave,
     onDelete,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [isEditing, setIsEditing] = useState(false);
     const [editedPayload, setEditedPayload] = useState(payload);
 

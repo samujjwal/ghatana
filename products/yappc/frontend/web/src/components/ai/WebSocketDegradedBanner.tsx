@@ -21,7 +21,7 @@ import { WifiOff, Wifi } from 'lucide-react';
 import { useWebSocketHealth } from '@/hooks/useWebSocketHealth';
 import type { WebSocketHealth } from '@/hooks/useWebSocketHealth';
 import { Button } from '../ui/Button';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ export function WebSocketDegradedBanner({
   reconnectAttemptOverride,
   className,
 }: WebSocketDegradedBannerProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { health: rawHealth, reconnectAttempt: rawAttempt } = useWebSocketHealth();
   const health = healthOverride ?? rawHealth;
   const reconnectAttempt = reconnectAttemptOverride ?? rawAttempt;

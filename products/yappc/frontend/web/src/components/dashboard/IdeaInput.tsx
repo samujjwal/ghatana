@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles as AutoAwesomeIcon, ArrowRight as ArrowForwardIcon } from 'lucide-react';
 import { Surface as Paper, IconButton, Input as InputBase, Box, Typography, Chip } from '@ghatana/design-system';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface IdeaInputProps {
     value?: string;
@@ -10,7 +10,7 @@ interface IdeaInputProps {
 }
 
 export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && onSubmit) {
             onSubmit();

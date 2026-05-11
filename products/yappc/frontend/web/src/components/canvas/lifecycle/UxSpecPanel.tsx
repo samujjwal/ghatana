@@ -15,7 +15,7 @@ import type { UxSpecPayload } from '@/shared/types/lifecycle-artifacts';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Textarea } from '../../ui/Textarea';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 export interface UxSpecPanelProps {
     data?: UxSpecPayload;
@@ -55,7 +55,7 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
     onClose,
     isLoading = false,
 }) => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [uxSpec, setUxSpec] = useState<UxSpecPayload>({
         ...defaultData,
         ...data,

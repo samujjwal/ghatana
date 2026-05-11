@@ -15,7 +15,7 @@ import { VelocityChart, BurndownChart } from 'yappc-ui/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '../../components/ui/Button';
 
 // ============================================================================
@@ -199,7 +199,7 @@ const SprintTable: React.FC<SprintTableProps> = ({
   onSprintSelect,
   selectedSprintId,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   return (
   <div className="sprint-table">
     <table>
@@ -258,7 +258,7 @@ const SprintTable: React.FC<SprintTableProps> = ({
 
 export const VelocityChartsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
 
   // State
   const [velocityData, setVelocityData] = useState<VelocityData | null>(null);

@@ -35,7 +35,7 @@ import {
   activeProjectAtom,
 } from '../../state/atoms';
 import { ROUTES } from '../../router/paths';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // =============================================================================
 // Types
@@ -315,7 +315,7 @@ const SprintBurndownChart: React.FC<{
 
 const DevDashboardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const activeSprint = useAtomValue(activeSprintAtom);
   const stories = useAtomValue(sprintStoriesAtom);
   const project = useAtomValue(activeProjectAtom);

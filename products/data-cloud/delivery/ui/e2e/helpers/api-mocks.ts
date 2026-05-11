@@ -9,7 +9,7 @@ import {
   mockAlertSuggestions,
   mockAlertRules,
 } from '../fixtures/test-data';
-import { buildDeprecatedRouteHeaders, warnDeprecatedRoute } from '../../src/mocks/deprecatedRoutes';
+import { COLLECTION_RUNTIME_OPENAPI_PATHS, DEPRECATED_COLLECTION_ROUTE_REDIRECTS, buildDeprecatedRouteHeaders, warnDeprecatedRoute } from '../../test-fixtures/deprecatedRoutes';
 
 const COLLECTION_LIST_ROUTE = '**/api/v1/entities/dc_collections';
 const COLLECTION_ITEM_ROUTE = '**/api/v1/entities/dc_collections/*';

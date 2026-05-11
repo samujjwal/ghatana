@@ -19,7 +19,7 @@ import {
   FeatureFlag,
   useFeatureFlag,
 } from '../../providers/FeatureFlagProvider';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -126,7 +126,7 @@ export const AgentAdvancedSettings: React.FC<AgentAdvancedSettingsProps> = ({
   onBasicChange,
   onAdvancedChange,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const { isFeatureEnabled } = useFeatureFlag();
   const planningAvailable = isFeatureEnabled(FeatureFlag.AGENT_ORCHESTRATION);
 

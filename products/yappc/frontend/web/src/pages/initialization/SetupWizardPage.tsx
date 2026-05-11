@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
-import { useI18n } from '../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -57,7 +57,7 @@ const FEATURE_OPTIONS = [
 // ============================================================================
 
 const SetupWizardPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<ProjectForm>({
     name: '', description: '', language: 'Java 21', framework: 'ActiveJ',

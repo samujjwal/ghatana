@@ -1539,10 +1539,10 @@ public class DataCloudHttpServer {
         // B3: Agent catalog runtime handler — loads YAML definitions from classpath
         agentCatalogHandler = new AgentCatalogHandler(httpSupport, metricsCollector);
 
+        // P0-10: SurfaceRegistryHandler now uses typed SurfaceRecord contract only
         surfaceRegistryHandler = new SurfaceRegistryHandler(
             httpSupport,
             objectMapper,
-            this::buildSurfaceSnapshot,
             this::buildTypedSurfaceSnapshot);
 
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store

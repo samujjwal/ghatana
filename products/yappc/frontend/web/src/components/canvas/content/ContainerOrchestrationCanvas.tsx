@@ -19,7 +19,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { useI18n } from '../../../i18n/I18nProvider';
+import { useTranslation } from '@ghatana/i18n';
 
 interface Container {
     id: string;
@@ -173,7 +173,7 @@ const getTypeIcon = (type: Container['type']) => {
 };
 
 export const ContainerOrchestrationCanvas = () => {
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [containers] = useState<Container[]>(MOCK_CONTAINERS);
     const [selectedContainer, setSelectedContainer] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');

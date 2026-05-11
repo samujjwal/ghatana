@@ -253,7 +253,7 @@ export const PseudocodeCanvas = () => {
     const [pseudocodeBlocks] = useState<PseudocodeBlock[]>(MOCK_PSEUDOCODE);
     const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const { t } = useI18n();
+    const { t } = useTranslation('common');
     const [filterCategory, setFilterCategory] = useState<PseudocodeBlock['category'] | 'all'>('all');
 
     const filteredBlocks = useMemo(() => {
