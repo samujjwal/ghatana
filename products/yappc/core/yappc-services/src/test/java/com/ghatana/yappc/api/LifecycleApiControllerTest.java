@@ -377,13 +377,13 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<GeneratedArtifacts> generate(ValidatedSpec spec) {
+        public Promise<GeneratedArtifacts> generate(ValidatedSpec spec, com.ghatana.yappc.domain.generate.GenerationContext context) {
             generateCallCount++;
             return Promise.of(generateResult);
         }
 
         @Override
-        public Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing) {
+        public Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing, com.ghatana.yappc.domain.generate.GenerationContext context) {
             regenerateWithDiffCallCount++;
             return Promise.of(regenerateWithDiffResult);
         }

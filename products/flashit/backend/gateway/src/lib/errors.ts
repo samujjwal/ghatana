@@ -258,6 +258,9 @@ const ERROR_METADATA: Record<string, ErrorMetadata> = {
   },
 };
 
+const metadataFor = (code: string): ErrorMetadata =>
+  ERROR_METADATA[code] ?? ERROR_METADATA['INTERNAL_ERROR']!;
+
 /**
  * Application error class with standardized metadata
  */
@@ -273,7 +276,7 @@ export class AppError extends Error {
   }
 
   getMetadata(): ErrorMetadata {
-    return ERROR_METADATA[this.code] || ERROR_METADATA['INTERNAL_ERROR'];
+    return metadataFor(this.code);
   }
 }
 
@@ -294,15 +297,15 @@ export function formatErrorResponse(
     details = error.details;
   } else if ('validation' in error && error.validation) {
     // Fastify validation error
-    metadata = ERROR_METADATA['VALIDATION_ERROR'];
+    metadata = metadataFor('VALIDATION_ERROR');
     code = 'VALIDATION_ERROR';
     details = { validation: error.validation };
   } else if ('statusCode' in error && error.statusCode === 429) {
-    metadata = ERROR_METADATA['RATE_LIMIT_EXCEEDED'];
+    metadata = metadataFor('RATE_LIMIT_EXCEEDED');
     code = 'RATE_LIMIT_EXCEEDED';
   } else {
     // Unknown error - treat as internal error
-    metadata = ERROR_METADATA['INTERNAL_ERROR'];
+    metadata = metadataFor('INTERNAL_ERROR');
     code = 'INTERNAL_ERROR';
   }
 
@@ -332,29 +335,29 @@ export function createErrorHandler() {
     reply: FastifyReply
   ) => {
     const logger = request.logger || Logger.fromRequest(request);
-    const correlationId = logger.context.correlationId;
+    const correlationId = logger.getContext().correlationId;
 
     // Determine error metadata
     let metadata: ErrorMetadata;
     if (error instanceof AppError) {
       metadata = error.getMetadata();
     } else if ('validation' in error && error.validation) {
-      metadata = ERROR_METADATA['VALIDATION_ERROR'];
+      metadata = metadataFor('VALIDATION_ERROR');
     } else if ('statusCode' in error) {
       // Try to map status code to error type
       if (error.statusCode === 429) {
-        metadata = ERROR_METADATA['RATE_LIMIT_EXCEEDED'];
+        metadata = metadataFor('RATE_LIMIT_EXCEEDED');
       } else if (error.statusCode === 401) {
-        metadata = ERROR_METADATA['TOKEN_INVALID'];
+        metadata = metadataFor('TOKEN_INVALID');
       } else if (error.statusCode === 403) {
-        metadata = ERROR_METADATA['INSUFFICIENT_PERMISSIONS'];
+        metadata = metadataFor('INSUFFICIENT_PERMISSIONS');
       } else if (error.statusCode === 404) {
-        metadata = ERROR_METADATA['RESOURCE_NOT_FOUND'];
+        metadata = metadataFor('RESOURCE_NOT_FOUND');
       } else {
-        metadata = ERROR_METADATA['INTERNAL_ERROR'];
+        metadata = metadataFor('INTERNAL_ERROR');
       }
     } else {
-      metadata = ERROR_METADATA['INTERNAL_ERROR'];
+      metadata = metadataFor('INTERNAL_ERROR');
     }
 
     // Log based on severity

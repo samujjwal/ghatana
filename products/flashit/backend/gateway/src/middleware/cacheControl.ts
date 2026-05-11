@@ -305,10 +305,10 @@ const cacheControlPlugin: FastifyPluginAsync<ResponseCacheConfig> = async (
   options: ResponseCacheConfig
 ) => {
   const config: ResponseCacheConfig = {
-    enabled: true,
-    ttl: DEFAULT_CACHE_TTL,
-    maxEntries: DEFAULT_MAX_ENTRIES,
     ...options,
+    enabled: options.enabled ?? true,
+    ttl: options.ttl ?? DEFAULT_CACHE_TTL,
+    maxEntries: options.maxEntries ?? DEFAULT_MAX_ENTRIES,
   };
 
   const keyGenerator = config.keyGenerator || defaultKeyGenerator;

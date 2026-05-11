@@ -128,7 +128,7 @@ public final class GenerationRun {
         private IntentInput intent;
         private RunStatus status = RunStatus.PENDING;
         private final java.util.List<String> artifactIds = new java.util.ArrayList<>();
-        private ReviewStatus reviewStatus = ReviewStatus.PENDING;
+        private ReviewStatus reviewStatus = ReviewStatus.REVIEW_PENDING;
         private String previewSessionId;
         private Instant createdAt = Instant.now();
         private Instant completedAt;
@@ -241,11 +241,19 @@ public final class GenerationRun {
 
     /**
      * Review status of the generated artifacts.
+     * 
+     * Idempotent state machine for generation review, apply, reject, and rollback.
+     * States: GENERATING → GENERATED → REVIEW_PENDING → APPROVED/APPLIED → REJECTED → ROLLBACK_REQUESTED → ROLLED_BACK → FAILED
      */
     public enum ReviewStatus {
-        PENDING,
+        GENERATING,
+        GENERATED,
+        REVIEW_PENDING,
         APPROVED,
+        APPLIED,
         REJECTED,
-        ROLLED_BACK
+        ROLLBACK_REQUESTED,
+        ROLLED_BACK,
+        FAILED
     }
 }

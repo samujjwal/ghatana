@@ -1,16 +1,41 @@
 import React from 'react';
 import { Button } from '@ghatana/design-system';
-import { ProductShell, type ProductShellConfig } from '@ghatana/product-shell';
+import {
+  ProductShell,
+  useStableProductShellConfig,
+  type ProductShellConfig,
+} from '@ghatana/product-shell';
 import { useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { currentUserAtom } from '../store/atoms';
 import { useLogout } from '../hooks/use-api';
 import { flashitRouteManifest } from '../routeManifest';
-import { resolveFlashitRole } from '../routeAccess';
+import { FLASHIT_ROLE_ORDER, resolveFlashitRole } from '../routeAccess';
 
 interface FlashitProductShellProps {
   children: React.ReactNode;
 }
+
+const roleLabels: ProductShellConfig['roleLabels'] = {
+  guest: 'Guest',
+  member: 'Member',
+  premium: 'Premium',
+  admin: 'Admin',
+};
+
+const roleDescriptions: ProductShellConfig['roleDescriptions'] = {
+  guest: 'Unauthenticated preview state.',
+  member: 'Core capture and reflection workspace.',
+  premium: 'Expanded insight and collaboration workspace.',
+  admin: 'Operational governance and support workspace.',
+};
+
+const sidebarFooter = (
+  <div className="rounded-lg bg-slate-900/80 p-4 text-sm text-slate-100">
+    <p className="eyebrow">Kernel shell</p>
+    <p className="m-0">Route visibility, search entry, and layout behavior come from shared product-shell contracts.</p>
+  </div>
+);
 
 export function FlashitProductShell({ children }: FlashitProductShellProps): React.ReactElement {
   const currentUser = useAtomValue(currentUserAtom);
@@ -18,28 +43,13 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
   const navigate = useNavigate();
   const currentRole = resolveFlashitRole(currentUser);
 
-  const config: ProductShellConfig = {
+  const config = useStableProductShellConfig((): ProductShellConfig => ({
     productName: 'FlashIt',
     logo: <span className="text-lg font-semibold tracking-tight text-sky-700">FI</span>,
     currentRole,
-    roleOrder: {
-      guest: 0,
-      member: 1,
-      premium: 2,
-      admin: 3,
-    },
-    roleLabels: {
-      guest: 'Guest',
-      member: 'Member',
-      premium: 'Premium',
-      admin: 'Admin',
-    },
-    roleDescriptions: {
-      guest: 'Unauthenticated preview state.',
-      member: 'Core capture and reflection workspace.',
-      premium: 'Expanded insight and collaboration workspace.',
-      admin: 'Operational governance and support workspace.',
-    },
+    roleOrder: FLASHIT_ROLE_ORDER,
+    roleLabels,
+    roleDescriptions,
     routes: flashitRouteManifest,
     onSearch: () => navigate('/search'),
     headerActions: (
@@ -50,13 +60,8 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
         <Button onClick={() => logout()}>Logout</Button>
       </div>
     ),
-    sidebarFooter: (
-      <div className="rounded-2xl bg-slate-900/80 p-4 text-sm text-slate-100">
-        <p className="eyebrow">Kernel shell</p>
-        <p className="m-0">Route visibility, search entry, and layout behavior come from shared product-shell contracts.</p>
-      </div>
-    ),
-  };
+    sidebarFooter,
+  }), [currentRole, currentUser?.displayName, currentUser?.email, logout, navigate]);
 
   return (
     <ProductShell

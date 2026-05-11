@@ -16,6 +16,7 @@
 import React from 'react';
 import { NavLink } from 'react-router';
 import type { ProductRouteCapability, ProductShellConfig } from '../types';
+import { filterDiscoverableRoutes } from '../access';
 
 interface RouteCapabilityNavProps {
   routes: readonly ProductRouteCapability[];
@@ -26,17 +27,6 @@ interface RouteCapabilityNavProps {
   groupHeadingClassName?: string;
   /** Additional class applied to each nav link. */
   navLinkClassName?: string | ((props: { isActive: boolean }) => string);
-}
-
-function roleAtLeast(
-  currentRole: string,
-  minimumRole: string | undefined,
-  roleOrder: Readonly<Record<string, number>>
-): boolean {
-  if (!minimumRole) return true;
-  const current = roleOrder[currentRole] ?? 0;
-  const minimum = roleOrder[minimumRole] ?? 0;
-  return current >= minimum;
 }
 
 function groupRoutes(routes: readonly ProductRouteCapability[]): Map<string, ProductRouteCapability[]> {
@@ -76,12 +66,7 @@ export function RouteCapabilityNav({
   groupHeadingClassName,
   navLinkClassName,
 }: RouteCapabilityNavProps): React.ReactElement {
-  const visibleRoutes = routes.filter(
-    (r) =>
-      r.lifecycle !== 'boundary' &&
-      r.discoverable !== false &&
-      roleAtLeast(config.currentRole, r.minimumRole, config.roleOrder)
-  );
+  const visibleRoutes = filterDiscoverableRoutes(routes, config.currentRole, config.roleOrder);
 
   const groups = groupRoutes(visibleRoutes);
 

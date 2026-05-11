@@ -41,6 +41,7 @@ import knowledgeGraphRoutes from "./routes/knowledge-graph";
 import { startScheduler, stopScheduler } from "./services/scheduler";
 import metricsPlugin from "./plugins/prometheus";
 import { registerTracingMiddleware } from "./middleware/tracing";
+import tenantIsolation from "./middleware/tenant-isolation";
 import { initCache, disconnectCache } from "./lib/cache";
 import { JwtPayload } from "./lib/auth";
 import { assertProductionConfig } from "./lib/production-validation";
@@ -99,8 +100,6 @@ export const buildServer = () => {
 
   // Multi-tenant isolation (extracts X-Tenant-ID / JWT tenantId)
   // Strict mode rejects requests without X-Tenant-ID header in production.
-  const tenantIsolation = (await import("./middleware/tenant-isolation"))
-    .default;
   app.register(tenantIsolation, { strict: env.NODE_ENV === 'production' });
 
   // JWT authentication

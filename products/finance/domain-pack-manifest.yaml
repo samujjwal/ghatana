@@ -104,8 +104,8 @@ pack:
     - delete
     - export
     - download
-    - settle
-    - cancel
+    - finance:settle
+    - finance:cancel
   policyResources:
     - transactions
     - positions

@@ -1,0 +1,16 @@
+{
+  "name": "@ghatana/product-manifest-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kernel-owned product manifest schema and validation contracts.",
+  "exports": {
+    ".": {
+      "import": "./index.mjs"
+    }
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1",
+    "zod": "^4.3.6"
+  }
+}

@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import AWS from 'aws-sdk';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../lib/auth.js';
@@ -97,9 +97,9 @@ export default async function progressiveUploadRoutes(fastify: FastifyInstance) 
   fastify.post('/init', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(initProgressiveUploadSchema),
+      body: toJsonSchema(initProgressiveUploadSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           uploadId: z.string().uuid(),
           chunkSize: z.number(),
           s3MultipartUploadId: z.string(),
@@ -245,7 +245,7 @@ export default async function progressiveUploadRoutes(fastify: FastifyInstance) 
   fastify.post('/chunk', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(uploadChunkSchema),
+      body: toJsonSchema(uploadChunkSchema),
       consumes: ['multipart/form-data'],
     },
   }, async (request, reply) => {
@@ -330,7 +330,7 @@ export default async function progressiveUploadRoutes(fastify: FastifyInstance) 
   fastify.post('/complete', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(completeProgressiveUploadSchema),
+      body: toJsonSchema(completeProgressiveUploadSchema),
     },
   }, async (request, reply) => {
     const { uploadId, chunkHashes } = request.body;
@@ -439,7 +439,7 @@ export default async function progressiveUploadRoutes(fastify: FastifyInstance) 
   fastify.get('/:uploadId/progress', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         uploadId: z.string().uuid(),
       })),
     },
@@ -488,7 +488,7 @@ export default async function progressiveUploadRoutes(fastify: FastifyInstance) 
   fastify.delete('/:uploadId', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         uploadId: z.string().uuid(),
       })),
     },

@@ -64,6 +64,10 @@ export class Logger {
     });
   }
 
+  getContext(): LogContext {
+    return { ...this.context };
+  }
+
   /**
    * Log info level message
    */

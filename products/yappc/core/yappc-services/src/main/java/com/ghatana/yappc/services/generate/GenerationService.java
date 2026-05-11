@@ -2,6 +2,7 @@ package com.ghatana.yappc.services.generate;
 
 import com.ghatana.yappc.domain.generate.DiffResult;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
+import com.ghatana.yappc.domain.generate.GenerationContext;
 import com.ghatana.yappc.domain.generate.GenerationReviewRequest;
 import com.ghatana.yappc.domain.generate.GenerationReviewResult;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
@@ -15,21 +16,23 @@ import io.activej.promise.Promise;
  */
 public interface GenerationService {
     /**
-     * Generates all artifacts from validated specification.
+     * Generates all artifacts from validated specification with explicit context.
      *
      * @param spec The validated specification
+     * @param context The generation context with explicit provenance
      * @return Promise of generated artifacts
      */
-    Promise<GeneratedArtifacts> generate(ValidatedSpec spec);
+    Promise<GeneratedArtifacts> generate(ValidatedSpec spec, GenerationContext context);
 
     /**
      * Regenerates artifacts with diff to show changes.
      *
      * @param spec The validated specification
      * @param existing Existing artifacts to diff against
+     * @param context The generation context with explicit provenance
      * @return Promise of diff result
      */
-    Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing);
+    Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing, GenerationContext context);
 
     /**
      * Records an explicit human review decision for a generated artifact run.

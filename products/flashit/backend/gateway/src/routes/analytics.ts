@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { AnalyticsService, AnalyticsAggregator, MetricsCollector } from '../services/analytics/analytics-service';
@@ -80,9 +80,9 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/dashboard', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(dashboardQuerySchema),
+      querystring: toJsonSchema(dashboardQuerySchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           dailyData: z.array(z.object({
             date: z.string(),
             moments: z.number(),
@@ -154,7 +154,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/meaning', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(meaningMetricsQuerySchema),
+      querystring: toJsonSchema(meaningMetricsQuerySchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;
@@ -184,7 +184,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/meaning/summary', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(meaningDashboardQuerySchema),
+      querystring: toJsonSchema(meaningDashboardQuerySchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;
@@ -211,7 +211,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/meaning/return-rate', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(meaningMetricsQuerySchema),
+      querystring: toJsonSchema(meaningMetricsQuerySchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;
@@ -242,7 +242,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/meaning/temporal-arcs', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(meaningMetricsQuerySchema),
+      querystring: toJsonSchema(meaningMetricsQuerySchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;
@@ -273,7 +273,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/meaning/language-evolution', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(meaningMetricsQuerySchema),
+      querystring: toJsonSchema(meaningMetricsQuerySchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;
@@ -304,9 +304,9 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/insights', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(insightsQuerySchema),
+      querystring: toJsonSchema(insightsQuerySchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           insights: z.array(z.object({
             id: z.string(),
             type: z.string(),
@@ -402,7 +402,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           insightsGenerated: z.number(),
         })),
@@ -462,7 +462,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.put('/insights/:insightId/action', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         insightId: z.string().uuid(),
       })),
     },
@@ -502,11 +502,11 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/weekly-summary', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         weekStart: z.string().datetime().optional(),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           weekStart: z.string(),
           weekEnd: z.string(),
           totalMoments: z.number(),
@@ -557,9 +557,9 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/metrics', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(metricsQuerySchema),
+      querystring: toJsonSchema(metricsQuerySchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           metrics: z.array(z.object({
             value: z.number(),
             timestamp: z.string(),
@@ -606,7 +606,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.post('/track', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(trackActivitySchema),
+      body: toJsonSchema(trackActivitySchema),
     },
   }, async (request, reply) => {
     const { activity, metadata } = request.body;
@@ -633,9 +633,9 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.post('/reports/generate', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(generateReportSchema),
+      body: toJsonSchema(generateReportSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           jobId: z.string(),
           message: z.string(),
           estimatedCompletionTime: z.string(),
@@ -703,9 +703,9 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/reports/:jobId/status', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(reportStatusSchema),
+      params: toJsonSchema(reportStatusSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           jobId: z.string(),
           status: z.string(),
           progress: z.number().optional(),
@@ -757,7 +757,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/reports/:jobId/download', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(reportStatusSchema),
+      params: toJsonSchema(reportStatusSchema),
     },
   }, async (request, reply) => {
     const { jobId } = request.params;
@@ -814,14 +814,14 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.get('/spheres/:sphereId', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         sphereId: z.string().uuid(),
       })),
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         period: z.enum(['week', 'month', 'quarter']).default('month'),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           sphereId: z.string(),
           sphereName: z.string(),
           analytics: z.object({
@@ -955,7 +955,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           waiting: z.number(),
           active: z.number(),
           completed: z.number(),

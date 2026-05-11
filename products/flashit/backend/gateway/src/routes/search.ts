@@ -11,7 +11,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { JwtPayload } from '../lib/auth.js';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { EnhancedSearchService, SearchType } from '../services/search/enhanced-search-service';
@@ -81,9 +81,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.post('/', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(searchSchema),
+      body: toJsonSchema(searchSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           results: z.array(z.object({
             momentId: z.string(),
             title: z.string(),
@@ -161,9 +161,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.get('/suggestions', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(suggestionsSchema),
+      querystring: toJsonSchema(suggestionsSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           suggestions: z.array(z.string()),
         })),
       },
@@ -193,9 +193,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.post('/similar', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(similarMomentsSchema),
+      body: toJsonSchema(similarMomentsSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           similarMoments: z.array(z.object({
             momentId: z.string(),
             similarity: z.number(),
@@ -291,9 +291,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.post('/embeddings/generate', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(generateEmbeddingSchema),
+      body: toJsonSchema(generateEmbeddingSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           jobIds: z.array(z.string()),
           message: z.string(),
         })),
@@ -352,9 +352,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.post('/reflection/generate', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(generateReflectionSchema),
+      body: toJsonSchema(generateReflectionSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           jobId: z.string(),
           message: z.string(),
         })),
@@ -418,11 +418,11 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   fastify.get('/analytics', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         period: z.enum(['day', 'week', 'month']).default('week'),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           totalSearches: z.number(),
           popularQueries: z.array(z.object({
             query: z.string(),

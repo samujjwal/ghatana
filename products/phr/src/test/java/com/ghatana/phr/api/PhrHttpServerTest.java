@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -99,6 +100,80 @@ class PhrHttpServerTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(200);
             JsonNode body = JSON.readTree(bodyString(response));
             assertThat(body.path("ready").asBoolean()).isTrue();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // GET /route-entitlements
+    // -----------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("GET /route-entitlements")
+    class RouteEntitlementRoute {
+
+        @Test
+        @DisplayName("returns ProductRouteEntitlement-shaped payload")
+        void returnsProductRouteEntitlementShape() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null);
+
+            assertThat(response.getCode()).isEqualTo(200);
+            JsonNode body = JSON.readTree(bodyString(response));
+            assertThat(body.path("product").asText()).isEqualTo("phr");
+            assertThat(body.path("principalId").asText()).isEqualTo("anonymous");
+            assertThat(body.path("tenantId").asText()).isEqualTo("default");
+            assertThat(body.path("role").asText()).isEqualTo("patient");
+            assertThat(body.path("routes").isArray()).isTrue();
+            assertThat(body.path("actions").isArray()).isTrue();
+            assertThat(body.path("cards").isArray()).isTrue();
+        }
+
+        @Test
+        @DisplayName("patient role is denied clinician-only emergency route")
+        void patientRoleDoesNotReceiveEmergencyRoute() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+                Map.of("X-Role", "patient"));
+
+            JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
+            assertThat(routePaths(routes)).doesNotContain("/emergency");
+        }
+
+        @Test
+        @DisplayName("clinician role receives emergency route")
+        void clinicianRoleReceivesEmergencyRoute() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+                Map.of("X-Role", "clinician"));
+
+            JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
+            assertThat(routePaths(routes)).contains("/emergency");
+        }
+
+        @Test
+        @DisplayName("unknown role fails closed to patient-scoped routes")
+        void unknownRoleFailsClosedToPatientRoutes() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+                Map.of("X-Role", "superuser"));
+
+            JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
+            assertThat(routePaths(routes)).contains("/dashboard", "/records");
+            assertThat(routePaths(routes)).doesNotContain("/labs", "/emergency");
+        }
+
+        @Test
+        @DisplayName("propagates tenant, persona, and tier headers")
+        void propagatesEntitlementContextHeaders() throws Exception {
+            HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
+                Map.of(
+                    "X-Tenant-ID", "tenant-health-1",
+                    "X-Principal-ID", "principal-1",
+                    "X-Persona", "clinician",
+                    "X-Tier", "clinical"
+                ));
+
+            JsonNode body = JSON.readTree(bodyString(response));
+            assertThat(body.path("tenantId").asText()).isEqualTo("tenant-health-1");
+            assertThat(body.path("principalId").asText()).isEqualTo("principal-1");
+            assertThat(body.path("persona").asText()).isEqualTo("clinician");
+            assertThat(body.path("tier").asText()).isEqualTo("clinical");
         }
     }
 
@@ -218,11 +293,23 @@ class PhrHttpServerTest extends EventloopTestBase {
 
     private HttpResponse dispatch(HttpMethod method, String path, String jsonBody)
             throws Exception {
+        return dispatch(method, path, jsonBody, Map.of());
+    }
+
+    private HttpResponse dispatch(HttpMethod method, String path, String jsonBody, Map<String, String> headers)
+            throws Exception {
         HttpRequest.Builder builder = HttpRequest.builder(method, "http://localhost" + path);
+        headers.forEach((name, value) -> builder.withHeader(HttpHeaders.of(name), value));
         if (jsonBody != null) {
             builder.withBody(jsonBody.getBytes(StandardCharsets.UTF_8));
         }
         return runPromise(() -> servlet.serve(builder.build()));
+    }
+
+    private static java.util.List<String> routePaths(JsonNode routes) {
+        java.util.List<String> paths = new java.util.ArrayList<>();
+        routes.forEach(route -> paths.add(route.path("path").asText()));
+        return paths;
     }
 
     private String bodyString(HttpResponse response) throws Exception {

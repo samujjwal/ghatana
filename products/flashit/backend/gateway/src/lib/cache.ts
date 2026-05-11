@@ -89,7 +89,12 @@ export async function cacheSet<T>(
 ): Promise<void> {
   if (!client || !isConnected) return;
   try {
-    await client.set(key(namespace, id), JSON.stringify(value), { EX: ttlSeconds });
+    await client.set(key(namespace, id), JSON.stringify(value), {
+      expiration: {
+        type: 'EX',
+        value: ttlSeconds,
+      },
+    });
   } catch {
     // Silently fail — cache is best-effort
   }
@@ -114,14 +119,14 @@ export async function cacheInvalidateNamespace(namespace: string): Promise<void>
   if (!client || !isConnected) return;
   try {
     const pattern = `${CACHE_PREFIX}${namespace}:*`;
-    let cursor = 0;
+    let cursor = '0';
     do {
       const result = await client.scan(cursor, { MATCH: pattern, COUNT: 100 });
       cursor = result.cursor;
       if (result.keys.length > 0) {
         await client.del(result.keys);
       }
-    } while (cursor !== 0);
+    } while (cursor !== '0');
   } catch {
     // Silently fail
   }

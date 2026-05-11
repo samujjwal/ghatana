@@ -16,12 +16,11 @@ import {
   executeRunPostAction,
   formatTimestamp,
   resolvePhaseIcon,
-  usePhaseCockpitData,
+  type MountedPhase,
+  type RunPostAction,
 } from '../../../services/phase';
-import type {
-  MountedPhase,
-  RunPostAction,
-} from '../../../services/phase';
+import { usePhasePacket } from '../../../hooks/usePhasePacket';
+import type { PhaseCockpitPacket, PhaseAction } from '../../../types/phasePacket';
 import type { GenerateReviewDecision } from '@/lib/api/client';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
@@ -29,8 +28,6 @@ import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
 import { Button } from '../../../components/ui/Button';
 import type { PhaseActionResult } from '../../../services/phase';
-import type { PhaseCockpitContract } from '../../../services/phase/PhaseCockpitContractBuilder';
-import type { PhaseCockpitDataWarning } from '../../../services/phase/usePhaseCockpitData';
 
 
 interface PhaseDetailCopy {
@@ -74,87 +71,78 @@ const PHASE_DETAIL_COPY: Record<MountedPhase, PhaseDetailCopy> = {
   },
 };
 
-function PhaseContractSummary({ contract }: { readonly contract: PhaseCockpitContract | null }) {
-  if (!contract) {
+function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | null }) {
+  if (!packet) {
     return null;
   }
 
-  const persistedActivityCount = contract.persisted.activity.length;
-  const blockerCount = contract.derived.blockers.length;
-  const evidenceCount = contract.derived.evidence.length;
-  const governanceCount = contract.derived.governance.length;
-  const suggestionCount = contract.suggested.actions.length;
+  const activityCount = packet.activityFeed.length;
+  const blockerCount = packet.blockers.length;
+  const evidenceCount = packet.evidence.length;
+  const governanceCount = packet.governance.length;
+  const actionCount = packet.availableActions.length;
 
   return (
     <section
       className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
-      data-testid="phase-contract-summary"
-      aria-label="Canonical phase contract summary"
+      data-testid="phase-packet-summary"
+      aria-label="Canonical phase packet summary"
     >
-      <div data-testid="phase-contract-persisted">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Persisted</p>
-        <p className="mt-2 font-medium text-fg">{contract.persisted.project.name}</p>
-        <p className="mt-1 text-xs text-fg-muted">{persistedActivityCount} backed activity event(s)</p>
+      <div data-testid="phase-packet-context">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Context</p>
+        <p className="mt-2 font-medium text-fg">{packet.projectName ?? 'Project'}</p>
+        <p className="mt-1 text-xs text-fg-muted">{activityCount} activity event(s)</p>
       </div>
-      <div data-testid="phase-contract-derived">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Derived</p>
+      <div data-testid="phase-packet-state">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">State</p>
         <p className="mt-2 font-medium text-fg">
           {blockerCount} blocker(s), {evidenceCount} evidence item(s)
         </p>
-        <p className="mt-1 text-xs text-fg-muted">{governanceCount} governance trace record(s)</p>
+        <p className="mt-1 text-xs text-fg-muted">{governanceCount} governance record(s)</p>
       </div>
-      <div data-testid="phase-contract-suggested">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Suggested</p>
-        <p className="mt-2 font-medium text-fg">{suggestionCount} ranked action(s)</p>
+      <div data-testid="phase-packet-actions">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Actions</p>
+        <p className="mt-2 font-medium text-fg">{actionCount} available action(s)</p>
         <p className="mt-1 text-xs text-fg-muted">
-          {contract.suggested.actions[0]?.title ?? 'No backend suggestion surfaced'}
+          {packet.dashboardActions.primaryAction ?? 'No primary action'}
         </p>
       </div>
-      <div data-testid="phase-contract-review">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Review</p>
+      <div data-testid="phase-packet-readiness">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Readiness</p>
         <p className="mt-2 font-medium text-fg">
-          {contract.review.required ? 'Review required' : 'Ready without extra review'}
+          {packet.readiness.canAdvance ? 'Can advance' : 'Blocked'}
         </p>
         <p className="mt-1 text-xs text-fg-muted">
-          {contract.review.reason ?? (contract.review.canAdvance ? 'Lifecycle preview can advance.' : 'Lifecycle preview is not ready.')}
+          Score: {Math.round(packet.readiness.completenessScore * 100)}%
         </p>
       </div>
     </section>
   );
 }
 
-function PhaseDataRecoveryPanel({ warnings }: { readonly warnings: readonly PhaseCockpitDataWarning[] }) {
-  if (warnings.length === 0) {
+function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | null; readonly onRetry: () => void }) {
+  if (!error) {
     return null;
   }
 
   return (
     <section
       className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning-color"
-      data-testid="phase-data-recovery"
-      aria-label="Phase cockpit partial data recovery"
+      data-testid="phase-packet-error"
+      aria-label="Phase packet error"
     >
-      <p className="font-semibold text-warning-color">Some cockpit data could not be refreshed.</p>
-      <div className="mt-3 space-y-3">
-        {warnings.map((warning) => (
-          <div key={warning.source} className="rounded-xl border border-warning-border/70 bg-surface/70 p-3">
-            <p className="font-medium text-fg" data-testid={`phase-data-warning-${warning.source}`}>
-              {warning.title}
-            </p>
-            <p className="mt-1 text-xs text-fg-muted">{warning.message}</p>
-            <Button
-              type="button"
-              variant="outline"
-              tone="warning"
-              size="small"
-              className="mt-2 border-warning-border bg-warning-bg text-warning-color"
-              onClick={warning.retry}
-            >
-              {warning.retryLabel}
-            </Button>
-          </div>
-        ))}
-      </div>
+      <p className="font-semibold text-warning-color">Phase packet unavailable</p>
+      <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
+      <Button
+        type="button"
+        variant="outline"
+        tone="warning"
+        size="small"
+        className="mt-2 border-warning-border bg-warning-bg text-warning-color"
+        onClick={onRetry}
+      >
+        Retry
+      </Button>
     </section>
   );
 }
@@ -207,22 +195,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     });
   }, [phase]);
 
-  const {
-    config,
-    projectQuery,
-    activity,
-    preview,
-    blockers,
-    evidence,
-    governance,
-    suggestions,
-    contract,
-    dataWarnings,
-  } = usePhaseCockpitData({
+  const { packet, isLoading, error, refetch } = usePhasePacket({
     phase,
     projectId,
     workspaceId: currentWorkspaceId,
-    onSuggestionAction: scrollToSupportingSurface,
   });
 
   const actionMutation = useMutation({
@@ -232,6 +208,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       setActionError(null);
       setFeedback(null);
       void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+      void refetch();
       if (result.kind === 'surface') {
         scrollToSupportingSurface();
       }
@@ -239,7 +216,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     onError: (error) => {
       setActionResult(null);
       setActionError(describePhaseActionError(error));
-      if (preview && !preview.canAdvance) {
+      if (packet && !packet.readiness.canAdvance) {
         scrollToBlockerPanel();
       }
     },
@@ -252,6 +229,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       setActionError(null);
       setFeedback(null);
       void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+      void refetch();
     },
     onError: (error) => {
       setActionError(describePhaseActionError(error));
@@ -265,6 +243,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       setActionError(null);
       setFeedback(null);
       void queryClient.invalidateQueries({ queryKey: ['project-activity', projectId] });
+      void refetch();
       if (result.kind === 'navigate' && projectId) {
         void navigate(`/p/${projectId}/observe`);
       }
@@ -293,7 +272,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       projectId,
       tenantId: currentUser?.tenantId,
       actorId: currentUser?.id,
-      preview,
+      preview: packet ? {
+        canAdvance: packet.readiness.canAdvance,
+        readiness: Math.round(packet.readiness.completenessScore * 100),
+      } as any : undefined,
     });
   }, [
     actionMutation,
@@ -301,24 +283,24 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     currentUser?.id,
     navigate,
     phase,
-    preview,
+    packet,
     projectId,
   ]);
 
   const handleSecondaryAction = () => {
     setActionResult(null);
     setActionError(null);
-    setFeedback(`Reviewing ${config.supportingTitle.toLowerCase()} for ${config.name}.`);
+    setFeedback(`Reviewing phase details for ${phase}.`);
     scrollToSupportingSurface();
   };
 
-  const handleSuggestionAction = useCallback((step: SuggestedStep) => {
-    if (step.applyMode === 'one-click' && !step.approvalRequired) {
+  const handleSuggestionAction = useCallback((action: PhaseAction) => {
+    if (action.enabled && !action.disabledReason) {
       handlePrimaryAction();
       return;
     }
 
-    setFeedback(`Reviewing suggestion: ${step.title}.`);
+    setFeedback(`Reviewing action: ${action.label}.`);
     scrollToSupportingSurface();
   }, [handlePrimaryAction, scrollToSupportingSurface]);
 
@@ -354,32 +336,24 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     });
   };
 
-  const project = projectQuery.data;
   const phaseDetailCopy = PHASE_DETAIL_COPY[phase];
-  const cockpitSuggestions = suggestions.map((step) => ({
-    ...step,
-    onAccept: handleSuggestionAction,
-  }));
 
-  // TODO-008: Verify phase capability from backend
-  if (project && project.capabilities) {
-    const phaseCapability = project.capabilities[phase as keyof typeof project.capabilities];
-    if (phaseCapability === false) {
-      return (
-        <div className="p-6">
-          <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-            <h2 className="font-semibold">Phase access denied</h2>
-            <p className="mt-1 text-sm">
-              You do not have permission to access the {config.name} phase for this project.
-              Please contact your workspace administrator or project owner for access.
-            </p>
-          </div>
+  // Check phase capability from packet
+  if (packet && !packet.capabilities.canRead) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold">Phase access denied</h2>
+          <p className="mt-1 text-sm">
+            You do not have permission to access the {phase} phase for this project.
+            Please contact your workspace administrator or project owner for access.
+          </p>
         </div>
-      );
-    }
+      </div>
+    );
   }
 
-  if (projectQuery.isLoading || !project) {
+  if (isLoading || !packet) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -394,11 +368,76 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     );
   }
 
-  const projectName = project.name ?? 'this project';
+  const projectName = packet.projectName ?? 'this project';
+  
+  // Map packet blockers to component format
+  const blockers = packet.blockers.map(b => ({
+    id: b.id,
+    title: b.title,
+    severity: (b.severity === 'CRITICAL' ? 'critical' : b.severity === 'WARNING' ? 'medium' : 'low') as 'critical' | 'medium' | 'high' | 'low',
+    description: b.description,
+    source: b.type,
+  }));
+  
+  // Map packet evidence to component format
+  const evidence = packet.evidence.map(e => ({
+    id: e.id,
+    type: (e.type as 'metric' | 'log' | 'artifact' | 'observation' | 'recommendation') || 'observation',
+    title: e.title,
+    description: e.description,
+    timestamp: new Date(e.timestamp).toISOString(),
+    metadata: e.metadata,
+  }));
+  
+  // Map packet governance to component format
+  const governance = packet.governance.map(g => ({
+    id: g.id,
+    artifactId: g.id,
+    action: g.type,
+    actor: g.actor,
+    source: (g.type as 'preview' | 'backed' | 'derived' | 'suggested' | 'unavailable') || 'derived',
+    summary: g.outcome,
+    timestamp: new Date(g.timestamp).toISOString(),
+    decision: g.outcome,
+  }));
+  
+  // Map packet actions to suggestions format
+  const suggestions = packet.availableActions.map(a => ({
+    id: a.actionId,
+    title: a.label,
+    type: 'suggestion' as const,
+    label: a.label,
+    description: a.description,
+    confidence: 0.5,
+    evidence: [] as any,
+    action: () => handleSuggestionAction(a),
+    priority: a.enabled ? 'high' : 'low',
+    kind: 'suggestion' as const,
+    enabled: a.enabled,
+    metadata: a.parameters,
+    applyMode: a.enabled ? 'one-click' as const : 'manual' as const,
+    approvalRequired: !a.enabled,
+  })) as any;
+  
+  // Map packet activity to component format
+  const activity = packet.activityFeed.map(entry => ({
+    id: entry.id,
+    source: 'lifecycle' as const,
+    action: entry.action,
+    summary: entry.summary,
+    timestamp: new Date(entry.timestamp).toISOString(),
+    actor: entry.actor,
+    severity: entry.severity as any,
+    success: true,
+  }));
+  
   const statusPanels = (
     <PhaseStatusPanels
       phase={phase}
-      preview={preview}
+      preview={{
+        canAdvance: packet.readiness.canAdvance,
+        readiness: Math.round(packet.readiness.completenessScore * 100),
+      } as any}
       blockers={blockers}
       activity={activity}
     />
@@ -412,20 +451,20 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
           {phaseDetailCopy.label}
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-fg">{config.supportingTitle}</h2>
+        <h2 className="mt-2 text-lg font-semibold text-fg">Phase Details</h2>
         <p className="mt-1 text-sm text-fg-muted">
           Review the existing detailed surface below when you need deeper context beyond the phase-native cockpit.
         </p>
       </div>
       <div className="mb-4 text-xs text-fg-muted">
         Last activity:{' '}
-        {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : 'No recent backed activity'}
+        {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : 'No recent activity'}
       </div>
       <PhaseEmbeddedSurface phase={phase} />
     </div>
   );
 
-  const isCtaDisabled = config.primaryLocked === true || actionMutation.isPending;
+  const isCtaDisabled = !packet.readiness.canAdvance || packet.blockers.length > 0 || actionMutation.isPending;
   const showGenerateReviewActions = phase === 'generate'
     && actionResult?.kind === 'generate-review'
     && Boolean(actionResult.runId)
@@ -437,48 +476,61 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const isRunPostActionPending = runPostActionMutation.isPending;
   const disabledReason = actionMutation.isPending
     ? 'The phase action is running. Keep this page open while the backend responds.'
-    : config.primaryLockedReason;
+    : packet.blockers.length > 0
+      ? `${packet.blockers.length} blocker${packet.blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
+      : undefined;
+
+  if (isLoading || !packet) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 rounded bg-surface-muted" />
+          <div className="h-28 rounded-xl bg-surface-muted" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="h-40 rounded-xl bg-surface-muted" />
+            <div className="h-40 rounded-xl bg-surface-muted" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
       <PhaseCockpitLayout
         testId={`${phase}-cockpit`}
-        phaseName={config.name}
-        phaseDescription={`${config.description} Project: ${projectName}.`}
+        phaseName={phase.charAt(0).toUpperCase() + phase.slice(1)}
+        phaseDescription={`Phase cockpit for ${phase}. Project: ${projectName}.`}
         primaryAction={(
           <PhasePrimaryActionCard
-            title={config.primaryTitle}
-            description={config.primaryDescription}
-            actionLabel={config.primaryLabel}
-            onAction={handlePrimaryAction}
-            secondaryActionLabel={isCtaDisabled ? 'View blockers' : config.secondaryLabel}
-            onSecondaryAction={isCtaDisabled ? scrollToBlockerPanel : handleSecondaryAction}
-            icon={resolvePhaseIcon(config.icon)}
+            title={`Advance ${phase}`}
+            description={packet.readiness.canAdvance 
+              ? 'Proceed to the next phase of the lifecycle.' 
+              : 'Resolve blockers to advance to the next phase.'}
+            actionLabel={packet.readiness.canAdvance ? 'Advance' : 'View Blockers'}
+            onAction={packet.readiness.canAdvance ? handlePrimaryAction : scrollToBlockerPanel}
+            secondaryActionLabel="Review Details"
+            onSecondaryAction={handleSecondaryAction}
+            icon={resolvePhaseIcon(phase as any)}
             disabled={isCtaDisabled}
-            disabledReason={
-              disabledReason
-                ? disabledReason
-                : isCtaDisabled
-                  ? `${blockers.length} blocker${blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
-                : undefined
-            }
+            disabledReason={disabledReason}
             testId={`${phase}-primary-action-card`}
-            actionTestId={config.primaryTestId}
-            secondaryActionTestId={config.secondaryTestId}
-            actionAriaLabel={`${config.name} primary action`}
+            actionTestId={`${phase}-advance-action`}
+            secondaryActionTestId={`${phase}-review-action`}
+            actionAriaLabel={`${phase} primary action`}
           />
         )}
         blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
         evidence={<PhaseEvidencePanel evidence={evidence} />}
-        suggestedAutomation={<PhaseSuggestedNextStep steps={cockpitSuggestions} />}
+        suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}
         advancedTools={advancedDetails}
         advancedToolsLabel={phaseDetailCopy.label}
         advancedToolsDescription={phaseDetailCopy.description}
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
-          <PhaseDataRecoveryPanel warnings={dataWarnings} />
-          <PhaseContractSummary contract={contract} />
+          <PhasePacketErrorPanel error={error} onRetry={refetch} />
+          <PhasePacketSummary packet={packet} />
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
               {feedback}

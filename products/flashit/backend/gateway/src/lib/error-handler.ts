@@ -117,16 +117,16 @@ export class ErrorHandlerService {
 
     switch (errorReport.severity) {
       case 'critical':
-        systemLogger.error('[CRITICAL]', errorReport.error.message, logData);
+        systemLogger.error(`[CRITICAL] ${errorReport.error.message}`, errorReport.error, logData);
         break;
       case 'high':
-        systemLogger.error('[HIGH]', errorReport.error.message, logData);
+        systemLogger.error(`[HIGH] ${errorReport.error.message}`, errorReport.error, logData);
         break;
       case 'medium':
-        systemLogger.warn('[MEDIUM]', errorReport.error.message, logData);
+        systemLogger.warn(`[MEDIUM] ${errorReport.error.message}`, logData);
         break;
       case 'low':
-        systemLogger.info('[LOW]', errorReport.error.message, logData);
+        systemLogger.info(`[LOW] ${errorReport.error.message}`, logData);
         break;
     }
   }

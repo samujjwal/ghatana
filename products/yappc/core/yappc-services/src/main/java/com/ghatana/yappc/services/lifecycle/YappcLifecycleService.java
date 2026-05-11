@@ -12,8 +12,12 @@ import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
+import com.ghatana.yappc.api.EvolveApiController;
 import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
+import com.ghatana.yappc.api.LearnApiController;
+import com.ghatana.yappc.api.ObserveApiController;
+import com.ghatana.yappc.api.RunApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.agent.AepEventPublisher;
@@ -180,6 +184,14 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(GenerationApiController.class);
         ValidationApiController validationController =
                 injector.getInstance(ValidationApiController.class);
+        RunApiController runController =
+                injector.getInstance(RunApiController.class);
+        ObserveApiController observeController =
+                injector.getInstance(ObserveApiController.class);
+        LearnApiController learnController =
+                injector.getInstance(LearnApiController.class);
+        EvolveApiController evolveController =
+                injector.getInstance(EvolveApiController.class);
         AdvancePhaseUseCase advancePhaseUseCase =
                 injector.getInstance(AdvancePhaseUseCase.class);
         AepEventPublisher aepPublisher =
@@ -216,7 +228,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         // ── Build secured API servlet with auth + RBAC + rate limiting ───
         AsyncServlet apiServlet = buildApiServlet(injector, eventloop,
                 intentController, shapeController, generationController,
-                validationController, advancePhaseUseCase, aepPublisher,
+                validationController, runController, observeController,
+                learnController, evolveController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService, workflowService);
         com.ghatana.platform.security.rbac.PolicyRepository policyRepository =
                 injector.getInstance(com.ghatana.platform.security.rbac.PolicyRepository.class);
@@ -309,6 +322,10 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             ShapeApiController shapeController,
             GenerationApiController generationController,
             ValidationApiController validationController,
+            RunApiController runController,
+            ObserveApiController observeController,
+            LearnApiController learnController,
+            EvolveApiController evolveController,
             AdvancePhaseUseCase advancePhaseUseCase,
             AepEventPublisher aepPublisher,
             HumanApprovalService humanApprovalService,
@@ -399,6 +416,23 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 .with(POST, "/api/v1/yappc/validate",               validationController::validate)
                 .with(POST, "/api/v1/yappc/validate/with-config",   validationController::validateWithConfig)
                 .with(POST, "/api/v1/yappc/validate/with-policy",   validationController::validateWithPolicy)
+
+                // ── Run phase (Phase 4) ───────────────────────────────────
+                .with(POST, "/api/v1/yappc/run/execute",            runController::executeRun)
+                .with(POST, "/api/v1/yappc/run/execute-with-observation", runController::executeRunWithObservation)
+                .with(POST, "/api/v1/yappc/run/rollback",            runController::rollback)
+                .with(POST, "/api/v1/yappc/run/promote",             runController::promote)
+
+                // ── Observe phase (Phase 5) ────────────────────────────────
+                .with(POST, "/api/v1/yappc/observe/collect",        observeController::collectObservation)
+
+                // ── Learn phase (Phase 7) ──────────────────────────────────
+                .with(POST, "/api/v1/yappc/learn/analyze",           learnController::analyze)
+                .with(POST, "/api/v1/yappc/learn/analyze-with-context", learnController::analyzeWithContext)
+
+                // ── Evolve phase (Phase 6) ─────────────────────────────────
+                .with(POST, "/api/v1/yappc/evolve/propose",          evolveController::propose)
+                .with(POST, "/api/v1/yappc/evolve/propose-with-constraints", evolveController::proposeWithConstraints)
 
                 // ── Human Approval Gate (Lifecycle 3.5) ─────────────────────
                                 .with(GET, "/api/v1/approvals/pending", approvalHttpHandlers::listPending)

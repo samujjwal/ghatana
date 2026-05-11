@@ -15,7 +15,6 @@ const checks = [
       'principalId',
       'tenantId',
       'role',
-      'persona',
       'tier',
       'routes',
       'actions',
@@ -109,11 +108,8 @@ const checks = [
     file: 'products/flashit/client/web/src/routeManifest.tsx',
     required: [
       'ProductRouteCapability',
-      'minimumRole',
-      'personas',
-      'tiers',
-      'actions',
-      'cards',
+      'flashItRouteContracts',
+      'ROUTE_ELEMENTS',
       'flashitRouteManifest',
       'getFlashitNavigationRoutes',
     ],
@@ -150,11 +146,11 @@ const checks = [
       'principalId',
       'tenantId',
       'role',
-      'persona',
       'tier',
-      'routes: allowedRoutes',
-      'actions: allowedRoutes.flatMap',
-      'cards: allowedRoutes.flatMap',
+      'routes: routeEntitlements',
+      'actions: routeEntitlements.flatMap',
+      'cards: routeEntitlements.flatMap',
+      'flashItRouteContracts',
     ],
   },
   {
@@ -170,6 +166,28 @@ const checks = [
  * that it imports real production code (not object-literal theater).
  */
 const behavioralCoverageChecks = [
+  {
+    name: 'PHR route entitlement behavioral test',
+    testFile: 'products/phr/src/test/java/com/ghatana/phr/api/PhrHttpServerTest.java',
+    required: [
+      'GET /route-entitlements',
+      'returns ProductRouteEntitlement-shaped payload',
+      'patient role is denied clinician-only emergency route',
+      'unknown role fails closed',
+      'propagates tenant',
+    ],
+  },
+  {
+    name: 'DMOS route entitlement behavioral test',
+    testFile: 'products/digital-marketing/dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosRouteEntitlementServletTest.java',
+    required: [
+      'DmosRouteEntitlementServlet',
+      'returns ProductRouteEntitlement-shaped payload',
+      'viewer role is denied brand-manager routes',
+      'unknown role fails closed',
+      'propagates tenant',
+    ],
+  },
   {
     name: 'FlashIt entitlements behavioral test',
     testFile: 'products/flashit/backend/gateway/src/routes/__tests__/entitlements.test.ts',
@@ -197,10 +215,10 @@ const behavioralCoverageChecks = [
     name: 'FlashIt idempotency behavioral test',
     testFile: 'products/flashit/backend/gateway/src/lib/__tests__/idempotency.test.ts',
     required: [
-      "from '../../idempotency.js'",
+      "from '../idempotency.js'",
       'checkIdempotency',
-      'found: false',
-      'found: true',
+      'result.found).toBe(false)',
+      'result.found).toBe(true)',
     ],
   },
 ];
@@ -240,6 +258,38 @@ for (const check of behavioralCoverageChecks) {
   }
 }
 
+const flashitFrontend = readFileSync(
+  path.join(repoRoot, 'products/flashit/client/web/src/routeManifest.tsx'),
+  'utf8',
+);
+const flashitBackend = readFileSync(
+  path.join(repoRoot, 'products/flashit/backend/gateway/src/routes/entitlements.ts'),
+  'utf8',
+);
+const flashitContract = readFileSync(
+  path.join(repoRoot, 'products/flashit/backend/gateway/src/routes/route-manifest.contract.ts'),
+  'utf8',
+);
+
+function extractFrontendRoutePaths(source) {
+  return [...source.matchAll(/path:\s*'([^']+)'/g)].map((match) => match[1]).sort();
+}
+
+function extractContractRoutePaths(source) {
+  return [...source.matchAll(/route\('([^']+)'/g)].map((match) => match[1]).sort();
+}
+
+const frontendRoutes = flashitFrontend.includes('flashItRouteContracts')
+  ? extractContractRoutePaths(flashitContract)
+  : extractFrontendRoutePaths(flashitFrontend);
+const contractRoutes = extractContractRoutePaths(flashitContract);
+const backendUsesContract = flashitBackend.includes('flashItRouteContracts');
+if (!backendUsesContract || JSON.stringify(frontendRoutes) !== JSON.stringify(contractRoutes)) {
+  errors.push(
+    `FlashIt frontend/backend route entitlement parity failed. frontend=[${frontendRoutes.join(', ')}], contract=[${contractRoutes.join(', ')}], backendUsesContract=${backendUsesContract}`,
+  );
+}
+
 if (errors.length > 0) {
   console.error('Route entitlement contract check failed:\n');
   for (const error of errors) {
@@ -249,4 +299,3 @@ if (errors.length > 0) {
 }
 
 console.log('Route entitlement contract check passed (token + behavioral coverage).');
-

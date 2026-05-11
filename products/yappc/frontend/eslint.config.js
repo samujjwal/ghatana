@@ -9,6 +9,7 @@ import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import designSystemEnforcement from './web/eslint-rules/design-system-enforcement.js';
+import terminologyConsistency from './eslint-rules/terminology-consistency.rule.js';
 
 /**
  * ESLint Configuration with Governance Rules
@@ -420,6 +421,7 @@ export default tseslint.config(
       unicorn: unicornPlugin,
       'jsx-a11y': jsxA11yPlugin,
       'design-system-enforcement': designSystemEnforcement,
+      'terminology-consistency': terminologyConsistency,
     },
     languageOptions: {
       parserOptions: {
@@ -441,6 +443,7 @@ export default tseslint.config(
     rules: {
       ...standardRules,
       ...governanceRules,
+      'terminology-consistency/productAsProject': 'warn',
     },
   },
 

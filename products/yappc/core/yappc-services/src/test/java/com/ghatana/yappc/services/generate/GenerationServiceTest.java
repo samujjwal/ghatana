@@ -65,48 +65,63 @@ class GenerationServiceTest extends EventloopTestBase {
                 LifecycleValidationResult.builder().build()); 
     }
 
-    private ValidatedSpec specWithEntities(List<EntitySpec> entities) { 
-        DomainModel model = DomainModel.builder().entities(entities).build(); 
-        return ValidatedSpec.of( 
+    private ValidatedSpec specWithEntities(List<EntitySpec> entities) {
+        DomainModel model = DomainModel.builder().entities(entities).build();
+        return ValidatedSpec.of(
                 ShapeSpec.builder().id("shape-456").tenantId("tenant-1").domainModel(model).build(),
-                LifecycleValidationResult.builder().build()); 
+                LifecycleValidationResult.builder().build());
+    }
+
+    private com.ghatana.yappc.domain.generate.GenerationContext defaultContext() {
+        return com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                .tenantId("tenant-1")
+                .workspaceId("workspace-1")
+                .projectId("project-1")
+                .actorId("test-actor")
+                .phase("GENERATE")
+                .sourceArtifactIds(List.of())
+                .canvasNodeIds(List.of())
+                .intentId("intent-1")
+                .shapeId("shape-1")
+                .correlationId("corr-1")
+                .build();
     }
 
     @Test
     @DisplayName("generate: spec without domainModel → artifacts contain config/docs/pipeline but no entity code")
-    void shouldGenerateArtifacts() { 
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); 
+    void shouldGenerateArtifacts() {
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities(), defaultContext()));
 
-        assertNotNull(result); 
-        assertNotNull(result.id()); 
+        assertNotNull(result);
+        assertNotNull(result.id());
         assertThat(result.specRef()).isEqualTo("shape-123");
-        assertThat(result.artifacts()).isNotNull(); 
+        assertThat(result.artifacts()).isNotNull();
         // config + docs + ci/cd pipeline — 3 base artifacts
-        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(3); 
+        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(3);
 
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); 
-        verify(auditLogger, times(1)).log(any(Map.class)); 
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
+        verify(auditLogger, times(1)).log(any(Map.class));
     }
 
     @Test
     @DisplayName("generate: spec with entities → entity code generation called per entity")
-    void shouldGenerateEntityCodeForEachEntity() { 
+    void shouldGenerateEntityCodeForEachEntity() {
         EntitySpec entity1 = EntitySpec.builder().name("User").description("User entity").build();
         EntitySpec entity2 = EntitySpec.builder().name("Order").description("Order entity").build();
 
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithEntities(List.of(entity1, entity2)))); 
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithEntities(List.of(entity1, entity2)), defaultContext()));
 
-        assertNotNull(result); 
+        assertNotNull(result);
         // 2 entities + 3 base artifacts = at least 5
-        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(5); 
+        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(5);
         // AI called once per entity + once per base artifact
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); 
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
     }
 
     @Test
     @DisplayName("generate: metrics timer and success counter recorded")
-    void shouldRecordMetricsOnSuccess() { 
-        runPromise(() -> service.generate(specWithoutEntities())); 
+    void shouldRecordMetricsOnSuccess() {
+        runPromise(() -> service.generate(specWithoutEntities(), defaultContext()));
 
         verify(metrics, atLeastOnce()).recordTimer(eq("yappc.generate.execute"), anyLong(), any(Map.class));
         verify(metrics, atLeastOnce()).incrementCounter(contains("success"), any(Map.class));
@@ -114,56 +129,56 @@ class GenerationServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generate: audit logger called with event details")
-    void shouldAuditGenerateExecution() { 
-        runPromise(() -> service.generate(specWithoutEntities())); 
+    void shouldAuditGenerateExecution() {
+        runPromise(() -> service.generate(specWithoutEntities(), defaultContext()));
 
-        verify(auditLogger, times(1)).log(any(Map.class)); 
+        verify(auditLogger, times(1)).log(any(Map.class));
     }
 
     @Test
     @DisplayName("regenerateWithDiff: both old and new artifacts present in diff result")
-    void shouldRegenerateWithDiff() { 
-        ValidatedSpec spec = specWithoutEntities(); 
-        GeneratedArtifacts existing = GeneratedArtifacts.builder() 
+    void shouldRegenerateWithDiff() {
+        ValidatedSpec spec = specWithoutEntities();
+        GeneratedArtifacts existing = GeneratedArtifacts.builder()
                 .id("old-123")
                 .specRef("shape-123")
-                .artifacts(List.of()) 
-                .build(); 
+                .artifacts(List.of())
+                .build();
 
-        DiffResult result = runPromise(() -> service.regenerateWithDiff(spec, existing)); 
+        DiffResult result = runPromise(() -> service.regenerateWithDiff(spec, existing, defaultContext()));
 
-        assertNotNull(result); 
-        assertNotNull(result.newArtifacts()); 
-        assertNotNull(result.oldArtifacts()); 
-        assertNotNull(result.diffs()); 
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); 
+        assertNotNull(result);
+        assertNotNull(result.newArtifacts());
+        assertNotNull(result.oldArtifacts());
+        assertNotNull(result.diffs());
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
     }
 
     @Test
     @DisplayName("regenerateWithDiff: diff metrics and audit recorded")
-    void shouldRecordMetricsOnDiff() { 
-        ValidatedSpec spec = specWithoutEntities(); 
-        GeneratedArtifacts existing = GeneratedArtifacts.builder() 
+    void shouldRecordMetricsOnDiff() {
+        ValidatedSpec spec = specWithoutEntities();
+        GeneratedArtifacts existing = GeneratedArtifacts.builder()
                 .id("old-123").specRef("shape-123").artifacts(List.of()).build();
 
-        runPromise(() -> service.regenerateWithDiff(spec, existing)); 
+        runPromise(() -> service.regenerateWithDiff(spec, existing, defaultContext()));
 
         verify(metrics, atLeastOnce()).recordTimer(contains("diff"), anyLong(), any(Map.class));
-        verify(auditLogger, atLeast(2)).log(any(Map.class)); // once for generate, once for diff 
+        verify(auditLogger, atLeast(2)).log(any(Map.class)); // once for generate, once for diff
     }
 
     @Test
     @DisplayName("generate: AI failure propagates and error metric recorded")
-    void shouldHandleGenerationFailure() { 
-        when(aiService.complete(any(CompletionRequest.class))) 
+    void shouldHandleGenerationFailure() {
+        when(aiService.complete(any(CompletionRequest.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("Generation failed")));
 
         try {
-            GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); 
+            GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities(), defaultContext()));
             // Promises.toList may succeed with remaining artifacts if only some calls fail
-            assertNotNull(result); 
-            verify(metrics, atLeastOnce()).recordTimer(anyString(), anyLong(), any(Map.class)); 
-        } catch (Exception e) { 
+            assertNotNull(result);
+            verify(metrics, atLeastOnce()).recordTimer(anyString(), anyLong(), any(Map.class));
+        } catch (Exception e) {
             assertThat(e.getMessage()).containsIgnoringCase("generation failed");
             verify(metrics, atLeastOnce()).incrementCounter(contains("error"), any(Map.class));
         }
@@ -171,10 +186,10 @@ class GenerationServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generate: metadata contains validation_passed flag")
-    void shouldIncludeValidationMetadataInArtifacts() { 
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); 
+    void shouldIncludeValidationMetadataInArtifacts() {
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities(), defaultContext()));
 
-        assertThat(result.metadata()).isNotNull(); 
+        assertThat(result.metadata()).isNotNull();
         assertThat(result.metadata()).containsKey("validation_passed");
     }
 }

@@ -4,10 +4,10 @@
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { FastifyRequest } from "fastify";
+import type { FastifyRequest } from "fastify";
 
 const SALT_ROUNDS = 10;
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || "7d";
+const JWT_EXPIRATION = (process.env.JWT_EXPIRATION || "7d") as jwt.SignOptions["expiresIn"];
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -69,6 +69,7 @@ export const requireAuth = async (request: FastifyRequest) => {
 export interface JwtPayload {
   userId: string;
   email: string;
+  role?: string;
   iat?: number;
   exp?: number;
 }

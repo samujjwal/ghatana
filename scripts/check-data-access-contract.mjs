@@ -111,6 +111,8 @@ const contracts = [
       "x-tenant-id",
       "x-correlation-id",
       "x-idempotency-key",
+      "FlashItTenantResolver",
+      "resolvePersonalTenant",
     ],
   },
   {
@@ -129,7 +131,7 @@ const contracts = [
       "FlashItDataAccessContextError",
       "Missing data access context",
       "prisma.auditEvent.create(",
-      "onRequest: [(app as any).authenticate]",
+      "onRequest: [app.authenticate]",
       "logger.logBusinessEvent(",
     ],
   },

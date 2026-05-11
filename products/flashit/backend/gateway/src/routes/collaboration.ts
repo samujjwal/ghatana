@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { sendEmail } from '../lib/email';
@@ -82,9 +82,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.post('/spheres/share', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(shareSphereSchema),
+      body: toJsonSchema(shareSphereSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           shareId: z.string(),
           invitationToken: z.string().optional(),
           message: z.string(),
@@ -247,9 +247,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.post('/invitations/accept', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(acceptInvitationSchema),
+      body: toJsonSchema(acceptInvitationSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           sphereId: z.string(),
           sphereName: z.string(),
           message: z.string(),
@@ -337,11 +337,11 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.get('/spheres/:sphereId/collaborators', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         sphereId: z.string().uuid(),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           collaborators: z.array(z.object({
             userId: z.string(),
             email: z.string(),
@@ -406,9 +406,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.post('/comments', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(createCommentSchema),
+      body: toJsonSchema(createCommentSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           comment: z.object({
             id: z.string(),
             content: z.string(),
@@ -547,15 +547,15 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.get('/moments/:momentId/comments', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         momentId: z.string().uuid(),
       })),
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         limit: z.coerce.number().min(1).max(100).default(50),
         offset: z.coerce.number().min(0).default(0),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           comments: z.array(z.object({
             id: z.string(),
             content: z.string(),
@@ -682,9 +682,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.post('/reactions', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(addReactionSchema),
+      body: toJsonSchema(addReactionSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           reactionAdded: z.boolean(),
         })),
@@ -772,9 +772,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.post('/follow', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(followUserSchema),
+      body: toJsonSchema(followUserSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           isFollowing: z.boolean(),
         })),
@@ -852,13 +852,13 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.get('/activity-feed', {
     onRequest: [requireAuth],
     schema: {
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         limit: z.coerce.number().min(1).max(100).default(20),
         offset: z.coerce.number().min(0).default(0),
         unreadOnly: z.coerce.boolean().default(false),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           activities: z.array(z.object({
             id: z.string(),
             actorUserId: z.string(),
@@ -938,9 +938,9 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
   fastify.put('/notification-preferences', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(updateNotificationPreferencesSchema),
+      body: toJsonSchema(updateNotificationPreferencesSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
         })),
       },
@@ -980,7 +980,7 @@ export default async function collaborationRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           sharedSpheres: z.number(),
           receivedShares: z.number(),
           followers: z.number(),

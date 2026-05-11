@@ -93,7 +93,26 @@ public class GenerationApiController {
                     try {
                         ValidatedSpec spec = parseValidatedSpec(json);
 
-                        return generationService.generate(spec)
+                        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+                        String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-Id"));
+                        if (tenantId == null || tenantId.isBlank()) tenantId = "default-tenant";
+                        if (workspaceId == null || workspaceId.isBlank()) workspaceId = "default-workspace";
+
+                        com.ghatana.yappc.domain.generate.GenerationContext context =
+                            com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                                .tenantId(tenantId)
+                                .workspaceId(workspaceId)
+                                .projectId(spec.shapeSpec().id())
+                                .actorId("api-user")
+                                .phase("GENERATE")
+                                .sourceArtifactIds(java.util.List.of())
+                                .canvasNodeIds(java.util.List.of())
+                                .intentId(spec.shapeSpec().id())
+                                .shapeId(spec.shapeSpec().id())
+                                .correlationId(java.util.UUID.randomUUID().toString())
+                                .build();
+
+                        return generationService.generate(spec, context)
                                 .then(artifacts -> {
                                     try {
                                         HttpResponse response = ok200Json(JsonMapper.toJson(artifacts));
@@ -172,7 +191,26 @@ public class GenerationApiController {
                         ValidatedSpec spec = validateSpec(diffRequest.validatedSpec());
                         GeneratedArtifacts existing = validateExistingArtifacts(diffRequest.existingArtifacts());
 
-                        return generationService.regenerateWithDiff(spec, existing)
+                        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+                        String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-Id"));
+                        if (tenantId == null || tenantId.isBlank()) tenantId = "default-tenant";
+                        if (workspaceId == null || workspaceId.isBlank()) workspaceId = "default-workspace";
+
+                        com.ghatana.yappc.domain.generate.GenerationContext context =
+                            com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                                .tenantId(tenantId)
+                                .workspaceId(workspaceId)
+                                .projectId(spec.shapeSpec().id())
+                                .actorId("api-user")
+                                .phase("GENERATE")
+                                .sourceArtifactIds(java.util.List.of())
+                                .canvasNodeIds(java.util.List.of())
+                                .intentId(spec.shapeSpec().id())
+                                .shapeId(spec.shapeSpec().id())
+                                .correlationId(java.util.UUID.randomUUID().toString())
+                                .build();
+
+                        return generationService.regenerateWithDiff(spec, existing, context)
                                 .then(diff -> {
                                     try {
                                         HttpResponse response = ok200Json(JsonMapper.toJson(diff));

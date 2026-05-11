@@ -689,8 +689,9 @@ public final class RouteAuthorizationRegistry {
         }
 
         // Get the route entry from generated registry to extract scopes
+        // Use the same server key as route registration (yappc-services)
         RouteEntry routeEntry = GeneratedRouteRegistry.getManifest()
-            .getRoutesForServer("yappc-lifecycle")
+            .getRoutesForServer("yappc-services")
             .stream()
             .filter(r -> r.method().equals(method.name()) && r.path().equals(path))
             .findFirst()

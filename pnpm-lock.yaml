@@ -746,6 +746,15 @@ importers:
         specifier: ^4.1.4
         version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-istanbul@4.1.4)(@vitest/coverage-v8@4.1.4)(@vitest/ui@4.1.4)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  platform/typescript/product-manifest-contracts:
+    dependencies:
+      js-yaml:
+        specifier: ^4.1.1
+        version: 4.1.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
   platform/typescript/product-shell:
     dependencies:
       '@ghatana/design-system':

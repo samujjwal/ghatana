@@ -64,6 +64,8 @@
     "check:product-ci-matrices": "node ./scripts/check-product-ci-matrices.mjs",
     "check:product-workspace-registration": "node ./scripts/check-product-workspace-registration.mjs",
     "check:product-scaffolder": "node ./scripts/check-product-scaffolder.mjs",
+    "check:product-kernel-audit-progress": "node ./scripts/generate-product-kernel-audit-progress.mjs --check",
+    "generate:product-kernel-audit-progress": "node ./scripts/generate-product-kernel-audit-progress.mjs",
     "check:security-workflow-coverage": "node ./scripts/check-security-workflow-coverage.mjs",
     "check:digital-marketing-root-docs": "node ./scripts/check-digital-marketing-root-docs.mjs",
     "check:bridge-compliance": "node ./scripts/check-bridge-compliance.mjs",

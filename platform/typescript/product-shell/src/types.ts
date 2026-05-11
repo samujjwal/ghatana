@@ -2,8 +2,8 @@
  * @ghatana/product-shell — Shared type contracts
  *
  * These types form the generic interface between product-specific route
- * registries (AEP uses UserRole, DC uses ShellRole) and the shared shell
- * components. Products map their registry types to these generic types.
+ * registries and the shared shell components. Products map their role and
+ * route registry types to these generic contracts.
  *
  * @doc.type module
  * @doc.purpose Generic type contracts for product shell configuration
@@ -25,13 +25,8 @@ import type React from 'react';
 export type RouteLifecycle = 'stable' | 'preview' | 'boundary';
 
 /**
- * Generic route capability that both AEP and Data Cloud registries can map to.
- *
- * AEP maps from `RouteCapability` (with `minimumRole: UserRole`).
- * DC maps from its registry (with `minimumShellRole: ShellRole`).
- *
- * Both map to `minimumRole: string` in this generic form. The shell uses
- * `config.roleOrder` to compare roles numerically.
+ * Generic route capability that product registries can map to. Products keep
+ * their own role vocabulary and expose the role threshold as `minimumRole`.
  */
 export interface ProductRouteCapability {
   /** Absolute path, e.g. "/pipelines" */
@@ -119,7 +114,7 @@ export interface ProductRouteEntitlement {
  * having any product-specific knowledge.
  */
 export interface ProductShellConfig {
-  /** Product display name shown in the sidebar header, e.g. "AEP", "Data Cloud" */
+  /** Product display name shown in the sidebar header. */
   readonly productName: string;
 
   /**
@@ -143,15 +138,16 @@ export interface ProductShellConfig {
   /**
    * Numeric hierarchy for roles. Higher numbers = more access.
    *
-   * AEP example: `{ viewer: 0, operator: 1, admin: 2 }` (auditor handled separately)
-   * DC example:  `{ 'primary-user': 0, operator: 1, admin: 2 }`
+   * Products provide their own role names, for example
+   * `{ viewer: 0, operator: 1, admin: 2 }`.
    */
   readonly roleOrder: Readonly<Record<string, number>>;
 
   /**
    * Display labels for each role, shown in the mode selector.
    *
-   * DC example: `{ 'primary-user': 'Standard view', operator: 'Operator view', admin: 'Admin view' }`
+   * Product-facing label for each role, for example
+   * `{ viewer: 'Viewer', admin: 'Admin' }`.
    */
   readonly roleLabels?: Readonly<Record<string, string>>;
 

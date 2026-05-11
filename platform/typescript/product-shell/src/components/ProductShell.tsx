@@ -2,7 +2,7 @@
  * ProductShell — root layout wrapper for Ghatana product UIs.
  *
  * Composes `CapabilitySidebar`, `ProductHeader`, `ActiveOperationsBar`,
- * and an `<Outlet />` (or `children`) into the standard product layout:
+ * and product-owned `children` into the standard product layout:
  *
  * ```
  * ┌──────────────────────────────────────────────────────┐
@@ -17,14 +17,14 @@
  * │         | product-specific actions                   │
  * ├──────────────────────────────────────────────────────┤
  * │ Main content area (pt-16 + pl-64 / pl-16)            │
- * │   <Outlet /> or children                             │
+ * │   Product-owned route content                        │
  * ├──────────────────────────────────────────────────────┤
  * │ ActiveOperationsBar (fixed bottom, when count > 0)   │
  * └──────────────────────────────────────────────────────┘
  * ```
  *
- * Both AEP and Data Cloud configure this shell via `ProductShellConfig`
- * instead of independently implementing layout behavior.
+ * Products configure this shell via `ProductShellConfig` instead of
+ * independently implementing layout behavior.
  *
  * @doc.type component
  * @doc.purpose Root layout wrapper for Ghatana product shells
@@ -32,7 +32,6 @@
  * @doc.pattern Compound Component / Layout Shell
  */
 import React, { useState } from 'react';
-import { Outlet } from 'react-router';
 import type { ProductShellConfig } from '../types';
 import { CapabilitySidebar } from './CapabilitySidebar';
 import { ProductHeader } from './ProductHeader';
@@ -41,10 +40,10 @@ import { ActiveOperationsBar } from './ActiveOperationsBar';
 interface ProductShellProps {
   config: ProductShellConfig;
   /**
-   * When provided, renders children instead of `<Outlet />`.
-   * Use this when ProductShell is not the direct parent of react-router routes.
+   * Product-owned route/content slot. The shared shell intentionally does not
+   * import router primitives.
    */
-  children?: React.ReactNode;
+  children: React.ReactNode;
   /**
    * Additional CSS class applied to the main content area wrapper.
    */
@@ -73,8 +72,8 @@ interface ProductShellProps {
  * ```tsx
  * // In a product's root layout component:
  * export function AppLayout() {
- *   const config = useProductShellConfig(); // product-specific hook
- *   return <ProductShell config={config} />;
+ *   const config = useProductShellConfig();
+ *   return <ProductShell config={config}>{routeContent}</ProductShell>;
  * }
  * ```
  */
@@ -131,7 +130,7 @@ export function ProductShell({
           {...mainContentProps}
           className={contentClassName ?? 'pt-16 p-6'}
         >
-          {children ?? <Outlet />}
+          {children}
         </main>
       </div>
 

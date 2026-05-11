@@ -2,7 +2,8 @@
  * Platform Integration Client
  * 
  * Client for integrating with Data Cloud+AEP platform.
- * Handles communication with platform services for execution, evidence, and memory.
+ * Handles communication with platform services for execution, evidence, memory,
+ * telemetry/analytics, policy/guardrails, and execution trace references.
  * 
  * @doc.type interface
  * @doc.purpose Platform integration client
@@ -16,6 +17,7 @@ import com.ghatana.yappc.api.PlatformExecution;
 import com.ghatana.yappc.api.PlatformEvidence;
 import com.ghatana.yappc.api.PlatformMemory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ import java.util.Map;
 public interface PlatformIntegrationClient {
 
     /**
-     * Executes a platform operation.
+     * Executes a platform operation (agent/intelligence execution).
      * 
      * @param request The execution request
      * @return PlatformExecution containing the execution result
@@ -49,7 +51,7 @@ public interface PlatformIntegrationClient {
     boolean storeEvidence(PlatformEvidence evidence);
 
     /**
-     * Searches for evidence.
+     * Searches for evidence (retrieval).
      * 
      * @param query The search query
      * @return List of search results
@@ -57,7 +59,7 @@ public interface PlatformIntegrationClient {
     List<PlatformEvidence.SearchResult> searchEvidence(PlatformEvidence.SearchQuery query);
 
     /**
-     * Stores memory in the platform.
+     * Stores memory in the platform (write proposal).
      * 
      * @param memory The memory to store
      * @return true if successful, false otherwise
@@ -65,7 +67,15 @@ public interface PlatformIntegrationClient {
     boolean storeMemory(PlatformMemory memory);
 
     /**
-     * Retrieves memory from the platform.
+     * Retrieves memory summary from the platform.
+     * 
+     * @param memoryId The memory ID
+     * @return PlatformMemory containing the memory summary
+     */
+    PlatformMemory retrieveMemorySummary(String memoryId);
+
+    /**
+     * Retrieves full memory from the platform.
      * 
      * @param memoryId The memory ID
      * @return PlatformMemory containing the memory data
@@ -79,6 +89,46 @@ public interface PlatformIntegrationClient {
      * @return true if successful, false otherwise
      */
     boolean deleteMemory(String memoryId);
+
+    /**
+     * Records telemetry event (telemetry/analytics).
+     * 
+     * @param event The telemetry event to record
+     * @return true if successful, false otherwise
+     */
+    boolean recordTelemetry(PlatformTelemetry event);
+
+    /**
+     * Gets analytics data for a time range (telemetry/analytics).
+     * 
+     * @param query The analytics query
+     * @return PlatformAnalytics containing the analytics data
+     */
+    PlatformAnalytics getAnalytics(PlatformAnalytics.AnalyticsQuery query);
+
+    /**
+     * Evaluates policy/guardrails for a request (policy/guardrails).
+     * 
+     * @param request The policy evaluation request
+     * @return PlatformPolicy containing the policy decision
+     */
+    PlatformPolicy evaluatePolicy(PlatformPolicy.PolicyRequest request);
+
+    /**
+     * Gets execution trace references (execution trace references).
+     * 
+     * @param executionId The execution ID
+     * @return PlatformTrace containing the trace references
+     */
+    PlatformTrace getExecutionTrace(String executionId);
+
+    /**
+     * Stores execution trace references (execution trace references).
+     * 
+     * @param trace The execution trace to store
+     * @return true if successful, false otherwise
+     */
+    boolean storeExecutionTrace(PlatformTrace trace);
 
     /**
      * Gets platform health status.
@@ -97,3 +147,82 @@ record PlatformHealth(
     Map<String, String> components,
     String version
 ) {}
+
+/**
+ * Platform telemetry event.
+ */
+record PlatformTelemetry(
+    String eventId,
+    String eventType,
+    Map<String, Object> data,
+    String tenantId,
+    String workspaceId,
+    String projectId,
+    Instant timestamp
+) {}
+
+/**
+ * Platform analytics data.
+ */
+record PlatformAnalytics(
+    List<AnalyticsMetric> metrics,
+    Map<String, Object> summary,
+    Instant startTime,
+    Instant endTime
+) {
+    record AnalyticsMetric(
+        String metricName,
+        double value,
+        Map<String, String> tags,
+        Instant timestamp
+    ) {}
+
+    record AnalyticsQuery(
+        String metricName,
+        Instant startTime,
+        Instant endTime,
+        Map<String, String> filters,
+        Map<String, String> groupBy
+    ) {}
+}
+
+/**
+ * Platform policy decision.
+ */
+record PlatformPolicy(
+    String policyId,
+    boolean isAllowed,
+    List<String> deniedReasons,
+    Map<String, Object> context,
+    Instant evaluatedAt
+) {
+    record PolicyRequest(
+        String policyType,
+        Map<String, Object> requestData,
+        String tenantId,
+        String workspaceId,
+        String projectId
+    ) {}
+}
+
+/**
+ * Platform execution trace.
+ */
+record PlatformTrace(
+    String traceId,
+    String executionId,
+    List<TraceSpan> spans,
+    Map<String, String> metadata,
+    Instant startedAt,
+    Instant completedAt
+) {
+    record TraceSpan(
+        String spanId,
+        String parentSpanId,
+        String operationName,
+        Instant startedAt,
+        Instant completedAt,
+        Map<String, Object> tags,
+        Map<String, Object> logs
+    ) {}
+}

@@ -88,12 +88,12 @@ class MetricsAggregator {
 
     return {
       count,
-      min: sorted[0],
-      max: sorted[count - 1],
+      min: sorted[0] ?? 0,
+      max: sorted[count - 1] ?? 0,
       avg: sorted.reduce((a, b) => a + b, 0) / count,
-      p50: sorted[Math.floor(count * 0.5)],
-      p95: sorted[Math.floor(count * 0.95)],
-      p99: sorted[Math.floor(count * 0.99)],
+      p50: sorted[Math.min(Math.floor(count * 0.5), count - 1)] ?? 0,
+      p95: sorted[Math.min(Math.floor(count * 0.95), count - 1)] ?? 0,
+      p99: sorted[Math.min(Math.floor(count * 0.99), count - 1)] ?? 0,
     };
   }
 

@@ -9,6 +9,9 @@
  */
 
 import { prisma } from './prisma.js';
+import { Logger } from './logger.js';
+
+const logger = Logger.create({ component: 'Resilience' });
 
 // ============================================================================
 // Types
@@ -88,8 +91,7 @@ export async function withRetry<T>(
       }
 
       // Log retry attempt
-      fastify?.log.warn({
-        msg: 'Operation failed, retrying...',
+      logger.warn('Operation failed, retrying...', {
         attempt: attempt + 1,
         maxRetries: opts.maxRetries,
         delay,
@@ -151,10 +153,7 @@ export class CircuitBreaker {
       // Transition to half-open to test service
       this.state = CircuitState.HALF_OPEN;
       this.successCount = 0;
-      fastify?.log.info({
-        msg: 'Circuit breaker transitioning to HALF_OPEN',
-        name: this.name,
-      });
+      logger.info('Circuit breaker transitioning to HALF_OPEN', { name: this.name });
     }
 
     try {
@@ -178,10 +177,7 @@ export class CircuitBreaker {
 
       if (this.successCount >= this.options.successThreshold) {
         this.state = CircuitState.CLOSED;
-        fastify?.log.info({
-          msg: 'Circuit breaker CLOSED (service recovered)',
-          name: this.name,
-        });
+        logger.info('Circuit breaker CLOSED (service recovered)', { name: this.name });
       }
     }
   }
@@ -199,8 +195,7 @@ export class CircuitBreaker {
     ) {
       this.state = CircuitState.OPEN;
       this.nextAttempt = Date.now() + this.options.timeout;
-      fastify?.log.error({
-        msg: 'Circuit breaker OPEN (too many failures)',
+      logger.error('Circuit breaker OPEN (too many failures)', undefined, {
         name: this.name,
         failureCount: this.failureCount,
         nextAttempt: new Date(this.nextAttempt).toISOString(),
@@ -227,10 +222,7 @@ export class CircuitBreaker {
     this.failureCount = 0;
     this.successCount = 0;
     this.nextAttempt = Date.now();
-    fastify?.log.info({
-      msg: 'Circuit breaker manually reset',
-      name: this.name,
-    });
+    logger.info('Circuit breaker manually reset', { name: this.name });
   }
 }
 
@@ -261,8 +253,7 @@ export async function withFallback<T>(
   try {
     return await primary();
   } catch (error) {
-    fastify?.log.warn({
-      msg: 'Primary operation failed, using fallback',
+    logger.warn('Primary operation failed, using fallback', {
       error: (error as Error).message,
     });
     return await fallback();

@@ -102,7 +102,6 @@ pack:
     - phr-compliance-rule-pack
   uiSurfaces:
     - web
-    - mobile
   runtimeServices:
     - launcher
     - fhir-server

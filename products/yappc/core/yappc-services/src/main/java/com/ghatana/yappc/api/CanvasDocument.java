@@ -153,6 +153,7 @@ public final class CanvasDocument {
      */
     public record CanvasNode(
             String id,
+            String parentId,
             String nodeType,
             String artifactId,
             CanvasPoint position,

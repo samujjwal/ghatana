@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ProductRouteCapability } from '@ghatana/product-shell';
+import { isRouteAllowed, type ProductRouteCapability } from '@ghatana/product-shell';
 import type { PhrRole } from './auth/PhrAccessContext';
 import { AppointmentsPage } from './pages/AppointmentsPage';
 import { ConsentPage } from './pages/ConsentPage';
@@ -26,10 +26,7 @@ export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = {
 };
 
 export function isRouteAllowedForRole(route: Pick<PhrRouteManifestEntry, 'minimumRole'>, role: PhrRole): boolean {
-  if (!route.minimumRole) {
-    return true;
-  }
-  return PHR_ROLE_ORDER[role] >= PHR_ROLE_ORDER[route.minimumRole as PhrRole];
+  return isRouteAllowed(route, role, PHR_ROLE_ORDER);
 }
 
 export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [

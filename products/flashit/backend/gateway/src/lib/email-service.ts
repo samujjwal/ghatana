@@ -116,7 +116,7 @@ async function sendViaSES(payload: EmailPayload): Promise<EmailResult> {
   // Build raw email
   const transporter = nodemailer.createTransport({
     SES: { ses, aws: { SendRawEmailCommand } },
-  });
+  } as any);
 
   const result = await transporter.sendMail({
     from: payload.from || process.env.EMAIL_FROM,

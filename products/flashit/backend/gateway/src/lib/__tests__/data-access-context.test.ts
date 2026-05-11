@@ -32,7 +32,7 @@ describe('buildFlashItDataAccessContext', () => {
     expect(ctx.principalId).toBe('principal-xyz');
   });
 
-  it('falls back tenantId to principalId when x-tenant-id header is absent', () => {
+  it('uses the modeled personal tenant when x-tenant-id header is absent', () => {
     const request = makeRequest({ userId: 'user-1' });
     const ctx = buildFlashItDataAccessContext(request, {
       auditClassification: 'SPHERE_ACCESS_READ',
@@ -41,7 +41,32 @@ describe('buildFlashItDataAccessContext', () => {
     expect(ctx.tenantId).toBe('user-1');
   });
 
-  it('uses x-tenant-id header when present', () => {
+  it('accepts x-tenant-id only when it matches the authenticated personal tenant', () => {
+    const request = makeRequest({
+      userId: 'user-1',
+      headers: { 'x-tenant-id': 'user-1' },
+    });
+    const ctx = buildFlashItDataAccessContext(request, {
+      auditClassification: 'SPHERE_ACCESS_READ',
+      dataOwnerScope: 'sphere:s2',
+    });
+    expect(ctx.tenantId).toBe('user-1');
+  });
+
+  it('rejects another tenant from x-tenant-id before data access metadata is returned', () => {
+    const request = makeRequest({
+      userId: 'user-1',
+      headers: { 'x-tenant-id': 'tenant-abc' },
+    });
+    expect(() =>
+      buildFlashItDataAccessContext(request, {
+        auditClassification: 'SPHERE_ACCESS_READ',
+        dataOwnerScope: 'sphere:s2',
+      }),
+    ).toThrow(FlashItDataAccessContextError);
+  });
+
+  it('can use an explicit tenant resolver for validated workspace membership', () => {
     const request = makeRequest({
       userId: 'user-1',
       headers: { 'x-tenant-id': 'tenant-abc' },
@@ -49,6 +74,7 @@ describe('buildFlashItDataAccessContext', () => {
     const ctx = buildFlashItDataAccessContext(request, {
       auditClassification: 'SPHERE_ACCESS_READ',
       dataOwnerScope: 'sphere:s2',
+      tenantResolver: ({ requestedTenantId }) => requestedTenantId ?? 'fallback',
     });
     expect(ctx.tenantId).toBe('tenant-abc');
   });

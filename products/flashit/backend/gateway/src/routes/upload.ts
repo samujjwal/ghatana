@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
@@ -85,15 +85,15 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
   fastify.post('/presigned-url', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(presignedUrlSchema),
+      body: toJsonSchema(presignedUrlSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           uploadId: z.string().uuid(),
           presignedUrl: z.string().url(),
           s3Key: z.string(),
           expiresIn: z.number(),
         })),
-        429: zodToJsonSchema(z.object({
+        429: toJsonSchema(z.object({
           error: z.string(),
           message: z.string(),
         })),
@@ -223,9 +223,9 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
   fastify.post('/complete', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(uploadCompleteSchema),
+      body: toJsonSchema(uploadCompleteSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           mediaReference: z.object({
             id: z.string(),
             s3Key: z.string(),
@@ -390,7 +390,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
   fastify.get('/:uploadId/status', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         uploadId: z.string().uuid(),
       })),
     },
@@ -448,7 +448,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
   fastify.delete('/:uploadId', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         uploadId: z.string().uuid(),
       })),
     },

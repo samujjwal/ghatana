@@ -154,6 +154,7 @@ class CanvasValidationServiceTest {
         CanvasDocument.CanvasNode node = new CanvasDocument.CanvasNode(
                 "node-1",
                 "default",
+                "entity",
                 "artifact-1",
                 new CanvasDocument.CanvasPoint(-10, 0), // Negative x
                 createValidBounds(),
@@ -179,6 +180,7 @@ class CanvasValidationServiceTest {
         CanvasDocument.CanvasNode node = new CanvasDocument.CanvasNode(
                 "node-1",
                 "default",
+                "entity",
                 "artifact-1",
                 createValidPoint(),
                 new CanvasDocument.CanvasBounds(0, 0, -100, 50), // Negative width
@@ -204,6 +206,7 @@ class CanvasValidationServiceTest {
         CanvasDocument.CanvasNode node = new CanvasDocument.CanvasNode(
                 "node-1",
                 "default",
+                "entity",
                 "artifact-1",
                 createValidPoint(),
                 createValidBounds(),
@@ -278,6 +281,7 @@ class CanvasValidationServiceTest {
         return new CanvasDocument.CanvasNode(
                 id,
                 "default",
+                "entity",
                 "artifact-" + id,
                 createValidPoint(),
                 createValidBounds(),

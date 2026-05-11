@@ -1,3 +1,5 @@
+import { isRouteAllowed } from '@ghatana/product-shell';
+
 export type FlashItRole = 'guest' | 'member' | 'premium' | 'admin';
 
 export interface FlashItAccessProfile {
@@ -20,11 +22,7 @@ export function isRouteAllowedForRole(
   route: Pick<{ minimumRole?: string }, 'minimumRole'>,
   role: FlashItRole,
 ): boolean {
-  if (!route.minimumRole) {
-    return true;
-  }
-
-  return FLASHIT_ROLE_ORDER[role] >= FLASHIT_ROLE_ORDER[route.minimumRole as FlashItRole];
+  return isRouteAllowed(route, role, FLASHIT_ROLE_ORDER);
 }
 
 export function resolveFlashitRole(profile: FlashItAccessProfile | null | undefined): FlashItRole {

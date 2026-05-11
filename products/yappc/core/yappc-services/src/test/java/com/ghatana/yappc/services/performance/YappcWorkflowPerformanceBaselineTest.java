@@ -90,9 +90,10 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
     @DisplayName("single generation completes within budget of " + SINGLE_OP_BUDGET_MS + "ms")
     void singleGenerationWithinBudget() {
         ValidatedSpec spec = minimalSpec("perf-single");
+        com.ghatana.yappc.domain.generate.GenerationContext context = defaultContext();
 
         long start = System.currentTimeMillis();
-        GeneratedArtifacts result = runPromise(() -> generationService.generate(spec));
+        GeneratedArtifacts result = runPromise(() -> generationService.generate(spec, context));
         long elapsed = System.currentTimeMillis() - start;
 
         assertThat(result).isNotNull();
@@ -104,11 +105,12 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
     @Test
     @DisplayName("batch of " + BATCH_SIZE + " sequential generations completes within " + BATCH_BUDGET_MS + "ms")
     void batchGenerationWithinBudget() {
+        com.ghatana.yappc.domain.generate.GenerationContext context = defaultContext();
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < BATCH_SIZE; i++) {
             ValidatedSpec spec = minimalSpec("perf-batch-" + i);
-            GeneratedArtifacts result = runPromise(() -> generationService.generate(spec));
+            GeneratedArtifacts result = runPromise(() -> generationService.generate(spec, context));
             assertThat(result).isNotNull();
         }
 
@@ -122,11 +124,12 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
     @Test
     @DisplayName("average generation time per spec is below " + (BATCH_BUDGET_MS / BATCH_SIZE) + "ms")
     void averageGenerationTimePerSpec() {
+        com.ghatana.yappc.domain.generate.GenerationContext context = defaultContext();
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < BATCH_SIZE; i++) {
             final int index = i;
-            runPromise(() -> generationService.generate(minimalSpec("avg-" + index)));
+            runPromise(() -> generationService.generate(minimalSpec("avg-" + index), context));
         }
 
         long totalElapsed = System.currentTimeMillis() - start;
@@ -220,10 +223,25 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
     // HELPERS
     // =========================================================================
 
-    private static ValidatedSpec minimalSpec(String id) {
+    private ValidatedSpec minimalSpec(String specId) {
         return ValidatedSpec.of(
-            ShapeSpec.builder().id(id).tenantId("tenant-perf").build(),
-            LifecycleValidationResult.builder().build());
+                ShapeSpec.builder().id(specId).tenantId("tenant-1").build(),
+                LifecycleValidationResult.builder().build());
+    }
+
+    private com.ghatana.yappc.domain.generate.GenerationContext defaultContext() {
+        return com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                .tenantId("tenant-1")
+                .workspaceId("workspace-1")
+                .projectId("project-1")
+                .actorId("test-actor")
+                .phase("GENERATE")
+                .sourceArtifactIds(List.of())
+                .canvasNodeIds(List.of())
+                .intentId("intent-1")
+                .shapeId("shape-1")
+                .correlationId("corr-1")
+                .build();
     }
 
     private static RunTask task(String id, String type) {

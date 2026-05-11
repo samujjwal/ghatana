@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { DataExportService } from '../services/data-export/export-service';
 import { SecureDataDeletionService } from '../services/data-deletion/deletion-service';
@@ -81,14 +81,14 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.post('/export', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(exportRequestSchema),
+      body: toJsonSchema(exportRequestSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           exportId: z.string(),
           message: z.string(),
           estimatedCompletion: z.string(),
         })),
-        429: zodToJsonSchema(z.object({
+        429: toJsonSchema(z.object({
           error: z.string(),
           message: z.string(),
           retryAfter: z.number(),
@@ -158,11 +158,11 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.get('/export/:exportId/status', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         exportId: z.string().uuid(),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           exportId: z.string(),
           status: z.string(),
           filePath: z.string().optional(),
@@ -217,10 +217,10 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.get('/export/:exportId/download', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         exportId: z.string().uuid(),
       })),
-      querystring: zodToJsonSchema(z.object({
+      querystring: toJsonSchema(z.object({
         token: z.string().optional(),
       })),
     },
@@ -290,15 +290,15 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.post('/deletion', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(deletionRequestSchema),
+      body: toJsonSchema(deletionRequestSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           requestId: z.string(),
           message: z.string(),
           verificationRequired: z.boolean(),
           verificationExpiresAt: z.string().optional(),
         })),
-        429: zodToJsonSchema(z.object({
+        429: toJsonSchema(z.object({
           error: z.string(),
           message: z.string(),
           cooldownEndsAt: z.string(),
@@ -382,13 +382,13 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
    */
   fastify.post('/deletion/verify', {
     schema: {
-      body: zodToJsonSchema(verifyDeletionSchema),
+      body: toJsonSchema(verifyDeletionSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           requestId: z.string(),
         })),
-        404: zodToJsonSchema(z.object({
+        404: toJsonSchema(z.object({
           error: z.string(),
           message: z.string(),
         })),
@@ -421,11 +421,11 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.get('/deletion/:requestId/status', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(z.object({
+      params: toJsonSchema(z.object({
         requestId: z.string().uuid(),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           requestId: z.string(),
           status: z.string(),
           deletionSummary: z.any().optional(),
@@ -479,7 +479,7 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           dataRetentionDays: z.number(),
           autoDeleteEnabled: z.boolean(),
           analyticsOptOut: z.boolean(),
@@ -534,9 +534,9 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.put('/settings', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(privacySettingsSchema),
+      body: toJsonSchema(privacySettingsSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           settings: z.any(),
         })),
@@ -587,9 +587,9 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
   fastify.post('/consent', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(consentUpdateSchema),
+      body: toJsonSchema(consentUpdateSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           message: z.string(),
           consentId: z.string(),
         })),
@@ -663,7 +663,7 @@ export default async function privacyRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           summary: z.object({
             totalMoments: z.number(),
             totalSpheres: z.number(),

@@ -221,7 +221,7 @@ public final class DmosRouteManifestGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("// GENERATED CODE - Do not edit manually\n");
         sb.append("// Regenerate from dmos-route-manifest.yaml\n");
-        sb.append("// Generated at: ").append(new Date()).append("\n\n");
+        sb.append("// Generation is deterministic; do not add wall-clock timestamps.\n\n");
         sb.append("import React from 'react';\n");
         sb.append("import type { ProductRouteCapability } from '@ghatana/product-shell';\n");
         sb.append("import { VALID_ROLES, type ValidRole } from '@/lib/role-utils';\n\n");

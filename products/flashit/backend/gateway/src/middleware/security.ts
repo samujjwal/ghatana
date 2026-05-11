@@ -28,7 +28,7 @@ export async function rateLimitMiddleware(request: FastifyRequest, reply: Fastif
   const user = request.user as JwtPayload | undefined;
   const userId = user?.userId;
   const ipAddress = request.ip;
-  const endpoint = request.url.split('?')[0]; // Remove query params
+  const endpoint = request.url.split('?')[0] ?? request.url; // Remove query params
 
   const result = await rateLimitService.checkRateLimit({
     userId,

@@ -208,6 +208,7 @@ class CanvasPerformanceTest {
         return new CanvasDocument.CanvasNode(
                 id,
                 "default",
+                "entity",
                 "artifact-" + id,
                 new CanvasDocument.CanvasPoint(
                         Math.random() * 1000,

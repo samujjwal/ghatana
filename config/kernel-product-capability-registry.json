@@ -1,0 +1,81 @@
+{
+  "kernelCapabilities": {
+    "approval-workflow": {
+      "description": "Kernel-managed approval workflow orchestration."
+    },
+    "audit-trail": {
+      "description": "Kernel audit trail and immutable evidence emission."
+    },
+    "boundary-policy-evaluation": {
+      "description": "Kernel policy boundary evaluation for product actions."
+    },
+    "consent-enforcement": {
+      "description": "Kernel consent enforcement and delegation checks."
+    },
+    "human-approval": {
+      "description": "Kernel human-in-the-loop approval capability."
+    },
+    "observability": {
+      "description": "Kernel observability, trace, metric, and log propagation."
+    },
+    "tenant-context": {
+      "description": "Kernel tenant context propagation and validation."
+    }
+  },
+  "plugins": {
+    "plugin-audit-trail": {
+      "description": "Tamper-evident audit event ledger."
+    },
+    "plugin-compliance": {
+      "description": "Product compliance rule evaluation."
+    },
+    "plugin-consent": {
+      "description": "Consent grant, revocation, and purpose-bound access lifecycle."
+    },
+    "plugin-fraud-detection": {
+      "description": "Fraud signal evaluation and gating."
+    },
+    "plugin-human-approval": {
+      "description": "Human approval gates for sensitive workflows."
+    },
+    "plugin-ledger": {
+      "description": "Double-entry ledger integrity."
+    },
+    "plugin-risk-management": {
+      "description": "Risk scoring and product action gating."
+    }
+  },
+  "domainPacks": {
+    "digital-marketing-boundary-policy": {
+      "owner": "digital-marketing"
+    },
+    "digital-marketing-compliance-rule-pack": {
+      "owner": "digital-marketing"
+    },
+    "finance-compliance-rule-pack": {
+      "owner": "finance"
+    },
+    "finance-trading-boundary-policy": {
+      "owner": "finance"
+    },
+    "flashit-boundary-policy": {
+      "owner": "flashit"
+    },
+    "flashit-compliance-rule-pack": {
+      "owner": "flashit"
+    },
+    "phr-compliance-rule-pack": {
+      "owner": "phr"
+    },
+    "phr-healthcare-boundary-policy": {
+      "owner": "phr"
+    }
+  },
+  "policyActions": {
+    "canonical": ["read", "write", "delete", "export", "download"],
+    "extensionNamespaces": ["digital-marketing", "finance", "flashit", "phr"]
+  },
+  "policyResources": {
+    "extensionNamespaces": ["digital-marketing", "finance", "flashit", "phr"]
+  }
+}

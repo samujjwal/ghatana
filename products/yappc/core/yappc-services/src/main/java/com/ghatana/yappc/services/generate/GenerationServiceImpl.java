@@ -61,25 +61,30 @@ public class GenerationServiceImpl implements GenerationService {
     }
 
     @Override
-    public Promise<GeneratedArtifacts> generate(ValidatedSpec spec) {
+    public Promise<GeneratedArtifacts> generate(ValidatedSpec spec, GenerationContext context) {
         long startTime = System.currentTimeMillis();
         String runId = UUID.randomUUID().toString();
         Instant createdAt = Instant.now();
 
-        // Create and persist generation run with provenance
+        // Create and persist generation run with explicit context (no defaults)
         GenerationRun generationRun = GenerationRun.builder()
             .id(runId)
             .planId(spec.shapeSpec().id())
-            .projectId(spec.shapeSpec().metadata().getOrDefault("projectId", "default-project"))
-            .tenantId(spec.shapeSpec().tenantId())
-            .workspaceId(spec.shapeSpec().metadata().getOrDefault("workspaceId", "default-workspace"))
+            .projectId(context.projectId())
+            .tenantId(context.tenantId())
+            .workspaceId(context.workspaceId())
             .intent(null) // TODO: Load actual Intent from intentRef
             .status(GenerationRun.RunStatus.GENERATING)
-            .reviewStatus(GenerationRun.ReviewStatus.PENDING)
+            .reviewStatus(GenerationRun.ReviewStatus.REVIEW_PENDING)
             .createdAt(createdAt)
             .addProvenance("generator_version", "1.0.0")
             .addProvenance("validation_passed", String.valueOf(spec.validationResult().passed()))
+            .addProvenance("actor_id", context.actorId())
+            .addProvenance("phase", context.phase())
+            .addProvenance("correlation_id", context.correlationId())
             .addMetadata("spec_ref", spec.shapeSpec().id())
+            .addMetadata("intent_id", context.intentId())
+            .addMetadata("shape_id", context.shapeId())
             .build();
 
         return generationRunRepository.save(generationRun)
@@ -90,24 +95,29 @@ public class GenerationServiceImpl implements GenerationService {
                 metrics.recordTimer("yappc.generate.execute", duration, tags);
                 ServiceObservability.incrementSuccess(metrics, "yappc.generate.execute", tags);
 
-                // Update generation run with completed status and artifact IDs
+                // Update generation run with completed status and artifact IDs (using explicit context)
                 GenerationRun completedRun = GenerationRun.builder()
                     .id(runId)
                     .planId(spec.shapeSpec().id())
-                    .projectId(spec.shapeSpec().metadata().getOrDefault("projectId", "default-project"))
-                    .tenantId(spec.shapeSpec().tenantId())
-                    .workspaceId(spec.shapeSpec().metadata().getOrDefault("workspaceId", "default-workspace"))
+                    .projectId(context.projectId())
+                    .tenantId(context.tenantId())
+                    .workspaceId(context.workspaceId())
                     .intent(null) // TODO: Load actual Intent from intentRef
                     .status(GenerationRun.RunStatus.COMPLETED)
                     .artifactIds(artifacts.artifacts().stream().map(Artifact::id).toList())
-                    .reviewStatus(GenerationRun.ReviewStatus.PENDING)
+                    .reviewStatus(GenerationRun.ReviewStatus.REVIEW_PENDING)
                     .createdAt(createdAt)
                     .completedAt(Instant.now())
                     .addProvenance("generator_version", "1.0.0")
                     .addProvenance("validation_passed", String.valueOf(spec.validationResult().passed()))
                     .addProvenance("duration_ms", String.valueOf(duration))
+                    .addProvenance("actor_id", context.actorId())
+                    .addProvenance("phase", context.phase())
+                    .addProvenance("correlation_id", context.correlationId())
                     .addMetadata("spec_ref", spec.shapeSpec().id())
                     .addMetadata("artifact_count", String.valueOf(artifacts.artifacts().size()))
+                    .addMetadata("intent_id", context.intentId())
+                    .addMetadata("shape_id", context.shapeId())
                     .build();
 
                 return generationRunRepository.save(completedRun)
@@ -120,15 +130,15 @@ public class GenerationServiceImpl implements GenerationService {
     }
 
     @Override
-    public Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing) {
+    public Promise<DiffResult> regenerateWithDiff(ValidatedSpec spec, GeneratedArtifacts existing, GenerationContext context) {
         long startTime = System.currentTimeMillis();
 
-        return generate(spec)
+        return generate(spec, context)
                 .then(newArtifacts -> {
                     DiffResult diff = computeDiff(existing, newArtifacts);
 
                     long duration = System.currentTimeMillis() - startTime;
-                    Map<String, String> tags = ServiceObservability.tenantTag(spec.shapeSpec().tenantId());
+                    Map<String, String> tags = ServiceObservability.tenantTag(context.tenantId());
                     metrics.recordTimer("yappc.generate.diff", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.generate.diff", tags);
 
@@ -179,8 +189,8 @@ public class GenerationServiceImpl implements GenerationService {
                 List<String> failures = new java.util.ArrayList<>();
                 
                 // Check 1: Run must be in a state that can be rolled back (APPROVED or COMPLETED)
-                if (runEntity.reviewStatus() != GenerationRun.ReviewStatus.APPROVED 
-                    && runEntity.reviewStatus() != GenerationRun.ReviewStatus.PENDING) {
+                if (runEntity.reviewStatus() != GenerationRun.ReviewStatus.APPROVED
+                    && runEntity.reviewStatus() != GenerationRun.ReviewStatus.REVIEW_PENDING) {
                     failures.add("Run is not in a rollback-eligible state (current status: " + runEntity.reviewStatus() + ")");
                 }
                 

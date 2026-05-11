@@ -24,6 +24,13 @@ import { RouteCapabilityNav } from '../components/RouteCapabilityNav';
 import { UnsupportedSurfaceBoundary } from '../components/UnsupportedSurfaceBoundary';
 import { ProductViewModeSelector } from '../components/ProductViewModeSelector';
 import { ActiveOperationsBar } from '../components/ActiveOperationsBar';
+import { ProductShell } from '../components/ProductShell';
+import {
+  filterDiscoverableRoutes,
+  hydrateRoutesFromEntitlement,
+  isRouteAllowed,
+  resolveHighestRole,
+} from '../access';
 import type { ProductRouteCapability, ProductShellConfig, UnsupportedSurfaceConfig } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -317,5 +324,57 @@ describe('ActiveOperationsBar', () => {
     render(<ActiveOperationsBar count={2} onClick={onClick} />);
     fireEvent.click(screen.getByRole('button'));
     expect(onClick).toHaveBeenCalled();
+  });
+});
+
+describe('ProductShell', () => {
+  it('renders without a router provider when children are supplied', () => {
+    const config: ProductShellConfig = {
+      productName: 'Test Product',
+      currentRole: 'operator',
+      roleOrder: ROLE_ORDER,
+      routes: [],
+    };
+
+    render(
+      <ProductShell config={config}>
+        <span>router-free-content</span>
+      </ProductShell>,
+    );
+
+    expect(screen.getByText('router-free-content')).toBeInTheDocument();
+  });
+});
+
+describe('shared route access helpers', () => {
+  it('resolves the highest known role', () => {
+    expect(resolveHighestRole(['primary-user', 'admin', 'unknown'], ROLE_ORDER, 'primary-user')).toBe('admin');
+  });
+
+  it('denies unknown roles and unknown minimum roles', () => {
+    expect(isRouteAllowed({ minimumRole: 'admin' }, 'unknown', ROLE_ORDER)).toBe(false);
+    expect(isRouteAllowed({ minimumRole: 'owner' }, 'admin', ROLE_ORDER)).toBe(false);
+  });
+
+  it('filters hidden, boundary, and role-denied routes', () => {
+    expect(filterDiscoverableRoutes(routes, 'operator', ROLE_ORDER).map((route) => route.path)).toEqual([
+      '/',
+      '/data',
+      '/trust',
+      '/preview-thing',
+    ]);
+  });
+
+  it('hydrates route metadata from backend entitlements and hides missing routes', () => {
+    const hydrated = hydrateRoutesFromEntitlement(routes, {
+      product: 'test',
+      principalId: 'principal',
+      tenantId: 'tenant',
+      role: 'operator',
+      routes: [{ path: '/data', label: 'Server Data', actions: ['read'] }],
+    });
+
+    expect(hydrated.find((route) => route.path === '/data')?.label).toBe('Server Data');
+    expect(hydrated.find((route) => route.path === '/')?.discoverable).toBe(false);
   });
 });

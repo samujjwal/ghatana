@@ -103,7 +103,20 @@ public class PhaseOperator {
 
     private Promise<Object> executeGenerate(Object input) {
         if (input instanceof com.ghatana.yappc.domain.generate.ValidatedSpec validatedSpec) {
-            return generationService.generate(validatedSpec)
+            com.ghatana.yappc.domain.generate.GenerationContext context =
+                com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                    .tenantId("default-tenant")
+                    .workspaceId("default-workspace")
+                    .projectId(validatedSpec.shapeSpec().id())
+                    .actorId("system")
+                    .phase("GENERATE")
+                    .sourceArtifactIds(java.util.List.of())
+                    .canvasNodeIds(java.util.List.of())
+                    .intentId(validatedSpec.shapeSpec().id())
+                    .shapeId(validatedSpec.shapeSpec().id())
+                    .correlationId(java.util.UUID.randomUUID().toString())
+                    .build();
+            return generationService.generate(validatedSpec, context)
                     .map(result -> (Object) result);
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Generate phase"));

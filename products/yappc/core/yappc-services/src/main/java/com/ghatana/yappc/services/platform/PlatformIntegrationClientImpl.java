@@ -175,6 +175,190 @@ public final class PlatformIntegrationClientImpl implements PlatformIntegrationC
     }
 
     @Override
+    public PlatformMemory retrieveMemorySummary(String memoryId) {
+        log.debug("Retrieving memory summary: memoryId={}", memoryId);
+
+        PlatformMemory memoryRecord = memory.get(memoryId);
+
+        if (memoryRecord == null) {
+            log.warn("Memory not found: memoryId={}", memoryId);
+            throw new IllegalArgumentException("Memory not found: " + memoryId);
+        }
+
+        // Return the memory as-is for demonstration
+        // In production, this might return a summary with truncated content
+        return memoryRecord;
+    }
+
+    @Override
+    public boolean storeExecutionTrace(PlatformTrace trace) {
+        log.info("Storing execution trace: traceId={}", trace.traceId());
+
+        // Store trace in executions map for demonstration
+        // In production, this would send to a dedicated trace storage service
+        executions.put(trace.traceId(), new PlatformExecution(
+                trace.traceId(),
+                "default-project", // Not available in PlatformTrace
+                "default-workspace", // Not available in PlatformTrace
+                "default-tenant", // Not available in PlatformTrace
+                new PlatformExecution.ExecutionRequest(
+                        "trace", // executionType
+                        "default-model", // modelId
+                        "1.0", // modelVersion
+                        Map.of("spans", String.valueOf(trace.spans().size())), // parameters
+                        trace.metadata(), // headers
+                        trace.traceId() // correlationId
+                ),
+                new PlatformExecution.ExecutionResponse(
+                        trace.traceId(),
+                        "trace", // Default execution type
+                        Map.of("spans", String.valueOf(trace.spans().size())), // Outputs
+                        new PlatformExecution.ExecutionMetrics(
+                                trace.completedAt() != null && trace.startedAt() != null
+                                    ? (int) (trace.completedAt().toEpochMilli() - trace.startedAt().toEpochMilli())
+                                    : 0,
+                                trace.spans().size(),
+                                0.0,
+                                Map.of()
+                        ),
+                        List.of(),
+                        null
+                ),
+                new PlatformExecution.ExecutionMetadata(
+                        trace.traceId(),
+                        trace.executionId(),
+                        "system", // Default actor
+                        "DataCloud+AEP",
+                        Set.of("trace"),
+                        trace.metadata()
+                ),
+                new PlatformExecution.ExecutionStatus(
+                        PlatformExecution.ExecutionStatus.ExecutionState.COMPLETED,
+                        "Trace stored successfully",
+                        trace.spans().size(),
+                        Instant.now()
+                ),
+                trace.startedAt(),
+                trace.completedAt() != null ? trace.completedAt() : Instant.now()
+        ));
+
+        log.info("Execution trace stored successfully: traceId={}", trace.traceId());
+        return true;
+    }
+
+    @Override
+    public PlatformTrace getExecutionTrace(String executionId) {
+        log.debug("Getting execution trace: executionId={}", executionId);
+
+        // In production, this would retrieve from a dedicated trace storage service
+        // For now, return a simple trace based on the execution
+        PlatformExecution execution = executions.get(executionId);
+        if (execution == null) {
+            log.warn("Execution not found for trace: executionId={}", executionId);
+            throw new IllegalArgumentException("Execution not found: " + executionId);
+        }
+
+        return new PlatformTrace(
+                executionId,
+                executionId,
+                List.of(), // Empty spans for demonstration
+                execution.metadata().customMetadata(),
+                execution.createdAt(),
+                Instant.now() // Use current time since completedAt may not be available
+        );
+    }
+
+    @Override
+    public PlatformPolicy evaluatePolicy(PlatformPolicy.PolicyRequest request) {
+        log.info("Evaluating policy: policyType={}, tenantId={}", request.policyType(), request.tenantId());
+
+        // Simple policy evaluation for demonstration
+        // In production, this would call a dedicated policy evaluation service
+        return new PlatformPolicy(
+                "policy-" + java.util.UUID.randomUUID().toString(),
+                true, // Allow by default
+                List.of(),
+                request.requestData(),
+                Instant.now()
+        );
+    }
+
+    @Override
+    public PlatformAnalytics getAnalytics(PlatformAnalytics.AnalyticsQuery query) {
+        log.info("Getting analytics: metricName={}", query.metricName());
+
+        // Simple analytics response for demonstration
+        // In production, this would query a dedicated analytics service
+        PlatformAnalytics.AnalyticsMetric metric = new PlatformAnalytics.AnalyticsMetric(
+                query.metricName(),
+                100.0,
+                query.filters(),
+                Instant.now()
+        );
+
+        return new PlatformAnalytics(
+                List.of(metric),
+                Map.of("result_count", 100, "avg_duration_ms", 500),
+                query.startTime(),
+                query.endTime()
+        );
+    }
+
+    @Override
+    public boolean recordTelemetry(PlatformTelemetry event) {
+        log.info("Recording telemetry: eventId={}, eventType={}", event.eventId(), event.eventType());
+
+        // Store telemetry in memory for demonstration
+        // In production, this would send to a dedicated telemetry service
+        executions.put(event.eventId(), new PlatformExecution(
+                event.eventId(),
+                event.projectId(),
+                event.workspaceId(),
+                event.tenantId(),
+                new PlatformExecution.ExecutionRequest(
+                        event.eventType(),
+                        "default-model",
+                        "1.0",
+                        event.data(),
+                        Map.of(),
+                        event.eventId()
+                ),
+                new PlatformExecution.ExecutionResponse(
+                        event.eventId(),
+                        event.eventType(),
+                        event.data(),
+                        new PlatformExecution.ExecutionMetrics(
+                                0,
+                                1,
+                                0.0,
+                                Map.of()
+                        ),
+                        List.of(),
+                        null
+                ),
+                new PlatformExecution.ExecutionMetadata(
+                        event.eventId(),
+                        "telemetry-session",
+                        "system",
+                        "DataCloud+AEP",
+                        Set.of(event.eventType()),
+                        Map.of()
+                ),
+                new PlatformExecution.ExecutionStatus(
+                        PlatformExecution.ExecutionStatus.ExecutionState.COMPLETED,
+                        "Telemetry recorded successfully",
+                        1,
+                        Instant.now()
+                ),
+                event.timestamp(),
+                Instant.now()
+        ));
+
+        log.info("Telemetry recorded successfully: eventId={}", event.eventId());
+        return true;
+    }
+
+    @Override
     public PlatformHealth getHealth() {
         log.debug("Getting platform health status");
 

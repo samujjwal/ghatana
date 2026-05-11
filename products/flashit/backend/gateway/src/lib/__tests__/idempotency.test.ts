@@ -17,9 +17,9 @@ vi.mock('../../prisma.js', () => ({
   },
 }));
 
-import { checkIdempotency } from '../../idempotency.js';
-import { prisma } from '../../prisma.js';
-import type { AuditEventType } from '../../../../generated/prisma/index.js';
+import { checkIdempotency } from '../idempotency.js';
+import { prisma } from '../prisma.js';
+import type { AuditEventType } from '../../../generated/prisma/index.js';
 
 const mockAuditEventFindFirst = vi.mocked(prisma.auditEvent.findFirst);
 

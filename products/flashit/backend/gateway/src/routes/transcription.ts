@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { WhisperTranscriptionService } from '../services/transcription/whisper-service.js';
 import { prisma } from '../lib/prisma.js';
@@ -41,15 +41,15 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
   fastify.post('/transcribe', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(transcribeMomentSchema),
+      body: toJsonSchema(transcribeMomentSchema),
       response: {
-        202: zodToJsonSchema(z.object({
+        202: toJsonSchema(z.object({
           momentId: z.string(),
           jobId: z.string(),
           status: z.string(),
           message: z.string()
         })),
-        404: zodToJsonSchema(z.object({
+        404: toJsonSchema(z.object({
           error: z.string(),
           message: z.string()
         }))
@@ -131,9 +131,9 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
   fastify.post('/batch', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(transcribeBatchSchema),
+      body: toJsonSchema(transcribeBatchSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           results: z.array(z.object({
             momentId: z.string(),
             transcript: z.string().optional(),
@@ -201,14 +201,14 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
   fastify.get('/:momentId', {
     onRequest: [requireAuth],
     schema: {
-      params: zodToJsonSchema(getMomentTranscriptSchema),
+      params: toJsonSchema(getMomentTranscriptSchema),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           transcript: z.string(),
           language: z.string().nullable(),
           createdAt: z.string(),
         })),
-        404: zodToJsonSchema(z.object({
+        404: toJsonSchema(z.object({
           error: z.string(),
           message: z.string(),
         })),
@@ -251,7 +251,7 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           totalMoments: z.number(),
           transcribed: z.number(),
           pending: z.number(),
@@ -282,11 +282,11 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
   fastify.post('/auto-transcribe', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(z.object({
+      body: toJsonSchema(z.object({
         maxBatch: z.number().min(1).max(50).optional().default(10),
       })),
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           total: z.number(),
           successful: z.number(),
           failed: z.number(),
@@ -338,7 +338,7 @@ export default async function transcriptionRoutes(fastify: FastifyInstance) {
     onRequest: [requireAuth],
     schema: {
       response: {
-        200: zodToJsonSchema(z.object({
+        200: toJsonSchema(z.object({
           available: z.boolean(),
           message: z.string(),
         })),

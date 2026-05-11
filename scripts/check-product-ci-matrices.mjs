@@ -18,6 +18,35 @@ import path from 'node:path';
 
 const repoRoot = process.cwd();
 const violations = [];
+const productShape = JSON.parse(
+  readFileSync(path.join(repoRoot, 'config/product-shape.json'), 'utf8'),
+);
+
+const productDisplayNames = {
+  finance: 'Finance',
+  phr: 'PHR',
+  'digital-marketing': 'Digital Marketing',
+  flashit: 'FlashIt',
+};
+
+function productIdsFromShape() {
+  return Object.keys(productShape.products).sort();
+}
+
+function productDisplayName(productId) {
+  return productDisplayNames[productId] ?? productId;
+}
+
+function productPathFilter(productId) {
+  return `products/${productId}/**`;
+}
+
+function productTaskPrefix(productId) {
+  if (productId === 'digital-marketing') {
+    return ':products:digital-marketing';
+  }
+  return `:products:${productId}`;
+}
 
 // ---------------------------------------------------------------------------
 // Minimal structural YAML parser – GitHub Actions workflow subset
@@ -309,7 +338,8 @@ function assertMatrixCommands(file, label, includes, expectedCommands) {
 const coverageGatesFile = '.github/workflows/product-coverage-gates.yml';
 const coverageGatesSource = readFileSync(path.join(repoRoot, coverageGatesFile), 'utf8');
 
-const coverageProducts = ['Finance', 'PHR', 'Digital Marketing', 'FlashIt'];
+const productIds = productIdsFromShape();
+const coverageProducts = productIds.map(productDisplayName);
 const coverageIncludes = assertMatrixProducts(coverageGatesFile, 'product coverage gates', coverageGatesSource, coverageProducts);
 
 assertMatrixEntryFields(coverageGatesFile, 'product coverage gates', coverageIncludes, [
@@ -318,13 +348,9 @@ assertMatrixEntryFields(coverageGatesFile, 'product coverage gates', coverageInc
   'reportPath',
 ]);
 
-const expectedTaskPrefixes = {
-  Finance: ':products:finance',
-  PHR: ':products:phr',
-  'Digital Marketing': ':products:digital-marketing',
-  FlashIt: ':products:flashit',
-};
-for (const [product, prefix] of Object.entries(expectedTaskPrefixes)) {
+for (const productId of productIds) {
+  const product = productDisplayName(productId);
+  const prefix = productTaskPrefix(productId);
   const entry = coverageIncludes.find((e) => e.product === product);
   if (entry && !String(entry.taskPrefix ?? '').includes(prefix)) {
     violations.push(
@@ -333,12 +359,7 @@ for (const [product, prefix] of Object.entries(expectedTaskPrefixes)) {
   }
 }
 
-assertPathFilters(coverageGatesFile, 'product coverage gates', coverageGatesSource, [
-  'products/finance/**',
-  'products/phr/**',
-  'products/digital-marketing/**',
-  'products/flashit/**',
-]);
+assertPathFilters(coverageGatesFile, 'product coverage gates', coverageGatesSource, productIds.map(productPathFilter));
 
 assertNoSwallowedFailures(coverageGatesFile, coverageGatesSource);
 
@@ -349,7 +370,7 @@ assertNoSwallowedFailures(coverageGatesFile, coverageGatesSource);
 const apiConformanceFile = '.github/workflows/api-contract-conformance.yml';
 const apiConformanceSource = readFileSync(path.join(repoRoot, apiConformanceFile), 'utf8');
 
-const conformanceProducts = ['PHR', 'Finance', 'Digital Marketing', 'FlashIt'];
+const conformanceProducts = productIds.map(productDisplayName);
 const conformanceIncludes = assertMatrixProducts(apiConformanceFile, 'API contract conformance', apiConformanceSource, conformanceProducts);
 
 assertMatrixEntryFields(apiConformanceFile, 'API contract conformance', conformanceIncludes, [
@@ -358,19 +379,21 @@ assertMatrixEntryFields(apiConformanceFile, 'API contract conformance', conforma
   'reportPath',
 ]);
 
-assertMatrixCommands(apiConformanceFile, 'API contract conformance', conformanceIncludes, [
-  { product: 'PHR', command: ':products:phr:checkApiContractConformance' },
-  { product: 'Finance', command: ':products:finance:checkApiContractConformance' },
-  { product: 'Digital Marketing', command: ':products:digital-marketing:dm-api:test' },
-  { product: 'FlashIt', command: 'flashit-tests' },
-]);
+const expectedConformanceCommands = productIds.map((productId) => {
+  if (productId === 'digital-marketing') {
+    return { product: productDisplayName(productId), command: ':products:digital-marketing:dm-api:test' };
+  }
+  if (productId === 'flashit') {
+    return { product: productDisplayName(productId), command: 'flashit-tests' };
+  }
+  return {
+    product: productDisplayName(productId),
+    command: `${productTaskPrefix(productId)}:checkApiContractConformance`,
+  };
+});
+assertMatrixCommands(apiConformanceFile, 'API contract conformance', conformanceIncludes, expectedConformanceCommands);
 
-assertPathFilters(apiConformanceFile, 'API contract conformance', apiConformanceSource, [
-  'products/phr/**',
-  'products/finance/**',
-  'products/digital-marketing/**',
-  'products/flashit/**',
-]);
+assertPathFilters(apiConformanceFile, 'API contract conformance', apiConformanceSource, productIds.map(productPathFilter));
 
 assertMinNodeVersion(apiConformanceFile, apiConformanceSource, 22);
 assertPnpmVersion(apiConformanceFile, apiConformanceSource, '10.33.0');

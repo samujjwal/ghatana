@@ -1,6 +1,6 @@
 // GENERATED CODE - Do not edit manually
 // Regenerate from dmos-route-manifest.yaml
-// Generated at: Mon May 11 08:40:42 PDT 2026
+// Generation is deterministic; do not add wall-clock timestamps.
 
 import React from 'react';
 import type { ProductRouteCapability } from '@ghatana/product-shell';

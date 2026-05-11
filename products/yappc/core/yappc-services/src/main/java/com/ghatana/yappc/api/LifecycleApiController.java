@@ -229,7 +229,22 @@ public class LifecycleApiController {
 
                                 ValidatedSpec validatedSpec = ValidatedSpec.of(shapeSpec, validationResult);
                                 long generateStart = System.currentTimeMillis();
-                                return generationService.generate(validatedSpec)
+
+                                com.ghatana.yappc.domain.generate.GenerationContext genContext =
+                                    com.ghatana.yappc.domain.generate.GenerationContext.builder()
+                                        .tenantId(context.tenantId())
+                                        .workspaceId(context.workspaceId())
+                                        .projectId(context.projectId())
+                                        .actorId(context.actorId())
+                                        .phase("GENERATE")
+                                        .sourceArtifactIds(java.util.List.of())
+                                        .canvasNodeIds(java.util.List.of())
+                                        .intentId(intentSpec.id())
+                                        .shapeId(shapeSpec.id())
+                                        .correlationId(context.correlationId())
+                                        .build();
+
+                                return generationService.generate(validatedSpec, genContext)
                                     .then(artifacts -> {
                                         recordPhaseTiming("GENERATE", generateStart, phaseDurationsMs, executedPhases);
 

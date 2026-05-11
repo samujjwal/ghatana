@@ -46,3 +46,19 @@ export { ProductViewModeSelector } from './components/ProductViewModeSelector';
 export { NotificationCenter } from './components/NotificationCenter';
 export { ActiveOperationsBar } from './components/ActiveOperationsBar';
 export { UnsupportedSurfaceBoundary } from './components/UnsupportedSurfaceBoundary';
+export {
+  filterDiscoverableRoutes,
+  hydrateRoutesFromEntitlement,
+  isRouteAllowed,
+  resolveHighestRole,
+} from './access';
+export {
+  createProductShellConfig,
+  useStableProductShellConfig,
+} from './shellConfig';
+export {
+  useProductEntitlements,
+  type ProductEntitlementStatus,
+  type UseProductEntitlementsOptions,
+  type UseProductEntitlementsResult,
+} from './useProductEntitlements';

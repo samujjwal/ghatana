@@ -9,6 +9,9 @@
  */
 
 import { prisma } from '../lib/prisma.js';
+import { Logger } from './logger.js';
+
+const logger = Logger.create({ component: 'PerformanceMonitor' });
 
 // ============================================================================
 // Performance Metrics
@@ -43,8 +46,7 @@ class PerformanceMonitor {
 
       // Log slow operations
       if (duration > 1000) {
-        fastify?.log.warn({
-          msg: 'Slow operation detected',
+        logger.warn('Slow operation detected', {
           operation,
           duration,
           metadata,
@@ -108,10 +110,10 @@ class PerformanceMonitor {
     return {
       count: filtered.length,
       avgDuration: Math.round(sum / durations.length),
-      minDuration: durations[0],
-      maxDuration: durations[durations.length - 1],
-      p95Duration: durations[Math.floor(durations.length * 0.95)],
-      p99Duration: durations[Math.floor(durations.length * 0.99)],
+      minDuration: durations[0] ?? 0,
+      maxDuration: durations[durations.length - 1] ?? 0,
+      p95Duration: durations[Math.min(Math.floor(durations.length * 0.95), durations.length - 1)] ?? 0,
+      p99Duration: durations[Math.min(Math.floor(durations.length * 0.99), durations.length - 1)] ?? 0,
     };
   }
 
@@ -290,10 +292,7 @@ export async function getDatabaseStats() {
       slowQueries,
     };
   } catch (error) {
-    fastify?.log.error({
-      msg: 'Failed to get database stats',
-      error: (error as Error).message,
-    });
+    logger.error('Failed to get database stats', error);
     return null;
   }
 }
@@ -326,8 +325,7 @@ export function setupRequestTracking(app: any) {
 
     // Log slow API calls
     if (duration > 2000) {
-      fastify?.log.warn({
-        msg: 'Slow API call',
+      logger.warn('Slow API call', {
         method: request.method,
         url: request.url,
         duration,
@@ -381,8 +379,7 @@ export function checkMemoryLeak(): {
 setInterval(() => {
   const check = checkMemoryLeak();
   if (check.isLeaking) {
-    fastify?.log.error({
-      msg: 'Memory leak detected',
+    logger.error('Memory leak detected', undefined, {
       heapGrowthMB: check.heapGrowth,
       recommendation: check.recommendation,
     });

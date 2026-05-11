@@ -31,6 +31,7 @@ export interface FlashItDataAccessOptions {
   readonly dataOwnerScope: string;
   readonly idempotencyKey?: string;
   readonly requireIdempotencyKey?: boolean;
+  readonly tenantResolver?: FlashItTenantResolver;
 }
 
 export class FlashItDataAccessContextError extends Error {
@@ -42,11 +43,30 @@ export class FlashItDataAccessContextError extends Error {
 
 type HeaderValue = string | string[] | undefined;
 
-interface AuthenticatedFastifyRequest extends FastifyRequest {
+type AuthenticatedFastifyRequest = FastifyRequest & {
   readonly user: {
     readonly userId: string;
+    readonly email?: string;
+    readonly role?: string;
   };
+};
+
+export interface FlashItTenantResolutionInput {
+  readonly principalId: string;
+  readonly requestedTenantId?: string;
 }
+
+export type FlashItTenantResolver = (input: FlashItTenantResolutionInput) => string;
+
+const resolvePersonalTenant: FlashItTenantResolver = ({ principalId, requestedTenantId }) => {
+  if (!requestedTenantId || requestedTenantId === principalId) {
+    return principalId;
+  }
+
+  throw new FlashItDataAccessContextError(
+    "x-tenant-id is not authorized for the authenticated FlashIt principal",
+  );
+};
 
 const firstHeaderValue = (value: HeaderValue): string | undefined => {
   if (Array.isArray(value)) {
@@ -68,7 +88,11 @@ export const buildFlashItDataAccessContext = (
 ): FlashItDataAccessContext => {
   const authenticatedRequest = request as AuthenticatedFastifyRequest;
   const principalId = requireNonEmpty(authenticatedRequest.user.userId, "principalId");
-  const tenantId = firstHeaderValue(request.headers["x-tenant-id"]) ?? principalId;
+  const requestedTenantId = firstHeaderValue(request.headers["x-tenant-id"]);
+  const tenantId = (options.tenantResolver ?? resolvePersonalTenant)({
+    principalId,
+    requestedTenantId,
+  });
   const correlationId = firstHeaderValue(request.headers["x-correlation-id"]) ?? randomUUID();
   const idempotencyKey =
     options.idempotencyKey ?? firstHeaderValue(request.headers["x-idempotency-key"]);

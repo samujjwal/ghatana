@@ -1,4 +1,8 @@
-import type { ProductRouteCapability } from '@ghatana/product-shell';
+import {
+  isRouteAllowed,
+  resolveHighestRole,
+  type ProductRouteCapability,
+} from '@ghatana/product-shell';
 import { normalizeRoles, type ValidRole } from '@/lib/role-utils';
 import {
   dmosRouteManifest as generatedRouteManifest,
@@ -11,7 +15,7 @@ export { DMOS_ROLE_ORDER };
 
 const DEFAULT_AUTHENTICATED_ROLE: ValidRole = 'viewer';
 
-const ROUTE_METADATA: Readonly<Record<string, Pick<DmosRouteManifestEntry, 'personas' | 'tiers' | 'cards'>>> = {
+const ROUTE_METADATA: Readonly<Record<string, Pick<DmosRouteManifestEntry, 'personas' | 'tiers' | 'cards' | 'capabilityKey'>>> = {
   '/workspaces/:workspaceId/dashboard': {
     personas: ['analyst', 'approver', 'executive'],
     tiers: ['core'],
@@ -121,14 +125,7 @@ const ROUTE_ACTIONS: Readonly<Record<string, readonly string[]>> = {
 
 function getHighestRole(roles: readonly string[]): ValidRole {
   const normalized = normalizeRoles([...roles]);
-  if (normalized.length === 0) {
-    return DEFAULT_AUTHENTICATED_ROLE;
-  }
-
-  return normalized.reduce<ValidRole>((highest, candidate) => {
-    const role = candidate as ValidRole;
-    return DMOS_ROLE_ORDER[role] > DMOS_ROLE_ORDER[highest] ? role : highest;
-  }, DEFAULT_AUTHENTICATED_ROLE);
+  return resolveHighestRole(normalized, DMOS_ROLE_ORDER, DEFAULT_AUTHENTICATED_ROLE) as ValidRole;
 }
 
 export function getHighestDmosRole(roles: readonly string[]): ValidRole {
@@ -139,12 +136,8 @@ export function isRouteAllowedForRoles(
   route: Pick<DmosRouteManifestEntry, 'minimumRole'>,
   roles: readonly string[],
 ): boolean {
-  if (!route.minimumRole) {
-    return true;
-  }
-
   const currentRole = getHighestRole(roles);
-  return DMOS_ROLE_ORDER[currentRole] >= DMOS_ROLE_ORDER[route.minimumRole as ValidRole];
+  return isRouteAllowed(route, currentRole, DMOS_ROLE_ORDER);
 }
 
 export function resolveDmosRoutePath(path: string, workspaceId: string | null | undefined): string {

@@ -10,7 +10,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJsonSchema } from '../lib/zod-schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { AdoptionLoopsService } from '../services/adoption/adoption-loops-service.js';
 
@@ -87,7 +87,7 @@ export default async function adoptionRoutes(fastify: FastifyInstance) {
   fastify.post('/suggestions/interactions', {
     onRequest: [requireAuth],
     schema: {
-      body: zodToJsonSchema(suggestionInteractionSchema),
+      body: toJsonSchema(suggestionInteractionSchema),
     },
   }, async (request, reply) => {
     const userId = request.user.userId;

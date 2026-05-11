@@ -15,6 +15,10 @@ import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ArtifactGraphController;
 import com.ghatana.yappc.api.ValidationApiController;
+import com.ghatana.yappc.api.RunApiController;
+import com.ghatana.yappc.api.ObserveApiController;
+import com.ghatana.yappc.api.LearnApiController;
+import com.ghatana.yappc.api.EvolveApiController;
 import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
@@ -507,6 +511,34 @@ public class LifecycleServiceModule extends AbstractModule {
     ValidationApiController validationApiController(ValidationService validationService) {
         logger.info("Creating ValidationApiController");
         return new ValidationApiController(validationService);
+    }
+
+    /** Provides RunApiController for Phase 4 (Run) HTTP routes. */
+    @Provides
+    RunApiController runApiController(RunService runService, AuditLogger auditLogger) {
+        logger.info("Creating RunApiController");
+        return new RunApiController(runService, auditLogger);
+    }
+
+    /** Provides ObserveApiController for Phase 5 (Observe) HTTP routes. */
+    @Provides
+    ObserveApiController observeApiController(ObserveService observeService) {
+        logger.info("Creating ObserveApiController");
+        return new ObserveApiController(observeService);
+    }
+
+    /** Provides LearnApiController for Phase 7 (Learn) HTTP routes. */
+    @Provides
+    LearnApiController learnApiController(LearningService learningService) {
+        logger.info("Creating LearnApiController");
+        return new LearnApiController(learningService);
+    }
+
+    /** Provides EvolveApiController for Phase 6 (Evolve) HTTP routes. */
+    @Provides
+    EvolveApiController evolveApiController(EvolutionService evolutionService) {
+        logger.info("Creating EvolveApiController");
+        return new EvolveApiController(evolutionService);
     }
 
     // ========== Artifact Compiler (YAPPC-ArtifactCompiler) ==========

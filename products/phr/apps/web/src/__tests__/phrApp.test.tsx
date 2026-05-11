@@ -4,6 +4,7 @@ import { ThemeProvider } from '@ghatana/theme';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhrAccessProvider } from '../auth/PhrAccessContext';
+import type { PhrRole } from '../auth/PhrAccessContext';
 import type { DashboardData } from '../types';
 import { phrRouteManifest } from '../routeManifest';
 import { AppShell } from '../layout/AppShell';
