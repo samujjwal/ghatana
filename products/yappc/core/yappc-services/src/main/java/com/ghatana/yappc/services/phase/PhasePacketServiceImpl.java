@@ -58,23 +58,38 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 true,
                 getNextPhase(phase),
                 List.of(),
-                1.0
+                1.0,
+                false
             );
 
+            String projectName = "Project-" + projectId;
+            String workspaceName = "Workspace-" + workspaceId;
+            
             PhasePacket packet = new PhasePacket(
                 phase,
                 projectId,
+                projectName,
                 principal.getTenantId(),
                 workspaceId,
+                workspaceName,
+                new PhasePacket.ActorContext(principal.getName(), principal.getName(), "user", false, false),
                 phase,
                 tier,
                 enabledFlags,
+                new PhasePacket.CapabilityModel(true, true, true, false, false, false, false),
                 blockers,
+                readiness,
+                List.of(),
+                List.of(),
+                List.of(),
                 evidence,
                 governance,
+                null,
                 actions,
-                readiness,
-                Instant.now().toEpochMilli()
+                null,
+                null,
+                Instant.now().toEpochMilli(),
+                null
             );
 
             log.debug("Built phase packet: phase={}, projectId={}, tenantId={}",

@@ -69,17 +69,28 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
                 new PhasePacket(
                     phase,
                     projectId,
+                    "Project-" + projectId,
                     principal.getTenantId(),
                     workspaceId,
+                    "Workspace-" + workspaceId,
+                    new PhasePacket.ActorContext(principal.getName(), principal.getName(), "user", false, false),
                     phase,
                     PhasePacket.TenantTier.FREE,
                     Set.of(),
+                    new PhasePacket.CapabilityModel(true, true, true, false, false, false, false),
+                    List.of(),
+                    new PhasePacket.PhaseReadiness(true, null, List.of(), 1.0, false),
                     List.of(),
                     List.of(),
                     List.of(),
                     List.of(),
-                    new PhasePacket.PhaseReadiness(true, null, List.of(), 1.0),
-                    Instant.now().toEpochMilli()
+                    List.of(),
+                    null,
+                    List.of(),
+                    null,
+                    null,
+                    Instant.now().toEpochMilli(),
+                    correlationId
                 )
             )
         );

@@ -40,6 +40,15 @@ yappc-services:
   - POST /api/v1/yappc/artifact/import-source
   - POST /api/v1/preview/session/create
   - POST /api/v1/preview/session/validate
+  # Authorization and Capabilities
+  - POST /api/v1/capabilities
+  - GET  /api/v1/capabilities
+  # Phase Cockpit
+  - POST /api/v1/phase/packet
+  - GET  /api/v1/phase/packet
+  # Dashboard Actions
+  - POST /api/v1/dashboard/actions
+  - GET  /api/v1/dashboard/actions
 
 # ─── yappc-api (VectorRoutes / AgentRoutes / WorkflowRoutes) ──────────────────
 yappc-api:

@@ -372,6 +372,14 @@ export default tseslint.config(
           ],
         },
       ],
+      // Block raw fetch calls outside API infrastructure
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.name="fetch"]',
+          message: 'Direct fetch() calls are not allowed. Use the typed API client from @/lib/api/client.ts instead. All HTTP calls must go through the typed helpers (get, post, patch, put, del).',
+        },
+      ],
 
       '@typescript-eslint/no-unused-vars': [
         'error',

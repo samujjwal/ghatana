@@ -17,7 +17,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "types": ["vite/client", "@react-router/node", "node"],
     "paths": {
@@ -86,11 +85,7 @@
     ".react-router/types/**/*.ts"
   ],
   "files": ["src/utils/Logger.ts"],
-  "references": [
-    {
-      "path": "../libs/api/tsconfig.json"
-    }
-  ],
+  "references": [],
   "exclude": [
     "node_modules",
     "dist",

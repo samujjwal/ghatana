@@ -1,11 +1,12 @@
-# Platform Mapping: YAPPC / AEP / Data Layer / Runtime
+# Platform Mapping: YAPPC / Data Cloud+AEP
 
 This document maps the agent catalog into an implementation-oriented platform split.
 
+**IMPORTANT**: AEP and Data Cloud are now merged into one platform product. YAPPC integrates with the merged Data Cloud+AEP platform product through typed contracts.
+
 Goal:
 - YAPPC = product/workspace/project-facing platform and lifecycle application layer
-- AEP = agent execution platform / orchestration / memory / tooling runtime
-- Data Cloud / data layer = data, telemetry, search, analytics, embeddings, historical evidence
+- Data Cloud+AEP = merged intelligence, agent execution, data, retrieval, memory, telemetry, evidence, policy, and evaluation platform product
 - Shared packages = domain types, schemas, contracts, event definitions, UI system, policy artifacts
 
 ---
@@ -37,8 +38,8 @@ YAPPC examples:
 - Search UI
 - Prompt / plan / confirm / generate / preview / download flow
 
-### AEP Responsibilities
-AEP should own:
+### Data Cloud+AEP Responsibilities
+Data Cloud+AEP should own:
 - agent registry
 - agent routing and orchestration
 - tool registry and invocation
@@ -51,18 +52,6 @@ AEP should own:
 - execution traces
 - parallel and chained task execution
 - reusable agent runtime abstractions
-
-AEP examples:
-- LifecycleOrchestratorAgent
-- RequirementsOrchestrator
-- ToolSelectionTaskAgent
-- MemoryWriteTaskAgent
-- ReflectionTaskAgent
-- SafetyGuardrailTaskAgent
-- ResultAggregationTaskAgent
-
-### Data Cloud / Data Layer Responsibilities
-Data layer should own:
 - raw and curated data storage
 - vector embeddings
 - search indexes
@@ -70,9 +59,24 @@ Data layer should own:
 - event storage
 - experimental data
 - cost and usage history
-- historical requirement/spec/version evidence
+- historical project/evidence retrieval
 - audit evidence storage
 - model evaluation datasets
+- feedback/evaluation loops
+- drift detection
+
+Data Cloud+AEP examples:
+- LifecycleOrchestratorAgent
+- RequirementsOrchestrator
+- ToolSelectionTaskAgent
+- MemoryWriteTaskAgent
+- ReflectionTaskAgent
+- SafetyGuardrailTaskAgent
+- ResultAggregationTaskAgent
+- SearchIndexBuildTaskAgent
+- DataValidationTaskAgent
+- TelemetryInstrumentationTaskAgent
+- DriftDetectionTaskAgent
 
 ### Shared Packages Responsibilities
 Shared packages should own:
@@ -106,25 +110,22 @@ Shared packages should own:
 - libs/domain/traceability
 - libs/domain/plugin-management
 
-### AEP Modules
-- services/aep-runtime
-- libs/aep/agent-registry
-- libs/aep/execution-engine
-- libs/aep/tool-registry
-- libs/aep/memory
-- libs/aep/reflection
-- libs/aep/evaluation
-- libs/aep/policy-guardrails
-- libs/aep/contracts
-
-### Data / Search / AI Modules
-- services/data-cloud
-- libs/data/events
-- libs/data/search
-- libs/data/embeddings
-- libs/data/analytics
-- libs/data/telemetry
-- libs/data/evaluation-datasets
+### Data Cloud+AEP Modules
+- services/data-cloud-aep-runtime
+- libs/data-cloud-aep/agent-registry
+- libs/data-cloud-aep/execution-engine
+- libs/data-cloud-aep/tool-registry
+- libs/data-cloud-aep/memory
+- libs/data-cloud-aep/reflection
+- libs/data-cloud-aep/evaluation
+- libs/data-cloud-aep/policy-guardrails
+- libs/data-cloud-aep/contracts
+- libs/data-cloud-aep/events
+- libs/data-cloud-aep/search
+- libs/data-cloud-aep/embeddings
+- libs/data-cloud-aep/analytics
+- libs/data-cloud-aep/telemetry
+- libs/data-cloud-aep/evaluation-datasets
 
 ### Shared Technical Modules
 - libs/shared/types
@@ -139,7 +140,7 @@ Shared packages should own:
 
 ## 3. Agent Placement Guidance
 
-### Agents that belong mostly in AEP
+### Agents that belong mostly in Data Cloud+AEP
 - LifecycleOrchestratorAgent
 - DiscoveryOrchestrator
 - RequirementsOrchestrator
@@ -153,9 +154,18 @@ Shared packages should own:
 - SelfCritiqueTaskAgent
 - ResultAggregationTaskAgent
 - SafetyGuardrailTaskAgent
+- SearchIndexBuildTaskAgent
+- DataValidationTaskAgent
+- TelemetryInstrumentationTaskAgent
+- FeatureAdoptionTaskAgent
+- FunnelAnalysisTaskAgent
+- DriftDetectionTaskAgent
+- EmbeddingRefreshTaskAgent
+- SemanticCachingTaskAgent
+- UsageAnalyticsCapabilityAgent
 
 Reason:
-These are runtime, orchestration, cognition, memory, and execution concerns.
+These are runtime, orchestration, cognition, memory, execution, data-heavy, analytics-heavy, or retrieval-heavy processing responsibilities.
 
 ### Agents that belong mostly in YAPPC business services
 - RequirementCaptureTaskAgent
@@ -171,19 +181,6 @@ These are runtime, orchestration, cognition, memory, and execution concerns.
 Reason:
 These are lifecycle/business-domain features tightly coupled to workspace/project/product context.
 
-### Agents that belong mostly in Data Cloud
-- SearchIndexBuildTaskAgent
-- DataValidationTaskAgent
-- TelemetryInstrumentationTaskAgent
-- FeatureAdoptionTaskAgent
-- FunnelAnalysisTaskAgent
-- DriftDetectionTaskAgent
-- EmbeddingRefreshTaskAgent
-- SemanticCachingTaskAgent
-- UsageAnalyticsCapabilityAgent
-
-Reason:
-These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibilities.
 
 ---
 
@@ -209,7 +206,7 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - ApprovalRequest
 - ActivityFeedItem
 
-### Strong candidates for AEP persistence
+### Strong candidates for Data Cloud+AEP persistence
 - AgentDefinition
 - AgentRun
 - AgentRunStep
@@ -222,8 +219,6 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - DelegationRecord
 - RetryRecord
 - SafetyIncident
-
-### Strong candidates for data platform persistence
 - EventEnvelope
 - SearchDocument
 - EmbeddingRecord
@@ -252,7 +247,7 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - approval flows
 - user workspace context
 
-### AEP APIs should expose
+### Data Cloud+AEP APIs should expose
 - submit agent task
 - inspect agent run
 - stream agent progress
@@ -261,8 +256,6 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - query memory summaries
 - run evaluation
 - fetch guardrail result
-
-### Data APIs should expose
 - search
 - analytics queries
 - telemetry summaries
@@ -285,15 +278,13 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - diagram.*
 - audit_log.*
 
-### AEP-owned event families
+### Data Cloud+AEP-owned event families
 - agent.*
 - tool.*
 - memory.*
 - reflection.*
 - evaluation.*
 - policy.*
-
-### Data-owned event families
 - analytics.*
 - telemetry.*
 - embedding.*
@@ -319,7 +310,7 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - audit/activity feed
 - preview/export screens
 
-### AEP admin / debug UI surfaces
+### Data Cloud+AEP admin / debug UI surfaces
 - agent run viewer
 - execution trace viewer
 - tool call inspector
@@ -327,8 +318,6 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - evaluation dashboards
 - policy decision logs
 - cost / token dashboards
-
-### Data / analytics UI surfaces
 - usage analytics
 - adoption dashboards
 - search quality dashboards
@@ -343,14 +332,14 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 1. User enters requirement or product idea in YAPPC UI
 2. YAPPC creates project-scoped request
 3. YAPPC emits requirement.submitted
-4. AEP receives orchestration request
+4. Data Cloud+AEP receives orchestration request through typed contracts
 5. RequirementsOrchestrator delegates:
    - RequirementCaptureTaskAgent
    - RequirementNormalizationTaskAgent
    - AcceptanceCriteriaTaskAgent
    - RequirementToStoryTraceTaskAgent
-6. AEP stores execution trace and optional memory artifacts
-7. Data layer updates search index / telemetry / analytics
+6. Data Cloud+AEP stores execution trace and optional memory artifacts
+7. Data Cloud+AEP updates search index / telemetry / analytics
 8. YAPPC presents structured output, confidence, diffs, and approval actions
 9. Human approves, edits, or rejects
 10. YAPPC persists approved requirement/version/audit record
@@ -366,15 +355,13 @@ These are data-heavy, analytics-heavy, or retrieval-heavy processing responsibil
 - human approval for high-impact actions
 - immutable audit trail for critical lifecycle events
 
-### In AEP
+### In Data Cloud+AEP
 - structured agent execution contracts
 - tool schema validation
 - model usage budgets
 - memory retention policy
 - safety classification before tool execution
 - execution traceability
-
-### In Data Layer
 - PII classification and redaction
 - retention classes
 - tenant-safe indexing
@@ -396,16 +383,13 @@ Implement in YAPPC:
 - basic traceability
 
 ### Second
-Implement in AEP:
+Implement in Data Cloud+AEP:
 - agent registry
 - execution engine
 - requirements orchestration
 - tool registry
 - run tracing
 - safety guardrails
-
-### Third
-Implement in data layer:
 - event store
 - search index
 - embeddings

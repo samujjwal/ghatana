@@ -4,6 +4,8 @@ Status: active contributor reference
 
 Use this document when adding or changing a phase, component, import path, generator, preview surface, or governance event. It complements the canonical terminology glossary in `products/yappc/docs/guides/terminology-glossary.md`.
 
+**IMPORTANT**: YAPPC integrates with the merged Data Cloud+AEP platform product through typed contracts. AEP and Data Cloud are no longer treated as separate external products.
+
 ## Product Model
 
 YAPPC separates the stored work container from the software being delivered.
@@ -147,6 +149,40 @@ Primary trace surfaces:
 - Page document operation logs for builder edits and persistence decisions.
 - Generate provenance on generated files and diff regions.
 - Dashboard safe-action execution audit through `/api/projects/{projectId}/dashboard-actions/execute`.
+- Platform execution trace references for Data Cloud+AEP integration.
+
+## Platform Integration Boundary
+
+YAPPC consumes Data Cloud+AEP capabilities through typed contracts only. YAPPC must not import internal platform runtime, memory, retrieval, analytics, or telemetry modules.
+
+Platform contract categories:
+
+- **Agent/intelligence execution**: Submit lifecycle tasks, inspect orchestration status, display execution progress, show trace references, cancel long-running work.
+- **Evidence/retrieval**: Retrieve relevant project evidence, show evidence in Validate/Generate/Review, index approved artifacts, support traceability.
+- **Memory**: Retrieve project-scoped memory summaries, write approved lifecycle knowledge.
+- **Telemetry/analytics**: Emit lifecycle events, display health summaries, show model quality or confidence summaries, support feedback loops.
+- **Policy/guardrails**: Evaluate high-impact operations, show block/review/approve decisions, attach policy decisions to audit records.
+
+Required YAPPC → Data Cloud+AEP request context:
+
+- tenantId, workspaceId, projectId, actorId
+- phase, operation, dataClassification
+- requestedAt, correlationId
+- artifactId, canvasNodeId, generationRunId where applicable
+
+Required Data Cloud+AEP → YAPPC response metadata:
+
+- status, confidence, confidenceReason
+- traceId, evidenceIds, policyDecisionId
+- degraded, degradedReason
+- createdAt, completedAt
+- runId, memoryRecordIds, searchResultIds where applicable
+
+Forbidden dependencies:
+
+- YAPPC cannot import internal Data Cloud+AEP runtime modules (e.g., agent-registry, execution-engine, memory, search internals).
+- YAPPC cannot import internal Data Cloud+AEP data modules (e.g., events, embeddings, analytics internals).
+- YAPPC must use typed/generated platform clients for all platform communication.
 
 When adding a generator:
 
@@ -174,6 +210,16 @@ Add an import path:
 Add a generator:
 
 1. Add OpenAPI schema, typed client method, provenance-bearing response model, review decision flow, and generated artifact tests.
+2. Link generation to Data Cloud+AEP run/trace/evidence where applicable.
+
+Add platform integration:
+
+1. Define platform DTOs for the contract category (execution, evidence, memory, telemetry, policy).
+2. Add required request context (tenant/workspace/project/actor/phase/operation).
+3. Add required response metadata (status/confidence/traceId/evidenceIds/policyDecisionId/degraded).
+4. Use typed/generated platform client; never import internal platform modules.
+5. Add contract tests for platform DTOs.
+6. Handle unavailable/degraded platform states explicitly.
 
 ## Verification Expectations
 

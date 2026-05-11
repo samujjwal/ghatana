@@ -242,6 +242,188 @@ paths:
                 version: "2.0.0"
                 status: operational
 
+  # ── Capabilities ─────────────────────────────────────────────────────────────
+
+  /api/v1/capabilities:
+    get:
+      tags: [auth]
+      summary: Get user capabilities
+      description: Returns the capabilities available to the current user based on their role and context
+      operationId: getCapabilities
+      parameters:
+        - name: workspaceId
+          in: query
+          description: Workspace ID to scope capabilities
+          required: false
+          schema:
+            type: string
+        - name: projectId
+          in: query
+          description: Project ID to scope capabilities
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User capabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapabilityResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [auth]
+      summary: Query user capabilities
+      description: Query capabilities for a specific context with optional correlation ID
+      operationId: queryCapabilities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapabilityRequest"
+      responses:
+        "200":
+          description: User capabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapabilityResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Phase Cockpit ────────────────────────────────────────────────────────────
+
+  /api/v1/phase/packet:
+    get:
+      tags: [lifecycle]
+      summary: Get phase cockpit packet
+      description: Returns the canonical phase cockpit packet for a project and phase
+      operationId: getPhasePacket
+      parameters:
+        - name: phase
+          in: query
+          description: Lifecycle phase (intent, shape, validate, generate, run, observe, learn, evolve)
+          required: true
+          schema:
+            type: string
+            enum: [intent, shape, validate, generate, run, observe, learn, evolve]
+        - name: projectId
+          in: query
+          description: Project ID
+          required: true
+          schema:
+            type: string
+        - name: workspaceId
+          in: query
+          description: Workspace ID
+          required: false
+          schema:
+            type: string
+        - name: correlationId
+          in: query
+          description: Optional correlation ID for tracing
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Phase cockpit packet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseCockpitPacket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [lifecycle]
+      summary: Request phase cockpit packet
+      description: Request the canonical phase cockpit packet with full request body
+      operationId: requestPhasePacket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhasePacketRequest"
+      responses:
+        "200":
+          description: Phase cockpit packet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseCockpitPacket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Dashboard Actions ─────────────────────────────────────────────────────────
+
+  /api/v1/dashboard/actions:
+    get:
+      tags: [lifecycle]
+      summary: Get dashboard actions
+      description: Returns backend-derived dashboard actions for a workspace
+      operationId: getDashboardActions
+      parameters:
+        - name: workspaceId
+          in: query
+          description: Workspace ID
+          required: true
+          schema:
+            type: string
+        - name: correlationId
+          in: query
+          description: Optional correlation ID for tracing
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectDashboardActions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [lifecycle]
+      summary: Request dashboard actions
+      description: Request backend-derived dashboard actions with full request body
+      operationId: requestDashboardActions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardActionRequest"
+      responses:
+        "200":
+          description: Dashboard actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectDashboardActions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── Workspaces ─────────────────────────────────────────────────────────────
 
   /api/workspaces:
@@ -4410,6 +4592,495 @@ components:
             $ref: "#/components/schemas/ProblemDetail"
 
   schemas:
+
+    # ── Capability schemas ─────────────────────────────────────────────────────
+
+    CapabilityRequest:
+      type: object
+      required: [workspaceId]
+      properties:
+        tenantId:
+          type: string
+          description: Tenant ID (optional, validated against principal)
+        workspaceId:
+          type: string
+          description: Workspace ID
+        projectId:
+          type: string
+          description: Project ID (optional)
+        correlationId:
+          type: string
+          description: Optional correlation ID for tracing
+
+    CapabilityResponse:
+      type: object
+      required: [userId, workspaceCapabilities, projectCapabilities, lifecycleCapabilities]
+      properties:
+        userId:
+          type: string
+        workspaceId:
+          type: string
+        projectId:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, ADMIN, DEVELOPER, VIEWER]
+        workspaceCapabilities:
+          type: object
+          properties:
+            canCreate:
+              type: boolean
+            canUpdate:
+              type: boolean
+            canDelete:
+              type: boolean
+        projectCapabilities:
+          type: object
+          properties:
+            canCreate:
+              type: boolean
+            canUpdate:
+              type: boolean
+            canDelete:
+              type: boolean
+            canRead:
+              type: boolean
+        lifecycleCapabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum: [intent, shape, validate, generate, run, observe, learn, evolve]
+              canExecute:
+                type: boolean
+              canApprove:
+                type: boolean
+              canReject:
+                type: boolean
+
+    # ── Phase Cockpit schemas ─────────────────────────────────────────────────
+
+    PhasePacketRequest:
+      type: object
+      required: [phase, projectId]
+      properties:
+        phase:
+          type: string
+          enum: [intent, shape, validate, generate, run, observe, learn, evolve]
+        tenantId:
+          type: string
+          description: Tenant ID (optional, validated against principal)
+        projectId:
+          type: string
+        workspaceId:
+          type: string
+          description: Workspace ID (optional)
+        correlationId:
+          type: string
+          description: Optional correlation ID for tracing
+
+    PhaseCockpitPacket:
+      type: object
+      required: [phase, projectId, tenantId, workspaceId, actor, tenantTier, enabledPhaseFlags, capabilities, blockers, readiness, requiredArtifacts, completedArtifacts, activityFeed, evidence, governance, availableActions, dashboardActions, healthSignals, timestamp]
+      properties:
+        phase:
+          type: string
+          enum: [intent, shape, validate, generate, run, observe, learn, evolve]
+        projectId:
+          type: string
+        projectName:
+          type: string
+        tenantId:
+          type: string
+        workspaceId:
+          type: string
+        workspaceName:
+          type: string
+        actor:
+          $ref: "#/components/schemas/ActorContext"
+        lifecyclePhase:
+          type: string
+        tenantTier:
+          type: string
+          enum: [FREE, PRO, ENTERPRISE]
+        enabledPhaseFlags:
+          type: array
+          items:
+            type: string
+        capabilities:
+          $ref: "#/components/schemas/CapabilityModel"
+        blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseBlocker"
+        readiness:
+          $ref: "#/components/schemas/PhaseReadiness"
+        requiredArtifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/RequiredArtifact"
+        completedArtifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompletedArtifact"
+        activityFeed:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityFeedEntry"
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseEvidence"
+        governance:
+          type: array
+          items:
+            $ref: "#/components/schemas/GovernanceRecord"
+        platformRunStatus:
+          $ref: "#/components/schemas/PlatformRunStatus"
+        availableActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseAction"
+        dashboardActions:
+          $ref: "#/components/schemas/DashboardActionClassification"
+        healthSignals:
+          $ref: "#/components/schemas/HealthSignals"
+        timestamp:
+          type: integer
+          format: int64
+        correlationId:
+          type: string
+
+    ActorContext:
+      type: object
+      required: [actorId, actorName, role, isOwner, isAdmin]
+      properties:
+        actorId:
+          type: string
+        actorName:
+          type: string
+        role:
+          type: string
+        isOwner:
+          type: boolean
+        isAdmin:
+          type: boolean
+
+    CapabilityModel:
+      type: object
+      required: [canRead, canCreate, canUpdate, canDelete, canApprove, canReject, canRollback]
+      properties:
+        canRead:
+          type: boolean
+        canCreate:
+          type: boolean
+        canUpdate:
+          type: boolean
+        canDelete:
+          type: boolean
+        canApprove:
+          type: boolean
+        canReject:
+          type: boolean
+        canRollback:
+          type: boolean
+
+    PhaseBlocker:
+      type: object
+      required: [id, type, title, description, severity, resourceId, resolvable]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        resourceId:
+          type: string
+        resolvable:
+          type: boolean
+
+    PhaseReadiness:
+      type: object
+      required: [canAdvance, nextPhase, missingPrerequisites, completenessScore, isDegraded]
+      properties:
+        canAdvance:
+          type: boolean
+        nextPhase:
+          type: string
+        missingPrerequisites:
+          type: array
+          items:
+            type: string
+        completenessScore:
+          type: number
+          format: double
+        isDegraded:
+          type: boolean
+
+    RequiredArtifact:
+      type: object
+      required: [artifactId, artifactType, title, description, isComplete]
+      properties:
+        artifactId:
+          type: string
+        artifactType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        isComplete:
+          type: boolean
+
+    CompletedArtifact:
+      type: object
+      required: [artifactId, artifactType, title, completedAt, completedBy]
+      properties:
+        artifactId:
+          type: string
+        artifactType:
+          type: string
+        title:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        completedBy:
+          type: string
+
+    ActivityFeedEntry:
+      type: object
+      required: [id, type, action, summary, actor, timestamp, severity]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        action:
+          type: string
+        summary:
+          type: string
+        actor:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        severity:
+          type: string
+          enum: [INFO, WARNING, ERROR]
+
+    PhaseEvidence:
+      type: object
+      required: [id, type, title, description, timestamp, metadata, evidenceId]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        evidenceId:
+          type: string
+
+    GovernanceRecord:
+      type: object
+      required: [id, type, outcome, actor, timestamp, metadata, policyDecisionId]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        outcome:
+          type: string
+        actor:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        policyDecisionId:
+          type: string
+
+    PlatformRunStatus:
+      type: object
+      required: [runId, status, platform, startedAt, traceId, evidenceIds]
+      properties:
+        runId:
+          type: string
+        status:
+          type: string
+        platform:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+        evidenceIds:
+          type: array
+          items:
+            type: string
+
+    PhaseAction:
+      type: object
+      required: [actionId, label, description, enabled, requiredPermission, parameters]
+      properties:
+        actionId:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        disabledReason:
+          type: string
+        requiredPermission:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+
+    DashboardActionClassification:
+      type: object
+      required: [primaryAction, blockedActions, reviewRequiredActions, safeToContinueActions]
+      properties:
+        primaryAction:
+          type: string
+        blockedActions:
+          type: array
+          items:
+            type: string
+        reviewRequiredActions:
+          type: array
+          items:
+            type: string
+        safeToContinueActions:
+          type: array
+          items:
+            type: string
+
+    HealthSignals:
+      type: object
+      required: [preview, generation, runtime]
+      properties:
+        preview:
+          $ref: "#/components/schemas/PreviewHealth"
+        generation:
+          $ref: "#/components/schemas/GenerationHealth"
+        runtime:
+          $ref: "#/components/schemas/RuntimeHealth"
+
+    PreviewHealth:
+      type: object
+      required: [isHealthy, status, issues]
+      properties:
+        isHealthy:
+          type: boolean
+        status:
+          type: string
+        issues:
+          type: array
+          items:
+            type: string
+
+    GenerationHealth:
+      type: object
+      required: [isHealthy, status, issues]
+      properties:
+        isHealthy:
+          type: boolean
+        status:
+          type: string
+        lastGeneratedAt:
+          type: string
+          format: date-time
+        issues:
+          type: array
+          items:
+            type: string
+
+    RuntimeHealth:
+      type: object
+      required: [isHealthy, status, issues]
+      properties:
+        isHealthy:
+          type: boolean
+        status:
+          type: string
+        lastDeployedAt:
+          type: string
+          format: date-time
+        issues:
+          type: array
+          items:
+            type: string
+
+    # ── Dashboard Action schemas ───────────────────────────────────────────────
+
+    DashboardActionRequest:
+      type: object
+      required: [workspaceId]
+      properties:
+        tenantId:
+          type: string
+          description: Tenant ID (optional, validated against principal)
+        workspaceId:
+          type: string
+        correlationId:
+          type: string
+          description: Optional correlation ID for tracing
+
+    ProjectDashboardActions:
+      type: object
+      required: [projectId, primaryAction, blockedActions, reviewRequiredActions, safeToContinueActions, reasonLabel, isDegraded, timestamp]
+      properties:
+        projectId:
+          type: string
+        projectName:
+          type: string
+        primaryAction:
+          type: string
+        blockedActions:
+          type: array
+          items:
+            type: string
+        reviewRequiredActions:
+          type: array
+          items:
+            type: string
+        safeToContinueActions:
+          type: array
+          items:
+            type: string
+        reasonLabel:
+          type: string
+        isDegraded:
+          type: boolean
+        timestamp:
+          type: integer
+          format: int64
 
     # ── Workspace and project schemas ────────────────────────────────────────
 

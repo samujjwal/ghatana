@@ -282,7 +282,18 @@ tasks.register("checkYappcForbiddenImports") {
                                 val forbiddenPatterns = listOf(
                                     Regex("""import\s+@prisma\.client"""),
                                     Regex("""import\s+com\.prisma\.client"""),
-                                    Regex("""import\s+.*\.graphql\.client""")
+                                    Regex("""import\s+.*\.graphql\.client"""),
+                                    // Data Cloud+AEP internal runtime modules - YAPPC must use typed contracts only
+                                    Regex("""import\s+com\.ghatana\.aep\.agent-registry"""),
+                                    Regex("""import\s+com\.ghatana\.aep\.execution-engine"""),
+                                    Regex("""import\s+com\.ghatana\.aep\.memory"""),
+                                    Regex("""import\s+com\.ghatana\.aep\.search"""),
+                                    Regex("""import\s+com\.ghatana\.datacloud\.events"""),
+                                    Regex("""import\s+com\.ghatana\.datacloud\.embeddings"""),
+                                    Regex("""import\s+com\.ghatana\.datacloud\.analytics"""),
+                                    // Generic internal platform imports
+                                    Regex("""import\s+com\.ghatana\.platform\.runtime"""),
+                                    Regex("""import\s+com\.ghatana\.platform\.data""")
                                 )
 
                                 forbiddenPatterns.forEach { pattern ->
@@ -301,8 +312,14 @@ tasks.register("checkYappcForbiddenImports") {
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "Forbidden cross-stack imports detected:\n${violations.joinToString("\n")}\n\n" +
-                "Java code must not import @prisma/client or GraphQL client directly. " +
-                "Use the appropriate HTTP API or event-based integration instead."
+                "Java code must not:\n" +
+                "- Import @prisma/client or com.prisma.client directly\n" +
+                "- Import GraphQL client directly\n" +
+                "- Import internal Data Cloud+AEP runtime modules (agent-registry, execution-engine, memory, search)\n" +
+                "- Import internal Data Cloud+AEP data modules (events, embeddings, analytics)\n" +
+                "- Import internal platform runtime or data modules\n\n" +
+                "YAPPC must consume Data Cloud+AEP through typed contracts only. " +
+                "Use the appropriate HTTP API or typed platform client instead."
             )
         }
 

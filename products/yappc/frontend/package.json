@@ -34,7 +34,7 @@
     "clean": "rimraf dist node_modules/.cache",
     "codegen": "pnpm codegen:graphql && pnpm codegen:openapi",
     "codegen:graphql": "graphql-codegen --config codegen.yml",
-    "codegen:openapi": "npx -y openapi-typescript-codegen ../../api/yappc-api.openapi.yaml -o web/src/clients/generated/api.ts --client axios",
+    "codegen:openapi": "npx -y openapi-typescript-codegen ../../docs/api/openapi.yaml -o web/src/clients/generated/api.ts --client axios",
     "storybook": "pnpm --filter yappc-ui storybook",
     "verify": "pnpm check:namespaces && pnpm check:auth-policy && pnpm check:duplication-boundaries && pnpm check:manifests && pnpm check:workspace-deps && pnpm --filter @ghatana/platform-events build && pnpm --filter @ghatana/ds-schema build && pnpm --filter @ghatana/ui-builder build && pnpm --filter yappc-artifact-compiler build && pnpm typecheck && pnpm lint:verify && pnpm test:verify && pnpm build:verify",
     "deps:update": "pnpm update --latest",
