@@ -153,25 +153,26 @@ class GovernanceDestructiveOperationE2ETest {
             return Promise.of((long) entityState.getOrDefault(spec.collection(), Map.of()).size());
         });
 
-        // entityStore.deleteBatch removes from entityState
-        when(mockEntityStore.deleteBatch(any(), any())).thenAnswer(inv -> {
-            List<EntityStore.EntityId> ids = inv.getArgument(1);
+        // entityStore.deleteByRefs removes from entityState
+        when(mockEntityStore.deleteByRefs(any(), any())).thenAnswer(inv -> {
+            List<EntityStore.EntityRef> refs = inv.getArgument(1);
             long deleted = 0;
-            for (EntityStore.EntityId id : ids) {
-                for (Map<String, EntityStore.Entity> collection : entityState.values()) {
-                    if (collection.remove(id.value()) != null) {
-                        deleted++;
-                        break;
-                    }
+            for (EntityStore.EntityRef ref : refs) {
+                Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+                if (collection != null && collection.remove(ref.entityId().value()) != null) {
+                    deleted++;
                 }
             }
             return Promise.of(BatchResult.success((int) deleted));
         });
 
-        // entityStore.delete removes a single entity
-        when(mockEntityStore.delete(any(), any())).thenAnswer(inv -> {
-            EntityStore.EntityId id = inv.getArgument(1);
-            entityState.values().forEach(col -> col.remove(id.value()));
+        // entityStore.deleteByRef removes a single entity
+        when(mockEntityStore.deleteByRef(any(), any())).thenAnswer(inv -> {
+            EntityStore.EntityRef ref = inv.getArgument(1);
+            Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+            if (collection != null) {
+                collection.remove(ref.entityId().value());
+            }
             return Promise.of(null);
         });
 

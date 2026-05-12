@@ -7,6 +7,7 @@ package com.ghatana.datacloud.launcher.http;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -86,6 +88,21 @@ class DataCloudCommandExecutorTest extends EventloopTestBase {
         public Promise<Void> record(AuditEvent event) {
             recorded.add(event);
             return Promise.complete();
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> query(AuditQuery query) {
+            return Promise.of(List.copyOf(recorded));
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+            return Promise.of(List.copyOf(recorded));
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+            return Promise.of(List.copyOf(recorded));
         }
     }
 

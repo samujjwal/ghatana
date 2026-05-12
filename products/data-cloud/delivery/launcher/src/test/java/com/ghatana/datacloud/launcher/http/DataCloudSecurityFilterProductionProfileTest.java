@@ -5,6 +5,8 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -108,7 +111,27 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         };
 
         // Audit service: no-op
-        auditService = event -> Promise.complete();
+        auditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.complete();
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
     }
 
     @AfterEach

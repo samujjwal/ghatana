@@ -68,13 +68,19 @@ public final class YappcAuthorizationService {
      * @param principal the authenticated principal
      * @param workspaceId the workspace ID
      * @param permission the required permission
-     * @throws AccessDeniedException if the principal lacks the required permission
+     * @throws AccessDeniedException if the principal lacks the required permission or workspaceId is null
      */
     public void authorizeWorkspaceAccess(
             @NotNull Principal principal,
             @NotNull String workspaceId,
             @NotNull String permission
     ) {
+        if (workspaceId == null) {
+            log.warn("Workspace access denied: principal={}, workspaceId is null", principal.getName());
+            throw new AccessDeniedException(
+                String.format("Workspace ID is required for authorization by principal %s", principal.getName())
+            );
+        }
         if (!authorizationService.hasPermission(toUser(principal), permission)) {
             log.warn(
                 "Workspace access denied: principal={}, workspaceId={}, requiredPermission={}",

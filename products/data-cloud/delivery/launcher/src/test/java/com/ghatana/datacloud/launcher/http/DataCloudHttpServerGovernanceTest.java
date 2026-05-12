@@ -118,23 +118,24 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             long total = entityState.getOrDefault(querySpec.collection(), Map.of()).size(); 
             return Promise.of(EntityStore.QueryResult.of(entities, total)); 
         });
-        when(mockEntityStore.deleteBatch(any(), any())).thenAnswer(invocation -> { 
-            List<EntityStore.EntityId> entityIds = invocation.getArgument(1); 
+        when(mockEntityStore.deleteByRefs(any(), any())).thenAnswer(invocation -> {
+            List<EntityStore.EntityRef> refs = invocation.getArgument(1);
             long deleted = 0;
-            for (EntityStore.EntityId entityId : entityIds) { 
-                for (Map<String, EntityStore.Entity> collection : entityState.values()) { 
-                    if (collection.remove(entityId.value()) != null) { 
-                        deleted++;
-                        break;
-                    }
+            for (EntityStore.EntityRef ref : refs) {
+                Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+                if (collection != null && collection.remove(ref.entityId().value()) != null) {
+                    deleted++;
                 }
             }
-            return Promise.of(BatchResult.success((int) deleted)); 
+            return Promise.of(BatchResult.success((int) deleted));
         });
-        when(mockEntityStore.delete(any(), any())).thenAnswer(invocation -> { 
-            EntityStore.EntityId entityId = invocation.getArgument(1); 
-            entityState.values().forEach(collection -> collection.remove(entityId.value())); 
-            return Promise.of(null); 
+        when(mockEntityStore.deleteByRef(any(), any())).thenAnswer(invocation -> {
+            EntityStore.EntityRef ref = invocation.getArgument(1);
+            Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+            if (collection != null) {
+                collection.remove(ref.entityId().value());
+            }
+            return Promise.of(null);
         });
         when(mockEntityStore.count(any(), any())).thenAnswer(invocation -> { 
             EntityStore.QuerySpec querySpec = invocation.getArgument(1); 

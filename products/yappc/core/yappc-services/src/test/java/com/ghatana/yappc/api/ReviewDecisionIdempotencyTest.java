@@ -49,9 +49,10 @@ class ReviewDecisionIdempotencyTest {
     @Test
     @DisplayName("Should track rollback decision sequence")
     void shouldTrackRollbackDecisionSequence() {
-        ReviewDecision applyDecision = createApplyDecision("decision-1", "plan-1", "diff-1");
-        ReviewDecision rollbackDecision1 = createRollbackDecision("decision-2", "plan-1", "diff-1");
-        ReviewDecision rollbackDecision2 = createRollbackDecision("decision-3", "plan-1", "diff-1");
+        Instant baseTime = Instant.now();
+        ReviewDecision applyDecision = createApplyDecision("decision-1", "plan-1", "diff-1", baseTime);
+        ReviewDecision rollbackDecision1 = createRollbackDecision("decision-2", "plan-1", "diff-1", baseTime.plusMillis(100));
+        ReviewDecision rollbackDecision2 = createRollbackDecision("decision-3", "plan-1", "diff-1", baseTime.plusMillis(200));
         
         // Verify decision types
         assertEquals(ReviewDecision.DecisionType.APPLY, applyDecision.decisionType());
@@ -87,8 +88,9 @@ class ReviewDecisionIdempotencyTest {
     @Test
     @DisplayName("Should handle request-changes followed by rollback")
     void shouldHandleRequestChangesFollowedByRollback() {
-        ReviewDecision requestChangesDecision = createRequestChangesDecision("decision-1", "plan-1", "diff-1");
-        ReviewDecision rollbackDecision = createRollbackDecision("decision-2", "plan-1", "diff-1");
+        Instant baseTime = Instant.now();
+        ReviewDecision requestChangesDecision = createRequestChangesDecision("decision-1", "plan-1", "diff-1", baseTime);
+        ReviewDecision rollbackDecision = createRollbackDecision("decision-2", "plan-1", "diff-1", baseTime.plusMillis(100));
         
         // Verify decision types
         assertEquals(ReviewDecision.DecisionType.REQUEST_CHANGES, requestChangesDecision.decisionType());
@@ -100,7 +102,7 @@ class ReviewDecisionIdempotencyTest {
 
     // Helper methods to create test data
 
-    private ReviewDecision createRollbackDecision(String decisionId, String generationPlanId, String diffId) {
+    private ReviewDecision createRollbackDecision(String decisionId, String generationPlanId, String diffId, Instant createdAt) {
         return new ReviewDecision(
                 decisionId,
                 generationPlanId,
@@ -123,13 +125,17 @@ class ReviewDecisionIdempotencyTest {
                         null,
                         Map.of("key", "value")
                 ),
-                Instant.now(),
+                createdAt,
                 "user-1",
                 "Test User"
         );
     }
 
-    private ReviewDecision createApplyDecision(String decisionId, String generationPlanId, String diffId) {
+    private ReviewDecision createRollbackDecision(String decisionId, String generationPlanId, String diffId) {
+        return createRollbackDecision(decisionId, generationPlanId, diffId, Instant.now());
+    }
+
+    private ReviewDecision createApplyDecision(String decisionId, String generationPlanId, String diffId, Instant createdAt) {
         return new ReviewDecision(
                 decisionId,
                 generationPlanId,
@@ -152,13 +158,17 @@ class ReviewDecisionIdempotencyTest {
                         null,
                         Map.of()
                 ),
-                Instant.now(),
+                createdAt,
                 "user-1",
                 "Test User"
         );
     }
 
-    private ReviewDecision createRequestChangesDecision(String decisionId, String generationPlanId, String diffId) {
+    private ReviewDecision createApplyDecision(String decisionId, String generationPlanId, String diffId) {
+        return createApplyDecision(decisionId, generationPlanId, diffId, Instant.now());
+    }
+
+    private ReviewDecision createRequestChangesDecision(String decisionId, String generationPlanId, String diffId, Instant createdAt) {
         return new ReviewDecision(
                 decisionId,
                 generationPlanId,
@@ -181,9 +191,13 @@ class ReviewDecisionIdempotencyTest {
                         null,
                         Map.of()
                 ),
-                Instant.now(),
+                createdAt,
                 "user-1",
                 "Test User"
         );
+    }
+
+    private ReviewDecision createRequestChangesDecision(String decisionId, String generationPlanId, String diffId) {
+        return createRequestChangesDecision(decisionId, generationPlanId, diffId, Instant.now());
     }
 }
