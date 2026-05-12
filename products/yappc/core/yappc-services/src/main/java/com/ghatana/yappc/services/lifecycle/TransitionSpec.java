@@ -59,6 +59,11 @@ public final class TransitionSpec {
             && to.equalsIgnoreCase(toPhase);
     }
 
+    /** {@code true} iff this transition starts from the given phase (case-insensitive). */
+    public boolean matchesFrom(String fromPhase) {
+        return from != null && from.equalsIgnoreCase(fromPhase);
+    }
+
     @Override
     public String toString() {
         return "TransitionSpec{" + from + " → " + to + ", type=" + type + '}';

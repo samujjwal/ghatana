@@ -130,7 +130,7 @@ class FinancePackContractTest {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
             BoundaryPolicyRule writeRule = rules.stream()
                     .filter(r -> r.getActions().contains("write")
-                            && r.getResourcePattern().startsWith("transactions"))
+                            && r.getResourcePattern().startsWith("finance:transactions"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No transaction write rule found"));
 
@@ -145,7 +145,7 @@ class FinancePackContractTest {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
             BoundaryPolicyRule exportRule = rules.stream()
                     .filter(r -> r.getActions().contains("export")
-                            && r.getResourcePattern().startsWith("positions"))
+                            && r.getResourcePattern().startsWith("finance:positions"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No position export rule found"));
 
@@ -158,7 +158,7 @@ class FinancePackContractTest {
         @DisplayName("transaction writes require approval and audit")
         void transactionWritesRequireApprovalAndAudit() {
             BoundaryPolicyRule writeRule = store.loadRules(anyContext).stream()
-                    .filter(r -> r.getResourcePattern().startsWith("transactions")
+                    .filter(r -> r.getResourcePattern().startsWith("finance:transactions")
                             && r.getActions().contains("write"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No transaction write rule found"));

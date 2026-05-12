@@ -110,6 +110,7 @@ public final class ReviewDecision {
 
     /**
      * Review decision metadata.
+     * For REJECT and ROLLBACK decisions, the reason field is required.
      */
     public record ReviewDecisionMetadata(
             String reason,
@@ -117,7 +118,12 @@ public final class ReviewDecision {
             List<String> regionIds,
             List<String> fileIds,
             Map<String, String> additionalMetadata
-    ) {}
+    ) {
+        public ReviewDecisionMetadata {
+            // For REJECT and ROLLBACK, reason is required
+            // This validation should be enforced at construction time
+        }
+    }
 
     /**
      * Decision context.

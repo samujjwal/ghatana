@@ -76,6 +76,7 @@
     "extensionNamespaces": ["digital-marketing", "finance", "flashit", "phr"]
   },
   "policyResources": {
+    "canonical": ["records", "moments", "campaigns", "accounts", "transactions"],
     "extensionNamespaces": ["digital-marketing", "finance", "flashit", "phr"]
   }
 }

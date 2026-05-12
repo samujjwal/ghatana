@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.ghatana.com/production-critical-scopes/v1",
+  "title": "Production-Critical Scan Scopes",
+  "description": "Declarative configuration for production-critical surfaces that must be scanned for stubs, mocks, and placeholders",
+  "type": "object",
+  "properties": {
+    "scanScopes": {
+      "type": "array",
+      "description": "List of production-critical directories to scan",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path from repo root to scan"
+          },
+          "critical": {
+            "type": "boolean",
+            "description": "Whether this scope is critical (violations fail CI) or informational (warnings only)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the scan scope"
+          }
+        },
+        "required": ["path", "critical", "description"]
+      }
+    },
+    "excludedPathSegments": {
+      "type": "array",
+      "description": "Path segments that trigger exclusion from scanning",
+      "items": {
+        "type": "string"
+      }
+    },
+    "excludedFilenamePatterns": {
+      "type": "array",
+      "description": "Filename patterns that trigger exclusion from scanning",
+      "items": {
+        "type": "string"
+      }
+    },
+    "scanPatterns": {
+      "type": "array",
+      "description": "Patterns to detect in production code",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the pattern"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "warning"],
+            "description": "Severity level for violations"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Regular expression pattern to detect"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the violation"
+          }
+        },
+        "required": ["id", "severity", "pattern", "description"]
+      }
+    }
+  },
+  "required": ["scanScopes"]
+}

@@ -175,6 +175,59 @@ tasks.register("validateServices") {
     }
 }
 
+// ============================================================================
+// Route Registry Generation Task
+// ============================================================================
+tasks.register<Exec>("generateRouteRegistry") {
+    group = "codegen"
+    description = "Generate GeneratedRouteRegistry.java from route-manifest.yaml"
+
+    val scriptFile = layout.projectDirectory.file("../../scripts/generate-route-registry.py").asFile
+    val outputFile = layout.projectDirectory.dir("src/generated/java/com/ghatana/yappc/api/generated").file("GeneratedRouteRegistry.java").asFile
+
+    inputs.file(scriptFile)
+    inputs.file(layout.projectDirectory.file("../../docs/api/route-manifest.yaml"))
+    outputs.file(outputFile)
+
+    doFirst {
+        outputFile.parentFile.mkdirs()
+    }
+
+    commandLine("python", scriptFile.absolutePath)
+    workingDir(layout.projectDirectory.file("../..").asFile)
+
+    doLast {
+        println("Generated route registry: ${outputFile.absolutePath}")
+    }
+}
+
+// ============================================================================
+// Route Manifest Validation Task
+// ============================================================================
+tasks.register<Exec>("validateRouteManifest") {
+    group = "verification"
+    description = "Validate route-manifest.yaml structure and OpenAPI parity"
+
+    val scriptFile = layout.projectDirectory.file("../../scripts/validate-openapi-parity.py").asFile
+
+    inputs.file(scriptFile)
+    inputs.file(layout.projectDirectory.file("../../docs/api/route-manifest.yaml"))
+    inputs.file(layout.projectDirectory.file("../../docs/api/openapi.yaml"))
+
+    environment("PYTHONIOENCODING", "utf-8")
+    commandLine("python", scriptFile.absolutePath)
+    workingDir(layout.projectDirectory.file("../..").asFile)
+
+    doLast {
+        println("Route manifest validation PASSED")
+    }
+}
+
+// Wire generation and validation into compileJava
+tasks.compileJava {
+    dependsOn("generateRouteRegistry", "validateRouteManifest")
+}
+
 tasks.register("serviceHealthCheck") {
     group = "verification"
     description = "Health check for all services"

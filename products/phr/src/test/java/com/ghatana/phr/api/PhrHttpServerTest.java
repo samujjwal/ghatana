@@ -4,7 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
+import com.ghatana.platform.cache.IdentityAwareBoundedCache;
+import com.ghatana.platform.http.security.RoleEvaluator;
+import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
+import com.ghatana.phr.api.routes.PhrFhirRoutes;
+import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
@@ -51,7 +57,15 @@ class PhrHttpServerTest extends EventloopTestBase {
         runPromise(fhirServer::start);
 
         FhirController controller = new FhirController(fhirServer);
-        server = new PhrHttpServer(fhirServer, controller, null);
+        
+        // Create route objects with eventloop
+        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
+        PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop(), fhirServer);
+        RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
+        IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
+        PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
+        
+        server = new PhrHttpServer(eventloop(), fhirRoutes, entitlementRoutes, healthRoutes);
         runPromise(server::start);
         servlet = server.getServlet();
     }

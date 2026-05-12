@@ -6,8 +6,8 @@
  */
 
 import { parseJsonResponse as sharedParseJsonResponse } from '@/lib/http';
-import { ApiRequestError, yappcApi } from '@/lib/api/client';
-import type { components } from '@/clients/generated/openapi';
+import { AuthService as GeneratedAuthService } from '@/clients/generated/api';
+import type { components } from '@/clients/generated/api';
 import { logger } from '../../utils/Logger';
 
 type ApiRole = components['schemas']['AuthRole'];
@@ -126,7 +126,7 @@ export class AuthService {
             
             // Validate session with server-backed /api/auth/me probe
             try {
-                const userInfo = await yappcApi.auth.me();
+                const userInfo = await GeneratedAuthService.me();
                 
                 // Ensure role is one of the expected values
                 const normalizedUser = {
@@ -175,14 +175,16 @@ export class AuthService {
                 return { success: false, error: 'Email and password are required' };
             }
 
-            const authData = await yappcApi.auth.loginSession({
-                    email: credentials.email,
-                    password: credentials.password,
-                } satisfies ApiLoginRequest);
+            const authData = await GeneratedAuthService.loginSession({
+                    requestBody: {
+                        email: credentials.email,
+                        password: credentials.password,
+                    }
+                });
             
             // In cookie mode, tokens are in httpOnly cookies
             // Call /api/auth/me to get complete user info
-            const userInfo = await yappcApi.auth.me();
+            const userInfo = await GeneratedAuthService.me();
             
             // Ensure role is one of the expected values
             const normalizedUser = {
@@ -315,7 +317,7 @@ export class AuthService {
                 logger.info('Logout attempt', 'auth', { userId: this.currentSession.user.id });
 
                 // Call logout API - in cookie mode, no refreshToken needed
-                await yappcApi.auth.logout();
+                await GeneratedAuthService.logout();
             }
         } catch (error) {
             logger.warn('Logout API call failed', 'auth', {
@@ -650,7 +652,7 @@ export class AuthService {
                 return { success: false, error: 'Not authenticated' };
             }
 
-            const updatedUser = await yappcApi.auth.updateProfile(updates);
+            const updatedUser = await GeneratedAuthService.updateProfile({ requestBody: updates });
 
             // Update session with new user data
             this.currentSession.user = { ...this.currentSession.user, ...updatedUser };

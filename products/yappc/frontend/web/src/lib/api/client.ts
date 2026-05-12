@@ -35,7 +35,7 @@ import { authService } from '@/services/auth/AuthService';
 import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
 
 // Task 3.2.2: Import OpenAPI-generated client for adapter layer
-import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService } from '../../clients/generated/api';
+import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService, LifecycleService, AuditService, GenerateService, WorkflowsService, RunService } from '../../clients/generated/api';
 import type {
   LoginRequest as GeneratedLoginRequestType,
   LoginResponse as GeneratedLoginResponseType,
@@ -437,13 +437,8 @@ function adaptLoginResponse(response: GeneratedLoginResponseType): LoginSessionR
 
 export const auth = {
   // Task 3.2.2: Delegate to generated client
-  login: (body: LoginRequest): Promise<LoginSessionResponse> => {
-    const generatedRequest = adaptLoginRequest(body);
-    return GeneratedAuthService.login(generatedRequest).then(adaptLoginResponse);
-  },
-  // Task 3.2.2: Alias for login (backward compatibility)
   loginSession: (body: LoginRequest): Promise<LoginSessionResponse> => {
-    return auth.login(body);
+    return GeneratedAuthService.loginSession({ requestBody: body });
   },
   // Task 3.2.2: For cookie-session mode, refresh is handled via cookies
   // Keep existing implementation until generated client supports cookie refresh
@@ -451,13 +446,14 @@ export const auth = {
     return post<Record<string, never>, AuthTokenResponse>('/api/auth/refresh', {}, 'auth.refresh');
   },
   // Task 3.2.2: For cookie-session mode, logout is handled via cookies
-  // Keep existing implementation until generated client supports cookie logout
+  // Delegate to generated client
   logout: (): Promise<void> => {
-    return post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout');
+    return GeneratedAuthService.logout();
   },
-  // Task 3.2.2: Keep existing implementation for updateProfile (not in generated client yet)
-  updateProfile: (body: AuthProfileUpdateRequest) =>
-    put<AuthProfileUpdateRequest, AuthProfileUpdateRequest>('/api/auth/profile', body, 'auth.updateProfile'),
+  // Task 3.2.2: Delegate to generated client for updateProfile
+  updateProfile: (body: AuthProfileUpdateRequest): Promise<AuthProfileUpdateRequest> => {
+    return GeneratedAuthService.updateProfile({ requestBody: body });
+  },
   // Task 3.2.2: Keep existing implementation for ssoCallback (not in generated client yet)
   ssoCallback: (body: { code: string; state?: string | null }) =>
     post<{ code: string; state?: string | null }, { token: string }>(

@@ -114,7 +114,7 @@ export default function ProjectIndexRoute() {
         throw new Error('Project id is required to load project overview.');
       }
       if (!currentWorkspaceId) {
-        throw new Error('Workspace context is required - project access must be scoped (TODO-001)');
+        throw new Error('Workspace context is required. Please access this project from within a workspace.');
       }
       return yappcApi.projects.getScoped(projectId, currentWorkspaceId) as unknown as Promise<ProjectContract>;
     },
@@ -128,7 +128,7 @@ export default function ProjectIndexRoute() {
         throw new Error('Project id is required to load recent project activity.');
       }
       if (!currentWorkspaceId) {
-        throw new Error('Workspace context is required - activity fetch must be scoped (TODO-002)');
+        throw new Error('Workspace context is required. Please access this project from within a workspace.');
       }
       return yappcApi.projects.activity(projectId, currentWorkspaceId) as unknown as Promise<ProjectActivityResponseContract>;
     },

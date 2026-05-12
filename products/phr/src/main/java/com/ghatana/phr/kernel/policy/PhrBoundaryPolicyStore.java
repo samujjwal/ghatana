@@ -57,7 +57,7 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     Set.of("read", "write", "delete", "export", "download"));
     private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
             BoundaryPolicyResourceRegistry.ofDeclaredResources(
-                    Set.of("subject-records", "interop", "clinical-documents"));
+                    Set.of("phr:subject-records", "phr:interop", "phr:clinical-documents"));
 
     /**
      * Immutable list of all PHR boundary rules, evaluated in declaration order.
@@ -70,7 +70,7 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("PHR-BP-001")
                     .sourceScopePattern("phr.*")
                     .targetScopePattern("phr.*")
-                    .resourcePattern("subject-records/**")
+                    .resourcePattern("phr:subject-records/**")
                     .actions("read")
                     .classificationCondition("*")
                     .requiresConsent(true)
@@ -84,7 +84,7 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("PHR-BP-002")
                     .sourceScopePattern("phr.*")
                     .targetScopePattern("phr.*")
-                    .resourcePattern("subject-records/**")
+                    .resourcePattern("phr:subject-records/**")
                     .actions("write", "delete")
                     .classificationCondition("*")
                     .requiresConsent(true)
@@ -98,7 +98,7 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("PHR-BP-003")
                     .sourceScopePattern("**")
                     .targetScopePattern("phr.*")
-                    .resourcePattern("interop/**")
+                    .resourcePattern("phr:interop/**")
                     .actions("read")
                     .classificationCondition("*")
                     .requiredFeatures(Set.of("phr.interop.enabled"))
@@ -113,7 +113,7 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("PHR-BP-004")
                     .sourceScopePattern("**")
                     .targetScopePattern("phr.*")
-                    .resourcePattern("clinical-documents/**")
+                    .resourcePattern("phr:clinical-documents/**")
                     .actions("export", "download")
                     .classificationCondition("*")
                     .requiresConsent(false)

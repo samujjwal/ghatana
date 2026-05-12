@@ -9,6 +9,9 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.DeterminismGuarantee;
 import com.ghatana.agent.FailureMode;
 import com.ghatana.agent.StateMutability;
+import com.ghatana.agent.learning.LearningContract;
+import com.ghatana.agent.learning.LearningLevel;
+import com.ghatana.agent.learning.LearningTarget;
 import com.ghatana.agent.release.AgentReleaseBuilder;
 import com.ghatana.agent.release.AgentReleaseState;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Immutable, versioned agent blueprint describing the stable contract of an agent.
@@ -258,6 +262,122 @@ public final class AgentDefinition {
                 .metadata(Map.copyOf(descriptorMetadata))
                 .labels(Map.copyOf(descriptorLabels))
                 .build();
+    }
+
+    /**
+     * Materializes a typed LearningContract from this definition's learning level string.
+     * This ensures consistency between definition.learningLevel, metadata.learningLevel, and the contract.
+     *
+     * @return typed LearningContract
+     * @throws IllegalStateException if learningLevel values are inconsistent
+     */
+    @NotNull
+    public LearningContract toLearningContract() {
+        // Extract learning level from both sources
+        String definitionLevel = learningLevel;
+        String metadataLevel = metadata.containsKey("learningLevel")
+                ? String.valueOf(metadata.get("learningLevel"))
+                : null;
+
+        // Validate consistency
+        if (definitionLevel != null && metadataLevel != null && !definitionLevel.equals(metadataLevel)) {
+            throw new IllegalStateException(
+                    String.format("Learning level mismatch: definition.learningLevel='%s' vs metadata.learningLevel='%s'",
+                            definitionLevel, metadataLevel));
+        }
+
+        // Use definition level as primary, fall back to metadata
+        String levelStr = definitionLevel != null ? definitionLevel : metadataLevel;
+        if (levelStr == null) {
+            levelStr = "L0"; // Default to L0 if not specified
+        }
+
+        // Parse the level
+        LearningLevel level;
+        try {
+            level = LearningLevel.valueOf(levelStr);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid learning level: " + levelStr, e);
+        }
+
+        // Extract adaptation targets if present
+        Set<LearningTarget> allowedTargets = Set.of();
+        Object adaptationTargetsObj = metadata.get("adaptationTargets");
+        if (adaptationTargetsObj instanceof List<?> targetsList) {
+            allowedTargets = targetsList.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(targetStr -> {
+                        try {
+                            return LearningTarget.valueOf(targetStr);
+                        } catch (IllegalArgumentException e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+        }
+
+        // Extract provenance and promotion requirements
+        boolean provenanceRequired = metadata.containsKey("provenanceRequired")
+                && Boolean.TRUE.equals(metadata.get("provenanceRequired"));
+        boolean promotionRequired = metadata.containsKey("promotionRequired")
+                && Boolean.TRUE.equals(metadata.get("promotionRequired"));
+
+        // Set defaults based on level
+        if (level.ordinal() >= LearningLevel.L2.ordinal() && !metadata.containsKey("provenanceRequired")) {
+            provenanceRequired = true;
+        }
+        if (level.ordinal() >= LearningLevel.L3.ordinal() && !metadata.containsKey("promotionRequired")) {
+            promotionRequired = true;
+        }
+
+        return new LearningContract(level, allowedTargets, provenanceRequired, promotionRequired);
+    }
+
+    /**
+     * Validates that learning level configuration is consistent across the definition.
+     *
+     * @return list of validation error messages, empty if valid
+     */
+    @NotNull
+    public List<String> validateLearningLevelConsistency() {
+        List<String> errors = new ArrayList<>();
+
+        String definitionLevel = learningLevel;
+        String metadataLevel = metadata.containsKey("learningLevel")
+                ? String.valueOf(metadata.get("learningLevel"))
+                : null;
+
+        if (definitionLevel != null && metadataLevel != null && !definitionLevel.equals(metadataLevel)) {
+            errors.add(String.format("Learning level mismatch: definition.learningLevel='%s' vs metadata.learningLevel='%s'",
+                    definitionLevel, metadataLevel));
+        }
+
+        String levelStr = definitionLevel != null ? definitionLevel : metadataLevel;
+        if (levelStr != null) {
+            try {
+                LearningLevel.valueOf(levelStr);
+            } catch (IllegalArgumentException e) {
+                errors.add("Invalid learning level: " + levelStr);
+            }
+        }
+
+        // Validate adaptation targets if present
+        Object adaptationTargetsObj = metadata.get("adaptationTargets");
+        if (adaptationTargetsObj instanceof List<?> targetsList) {
+            for (Object targetObj : targetsList) {
+                if (targetObj instanceof String targetStr) {
+                    try {
+                        LearningTarget.valueOf(targetStr);
+                    } catch (IllegalArgumentException e) {
+                        errors.add("Invalid adaptation target: " + targetStr);
+                    }
+                }
+            }
+        }
+
+        return errors;
     }
 
     /**

@@ -104,13 +104,21 @@ pack:
     - delete
     - export
     - download
+    - settle
+    - cancel
     - finance:settle
     - finance:cancel
+    - "*"
   policyResources:
-    - transactions
-    - positions
-    - market-data
-    - risk-data
+    - finance:transactions
+    - finance:transactions/*
+    - finance:positions
+    - finance:positions/*
+    - finance:market-data
+    - finance:market-data/*
+    - finance:risk-data
+    - finance:risk-data/*
+    - "**"
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance
@@ -187,6 +195,24 @@ pack:
     - name: client-onboarding
       description: "Client Onboarding with AML"
 
+  # Performance claims with evidence-backed validation
+  performance:
+    claims:
+      - capability: finance.trade-processing
+        metric: latency
+        target: "< 1ms"
+        evidence:
+          benchmark_suite: OrderProcessingPerformanceBaselineService
+          slo_id: finance.trade-processing.latency.p99
+          test_file: src/test/java/com/ghatana/finance/performance/OrderProcessingPerformanceTest.java
+      - capability: finance.trade-processing
+        metric: throughput
+        target: "100k-tps"
+        evidence:
+          benchmark_suite: OrderProcessingPerformanceBaselineService
+          slo_id: finance.trade-processing.throughput
+          test_file: src/test/java/com/ghatana/finance/performance/OrderProcessingPerformanceTest.java
+
   # Integration testing configuration
   integration_testing:
     enabled: true
@@ -213,3 +239,4 @@ pack:
     created: "2026-03-19"
     author: "Ghatana Finance Team"
     documentation: "docs/README.md"
+    conformanceMode: "backend-only"

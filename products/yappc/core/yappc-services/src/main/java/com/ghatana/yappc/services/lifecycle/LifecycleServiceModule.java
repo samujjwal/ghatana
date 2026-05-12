@@ -24,6 +24,7 @@ import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
 import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
 import com.ghatana.yappc.services.ai.AiServiceModule;
+import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -48,6 +49,7 @@ import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
+import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
 import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade;
@@ -585,11 +587,16 @@ public class LifecycleServiceModule extends AbstractModule {
             YappcArtifactRepository artifactRepository,
             PhaseGateValidator phaseGateValidator,
             com.ghatana.governance.PolicyEngine policyEngine,
+            CapabilityEvaluationService capabilityEvaluationService,
+            TransitionConfigLoader transitionConfigLoader,
+            PlatformIntegrationClient platformIntegrationClient,
             @Nullable BusinessMetrics metrics,
             AuditLogger auditLogger) {
         logger.info("Creating PhasePacketService (canonical cockpit read model)");
+        // Phase 3.5/3.6: Pass null for platform AuditService and PreviewRuntimeService
+        // These will be wired in when platform services are fully integrated
         return new com.ghatana.yappc.services.phase.PhasePacketServiceImpl(
-            dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, metrics, auditLogger);
+            dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, auditLogger);
     }
 
     // ========== Lifecycle Transitions ==========

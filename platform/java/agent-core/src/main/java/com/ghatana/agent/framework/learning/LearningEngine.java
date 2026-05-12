@@ -8,6 +8,9 @@ import com.ghatana.agent.framework.memory.Episode;
 import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.memory.Policy;
+import com.ghatana.agent.learning.LearningContract;
+import com.ghatana.agent.learning.LearningLevel;
+import com.ghatana.agent.learning.LearningTarget;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,6 +18,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -25,20 +29,35 @@ import java.util.concurrent.Executor;
  * and produces confidence-scored learning outcomes. Low-confidence policies
  * (below the configured threshold) are flagged for human review.
  *
+ * <p>Learning is governed by a {@link LearningContract} which declares:
+ * <ul>
+ *   <li>The {@link LearningLevel} (L0-L5) controlling which targets are allowed</li>
+ *   <li>The set of {@link LearningTarget}s the agent may propose changes for</li>
+ *   <li>Whether provenance tracking is required</li>
+ *   <li>Whether promotion (evaluation before activation) is required</li>
+ * </ul>
+ *
  * <h2>Learning Levels (L0-L5)</h2>
  * <ul>
  *   <li><b>L0</b>: No learning — deterministic, static configuration only</li>
- *   <li><b>L1</b>: Parameter feedback — adjust thresholds based on logged outcomes</li>
- *   <li><b>L2</b>: Bandit / online learning — explore/exploit tradeoffs</li>
- *   <li><b>L3</b>: Pattern synthesis — extract procedural policies from episodes</li>
- *   <li><b>L4</b>: Structural learning — modify reasoning strategy or tool selection</li>
- *   <li><b>L5</b>: Parameter updates — full fine-tuning or prompt optimisation</li>
+ *   <li><b>L1</b>: Episodic memory only — store raw episodes</li>
+ *   <li><b>L2</b>: Semantic facts and retrieval policies — bandit/online learning</li>
+ *   <li><b>L3</b>: Procedural skills and negative knowledge — pattern synthesis</li>
+ *   <li><b>L4</b>: Prompt templates and planner policies — structural learning</li>
+ *   <li><b>L5</b>: Model adapters — offline-only, full parameter updates</li>
  * </ul>
  *
  * <h2>Usage</h2>
  * <pre>{@code
+ * LearningContract contract = new LearningContract(
+ *     LearningLevel.L3,
+ *     Set.of(LearningTarget.PROCEDURAL_SKILL, LearningTarget.SEMANTIC_FACT),
+ *     true,  // provenanceRequired
+ *     true   // promotionRequired
+ * );
+ *
  * LearningEngine engine = LearningEngine.create(executor)
- *     .withLearningLevel(LearningLevel.L3)
+ *     .withLearningContract(contract)
  *     .withHumanReviewThreshold(0.7);
  *
  * // Run during the REFLECT phase (fire-and-forget — never block user response)
@@ -63,13 +82,18 @@ public final class LearningEngine {
     private static final int DEFAULT_BATCH_SIZE = 100;
 
     private final Executor executor;
-    private LearningLevel level;
+    private LearningContract learningContract;
     private double humanReviewThreshold;
     private int batchSize;
 
     private LearningEngine(@NotNull Executor executor) {
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
-        this.level = LearningLevel.L3;
+        this.learningContract = new LearningContract(
+                com.ghatana.agent.learning.LearningLevel.L0,
+                Set.of(),
+                false,
+                false
+        );
         this.humanReviewThreshold = DEFAULT_REVIEW_THRESHOLD;
         this.batchSize = DEFAULT_BATCH_SIZE;
     }
@@ -86,14 +110,29 @@ public final class LearningEngine {
     }
 
     /**
-     * Sets the learning level, controlling which learning capabilities are active.
+     * Sets the learning contract, governing what the agent may learn and propose.
      *
-     * @param level the desired learning level
+     * @param contract the learning contract
      * @return this engine (fluent)
      */
     @NotNull
-    public LearningEngine withLearningLevel(@NotNull LearningLevel level) {
-        this.level = Objects.requireNonNull(level, "level must not be null");
+    public LearningEngine withLearningContract(@NotNull LearningContract contract) {
+        this.learningContract = Objects.requireNonNull(contract, "contract must not be null");
+        return this;
+    }
+
+    /**
+     * Sets the learning level (convenience method that creates a default contract).
+     *
+     * @param level the desired learning level
+     * @return this engine (fluent)
+     * @deprecated Use {@link #withLearningContract(LearningContract)} for explicit control
+     */
+    @NotNull
+    @Deprecated
+    public LearningEngine withLearningLevel(@NotNull com.ghatana.agent.learning.LearningLevel level) {
+        Objects.requireNonNull(level, "level must not be null");
+        this.learningContract = new LearningContract(level, Set.of(), level.ordinal() >= 2, level.ordinal() >= 3);
         return this;
     }
 
@@ -147,8 +186,8 @@ public final class LearningEngine {
     public Promise<LearningOutcome> reflect(
             @NotNull String agentId,
             @NotNull MemoryStore memoryStore) {
-        if (level == LearningLevel.L0) {
-            return Promise.of(LearningOutcome.noOp(agentId));
+        if (learningContract.level() == com.ghatana.agent.learning.LearningLevel.L0) {
+            return Promise.of(LearningOutcome.noOp(agentId, learningContract.level()));
         }
         Instant start = Instant.now();
         MemoryFilter filter = MemoryFilter.builder()
@@ -158,11 +197,11 @@ public final class LearningEngine {
         return memoryStore.queryEpisodes(filter, batchSize)
                 .then(episodes -> {
                     if (episodes.isEmpty()) {
-                        return Promise.of(LearningOutcome.noOp(agentId));
+                        return Promise.of(LearningOutcome.noOp(agentId, learningContract.level()));
                     }
                     // CPU-bound pattern synthesis on the blocking executor
                     return Promise.<List<CandidatePolicy>>ofBlocking(executor,
-                                    () -> synthesisePolicies(agentId, episodes))
+                                    () -> synthesisePolicies(agentId, episodes, learningContract))
                             .then(candidates -> persistPolicies(agentId, episodes, candidates, memoryStore, start));
                 });
     }
@@ -174,12 +213,14 @@ public final class LearningEngine {
      *
      * @param agentId  agent identifier
      * @param episodes episodes to process
+     * @param contract learning contract governing what can be learned
      * @return list of candidate policies with confidence scores
      */
     @NotNull
     private List<CandidatePolicy> synthesisePolicies(
             @NotNull String agentId,
-            @NotNull List<Episode> episodes) {
+            @NotNull List<Episode> episodes,
+            @NotNull LearningContract contract) {
         // Pattern: find repeated (action, outcome) pairs above frequency threshold
         java.util.Map<String, long[]> patternCounts = new java.util.HashMap<>();
         for (Episode ep : episodes) {
@@ -239,7 +280,7 @@ public final class LearningEngine {
         if (approved.isEmpty()) {
             Duration duration = Duration.between(start, Instant.now());
             return Promise.of(new LearningOutcome(
-                    agentId, start, duration, level, episodes.size(), 0, 0, flagged));
+                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, flagged));
         }
 
         // Chain all store operations sequentially to avoid concurrent writes
@@ -261,31 +302,13 @@ public final class LearningEngine {
         return storeChain.map(created -> {
             Duration duration = Duration.between(start, Instant.now());
             return new LearningOutcome(
-                    agentId, start, duration, level, episodeCount, created, 0, totalFlagged);
+                    agentId, start, duration, learningContract.level(), episodeCount, created, 0, totalFlagged);
         });
     }
 
     // =========================================================================
     // Inner types
     // =========================================================================
-
-    /**
-     * Learning levels controlling which capabilities are active.
-     */
-    public enum LearningLevel {
-        /** No learning — static configuration only. */
-        L0,
-        /** Parameter feedback from logged outcomes. */
-        L1,
-        /** Bandit / online learning. */
-        L2,
-        /** Pattern synthesis from episodes → policies. */
-        L3,
-        /** Structural learning — strategy or tool selection modification. */
-        L4,
-        /** Full parameter updates or prompt optimisation. */
-        L5
-    }
 
     /**
      * Outcome of a single reflect pass.
@@ -303,7 +326,7 @@ public final class LearningEngine {
             @NotNull String agentId,
             @NotNull Instant startedAt,
             @NotNull Duration duration,
-            @NotNull LearningLevel levelApplied,
+            @NotNull com.ghatana.agent.learning.LearningLevel levelApplied,
             int episodesProcessed,
             int policiesCreated,
             int policiesUpdated,
@@ -311,8 +334,8 @@ public final class LearningEngine {
 
         /** Returns a no-op outcome for agents with L0 learning or no episodes. */
         @NotNull
-        static LearningOutcome noOp(@NotNull String agentId) {
-            return new LearningOutcome(agentId, Instant.now(), Duration.ZERO, LearningLevel.L0, 0, 0, 0, 0);
+        static LearningOutcome noOp(@NotNull String agentId, @NotNull com.ghatana.agent.learning.LearningLevel level) {
+            return new LearningOutcome(agentId, Instant.now(), Duration.ZERO, level, 0, 0, 0, 0);
         }
     }
 

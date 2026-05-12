@@ -17,6 +17,9 @@
  */
 const ghatanaArchitectureRules = require("./eslint-rules/ghatana-architecture-rules");
 const i18nCoverageRule = require("./eslint-rules/i18n-coverage-rule");
+const noRawFetchRule = require("./eslint-rules/no-raw-fetch");
+const noProductionTodosRule = require("./eslint-rules/no-production-todos");
+const enforcePackageBoundariesRule = require("./eslint-rules/enforce-package-boundaries");
 
 module.exports = [
   {
@@ -43,12 +46,12 @@ module.exports = [
       "**/*.jsx",
       "**/*.ts",
       "**/*.tsx",
-      "**/*.mjs",
-      "**/*.cjs",
     ],
     plugins: {
       ghatana: ghatanaArchitectureRules,
       i18n: i18nCoverageRule,
+      'no-raw-fetch': noRawFetchRule,
+      'no-production-todos': noProductionTodosRule,
     },
     rules: {
       "ghatana/no-cross-product-imports": "error",
@@ -61,6 +64,9 @@ module.exports = [
       "ghatana/no-duplicate-components": "error",
       "ghatana/no-yappc-direct-platform-imports": "error",
       "i18n/i18n-coverage": "warn",
+      "no-raw-fetch/no-raw-fetch": "error",
+      "no-production-todos/no-production-todos": "error",
+      "enforce-package-boundaries/enforce-package-boundaries": "error",
       "no-restricted-imports": [
         "error",
         {

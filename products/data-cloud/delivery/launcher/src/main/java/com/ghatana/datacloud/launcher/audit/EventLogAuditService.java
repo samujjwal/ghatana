@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -149,5 +151,24 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
         byte[] bytes = new byte[duplicate.remaining()];
         duplicate.get(bytes);
         return bytes;
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> query(AuditQuery query) {
+        // Placeholder implementation - query by criteria
+        return Promise.of(new ArrayList<>());
+    }
+
+
+    @Override
+    public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+        // Placeholder implementation - query by project
+        return Promise.of(new ArrayList<>());
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+        // Placeholder implementation - query by phase
+        return Promise.of(new ArrayList<>());
     }
 }

@@ -9,6 +9,7 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
+import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -18,7 +19,9 @@ import com.ghatana.yappc.services.intent.IntentServiceImpl;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
+import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
+import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.observe.ObserveService;
@@ -283,9 +286,14 @@ public class YappcApiModule extends AbstractModule {
             YappcArtifactRepository artifactRepository,
             PhaseGateValidator phaseGateValidator,
             PolicyEngine policyEngine,
+            CapabilityEvaluationService capabilityEvaluationService,
+            TransitionConfigLoader transitionConfigLoader,
+            PlatformIntegrationClient platformIntegrationClient,
             @Nullable BusinessMetrics metrics,
             @Nullable com.ghatana.audit.AuditLogger auditLogger) {
-        return new PhasePacketServiceImpl(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, metrics, auditLogger);
+        // Phase 3.5/3.6: Pass null for platform AuditService and PreviewRuntimeService
+        // These will be wired in when platform services are fully integrated
+        return new PhasePacketServiceImpl(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, auditLogger);
     }
 
     @Provides

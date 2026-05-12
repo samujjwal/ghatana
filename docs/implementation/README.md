@@ -1,1518 +1,1035 @@
-Below is a **detailed TODO backlog** for `samujjwal/ghatana` → `products/data-cloud` + shared libraries at commit `eaa2b5dac6d592ef9d738e309393632efdabc1c4`.
+Below is a **production-grade implementation plan for YAPPC based on repo snapshot `5e03f330990461913b4b8963dbee39f5ac75143a`**. I am treating this as the **full codebase state at that commit**, not the commit diff. The target commit itself is only a changelog update referencing merge `c504db6`, so the plan is based on the YAPPC snapshot at that ref, not just the changed file. 
 
-Use this as the implementation checklist. It is organized by **priority**, with **what to change**, **where**, and **validation**.
+# YAPPC Implementation Plan
+
+## Guiding principle
+
+YAPPC should be implemented as **independently production-grade capability areas** that all plug into the same canonical spine:
+
+1. Project / Product / App terminology.
+2. Mounted lifecycle: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
+3. Artifact model with provenance and review.
+4. Canvas → Page Document → Builder Document model.
+5. Preview trust as a security boundary.
+6. Governance trace across UI edits, generated output, backend actions, Data Cloud+AEP calls.
+7. Typed contracts only for Data Cloud+AEP integration.
+
+The canonical model already defines these boundaries and explicitly says YAPPC consumes merged Data Cloud+AEP capabilities through typed/generated contracts, while forbidding imports of internal platform runtime, memory, retrieval, analytics, telemetry, embeddings, and agent internals. 
 
 ---
 
-# P0 — Production-Blocking TODOs
+# Phase 0 — Establish the production spine
 
-## P0-01 — Replace deprecated tenant resolution with canonical request context everywhere
+## 0.1 Freeze commit-scoped implementation tracker
+
+**Goal:** Stop repeating broad audits and convert the current state into a controlled execution tracker.
 
 **Where**
 
-* `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java`
-* `products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/security/RequestContextResolver.java`
-* All handlers under:
+* `products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md`
+* `products/yappc/docs/architecture/YAPPC_CANONICAL_MODELS.md`
+* `products/yappc/docs/api/route-manifest.yaml`
+* `products/yappc/docs/api/openapi.yaml`
 
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/
-```
+**Tasks**
 
-Especially:
+1. Create/update a tracker with these sections:
 
-```text
-SurfaceRegistryHandler.java
-EntityCrudHandler.java
-DataSourceRegistryHandler.java
-```
+   * Contract spine.
+   * Access/scope.
+   * Lifecycle/phase cockpit.
+   * Data Cloud+AEP integration.
+   * Generation/diff/review.
+   * Canvas/page-builder/preview.
+   * API client migration.
+   * UI/UX dashboard.
+   * Testing/quality gates.
+   * Cleanup/docs.
 
-**Current problem**
+2. For every item, track:
 
-`RequestContextResolver` has the correct production behavior: tenant must come from authenticated identity in production/staging/sovereign profiles, and `X-Tenant-Id` / `tenantId` query parameters are rejected. However, handlers still call deprecated `requireTenantIdOrFail()` and return `X-Tenant-Id header is required`, which conflicts with the production security model.  
+   * Area.
+   * File/path.
+   * Current issue.
+   * Required fix.
+   * Acceptance criteria.
+   * Test coverage.
+   * Owner status: `todo`, `in-progress`, `blocked`, `done`.
 
-**What to change**
+3. Mark this plan as based on snapshot:
 
-1. Create a canonical helper method in `HttpHandlerSupport`, for example:
+   * `samujjwal/ghatana@5e03f330990461913b4b8963dbee39f5ac75143a`.
 
-```java
-public RequestContext requireRequestContext(HttpRequest request)
-```
+**Acceptance criteria**
 
-or use existing:
-
-```java
-resolveRequestContextWithError(request)
-requireTenantIdWithError(request)
-```
-
-2. Replace every usage of:
-
-```java
-http.requireTenantIdOrFail(request)
-```
-
-with canonical request-context resolution.
-
-3. Pass the full request context into service/domain methods, not just `tenantId`.
-
-4. Stop returning:
-
-```text
-X-Tenant-Id header is required
-```
-
-from production-protected routes.
-
-5. Return correct status codes:
-
-```text
-401 when authentication is missing
-403 when tenant spoofing or access mismatch occurs
-400 only when tenant format is invalid
-```
-
-**Validation**
-
-Add/extend tests:
-
-```text
-DataCloudSecurityFilterProductionProfileTest
-RequestContextResolverTest
-TenantIsolationTest
-SurfaceRegistryHandlerSecurityTest
-EntityCrudHandlerSecurityTest
-DataSourceRegistryHandlerSecurityTest
-```
-
-Required cases:
-
-* production rejects `X-Tenant-Id`
-* production rejects `tenantId` query param
-* local/test may allow fallback only when explicitly configured
-* missing JWT/API key returns 401
-* JWT tenant mismatch returns 403
-* handler receives tenant/workspace/project/principal from canonical context
+* No task exists only in chat or scattered audit notes.
+* Tracker is canonical and references exact files.
+* Old one-off audit docs are not used as implementation source of truth.
 
 ---
 
-## P0-02 — Remove deprecated tenant helper after migration
+# Phase 1 — Route, contract, and client spine
+
+This should be first because every area depends on route parity, generated client correctness, and authorization consistency.
+
+## 1.1 Make `route-manifest.yaml` the true API source of truth
+
+The route manifest at this commit is no longer just a flat route list. It declares schema fields such as `method`, `path`, `auth`, `owner`, `boundary`, `operationId`, `scopes`, `auditEventType`, and `privacyClassification`, and states that it validates against OpenAPI and drives generated route authorization. 
 
 **Where**
 
-```text
-HttpHandlerSupport.java
-```
+* `products/yappc/docs/api/route-manifest.yaml`
+* `products/yappc/docs/api/openapi.yaml`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/generated/*`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/RouteAuthorizationRegistry.java`
+* `products/yappc/frontend/web/src/clients/generated/api/*`
 
-**What to change**
+**Tasks**
 
-After all handlers are migrated, delete or restrict:
+1. Validate every manifest route has:
 
-```java
-@Deprecated
-public String requireTenantIdOrFail(HttpRequest request)
-```
+   * Matching OpenAPI path.
+   * Matching HTTP method.
+   * Matching `operationId`.
+   * Matching auth/security scheme.
+   * Matching request/response schema.
+   * Matching generated client operation.
+   * Matching generated authorization entry.
 
-If some test/local code still needs it, rename it clearly:
+2. Fix operation naming consistency:
 
-```java
-resolveTenantIdForLocalTestOnly(...)
-```
+   * `operationId` should be lower camelCase or PascalCase consistently.
+   * Current manifest comments say PascalCase, but examples and entries include lower camelCase such as `captureIntent`; choose one and enforce it.
 
-and make it package-private or test-fixture-only.
+3. Make route generation deterministic:
 
-**Validation**
+   * Build task reads manifest.
+   * Generates `GeneratedRouteRegistry`.
+   * Generates/validates OpenAPI route skeleton.
+   * Generates client method coverage test.
+   * Fails build on drift.
 
-Run grep:
+4. Add manifest validation rules:
 
-```bash
-grep -R "requireTenantIdOrFail" products/data-cloud \
-  --exclude-dir=build \
-  --exclude-dir=node_modules
-```
+   * Required fields present.
+   * Scope format valid.
+   * `auth=public` has empty scopes.
+   * `auth=required` has non-empty scopes.
+   * `boundary=DATA_CLOUD_AEP` never appears in YAPPC internal imports.
+   * `privacyClassification=RESTRICTED` requires audit event.
 
-Expected result:
+**Acceptance criteria**
 
-```text
-No production usage.
-```
+* A build fails if a route exists in controller code but not manifest.
+* A build fails if manifest route does not exist in OpenAPI.
+* A build fails if frontend client calls a route missing from OpenAPI.
+* No route can bypass auth by being missing from the registry.
 
 ---
 
-## P0-03 — Make audit writer mandatory for sensitive and critical production routes
+## 1.2 Complete generated client migration
+
+The frontend API client already imports generated OpenAPI services and says it is an adapter layer for backward compatibility, but it still contains manual fetch helpers, scoped helper wrappers, and old compatibility methods. 
 
 **Where**
 
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java
-```
+* `products/yappc/frontend/web/src/lib/api/client.ts`
+* `products/yappc/frontend/web/src/clients/generated/api/*`
+* `products/yappc/frontend/apps/api/src/__tests__/openapi-contract.test.ts`
+* `products/yappc/frontend/eslint-local-rules/*`
+* `products/yappc/frontend/eslint.config.mjs`
 
-**Current problem**
+**Tasks**
 
-`DataCloudSecurityFilter` logs and drops audit events when `auditService == null`. For sensitive/critical routes this is not production safe. 
+1. Split `client.ts` into:
 
-**What to change**
+   * `generatedClientAdapter.ts`
+   * `legacyClientAdapter.ts`
+   * `scopeHeaders.ts`
+   * `errorMapper.ts`
+   * `index.ts`
 
-1. In production/staging/sovereign profile, reject sensitive/critical route execution when `auditService == null`.
+2. Migrate endpoint groups in order:
 
-2. Add explicit startup validation in runtime/profile validation so the app fails before serving traffic.
+   * Auth.
+   * Workspaces.
+   * Projects.
+   * Lifecycle.
+   * Phase packet.
+   * Dashboard actions.
+   * Generate/diff/review.
+   * Preview session.
+   * Artifact import/review.
+   * Audit/telemetry.
 
-3. Return a structured error:
+3. Delete manual endpoint wrappers once generated coverage exists.
 
-```json
-{
-  "error": {
-    "code": "AUDIT_SERVICE_REQUIRED",
-    "message": "Audit service is required for sensitive and critical routes in this profile."
-  }
-}
-```
+4. Enforce no raw fetch:
 
-4. Keep audit-optional behavior only for local/test profiles.
+   * Allowed only in HTTP infrastructure.
+   * Disallowed in route components, hooks, page services, and random libs.
 
-**Validation**
+5. Normalize auth mode:
 
-Add tests:
+   * Current adapter bridges cookie-session generated types with old token-based expectations.
+   * Pick final mode: cookie-session for web.
+   * Remove fake empty token compatibility once consumers are migrated.
 
-```text
-SensitiveMutationAuditTrailTest
-DataCloudSecurityFilterProductionProfileTest
-RuntimeProfileValidatorTest
-```
+**Acceptance criteria**
 
-Required cases:
-
-* critical route fails when audit service is missing
-* sensitive route fails when audit service is missing in production
-* local profile can run with audit disabled only if explicitly allowed
-* audit failure is observable and includes request ID / tenant / route
+* `client.ts` becomes a thin compatibility barrel or is removed.
+* All frontend REST calls are generated-client-backed.
+* No new raw fetch can be introduced outside approved infra.
+* Contract tests fail for missing OpenAPI paths.
 
 ---
 
-## P0-04 — Remove broad API_CLIENT and PROCESSOR role bypasses
+# Phase 2 — Access, scope, authorization, and permissions
+
+This should run immediately after Phase 1 because current failures likely appear as inconsistent “access denied” behavior.
+
+## 2.1 Make scope extraction consistent end to end
+
+The route authorization registry now loads from generated route registry and supports exact + parameterized route matching. It extracts scope in priority order from path parameters, query params, and headers, while request body extraction is intentionally not done at auth filter level. 
 
 **Where**
 
-```text
-DataCloudSecurityFilter.java
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/RouteAuthorizationRegistry.java`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/RouteAuthorizationFilter.java`
+* `products/yappc/frontend/web/src/lib/api/client.ts`
+* `products/yappc/frontend/web/src/services/phase/PhaseCockpitDataService.ts`
+* all controllers accepting `workspaceId`, `projectId`, `artifactId`, `runId`
 
-**Current problem**
+**Tasks**
 
-`hasRequiredAccess()` treats `ADMIN`, `API_CLIENT`, and `PROCESSOR` as broad bypass roles. That means machine roles can satisfy admin-level operations unless restricted elsewhere. 
+1. Define canonical scope transport:
 
-**What to change**
+   * Path params when part of route.
+   * Query params for read routes.
+   * Headers only for cross-cutting scope, not primary resource identity.
+   * Body scope only for controller-level validation after authorization.
 
-1. Replace broad role bypass logic with explicit action grants.
+2. Remove mixed conventions:
 
-2. Introduce a permission model such as:
+   * `workspaceId` query in some calls.
+   * `X-Workspace-Id` in others.
+   * `scope` query helper that does not map to actual resource identity.
 
-```java
-PermissionDecision evaluate(
-    RequestContext context,
-    RouteAction action,
-    ResourceScope scope
-)
-```
+3. Add a shared scope DTO:
 
-3. Allow `API_CLIENT` only when token/scopes include the required action:
+   * Java: `RequestScopeContext`.
+   * TypeScript: `ScopeContext`.
 
-```text
-connector:create
-connector:rotate_credentials
-governance:policy:update
-entity:delete
-pipeline:execute
-```
+4. Add tests for all permutations:
 
-4. Allow `PROCESSOR` only for execution/runtime actions, not admin/settings/governance actions.
+   * workspace read.
+   * project read/write.
+   * artifact read/write.
+   * preview session create/validate.
+   * generation review/apply/reject/rollback.
+   * dashboard action execute.
 
-5. Keep `ADMIN` powerful, but still tenant-scoped and policy-audited.
+5. Fix the existing TODO path:
 
-**Validation**
+   * `fetchProjectSnapshot` currently throws `"Workspace context is required - project access must be scoped (TODO-001)"`.
+   * Replace with typed route-level requirement and user-facing error handling. 
 
-Add tests:
+**Acceptance criteria**
 
-```text
-RouteActionAccessRegistryTest
-DataCloudSecurityFilterJwtTest
-DataCloudSecurityFilterMachinePrincipalTest
-```
-
-Required cases:
-
-* `API_CLIENT` cannot rotate connector credentials without explicit scope
-* `PROCESSOR` cannot create governance policy
-* `PROCESSOR` cannot delete entities
-* scoped machine token can perform only granted route actions
-* admin route access still emits audit
+* Every project-scoped frontend call includes `workspaceId`.
+* Backend rejects missing scope with a clear RFC-7807-style error.
+* UI shows an actionable access/scope message, not a generic crash.
+* No project data can be accessed without tenant + workspace + project validation.
 
 ---
 
-## P0-05 — Generate route/action access metadata from OpenAPI instead of manual maps
+## 2.2 Replace role heuristics with capability service
+
+`PhasePacketServiceImpl` currently derives role from the first principal role and computes booleans like `canEdit`, `isAdmin`, and Enterprise-only rollback locally. 
 
 **Where**
 
-```text
-EndpointSensitivity.java
-RouteActionAccessRegistry.java
-DataCloudRouterBuilder.java
-products/data-cloud/contracts/openapi/data-cloud.yaml
-products/data-cloud/contracts/openapi/action-plane.yaml
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/YappcAuthorizationService.java`
+* `products/yappc/frontend/web/src/services/workspace/accessControl.ts`
+* `products/yappc/frontend/libs/yappc-auth/src/*`
 
-**Current problem**
+**Tasks**
 
-Security sensitivity and access levels are partly prefix-based and partly manually listed. That can drift from registered routes and OpenAPI contracts.  
+1. Introduce backend `CapabilityEvaluationService`.
+2. Evaluate capabilities from:
 
-**What to change**
+   * Tenant.
+   * Workspace membership.
+   * Project role.
+   * Artifact ownership.
+   * Subscription tier.
+   * Feature flag.
+   * Policy decision.
+3. Return capability model in phase packet.
+4. UI renders actions only from capability model.
+5. Do not duplicate authorization logic in React components.
 
-1. Add OpenAPI extensions to every route:
+**Acceptance criteria**
 
-```yaml
-x-ghatana-surface: data.entities.write
-x-ghatana-sensitivity: SENSITIVE
-x-ghatana-required-access: OPERATOR
-x-ghatana-policy-required: true
-x-ghatana-audit-required: true
-x-ghatana-idempotency-required: true
-```
-
-2. Generate `RouteActionAccessRegistry` from OpenAPI.
-
-3. Generate `EndpointSensitivity` metadata from OpenAPI.
-
-4. Add CI check:
-
-```bash
-products/data-cloud/scripts/check-route-security-drift.sh
-```
-
-5. Fail CI when:
-
-* router has a route not present in OpenAPI
-* OpenAPI route lacks sensitivity metadata
-* runtime registry differs from generated registry
-
-**Validation**
-
-Required tests:
-
-```text
-RouteActionAccessRegistryTest
-EndpointSensitivityContractTest
-DataCloudHttpServerRouteInventoryTest
-OpenApiSecurityMetadataTest
-```
+* Capability decisions are backend-derived.
+* Frontend does not infer sensitive permissions.
+* Viewer/editor/admin/owner paths are tested.
+* Cross-workspace access is explicitly denied and audited.
 
 ---
 
-## P0-06 — Make entity write lifecycle atomic
+# Phase 3 — Lifecycle cockpit and phase packet productionization
+
+## 3.1 Make phase packet fully real, no default/sample data
+
+`PhasePacketServiceImpl` is labelled production, but several methods still return fallback/default/sample values: missing project returns generated `Project-{id}`, evidence and governance return empty lists with TODOs, activity feed returns a sample entry, health signals default to healthy, and next-phase logic is hardcoded. 
 
 **Where**
 
-```text
-EntityCrudHandler.java
-DataCloudClient.java
-planes/data/entity/
-planes/event/core/
-planes/event/store/
-planes/governance/core/
-delivery/runtime-composition/
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/*`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/gate/*`
+* `products/yappc/frontend/web/src/services/phase/*`
+* `products/yappc/frontend/web/src/routes/app/project/_phaseCockpit.tsx`
 
-**Current problem**
+**Tasks**
 
-Entity save supports an optional transaction manager. Without it, entity save → event append → websocket broadcast → semantic indexing runs non-atomically. Event rollback is noted as best-effort. 
+1. Replace fake project fallback:
 
-**What to change**
+   * If project is missing, return 404.
+   * If Data Cloud is degraded, return explicit degraded packet with `degradedReason`.
+   * Do not synthesize project names/tier.
 
-1. Introduce a canonical write pipeline:
+2. Replace hardcoded next phase:
 
-```text
-validate request
-resolve request context
-authorize
-apply policy
-persist entity mutation
-persist event
-persist audit
-persist outbox item for indexing/notifications
-commit
-async process outbox
-```
+   * Use transition config / lifecycle DAG.
+   * Support legacy aliases only through compatibility adapter.
+   * Return blocked/review/advance state from gate validator.
 
-2. Require transaction/outbox for production.
+3. Replace empty evidence:
 
-3. Move websocket broadcast and semantic indexing outside the write transaction via outbox events.
+   * Query typed Data Cloud+AEP evidence endpoint.
+   * Include `evidenceIds`, `traceId`, confidence, source artifact references.
+   * Show evidence in UI where decisions are made.
 
-4. Remove direct best-effort rollback hooks from production code.
+4. Replace empty governance:
 
-5. Persist event/audit/indexing correlation IDs.
+   * Query policy decision/audit records.
+   * Include who/what/why/when.
+   * Show policy blocks and review-required states in cockpit.
 
-**Validation**
+5. Replace sample activity:
 
-Add golden tests:
+   * Add audit query API.
+   * Return real activity feed.
+   * Include actor, phase, operation, outcome, timestamp, severity.
 
-```text
-EntityWriteOutboxTest
-EntityEventConsistencyTest
-EntityWriteCrashRecoveryTest
-SemanticIndexOutboxTest
-```
+6. Replace default healthy signals:
 
-Required cases:
+   * Preview health from preview runtime.
+   * Generation health from generation service/repository.
+   * Runtime health from run/observe subsystem.
+   * Data Cloud+AEP health included when phase needs it.
 
-* crash after entity save does not lose event/audit
-* crash after event append does not duplicate entity
-* retry with same idempotency key returns same response
-* semantic index eventually catches up
-* failed indexing does not corrupt entity/event truth
+**Acceptance criteria**
+
+* No sample/default project/activity/health/evidence appears in production mode.
+* Phase cockpit can render degraded states explicitly.
+* Every action shown has a backend reason and capability decision.
+* Phase packet has contract tests and e2e UI tests.
 
 ---
 
-## P0-07 — Add idempotency to all mutating routes, not just entity writes
+## 3.2 Align frontend phase data with backend phase packet
+
+The frontend still loads project snapshot and phase transition preview separately through `fetchProjectSnapshot` and `fetchPhaseTransitionPreview`.  The canonical model says lifecycle packet inputs include project snapshot, activity feed, readiness preview, backend dashboard classification, and typed phase actions. 
 
 **Where**
 
-```text
-EntityCrudHandler.java
-EventHandler.java
-DataSourceRegistryHandler.java
-DataLifecycleHandler.java
-PipelineCheckpointHandler.java
-WorkflowExecutionHandler.java
-LearningHandler.java
-AlertingHandler.java
-AiAssistHandler.java
-```
+* `products/yappc/frontend/web/src/services/phase/PhaseCockpitDataService.ts`
+* `products/yappc/frontend/web/src/services/phase/usePhaseCockpitData.ts`
+* `products/yappc/frontend/web/src/services/phase/PhaseCockpitContractBuilder.ts`
+* `products/yappc/frontend/web/src/routes/app/project/_phaseCockpit.tsx`
 
-**Current problem**
+**Tasks**
 
-Entity idempotency exists, but the code explicitly notes that pipelines, events, governance, and analytics still need idempotency or explicit non-idempotent documentation. 
+1. Make `/api/v1/phase/packet` the primary cockpit read model.
+2. Keep old project/activity/transition calls only as transitional fallback.
+3. Remove duplicated normalization once packet is complete.
+4. Add typed frontend `PhasePacket` model generated from OpenAPI.
+5. Render:
 
-**What to change**
+   * readiness.
+   * blockers.
+   * required/completed artifacts.
+   * evidence.
+   * governance.
+   * actions.
+   * health.
+   * activity.
+   * degraded platform status.
 
-1. Define a route-level idempotency contract.
+**Acceptance criteria**
 
-2. For every `POST`, `PUT`, `DELETE`, and state-changing route, decide:
-
-```text
-idempotent-required
-naturally-idempotent
-non-idempotent-explicit
-```
-
-3. Require `X-Idempotency-Key` for unsafe production mutations where retries can duplicate work.
-
-4. Store idempotency keys using durable store in production.
-
-5. Scope idempotency by:
-
-```text
-tenantId
-workspaceId
-route action
-resource ID
-idempotency key
-principal/client ID
-```
-
-6. Return `409` for conflicting reuse of same key with different payload hash.
-
-**Validation**
-
-Required tests:
-
-```text
-IdempotencyContractTest
-EventAppendIdempotencyTest
-ConnectorSyncIdempotencyTest
-PipelineExecutionIdempotencyTest
-GovernanceMutationIdempotencyTest
-```
+* Cockpit route needs one primary packet load.
+* UI does not recompute business readiness.
+* All phases render from same packet shape.
+* Missing/degraded fields render visibly and safely.
 
 ---
 
-## P0-08 — Replace connector registry-only behavior with durable connector job runtime
+# Phase 4 — Data Cloud+AEP integration boundary
+
+The canonical model now explicitly says Data Cloud+AEP is merged platform capability and YAPPC must use typed contracts only. It defines required YAPPC request context and required platform response metadata. 
+
+## 4.1 Create typed platform client boundary
 
 **Where**
 
-```text
-DataSourceRegistryHandler.java
-DataFabricConnector.java
-extensions/connectors/
-planes/event/
-planes/data/
-planes/context/
-planes/governance/
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/platform/*`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/*`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/generate/*`
+* `products/yappc/docs/api/openapi.yaml`
+* `products/yappc/docs/api/route-manifest.yaml`
 
-**Current problem**
+**Tasks**
 
-Connector registration and sync exist, but sync/test/schema actions rely on optional `DataFabricConnector`; missing fabric returns pending/queued responses rather than creating durable jobs with evidence. 
+1. Define Java interfaces:
 
-**What to change**
+   * `PlatformExecutionClient`
+   * `PlatformEvidenceClient`
+   * `PlatformMemoryClient`
+   * `PlatformTelemetryClient`
+   * `PlatformPolicyClient`
 
-Create a connector runtime with these services:
+2. Define common request context:
 
-```text
-ConnectorRegistryService
-ConnectorCredentialService
-ConnectorSchemaDiscoveryService
-ConnectorSyncJobService
-ConnectorEvidenceService
-ConnectorLineageService
-ConnectorHealthService
-```
+   * `tenantId`
+   * `workspaceId`
+   * `projectId`
+   * `actorId`
+   * `phase`
+   * `operation`
+   * `dataClassification`
+   * `requestedAt`
+   * `correlationId`
+   * optional `artifactId`, `canvasNodeId`, `generationRunId`
 
-Implement durable job state:
+3. Define common response metadata:
 
-```text
-PENDING
-VALIDATING
-RUNNING
-PARTIAL_SUCCESS
-FAILED
-COMPLETED
-CANCELLED
-RETRYING
-DEAD_LETTERED
-```
+   * `status`
+   * `confidence`
+   * `confidenceReason`
+   * `traceId`
+   * `evidenceIds`
+   * `policyDecisionId`
+   * `degraded`
+   * `degradedReason`
+   * `createdAt`
+   * `completedAt`
+   * optional `runId`, `memoryRecordIds`, `searchResultIds`
 
-Each sync must persist:
+4. Add adapters:
 
-```text
-jobId
-tenantId
-connectorId
-source system
-schema snapshot
-source cursor / offset
-row evidence
-row-level errors
-target collection
-created entities
-created events
-lineage links
-audit events
-```
+   * Real DataCloud client adapter.
+   * AEP execution adapter.
+   * Test fake only in test source set.
 
-**Validation**
+5. Add architecture rule:
 
-Required tests:
+   * YAPPC may import platform client contracts.
+   * YAPPC may not import platform internals.
 
-```text
-ConnectorRegistrationE2ETest
-ConnectorCredentialRedactionTest
-ConnectorSyncJobLifecycleTest
-ConnectorRetryIdempotencyTest
-ConnectorSourceRowEvidenceTest
-ConnectorTenantIsolationTest
-```
+**Acceptance criteria**
+
+* No YAPPC service imports internal AEP/Data Cloud modules directly.
+* Platform failure returns degraded metadata, not silent empty list.
+* Contract tests enforce required request/response fields.
 
 ---
 
-## P0-09 — Fail closed when connector runtime is unavailable in production
+# Phase 5 — Generation, diff, review, rollback
+
+Generation has improved at this commit: it persists a generation run, adds explicit context, supports AI degraded fallback, records review decisions, and performs rollback safety checks. But it still has production gaps: TODO for loading actual intent, handcrafted JSON serialization, content references without content loading, and simplified diff logic that cannot compute actual line diffs from content refs. 
+
+## 5.1 Persist real artifact content and provenance
 
 **Where**
 
-```text
-DataSourceRegistryHandler.java
-RuntimeProfileValidator.java
-SurfaceRegistryHandler.java
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/generate/GenerationServiceImpl.java`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/GenerationRunRepository.java`
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/YappcArtifactRepository.java`
+* `products/yappc/docs/api/openapi.yaml`
+* frontend generation review route/components
 
-**What to change**
+**Tasks**
 
-1. In production/staging/sovereign profiles, connector test/sync/schema routes must return `503` if connector runtime is unavailable.
+1. Introduce `GeneratedArtifactContentRepository`.
+2. Store actual content with:
 
-2. Do not return:
+   * artifactId.
+   * contentHash.
+   * path.
+   * MIME/language.
+   * size.
+   * source prompt hash.
+   * generator version.
+   * AI/degraded mode.
+   * provenance metadata.
+3. Make `contentRef` resolvable.
+4. Add endpoint to fetch content safely.
+5. Add content redaction rules for restricted artifacts.
 
-```text
-pending
-queued
-fabricAvailable=false
-```
+**Acceptance criteria**
 
-as if it were a real accepted job unless a durable job was actually created.
-
-3. Runtime Truth should mark connector surfaces:
-
-```text
-MISCONFIGURED
-UNAVAILABLE
-DEGRADED
-```
-
-depending on missing dependency.
-
-**Validation**
-
-Required tests:
-
-```text
-ConnectorRuntimeUnavailableProductionTest
-RuntimeTruthConnectorSurfaceTest
-```
+* Generated files are not anonymous content references.
+* UI can load actual generated content.
+* Audit records can prove which input produced which output.
 
 ---
 
-## P0-10 — Make Runtime Truth a single typed canonical contract
+## 5.2 Replace simplified diff with real diff engine
 
 **Where**
 
-```text
-SurfaceRegistryHandler.java
-SurfaceRecord.java
-SurfaceSchemaGenerator.java
-products/data-cloud/contracts/openapi/data-cloud.yaml
-products/data-cloud/delivery/ui/src/lib/capabilities.ts
-products/data-cloud/delivery/ui/src/hooks/useCapabilityGate.ts
-```
+* `GenerationServiceImpl.computeDiff`
+* `ArtifactDiff`
+* generated OpenAPI schemas
+* frontend diff viewer
 
-**Current problem**
+**Tasks**
 
-`/api/v1/surfaces` returns raw capability map semantics, while `/api/v1/surfaces/typed` returns typed `SurfaceRecord` data. The README says `/api/v1/surfaces` is canonical.  
+1. Load old/new content by contentRef.
+2. Use proper line diff library or internal deterministic diff utility.
+3. Compute:
 
-**What to change**
+   * added/deleted/modified regions.
+   * line ranges.
+   * ownership: AI/user/system.
+   * provenance per region.
+4. Preserve user edits across review.
+5. Store diff snapshot with generation run.
 
-1. Make `GET /api/v1/surfaces` return typed surface records.
+**Acceptance criteria**
 
-2. Include:
-
-```text
-surface id
-state
-owner
-dependencies
-dependency probe results
-tenant scope
-runtime profile
-evidence
-limitations
-action gates
-runtime posture metadata
-generatedAt
-```
-
-3. Deprecate/remove `/api/v1/surfaces/typed`.
-
-4. Remove “capability” naming from UI hooks and backend comments unless compatibility-only.
-
-5. Remove the legacy constructor that defaults typed surface list to empty.
-
-**Validation**
-
-Required tests:
-
-```text
-SurfaceRegistryHandlerContractTest
-RuntimeTruthSchemaTest
-RuntimeTruthUiGateTest
-SdkSurfaceContractTest
-```
+* Diff displays actual line-level content.
+* Applying edited diffs preserves provenance.
+* Rollback can restore previous content.
+* Tests cover added, deleted, modified, renamed, empty, binary/unrenderable files.
 
 ---
 
-# P1 — Major Architecture / Correctness TODOs
-
-## P1-01 — Remove duplicate legacy Action Plane route aliases
+## 5.3 Productionize review decisions
 
 **Where**
 
-```text
-DataCloudRouterBuilder.java
-RouteActionAccessRegistry.java
-products/data-cloud/contracts/openapi/action-plane.yaml
-products/data-cloud/contracts/openapi/data-cloud.yaml
-```
+* `GenerationServiceImpl.reviewDecision`
+* `GenerationRunRepository`
+* frontend review UI
+* audit events
 
-**Current problem**
+**Tasks**
 
-Router registers both legacy root routes and canonical `/api/v1/action/*` routes for pipelines, memory, learning, and executions. 
+1. Require:
 
-**What to change**
+   * actorId.
+   * projectId.
+   * workspaceId.
+   * tenantId.
+   * runId.
+   * reason for reject/rollback.
+   * review provenance.
+2. Apply decision states:
 
-1. Keep canonical routes:
+   * `REVIEW_PENDING`
+   * `APPROVED`
+   * `REJECTED`
+   * `ROLLED_BACK`
+   * `APPLY_FAILED`
+   * `ROLLBACK_FAILED`
+3. Make review action idempotent:
 
-```text
-/api/v1/action/pipelines
-/api/v1/action/executions
-/api/v1/action/learning
-/api/v1/action/memory
-```
+   * duplicate apply does not reapply.
+   * duplicate rollback does not corrupt state.
+4. Store user edits as structured JSON using ObjectMapper, not manual string building.
+5. Emit audit and metric events.
 
-2. Mark legacy routes as deprecated:
+**Acceptance criteria**
 
-```text
-/api/v1/pipelines
-/api/v1/executions
-/api/v1/learning
-/api/v1/memory
-```
-
-3. Add config:
-
-```text
-DATACLOUD_ENABLE_LEGACY_ACTION_ROUTES=false
-```
-
-4. Default to disabled in production.
-
-5. Emit deprecation warnings if enabled.
-
-6. Remove `RouteActionAccessRegistry` normalization that rewrites `/api/v1/action/` back to `/api/v1/`.
-
-**Validation**
-
-Required tests:
-
-```text
-ActionPlaneRouteNamespaceTest
-LegacyActionRouteDisabledProductionTest
-OpenApiRouteInventoryTest
-```
+* Review state machine is explicit and tested.
+* User edits are queryable and validated.
+* Rollback is safe, auditable, and reversible where possible.
 
 ---
 
-## P1-02 — Consolidate Action Plane UI client into Data Cloud product SDK
+# Phase 6 — Canvas, page builder, artifact import, and preview trust
+
+The canonical builder model separates Canvas node, Page document, and Builder document. It also says imported artifacts/components must declare preview trust and data classification, and untrusted inputs must not mutate canvas/page documents before validation. 
+
+## 6.1 Harden page artifact persistence
 
 **Where**
 
-```text
-products/data-cloud/planes/action/ui/src/generated/aep-client.ts
-products/data-cloud/planes/action/ui/src/hooks/useCapabilities.ts
-products/data-cloud/delivery/ui/
-products/data-cloud/delivery/sdk/
-products/data-cloud/contracts/openapi/action-plane.yaml
-```
+* page artifact API/controllers
+* frontend page builder libs
+* canvas node/page document adapters
+* `products/yappc/docs/api/openapi.yaml`
 
-**Current problem**
+**Tasks**
 
-Search shows separate Action Plane UI generated client and capability hook under `planes/action/ui`, which conflicts with the one-product UI and SDK model.  
+1. Define `PageArtifactDocument` contract:
 
-**What to change**
+   * artifactId.
+   * projectId/workspaceId/tenantId.
+   * builderDocument.
+   * registry version.
+   * operation log.
+   * sync state.
+   * preview trust.
+   * data classification.
+2. Add optimistic concurrency:
 
-1. Generate Action Plane client from product-level contracts into:
+   * documentVersion.
+   * etag.
+   * conflict response.
+3. Add operation log entries:
 
-```text
-products/data-cloud/delivery/sdk
-```
+   * save.
+   * import.
+   * reload.
+   * overwrite.
+   * migration.
+   * governance decision.
+4. Add migration path for old builder documents.
 
-2. Update Data Cloud UI to consume SDK/adapters from `delivery/sdk`.
+**Acceptance criteria**
 
-3. Move reusable Action UI components into `delivery/ui` or a shared UI package only if genuinely reusable.
-
-4. Delete generated AEP client after migration.
-
-**Validation**
-
-Required tests:
-
-```text
-UnifiedSdkGenerationTest
-ActionPlaneUiUsesProductSdkTest
-ProductionBundleNoAepClientTest
-```
+* No builder save can overwrite silently.
+* Every mutation has operation log.
+* UI can resolve conflicts with clear choices.
 
 ---
 
-## P1-03 — Remove production-visible UI mocks and deprecated route fixtures
+## 6.2 Productionize import/decompile/residual islands
 
 **Where**
 
-```text
-products/data-cloud/delivery/ui/src/mocks/deprecatedRoutes.ts
-products/data-cloud/delivery/ui/e2e/helpers/api-mocks.ts
-```
+* `/api/v1/yappc/artifact/import-source`
+* artifact compiler
+* frontend import UI
+* residual island review APIs
+* registry candidate APIs
 
-**Current problem**
+**Tasks**
 
-Mock/deprecated route files are discoverable in the product UI tree. E2E mocks may be valid, but production import boundaries must prove they are test-only.  
+1. Add source import job lifecycle:
 
-**What to change**
+   * submitted.
+   * validating.
+   * decompiling.
+   * mapping.
+   * residual-review-required.
+   * completed.
+   * failed.
+2. Validate untrusted input before document mutation.
+3. Require runtime health check before import.
+4. Map known components to registry.
+5. Create residual islands for unknown/untrusted components.
+6. Add review flows:
 
-1. Delete `src/mocks/deprecatedRoutes.ts` if unused.
+   * accept residual.
+   * map to registry candidate.
+   * reject/remove.
+   * quarantine.
+7. Attach preview trust to every imported node.
 
-2. If still needed for tests, move to:
+**Acceptance criteria**
 
-```text
-products/data-cloud/delivery/ui/test-fixtures/
-```
-
-or:
-
-```text
-products/data-cloud/delivery/ui/e2e/fixtures/
-```
-
-3. Add eslint/import rule preventing production files from importing test fixtures.
-
-4. Add build check:
-
-```bash
-grep -R "src/mocks\|api-mocks\|deprecatedRoutes" \
-  products/data-cloud/delivery/ui/src
-```
-
-Expected: no production imports.
-
-**Validation**
-
-Required tests:
-
-```text
-ProductionBundleNoMocksTest
-UiDeprecatedRouteImportGuardTest
-```
+* Import never executes untrusted code directly.
+* Residual islands are visible and reviewable.
+* Preview is blocked or isolated when trust is insufficient.
 
 ---
 
-## P1-04 — Move connector credential handling behind a dedicated secret service
+# Phase 7 — UI/UX: no cognitive load, full visibility
+
+## 7.1 Rebuild dashboard around backend action classification
 
 **Where**
 
-```text
-DataSourceRegistryHandler.java
-extensions/connectors/
-planes/governance/core/
-delivery/runtime-composition/
-```
+* `products/yappc/frontend/web/src/routes/dashboard.tsx`
+* dashboard action services/components
+* `projects.dashboardActions`
+* phase cockpit route links
 
-**What to change**
+**Tasks**
 
-1. Keep rejecting raw credentials in API payloads.
+1. Dashboard sections:
 
-2. Replace direct `secretRef` pass-through with a `ConnectorSecretService`.
+   * blocked work.
+   * review required.
+   * safe to continue.
+   * active generation/runs.
+   * recent activity.
+   * degraded integrations.
+2. Every card must answer:
 
-3. Support:
+   * What is happening?
+   * Why does it matter?
+   * What is the safest next action?
+   * Who/what is blocking it?
+3. Cards route to exact phase cockpit.
+4. Avoid AI-branded clutter; show outcome, confidence, evidence.
 
-```text
-create secret reference
-rotate secret reference
-revoke secret reference
-validate secret accessibility
-audit secret access
-redact secret metadata in responses
-```
+**Acceptance criteria**
 
-4. Ensure `secretRef` cannot leak cross-tenant.
-
-**Validation**
-
-Required tests:
-
-```text
-ConnectorRawCredentialRejectionTest
-ConnectorSecretRefTenantIsolationTest
-ConnectorSecretRotationAuditTest
-```
+* User can start from dashboard and reach every required phase/action.
+* No page requires understanding internal AI/system concepts.
+* Every action is permission-gated from backend capabilities.
 
 ---
 
-## P1-05 — Add source-row evidence and lineage for connector ingestion
+## 7.2 Make phase cockpit consistent across all phases
 
 **Where**
 
-```text
-extensions/connectors/
-planes/context/
-planes/data/
-planes/event/
-DataSourceRegistryHandler.java
-```
+* `frontend/web/src/routes/app/project/_phaseCockpit.tsx`
+* `frontend/web/src/services/phase/*`
+* shared UI components
 
-**What to change**
+**Tasks**
 
-For every ingested record, persist:
+1. Standard layout:
 
-```text
-source connector ID
-source object/table/topic
-source row/document key
-source offset/cursor/version
-source extracted timestamp
-schema version
-mapping version
-canonical entity ID
-generated event ID
-lineage edge ID
-quality/trust state
-```
+   * header: phase, readiness, health.
+   * primary action.
+   * blockers.
+   * evidence.
+   * required/completed artifacts.
+   * governance.
+   * activity.
+   * advanced details collapsed.
+2. Use same interaction model for all phases.
+3. Avoid phase-specific UI forks unless behavior truly differs.
+4. Add accessibility and keyboard coverage.
 
-**Validation**
+**Acceptance criteria**
 
-Required tests:
-
-```text
-SourceRowToEntityLineageTest
-ConnectorSchemaVersionLineageTest
-IngestionEvidenceQueryTest
-```
+* Intent/Shape/Validate/Generate/Run/Observe/Learn/Evolve all render with same shell.
+* Missing data surfaces as degraded/empty states, not broken UI.
+* Phase actions are clear and minimal.
 
 ---
 
-## P1-06 — Add schema discovery and mapping lifecycle
+# Phase 8 — Scaffold, packs, templates, and generated app quality
+
+## 8.1 Treat scaffold as production generator, not template copier
 
 **Where**
 
-```text
-DataSourceRegistryHandler.java
-extensions/connectors/
-planes/data/entity/
-products/data-cloud/contracts/
-delivery/ui/
-```
+* `products/yappc/core/scaffold/api/*`
+* `products/yappc/core/scaffold/packs/*`
+* `products/yappc/docs/api/route-manifest.yaml`
+* frontend scaffold/generate UI
 
-**What to change**
+**Tasks**
 
-Implement lifecycle:
+1. Define pack contract:
 
-```text
-DISCOVERED
-DRAFT_MAPPING
-VALIDATED
-APPROVED
-ACTIVE
-DEPRECATED
-RETIRED
-```
+   * metadata.
+   * language.
+   * platform.
+   * build system.
+   * variables.
+   * required features.
+   * dependency graph.
+   * license compatibility.
+   * generated files.
+   * tests.
+2. Validate pack before use.
+3. Validate variables with schema.
+4. Add generated output validation:
 
-Required APIs:
+   * compile.
+   * test.
+   * lint.
+   * dependency audit.
+   * license check.
+5. Add provenance from lifecycle artifacts to generated scaffold files.
 
-```text
-GET /api/v1/connectors/{id}/schema
-POST /api/v1/connectors/{id}/mappings
-POST /api/v1/connectors/{id}/mappings/{mappingId}/validate
-POST /api/v1/connectors/{id}/mappings/{mappingId}/approve
-POST /api/v1/connectors/{id}/mappings/{mappingId}/activate
-```
+**Acceptance criteria**
 
-**Validation**
-
-Required tests:
-
-```text
-SchemaDiscoveryMappingLifecycleTest
-MappingValidationTest
-MappingApprovalAuthorizationTest
-```
+* A generated project builds/tests in CI.
+* Pack conflicts are detected before write.
+* Generated output has provenance and rollback metadata.
 
 ---
 
-## P1-07 — Make AI/automation outputs evidence-first and policy-gated
+# Phase 9 — Observability, audit, and operations
+
+## 9.1 Make observability consistent across services
 
 **Where**
 
-```text
-AiAssistHandler.java
-LearningHandler.java
-WorkflowExecutionHandler.java
-planes/intelligence/
-planes/action/
-planes/governance/
-delivery/ui/
-```
+* `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/common/ServiceObservability.java`
+* generation/lifecycle/run/observe/phase services
+* `products/yappc/prometheus.yappc.yml`
+* ops docs
 
-**What to change**
+**Tasks**
 
-For every AI/automation response, return:
+1. Standard metric tags:
 
-```text
-input scope
-source evidence
-confidence
-risk level
-policy decision
-freshness
-lineage/provenance
-human review requirement
-trace ID
-audit ID
-```
+   * tenantId.
+   * workspaceId.
+   * projectId.
+   * phase.
+   * operation.
+   * outcome.
+   * degraded.
+2. Standard audit event shape:
 
-For low confidence or high risk:
+   * actor.
+   * target.
+   * phase.
+   * operation.
+   * data classification.
+   * preview trust.
+   * correlationId.
+   * traceId.
+3. Add dashboards:
 
-```text
-create review item
-disable auto-apply
-require approve/reject/escalate
-```
+   * phase packet latency.
+   * generation success/fallback/failure.
+   * preview blocks.
+   * policy decisions.
+   * route authorization denials.
+   * Data Cloud+AEP degraded states.
 
-**Validation**
+**Acceptance criteria**
 
-Required tests:
-
-```text
-AiSuggestionEvidenceContractTest
-LowConfidenceHitlGateTest
-AutomationPolicyDenyTest
-AiActionAuditTrailTest
-```
+* Every critical mutation has audit event.
+* Every external/platform call has metrics.
+* Degraded mode is visible in UI and ops.
 
 ---
 
-## P1-08 — Add human override / delegation controls for automation
+# Phase 10 — Security and preview runtime
+
+## 10.1 Enforce preview trust as policy
 
 **Where**
 
-```text
-planes/action/
-LearningHandler.java
-WorkflowExecutionHandler.java
-delivery/ui/
-contracts/openapi/action-plane.yaml
-```
+* `PreviewSecurityPolicy`
+* preview session APIs
+* page builder preview UI
+* artifact import flow
+* route manifest/openapi
 
-**What to change**
+**Tasks**
 
-Support action states:
+1. Require preview context:
 
-```text
-PROPOSED
-AUTO_APPLIED
-REVIEW_REQUIRED
-INTERRUPTED_BY_HUMAN
-TAKEN_OVER_BY_HUMAN
-RESUMED_AUTOMATION
-REJECTED
-ROLLED_BACK
-```
+   * tenantId.
+   * workspaceId.
+   * projectId.
+   * artifactId.
+   * userId.
+   * previewTrust.
+   * dataClassification.
+2. Block untrusted execution.
+3. Isolate semi-trusted preview.
+4. Require explicit acknowledgement for restricted data.
+5. Audit preview session creation/validation.
 
-Add APIs:
+**Acceptance criteria**
 
-```text
-POST /api/v1/action/runs/{runId}/interrupt
-POST /api/v1/action/runs/{runId}/take-over
-POST /api/v1/action/runs/{runId}/resume
-POST /api/v1/action/runs/{runId}/rollback
-```
-
-**Validation**
-
-Required tests:
-
-```text
-HumanInterruptAutomationTest
-TakeoverAuditTrailTest
-ResumeAutomationPolicyTest
-RollbackEvidenceTest
-```
+* No untrusted imported code executes directly.
+* Preview errors and policy blocks show in Observe.
+* Preview tokens expire and are validated.
 
 ---
 
-## P1-09 — Enforce product/shared-library dependency boundaries
+# Phase 11 — Testing and quality gates
+
+## 11.1 Required test suites per area
 
 **Where**
 
-```text
-products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md
-products/data-cloud/
-platform/
-libs/
-shared/
-scripts/check-circular-deps.mjs
-scripts/check-cross-workspace-deps.mjs
-```
+* Java unit/integration tests under `products/yappc/core/**/src/test`
+* frontend Vitest tests
+* Playwright e2e tests
+* OpenAPI/route parity tests
+* architecture fitness tests
 
-**What to change**
+**Tasks**
 
-Implement architecture checks for the documented rules:
+1. Contract tests:
 
-```text
-Data/Event/Context/Governance must not import Action internals.
-Contracts must not depend on runtime implementation.
-UI must use generated clients/adapters, not backend internals.
-Extensions must depend on contracts/SPI, not launcher internals.
-Shared libraries must not contain Data Cloud product behavior.
-```
+   * manifest ↔ OpenAPI.
+   * OpenAPI ↔ generated client.
+   * manifest ↔ generated route registry.
+   * frontend used routes ↔ OpenAPI.
+2. Authorization tests:
 
-The plane architecture explicitly defines allowed and forbidden dependency directions. 
+   * public route.
+   * missing principal.
+   * missing workspaceId/projectId/artifactId.
+   * unauthorized workspace.
+   * role/tier restrictions.
+3. Phase packet tests:
 
-**Validation**
+   * all phases.
+   * blockers.
+   * evidence.
+   * governance.
+   * degraded platform.
+4. Generation tests:
 
-Required tests/checks:
+   * AI success.
+   * AI degraded fallback.
+   * diff.
+   * review apply/reject/rollback.
+   * user edits.
+5. UI e2e:
 
-```text
-DataCloudArchitectureTest
-check-data-cloud-boundaries.mjs
-check-shared-library-product-leakage.mjs
-```
+   * dashboard → phase cockpit.
+   * phase action → backend call.
+   * generate → review → apply.
+   * import → residual review.
+   * preview trust block.
+6. Build gates:
+
+   * typecheck.
+   * lint.
+   * no raw fetch.
+   * no forbidden imports.
+   * no production TODO/fallback markers.
+
+**Acceptance criteria**
+
+* No touched area ships without meaningful unit + integration/contract/e2e coverage.
+* Tests verify behavior, not just rendering.
+* CI fails on contract drift and forbidden dependencies.
 
 ---
 
-## P1-10 — Move Data Cloud-specific behavior out of shared/platform libraries
+# Phase 12 — Cleanup and consolidation
+
+## 12.1 Remove stale, duplicate, and compatibility code
 
 **Where**
 
-Inspect and classify:
+* `products/yappc/docs/archive/*`
+* old audit docs.
+* old generated clients.
+* legacy API wrappers.
+* invalid imports.
+* dead packages.
 
-```text
-platform/java/agent-core
-platform/java/workflow
-platform/java/messaging
-platform/java/ai-integration
-platform/java/data-governance
-platform/contracts
-```
+**Tasks**
 
-The canonical plane architecture already identifies shared-platform review rules and migration candidates. 
+1. Keep only canonical docs:
 
-**What to change**
+   * vision.
+   * architecture.
+   * API/contracts.
+   * security.
+   * operations.
+   * testing.
+   * implementation tracker.
+2. Archive or delete old one-off audit reports.
+3. Remove compatibility adapters after generated client migration.
+4. Remove fake sample data and production TODOs.
+5. Enforce package boundaries:
 
-For each module:
+   * `@ghatana/*` only for platform generic code.
+   * `@yappc/*` only for YAPPC product-specific code.
+   * app imports through app barrels where required.
 
-1. Keep generic interfaces in platform only if used by multiple unrelated products.
-2. Move Data Cloud plane semantics into `products/data-cloud/planes/*`.
-3. Move Action Plane runtime behavior into `products/data-cloud/planes/action/*`.
-4. Move Data Cloud contracts into `products/data-cloud/contracts`.
+**Acceptance criteria**
 
-**Validation**
-
-Required checks:
-
-```text
-SharedLibraryReuseScorecardTest
-ProductSpecificTypeLeakageTest
-CrossProductDependencyTest
-```
-
----
-
-## P1-11 — Standardize canonical error envelope across all handlers
-
-**Where**
-
-```text
-HttpHandlerSupport.java
-ApiResponse.java
-DataCloudSecurityFilter.java
-all handlers
-contracts/openapi/data-cloud.yaml
-contracts/openapi/action-plane.yaml
-```
-
-**What to change**
-
-Use one error envelope everywhere:
-
-```json
-{
-  "error": {
-    "code": "SURFACE_UNAVAILABLE",
-    "message": "...",
-    "correlationId": "...",
-    "tenantId": "...",
-    "surface": "...",
-    "retryable": false,
-    "details": {}
-  }
-}
-```
-
-Avoid ad hoc JSON strings in security filter responses.
-
-**Validation**
-
-Required tests:
-
-```text
-ErrorEnvelopeContractTest
-SecurityFilterErrorEnvelopeTest
-HandlerErrorEnvelopeTest
-```
+* No stale docs drive implementation.
+* No duplicate clients or route definitions.
+* No generated/sample/fake data remains in production paths.
 
 ---
 
-## P1-12 — Add route-level surface IDs
+# Suggested execution order
 
-**Where**
+## Sprint 1 — Contract and access spine
 
-```text
-DataCloudRouterBuilder.java
-SurfaceRegistryHandler.java
-contracts/openapi/*.yaml
-delivery/ui/
-```
+1. Route manifest validation.
+2. OpenAPI parity.
+3. Generated route registry parity.
+4. Generated frontend client migration plan.
+5. Scope model and authorization tests.
+6. Fix `TODO-001` workspace scoping path.
 
-**What to change**
+## Sprint 2 — Phase packet as canonical read model
 
-Every route should map to a surface ID:
+1. Backend phase packet contract.
+2. Replace project fallback/default data.
+3. Real lifecycle transition config.
+4. Real capability model.
+5. Frontend cockpit consumes packet.
+6. Phase packet e2e tests.
 
-```text
-data.entities.read
-data.entities.write
-event.append
-connectors.sync
-action.pipelines.execute
-governance.policy.update
-ai.suggestions.apply
-```
+## Sprint 3 — Data Cloud+AEP typed integration
 
-Surface IDs should drive:
+1. Platform client contracts.
+2. Evidence retrieval.
+3. Policy decisions.
+4. Degraded state handling.
+5. Memory/telemetry write hooks.
+6. Forbidden import architecture tests.
 
-```text
-runtime truth
-UI gating
-authorization metadata
-audit event type
-OpenAPI metadata
-SDK feature flags
-```
+## Sprint 4 — Generation/review/rollback
 
-**Validation**
+1. Artifact content repository.
+2. Real diff engine.
+3. Review state machine.
+4. Structured user edits.
+5. Rollback restore path.
+6. UI review flow.
 
-Required tests:
+## Sprint 5 — Canvas/page/import/preview
 
-```text
-RouteSurfaceMappingTest
-SurfaceIdOpenApiMetadataTest
-UiSurfaceGateCoverageTest
-```
+1. Page artifact contract.
+2. Operation log.
+3. Import job lifecycle.
+4. Residual island review.
+5. Preview trust enforcement.
+6. Canvas/page e2e.
 
----
+## Sprint 6 — UI polish, observability, cleanup
 
-# P2 — Cleanup, Documentation, and Consistency TODOs
-
-## P2-01 — Fix contradictory canonical documentation around Action Plane paths
-
-**Where**
-
-```text
-products/data-cloud/docs/product/02_data_cloud_unified_detailed_architecture.md
-products/data-cloud/docs/product/03_data_cloud_unified_high_level_design.md
-products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md
-```
-
-**Current problem**
-
-Canonical docs correctly state AEP lives under `products/data-cloud/planes/action`, but some validation/migration language appears to forbid active `products/data-cloud/planes/action` paths, which contradicts the target architecture.  
-
-**What to change**
-
-1. Replace stale text like:
-
-```text
-No active products/data-cloud/planes/action after merge
-```
-
-with:
-
-```text
-No active legacy products/aep or old AEP product-boundary paths after merge.
-```
-
-2. Update stale-path grep scripts to search for old product paths, not the canonical Action Plane path.
-
-3. Make `PLANE_ARCHITECTURE.md` the canonical reference.
-
-**Validation**
-
-Add:
-
-```text
-DocumentationTruthTest
-StalePathDocumentationCheck
-```
+1. Dashboard simplification.
+2. Phase cockpit consistency.
+3. Audit/metrics dashboards.
+4. Security hardening.
+5. Remove legacy code/docs.
+6. Final regression suite.
 
 ---
 
-## P2-02 — Archive or delete top-level audit artifacts
-
-**Where**
-
-```text
-dc-aep-analysis.md
-code-audits/todo.md
-docs/archive/data-cloud-audit-legacy/
-```
-
-**Current problem**
-
-Top-level and archived audit/TODO artifacts are still discoverable and can confuse future audits.  
-
-**What to change**
-
-1. Delete if obsolete.
-2. Otherwise move to:
-
-```text
-docs/archive/data-cloud-audit-legacy/
-```
-
-3. Add clear archive banner:
-
-```text
-Archived. Not canonical. Do not use for current audits.
-```
-
-4. Exclude archived audit docs from documentation truth checks.
-
-**Validation**
-
-```bash
-grep -R "data_cloud_audit_report\|todo.md\|dc-aep-analysis" .
-```
-
-Expected:
-
-* either absent
-* or under `docs/archive/` only with archive banner
-
----
-
-## P2-03 — Create canonical docs index and enforce it
-
-**Where**
-
-```text
-products/data-cloud/docs/README.md
-products/data-cloud/README.md
-scripts/check-documentation-truth.mjs
-```
-
-**What to change**
-
-Create a canonical docs matrix:
-
-```text
-Vision / market positioning
-Plane architecture
-Detailed architecture
-High-level design
-API/contracts
-Connector strategy
-Ingestion strategy
-Retrieval/search/indexing strategy
-AI/automation strategy
-Governance/provenance/security
-Operations/runbook
-Testing strategy
-Shared-library boundary guide
-UI/design-system guide
-```
-
-Each doc should have:
-
-```text
-Status: Canonical / Draft / Archived
-Owner:
-Last reviewed:
-Supersedes:
-Superseded by:
-```
-
-**Validation**
-
-Add CI check:
-
-```bash
-node scripts/check-documentation-truth.mjs
-```
-
-Fail if:
-
-* canonical docs are missing
-* archived docs are referenced as canonical
-* duplicate canonical docs exist for same topic
-
----
-
-## P2-04 — Rename remaining “capability” terminology where it means Runtime Truth
-
-**Where**
-
-```text
-SurfaceRegistryHandler.java
-delivery/ui/src/hooks/useCapabilityGate.ts
-delivery/ui/src/lib/capabilities.ts
-planes/action/ui/src/hooks/useCapabilities.ts
-docs
-tests
-```
-
-**What to change**
-
-Use:
-
-```text
-surface
-runtime truth
-surface state
-dependency probe
-action gate
-```
-
-Avoid:
-
-```text
-capability
-capability gate
-capability registry
-```
-
-unless referring to explicitly deprecated compatibility code.
-
-**Validation**
-
-```bash
-grep -R "capability\|Capability" products/data-cloud \
-  --exclude-dir=build \
-  --exclude-dir=node_modules
-```
-
-Every remaining usage must be justified as compatibility/deprecation.
-
----
-
-## P2-05 — Remove dead or duplicate route definitions
-
-**Where**
-
-```text
-DataCloudRouterBuilder.java
-contracts/openapi/*.yaml
-REST_API_DOCUMENTATION.md
-```
-
-**What to change**
-
-1. Generate route inventory from router.
-2. Generate route inventory from OpenAPI.
-3. Compare.
-4. Remove routes not in OpenAPI or add them properly to OpenAPI.
-5. Remove duplicate legacy routes after compatibility window.
-
-**Validation**
-
-```text
-RuntimeRouteOpenApiParityTest
-DuplicateRouteRegistrationTest
-```
-
----
-
-## P2-06 — Add production bundle guard for frontend
-
-**Where**
-
-```text
-products/data-cloud/delivery/ui/
-```
-
-**What to change**
-
-Add check that production build does not contain:
-
-```text
-mock
-fixture
-deprecatedRoutes
-fake
-demo
-placeholder
-api-mocks
-```
-
-except allowed test-only folders.
-
-**Validation**
-
-```bash
-pnpm build
-node scripts/check-production-ui-bundle.mjs
-```
-
----
-
-## P2-07 — Consolidate Data Cloud UI docs
-
-**Where**
-
-```text
-products/data-cloud/delivery/ui/ARCHITECTURE.md
-products/data-cloud/delivery/ui/docs/DESIGN_ARCHITECTURE.md
-products/data-cloud/delivery/ui/docs/guidelines/CODING.md
-products/data-cloud/delivery/ui/docs/usage/USER_MANUAL.md
-```
-
-**What to change**
-
-Create one UI canonical set:
-
-```text
-UI_ARCHITECTURE.md
-DESIGN_SYSTEM_USAGE.md
-USER_MANUAL.md
-UI_TESTING_STRATEGY.md
-```
-
-Remove overlapping repeated content.
-
-**Validation**
-
-Documentation truth check should show one canonical doc per topic.
-
----
-
-## P2-08 — Add shared-library reuse scorecard as CI gate
-
-**Where**
-
-```text
-products/data-cloud/scripts/check-reuse-scorecard.sh
-platform/
-libs/
-shared/
-products/data-cloud/
-```
-
-**What to change**
-
-For every shared library Data Cloud depends on, classify:
-
-```text
-Keep shared
-Move to Data Cloud
-Split generic/product-specific
-Delete
-Replace
-```
-
-Criteria:
-
-```text
-used by 3+ unrelated products
-generic infrastructure
-no Data Cloud plane semantics
-no Action Plane runtime semantics
-clear dependency direction
-```
-
-**Validation**
-
-CI fails when product-specific code appears in shared library without explicit waiver.
-
----
-
-# Final Consolidated Implementation Order
-
-Use this exact order to avoid rework:
-
-1. **Canonical request context migration**
-2. **Audit/policy/durability fail-closed production gates**
-3. **Role/action permission model**
-4. **Contract-generated route/security registry**
-5. **Typed Runtime Truth consolidation**
-6. **Entity/event/audit outbox**
-7. **Route-wide idempotency**
-8. **Connector durable job runtime**
-9. **Connector evidence/lineage/schema mapping**
-10. **Action Plane route namespace cleanup**
-11. **Data Cloud UI + SDK consolidation**
-12. **Mock/deprecated UI cleanup**
-13. **Shared-library boundary enforcement**
-14. **Canonical docs cleanup**
-15. **CI gates for route drift, docs drift, mock imports, stale paths, forbidden dependencies**
-
-This sequence fixes root causes first, then removes duplicated/legacy paths so future audits do not keep rediscovering the same issues.
+# Highest-priority TODO list
+
+| Priority | TODO                                                                                      | Where                                                                   |
+| -------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| P0       | Make route manifest/OpenAPI/generated client/generated auth registry fully parity-checked | `docs/api`, `core/yappc-services`, `frontend/web/src/clients/generated` |
+| P0       | Normalize tenant/workspace/project/artifact scope transport                               | `RouteAuthorizationRegistry.java`, `client.ts`, controllers             |
+| P0       | Replace phase packet fake/default/sample data with real/degraded states                   | `PhasePacketServiceImpl.java`                                           |
+| P0       | Make phase cockpit consume canonical phase packet                                         | `frontend/web/src/services/phase`, `_phaseCockpit.tsx`                  |
+| P1       | Complete generated frontend client migration and remove manual fetch wrappers             | `frontend/web/src/lib/api/client.ts`                                    |
+| P1       | Add platform typed clients for Data Cloud+AEP boundary                                    | `core/yappc-services/src/main/java/com/ghatana/yappc/platform`          |
+| P1       | Persist generated artifact content and real provenance                                    | `GenerationServiceImpl.java`, artifact repositories                     |
+| P1       | Replace simplified diff with real content-backed diff                                     | generation service + frontend diff viewer                               |
+| P1       | Make review/apply/reject/rollback a tested state machine                                  | generation service, repository, UI                                      |
+| P2       | Harden canvas/page document/preview trust/import flows                                    | page builder, artifact import, preview APIs                             |
+| P2       | Replace frontend permission inference with backend capabilities                           | phase packet, dashboard, action rendering                               |
+| P2       | Add no-raw-fetch and forbidden-platform-import lint/architecture rules                    | frontend eslint + Java ArchUnit                                         |
+| P3       | Consolidate docs and remove legacy/temporary audit clutter                                | `products/yappc/docs`                                                   |
+
+The practical first move is **not** to start with UI or generation. Start with the **contract/access spine**, because current YAPPC already has the right canonical direction, but the implementation still has adapter seams, compatibility paths, simplified/default service behavior, and scope inconsistencies that will cause every other area to regress if left unresolved.

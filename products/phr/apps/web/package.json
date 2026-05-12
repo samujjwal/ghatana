@@ -9,10 +9,12 @@
     "build": "tsc --noEmit && vite build",
     "lint": "pnpm exec eslint src --max-warnings=0",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:a11y": "playwright test --grep @a11y",
+    "test": "pnpm run test:unit",
+    "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

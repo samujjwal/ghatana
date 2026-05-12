@@ -36,6 +36,7 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
     private final ConcurrentHashMap<String, ConsentRecord> consentRegistry = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicLong consentCounter = new java.util.concurrent.atomic.AtomicLong(0);
     private volatile KernelContext context;
 
     @Override
@@ -280,13 +281,15 @@ public class HealthcareConsentKernelExtension implements KernelExtension {
     }
 
     private Optional<ConsentRecord> findLatestConsent(String patientId, ConsentPurpose purpose) {
-        return consentRegistry.values().stream()
-            .filter(r -> r.getPatientId().equals(patientId) && r.getPurpose() == purpose)
-            .max(java.util.Comparator.comparing(ConsentRecord::getGrantedAt));
+    return consentRegistry.values().stream()
+        .filter(r -> r.getPatientId().equals(patientId) && r.getPurpose() == purpose)
+        .max(java.util.Comparator.comparing(ConsentRecord::getGrantedAt)
+            .thenComparing(ConsentRecord::getConsentId));
     }
 
     private String generateConsentId(String patientId, ConsentPurpose purpose, Instant grantedAt) {
-        String canonical = patientId + ":" + purpose.name() + ":" + grantedAt.toString();
+        long counter = consentCounter.incrementAndGet();
+        String canonical = patientId + ":" + purpose.name() + ":" + grantedAt.toString() + ":" + counter;
         String digest = Integer.toHexString(canonical.hashCode());
         return patientId + ":" + purpose.name() + ":" + digest;
     }

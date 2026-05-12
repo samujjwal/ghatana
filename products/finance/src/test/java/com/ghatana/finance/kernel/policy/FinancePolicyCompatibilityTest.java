@@ -104,7 +104,7 @@ class FinancePolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 financeTrading,
                 financeTrading,
-                "transactions/order-789",
+                "finance:transactions/order-789",
                 "read",
                 confidential
         );
@@ -119,7 +119,7 @@ class FinancePolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 externalScope,
                 financeTrading,
-                "transactions/order-789",
+                "finance:transactions/order-789",
                 "read",
                 confidential
         );
@@ -134,7 +134,7 @@ class FinancePolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 financeTrading,
                 financeTrading,
-                "transactions/order-789",
+                "finance:transactions/order-789",
                 "settle",
                 confidential
         );
@@ -150,7 +150,7 @@ class FinancePolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 financeRisk,
                 financeTrading,
-                "positions/portfolio-001",
+                "finance:positions/portfolio-001",
                 "export",
                 confidential
         );
@@ -165,7 +165,7 @@ class FinancePolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 financeRisk,
                 financeRisk,
-                "risk-data/entity-001",
+                "finance:risk-data/entity-001",
                 "read",
                 confidential
         );

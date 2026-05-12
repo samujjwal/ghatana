@@ -28,19 +28,25 @@ import java.util.Set;
  *       │                                               │
  *       ▼                                               ▼
  *   FAILED                                    ROLLBACK_REQUESTED ──rollback──▶ ROLLED_BACK
+ *                                                       │
+ *                                                       │
+ *                                                       ▼
+ *                                                   ROLLBACK_FAILED
  * </pre>
  *
  * <p><b>Idempotency rules:</b>
  * <ul>
  *   <li>Apply once succeeds, apply twice is idempotent (no-op if already APPLIED)</li>
+ *   <li>Apply failure transitions to APPLY_FAILED (terminal)</li>
  *   <li>Reject after apply is denied (cannot reject after APPLIED)</li>
  *   <li>Rollback after apply succeeds (can only rollback from APPLIED or APPROVED)</li>
  *   <li>Rollback twice is idempotent (no-op if already ROLLED_BACK)</li>
+ *   <li>Rollback failure transitions to ROLLBACK_FAILED (terminal)</li>
  *   <li>Viewer cannot apply/reject/rollback (requires approver role)</li>
  *   <li>Degraded output requires review (FAILED state requires manual review)</li>
  * </ul>
  *
- * <p>All terminal states (APPLIED, REJECTED, ROLLED_BACK, FAILED) do not allow further transitions.
+ * <p>All terminal states (APPLIED, REJECTED, ROLLED_BACK, APPLY_FAILED, ROLLBACK_FAILED, FAILED) do not allow further transitions.
  *
  * @doc.type class
  * @doc.purpose Idempotent state machine for generation review, apply, reject, rollback
@@ -65,6 +71,10 @@ public final class GenerationReviewStateMachine {
     private static final Set<GenerationRun.ReviewStatus> CAN_APPLY =
             EnumSet.of(GenerationRun.ReviewStatus.APPROVED, GenerationRun.ReviewStatus.APPLIED);
 
+    /** States from which apply failure can be set. */
+    private static final Set<GenerationRun.ReviewStatus> CAN_SET_APPLY_FAILED =
+            EnumSet.of(GenerationRun.ReviewStatus.APPROVED);
+
     /** States from which reject decision can be made. */
     private static final Set<GenerationRun.ReviewStatus> CAN_REJECT =
             EnumSet.of(GenerationRun.ReviewStatus.REVIEW_PENDING, GenerationRun.ReviewStatus.APPROVED);
@@ -77,12 +87,18 @@ public final class GenerationReviewStateMachine {
     private static final Set<GenerationRun.ReviewStatus> CAN_COMPLETE_ROLLBACK =
             EnumSet.of(GenerationRun.ReviewStatus.ROLLBACK_REQUESTED, GenerationRun.ReviewStatus.ROLLED_BACK);
 
+    /** States from which rollback failure can be set. */
+    private static final Set<GenerationRun.ReviewStatus> CAN_SET_ROLLBACK_FAILED =
+            EnumSet.of(GenerationRun.ReviewStatus.ROLLBACK_REQUESTED);
+
     /** Terminal states — no further transitions are allowed from these. */
     private static final Set<GenerationRun.ReviewStatus> TERMINAL_STATES =
             EnumSet.of(
                     GenerationRun.ReviewStatus.APPLIED,
                     GenerationRun.ReviewStatus.REJECTED,
                     GenerationRun.ReviewStatus.ROLLED_BACK,
+                    GenerationRun.ReviewStatus.APPLY_FAILED,
+                    GenerationRun.ReviewStatus.ROLLBACK_FAILED,
                     GenerationRun.ReviewStatus.FAILED);
 
     /**
@@ -159,6 +175,23 @@ public final class GenerationReviewStateMachine {
     }
 
     /**
+     * Asserts that apply failure can be set from the given state.
+     *
+     * @param current current status
+     * @param runId run ID for error messages
+     * @throws IllegalStateException if the transition is not allowed
+     */
+    public static void assertCanSetApplyFailed(
+            GenerationRun.ReviewStatus current,
+            String runId) {
+        if (!CAN_SET_APPLY_FAILED.contains(current)) {
+            throw new IllegalStateException(
+                    "Cannot set apply failed for run " + runId +
+                    " in state " + current + "; expected one of: " + CAN_SET_APPLY_FAILED);
+        }
+    }
+
+    /**
      * Asserts that a reject decision is legal from the given state.
      *
      * @param current current status
@@ -214,7 +247,7 @@ public final class GenerationReviewStateMachine {
      * (no further transitions are possible).
      *
      * @param status the status to check
-     * @return true when the status is APPLIED, REJECTED, ROLLED_BACK, or FAILED
+     * @return true when the status is APPLIED, REJECTED, ROLLED_BACK, APPLY_FAILED, ROLLBACK_FAILED, or FAILED
      */
     public static boolean isTerminal(GenerationRun.ReviewStatus status) {
         return TERMINAL_STATES.contains(status);

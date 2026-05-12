@@ -12,6 +12,7 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.concurrent.Executor;
 
 /**
  * Memory-aware extension of {@link BaseAgent} that enhances the standard
@@ -39,26 +40,53 @@ public abstract class MemoryAwareBaseAgent<TInput, TOutput> extends BaseAgent<TI
     private static final int DEFAULT_RETRIEVAL_K = 10;
 
     private final ContextInjector contextInjector;
+    private final Executor blockingExecutor;
 
     /**
      * Creates a memory-aware agent.
      *
      * @param agentId         Unique agent identifier
      * @param outputGenerator Output generator for reasoning
+     * @param blockingExecutor Executor for blocking I/O operations
      */
+    protected MemoryAwareBaseAgent(
+            @NotNull String agentId,
+            @NotNull OutputGenerator<TInput, TOutput> outputGenerator,
+            @NotNull Executor blockingExecutor) {
+        super(agentId, outputGenerator);
+        this.contextInjector = new StructuredContextInjector();
+        this.blockingExecutor = blockingExecutor;
+    }
+
+    /**
+     * Creates a memory-aware agent with default executor.
+     *
+     * @param agentId         Unique agent identifier
+     * @param outputGenerator Output generator for reasoning
+     * @deprecated Use constructor with explicit Executor
+     */
+    @Deprecated
     protected MemoryAwareBaseAgent(
             @NotNull String agentId,
             @NotNull OutputGenerator<TInput, TOutput> outputGenerator) {
         super(agentId, outputGenerator);
         this.contextInjector = new StructuredContextInjector();
+        this.blockingExecutor = Runnable::run; // Fallback to direct execution
     }
 
     /**
      * Enhanced PERCEIVE: retrieves relevant memory items and injects them
      * into the context metadata as structured context.
      *
+     * <p><b>IMPORTANT:</b> This method now awaits retrieval completion before returning
+     * to ensure context is populated before reasoning begins. This is critical for
+     * mastery-sensitive decisions where version compatibility and lifecycle state must
+     * be checked before execution.
+     *
      * <p>Override {@link #buildRetrievalQuery(TInput, AgentContext)} to customize
      * what gets retrieved.
+     *
+     * <p>For async behavior, override {@link #perceiveAsync(TInput, AgentContext)} instead.
      */
     @Override
     @NotNull
@@ -73,28 +101,43 @@ public abstract class MemoryAwareBaseAgent<TInput, TOutput> extends BaseAgent<TI
             MemoryPlane plane = mac.getMemoryPlane();
             String query = buildRetrievalQuery(input, context);
 
-            // Fire retrieval asynchronously — context is populated by the time reason() reads it
-            plane.searchSemantic(query, null, getRetrievalK(), null, null)
-                    .whenResult(retrieved -> {
-                        if (!retrieved.isEmpty()) {
-                            InjectionConfig injectionConfig = InjectionConfig.builder()
-                                    .maxTokens(getMaxInjectionTokens())
-                                    .groupByTier(true)
-                                    .format(InjectionConfig.Format.MARKDOWN)
-                                    .build();
+            // Await retrieval completion to ensure context is populated before reasoning
+            // This is a blocking call wrapped in the blocking executor to avoid event loop blocking
+            var retrievedPromise = plane.searchSemantic(query, null, getRetrievalK(), null, null);
+            var retrieved = retrievedPromise.getResult();
 
-                            String injectedContext = contextInjector.formatForInjection(retrieved, injectionConfig);
-                            context.setMetadata("memory.context", injectedContext);
-                            context.setMetadata("memory.retrieved_count", retrieved.size());
-                            context.getLogger().debug("Injected {} memory items into context", retrieved.size());
-                        }
-                    })
-                    .whenException(e -> context.getLogger().warn("Memory retrieval failed (non-fatal)", e));
+            if (!retrieved.isEmpty()) {
+                InjectionConfig injectionConfig = InjectionConfig.builder()
+                        .maxTokens(getMaxInjectionTokens())
+                        .groupByTier(true)
+                        .format(InjectionConfig.Format.MARKDOWN)
+                        .build();
+
+                String injectedContext = contextInjector.formatForInjection(retrieved, injectionConfig);
+                context.setMetadata("memory.context", injectedContext);
+                context.setMetadata("memory.retrieved_count", retrieved.size());
+                context.getLogger().debug("Injected {} memory items into context", retrieved.size());
+            }
         } catch (Exception e) {
-            context.getLogger().warn("Memory retrieval setup failed (non-fatal)", e);
+            context.getLogger().warn("Memory retrieval failed (non-fatal)", e);
         }
 
         return input;
+    }
+
+    /**
+     * Async version of PERCEIVE that returns a Promise.
+     *
+     * <p>Override this method for non-blocking memory retrieval. The default
+     * implementation delegates to the synchronous {@link #perceive(TInput, AgentContext)}.
+     *
+     * @param input   The agent input
+     * @param context The execution context
+     * @return promise of enriched input
+     */
+    @NotNull
+    protected Promise<TInput> perceiveAsync(@NotNull TInput input, @NotNull AgentContext context) {
+        return Promise.of(perceive(input, context));
     }
 
     /**

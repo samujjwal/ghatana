@@ -1,0 +1,272 @@
+{
+  "capabilities": [
+    {
+      "id": "conformance-checks",
+      "name": "Conformance Checks",
+      "description": "Validate product and platform conformance against standards",
+      "category": "conformance",
+      "commands": [
+        {
+          "name": "check-observability",
+          "script": "scripts/check-observability-conformance.mjs",
+          "description": "Validate observability conformance across products",
+          "args": []
+        },
+        {
+          "name": "check-production-stubs",
+          "script": "scripts/check-production-stubs.mjs",
+          "description": "Scan for production stubs and placeholders",
+          "args": []
+        },
+        {
+          "name": "check-route-entitlements",
+          "script": "scripts/check-route-entitlement-contracts.mjs",
+          "description": "Validate route entitlement contracts",
+          "args": []
+        },
+        {
+          "name": "check-product-manifests",
+          "script": "scripts/check-product-manifest-contracts.mjs",
+          "description": "Validate product manifest contracts",
+          "args": []
+        },
+        {
+          "name": "check-product-scaffolder",
+          "script": "scripts/check-product-scaffolder.mjs",
+          "description": "Validate product scaffolder output",
+          "args": []
+        },
+        {
+          "name": "check-runtime-templates",
+          "script": "scripts/check-runtime-template-conformance.mjs",
+          "description": "Validate runtime template conformance",
+          "args": []
+        },
+        {
+          "name": "check-design-system",
+          "script": "scripts/check-design-system-conformance.mjs",
+          "description": "Validate design system conformance",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "scaffolding",
+      "name": "Product Scaffolding",
+      "description": "Create new products and modules",
+      "category": "scaffolding",
+      "commands": [
+        {
+          "name": "scaffold-product",
+          "script": "scripts/scaffold-product.mjs",
+          "description": "Scaffold a new product from templates",
+          "args": []
+        },
+        {
+          "name": "create-module",
+          "script": "scripts/create-module.sh",
+          "description": "Create a new platform module",
+          "args": []
+        },
+        {
+          "name": "bootstrap-product",
+          "script": "scripts/bootstrap-regulated-product.sh",
+          "description": "Bootstrap a regulated product with required infrastructure",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "validation",
+      "name": "Validation",
+      "description": "Validate code quality and compliance",
+      "category": "validation",
+      "commands": [
+        {
+          "name": "validate-doc-tags",
+          "script": "scripts/validate-doc-tags.sh",
+          "description": "Validate Java documentation tags",
+          "args": []
+        },
+        {
+          "name": "validate-gradle",
+          "script": "scripts/validate-gradle-build.sh",
+          "description": "Validate Gradle build configuration",
+          "args": []
+        },
+        {
+          "name": "validate-openapi",
+          "script": "scripts/validate-openapi-parity.js",
+          "description": "Validate OpenAPI contract parity",
+          "args": []
+        },
+        {
+          "name": "check-test-authenticity",
+          "script": "scripts/check-test-authenticity.sh",
+          "description": "Validate test authenticity (anti-theater rule)",
+          "args": []
+        },
+        {
+          "name": "check-dependency-boundaries",
+          "script": "scripts/check-dependency-boundaries.mjs",
+          "description": "Validate dependency boundary compliance",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "documentation",
+      "name": "Documentation",
+      "description": "Generate and validate documentation",
+      "category": "documentation",
+      "commands": [
+        {
+          "name": "generate-architecture-docs",
+          "script": "scripts/generate-architecture-docs.py",
+          "description": "Generate architecture documentation",
+          "args": []
+        },
+        {
+          "name": "check-doc-truth",
+          "script": "scripts/check-doc-truth.mjs",
+          "description": "Validate documentation truth claims",
+          "args": []
+        },
+        {
+          "name": "check-documentation-index",
+          "script": "scripts/check-documentation-index.mjs",
+          "description": "Validate documentation index completeness",
+          "args": []
+        },
+        {
+          "name": "check-doc-claims",
+          "script": "scripts/check-doc-claims-evidence.mjs",
+          "description": "Validate documentation claims have evidence",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "description": "Security validation and auditing",
+      "category": "security",
+      "commands": [
+        {
+          "name": "security-audit",
+          "script": "scripts/security-audit.sh",
+          "description": "Run security audit checks",
+          "args": []
+        },
+        {
+          "name": "check-secret-credentials",
+          "script": "scripts/check-secret-default-credentials.mjs",
+          "description": "Check for default secret credentials",
+          "args": []
+        },
+        {
+          "name": "check-jwt-dependency",
+          "script": "scripts/check-jwt-dependency-policy.sh",
+          "description": "Validate JWT dependency policy",
+          "args": []
+        },
+        {
+          "name": "check-license-policy",
+          "script": "scripts/check-license-policy.sh",
+          "description": "Validate license policy compliance",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "testing",
+      "name": "Testing",
+      "description": "Test execution and validation",
+      "category": "testing",
+      "commands": [
+        {
+          "name": "test-tiered",
+          "script": "scripts/test-tiered.sh",
+          "description": "Run tiered test suite",
+          "args": []
+        },
+        {
+          "name": "scan-test-classifications",
+          "script": "scripts/scan-test-classifications.sh",
+          "description": "Scan and classify test files",
+          "args": []
+        },
+        {
+          "name": "check-audited-e2e",
+          "script": "scripts/check-audited-e2e-workflow.mjs",
+          "description": "Validate audited E2E workflows",
+          "args": []
+        },
+        {
+          "name": "check-audited-performance",
+          "script": "scripts/check-audited-performance-workflows.mjs",
+          "description": "Validate audited performance workflows",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "description": "Architecture validation and governance",
+      "category": "architecture",
+      "commands": [
+        {
+          "name": "check-architecture-compliance",
+          "script": "scripts/check-architecture-compliance.js",
+          "description": "Validate architecture compliance",
+          "args": []
+        },
+        {
+          "name": "architecture-score-gate",
+          "script": "scripts/architecture-score-gate.sh",
+          "description": "Run architecture score gate",
+          "args": []
+        },
+        {
+          "name": "check-circular-deps",
+          "script": "scripts/check-circular-deps.mjs",
+          "description": "Check for circular dependencies",
+          "args": []
+        },
+        {
+          "name": "check-java-architecture",
+          "script": "scripts/check-java-architecture.sh",
+          "description": "Validate Java architecture compliance",
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "deployment",
+      "name": "Deployment",
+      "description": "Deployment and infrastructure setup",
+      "category": "deployment",
+      "commands": [
+        {
+          "name": "check-production-readiness",
+          "script": "scripts/check-production-readiness.mjs",
+          "description": "Validate production readiness",
+          "args": []
+        },
+        {
+          "name": "scan-production-placeholders",
+          "script": "scripts/scan-production-placeholders.sh",
+          "description": "Scan for production placeholders",
+          "args": []
+        },
+        {
+          "name": "deprecation-cleanup",
+          "script": "scripts/deprecation-cleanup.sh",
+          "description": "Clean up deprecated code",
+          "args": []
+        }
+      ]
+    }
+  ]
+}

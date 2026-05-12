@@ -3,115 +3,167 @@
 **Purpose**: Track all production-grade implementation tasks for YAPPC hardening  
 **Status**: Active  
 **Last Updated**: 2026-05-11  
-**Source**: products/yappc/docs/audits/yappc-todos.md  
+**Source**: docs/implementation/README.md  
+**Based on snapshot**: samujjwal/ghatana@5e03f330990461913b4b8963dbee39f5ac75143a  
 
 ---
 
-## Area 00 — Canonical Spine
+## Phase 0 — Establish the production spine
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 00-01 | Implementation TODOs exist only in chat/audit docs, not mapped to code paths | Create canonical tracker with 14 sections mapping all TODOs to code paths, tests, and acceptance gates | `products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md` | N/A | Tracker validation tests | Every TODO maps to code path, test path, and acceptance gate | Completed | Sprint 1 |
-| 00-02 | Project/Product/App terms not consistently enforced | Add lightweight text/AST check to enforce canonical terminology distinction | All TypeScript/Java files, lint rules | N/A | Terminology consistency tests | No UI/API/schema uses Product as synonym for Project | Completed | Sprint 1 |
-| 00-03 | Route manifest not single source of truth for authorization chain | Finish route-manifest → OpenAPI → generated client → backend authorization chain | Route manifest, OpenAPI, generated client, RouteAuthorizationRegistry | All route contracts | RouteManifestSchemaTest, RouteManifestOpenApiParityTest, RouteManifestGeneratedRegistryTest | Build fails if any route missing from one layer | Completed | Sprint 1 |
-| 00-04 | Scope extraction inconsistent across path/query/headers | Define canonical request-scope strategy: path params > query params > headers (never body at auth time) | RouteAuthorizationFilter, authorization utilities, frontend API client | Authorization contracts | Scope extraction matrix tests | No route returns generic "Access denied" for missing scope | Completed | Sprint 1 |
-| 00-05 | Frontend API client not fully migrated to generated OpenAPI client | Migrate endpoint groups one by one to generated client with adapter pattern | Frontend API client, generated client, OpenAPI | All API contracts | FrontendGeneratedClientParityTest | client.ts becomes thin compatibility facade | Completed | Sprint 1 |
-
----
-
-## Area 01 — Workspace, Project, Access, and Scope
-
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 01-01 | Route pattern matching not implemented for parameterized routes | Implement route pattern matching in RouteAuthorizationRegistry | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/RouteAuthorizationRegistry.java` | Authorization contracts | Route pattern tests | Parameterized routes are matched correctly | Completed | Sprint 1 |
-| 01-02 | Scope requirements not enforced by route type | Require tenant/workspace/project/artifact scope based on route type | RouteAuthorizationRegistry, RouteAuthorizationFilter | Authorization contracts | Scope enforcement tests | Missing scope returns precise error | Completed | Sprint 1 |
-| 01-03 | Scope extraction inconsistent across headers, query params, path params, and request bodies | Normalize scope extraction logic | RouteAuthorizationFilter, authorization utilities | Authorization contracts | Scope extraction tests | Scope extraction is deterministic | Completed | Sprint 1 |
-| 01-04 | Server key mismatch in RouteAuthorizationRegistry getAuthorizedScopesForRoute | Fix server key from "yappc-lifecycle" to "yappc-services" to match registration | RouteAuthorizationRegistry line 693 | Authorization contracts | RouteAuthorizationRegistryTest | getAuthorizedScopesForRoute uses correct server key | Completed | Sprint 1 |
-| 01-04 | Access errors not deterministic | Return deterministic access error types | RouteAuthorizationFilter, error handlers | Error response DTOs | Access error tests | Access denial is explainable | Completed | Sprint 2 |
-| 01-05 | Frontend capabilities not canonical | Define canonical frontend capabilities | `products/yappc/frontend/web/src/services/workspace/canonicalCapabilities.ts`, capability definitions | Capability contracts | Capability tests | UI does not show invalid primary actions | Completed | Sprint 2 |
-| 01-06 | Capabilities loaded from scattered sources | Load capabilities from backend read model | Backend capability service, frontend capability loader | Capability DTOs | Capability loading tests | Backend remains source of enforcement | Completed | Sprint 2 |
-| 01-07 | Scattered role checks throughout codebase | Remove scattered role checks, centralize in authorization service | Authorization service, route handlers | Authorization contracts | Role check tests | Role checks are centralized | Completed | Sprint 2 |
-| 01-08 | No owner/admin/developer/viewer test matrix | Add comprehensive access control test matrix | Test files for authorization | Authorization contracts | Access control matrix tests | All permission combinations tested | Completed | Sprint 2 |
-| 01-09 | Included/read-only projects not handled consistently | Ensure consistent handling of included/read-only projects | Project service, authorization logic | Project DTOs | Project access tests | Viewer/read-only projects are handled consistently | Completed | Sprint 2 |
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 0-1 | Contract spine | `products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md` | Tracker needs to match 12-phase plan structure | Create/update tracker with sections: contract spine, access/scope, lifecycle/phase cockpit, Data Cloud+AEP integration, generation/diff/review, canvas/page-builder/preview, API client migration, UI/UX dashboard, testing/quality gates, cleanup/docs | No task exists only in chat or scattered audit notes | Tracker validation tests | todo |
+| 0-2 | Access/scope | `products/yappc/docs/architecture/YAPPC_CANONICAL_MODELS.md` | Need canonical models documentation | Document canonical spine: project/product/app terminology, mounted lifecycle, artifact model with provenance, Canvas→Page Document→Builder Document model, preview trust security boundary, governance trace, typed contracts | Canonical models documented and referenced | Model validation tests | todo |
+| 0-3 | API contracts | `products/yappc/docs/api/route-manifest.yaml`, `openapi.yaml` | Files exist but need validation | Ensure proper structure and completeness | Files exist with proper structure | Schema validation tests | todo |
+| 0-4 | All areas | Tracker header | Missing snapshot reference | Mark tracker as based on snapshot samujjwal/ghatana@5e03f330990461913b4b8963dbee39f5ac75143a | Tracker references snapshot | N/A | todo |
 
 ---
 
-## Area 02 — Lifecycle Cockpit
+## Phase 1 — Route, contract, and client spine
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 02-01 | No canonical PhaseCockpitPacket definition | Define PhaseCockpitPacket with tenantId/workspaceId/projectId/actorId/phase/project/readiness/blockers/artifacts/activity/governance/capabilities/platform/degraded | Phase packet DTO, phase services, PhasePacketController | Phase packet contracts | Phase packet contract test | Packet structure is canonical | Completed | Sprint 2 |
-| 02-02 | Phase UI not packet-driven | Move phase UI to packet-driven rendering | `products/yappc/frontend/web/src/routes/app/project/_phaseCockpit.tsx`, phase packet endpoint | Phase packet contracts | Phase UI tests | UI renders from canonical packet | Completed | Sprint 2 | Refactored _phaseCockpit.tsx to use usePhasePacket directly, removed legacy usePhaseCockpitData wrapper, added PhasePacketSummary and PhasePacketErrorPanel components
-| 02-03 | Phase-specific behavior not productionized | Implement each phase (Intent/Shape/Validate/Generate/Run/Observe/Learn/Evolve) with production-grade behavior | `YappcLifecycleService.java`, `LifecycleServiceModule.java`, phase controllers | Phase contracts | Route test, loader test, action test, capability test, error/degraded state test, audit event test, OpenAPI contract test | Each phase has production-grade behavior | Completed | Sprint 2 | Added Run, Observe, Learn, Evolve phase routes and controller providers to YappcLifecycleService and LifecycleServiceModule
-| 02-04 | Dashboard not simplified to action cockpit | Build dashboard around What is blocked?, What needs review?, What is safe to continue? | Dashboard service, UI components, NextActionRankingService | Dashboard contracts | Dashboard action routing test | User knows next safe action in under 5 seconds | Completed | Sprint 2 |
-
----
-
-## Area 03 — Dashboard and UX Shell
-
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 03-01 | Canvas/document model not stabilized | Define CanvasDocument schema with node ID/parent ID/linked artifact ID, save/load API contract, operation metadata, validation | `CanvasDocument.java`, `CanvasService.java`, `CanvasValidationService.java` | Canvas contracts | Canvas schema tests, validation tests, drill-down tests, large-canvas performance tests | Canvas save/load round-trips exactly, governed mutations create trace/audit metadata | Completed | Sprint 3 | Added parentId field to CanvasNode to support canonical model hierarchy; CanvasService has save/load with operation metadata; CanvasValidationService for validation
-| 03-02 | Page builder and component registry not productionized | Define page document envelope, builder document schema, component registry contract, validation, versioning, migration, residual/unavailable state, operation log, conflict/overwrite/review flows | `PageDocumentEnvelope.java`, `BuilderDocumentSchema.java`, `ComponentRegistryContract.java`, `ComponentRegistryValidationService.java`, `ResidualIslandReviewService.java`, collab conflict-resolution | Page/builder contracts | Registry contract tests, validation tests, migration tests, serialization tests | Invalid/unknown components become governed residual/unavailable states | Completed | Sprint 3 | All components exist: PageDocumentEnvelope with operation log, BuilderDocumentSchema with component references, ComponentRegistryContract with versioning and aliases, ComponentRegistryValidationService, ResidualIslandReviewService for unknown components, conflict-resolution in collab library
-| 03-03 | Preview trust and import-source flows not hardened | Require preview session, enforce tenant/workspace/project/artifact/user scope, block untrusted direct execution, require acknowledgement for sensitive data, surface preview policy blocks, import-source validation, residual islands | `PreviewSessionApiController.java`, `PreviewSecurityPolicy.java`, `ResidualIslandReviewService.java` | Preview/observe contracts | Preview governance tests, import-source validation tests, residual review tests | No imported source can mutate canvas/page state before validation and trust classification | Completed | Sprint 3 | PreviewSessionApiController enforces signed sessions, scope normalization, trust levels, CSP/sandbox policies; PreviewSecurityPolicy with 4 trust levels and data classification; ResidualIslandReviewService for unknown components; production-safe factory with strict validation
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 1-1 | Route manifest | `products/yappc/docs/api/route-manifest.yaml`, `openapi.yaml` | Need parity validation | Validate every manifest route has matching OpenAPI path, HTTP method, operationId, auth/security scheme, request/response schema, generated client operation, generated authorization entry | Build fails if route missing from one layer | RouteManifestSchemaTest, RouteManifestOpenApiParityTest, RouteManifestGeneratedRegistryTest | todo |
+| 1-2 | Route manifest | `products/yappc/docs/api/route-manifest.yaml` | Operation naming inconsistent | Fix operation naming consistency - choose lower camelCase or PascalCase for operationId and enforce it throughout manifest | All operationIds follow consistent naming convention | Naming convention tests | todo |
+| 1-3 | Route generation | Build task | Route generation not deterministic | Make route generation deterministic: build task reads manifest, generates GeneratedRouteRegistry, generates/validates OpenAPI route skeleton, generates client method coverage test, fails build on drift | Build fails on drift | Generation determinism tests | todo |
+| 1-4 | Route manifest | `products/yappc/docs/api/route-manifest.yaml` | Missing validation rules | Add manifest validation rules: required fields present, scope format valid, auth=public has empty scopes, auth=required has non-empty scopes, boundary=DATA_CLOUD_AEP never appears in YAPPC imports, privacyClassification=RESTRICTED requires audit event | Manifest passes all validation rules | Manifest validation tests | todo |
+| 1-5 | Frontend client | `products/yappc/frontend/web/src/lib/api/client.ts` | Monolithic client file | Split client.ts into generatedClientAdapter.ts, legacyClientAdapter.ts, scopeHeaders.ts, errorMapper.ts, index.ts | Client split into focused modules | Client module tests | todo |
+| 1-6 | Frontend client | `products/yappc/frontend/web/src/lib/api/client.ts` | Manual endpoint wrappers | Migrate endpoint groups (Auth, Workspaces, Projects, Lifecycle, Phase packet, Dashboard actions, Generate/diff/review, Preview session, Artifact import/review, Audit/telemetry) to generated client | All endpoints use generated client | Client migration tests | todo |
+| 1-7 | Frontend client | `products/yappc/frontend/web/src/lib/api/client.ts` | Legacy wrapper code | Delete manual endpoint wrappers once generated coverage exists | client.ts becomes thin compatibility barrel or removed | Client cleanup tests | todo |
+| 1-8 | Frontend | All frontend files | Raw fetch usage | Enforce no raw fetch: allowed only in HTTP infrastructure, disallowed in route components, hooks, page services, random libs | No new raw fetch outside approved infra | No-raw-fetch lint rule | todo |
+| 1-9 | Frontend client | `products/yappc/frontend/web/src/lib/api/client.ts` | Mixed auth modes | Normalize auth mode: pick cookie-session for web, remove fake empty token compatibility once consumers are migrated | Consistent auth mode across frontend | Auth mode tests | todo |
 
 ---
 
-## Area 04 — Generation, Diff, Review, Rollback
+## Phase 2 — Access, scope, authorization, and permissions
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 04-01 | Generation uses default project/workspace IDs when metadata absent | Require explicit GenerationContext with tenantId/workspaceId/projectId/actorId/phase/sourceArtifactIds/canvasNodeIds/intentId/shapeId/correlationId | `GenerationContext.java`, `GenerationService.java`, `GenerationServiceImpl.java` | Generation contracts | Generation context tests | Generation fails fast if project/workspace/actor/source context missing | Completed | Sprint 4 | GenerationContext record with all required fields, validation throws IllegalArgumentException for blank/null fields, GenerationService uses context in generate() and regenerateWithDiff() methods
-| 04-02 | Only content references stored, not actual content | Add ArtifactContentStore interface with content hash, size, MIME/language, provenance, source evidence IDs, generated-by run ID, content retrieval authorization | `ArtifactContentStore.java` | Generation contracts | Content storage tests | Diff, preview, review, apply, rollback can load actual content by governed content reference | Completed | Sprint 4 | ArtifactContentStore interface with ContentMetadata (contentHash, size, mimeType, language, provenance, generatedByRunId, authorizationToken); methods for putContent, getContent, getContentMetadata, deleteContent, contentExists with authorization
-| 04-03 | Placeholder diff without real content | Use real line diff algorithm, store DiffRegion with id/filePath/type/line ranges/originalContent/newContent/owner/provenance | `StructuredDiff.java`, `ArtifactDiff.java` | Diff contracts | Diff structure tests | Generated diff view can render real additions/deletions/modifications with provenance | Completed | Sprint 4 | StructuredDiff with DiffRegion (regionId, filePath, type, status, provenance, hunks, metadata), DiffRegionProvenance (sourceType, sourceId, sourceVersion, aiModelId, aiModelVersion, sessionId, traceId, evidenceIds), DiffHunk (oldStart, oldLines, newStart, newLines, oldContent, newContent, diffHeader), DiffSummary
-| 04-04 | Review/apply/reject/rollback not idempotent state machine | Make generation review a state machine: GENERATING/GENERATED/REVIEW_PENDING/APPROVED/APPLIED/REJECTED/ROLLBACK_REQUESTED/ROLLED_BACK/FAILED with rules | `GenerationReviewStateMachine.java`, `GenerationRun.java` | Review contracts | Apply once succeeds, apply twice idempotent, reject after apply denied, rollback after apply succeeds, rollback twice idempotent, viewer cannot apply/reject/rollback, degraded output requires review | Review decisions are deterministic, auditable, and safe to retry | Completed | Sprint 4 | GenerationReviewStateMachine with all states (GENERATING, GENERATED, REVIEW_PENDING, APPROVED, APPLIED, REJECTED, ROLLBACK_REQUESTED, ROLLED_BACK, FAILED), idempotency rules (apply idempotent if APPLIED, rollback idempotent if ROLLED_BACK), transition assertions, terminal states
-
----
-
-## Area 05 — Scaffold, Packs, Templates, Dependencies
-
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 05-01 | Scaffold not deterministic service boundary | Define canonical pack metadata, validate pack structure/required variables/template syntax, dry-run result, generated file manifest, dependency conflict analysis, update preview, pack/template/version provenance | `PackInfo.java`, `PackValidationResult.java`, `PackService.java`, `DryRunCommand.java`, scaffold core | Scaffold contracts | Pack validation tests, template validation tests, dependency conflict tests, scaffold parity tests | Every scaffold mutation can be previewed, validated, traced, and rolled back | Completed | Sprint 5 | PackInfo with canonical metadata (name, version, language, category, platform, buildSystem, archetype, templates, requiredVariables, optionalVariables, supportedPacks, defaults, isComposition, composedPacks); PackValidationResult with errors/warnings; PackService for discovery; DryRunCommand for dry-run functionality
-| 05-04 | No operation metadata on persistence | Persist canvas changes with operation metadata | Canvas service, audit logger | Audit contracts | Canvas persistence tests | Operations are audited | Completed | Sprint 4 |
-| 05-05 | No semantic zoom and drill-down tests | Implement semantic zoom and drill-down tests | Canvas library, UI components | Canvas contracts | Canvas interaction tests | Zoom/drill-down work correctly | Completed | Sprint 4 |
-| 05-06 | Diagram and sketch layers not integrated | Integrate diagram and sketch layers through stable adapters | Canvas library, diagram/skeleton libraries | Canvas contracts | Canvas integration tests | Layers are integrated cleanly | Completed | Sprint 4 |
-| 05-07 | Canvas directly owns page-builder internals | Ensure canvas does not directly own page-builder internals | Canvas library, page-builder library | Canvas/builder contracts | Canvas separation tests | Boundaries are respected | Completed | Sprint 4 |
-| 05-08 | No performance tests for large canvases | Add performance tests for large canvases | Canvas test files | N/A | Canvas performance tests | Large canvas is usable | Completed | Sprint 4 |
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 2-1 | Scope transport | RouteAuthorizationRegistry, frontend client | Mixed scope conventions | Define canonical scope transport: path params when part of route, query params for read routes, headers only for cross-cutting scope, body scope only for controller-level validation after authorization | Every project-scoped call includes workspaceId | Scope transport tests | todo |
+| 2-2 | Scope transport | All scope-using code | Mixed conventions | Remove mixed conventions: workspaceId query vs X-Workspace-Id headers, scope query helper that doesn't map to actual resource identity | Consistent scope transport across all calls | Scope consistency tests | todo |
+| 2-3 | Scope DTO | Backend and frontend | No shared scope DTO | Add shared scope DTO: Java RequestScopeContext, TypeScript ScopeContext | Scope DTO used consistently | Scope DTO tests | todo |
+| 2-4 | Scope tests | Test files | Missing scope permutation tests | Add tests for all permutations: workspace read, project read/write, artifact read/write, preview session create/validate, generation review/apply/reject/rollback, dashboard action execute | All scope permutations tested | Scope permutation tests | todo |
+| 2-5 | Scope error handling | PhaseCockpitDataService | TODO-001 workspace context error | Fix TODO-001 path: replace fetchProjectSnapshot workspace context error with typed route-level requirement and user-facing error handling | Backend rejects missing scope with RFC-7807-style error, UI shows actionable message | Error handling tests | todo |
+| 2-6 | Capabilities | Backend services | Role heuristics in PhasePacketServiceImpl | Introduce backend CapabilityEvaluationService that evaluates capabilities from tenant, workspace membership, project role, artifact ownership, subscription tier, feature flag, policy decision | Capability decisions are backend-derived | Capability service tests | todo |
+| 2-7 | Capabilities | Phase packet, UI | Frontend permission inference | Return capability model in phase packet, UI renders actions only from capability model, do not duplicate authorization logic in React components | Frontend does not infer sensitive permissions | Capability integration tests | todo |
 
 ---
 
-## Area 06 — Data Cloud+AEP Platform Integration
+## Phase 3 — Lifecycle cockpit and phase packet productionization
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 06-01 | YAPPC imports internal Data Cloud+AEP modules | Create YAPPC platform contract client with contracts for agent/intelligence execution, evidence/retrieval, memory summary/write proposal, telemetry/analytics, policy/guardrails, execution trace references | `PlatformIntegrationClient.java`, `PlatformExecution.java`, `PlatformEvidence.java`, `PlatformMemory.java` | Platform contracts | Platform contract DTO tests | YAPPC has no direct imports from Data Cloud+AEP internals, only generated/typed contract clients | Completed | Sprint 6 | PlatformIntegrationClient with all contracts: execute/getExecutionStatus, storeEvidence/searchEvidence, storeMemory/retrieveMemorySummary/retrieveMemory/deleteMemory, recordTelemetry/getAnalytics, evaluatePolicy, getExecutionTrace/storeExecutionTrace; PlatformExecution DTO with ExecutionRequest/Response/Metrics/Metadata/Status
-
----
-
-## Area 07 — Observability, Operations, Security, Privacy
-
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 07-01 | Metric names and tags not standardized | Standardize metric names with tags: tenant/workspace/project/phase/action/outcome, add readiness checks (database/artifact store/preview runtime/scaffold packs/generated route registry/platform connectivity), add startup guards, add runbooks | `MetricsStandardizationService.java`, `MetricsStandardizationServiceImpl.java`, `ReadinessCheckService.java` | N/A | Metrics tests, readiness tests, startup tests | Any lifecycle failure can be traced from UI action → API route → audit event → metric/log → artifact/platform trace | Completed | Sprint 7 | MetricsStandardizationService with standardizeMetricName, standardizeTags, isValidMetricName, validateTags; MetricsStandardizationServiceImpl with regex patterns and validation; ReadinessCheckService with checks for database, artifact content store, preview runtime, scaffold packs, route registry, platform connectivity
-| 07-02 | Privacy classification not enforced in runtime behavior | Use route manifest privacy classification in runtime behavior: PUBLIC (no sensitive payloads), INTERNAL (workspace/project metadata), CONFIDENTIAL (generated artifacts, source imports, requirements, evidence), RESTRICTED (rollback, promotion, policy decisions, sensitive previews) | `PrivacyClassification.java`, `PrivacyEnforcementService.java` | Privacy contracts | Privacy classification tests | Telemetry and logs redact or avoid restricted payloads by default | Completed | Sprint 7 | PrivacyClassification enum with PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED; PrivacyEnforcementService with sanitizeTelemetry, sanitizeLogMessage, canIncludeInTelemetry, canIncludeInLogs, redactSensitiveFields methods
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 3-1 | Phase packet | PhasePacketServiceImpl | Fake project fallback | Replace fake project fallback: if project missing return 404, if Data Cloud degraded return explicit degraded packet with degradedReason, do not synthesize project names/tier | No sample/default project data in production mode | Phase packet data tests | todo |
+| 3-2 | Phase packet | PhasePacketServiceImpl | Hardcoded next phase | Replace hardcoded next phase: use transition config/lifecycle DAG, support legacy aliases through compatibility adapter, return blocked/review/advance state from gate validator | Next phase computed from transition config | Phase transition tests | todo |
+| 3-3 | Phase packet | PhasePacketServiceImpl | Empty evidence | Replace empty evidence: query typed Data Cloud+AEP evidence endpoint, include evidenceIds, traceId, confidence, source artifact references, show evidence in UI | Evidence displayed in cockpit where decisions made | Evidence integration tests | todo |
+| 3-4 | Phase packet | PhasePacketServiceImpl | Empty governance | Replace empty governance: query policy decision/audit records, include who/what/why/when, show policy blocks and review-required states in cockpit | Governance visible in cockpit | Governance integration tests | todo |
+| 3-5 | Phase packet | PhasePacketServiceImpl | Sample activity | Replace sample activity: add audit query API, return real activity feed with actor, phase, operation, outcome, timestamp, severity | Real activity feed returned | Activity feed tests | todo |
+| 3-6 | Phase packet | PhasePacketServiceImpl | Default healthy signals | Replace default healthy signals: preview health from preview runtime, generation health from generation service/repository, runtime health from run/observe subsystem, Data Cloud+AEP health when phase needs it | Health signals from real sources | Health signal tests | todo |
+| 3-7 | Phase packet | Frontend cockpit | Separate data loads | Make /api/v1/phase/packet the primary cockpit read model, keep old project/activity/transition calls only as transitional fallback | Cockpit route needs one primary packet load | Phase packet integration tests | todo |
+| 3-8 | Phase packet | Frontend cockpit | Duplicated normalization | Remove duplicated normalization once packet is complete, add typed frontend PhasePacket model generated from OpenAPI | UI does not recompute business readiness | Phase packet contract tests | todo |
 
 ---
 
-## Area 08 — Testing and Quality Gates
+## Phase 4 — Data Cloud+AEP integration boundary
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 08-01 | No required test suites | Create 14 mandatory test gates: route manifest schema, route manifest ↔ OpenAPI parity, OpenAPI ↔ generated client, frontend client endpoint coverage, backend route authorization, scope extraction matrix, phase cockpit packet contract, dashboard action routing, canvas save/load round-trip, page builder serialization/migration, import-source preview trust, generation diff/review/rollback state machine, Data Cloud+AEP contract DTO, E2E dashboard → phase → generate → review → run/observe flow | Test files across all areas | All contracts | Unit tests, contract tests, integration tests, component tests, e2e tests, no placeholder assertions | Every touched area has unit/contract/integration/component/e2e tests with meaningful assertions | Completed | Sprint 8 | Test suites include CanvasPerformanceTest, CanvasValidationServiceTest, PageDocumentSerializationTest, PreviewSessionApiControllerTest, ReviewDecisionIdempotencyTest, YappcWorkflowE2ETest, LifecycleApiControllerTest, GenerationApiControllerTest, RouteAuthorizationRegistryTest, YappcLifecycleApiContractTest, and others covering all 14 mandatory test gates
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 4-1 | Platform client | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/platform/*` | No typed platform client | Define Java interfaces: PlatformExecutionClient, PlatformEvidenceClient, PlatformMemoryClient, PlatformTelemetryClient, PlatformPolicyClient | Platform client contracts defined | Platform contract tests | todo |
+| 4-2 | Platform client | Platform client contracts | No common request context | Define common request context: tenantId, workspaceId, projectId, actorId, phase, operation, dataClassification, requestedAt, correlationId, optional artifactId, canvasNodeId, generationRunId | Request context standardized across all platform calls | Request context tests | todo |
+| 4-3 | Platform client | Platform client contracts | No common response metadata | Define common response metadata: status, confidence, confidenceReason, traceId, evidenceIds, policyDecisionId, degraded, degradedReason, createdAt, completedAt, optional runId, memoryRecordIds, searchResultIds | Response metadata standardized across all platform responses | Response metadata tests | todo |
+| 4-4 | Platform client | Platform client adapters | No adapters | Add adapters: Real DataCloud client adapter, AEP execution adapter, Test fake only in test source set | Platform failure returns degraded metadata, not silent empty list | Adapter tests | todo |
+| 4-5 | Architecture | Architecture rules | No boundary enforcement | Add architecture rule: YAPPC may import platform client contracts, YAPPC may not import platform internals | No YAPPC service imports internal platform modules directly | Architecture compliance tests | todo |
 
 ---
 
-## Area 09 — Documentation and Cleanup
+## Phase 5 — Generation, diff, review, rollback
 
-| ID | Problem | Production-grade fix | Files/paths | Contracts affected | Tests required | Acceptance criteria | Status | Owner/notes |
-|----|---------|---------------------|-------------|-------------------|----------------|-------------------|--------|-------------|
-| 09-01 | Too many active docs | Consolidate active docs to canonical list: 00-vision.md, 01-architecture.md, 02-domain-model.md, 03-api-contracts.md, 04-ui-ux.md, 05-platform-mapping-yappc-data-cloud-aep.md, 06-security-governance.md, 07-observability-operations.md, 08-testing-quality.md, audits/IMPLEMENTATION_TRACKER.md | products/yappc/docs/* | N/A | N/A | Active docs are canonical and minimal | Completed | Sprint 9 | Archive directory exists with 129 archived docs; canonical docs include ARCHITECTURE.md, 05-platform-mapping-yappc-data-cloud-aep.md, audits/IMPLEMENTATION_TRACKER.md
-| 09-02 | Stale audit/session docs not archived | Archive stale audit/session docs to docs/archive/, remove duplicate reports, stale path references, old AEP/Data Cloud split wording, generated-session docs | products/yappc/docs/archive/* | N/A | N/A | Archive docs are clearly not active | Completed | Sprint 9 |
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 5-1 | Generation | GenerationServiceImpl, artifact repositories | No actual content storage | Introduce GeneratedArtifactContentRepository, store actual content with artifactId, contentHash, path, MIME/language, size, source prompt hash, generator version, AI/degraded mode, provenance metadata | Generated files not anonymous content references | Content storage tests | todo |
+| 5-2 | Generation | GenerationServiceImpl, artifact repositories | contentRef not resolvable | Make contentRef resolvable, add endpoint to fetch content safely, add content redaction rules for restricted artifacts | UI can load actual generated content | Content retrieval tests | todo |
+| 5-3 | Diff | GenerationServiceImpl.computeDiff, frontend diff viewer | Simplified diff logic | Replace simplified diff with real diff engine: load old/new content by contentRef, use proper line diff library, compute added/deleted/modified regions, line ranges, ownership (AI/user/system), provenance per region | Diff displays actual line-level content | Diff engine tests | todo |
+| 5-4 | Diff | GenerationServiceImpl | No user edit preservation | Preserve user edits across review, store diff snapshot with generation run | Applying edited diffs preserves provenance | User edit tests | todo |
+| 5-5 | Review | GenerationServiceImpl.reviewDecision | Missing required fields | Require actorId, projectId, workspaceId, tenantId, runId, reason for reject/rollback, review provenance for review decisions | Review state machine is explicit and tested | Review validation tests | todo |
+| 5-6 | Review | GenerationServiceImpl, GenerationRunRepository | No state machine | Apply decision states: REVIEW_PENDING, APPROVED, REJECTED, ROLLED_BACK, APPLY_FAILED, ROLLBACK_FAILED, make review action idempotent | Review decisions are deterministic, auditable, and safe to retry | State machine tests | todo |
+| 5-7 | Review | GenerationServiceImpl | Manual JSON serialization | Store user edits as structured JSON using ObjectMapper, emit audit and metric events | User edits are queryable and validated | JSON serialization tests | todo |
+
+---
+
+## Phase 6 — Canvas, page builder, artifact import, and preview trust
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 6-1 | Page artifact | Page artifact API/controllers, frontend page builder | No PageArtifactDocument contract | Define PageArtifactDocument contract: artifactId, projectId/workspaceId/tenantId, builderDocument, registry version, operation log, sync state, preview trust, data classification | No builder save can overwrite silently | Page artifact contract tests | todo |
+| 6-2 | Page artifact | Page artifact contract | No optimistic concurrency | Add optimistic concurrency: documentVersion, etag, conflict response, add operation log entries (save, import, reload, overwrite, migration, governance decision) | Every mutation has operation log | Concurrency tests | todo |
+| 6-3 | Page artifact | Page artifact contract | No migration path | Add migration path for old builder documents | UI can resolve conflicts with clear choices | Migration tests | todo |
+| 6-4 | Import | `/api/v1/yappc/artifact/import-source`, artifact compiler | No job lifecycle | Add source import job lifecycle: submitted, validating, decompiling, mapping, residual-review-required, completed, failed | Import never executes untrusted code directly | Import lifecycle tests | todo |
+| 6-5 | Import | Import flow | No validation before mutation | Validate untrusted input before document mutation, require runtime health check before import, map known components to registry | Residual islands are visible and reviewable | Import validation tests | todo |
+| 6-6 | Import | Residual island review APIs | No residual island flows | Create residual islands for unknown/untrusted components, add review flows: accept residual, map to registry candidate, reject/remove, quarantine | Preview is blocked or isolated when trust insufficient | Residual island tests | todo |
+| 6-7 | Import | Import flow | No preview trust on imports | Attach preview trust to every imported node | Preview errors and policy blocks show in Observe | Preview trust tests | todo |
+
+---
+
+## Phase 7 — UI/UX: no cognitive load, full visibility
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 7-1 | Dashboard | `products/yappc/frontend/web/src/routes/dashboard.tsx` | Dashboard not action-focused | Rebuild dashboard sections: blocked work, review required, safe to continue, active generation/runs, recent activity, degraded integrations | User can start from dashboard and reach every required phase/action | Dashboard integration tests | todo |
+| 7-2 | Dashboard | Dashboard components | Cards don't answer key questions | Every dashboard card must answer: What is happening? Why does it matter? What is the safest next action? Who/what is blocking it?, cards route to exact phase cockpit | No page requires understanding internal AI/system concepts | Dashboard UX tests | todo |
+| 7-3 | Phase cockpit | `frontend/web/src/routes/app/project/_phaseCockpit.tsx` | Inconsistent layout | Standard phase cockpit layout: header (phase/readiness/health), primary action, blockers, evidence, required/completed artifacts, governance, activity, advanced details collapsed | Intent/Shape/Validate/Generate/Run/Observe/Learn/Evolve all render with same shell | Phase cockpit tests | todo |
+| 7-4 | Phase cockpit | Phase cockpit components | No accessibility coverage | Use same interaction model for all phases, add accessibility and keyboard coverage | Missing data surfaces as degraded/empty states, not broken UI | Accessibility tests | todo |
+
+---
+
+## Phase 8 — Scaffold, packs, templates, and generated app quality
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 8-1 | Scaffold | `products/yappc/core/scaffold/api/*`, `products/yappc/core/scaffold/packs/*` | No pack contract | Define pack contract: metadata, language, platform, build system, variables, required features, dependency graph, license compatibility, generated files, tests | A generated project builds/tests in CI | Pack contract tests | todo |
+| 8-2 | Scaffold | Scaffold core | No validation | Validate pack before use, validate variables with schema, add generated output validation (compile, test, lint, dependency audit, license check) | Pack conflicts are detected before write | Scaffold validation tests | todo |
+| 8-3 | Scaffold | Scaffold core | No provenance | Add provenance from lifecycle artifacts to generated scaffold files | Generated output has provenance and rollback metadata | Provenance tests | todo |
+
+---
+
+## Phase 9 — Observability, audit, and operations
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 9-1 | Observability | All services | Inconsistent metric tags | Standard metric tags: tenantId, workspaceId, projectId, phase, operation, outcome, degraded | Every critical mutation has audit event | Metrics standardization tests | todo |
+| 9-2 | Observability | All services | Inconsistent audit event shape | Standard audit event shape: actor, target, phase, operation, data classification, preview trust, correlationId, traceId | Every external/platform call has metrics | Audit event tests | todo |
+| 9-3 | Observability | `products/yappc/prometheus.yappc.yml`, ops docs | Missing dashboards | Add dashboards: phase packet latency, generation success/fallback/failure, preview blocks, policy decisions, route authorization denials, Data Cloud+AEP degraded states | Degraded mode is visible in UI and ops | Dashboard configuration tests | todo |
+
+---
+
+## Phase 10 — Security and preview runtime
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 10-1 | Preview security | PreviewSecurityPolicy, preview session APIs | No preview context requirement | Require preview context: tenantId, workspaceId, projectId, artifactId, userId, previewTrust, dataClassification | No untrusted imported code executes directly | Preview context tests | todo |
+| 10-2 | Preview security | Preview session APIs, page builder preview UI | No trust enforcement | Block untrusted execution, isolate semi-trusted preview, require explicit acknowledgement for restricted data, audit preview session creation/validation | Preview tokens expire and are validated | Preview security tests | todo |
+
+---
+
+## Phase 11 — Testing and quality gates
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 11-1 | Contract tests | Test files across all areas | Missing contract tests | Add contract tests: manifest ↔ OpenAPI, OpenAPI ↔ generated client, manifest ↔ generated route registry, frontend used routes ↔ OpenAPI | No touched area ships without meaningful unit + integration/contract/e2e coverage | Contract test suite | todo |
+| 11-2 | Authorization tests | Authorization test files | Missing authorization tests | Add authorization tests: public route, missing principal, missing workspaceId/projectId/artifactId, unauthorized workspace, role/tier restrictions | Tests verify behavior, not just rendering | Authorization test suite | todo |
+| 11-3 | Phase packet tests | Phase packet test files | Missing phase packet tests | Add phase packet tests: all phases, blockers, evidence, governance, degraded platform | CI fails on contract drift and forbidden dependencies | Phase packet test suite | todo |
+| 11-4 | Generation tests | Generation test files | Missing generation tests | Add generation tests: AI success, AI degraded fallback, diff, review apply/reject/rollback, user edits | No test theater | Generation test suite | todo |
+| 11-5 | UI e2e tests | Playwright e2e tests | Missing UI e2e tests | Add UI e2e tests: dashboard → phase cockpit, phase action → backend call, generate → review → apply, import → residual review, preview trust block | All TypeScript code fully typed during implementation | E2E test suite | todo |
+| 11-6 | Build gates | Build configuration | Missing build gates | Add build gates: typecheck, lint, no raw fetch, no forbidden imports, no production TODO/fallback markers | Formatting, linting, and static checks remain healthy | Build gate configuration | todo |
+
+---
+
+## Phase 12 — Cleanup and consolidation
+
+| ID | Area | File/path | Current issue | Required fix | Acceptance criteria | Test coverage | Owner status |
+|----|------|-----------|---------------|--------------|-------------------|---------------|--------------|
+| 12-1 | Documentation | `products/yappc/docs` | Too many active docs | Keep only canonical docs: vision, architecture, API/contracts, security, operations, testing, implementation tracker, archive or delete old one-off audit reports | No stale docs drive implementation | Documentation audit | todo |
+| 12-2 | Code cleanup | All YAPPC code | Legacy adapters | Remove compatibility adapters after generated client migration, remove fake sample data and production TODOs | No duplicate clients or route definitions | Code cleanup validation | todo |
+| 12-3 | Package boundaries | All YAPPC code | Boundary violations | Enforce package boundaries: @ghatana/* only for platform generic code, @yappc/* only for YAPPC product-specific code, app imports through app barrels | No generated/sample/fake data remains in production paths | Package boundary tests | todo |
 
 ---
 
@@ -119,15 +171,12 @@
 
 | Sprint | Status | Start Date | End Date | Notes |
 |--------|--------|------------|----------|-------|
-| Sprint 1 | Completed | 2026-05-11 | 2026-05-11 | Contract and access foundation - canonical tracker, terminology enforcement, route manifest source of truth, scope normalization, generated OpenAPI client |
-| Sprint 2 | Not Started | TBD | TBD | Dashboard and lifecycle cockpit |
-| Sprint 3 | Not Started | TBD | TBD | Canvas, page builder, registry, preview |
-| Sprint 4 | Not Started | TBD | TBD | Generation, diff, review, rollback |
-| Sprint 5 | Not Started | TBD | TBD | Scaffold, packs, templates, dependencies |
-| Sprint 6 | Not Started | TBD | TBD | Data Cloud+AEP platform integration |
-| Sprint 7 | Not Started | TBD | TBD | Observability, operations, security, privacy |
-| Sprint 8 | Not Started | TBD | TBD | Testing and quality gates |
-| Sprint 9 | Not Started | TBD | TBD | Docs and repo cleanup |
+| Sprint 1 | In Progress | 2026-05-11 | TBD | Contract and access spine - route manifest validation, OpenAPI parity, generated route registry, generated frontend client migration, scope model, authorization tests |
+| Sprint 2 | Not Started | TBD | TBD | Phase packet as canonical read model - backend phase packet contract, replace project fallback, real lifecycle transition config, real capability model, frontend cockpit consumes packet |
+| Sprint 3 | Not Started | TBD | TBD | Data Cloud+AEP typed integration - platform client contracts, evidence retrieval, policy decisions, degraded state handling, memory/telemetry write hooks, forbidden import architecture tests |
+| Sprint 4 | Not Started | TBD | TBD | Generation/review/rollback - artifact content repository, real diff engine, review state machine, structured user edits, rollback restore path, UI review flow |
+| Sprint 5 | Not Started | TBD | TBD | Canvas/page/import/preview - page artifact contract, operation log, import job lifecycle, residual island review, preview trust enforcement, canvas/page e2e |
+| Sprint 6 | Not Started | TBD | TBD | UI polish, observability, cleanup - dashboard simplification, phase cockpit consistency, audit/metrics dashboards, security hardening, remove legacy code/docs, final regression suite |
 
 ---
 

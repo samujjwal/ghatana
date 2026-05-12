@@ -129,7 +129,7 @@ class PhrPackContractTest {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
             BoundaryPolicyRule readRule = rules.stream()
                     .filter(r -> r.getActions().contains("read")
-                            && r.getResourcePattern().startsWith("subject-records"))
+                            && r.getResourcePattern().startsWith("phr:subject-records"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No subject-record read rule found"));
 
@@ -147,7 +147,7 @@ class PhrPackContractTest {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
             BoundaryPolicyRule exportRule = rules.stream()
                     .filter(r -> r.getActions().contains("export")
-                            && r.getResourcePattern().startsWith("clinical-documents"))
+                            && r.getResourcePattern().startsWith("phr:clinical-documents"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No clinical-document export rule found"));
 
@@ -160,7 +160,7 @@ class PhrPackContractTest {
         @DisplayName("subject-record writes require approval and audit")
         void subjectRecordWritesRequireApprovalAndAudit() {
             BoundaryPolicyRule writeRule = store.loadRules(anyContext).stream()
-                    .filter(r -> r.getResourcePattern().startsWith("subject-records")
+                    .filter(r -> r.getResourcePattern().startsWith("phr:subject-records")
                             && r.getActions().contains("write"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError("No subject-record write rule found"));

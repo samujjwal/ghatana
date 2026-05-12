@@ -3072,7 +3072,7 @@ paths:
     post:
       tags: [run]
       summary: Execute a run with embedded observation collection
-      operationId: RunWithObservation
+      operationId: runWithObservation
       parameters:
         - name: X-Tenant-ID
           in: header

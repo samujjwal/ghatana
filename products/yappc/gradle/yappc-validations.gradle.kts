@@ -709,66 +709,69 @@ tasks.register("validateLifecycleConfig") {
 // Validates canonical-workflows.yaml stage references resolve to known stages
 // ============================================================================
 tasks.register("validateWorkflowConfig") {
-    description = "Validates canonical-workflows.yaml stage references resolve to known lifecycle stages"
+    description = "Validates canonical-workflows.yaml stage references resolve to known stages"
     group = "verification"
 
+    val workflowFile = layout.projectDirectory.file("config/canonical-workflows.yaml").asFile
     val stagesFile = layout.projectDirectory.file("config/lifecycle/stages.yaml").asFile
-    val workflowFile = layout.projectDirectory.file("config/workflows/canonical-workflows.yaml").asFile
 
     doLast {
         val yaml = org.yaml.snakeyaml.Yaml()
         var errors = 0
 
-        if (!stagesFile.exists())
-            throw GradleException("config/lifecycle/stages.yaml not found — run validateLifecycleConfig first")
+        if (!stagesFile.exists()) throw GradleException("config/lifecycle/stages.yaml not found")
 
         @Suppress("UNCHECKED_CAST")
-        val knownStageIds = ((yaml.load<Map<String, Any>>(stagesFile.readText())
-            ?.get("stages") as? List<Map<String, Any>>) ?: emptyList())
-            .mapNotNull { it["id"]?.toString()?.trim() }.toSet()
-
-        if (!workflowFile.exists())
-            throw GradleException("config/workflows/canonical-workflows.yaml not found")
-
-        @Suppress("UNCHECKED_CAST")
-        val workflowDoc = yaml.load<Map<String, Any>>(workflowFile.readText())
-        @Suppress("UNCHECKED_CAST")
-        val workflowsList = when (val wfl = workflowDoc?.get("workflows")) {
-            is List<*> -> wfl.filterIsInstance<Map<String, Any>>()
-            is Map<*, *> -> (wfl as Map<String, Map<String, Any>>).values.toList()
-            else -> {
-                val entries = workflowDoc?.entries ?: emptySet()
-                entries.mapNotNull { entry ->
-                    @Suppress("UNCHECKED_CAST")
-                    (entry.value as? Map<String, Any>)
-                }
-            }
+        val stagesList = (yaml.load<Map<String, Any>>(stagesFile.readText())
+            ?.get("stages") as? List<Map<String, Any>>) ?: emptyList()
+        val knownStageIds = mutableSetOf<String>()
+        stagesList.forEach { stage ->
+            val id = stage["id"]?.toString()?.trim()
+            if (id.isNullOrBlank()) { println("ERROR: stages.yaml entry missing 'id' field"); errors++ }
+            else if (!knownStageIds.add(id)) { println("ERROR: Duplicate stage id '$id' in stages.yaml"); errors++ }
         }
 
-        println("Validating ${workflowsList.size} canonical workflows...")
+        if (!workflowFile.exists()) throw GradleException("config/canonical-workflows.yaml not found")
 
-        workflowsList.forEachIndexed { idx, wf ->
-            val wfId = wf["id"]?.toString() ?: wf["name"]?.toString() ?: "#$idx"
-            listOf("id", "name").forEach { field ->
-                if (!wf.containsKey(field)) println("WARNING: workflow '$wfId' missing recommended field: $field")
-            }
+        @Suppress("UNCHECKED_CAST")
+        val workflows = (yaml.load<Map<String, Any>>(workflowFile.readText())
+            ?.get("workflows") as? List<Map<String, Any>>) ?: emptyList()
 
+        workflows.forEachIndexed { idx, workflow ->
             @Suppress("UNCHECKED_CAST")
-            val steps = (wf["stages"] ?: wf["steps"] ?: wf["phases"]) as? List<*> ?: emptyList<Any>()
-            steps.forEachIndexed { si, step ->
-                val stageRef = when (step) {
-                    is Map<*, *> -> step["stage"]?.toString() ?: step["id"]?.toString()
-                    is String    -> step
-                    else         -> null
-                }
-                if (stageRef != null && stageRef !in knownStageIds) {
-                    println("ERROR: workflow '$wfId' step[$si] references unknown stage: $stageRef"); errors++
+            val stages = (workflow["stages"] as? List<String>) ?: emptyList()
+            stages.forEach { stage ->
+                if (stage !in knownStageIds) {
+                    println("ERROR: workflow #$idx references unknown stage: $stage")
+                    errors++
                 }
             }
         }
 
         if (errors > 0) throw GradleException("Workflow config validation failed with $errors error(s)")
-        println("Workflow config validation PASSED: ${workflowsList.size} workflows, 0 errors")
+        println("Workflow config validation PASSED: ${workflows.size} workflows, 0 errors")
+    }
+}
+
+// ============================================================================
+// Route Manifest Validation Task
+// Validates route-manifest.yaml structure and OpenAPI parity
+// ============================================================================
+tasks.register<Exec>("validateRouteManifest") {
+    description = "Validates route-manifest.yaml structure and OpenAPI parity"
+    group = "verification"
+
+    val scriptFile = layout.projectDirectory.file("scripts/validate-openapi-parity.py").asFile
+
+    inputs.file(scriptFile)
+    inputs.file(layout.projectDirectory.file("docs/api/route-manifest.yaml"))
+    inputs.file(layout.projectDirectory.file("docs/api/openapi.yaml"))
+
+    commandLine("python", scriptFile.absolutePath)
+    workingDir(layout.projectDirectory.asFile)
+
+    doLast {
+        println("Route manifest validation PASSED")
     }
 }
 
@@ -828,5 +831,6 @@ tasks.findByName("check")?.dependsOn(
     "validatePipelines",
     "validateLifecycleConfig",
     "validateWorkflowConfig",
+    "validateRouteManifest",
     "validatePolicyConfig"
 )

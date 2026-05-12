@@ -3,7 +3,7 @@ package com.ghatana.yappc.api.generated;
 /**
  * AUTO-GENERATED - DO NOT EDIT
  * Generated from docs/api/route-manifest.yaml
- * Run: ./gradlew :products:yappc:generateRouteRegistry
+ * Run: python scripts/generate-route-registry.py
  */
 import com.ghatana.yappc.governance.route.AuthMode;
 import com.ghatana.yappc.governance.route.Boundary;
@@ -20,7 +20,8 @@ public final class GeneratedRouteRegistry {
         initializeManifest();
     }
     
-    private static void initializeManifest() {        MANIFEST.addRoute("yappc-services", new RouteEntry(
+    private static void initializeManifest() {
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/health",
             AuthMode.PUBLIC,
@@ -30,7 +31,8 @@ public final class GeneratedRouteRegistry {
             "liveness",
             "LIVENESS_CHECK",
             PrivacyClassification.PUBLIC
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/yappc/info",
             AuthMode.PUBLIC,
@@ -40,7 +42,8 @@ public final class GeneratedRouteRegistry {
             "serviceInfo",
             "SERVICE_INFO_READ",
             PrivacyClassification.PUBLIC
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/intent/capture",
             AuthMode.REQUIRED,
@@ -50,7 +53,8 @@ public final class GeneratedRouteRegistry {
             "captureIntent",
             "INTENT_CAPTURE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/intent/analyze",
             AuthMode.REQUIRED,
@@ -60,7 +64,8 @@ public final class GeneratedRouteRegistry {
             "analyzeIntent",
             "INTENT_ANALYZE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/yappc/intent/{id}",
             AuthMode.REQUIRED,
@@ -70,7 +75,8 @@ public final class GeneratedRouteRegistry {
             "getIntent",
             "INTENT_READ",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/shape/derive",
             AuthMode.REQUIRED,
@@ -80,7 +86,8 @@ public final class GeneratedRouteRegistry {
             "deriveShape",
             "SHAPE_DERIVE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/shape/model",
             AuthMode.REQUIRED,
@@ -90,7 +97,8 @@ public final class GeneratedRouteRegistry {
             "modelShape",
             "SHAPE_MODEL",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/yappc/shape/{id}",
             AuthMode.REQUIRED,
@@ -100,7 +108,8 @@ public final class GeneratedRouteRegistry {
             "getShape",
             "SHAPE_READ",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/validate",
             AuthMode.REQUIRED,
@@ -110,7 +119,8 @@ public final class GeneratedRouteRegistry {
             "validateArtifacts",
             "VALIDATE_ARTIFACTS",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/validate/with-config",
             AuthMode.REQUIRED,
@@ -120,7 +130,8 @@ public final class GeneratedRouteRegistry {
             "validateWithConfig",
             "VALIDATE_WITH_CONFIG",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/validate/with-policy",
             AuthMode.REQUIRED,
@@ -130,7 +141,8 @@ public final class GeneratedRouteRegistry {
             "validateWithPolicy",
             "VALIDATE_WITH_POLICY",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/generate",
             AuthMode.REQUIRED,
@@ -140,7 +152,8 @@ public final class GeneratedRouteRegistry {
             "generateArtifacts",
             "GENERATE_ARTIFACTS",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/generate/diff",
             AuthMode.REQUIRED,
@@ -150,7 +163,8 @@ public final class GeneratedRouteRegistry {
             "generateDiff",
             "GENERATE_DIFF",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/yappc/generate/artifacts/{id}",
             AuthMode.REQUIRED,
@@ -160,7 +174,8 @@ public final class GeneratedRouteRegistry {
             "getArtifacts",
             "ARTIFACTS_READ",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/run",
             AuthMode.REQUIRED,
@@ -170,17 +185,19 @@ public final class GeneratedRouteRegistry {
             "runArtifacts",
             "RUN_ARTIFACTS",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/run/with-observation",
             AuthMode.REQUIRED,
             Set.of("project:write"),
             "yappc-services",
             Boundary.YAPPC,
-            "RunWithObservation",
+            "runWithObservation",
             "RUN_WITH_OBSERVATION",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/run/rollback",
             AuthMode.REQUIRED,
@@ -190,7 +207,8 @@ public final class GeneratedRouteRegistry {
             "rollbackRun",
             "RUN_ROLLBACK",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/run/promote",
             AuthMode.REQUIRED,
@@ -200,7 +218,8 @@ public final class GeneratedRouteRegistry {
             "promoteRun",
             "RUN_PROMOTE",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/observe",
             AuthMode.REQUIRED,
@@ -210,7 +229,8 @@ public final class GeneratedRouteRegistry {
             "observeRun",
             "OBSERVE_RUN",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/learn",
             AuthMode.REQUIRED,
@@ -220,7 +240,8 @@ public final class GeneratedRouteRegistry {
             "learnFromRun",
             "LEARN_FROM_RUN",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/learn/with-context",
             AuthMode.REQUIRED,
@@ -230,7 +251,8 @@ public final class GeneratedRouteRegistry {
             "learnWithContext",
             "LEARN_WITH_CONTEXT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/evolve",
             AuthMode.REQUIRED,
@@ -240,7 +262,8 @@ public final class GeneratedRouteRegistry {
             "evolveSystem",
             "EVOLVE_SYSTEM",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/evolve/with-constraints",
             AuthMode.REQUIRED,
@@ -250,7 +273,8 @@ public final class GeneratedRouteRegistry {
             "evolveWithConstraints",
             "EVOLVE_WITH_CONSTRAINTS",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/lifecycle/execute",
             AuthMode.REQUIRED,
@@ -260,7 +284,8 @@ public final class GeneratedRouteRegistry {
             "executeLifecycle",
             "LIFECYCLE_EXECUTE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/graph/ingest",
             AuthMode.REQUIRED,
@@ -270,7 +295,8 @@ public final class GeneratedRouteRegistry {
             "ingestArtifactGraph",
             "ARTIFACT_GRAPH_INGEST",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/graph/analyze",
             AuthMode.REQUIRED,
@@ -280,7 +306,8 @@ public final class GeneratedRouteRegistry {
             "analyzeArtifactGraph",
             "ARTIFACT_GRAPH_ANALYZE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/graph/merge",
             AuthMode.REQUIRED,
@@ -290,7 +317,8 @@ public final class GeneratedRouteRegistry {
             "mergeArtifactGraph",
             "ARTIFACT_GRAPH_MERGE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/graph/query",
             AuthMode.REQUIRED,
@@ -300,7 +328,8 @@ public final class GeneratedRouteRegistry {
             "queryArtifactGraph",
             "ARTIFACT_GRAPH_QUERY",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/residual/analyze",
             AuthMode.REQUIRED,
@@ -310,7 +339,8 @@ public final class GeneratedRouteRegistry {
             "analyzeResidual",
             "RESIDUAL_ANALYZE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/artifact/import-source",
             AuthMode.REQUIRED,
@@ -320,7 +350,8 @@ public final class GeneratedRouteRegistry {
             "importSource",
             "SOURCE_IMPORT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/preview/session/create",
             AuthMode.REQUIRED,
@@ -330,7 +361,8 @@ public final class GeneratedRouteRegistry {
             "createPreviewSession",
             "PREVIEW_SESSION_CREATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/preview/session/validate",
             AuthMode.REQUIRED,
@@ -340,7 +372,8 @@ public final class GeneratedRouteRegistry {
             "validatePreviewSession",
             "PREVIEW_SESSION_VALIDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/capabilities",
             AuthMode.REQUIRED,
@@ -350,7 +383,8 @@ public final class GeneratedRouteRegistry {
             "queryCapabilities",
             "CAPABILITIES_QUERY",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/capabilities",
             AuthMode.REQUIRED,
@@ -360,7 +394,8 @@ public final class GeneratedRouteRegistry {
             "getCapabilities",
             "CAPABILITIES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/phase/packet",
             AuthMode.REQUIRED,
@@ -370,7 +405,8 @@ public final class GeneratedRouteRegistry {
             "requestPhasePacket",
             "PHASE_PACKET_REQUEST",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/phase/packet",
             AuthMode.REQUIRED,
@@ -380,7 +416,8 @@ public final class GeneratedRouteRegistry {
             "getPhasePacket",
             "PHASE_PACKET_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-services", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/dashboard/actions",
             AuthMode.REQUIRED,
@@ -390,7 +427,8 @@ public final class GeneratedRouteRegistry {
             "requestDashboardActions",
             "DASHBOARD_ACTIONS_REQUEST",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/dashboard/actions",
             AuthMode.REQUIRED,
@@ -400,7 +438,8 @@ public final class GeneratedRouteRegistry {
             "getDashboardActions",
             "DASHBOARD_ACTIONS_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/search",
             AuthMode.REQUIRED,
@@ -410,7 +449,8 @@ public final class GeneratedRouteRegistry {
             "vectorSearch",
             "VECTOR_SEARCH",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/search/hybrid",
             AuthMode.REQUIRED,
@@ -420,7 +460,8 @@ public final class GeneratedRouteRegistry {
             "vectorSearchHybrid",
             "VECTOR_SEARCH_HYBRID",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/vector/similar/{id}",
             AuthMode.REQUIRED,
@@ -430,7 +471,8 @@ public final class GeneratedRouteRegistry {
             "vectorSimilar",
             "VECTOR_SIMILAR",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/index",
             AuthMode.REQUIRED,
@@ -440,7 +482,8 @@ public final class GeneratedRouteRegistry {
             "vectorIndex",
             "VECTOR_INDEX",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/index/batch",
             AuthMode.REQUIRED,
@@ -450,7 +493,8 @@ public final class GeneratedRouteRegistry {
             "vectorIndexBatch",
             "VECTOR_INDEX_BATCH",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "DELETE",
             "/api/v1/vector/index/{id}",
             AuthMode.REQUIRED,
@@ -460,7 +504,8 @@ public final class GeneratedRouteRegistry {
             "vectorIndexDelete",
             "VECTOR_INDEX_DELETE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/rag",
             AuthMode.REQUIRED,
@@ -470,7 +515,8 @@ public final class GeneratedRouteRegistry {
             "vectorRag",
             "VECTOR_RAG",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/vector/rag/chat",
             AuthMode.REQUIRED,
@@ -480,7 +526,8 @@ public final class GeneratedRouteRegistry {
             "vectorRagChat",
             "VECTOR_RAG_CHAT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents",
             AuthMode.REQUIRED,
@@ -490,7 +537,8 @@ public final class GeneratedRouteRegistry {
             "listAgents",
             "AGENTS_LIST",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents/health",
             AuthMode.PUBLIC,
@@ -500,7 +548,8 @@ public final class GeneratedRouteRegistry {
             "agentsHealth",
             "AGENTS_HEALTH",
             PrivacyClassification.PUBLIC
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents/capabilities",
             AuthMode.REQUIRED,
@@ -510,7 +559,8 @@ public final class GeneratedRouteRegistry {
             "agentsCapabilities",
             "AGENTS_CAPABILITIES",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents/by-capability/{capability}",
             AuthMode.REQUIRED,
@@ -520,7 +570,8 @@ public final class GeneratedRouteRegistry {
             "agentsByCapability",
             "AGENTS_BY_CAPABILITY",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents/{name}",
             AuthMode.REQUIRED,
@@ -530,7 +581,8 @@ public final class GeneratedRouteRegistry {
             "getAgent",
             "AGENT_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/agents/{name}/health",
             AuthMode.PUBLIC,
@@ -540,7 +592,8 @@ public final class GeneratedRouteRegistry {
             "agentHealth",
             "AGENT_HEALTH",
             PrivacyClassification.PUBLIC
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/agents/{name}/execute",
             AuthMode.REQUIRED,
@@ -550,7 +603,8 @@ public final class GeneratedRouteRegistry {
             "executeAgent",
             "AGENTS_EXECUTE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/agents/copilot/chat",
             AuthMode.REQUIRED,
@@ -560,7 +614,8 @@ public final class GeneratedRouteRegistry {
             "copilotChat",
             "COPILOT_CHAT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/agents/search",
             AuthMode.REQUIRED,
@@ -570,7 +625,8 @@ public final class GeneratedRouteRegistry {
             "searchAgents",
             "AGENTS_SEARCH",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/agents/predict",
             AuthMode.REQUIRED,
@@ -580,7 +636,8 @@ public final class GeneratedRouteRegistry {
             "predictAgent",
             "AGENTS_PREDICT",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows",
             AuthMode.REQUIRED,
@@ -590,7 +647,8 @@ public final class GeneratedRouteRegistry {
             "createWorkflow",
             "WORKFLOW_CREATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/workflows",
             AuthMode.REQUIRED,
@@ -600,7 +658,8 @@ public final class GeneratedRouteRegistry {
             "listWorkflows",
             "WORKFLOW_LIST",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "GET",
             "/api/v1/workflows/{id}",
             AuthMode.REQUIRED,
@@ -610,7 +669,8 @@ public final class GeneratedRouteRegistry {
             "getWorkflow",
             "WORKFLOW_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "DELETE",
             "/api/v1/workflows/{id}",
             AuthMode.REQUIRED,
@@ -620,7 +680,8 @@ public final class GeneratedRouteRegistry {
             "deleteWorkflow",
             "WORKFLOW_DELETE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/start",
             AuthMode.REQUIRED,
@@ -630,7 +691,8 @@ public final class GeneratedRouteRegistry {
             "startWorkflow",
             "WORKFLOW_START",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/pause",
             AuthMode.REQUIRED,
@@ -640,7 +702,8 @@ public final class GeneratedRouteRegistry {
             "pauseWorkflow",
             "WORKFLOW_PAUSE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/resume",
             AuthMode.REQUIRED,
@@ -650,7 +713,8 @@ public final class GeneratedRouteRegistry {
             "resumeWorkflow",
             "WORKFLOW_RESUME",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/cancel",
             AuthMode.REQUIRED,
@@ -660,7 +724,8 @@ public final class GeneratedRouteRegistry {
             "cancelWorkflow",
             "WORKFLOW_CANCEL",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/steps/advance",
             AuthMode.REQUIRED,
@@ -670,7 +735,8 @@ public final class GeneratedRouteRegistry {
             "advanceWorkflowStep",
             "WORKFLOW_STEP_ADVANCE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/steps/{stepId}/goto",
             AuthMode.REQUIRED,
@@ -680,7 +746,8 @@ public final class GeneratedRouteRegistry {
             "gotoWorkflowStep",
             "WORKFLOW_STEP_GOTO",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/plans/generate",
             AuthMode.REQUIRED,
@@ -690,7 +757,8 @@ public final class GeneratedRouteRegistry {
             "generateWorkflowPlan",
             "WORKFLOW_PLAN_GENERATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{workflowId}/plans/{planId}/approve",
             AuthMode.REQUIRED,
@@ -700,7 +768,8 @@ public final class GeneratedRouteRegistry {
             "approveWorkflowPlan",
             "WORKFLOW_PLAN_APPROVE",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{workflowId}/plans/{planId}/reject",
             AuthMode.REQUIRED,
@@ -710,7 +779,8 @@ public final class GeneratedRouteRegistry {
             "rejectWorkflowPlan",
             "WORKFLOW_PLAN_REJECT",
             PrivacyClassification.RESTRICTED
-        ));        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "PUT",
             "/api/v1/workflows/{workflowId}/plans/{planId}/steps",
             AuthMode.REQUIRED,
@@ -720,7 +790,8 @@ public final class GeneratedRouteRegistry {
             "updateWorkflowPlanSteps",
             "WORKFLOW_PLAN_STEPS_UPDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/route",
             AuthMode.REQUIRED,
@@ -730,7 +801,8 @@ public final class GeneratedRouteRegistry {
             "routeWorkflow",
             "WORKFLOW_ROUTE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs",
             AuthMode.REQUIRED,
@@ -740,7 +812,8 @@ public final class GeneratedRouteRegistry {
             "listPacks",
             "PACK_LIST",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/languages",
             AuthMode.REQUIRED,
@@ -750,7 +823,8 @@ public final class GeneratedRouteRegistry {
             "getPackLanguages",
             "PACK_LANGUAGES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/categories",
             AuthMode.REQUIRED,
@@ -760,7 +834,8 @@ public final class GeneratedRouteRegistry {
             "getPackCategories",
             "PACK_CATEGORIES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/platforms",
             AuthMode.REQUIRED,
@@ -770,7 +845,8 @@ public final class GeneratedRouteRegistry {
             "getPackPlatforms",
             "PACK_PLATFORMS_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/packs/refresh",
             AuthMode.REQUIRED,
@@ -780,7 +856,8 @@ public final class GeneratedRouteRegistry {
             "refreshPacks",
             "PACKS_REFRESH",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/{name}",
             AuthMode.REQUIRED,
@@ -790,7 +867,8 @@ public final class GeneratedRouteRegistry {
             "getPack",
             "PACK_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/{name}/validate",
             AuthMode.REQUIRED,
@@ -800,7 +878,8 @@ public final class GeneratedRouteRegistry {
             "validatePack",
             "PACK_VALIDATE",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/{name}/templates",
             AuthMode.REQUIRED,
@@ -810,7 +889,8 @@ public final class GeneratedRouteRegistry {
             "getPackTemplates",
             "PACK_TEMPLATES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/packs/{name}/variables",
             AuthMode.REQUIRED,
@@ -820,7 +900,8 @@ public final class GeneratedRouteRegistry {
             "getPackVariables",
             "PACK_VARIABLES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects",
             AuthMode.REQUIRED,
@@ -830,7 +911,8 @@ public final class GeneratedRouteRegistry {
             "createScaffoldProject",
             "SCAFFOLD_CREATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects/add-feature",
             AuthMode.REQUIRED,
@@ -840,7 +922,8 @@ public final class GeneratedRouteRegistry {
             "addFeatureToProject",
             "SCAFFOLD_ADD_FEATURE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects/update",
             AuthMode.REQUIRED,
@@ -850,7 +933,8 @@ public final class GeneratedRouteRegistry {
             "updateScaffoldProject",
             "SCAFFOLD_UPDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/scaffold/projects/info",
             AuthMode.REQUIRED,
@@ -860,7 +944,8 @@ public final class GeneratedRouteRegistry {
             "getScaffoldProjectInfo",
             "SCAFFOLD_INFO_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/scaffold/projects/state",
             AuthMode.REQUIRED,
@@ -870,7 +955,8 @@ public final class GeneratedRouteRegistry {
             "getScaffoldProjectState",
             "SCAFFOLD_STATE_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/scaffold/projects/validate",
             AuthMode.REQUIRED,
@@ -880,7 +966,8 @@ public final class GeneratedRouteRegistry {
             "validateScaffoldProject",
             "SCAFFOLD_VALIDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/scaffold/projects/check-updates",
             AuthMode.REQUIRED,
@@ -890,7 +977,8 @@ public final class GeneratedRouteRegistry {
             "checkScaffoldUpdates",
             "SCAFFOLD_CHECK_UPDATES",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects/preview-update",
             AuthMode.REQUIRED,
@@ -900,7 +988,8 @@ public final class GeneratedRouteRegistry {
             "previewScaffoldUpdate",
             "SCAFFOLD_PREVIEW_UPDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/scaffold/projects/features",
             AuthMode.REQUIRED,
@@ -910,7 +999,8 @@ public final class GeneratedRouteRegistry {
             "getScaffoldFeatures",
             "SCAFFOLD_FEATURES_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects/export",
             AuthMode.REQUIRED,
@@ -920,7 +1010,8 @@ public final class GeneratedRouteRegistry {
             "exportScaffoldProject",
             "SCAFFOLD_EXPORT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/scaffold/projects/import",
             AuthMode.REQUIRED,
@@ -930,7 +1021,8 @@ public final class GeneratedRouteRegistry {
             "importScaffoldProject",
             "SCAFFOLD_IMPORT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/templates/render",
             AuthMode.REQUIRED,
@@ -940,7 +1032,8 @@ public final class GeneratedRouteRegistry {
             "renderTemplate",
             "TEMPLATE_RENDER",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/templates/helpers",
             AuthMode.REQUIRED,
@@ -950,7 +1043,8 @@ public final class GeneratedRouteRegistry {
             "getTemplateHelpers",
             "TEMPLATE_HELPERS_GET",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/templates/validate",
             AuthMode.REQUIRED,
@@ -960,7 +1054,8 @@ public final class GeneratedRouteRegistry {
             "validateTemplate",
             "TEMPLATE_VALIDATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "GET",
             "/api/v1/dependencies/analyze/pack/{name}",
             AuthMode.REQUIRED,
@@ -970,7 +1065,8 @@ public final class GeneratedRouteRegistry {
             "analyzePackDependencies",
             "DEPENDENCY_ANALYZE_PACK",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/dependencies/analyze/project",
             AuthMode.REQUIRED,
@@ -980,7 +1076,8 @@ public final class GeneratedRouteRegistry {
             "analyzeProjectDependencies",
             "DEPENDENCY_ANALYZE_PROJECT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/dependencies/conflicts",
             AuthMode.REQUIRED,
@@ -990,7 +1087,8 @@ public final class GeneratedRouteRegistry {
             "detectDependencyConflicts",
             "DEPENDENCY_CONFLICTS_DETECT",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/api/v1/dependencies/add-conflicts",
             AuthMode.REQUIRED,
@@ -1000,7 +1098,8 @@ public final class GeneratedRouteRegistry {
             "addDependencyConflicts",
             "DEPENDENCY_CONFLICTS_ADD",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/api/v1/jobs",
             AuthMode.REQUIRED,
@@ -1010,7 +1109,8 @@ public final class GeneratedRouteRegistry {
             "createRefactorJob",
             "REFACTOR_JOB_CREATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/api/v1/jobs/{jobId}",
             AuthMode.REQUIRED,
@@ -1020,7 +1120,8 @@ public final class GeneratedRouteRegistry {
             "getRefactorJob",
             "REFACTOR_JOB_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "DELETE",
             "/api/v1/jobs/{jobId}",
             AuthMode.REQUIRED,
@@ -1030,7 +1131,8 @@ public final class GeneratedRouteRegistry {
             "deleteRefactorJob",
             "REFACTOR_JOB_DELETE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/api/v1/jobs/{jobId}/report",
             AuthMode.REQUIRED,
@@ -1040,7 +1142,8 @@ public final class GeneratedRouteRegistry {
             "getRefactorJobReport",
             "REFACTOR_JOB_REPORT_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/api/v1/jobs/{jobId}/start",
             AuthMode.REQUIRED,
@@ -1050,7 +1153,8 @@ public final class GeneratedRouteRegistry {
             "startRefactorJob",
             "REFACTOR_JOB_START",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/api/v1/jobs/{jobId}/stop",
             AuthMode.REQUIRED,
@@ -1060,7 +1164,8 @@ public final class GeneratedRouteRegistry {
             "stopRefactorJob",
             "REFACTOR_JOB_STOP",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/api/v1/jobs/{jobId}/runs",
             AuthMode.REQUIRED,
@@ -1070,7 +1175,8 @@ public final class GeneratedRouteRegistry {
             "createRefactorJobRun",
             "REFACTOR_JOB_RUN_CREATE",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/api/v1/jobs/{jobId}/runs",
             AuthMode.REQUIRED,
@@ -1080,7 +1186,8 @@ public final class GeneratedRouteRegistry {
             "listRefactorJobRuns",
             "REFACTOR_JOB_RUNS_LIST",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/api/v1/jobs/{jobId}/runs/{runId}",
             AuthMode.REQUIRED,
@@ -1090,7 +1197,8 @@ public final class GeneratedRouteRegistry {
             "getRefactorJobRun",
             "REFACTOR_JOB_RUN_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/api/v1/jobs/{jobId}/runs/{runId}/logs",
             AuthMode.REQUIRED,
@@ -1100,7 +1208,8 @@ public final class GeneratedRouteRegistry {
             "getRefactorJobRunLogs",
             "REFACTOR_JOB_RUN_LOGS_GET",
             PrivacyClassification.CONFIDENTIAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "POST",
             "/v1/diagnose",
             AuthMode.REQUIRED,
@@ -1110,7 +1219,8 @@ public final class GeneratedRouteRegistry {
             "diagnoseRefactorer",
             "REFACTORER_DIAGNOSE",
             PrivacyClassification.INTERNAL
-        ));        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        ));
+        MANIFEST.addRoute("refactorer-api", new RouteEntry(
             "GET",
             "/v1/config",
             AuthMode.PUBLIC,

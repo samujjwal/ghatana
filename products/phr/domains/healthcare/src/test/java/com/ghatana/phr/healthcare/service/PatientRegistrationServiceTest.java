@@ -4,6 +4,7 @@ import com.ghatana.phr.healthcare.domain.DataClassification;
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
 import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -284,6 +286,21 @@ class PatientRegistrationServiceTest extends EventloopTestBase {
         public Promise<Void> record(AuditEvent event) {
             events.add(event);
             return Promise.complete();
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> query(AuditQuery query) {
+            return Promise.of(new ArrayList<>());
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+            return Promise.of(new ArrayList<>());
+        }
+
+        @Override
+        public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+            return Promise.of(new ArrayList<>());
         }
     }
 }

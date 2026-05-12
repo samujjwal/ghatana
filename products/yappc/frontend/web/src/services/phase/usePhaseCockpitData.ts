@@ -112,7 +112,9 @@ export function usePhaseCockpitData({
       }
 
       if (!workspaceId) {
-        throw new Error('Workspace context is required - project snapshot fetch must be scoped (TODO-001)');
+        throw new Error(
+          'Workspace context is required. Please access this project from within a workspace.'
+        );
       }
       return fetchProjectSnapshot(projectId, workspaceId);
     },

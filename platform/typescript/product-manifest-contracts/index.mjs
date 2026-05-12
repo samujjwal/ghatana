@@ -189,3 +189,49 @@ export function validatePolicyVocabulary({ manifest, registry }) {
 
   return violations;
 }
+
+export function validateProductIdentityAlignment({ product, manifest }) {
+  const violations = [];
+
+  const manifestId = manifest.id;
+  const manifestProduct = manifest.product;
+
+  if (!manifestId) {
+    violations.push('manifest must declare an id field');
+    return violations;
+  }
+
+  if (manifestProduct && manifestProduct !== product) {
+    violations.push(
+      `manifest declares product '${manifestProduct}' but product registry key is '${product}'; these must match for canonical identity`,
+    );
+  }
+
+  if (manifestId !== product) {
+    violations.push(
+      `manifest id '${manifestId}' must match the canonical product registry key '${product}' for identity alignment`,
+    );
+  }
+
+  return violations;
+}
+
+export function validatePolicyResourcesVocabulary({ manifest, registry }) {
+  const violations = [];
+  const canonicalResources = new Set(registry.policyResources?.canonical ?? []);
+  const resourceNamespaces = new Set(registry.policyResources?.extensionNamespaces ?? []);
+
+  for (const resource of manifest.policyResources ?? []) {
+    if (canonicalResources.has(resource)) {
+      continue;
+    }
+    const namespace = resource.includes(':') ? resource.split(':')[0] : undefined;
+    if (!namespace || !resourceNamespaces.has(namespace) || !namespacedPolicyPattern.test(resource)) {
+      violations.push(
+        `policyResources entry '${resource}' must be canonical or namespaced as '<product>:<resource>'`,
+      );
+    }
+  }
+
+  return violations;
+}

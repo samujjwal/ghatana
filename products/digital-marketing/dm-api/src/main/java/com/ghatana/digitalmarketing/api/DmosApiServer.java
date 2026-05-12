@@ -98,14 +98,19 @@ import com.ghatana.plugin.audit.impl.DurableAuditTrailPlugin;
 import com.ghatana.plugin.audit.impl.StandardAuditTrailPlugin;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import com.ghatana.plugin.compliance.impl.StandardCompliancePlugin;
+import com.ghatana.plugin.risk.RiskManagementPlugin;
+import com.ghatana.plugin.risk.impl.StandardRiskManagementPlugin;
+import com.ghatana.plugin.notification.NotificationPlugin;
+import com.ghatana.platform.cache.IdentityAwareBoundedCache;
+import com.ghatana.platform.http.security.ProductEntitlementContext;
+import com.ghatana.platform.http.security.RoleEvaluator;
+import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
 import com.ghatana.plugin.consent.impl.StandardConsentPlugin;
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.notification.impl.DurableNotificationPlugin;
 import com.ghatana.plugin.notification.impl.InMemoryNotificationPlugin;
-import com.ghatana.plugin.risk.RiskManagementPlugin;
-import com.ghatana.plugin.risk.impl.StandardRiskManagementPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
 import com.ghatana.platform.security.encryption.HashingService;
@@ -1035,7 +1040,16 @@ public final class DmosApiServer extends Launcher {
 
         WorkspaceService workspaceService = get(WorkspaceService.class);
         register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop, httpContextFactory));
-        register(DmosRouteEntitlementServlet.class, new DmosRouteEntitlementServlet(eventloop));
+
+        // Instantiate entitlement dependencies
+        ProductEntitlementContext entitlementContext = new ProductEntitlementContext.FailClosed(
+            "system", "system", "admin", null, null, null);
+        RoleEvaluator roleEvaluator = new RoleEvaluator.FailClosed();
+        RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(roleEvaluator);
+        IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = 
+            new IdentityAwareBoundedCache<>(1000, 300000L);
+        register(DmosRouteEntitlementServlet.class, new DmosRouteEntitlementServlet(
+            eventloop, entitlementContext, roleEvaluator, routeEntitlementEvaluator, entitlementCache));
 
         DashboardSummaryService dashboardSummaryService = get(DashboardSummaryService.class);
         register(DmosDashboardServlet.class, new DmosDashboardServlet(dashboardSummaryService, eventloop, httpContextFactory));

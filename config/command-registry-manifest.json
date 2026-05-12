@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.ghatana.com/command-registry-manifest/v1",
+  "title": "Command Registry Manifest",
+  "description": "Manifest-driven command registry for root scripts organized by capability",
+  "type": "object",
+  "properties": {
+    "capabilities": {
+      "type": "array",
+      "description": "List of capabilities with their associated commands",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique capability identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable capability name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Capability description"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["conformance", "scaffolding", "validation", "documentation", "security", "testing", "architecture", "deployment"],
+            "description": "Category for grouping capabilities"
+          },
+          "commands": {
+            "type": "array",
+            "description": "Commands available in this capability",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Command name"
+                },
+                "script": {
+                  "type": "string",
+                  "description": "Script file to execute"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Command description"
+                },
+                "args": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Default arguments for the command"
+                }
+              },
+              "required": ["name", "script", "description"]
+            }
+          }
+        },
+        "required": ["id", "name", "description", "category", "commands"]
+      }
+    }
+  },
+  "required": ["capabilities"]
+}

@@ -4,8 +4,8 @@ import type {
   PhaseTransitionPreviewSnapshot,
   TenantTier,
 } from './types';
-import type { Project } from '@/lib/api/client';
-import { yappcApi } from '@/lib/api/client';
+import type { components } from '@/clients/generated/api';
+import { ProjectsService, PhasesService } from '@/clients/generated/api';
 
 export type LifecyclePhase =
   | 'INTENT'
@@ -175,12 +175,30 @@ export function normalizeProjectSnapshot(
   };
 }
 
+/**
+ * Error thrown when required scope context is missing
+ */
+export class MissingScopeContextError extends Error {
+  constructor(
+    readonly missingScope: 'workspaceId' | 'projectId' | 'tenantId',
+    readonly operation: string,
+  ) {
+    super(
+      `Missing required ${missingScope} for ${operation}. Please ensure you are accessing this resource from within the correct workspace context.`
+    );
+    this.name = 'MissingScopeContextError';
+  }
+}
+
 export async function fetchProjectSnapshot(
   projectId: string,
   workspaceId: string,
 ): Promise<PhaseProjectSnapshot> {
   if (!workspaceId) {
-    throw new Error('Workspace context is required - project access must be scoped (TODO-001)');
+    throw new MissingScopeContextError('workspaceId', 'fetchProjectSnapshot');
+  }
+  if (!projectId) {
+    throw new MissingScopeContextError('projectId', 'fetchProjectSnapshot');
   }
   const project = await yappcApi.projects.getScoped(projectId, workspaceId);
   return normalizeProjectSnapshot(project);
@@ -190,5 +208,5 @@ export async function fetchPhaseTransitionPreview(
   currentPhase: LifecyclePhase,
   projectId: string,
 ): Promise<PhaseTransitionPreviewSnapshot> {
-  return yappcApi.phases.next(currentPhase, projectId);
+  return PhasesService.getNextPhase({ currentPhase, projectId });
 }

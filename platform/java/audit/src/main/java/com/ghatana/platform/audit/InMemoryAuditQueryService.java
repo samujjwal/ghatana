@@ -55,6 +55,79 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
         return Promise.complete();
     }
 
+    // -------------------------------------------------------------------------
+    // AuditService — query convenience methods
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Promise<List<AuditEvent>> query(AuditQuery query) {
+        Objects.requireNonNull(query, "query cannot be null");
+
+        // Convert AuditQuery to AuditSearchCriteria
+        AuditQueryService.AuditSearchCriteria criteria = AuditQueryService.AuditSearchCriteria.builder()
+                .resourceType(query.resourceType())
+                .resourceId(query.resourceId())
+                .principal(query.principal())
+                .eventType(query.eventType())
+                .fromDate(query.startDate())
+                .toDate(query.endDate())
+                .success(query.success())
+                .offset(query.offset())
+                .limit(query.limit())
+                .build();
+
+        // Use tenantId from query, or fall back to filtering by projectId/phase in details
+        String tenantId = query.tenantId();
+        if (tenantId == null && query.projectId() != null) {
+            // If no tenantId but projectId, filter all events by projectId in details
+            return filterAllEvents(event ->
+                Objects.equals(query.projectId(), event.getDetail("projectId")) ||
+                Objects.equals(query.projectId(), event.getResourceId())
+            ).map(filtered -> filterByCriteriaSync(filtered, criteria));
+        }
+
+        if (tenantId == null) {
+            // If no tenantId and no projectId, return empty list
+            return Promise.of(List.of());
+        }
+
+        return search(tenantId, criteria);
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+        Objects.requireNonNull(projectId, "projectId cannot be null");
+        Objects.requireNonNull(startDate, "startDate cannot be null");
+        Objects.requireNonNull(endDate, "endDate cannot be null");
+
+        return filterAllEvents(event ->
+            Objects.equals(projectId, event.getDetail("projectId")) ||
+            Objects.equals(projectId, event.getResourceId())
+        ).map(events -> events.stream()
+                .filter(e -> e.getTimestamp() != null &&
+                        !e.getTimestamp().isBefore(startDate) &&
+                        !e.getTimestamp().isAfter(endDate))
+                .collect(Collectors.toList()));
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+        Objects.requireNonNull(projectId, "projectId cannot be null");
+        Objects.requireNonNull(phase, "phase cannot be null");
+        Objects.requireNonNull(startDate, "startDate cannot be null");
+        Objects.requireNonNull(endDate, "endDate cannot be null");
+
+        return filterAllEvents(event ->
+            (Objects.equals(projectId, event.getDetail("projectId")) ||
+             Objects.equals(projectId, event.getResourceId())) &&
+            Objects.equals(phase, event.getDetail("phase"))
+        ).map(events -> events.stream()
+                .filter(e -> e.getTimestamp() != null &&
+                        !e.getTimestamp().isBefore(startDate) &&
+                        !e.getTimestamp().isAfter(endDate))
+                .collect(Collectors.toList()));
+    }
+
     @Override
     public Promise<List<AuditEvent>> findByTenantId(String tenantId) {
         List<AuditEvent> events = eventsByTenant.getOrDefault(tenantId, List.of());
@@ -160,6 +233,53 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
             .filter(predicate)
             .collect(Collectors.toList());
         return Promise.of(filtered);
+    }
+
+    private Promise<List<AuditEvent>> filterAllEvents(java.util.function.Predicate<AuditEvent> predicate) {
+        List<AuditEvent> allEvents = eventsByTenant.values().stream()
+            .flatMap(List::stream)
+            .filter(predicate)
+            .collect(Collectors.toList());
+        return Promise.of(allEvents);
+    }
+
+    private Promise<List<AuditEvent>> filterByCriteria(List<AuditEvent> events, AuditQueryService.AuditSearchCriteria criteria) {
+        return Promise.of(filterByCriteriaSync(events, criteria));
+    }
+
+    private List<AuditEvent> filterByCriteriaSync(List<AuditEvent> events, AuditQueryService.AuditSearchCriteria criteria) {
+        Stream<AuditEvent> stream = events.stream();
+
+        // Apply filters
+        if (criteria.resourceType() != null) {
+            stream = stream.filter(e -> Objects.equals(criteria.resourceType(), e.getResourceType()));
+        }
+        if (criteria.resourceId() != null) {
+            stream = stream.filter(e -> Objects.equals(criteria.resourceId(), e.getResourceId()));
+        }
+        if (criteria.principal() != null) {
+            stream = stream.filter(e -> Objects.equals(criteria.principal(), e.getPrincipal()));
+        }
+        if (criteria.eventType() != null) {
+            stream = stream.filter(e -> Objects.equals(criteria.eventType(), e.getEventType()));
+        }
+        if (criteria.fromDate() != null) {
+            stream = stream.filter(e -> e.getTimestamp() != null && !e.getTimestamp().isBefore(criteria.fromDate()));
+        }
+        if (criteria.toDate() != null) {
+            stream = stream.filter(e -> e.getTimestamp() != null && !e.getTimestamp().isAfter(criteria.toDate()));
+        }
+        if (criteria.success() != null) {
+            stream = stream.filter(e -> Objects.equals(criteria.success(), e.getSuccess()));
+        }
+
+        // Apply pagination
+        List<AuditEvent> results = stream
+            .skip(criteria.offset())
+            .limit(criteria.limit())
+            .collect(Collectors.toList());
+
+        return results;
     }
 
     private String buildKey(String tenantId, String eventId) {

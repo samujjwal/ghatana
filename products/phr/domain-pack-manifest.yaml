@@ -86,9 +86,9 @@ pack:
     - export
     - download
   policyResources:
-    - subject-records
-    - interop
-    - clinical-documents
+    - phr:subject-records
+    - phr:interop
+    - phr:clinical-documents
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance

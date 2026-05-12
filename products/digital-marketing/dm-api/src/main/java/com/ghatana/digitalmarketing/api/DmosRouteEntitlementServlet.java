@@ -1,6 +1,11 @@
 package com.ghatana.digitalmarketing.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.cache.IdentityAwareBoundedCache;
+import com.ghatana.platform.http.security.ProductEntitlementContext;
+import com.ghatana.platform.http.security.ProductRouteEntitlement;
+import com.ghatana.platform.http.security.RoleEvaluator;
+import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -31,9 +36,17 @@ public final class DmosRouteEntitlementServlet {
     private static final RouteContract ROUTE_CONTRACT = loadRouteContract();
 
     private final Eventloop eventloop;
+    private final ProductEntitlementContext entitlementContext;
+    private final RoleEvaluator roleEvaluator;
+    private final RouteEntitlementEvaluator routeEntitlementEvaluator;
+    private final IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache;
 
-    public DmosRouteEntitlementServlet(Eventloop eventloop) {
+    public DmosRouteEntitlementServlet(Eventloop eventloop, ProductEntitlementContext entitlementContext, RoleEvaluator roleEvaluator, RouteEntitlementEvaluator routeEntitlementEvaluator, IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.entitlementContext = Objects.requireNonNull(entitlementContext, "entitlementContext must not be null");
+        this.roleEvaluator = Objects.requireNonNull(roleEvaluator, "roleEvaluator must not be null");
+        this.routeEntitlementEvaluator = Objects.requireNonNull(routeEntitlementEvaluator, "routeEntitlementEvaluator must not be null");
+        this.entitlementCache = Objects.requireNonNull(entitlementCache, "entitlementCache must not be null");
     }
 
     public AsyncServlet getServlet() {
@@ -43,58 +56,80 @@ public final class DmosRouteEntitlementServlet {
     }
 
     private Promise<HttpResponse> handleRouteEntitlements(HttpRequest request) {
-        String role = headerOrDefault(request, "X-Role", "viewer");
-        Map<String, Object> entitlement = Map.of(
-            "product", "digital-marketing",
-            "principalId", headerOrDefault(request, "X-Principal-ID", "anonymous"),
-            "tenantId", headerOrDefault(request, "X-Tenant-ID", "default"),
-            "role", role,
-            "persona", headerOrDefault(request, "X-Persona", "analyst"),
-            "tier", headerOrDefault(request, "X-Tier", "core"),
-            "routes", routesFor(role),
-            "actions", List.of(
-                action("view-dashboard", "View dashboard", "/workspaces/:workspaceId/dashboard"),
-                action("review-approval", "Review approval", "/workspaces/:workspaceId/approvals"),
-                action("view-audit-log", "View AI action log", "/workspaces/:workspaceId/ai-actions")
-            ),
-            "cards", List.of(
-                card("launch-readiness", "Launch readiness", "/workspaces/:workspaceId/dashboard"),
-                card("approval-queue", "Approval queue", "/workspaces/:workspaceId/approvals"),
-                card("workflow-health", "Workflow health", "/workspaces/:workspaceId/dashboard")
-            )
-        );
-        return jsonResponse(request, 200, entitlement);
-    }
-
-    private static List<Map<String, Object>> routesFor(String role) {
-        return ROUTE_CONTRACT.routes().stream()
-            .filter(route -> isRouteVisibleForRole(route.minimumRole(), role))
-            .map(DmosRouteEntitlementServlet::toRouteMap)
-            .toList();
-    }
-
-    private static boolean isRouteVisibleForRole(String minimumRole, String currentRole) {
-        return roleOrder(currentRole) >= roleOrder(minimumRole);
-    }
-
-    private static int roleOrder(String role) {
-        Integer value = ROUTE_CONTRACT.roleOrder().get(role);
-        return value == null ? 0 : value;
-    }
-
-    private static Map<String, Object> toRouteMap(RouteDefinition definition) {
-        Map<String, Object> route = new LinkedHashMap<>();
-        route.put("path", definition.path());
-        route.put("label", definition.label());
-        route.put("minimumRole", definition.minimumRole());
-        route.put("personas", definition.personas());
-        route.put("tiers", definition.tiers());
-        route.put("actions", definition.actions());
-        route.put("cards", definition.cards());
-        if (definition.capabilityKey() != null && !definition.capabilityKey().isBlank()) {
-            route.put("capabilityKey", definition.capabilityKey());
+        if (!entitlementContext.isAuthenticated()) {
+            return jsonResponse(request, 401, Map.of(
+                "error", "UNAUTHENTICATED",
+                "message", "Request must be authenticated to access route entitlements"
+            ));
         }
-        return route;
+
+        String principalId = entitlementContext.getPrincipalId();
+        String tenantId = entitlementContext.getTenantId();
+        String role = entitlementContext.getRole();
+        String cacheKey = "route-entitlements:" + role;
+
+        // Try cache first
+        java.util.Optional<Map<String, Object>> cached = entitlementCache.get(
+            principalId,
+            tenantId,
+            "/v1/route-entitlements",
+            cacheKey
+        );
+        if (cached.isPresent()) {
+            return jsonResponse(request, 200, cached.get());
+        }
+
+        // Compute entitlements
+        List<ProductRouteEntitlement.ActionEntitlement> actions = List.of(
+            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:view-dashboard", "View dashboard", "/workspaces/:workspaceId/dashboard"),
+            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:review-approval", "Review approval", "/workspaces/:workspaceId/approvals"),
+            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:view-audit-log", "View AI action log", "/workspaces/:workspaceId/ai-actions")
+        );
+        List<ProductRouteEntitlement.CardEntitlement> cards = List.of(
+            new ProductRouteEntitlement.CardEntitlement("launch-readiness", "Launch readiness", "/workspaces/:workspaceId/dashboard", "dashboard"),
+            new ProductRouteEntitlement.CardEntitlement("approval-queue", "Approval queue", "/workspaces/:workspaceId/approvals", "dashboard"),
+            new ProductRouteEntitlement.CardEntitlement("workflow-health", "Workflow health", "/workspaces/:workspaceId/dashboard", "dashboard")
+        );
+
+        ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
+            "digital-marketing",
+            principalId,
+            tenantId,
+            role,
+            entitlementContext.getPersona().orElse("analyst"),
+            entitlementContext.getTier().orElse("core"),
+            entitlementContext.getCorrelationId().orElse(null),
+            routesFor(role),
+            actions,
+            cards
+        );
+
+        Map<String, Object> entitlementMap = entitlement.toMap();
+        
+        // Cache for 5 minutes (300 seconds)
+        entitlementCache.put(principalId, tenantId, "/v1/route-entitlements", cacheKey, entitlementMap);
+        
+        return jsonResponse(request, 200, entitlementMap);
+    }
+
+    private List<ProductRouteEntitlement.RouteEntitlement> routesFor(String role) {
+        List<ProductRouteEntitlement.RouteEntitlement> routes = ROUTE_CONTRACT.routes().stream()
+            .map(DmosRouteEntitlementServlet::toRouteEntitlement)
+            .toList();
+        return routeEntitlementEvaluator.filterByRole(routes, role, ROUTE_CONTRACT.roleOrder());
+    }
+
+    private static ProductRouteEntitlement.RouteEntitlement toRouteEntitlement(RouteDefinition definition) {
+        return new ProductRouteEntitlement.RouteEntitlement(
+            definition.path(),
+            definition.label(),
+            definition.minimumRole(),
+            definition.personas(),
+            definition.tiers(),
+            definition.actions(),
+            definition.cards(),
+            definition.capabilityKey() != null && !definition.capabilityKey().isBlank() ? definition.capabilityKey() : null
+        );
     }
 
     private static RouteContract loadRouteContract() {
@@ -108,19 +143,6 @@ public final class DmosRouteEntitlementServlet {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to load DMOS route-capability contract", e);
         }
-    }
-
-    private static Map<String, Object> action(String id, String label, String routePath) {
-        return Map.of("id", id, "label", label, "routePath", routePath);
-    }
-
-    private static Map<String, Object> card(String id, String title, String routePath) {
-        return Map.of("id", id, "title", title, "routePath", routePath, "surface", "dashboard");
-    }
-
-    private static String headerOrDefault(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
     private Promise<HttpResponse> jsonResponse(HttpRequest request, int statusCode, Object body) {

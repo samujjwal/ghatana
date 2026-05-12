@@ -27,7 +27,15 @@ export function isRouteAllowed(
 
   const currentOrder = roleOrder[role];
   const minimumOrder = roleOrder[route.minimumRole];
-  if (currentOrder === undefined || minimumOrder === undefined) {
+  
+  // Fail closed: unknown roles cannot access routes
+  if (currentOrder === undefined) {
+    console.warn(`Unknown role '${role}' in roleOrder. Denying access to prevent privilege escalation.`);
+    return false;
+  }
+  
+  if (minimumOrder === undefined) {
+    console.warn(`Route minimumRole '${route.minimumRole}' not found in roleOrder. Denying access.`);
     return false;
   }
 

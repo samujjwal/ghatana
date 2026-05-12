@@ -100,6 +100,73 @@ public class JpaAuditService implements AuditService, AuditQueryService {
     }
 
     // -------------------------------------------------------------------------
+    // AuditService — query convenience methods
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Promise<List<AuditEvent>> query(AuditQuery query) {
+        Objects.requireNonNull(query, "query cannot be null");
+        
+        // Convert AuditQuery to AuditSearchCriteria
+        AuditQueryService.AuditSearchCriteria criteria = AuditQueryService.AuditSearchCriteria.builder()
+                .resourceType(query.resourceType())
+                .resourceId(query.resourceId())
+                .principal(query.principal())
+                .eventType(query.eventType())
+                .fromDate(query.startDate())
+                .toDate(query.endDate())
+                .success(query.success())
+                .offset(query.offset())
+                .limit(query.limit())
+                .build();
+        
+        // Use tenantId from query, or fall back to filtering by projectId/phase in details
+        String tenantId = query.tenantId();
+        if (tenantId == null && query.projectId() != null) {
+            // If no tenantId but projectId, we need to handle this differently
+            // For now, use the search with resource filtering
+            return search(query.projectId(), criteria);
+        }
+        
+        return search(tenantId, criteria);
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+        Objects.requireNonNull(projectId, "projectId cannot be null");
+        Objects.requireNonNull(startDate, "startDate cannot be null");
+        Objects.requireNonNull(endDate, "endDate cannot be null");
+        
+        // Query by resource where resourceType is "project" and resourceId is the projectId
+        return findByResource(projectId, "project", projectId)
+                .map(events -> events.stream()
+                        .filter(e -> e.getTimestamp() != null &&
+                                !e.getTimestamp().isBefore(startDate) &&
+                                !e.getTimestamp().isAfter(endDate))
+                        .toList());
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+        Objects.requireNonNull(projectId, "projectId cannot be null");
+        Objects.requireNonNull(phase, "phase cannot be null");
+        Objects.requireNonNull(startDate, "startDate cannot be null");
+        Objects.requireNonNull(endDate, "endDate cannot be null");
+        
+        // Query by resource and filter by phase in details
+        return findByResource(projectId, "project", projectId)
+                .map(events -> events.stream()
+                        .filter(e -> e.getTimestamp() != null &&
+                                !e.getTimestamp().isBefore(startDate) &&
+                                !e.getTimestamp().isAfter(endDate))
+                        .filter(e -> {
+                            Object phaseDetail = e.getDetail("phase");
+                            return phaseDetail != null && phaseDetail.toString().equals(phase);
+                        })
+                        .toList());
+    }
+
+    // -------------------------------------------------------------------------
     // AuditQueryService — read side
     // -------------------------------------------------------------------------
 

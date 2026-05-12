@@ -105,7 +105,7 @@ class PhrPolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 phrClinical,
                 phrClinical,
-                "subject-records/patient-001",
+                "phr:subject-records/patient-001",
                 "read",
                 restricted
         );
@@ -120,7 +120,7 @@ class PhrPolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 externalScope,
                 phrClinical,
-                "subject-records/patient-001",
+                "phr:subject-records/patient-001",
                 "read",
                 restricted
         );
@@ -135,7 +135,7 @@ class PhrPolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 phrAdmin,
                 phrAdmin,
-                "subject-records/patient-001",
+                "phr:subject-records/patient-001",
                 "write",
                 restricted
         );
@@ -151,7 +151,7 @@ class PhrPolicyCompatibilityTest {
         BoundaryPolicyResolver.BoundaryDecision decision = resolver.resolve(
                 phrClinical,
                 externalScope,
-                "clinical-documents/report-042",
+                "phr:clinical-documents/report-042",
                 "export",
                 restricted
         );

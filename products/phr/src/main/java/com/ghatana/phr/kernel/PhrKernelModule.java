@@ -9,12 +9,16 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.health.HealthStatus;
-import io.activej.promise.Promise;
-import io.activej.promise.Promises;
+import com.ghatana.platform.http.security.RoleEvaluator;
+import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.phr.api.FhirController;
 import com.ghatana.phr.api.NepalHieController;
 import com.ghatana.phr.api.PhrHttpServer;
+import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
+import com.ghatana.phr.api.routes.PhrFhirRoutes;
+import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.HttpNepalHieClient;
 import com.ghatana.phr.hie.NepalHieConfig;
@@ -42,6 +46,9 @@ import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrServiceCatalog;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
 import java.util.List;
 import java.util.Map;
@@ -255,7 +262,16 @@ public class PhrKernelModule implements KernelModule {
         CaregiverService caregivers = new CaregiverService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
-        PhrHttpServer phrHttpServer = new PhrHttpServer(fhirServer, fhirController, billing);
+        
+        // Create route objects with eventloop
+        Eventloop eventloop = context.getEventloop();
+        PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop, fhirController);
+        PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop, fhirServer);
+        RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
+        IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
+        PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop, routeEntitlementEvaluator, entitlementCache);
+        
+        PhrHttpServer phrHttpServer = new PhrHttpServer(eventloop, fhirRoutes, entitlementRoutes, healthRoutes);
         context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
         context.registerService(FhirController.class, fhirController);

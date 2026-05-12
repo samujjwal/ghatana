@@ -62,6 +62,24 @@ public class TransitionConfigLoader {
         return transitions;
     }
 
+    /**
+     * Returns the next phase in the lifecycle for the given current phase.
+     *
+     * <p>This method finds the forward transition from the current phase
+     * and returns the target phase. If no forward transition is found,
+     * returns the current phase (end of lifecycle).
+     *
+     * @param currentPhase the current phase name
+     * @return the next phase in the lifecycle, or current phase if at end
+     */
+    public String getNextPhase(String currentPhase) {
+        return transitions.stream()
+            .filter(t -> "forward".equals(t.getType()) && t.matchesFrom(currentPhase))
+            .map(TransitionSpec::getTo)
+            .findFirst()
+            .orElse(currentPhase);
+    }
+
     // ─── Private loading ──────────────────────────────────────────────────────
 
     private List<TransitionSpec> load() {

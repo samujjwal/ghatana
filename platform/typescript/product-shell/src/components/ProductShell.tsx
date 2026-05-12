@@ -36,6 +36,7 @@ import type { ProductShellConfig } from '../types';
 import { CapabilitySidebar } from './CapabilitySidebar';
 import { ProductHeader } from './ProductHeader';
 import { ActiveOperationsBar } from './ActiveOperationsBar';
+import { twLayout } from '@ghatana/design-system/tokens';
 
 interface ProductShellProps {
   config: ProductShellConfig;
@@ -100,7 +101,7 @@ export function ProductShell({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={`${twLayout.fullHeight} ${twLayout.bgLight} ${twLayout.bgDark}`}>
       {/* Sidebar */}
       <CapabilitySidebar
         config={config}
@@ -114,8 +115,8 @@ export function ProductShell({
       <div
         className={
           sidebarCollapsed
-            ? 'lg:ml-16 transition-all duration-300'
-            : 'lg:ml-64 transition-all duration-300'
+            ? `${twLayout.sidebarCollapsed} ${twLayout.transition}`
+            : `${twLayout.sidebarExpanded} ${twLayout.transition}`
         }
       >
         {/* Header */}
@@ -128,7 +129,7 @@ export function ProductShell({
         {/* Content */}
         <main
           {...mainContentProps}
-          className={contentClassName ?? 'pt-16 p-6'}
+          className={contentClassName ?? twLayout.contentPadding}
         >
           {children}
         </main>

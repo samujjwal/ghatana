@@ -1375,6 +1375,96 @@ module.exports = {
         };
       },
     },
+
+    /**
+     * Rule: enforce-yappc-platform-boundary (Phase 4.5)
+     *
+     * Enforces that YAPPC may import platform client contracts but not platform internals.
+     * YAPPC services can import from platform client interfaces (e.g., com.ghatana.yappc.services.platform.*)
+     * but must not import internal platform modules directly (e.g., com.ghatana.platform.* internal packages).
+     *
+     * Allowed: YAPPC imports of platform client contracts (services.platform, api.Platform*)
+     * Forbidden: YAPPC imports of platform internals (platform.core, platform.database internal modules)
+     */
+    "enforce-yappc-platform-boundary": {
+      meta: {
+        type: "error",
+        docs: {
+          description:
+            "YAPPC may import platform client contracts but not platform internals",
+          category: "Architecture",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          forbiddenPlatformInternal:
+            "🚫 Forbidden platform internal import: '{{import}}'. YAPPC may import platform client contracts (services.platform, api.Platform*) but not platform internals. Use the platform client interfaces instead.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+
+        // Only apply to YAPPC product code
+        if (!currentFilePath.includes("/products/yappc/")) {
+          return {};
+        }
+
+        // Skip test files
+        if (
+          currentFilePath.includes("/test/") ||
+          currentFilePath.endsWith(".test.ts") ||
+          currentFilePath.endsWith(".test.tsx")
+        ) {
+          return {};
+        }
+
+        // Forbidden platform internal packages
+        const FORBIDDEN_PLATFORM_INTERNALS = [
+          "com.ghatana.platform.core",
+          "com.ghatana.platform.database",
+          "com.ghatana.platform.http",
+          "com.ghatana.platform.observability",
+          "com.ghatana.platform.security",
+          "com.ghatana.platform.testing",
+          "com.ghatana.platform.workflow",
+          "com.ghatana.platform.agent-core",
+          "com.ghatana.platform.ai-integration",
+        ];
+
+        function checkImport(node, importPath) {
+          // Only check Java imports (com.ghatana.*)
+          if (!importPath.startsWith("com.ghatana.")) return;
+
+          // Skip allowed platform client contracts
+          if (
+            importPath.startsWith("com.ghatana.yappc.services.platform") ||
+            importPath.startsWith("com.ghatana.yappc.api.Platform")
+          ) {
+            return;
+          }
+
+          // Check if it's a forbidden platform internal import
+          const isForbidden = FORBIDDEN_PLATFORM_INTERNALS.some((forbidden) =>
+            importPath.startsWith(forbidden)
+          );
+
+          if (isForbidden) {
+            context.report({
+              node,
+              messageId: "forbiddenPlatformInternal",
+              data: { import: importPath },
+            });
+          }
+        }
+
+        return {
+          ImportDeclaration(node) {
+            checkImport(node, node.source.value);
+          },
+        };
+      },
+    },
   },
 };
 

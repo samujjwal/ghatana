@@ -2,6 +2,7 @@
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { productManifestSchema } from "../platform/typescript/product-manifest-contracts/index.mjs";
 
 function parseArgs(argv) {
   const args = new Map();
@@ -431,7 +432,7 @@ writeFile(
     - write
     - delete
   policyResources:
-    - core
+    - ${id}:core
   pluginsConsumed:
     - plugin-audit-trail
     - plugin-compliance
@@ -443,7 +444,7 @@ writeFile(
 ${uiEnabled ? "    - web" : "    []"}
   runtimeServices:
     - launcher
-  dataSensitivity: internal
+  dataSensitivity: LOW
 `
 );
 
@@ -506,7 +507,7 @@ public final class ${classPrefix}BoundaryPolicyStore implements BoundaryPolicySt
     private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
             BoundaryPolicyActionRegistry.ofDeclaredActions(Set.of("read", "write", "delete"));
     private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
-            BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of("core"));
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of("${id}:core"));
     private static final List<BoundaryPolicyRule> RULES = List.of(
             BoundaryPolicyRule.builder()
                     .ruleId("${rulePrefix}001")
@@ -782,19 +783,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     join(productDir, "client", "web", "src", "App.test.tsx"),
     `import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
-vi.mock("@ghatana/product-shell", () => ({
-  ProductShell: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="product-shell">{children}</div>
-  ),
-}));
-
 describe("App", () => {
-  it("renders the scaffolded product shell", () => {
+  it("renders the product shell with correct configuration", () => {
     render(<App />);
-    expect(screen.getByTestId("product-shell")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "${name}" })).toBeTruthy();
     expect(screen.getByText("Replace this scaffold with product-owned domain workflows.")).toBeTruthy();
   });

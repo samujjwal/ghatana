@@ -52,6 +52,8 @@ dependencies {
     api(project(":platform:java:governance"))
     api(project(":platform:java:database"))
     api(project(":platform:java:audit"))
+    api(project(":platform:java:http"))
+    api(project(":platform:java:cache"))
 
     // Kernel platform — MIGRATED: use platform-kernel:kernel-core
     // api(project(":platform:java:kernel"))

@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import {
   loadProductManifest,
   parseRegistry,
+  validatePolicyResourcesVocabulary,
   validatePolicyVocabulary,
+  validateProductIdentityAlignment,
   validateProductManifestShape,
   validateRegistryReferences,
   validateSurfaceAlignment,
@@ -88,6 +90,13 @@ function validateManifest(entry, manifest) {
     addViolation(entry.file, violation);
   }
 
+  for (const violation of validateProductIdentityAlignment({
+    product: entry.product,
+    manifest,
+  })) {
+    addViolation(entry.file, violation);
+  }
+
   validateClientPackageFiles(entry, shape);
   validatePluginOwnership(entry, manifest);
 
@@ -100,6 +109,13 @@ function validateManifest(entry, manifest) {
   }
 
   for (const violation of validatePolicyVocabulary({
+    manifest,
+    registry: capabilityRegistry,
+  })) {
+    addViolation(entry.file, violation);
+  }
+
+  for (const violation of validatePolicyResourcesVocabulary({
     manifest,
     registry: capabilityRegistry,
   })) {
@@ -259,6 +275,86 @@ function runNegativeFixtureAssertions() {
     addViolation(
       'scripts/check-product-manifest-contracts.mjs',
       'negative fixture failed: unprefixed product-specific policy action must fail',
+    );
+  }
+
+  const mismatchedId = validateProductIdentityAlignment({
+    product: 'flashit',
+    manifest: { id: 'flashit-domain-pack', product: 'flashit' },
+  });
+  if (mismatchedId.length === 0) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      'negative fixture failed: manifest id must match product registry key',
+    );
+  }
+
+  const mismatchedProduct = validateProductIdentityAlignment({
+    product: 'flashit',
+    manifest: { id: 'flashit', product: 'other-product' },
+  });
+  if (mismatchedProduct.length === 0) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      'negative fixture failed: manifest product must match product registry key',
+    );
+  }
+
+  const missingId = validateProductIdentityAlignment({
+    product: 'flashit',
+    manifest: { product: 'flashit' },
+  });
+  if (missingId.length === 0) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      'negative fixture failed: manifest must declare an id field',
+    );
+  }
+
+  const badResource = validatePolicyResourcesVocabulary({
+    manifest: { policyResources: ['unprefixed-resource'] },
+    registry: capabilityRegistry,
+  });
+  if (badResource.length === 0) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      'negative fixture failed: unprefixed product-specific policy resource must fail',
+    );
+  }
+
+  const invalidNamespaceResource = validatePolicyResourcesVocabulary({
+    manifest: { policyResources: ['invalid:resource'] },
+    registry: capabilityRegistry,
+  });
+  if (invalidNamespaceResource.length === 0) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      'negative fixture failed: policy resource with invalid namespace must fail',
+    );
+  }
+
+  // Scaffolder golden test: validate that a scaffolded manifest would pass schema validation
+  const scaffoldedManifest = {
+    id: 'test-scaffold',
+    version: '0.1.0',
+    product: 'test-scaffold',
+    domain: 'test-domain',
+    rulePrefix: 'TEST-BP-',
+    kernelCapabilitiesConsumed: ['boundary-policy-evaluation', 'audit-trail', 'tenant-context'],
+    policyActions: ['read', 'write', 'delete'],
+    policyResources: ['test-scaffold:core'],
+    pluginsConsumed: ['plugin-audit-trail', 'plugin-compliance'],
+    bridgesConsumed: [],
+    domainPacksProvided: ['test-scaffold-boundary-policy', 'test-scaffold-compliance-rule-pack'],
+    uiSurfaces: ['web'],
+    runtimeServices: ['launcher'],
+    dataSensitivity: 'LOW',
+  };
+  const scaffoldedValidation = validateProductManifestShape(scaffoldedManifest);
+  if (!scaffoldedValidation.success) {
+    addViolation(
+      'scripts/check-product-manifest-contracts.mjs',
+      `scaffolder golden test failed: generated manifest must pass schema validation - ${scaffoldedValidation.error.issues.map(i => i.message).join(', ')}`,
     );
   }
 }

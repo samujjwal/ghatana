@@ -53,8 +53,8 @@
 #
 # operationId:
 #   - Must be unique across all routes
-#   - PascalCase naming convention
-#   - Pattern: ^[A-Z][a-zA-Z0-9]*$
+#   - camelCase naming convention (lower camelCase)
+#   - Pattern: ^[a-z][a-zA-Z0-9]*$
 #   - Examples: captureIntent, listPacks, createRefactorJob
 #
 # scopes:
@@ -334,7 +334,7 @@ yappc-services:
     scopes: [project:write]
     owner: yappc-services
     boundary: YAPPC
-    operationId: RunWithObservation
+    operationId: runWithObservation
     auditEventType: RUN_WITH_OBSERVATION
     privacyClassification: CONFIDENTIAL
   - method: POST

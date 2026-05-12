@@ -29,6 +29,31 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 
 // ---------------------------------------------------------------------------
+// Load declarative production-critical scan scopes
+// ---------------------------------------------------------------------------
+const SCAN_CONFIG_PATH = join(REPO_ROOT, 'config/production-critical-scopes.config.json');
+let scanConfig = {
+  scanScopes: [
+    { path: 'platform', critical: true },
+    { path: 'products', critical: true },
+    { path: 'shared-services', critical: true },
+    { path: 'platform-kernel', critical: true },
+    { path: 'platform-plugins', critical: true },
+  ],
+  excludedPathSegments: [],
+  excludedFilenamePatterns: [],
+  scanPatterns: [],
+};
+
+if (existsSync(SCAN_CONFIG_PATH)) {
+  try {
+    scanConfig = JSON.parse(readFileSync(SCAN_CONFIG_PATH, 'utf8'));
+  } catch (error) {
+    console.warn(`Warning: failed to load scan config from ${SCAN_CONFIG_PATH}, using defaults`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI args
 // ---------------------------------------------------------------------------
 const args = process.argv.slice(2);
@@ -68,22 +93,12 @@ const changedFiles = getChangedFiles();
 // ---------------------------------------------------------------------------
 
 /** @type {{ id: string; severity: 'critical' | 'warning'; pattern: RegExp; description: string }[]} */
-const PATTERNS = [
-  // --- Deliberate stubs / placeholders ---
-  { id: 'TODO_FIXME_PROD', severity: 'critical', pattern: /\b(TODO|FIXME|HACK|TEMP|XXX)\b/, description: 'TODO / FIXME / HACK / TEMP marker in production code' },
-  { id: 'NOT_IMPLEMENTED', severity: 'critical', pattern: /not\s+implemented|coming\s+soon|placeholder|stub\s+implementation|demo\s+only|remove\s+before\s+prod/i, description: 'Explicit "not implemented" or placeholder comment' },
-  { id: 'STUB_METHOD_NAME', severity: 'critical', pattern: /\b(stubMethod|fakeImpl|mockImpl|demoImpl|tempImpl|placeholderImpl)\b/, description: 'Method name suggests stub implementation' },
-  // --- Console output left in production ---
-  { id: 'CONSOLE_LOG', severity: 'warning', pattern: /console\.(log|warn|error|debug|info)\(/, description: 'console.log/warn/error/debug/info in production TypeScript/JavaScript' },
-  { id: 'SYSOUT_JAVA', severity: 'warning', pattern: /System\.out\.(print|println)|e\.printStackTrace\(\)/, description: 'System.out.println or printStackTrace in production Java' },
-  // --- Hardcoded return shortcuts ---
-  { id: 'RETURN_EMPTY_LIST', severity: 'warning', pattern: /return\s+(Collections\.emptyList\(\)|List\.of\(\)|new ArrayList<>\(\)|\[\])\s*;/, description: 'Method unconditionally returns empty collection — may be a stub' },
-  { id: 'RETURN_NULL_PROMISE', severity: 'warning', pattern: /return\s+Promise\.of\(null\)\s*;/, description: 'Method returns Promise.of(null) — likely a stub ActiveJ promise' },
-  // --- Mock/test imports in production ---
-  { id: 'MOCK_IMPORT_PROD', severity: 'critical', pattern: /import\s+.*from\s+['"].*\/__mocks__\/|import\s+.*Mockito|import\s+.*MockBean/, description: 'Mock / Mockito import in production (non-test) file' },
-  // --- Test-only annotations in production ---
-  { id: 'VITEST_IN_PROD', severity: 'critical', pattern: /\bvi\.fn\(\)|\bvi\.mock\(|\bvi\.spyOn\(/, description: 'Vitest vi.fn/vi.mock/vi.spyOn in production file' },
-];
+const PATTERNS = scanConfig.scanPatterns.map((p) => ({
+  id: p.id,
+  severity: p.severity,
+  pattern: new RegExp(p.pattern, 'i'),
+  description: p.description,
+}));
 
 // ---------------------------------------------------------------------------
 // File-extension filter for production files
@@ -93,33 +108,9 @@ const PROD_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '
 // ---------------------------------------------------------------------------
 // Path filters — these segments anywhere in the path trigger exclusion
 // ---------------------------------------------------------------------------
-const EXCLUDED_PATH_SEGMENTS = [
-  'node_modules',
-  'build',
-  'dist',
-  '.gradle',
-  '__tests__',
-  '/test/',
-  '/tests/',
-  'test-utils',
-  'scripts/',
-  'monitoring/',
-  'docs/',
-  '.github/',
-  'templates/',
-  'code-audits/',
-  'integration-tests/',
-  'frontend/', // yappc legacy frontend
-];
+const EXCLUDED_PATH_SEGMENTS = scanConfig.excludedPathSegments;
 
-const EXCLUDED_FILENAME_PATTERNS = [
-  /\.test\.[jt]sx?$/,
-  /\.spec\.[jt]sx?$/,
-  /Test\.java$/,
-  /IT\.java$/,
-  /Spec\.java$/,
-  /\.md$/,
-];
+const EXCLUDED_FILENAME_PATTERNS = scanConfig.excludedFilenamePatterns.map((p) => new RegExp(p));
 
 // ---------------------------------------------------------------------------
 // Allowlist loading
@@ -177,13 +168,7 @@ function walkDir(dir) {
 /** @type {{ file: string; line: number; col: number; patternId: string; severity: string; description: string; text: string }[]} */
 const violations = [];
 
-const scanRoots = [
-  join(REPO_ROOT, 'platform'),
-  join(REPO_ROOT, 'products'),
-  join(REPO_ROOT, 'shared-services'),
-  join(REPO_ROOT, 'platform-kernel'),
-  join(REPO_ROOT, 'platform-plugins'),
-];
+const scanRoots = scanConfig.scanScopes.map((scope) => join(REPO_ROOT, scope.path));
 
 for (const root of scanRoots) {
   for (const filePath of walkDir(root)) {

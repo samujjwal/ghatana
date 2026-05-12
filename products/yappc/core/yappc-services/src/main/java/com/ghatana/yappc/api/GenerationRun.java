@@ -243,7 +243,7 @@ public final class GenerationRun {
      * Review status of the generated artifacts.
      * 
      * Idempotent state machine for generation review, apply, reject, and rollback.
-     * States: GENERATING → GENERATED → REVIEW_PENDING → APPROVED/APPLIED → REJECTED → ROLLBACK_REQUESTED → ROLLED_BACK → FAILED
+     * States: GENERATING → GENERATED → REVIEW_PENDING → APPROVED/APPLIED/APPLY_FAILED → REJECTED → ROLLBACK_REQUESTED → ROLLED_BACK/ROLLBACK_FAILED → FAILED
      */
     public enum ReviewStatus {
         GENERATING,
@@ -251,9 +251,11 @@ public final class GenerationRun {
         REVIEW_PENDING,
         APPROVED,
         APPLIED,
+        APPLY_FAILED,
         REJECTED,
         ROLLBACK_REQUESTED,
         ROLLED_BACK,
+        ROLLBACK_FAILED,
         FAILED
     }
 }

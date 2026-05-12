@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.ghatana.com/workspace-dependency-policy/v1",
+  "title": "Workspace Dependency Policy",
+  "description": "Centralized dependency version and peer range policy for Kernel and products",
+  "type": "object",
+  "properties": {
+    "frontendDependencies": {
+      "type": "object",
+      "description": "Core frontend dependencies with version ranges",
+      "properties": {
+        "react": {
+          "type": "string",
+          "description": "React version range"
+        },
+        "react-dom": {
+          "type": "string",
+          "description": "React DOM version range"
+        },
+        "typescript": {
+          "type": "string",
+          "description": "TypeScript version range"
+        },
+        "vite": {
+          "type": "string",
+          "description": "Vite version range"
+        },
+        "eslint": {
+          "type": "string",
+          "description": "ESLint version range"
+        },
+        "prettier": {
+          "type": "string",
+          "description": "Prettier version range"
+        },
+        "vitest": {
+          "type": "string",
+          "description": "Vitest version range"
+        },
+        "playwright": {
+          "type": "string",
+          "description": "Playwright version range"
+        },
+        "zod": {
+          "type": "string",
+          "description": "Zod version range"
+        }
+      },
+      "required": ["react", "react-dom", "typescript", "vite"]
+    },
+    "peerDependencyOverrides": {
+      "type": "object",
+      "description": "Peer dependency overrides to enforce consistent versions across packages"
+    },
+    "allowedDevDependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of allowed dev dependencies for production packages"
+    }
+  },
+  "required": ["frontendDependencies"]
+}

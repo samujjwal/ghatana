@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.ghatana.com/product-route-entitlement/v1",
+  "title": "ProductRouteEntitlement",
+  "description": "Kernel-owned contract for product route entitlement payloads. Used by backend route entitlement endpoints to return typed navigation, action, and card metadata.",
+  "type": "object",
+  "required": ["product", "principalId", "tenantId", "role", "routes", "actions", "cards"],
+  "properties": {
+    "product": {
+      "type": "string",
+      "description": "Product identifier (e.g., 'phr', 'digital-marketing', 'flashit')"
+    },
+    "principalId": {
+      "type": "string",
+      "description": "Authenticated principal/user ID"
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant ID for multi-tenancy"
+    },
+    "role": {
+      "type": "string",
+      "description": "Current role of the principal"
+    },
+    "persona": {
+      "type": "string",
+      "description": "Persona for UX customization (optional)"
+    },
+    "tier": {
+      "type": "string",
+      "description": "Commercial tier (e.g., 'core', 'premium') (optional)"
+    },
+    "correlationId": {
+      "type": "string",
+      "description": "Request correlation ID for tracing (optional)"
+    },
+    "routes": {
+      "type": "array",
+      "description": "List of route entitlements",
+      "items": {
+        "$ref": "#/$defs/RouteEntitlement"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "description": "List of action entitlements",
+      "items": {
+        "$ref": "#/$defs/ActionEntitlement"
+      }
+    },
+    "cards": {
+      "type": "array",
+      "description": "List of card entitlements",
+      "items": {
+        "$ref": "#/$defs/CardEntitlement"
+      }
+    }
+  },
+  "$defs": {
+    "RouteEntitlement": {
+      "type": "object",
+      "required": ["path", "label", "minimumRole", "personas", "tiers", "actions", "cards"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Route path (e.g., '/dashboard')"
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable route label"
+        },
+        "minimumRole": {
+          "type": "string",
+          "description": "Minimum role required to access this route"
+        },
+        "personas": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Personas for which this route is relevant"
+        },
+        "tiers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Commercial tiers for which this route is available"
+        },
+        "actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Action IDs available on this route"
+        },
+        "cards": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Card IDs available on this route"
+        },
+        "capabilityKey": {
+          "type": "string",
+          "description": "Optional capability key for feature gating"
+        }
+      }
+    },
+    "ActionEntitlement": {
+      "type": "object",
+      "required": ["id", "label", "routePath"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Action identifier"
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable action label"
+        },
+        "routePath": {
+          "type": "string",
+          "description": "Route path where this action is available"
+        }
+      }
+    },
+    "CardEntitlement": {
+      "type": "object",
+      "required": ["id", "title", "routePath", "surface"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Card identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable card title"
+        },
+        "routePath": {
+          "type": "string",
+          "description": "Route path where this card is available"
+        },
+        "surface": {
+          "type": "string",
+          "description": "Surface where this card appears (e.g., 'dashboard')"
+        }
+      }
+    }
+  }
+}

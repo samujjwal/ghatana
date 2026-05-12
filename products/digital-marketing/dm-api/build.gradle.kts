@@ -22,6 +22,9 @@ dependencies {
     // Platform policy-as-code for OPA AuthZ wiring
     implementation(project(":platform:java:policy-as-code"))
 
+    // Platform cache for entitlement caching
+    implementation(project(":platform:java:cache"))
+
     // Platform plugins for production-grade implementations
     implementation(project(":platform-plugins:plugin-consent"))
     implementation(project(":platform-plugins:plugin-human-approval"))

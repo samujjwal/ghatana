@@ -11,6 +11,7 @@ package com.ghatana.datacloud.audit;
 
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
 import io.activej.inject.annotation.Inject;
@@ -19,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,6 +62,33 @@ public class DataCloudAuditService implements AuditService {
         return storagePlugin.append(dataCloudEvent)
                 .toVoid()
                 .whenException(e -> log.error("Failed to persist audit event", e));
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> query(AuditQuery query) {
+        log.debug("Querying audit events with custom criteria");
+        
+        // For now, return empty list as query functionality needs storage plugin query support
+        // This can be implemented once storage plugin provides query capabilities
+        return Promise.of(new ArrayList<>());
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+        log.debug("Querying audit events for project: {}, range: {} to {}", projectId, startDate, endDate);
+        
+        // For now, return empty list as query functionality needs storage plugin query support
+        // This can be implemented once storage plugin provides query capabilities
+        return Promise.of(new ArrayList<>());
+    }
+
+    @Override
+    public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+        log.debug("Querying audit events for project: {}, phase: {}, range: {} to {}", projectId, phase, startDate, endDate);
+        
+        // For now, return empty list as query functionality needs storage plugin query support
+        // This can be implemented once storage plugin provides query capabilities
+        return Promise.of(new ArrayList<>());
     }
 
     private Event convertToDataCloudEvent(AuditEvent auditEvent) {
