@@ -28,3 +28,21 @@ generator:
     - act
     - capture
     - reflect
+
+governance:
+  learningLevel: L2
+  adaptationTargets:
+    - semantic-facts
+    - negative-knowledge
+    - episodic-capture
+  skillRefs:
+    - id: "finance.risk-assessment"
+      learningLevel: "L2"
+      requiredFor: "response-serving"
+  masteryBindings:
+    - skillId: "finance.risk-assessment"
+      learningLevel: "L2"
+      evaluationPackId: "finance-risk-eval-pack-v1"
+      promotionPolicy: "require-eval-pass"
+  evaluationRefs:
+    - "finance-risk-eval-pack-v1"

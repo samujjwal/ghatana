@@ -3,7 +3,8 @@
  *
  * Renders grouped navigation links from the list of `ProductRouteCapability`
  * entries that pass the current role filter. Routes with `lifecycle: 'boundary'`
- * are excluded. Routes with `discoverable: false` are excluded.
+ * or `lifecycle: 'deprecated'` are excluded. Routes with `discoverable: false`
+ * are excluded.
  *
  * Navigation state (active, hover, focus) is handled via react-router's
  * `NavLink` with its built-in `isActive` detection.
@@ -55,7 +56,7 @@ const defaultNavLinkClass = ({ isActive }: { isActive: boolean }): string =>
  * Registry-driven navigation links grouped by `route.group`.
  *
  * Filters out:
- * - Routes with `lifecycle === 'boundary'`
+ * - Routes with `lifecycle === 'boundary'` or `lifecycle === 'deprecated'`
  * - Routes with `discoverable === false`
  * - Routes whose `minimumRole` exceeds the current role
  */

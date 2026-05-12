@@ -1,10 +1,14 @@
 {
+  "schemaVersion": "1.0.0",
   "id": "digital-marketing",
   "version": "1.0.0",
   "product": "digital-marketing",
   "domain": "digital-marketing",
   "productCode": "DM",
   "rulePrefix": "DM-",
+  "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
+  "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
+  "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
   "kernelCapabilitiesConsumed": [
     "boundary-policy-evaluation",
     "audit-trail",
@@ -16,22 +20,22 @@
     "write",
     "delete",
     "export",
-    "sync",
-    "launch",
-    "pause",
-    "resume",
-    "increase",
-    "publish",
-    "execute"
+    "digital-marketing:sync",
+    "digital-marketing:launch",
+    "digital-marketing:pause",
+    "digital-marketing:resume",
+    "digital-marketing:increase",
+    "digital-marketing:publish",
+    "digital-marketing:execute"
   ],
   "policyResources": [
-    "workspaces",
-    "contacts",
-    "audiences",
-    "campaigns",
-    "budgets",
-    "content",
-    "connectors"
+    "digital-marketing:workspaces",
+    "digital-marketing:contacts",
+    "digital-marketing:audiences",
+    "digital-marketing:campaigns",
+    "digital-marketing:budgets",
+    "digital-marketing:content",
+    "digital-marketing:connectors"
   ],
   "pluginsConsumed": [
     "plugin-audit-trail",
@@ -53,9 +57,6 @@
     "dm-application"
   ],
   "dataSensitivity": "marketing-consent",
-  "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
-  "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
-  "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
   "complianceRuleSets": [
     "DM_MARKETING_INTEGRITY",
     "DM_CONSENT_LIFECYCLE",

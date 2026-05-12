@@ -14,6 +14,11 @@ package com.ghatana.agent.evaluation;
  */
 public enum EvaluationType {
     /**
+     * Skill unit test - verifies individual skill components work correctly.
+     */
+    SKILL_UNIT,
+
+    /**
      * Regression test - verifies behavior matches expected output.
      */
     REGRESSION,
@@ -46,5 +51,10 @@ public enum EvaluationType {
     /**
      * Security test - verifies no security vulnerabilities.
      */
-    SECURITY
+    SECURITY,
+
+    /**
+     * Abstention test - verifies ability to abstain appropriately.
+     */
+    ABSTENTION
 }

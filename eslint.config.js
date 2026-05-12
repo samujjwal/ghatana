@@ -52,9 +52,11 @@ module.exports = [
       i18n: i18nCoverageRule,
       'no-raw-fetch': noRawFetchRule,
       'no-production-todos': noProductionTodosRule,
+      'enforce-package-boundaries': enforcePackageBoundariesRule,
     },
     rules: {
       "ghatana/no-cross-product-imports": "error",
+      "ghatana/no-platform-to-product-imports": "error",
       "ghatana/no-banned-libraries": "error",
       "ghatana/no-deprecated-ghatana-ui": "error",
       "ghatana/no-deleted-v41-packages": "error",

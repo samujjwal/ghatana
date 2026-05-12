@@ -6,8 +6,10 @@
       "name": "Personal Health Records",
       "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": "products/phr/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
+      "buildFile": "products/phr/build.gradle.kts",
       "gradleModules": [
         ":products:phr",
         ":products:phr:launcher"
@@ -40,7 +42,11 @@
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false
       },
       "metadata": {
         "owner": "PHR Team",
@@ -54,8 +60,10 @@
       "name": "Finance",
       "description": "Financial trading and risk management domain pack for capital markets",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": "products/finance/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
+      "buildFile": "products/finance/build.gradle.kts",
       "gradleModules": [
         ":products:finance",
         ":products:finance:launcher",
@@ -122,7 +130,11 @@
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": false
       },
       "validationRules": [
         {
@@ -143,8 +155,10 @@
       "name": "Digital Marketing Operating System",
       "description": "Digital marketing campaign management for non-regulated local services and B2B businesses",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": "products/digital-marketing/dm-domain-packs/domain-pack.json",
       "manifestFormat": "json",
+      "buildFile": "products/digital-marketing/dm-domain-packs/build.gradle.kts",
       "gradleModules": [
         ":products:digital-marketing:dm-core-contracts",
         ":products:digital-marketing:dm-domain-packs",
@@ -157,7 +171,6 @@
         ":products:digital-marketing:dm-api",
         ":products:digital-marketing:dm-integration-tests"
       ],
-      "buildFile": "products/digital-marketing/dm-domain-packs/build.gradle.kts",
       "surfaces": [
         {
           "type": "backend-api",
@@ -186,7 +199,41 @@
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": true
+        "bridge": true,
+        "bridgeAdapters": [
+          {
+            "file": "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java",
+            "tests": [
+              {
+                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
+                "requiredEvidence": [
+                  "shouldRejectAuthorizationBeforeStart",
+                  "shouldDelegateAuthorization",
+                  "shouldDenyConsentVerificationWhenUnauthorized",
+                  "shouldRejectUnauthorizedApprovalRequests",
+                  "shouldRecordAuditWithContextAttributes",
+                  "shouldRejectUnauthorizedAuditRecording",
+                  "shouldRejectUnauthorizedRiskEvaluation",
+                  "shouldDelegateFeatureFlagEvaluation",
+                  "shouldFailClosedForUnauthorizedFeatureFlagChecks",
+                  "shouldNotifyUser"
+                ]
+              },
+              {
+                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
+                "requiredEvidence": [
+                  "transientFailuresTriggerRetryWithBackoff",
+                  "retryAttemptsPreserveOriginalContext",
+                  "retryCountRespectsMaximum"
+                ]
+              }
+            ]
+          }
+        ],
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": false
       },
       "metadata": {
         "owner": "Digital Marketing Team",
@@ -200,8 +247,10 @@
       "name": "FlashIt",
       "description": "Personal reflection and journaling application",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": "products/flashit/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
+      "buildFile": "products/flashit/build.gradle.kts",
       "gradleModules": [
         ":products:flashit"
       ],
@@ -241,7 +290,11 @@
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false
       },
       "metadata": {
         "owner": "FlashIt Team",
@@ -255,6 +308,7 @@
       "name": "Data Cloud",
       "description": "Data cloud platform with planes architecture",
       "type": "product",
+      "kind": "platform-provider",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -327,11 +381,16 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": true
+        "bridge": true,
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": true,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Data Cloud Team",
@@ -345,6 +404,7 @@
       "name": "YAPPC",
       "description": "AI-powered code analysis and refactoring platform",
       "type": "product",
+      "kind": "platform-provider",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -412,11 +472,16 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": true
+        "bridge": true,
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": true,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "YAPPC Team",
@@ -430,6 +495,7 @@
       "name": "Audio-Video",
       "description": "Audio and video processing services",
       "type": "product",
+      "kind": "shared-service",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -469,11 +535,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Audio-Video Team",
@@ -487,6 +554,7 @@
       "name": "DCMAAR",
       "description": "Guardian threat detection and AI platform adapters",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -519,11 +587,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "DCMAAR Team",
@@ -537,6 +606,7 @@
       "name": "Tutorputor",
       "description": "AI-powered content generation and tutoring platform",
       "type": "product",
+      "kind": "business-product",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -570,11 +640,16 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "agentDefinitions": true,
+        "masteryBindings": true,
+        "evaluationPacks": true,
+        "runtimeModule": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Tutorputor Team",
@@ -588,6 +663,7 @@
       "name": "Aura",
       "description": "AI-powered recommendation and explainability platform",
       "type": "product",
+      "kind": "demo/example",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -622,11 +698,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Aura Team",
@@ -640,6 +717,7 @@
       "name": "Software-Org",
       "description": "Software organization management platform",
       "type": "product",
+      "kind": "demo/example",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -671,11 +749,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Software-Org Team",
@@ -689,6 +768,7 @@
       "name": "Virtual-Org",
       "description": "Virtual organization management platform",
       "type": "product",
+      "kind": "demo/example",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -719,11 +799,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Virtual-Org Team",
@@ -737,6 +818,7 @@
       "name": "Security-Gateway",
       "description": "Security gateway service",
       "type": "product",
+      "kind": "shared-service",
       "manifestPath": null,
       "manifestFormat": null,
       "gradleModules": [
@@ -760,11 +842,12 @@
         ]
       },
       "conformance": {
-        "manifest": true,
+        "manifest": false,
         "observability": true,
         "security": true,
         "dataAccess": true,
-        "bridge": false
+        "bridge": false,
+        "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
         "owner": "Security Team",

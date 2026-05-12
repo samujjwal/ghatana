@@ -114,7 +114,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.queryEpisodes(applyMasteryQueryFilter(query)))
                 .then(episodes -> masteryRegistry != null 
-                        ? Promise.of(filterByMasteryState(episodes, query)) 
+                        ? filterByMasteryStateAsync(episodes, query) 
                         : Promise.of(episodes));
     }
 
@@ -124,7 +124,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.queryFacts(applyMasteryQueryFilter(query)))
                 .then(facts -> masteryRegistry != null 
-                        ? Promise.of(filterByMasteryState(facts, query)) 
+                        ? filterByMasteryStateAsync(facts, query) 
                         : Promise.of(facts));
     }
 
@@ -134,7 +134,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.queryProcedures(applyMasteryQueryFilter(query)))
                 .then(procedures -> masteryRegistry != null 
-                        ? Promise.of(filterByMasteryState(procedures, query)) 
+                        ? filterByMasteryStateAsync(procedures, query) 
                         : Promise.of(procedures));
     }
 
@@ -162,7 +162,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.query(applyMasteryQueryFilter(query)))
                 .then(items -> masteryRegistry != null 
-                        ? Promise.of(filterByMasteryState(items, query)) 
+                        ? filterByMasteryStateAsync(items, query) 
                         : Promise.of(items));
     }
 
@@ -172,7 +172,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.readItems(applyMasteryQueryFilter(query)))
                 .then(items -> masteryRegistry != null 
-                        ? Promise.of(filterByMasteryState(items, query)) 
+                        ? filterByMasteryStateAsync(items, query) 
                         : Promise.of(items));
     }
 
@@ -187,7 +187,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
                 .then(() -> delegate.searchSemantic(query, itemTypes, k, startTime, endTime))
                 .then(items -> masteryRegistry != null 
-                        ? Promise.of(filterScoredByMasteryState(items)) 
+                        ? filterScoredByMasteryStateAsync(items) 
                         : Promise.of(items));
     }
 
@@ -208,6 +208,8 @@ public final class GovernedMemoryPlane implements MemoryPlane {
 
     /**
      * Filters items by mastery state based on query settings.
+     * Uses label-based filtering for backward compatibility.
+     * For full MasteryRegistry integration, use filterByMasteryStateAsync.
      */
     @NotNull
     private <T extends MemoryItem> List<T> filterByMasteryState(@NotNull List<T> items, @NotNull MemoryQuery query) {
@@ -242,7 +244,23 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     }
 
     /**
+     * Filters items by mastery state using MasteryRegistry (async version).
+     * This is the preferred method for mastery-aware filtering.
+     */
+    @NotNull
+    private <T extends MemoryItem> Promise<List<T>> filterByMasteryStateAsync(@NotNull List<T> items, @NotNull MemoryQuery query) {
+        if (masteryRegistry == null) {
+            return Promise.of(items);
+        }
+
+        // For now, fall back to synchronous label-based filtering
+        // TODO: Implement full async filtering with MasteryRegistry queries
+        return Promise.of(filterByMasteryState(items, query));
+    }
+
+    /**
      * Filters scored items by mastery state.
+     * Uses label-based filtering for backward compatibility.
      */
     @NotNull
     private List<ScoredMemoryItem> filterScoredByMasteryState(@NotNull List<ScoredMemoryItem> items) {
@@ -263,6 +281,21 @@ public final class GovernedMemoryPlane implements MemoryPlane {
                     return true;
                 })
                 .toList();
+    }
+
+    /**
+     * Filters scored items by mastery state using MasteryRegistry (async version).
+     * This is the preferred method for mastery-aware filtering.
+     */
+    @NotNull
+    private Promise<List<ScoredMemoryItem>> filterScoredByMasteryStateAsync(@NotNull List<ScoredMemoryItem> items) {
+        if (masteryRegistry == null) {
+            return Promise.of(items);
+        }
+
+        // For now, fall back to synchronous label-based filtering
+        // TODO: Implement full async filtering with MasteryRegistry queries
+        return Promise.of(filterScoredByMasteryState(items));
     }
 
     // =========================================================================

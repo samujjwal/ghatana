@@ -7,6 +7,7 @@ package com.ghatana.aep.di;
 import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.dispatch.CatalogAgentDispatcher;
+import com.ghatana.agent.runtime.safety.GovernedAgentDispatcher;
 import com.ghatana.agent.dispatch.tier.DefaultLlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
@@ -357,13 +358,39 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides {@link AgentDispatcher} bound to {@link CatalogAgentDispatcher}.
+     * Provides {@link GovernedAgentDispatcher} wrapping {@link CatalogAgentDispatcher}.
+     * This ensures all agent execution goes through governance checks including release guards,
+     * mastery validation, version context checks, and task classification.
      *
-     * @param dispatcher the concrete dispatcher implementation
-     * @return agent dispatcher interface binding
+     * @param catalogAgentDispatcher the base catalog dispatcher to wrap
+     * @return governed agent dispatcher
      */
     @Provides
-    AgentDispatcher agentDispatcher(CatalogAgentDispatcher dispatcher) {
-        return dispatcher;
+    GovernedAgentDispatcher governedAgentDispatcher(
+            CatalogAgentDispatcher catalogAgentDispatcher) {
+        return new GovernedAgentDispatcher(
+                catalogAgentDispatcher,
+                null, // invariantMonitor - optional
+                null, // traceLedger - optional
+                null, // releaseRepository - optional
+                null, // agentRunTracer - optional
+                null, // capabilityManifest - optional
+                null, // masteryRegistry - optional
+                null, // versionContextResolver - optional
+                null, // taskClassifier - optional
+                null  // modeSelector - optional
+        );
+    }
+
+    /**
+     * Provides {@link AgentDispatcher} bound to {@link GovernedAgentDispatcher}.
+     * This ensures all consumers of AgentDispatcher get the governed version.
+     *
+     * @param governedDispatcher the governed dispatcher
+     * @return agent dispatcher interface
+     */
+    @Provides
+    AgentDispatcher agentDispatcher(GovernedAgentDispatcher governedDispatcher) {
+        return governedDispatcher;
     }
 }

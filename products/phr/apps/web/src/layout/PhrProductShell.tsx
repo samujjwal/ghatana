@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@ghatana/design-system';
 import {
   ProductShell,
-  useStableProductShellConfig,
+  useProductShellConfig,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { Outlet } from 'react-router-dom';
@@ -35,7 +35,7 @@ const sidebarFooter = (
 export function PhrProductShell(): React.ReactElement {
   const { role, setRole } = usePhrAccess();
 
-  const config = useStableProductShellConfig((): ProductShellConfig => ({
+  const config = useProductShellConfig({
     productName: 'PHR Nepal',
     currentRole: role,
     roleOrder: PHR_ROLE_ORDER,
@@ -50,7 +50,7 @@ export function PhrProductShell(): React.ReactElement {
     routes: phrRouteManifest,
     headerActions: <Button>Emergency Access Review</Button>,
     sidebarFooter,
-  }), [role, setRole]);
+  });
 
   return (
     <ProductShell config={config} contentClassName="pt-20 p-6">

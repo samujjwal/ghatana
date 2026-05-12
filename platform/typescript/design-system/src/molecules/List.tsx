@@ -183,7 +183,7 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
       padding: config.padding,
       borderRadius: tokens.borderRadius.md,
       cursor: item.disabled ? 'not-allowed' : selectable ? 'pointer' : 'default',
-      transition: `all ${tokens.transitions.transitions.fast} ease-in-out`,
+      transition: `all ${tokens.transitions.duration.fast}ms ease-in-out`,
       opacity: item.disabled ? 0.5 : 1,
       backgroundColor: item.selected ? tokens.colors.palette.primary[50] : 'transparent',
       border:
@@ -304,4 +304,3 @@ export const ListItemIcon: React.FC<ListItemIconProps> = ({ style, children, ...
   );
 };
 ListItemIcon.displayName = 'ListItemIcon';
-

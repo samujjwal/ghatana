@@ -144,7 +144,7 @@ configure<ProductPackValidationExtension> {
     manifestFile.set(layout.projectDirectory.file("domain-pack-manifest.yaml"))
     requiredManifestFields.set(
         listOf(
-            "pack:", "id:", "version:", "capabilities:", "domain:",
+            "id:", "version:", "capabilities:", "domain:",
             "kernelCapabilitiesConsumed:", "policyActions:", "pluginsConsumed:", "bridgesConsumed:",
             "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:",
             "policyResources:"

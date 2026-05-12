@@ -22,7 +22,16 @@ export type {
 } from './types';
 
 // Root shell
-export { ProductShell } from './components/ProductShell';
+export {
+  ProductShell,
+  ProductShellLayout,
+  useProductShellState,
+} from './components/ProductShell';
+export type {
+  ProductShellProps,
+  ProductShellLayoutProps,
+  ProductShellState,
+} from './components/ProductShell';
 export { PageHeader } from './components/PageHeader';
 export {
   PageContent,
@@ -47,13 +56,21 @@ export { NotificationCenter } from './components/NotificationCenter';
 export { ActiveOperationsBar } from './components/ActiveOperationsBar';
 export { UnsupportedSurfaceBoundary } from './components/UnsupportedSurfaceBoundary';
 export {
+  createRoleHierarchy,
+  createRouteAccessEvaluator,
   filterDiscoverableRoutes,
+  hasMinimumRole,
   hydrateRoutesFromEntitlement,
   isRouteAllowed,
   resolveHighestRole,
 } from './access';
+export type {
+  RoleHierarchy,
+  RouteAccessEvaluator,
+} from './access';
 export {
   createProductShellConfig,
+  useProductShellConfig,
   useStableProductShellConfig,
 } from './shellConfig';
 export {

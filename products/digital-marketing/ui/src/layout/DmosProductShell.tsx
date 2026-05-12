@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
   ProductShell,
   resolveHighestRole,
-  useStableProductShellConfig,
+  useProductShellConfig,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -56,7 +56,7 @@ export function DmosProductShell({ children }: DmosProductShellProps): React.Rea
     [workspaceId],
   );
 
-  const config = useStableProductShellConfig((): ProductShellConfig => ({
+  const config = useProductShellConfig({
     productName: 'DMOS',
     logo: <span className="text-lg font-semibold tracking-tight text-sky-700">DM</span>,
     currentRole,
@@ -80,7 +80,7 @@ export function DmosProductShell({ children }: DmosProductShellProps): React.Rea
     ),
     sidebarFooter,
     onSearch: () => navigate(resolveDmosRoutePath('/workspaces/:workspaceId/dashboard', workspaceId)),
-  }), [currentRole, logout, navigate, shellRoutes, workspaceId]);
+  });
 
   return (
     <ProductShell

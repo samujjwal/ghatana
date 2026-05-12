@@ -13,6 +13,7 @@
  * This ensures single source of truth for product registration.
  */
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,7 @@ const SETTINGS_OUTPUT_PATH = path.join(repoRoot, 'config/generated/settings-grad
 const PNPM_OUTPUT_PATH = path.join(repoRoot, 'config/generated/pnpm-workspace-entries.yaml');
 const CI_MATRIX_OUTPUT_PATH = path.join(repoRoot, 'config/generated/ci-matrix.json');
 const PACKAGE_SCRIPTS_OUTPUT_PATH = path.join(repoRoot, 'config/generated/package-scripts.json');
+const PNPM_WORKSPACE_PATH = path.join(repoRoot, 'pnpm-workspace.yaml');
 
 // Load canonical registry
 function loadRegistry() {
@@ -52,44 +54,22 @@ function validateRegistry(registry) {
     throw new Error('Registry contains no products');
   }
   
-  console.log(`Validated registry with ${productIds.length} products`);
-  return productIds;
-}
-
-// Load manifests from canonical product registry instead of hardcoded array
-function loadManifestsFromRegistry() {
-  const registryPath = path.join(repoRoot, 'config/canonical-product-registry.json');
-  if (!existsSync(registryPath)) {
-    console.warn('Canonical product registry not found, using fallback');
-    return [];
-  }
-  
-  const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
-  const manifests = [];
-  
   for (const [productId, product] of Object.entries(registry.registry)) {
-    // Only include products that have manifest paths
-    if (product.manifestPath && product.manifestFormat) {
-      const entry = {
-        product: productId,
-        file: product.manifestPath,
-        format: product.manifestFormat,
-        buildFile: product.gradleModules && product.gradleModules.length > 0 
-          ? `products/${productId.replace('-', '/')}/build.gradle.kts`
-          : null,
-      };
-      
-      // If no explicit build file, try to infer from first gradle module
-      if (!entry.buildFile && product.gradleModules && product.gradleModules.length > 0) {
-        const firstModule = product.gradleModules[0];
-        entry.buildFile = firstModule.replace(':', '').replace(/:/g, '/') + '/build.gradle.kts';
+    if (!product.kind) {
+      throw new Error(`Registry entry ${productId} must declare kind`);
+    }
+    if (product.conformance?.manifest === true) {
+      if (!product.manifestPath || !product.manifestFormat) {
+        throw new Error(`Registry entry ${productId} enables manifest conformance but has no manifestPath/manifestFormat`);
       }
-      
-      manifests.push(entry);
+      if (!product.buildFile) {
+        throw new Error(`Registry entry ${productId} enables manifest conformance but has no explicit buildFile`);
+      }
     }
   }
-  
-  return manifests;
+
+  console.log(`Validated registry with ${productIds.length} entries`);
+  return productIds;
 }
 
 // Generate product-shape.json
@@ -182,8 +162,11 @@ function generatePnpmEntries(registry) {
   lines.push('  # Shared services');
   lines.push('  - "shared-services/*/ui"');
   
-  writeFileSync(PNPM_OUTPUT_PATH, lines.join('\n'));
+  const output = lines.join('\n') + '\n';
+  writeFileSync(PNPM_OUTPUT_PATH, output);
+  writeFileSync(PNPM_WORKSPACE_PATH, output);
   console.log(`Generated pnpm workspace entries at ${PNPM_OUTPUT_PATH}`);
+  console.log(`Updated root pnpm workspace at ${PNPM_WORKSPACE_PATH}`);
 }
 
 // Generate CI matrix configuration
@@ -233,26 +216,23 @@ function generatePackageScripts(registry) {
   scripts['format'] = 'prettier --write "**/*.{ts,tsx,js,jsx,json,md}"';
   scripts['clean'] = 'pnpm -r --parallel exec rm -rf node_modules dist build .turbo';
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
+  scripts['product'] = 'node ./scripts/run-product-task.mjs';
   
   // Generate product-specific scripts from registry
   for (const [productId, product] of Object.entries(registry.registry)) {
     const surfaces = product.surfaces || [];
-    const pnpmPackages = product.pnpmPackages || [];
     
-    // Build scripts
     for (const surface of surfaces) {
-      if (surface.type === 'web' || surface.type === 'mobile' || surface.type === 'backend-api') {
-        const surfaceName = surface.type === 'backend-api' ? 'gateway' : surface.type;
-        scripts[`build:${productId}-${surfaceName}`] = `pnpm --dir ${surface.path} build`;
-        scripts[`dev:${productId}-${surfaceName}`] = `pnpm --dir ${surface.path} dev`;
-        scripts[`test:${productId}-${surfaceName}`] = `pnpm --dir ${surface.path} test`;
+      const surfaceName = surface.type === 'backend-api' ? 'gateway' : surface.type;
+      scripts[`build:${productId}-${surfaceName}`] = `pnpm product ${productId} build ${surfaceName}`;
+      scripts[`test:${productId}-${surfaceName}`] = `pnpm product ${productId} test ${surfaceName}`;
+      if (surface.packagePath) {
+        scripts[`dev:${productId}-${surfaceName}`] = `pnpm product ${productId} dev ${surfaceName}`;
       }
     }
     
-    // Build all for product
-    if (pnpmPackages.length > 0) {
-      scripts[`build:${productId}`] = `pnpm --filter './products/${productId.replace('-', '/')}/**' build`;
-    }
+    scripts[`build:${productId}`] = `pnpm product ${productId} build`;
+    scripts[`test:${productId}`] = `pnpm product ${productId} test`;
   }
   
   writeFileSync(PACKAGE_SCRIPTS_OUTPUT_PATH, JSON.stringify(scripts, null, 2) + '\n');
@@ -278,8 +258,7 @@ function main() {
     
     // Merge generated package scripts into package.json
     console.log('\nMerging generated package scripts into package.json...');
-    const { execSync } = require('node:child_process');
-    execSync('node scripts/merge-generated-package-scripts.mjs', { cwd: repoRoot, stdio: 'inherit' });
+    execFileSync(process.execPath, ['scripts/merge-generated-package-scripts.mjs'], { cwd: repoRoot, stdio: 'inherit' });
     
     console.log('\n=== All artifacts generated successfully ===');
     console.log('\nGenerated files:');

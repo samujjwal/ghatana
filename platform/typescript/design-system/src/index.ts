@@ -59,6 +59,7 @@ export * from "./molecules/FormField";
 export * from "./molecules/Alert";
 export * from "./molecules/Card";
 export * from "./molecules/EmptyState";
+export * from "./molecules/AsyncState";
 export * from "./molecules/Modal";
 export * from "./molecules/Dialog";
 export * from "./molecules/Table";
@@ -108,6 +109,7 @@ export * from "./organisms/ErrorBoundary";
 export * from "./organisms/ProtectedRoute";
 export * from "./organisms/DynamicForm";
 export * from "./organisms/ActivityFeed";
+export * from "./organisms/DashboardPrimitives";
 export { DataGrid } from "./organisms/DataGrid";
 
 // NOTE: design-system provides its own DataGrid component with stats, CRUD, and multiple display modes.

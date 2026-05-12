@@ -21,8 +21,9 @@ import type React from 'react';
  * stable  → fully implemented, discoverable
  * preview → partially implemented, visible with caveats
  * boundary → not ready, navigation-hidden or replaced by UnsupportedSurfaceBoundary
+ * deprecated → retained for compatibility but hidden from primary navigation
  */
-export type RouteLifecycle = 'stable' | 'preview' | 'boundary';
+export type RouteLifecycle = 'stable' | 'preview' | 'boundary' | 'deprecated';
 
 /**
  * Generic route capability that product registries can map to. Products keep
@@ -47,7 +48,7 @@ export interface ProductRouteCapability {
   readonly group?: string;
   /** Minimum role required to access this route. Compared via `config.roleOrder`. */
   readonly minimumRole?: string;
-  /** Route lifecycle state. boundary routes are excluded from navigation. */
+  /** Route lifecycle state. boundary and deprecated routes are excluded from navigation. */
   readonly lifecycle?: RouteLifecycle;
   /** Whether the route appears in navigation for the current role. */
   readonly discoverable?: boolean;

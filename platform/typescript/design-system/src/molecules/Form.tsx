@@ -146,7 +146,7 @@ export const FormSubmitButton: React.FC<FormSubmitButtonProps> = ({
     fontWeight: 600,
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     opacity: disabled || loading ? 0.5 : 1,
-    transition: `all ${tokens.transitions.transitions.fast} ease-in-out`,
+    transition: `all ${tokens.transitions.duration.fast}ms ease-in-out`,
   };
 
   return (

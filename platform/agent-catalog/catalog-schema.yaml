@@ -226,6 +226,40 @@ schema:
       governance:
         type: object
         description: "General governance metadata"
+        properties:
+          requires_approval:
+            type: boolean
+          can_block:
+            type: boolean
+          audit_trail:
+            type: string
+            enum: [minimal, standard, detailed]
+          skillRefs:
+            type: array
+            items:
+              skillId:
+                type: string
+                required: true
+              requiredLevel:
+                type: string
+                enum: [L1, L2, L3, L4, L5]
+                default: L1
+            description: "References to skills this agent requires mastery of"
+          masteryBindings:
+            type: object
+            properties:
+              learningLevel:
+                type: string
+                enum: [L1, L2, L3, L4, L5]
+                description: "Target learning level for this agent"
+              evaluationPackId:
+                type: string
+                description: "ID of the evaluation pack for this agent"
+              promotionPolicy:
+                type: string
+                enum: [default, strict, permissive]
+                default: default
+            description: "Mastery system bindings for this agent"
 
       actionGovernance:
         type: object

@@ -114,6 +114,17 @@ governance:
   requires_approval: false
   can_block: false
   audit_trail: standard
+  skillRefs:
+  - skillId: java-backend
+    requiredLevel: L3
+  - skillId: activej-async
+    requiredLevel: L2
+  - skillId: rest-api-design
+    requiredLevel: L2
+  masteryBindings:
+    learningLevel: L3
+    evaluationPackId: java-expert-eval-pack
+    promotionPolicy: default
 performance:
   expected_latency_ms: 3000
   max_latency_ms: 10000

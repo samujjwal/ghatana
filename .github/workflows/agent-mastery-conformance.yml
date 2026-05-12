@@ -1,0 +1,85 @@
+name: Agent Mastery Conformance
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'platform/java/agent-core/**'
+      - 'products/data-cloud/extensions/agent-registry/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'platform/java/agent-core/**'
+      - 'products/data-cloud/extensions/agent-registry/**'
+
+concurrency:
+  group: agent-mastery-conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-mastery-conformance:
+    name: Validate Agent Mastery Conformance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run AgentDefinitionValidator tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*AgentDefinitionMasteryValidationTest" --no-daemon
+
+      - name: Validate governance artifacts in AgentRelease
+        run: ./gradlew :platform:java:agent-core:test --tests "*AgentReleaseTest" --no-daemon
+
+      - name: Run DefaultPromotionPolicy tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*DefaultPromotionPolicyTest" --no-daemon
+
+      - name: Validate obsolescence detection
+        run: ./gradlew :platform:java:agent-core:test --tests "*ObsolescenceDetectorTest" --no-daemon
+
+      - name: Validate obsolescence routing
+        run: ./gradlew :platform:java:agent-core:test --tests "*ObsolescenceRouterTest" --no-daemon
+
+      - name: Post PR comment on violations
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚨 **Agent Mastery Conformance Violations Detected**
+
+              This PR fails agent mastery conformance checks:
+
+              - AgentDefinitionValidator governance checks
+              - AgentRelease governance artifacts (evaluationPackId, memoryContractId)
+              - DefaultPromotionPolicy target-specific checks
+              - Obsolescence detection and routing
+
+              **Action Required:**
+              1. Ensure agent definitions include required governance artifacts
+              2. Verify evaluationPackId and memoryContractId are set
+              3. Check that promotion policy includes target-specific checks
+              4. Review obsolescence detection configuration
+
+              See \`docs/audit/README.md\` for governance requirements.`
+            })

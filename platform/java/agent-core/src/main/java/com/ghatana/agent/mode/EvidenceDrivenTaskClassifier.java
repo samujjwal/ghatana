@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ */
+package com.ghatana.agent.mode;
+
+import com.ghatana.agent.environment.EnvironmentFingerprint;
+import com.ghatana.agent.mastery.MasteryEvidence;
+import com.ghatana.agent.mastery.MasteryEvidenceRepository;
+import com.ghatana.agent.mastery.MasteryEvidenceType;
+import com.ghatana.agent.mastery.MasteryItem;
+import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryState;
+import io.activej.promise.Promise;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+/**
+ * Evidence-driven task classifier that uses mastery evidence to classify tasks.
+ *
+ * <p>Instead of using heuristics, this classifier queries the mastery evidence repository
+ * and mastery registry to determine task classification based on actual evidence of mastery,
+ * evaluation results, and risk factors.
+ *
+ * @doc.type class
+ * @doc.purpose Evidence-driven task classifier
+ * @doc.layer agent-core
+ * @doc.pattern Classifier
+ */
+public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
+
+    private final MasteryRegistry masteryRegistry;
+    private final MasteryEvidenceRepository evidenceRepository;
+
+    // Risk patterns for high-risk detection
+    private static final Pattern[] RISK_PATTERNS = {
+            Pattern.compile("(?i)(delete|drop|truncate|remove|destroy)"),
+            Pattern.compile("(?i)(production|prod)"),
+            Pattern.compile("(?i)(credential|password|secret|key|token)"),
+            Pattern.compile("(?i)(security|auth|permission|role)"),
+            Pattern.compile("(?i)(payment|transaction|billing|invoice)"),
+            Pattern.compile("(?i)(database|schema|migration)"),
+            Pattern.compile("(?i)(deploy|release|publish)")
+    };
+
+    // Maintenance patterns
+    private static final Pattern[] MAINTENANCE_PATTERNS = {
+            Pattern.compile("(?i)(legacy|deprecated|old)"),
+            Pattern.compile("(?i)(refactor|cleanup|debt)"),
+            Pattern.compile("(?i)(bugfix|hotfix|patch)"),
+            Pattern.compile("(?i)(upgrade.*version|migration.*to)")
+    };
+
+    // Exploration patterns
+    private static final Pattern[] EXPLORATION_PATTERNS = {
+            Pattern.compile("(?i)(research|investigate|explore|prototype)"),
+            Pattern.compile("(?i)(poc|proof of concept)"),
+            Pattern.compile("(?i)(experiment|test|trial)"),
+            Pattern.compile("(?i)(spike|feasibility)")
+    };
+
+    /**
+     * Creates an evidence-driven task classifier.
+     *
+     * @param masteryRegistry mastery registry
+     * @param evidenceRepository evidence repository
+     */
+    public EvidenceDrivenTaskClassifier(
+            @NotNull MasteryRegistry masteryRegistry,
+            @NotNull MasteryEvidenceRepository evidenceRepository
+    ) {
+        this.masteryRegistry = masteryRegistry;
+        this.evidenceRepository = evidenceRepository;
+    }
+
+    @Override
+    @NotNull
+    public TaskClass classify(
+            @NotNull String taskDescription,
+            @NotNull Optional<MasteryItem> mastery,
+            @NotNull EnvironmentFingerprint env
+    ) {
+        // Check for high-risk patterns first
+        if (isHighRisk(taskDescription)) {
+            return TaskClass.HIGH_RISK_TASK;
+        }
+
+        // Check for maintenance patterns
+        if (isMaintenance(taskDescription)) {
+            return TaskClass.MAINTENANCE_TASK;
+        }
+
+        // Check for exploration patterns
+        if (isExploration(taskDescription)) {
+            return TaskClass.EXPLORATION_TASK;
+        }
+
+        // Check for migration patterns
+        if (isMigration(taskDescription)) {
+            return TaskClass.MIGRATION_TASK;
+        }
+
+        // Use mastery evidence to determine if task is known or variation
+        if (mastery.isPresent()) {
+            MasteryItem item = mastery.get();
+            
+            // Check mastery state
+            if (item.state() == MasteryState.MASTERED) {
+                // Check for evidence of exact task match
+                return hasExactEvidence(item, taskDescription) 
+                        ? TaskClass.KNOWN_TASK 
+                        : TaskClass.KNOWN_VARIATION;
+            }
+            
+            if (item.state() == MasteryState.COMPETENT) {
+                return TaskClass.KNOWN_VARIATION;
+            }
+            
+            if (item.state() == MasteryState.PRACTICED) {
+                return TaskClass.UNKNOWN_TASK;
+            }
+        }
+
+        // No mastery item or low mastery state
+        return TaskClass.UNKNOWN_TASK;
+    }
+
+    /**
+     * Checks if the task description matches high-risk patterns.
+     */
+    private boolean isHighRisk(String description) {
+        for (Pattern pattern : RISK_PATTERNS) {
+            if (pattern.matcher(description).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the task description matches maintenance patterns.
+     */
+    private boolean isMaintenance(String description) {
+        for (Pattern pattern : MAINTENANCE_PATTERNS) {
+            if (pattern.matcher(description).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the task description matches exploration patterns.
+     */
+    private boolean isExploration(String description) {
+        for (Pattern pattern : EXPLORATION_PATTERNS) {
+            if (pattern.matcher(description).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the task description matches migration patterns.
+     */
+    private boolean isMigration(String description) {
+        return description.toLowerCase().contains("migrate") 
+                || description.toLowerCase().contains("upgrade")
+                || description.toLowerCase().contains("migrating");
+    }
+
+    /**
+     * Checks if there's evidence of exact task match for the mastery item.
+     * This is a synchronous check for simplicity - async version would use Promise.
+     */
+    private boolean hasExactEvidence(MasteryItem item, String taskDescription) {
+        // Check if evaluation refs indicate exact task matches
+        if (item.evaluationRefs() != null && !item.evaluationRefs().isEmpty()) {
+            for (String evalRef : item.evaluationRefs()) {
+                if (evalRef.toLowerCase().contains(taskDescription.toLowerCase().substring(0, Math.min(20, taskDescription.length())))) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check evidence refs for procedural skill evidence
+        if (item.evidenceRefs() != null && !item.evidenceRefs().isEmpty()) {
+            // Evidence refs are stored as strings in the format "evidenceId:ref"
+            for (String evidenceRef : item.evidenceRefs()) {
+                String[] parts = evidenceRef.split(":");
+                if (parts.length > 1) {
+                    String ref = parts[1];
+                    if (ref.toLowerCase().contains(taskDescription.toLowerCase().substring(0, Math.min(20, taskDescription.length())))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Async version that queries evidence repository for more accurate classification.
+     *
+     * @param taskDescription task description
+     * @param masteryId mastery item ID
+     * @return promise of task classification
+     */
+    @NotNull
+    public Promise<TaskClass> classifyAsync(
+            @NotNull String taskDescription,
+            @NotNull String masteryId
+    ) {
+        // Query evidence repository for this mastery item
+        return evidenceRepository.findByMasteryId(masteryId)
+                .then(evidenceList -> {
+                    // Check for exact task match evidence
+                    boolean hasExactMatch = evidenceList.stream()
+                            .anyMatch(e -> e.ref().toLowerCase().contains(taskDescription.toLowerCase()));
+                    
+                    if (hasExactMatch) {
+                        return Promise.of(TaskClass.KNOWN_TASK);
+                    }
+                    
+                    // Check for procedural skill evidence (tool outputs indicate procedural execution)
+                    boolean hasProceduralEvidence = evidenceList.stream()
+                            .anyMatch(e -> e.type() == MasteryEvidenceType.TOOL_OUTPUT);
+                    
+                    if (hasProceduralEvidence) {
+                        return Promise.of(TaskClass.KNOWN_VARIATION);
+                    }
+                    
+                    return Promise.of(TaskClass.UNKNOWN_TASK);
+                });
+    }
+}

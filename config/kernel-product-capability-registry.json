@@ -48,14 +48,64 @@
   "domainPacks": {
     "kernel-canonical": {
       "description": "Canonical Kernel domain packs - products declare their own domain packs in manifests"
+    },
+    "phr-healthcare-boundary-policy": {
+      "owner": "phr",
+      "description": "PHR healthcare boundary policies."
+    },
+    "phr-compliance-rule-pack": {
+      "owner": "phr",
+      "description": "PHR compliance rule pack."
+    },
+    "finance-trading-boundary-policy": {
+      "owner": "finance",
+      "description": "Finance trading boundary policies."
+    },
+    "finance-compliance-rule-pack": {
+      "owner": "finance",
+      "description": "Finance compliance rule pack."
+    },
+    "digital-marketing-boundary-policy": {
+      "owner": "digital-marketing",
+      "description": "Digital Marketing boundary policies."
+    },
+    "digital-marketing-compliance-rule-pack": {
+      "owner": "digital-marketing",
+      "description": "Digital Marketing compliance rule pack."
+    },
+    "flashit-boundary-policy": {
+      "owner": "flashit",
+      "description": "FlashIt boundary policies."
+    },
+    "flashit-compliance-rule-pack": {
+      "owner": "flashit",
+      "description": "FlashIt compliance rule pack."
     }
   },
   "policyActions": {
-    "canonical": ["read", "write", "delete", "export", "download"],
-    "note": "Product-specific policy actions are declared in product manifests with product prefix (e.g., finance:settle, digital-marketing:launch)"
+    "canonical": [
+      "read",
+      "write",
+      "delete",
+      "export",
+      "download"
+    ],
+    "note": "Product-specific policy actions are declared in product manifests with product prefix (e.g., finance:settle, digital-marketing:launch)",
+    "extensionNamespaces": [
+      "phr",
+      "finance",
+      "digital-marketing",
+      "flashit"
+    ]
   },
   "policyResources": {
     "canonical": [],
-    "note": "Product-specific policy resources are declared in product manifests with product prefix (e.g., finance:transactions, phr:subject-records)"
+    "note": "Product-specific policy resources are declared in product manifests with product prefix (e.g., finance:transactions, phr:subject-records)",
+    "extensionNamespaces": [
+      "phr",
+      "finance",
+      "digital-marketing",
+      "flashit"
+    ]
   }
 }

@@ -9,8 +9,20 @@ const schemaVersionPattern = /^1\.0\.0$/;
 
 const stringArraySchema = z.array(z.string().min(1));
 const strictRecordSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown())]));
+const productExtensionValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.array(z.union([z.string(), z.number(), z.boolean()])),
+  z.record(z.string(), z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(z.union([z.string(), z.number(), z.boolean()])),
+  ])),
+]);
 // Constrained schema for product extensions - allows structured JSON but not arbitrary code
-const productExtensionsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown()), z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))]));
+const productExtensionsSchema = z.record(z.string(), productExtensionValueSchema);
 
 // Strict extension schema for product-specific extensions
 const productExtensionSchema = z.object({
@@ -42,7 +54,7 @@ const moduleSchema = z.object({
 });
 
 export const productManifestSchema = z.object({
-  schemaVersion: z.string().regex(schemaVersionPattern).optional(),
+  schemaVersion: z.string().regex(schemaVersionPattern),
   id: z.string().regex(slugPattern),
   version: z.string().regex(semverPattern),
   product: z.string().regex(slugPattern).optional(),
@@ -79,21 +91,16 @@ export const productManifestSchema = z.object({
 
 export function loadProductManifest(filePath, format) {
   const content = readFileSync(filePath, 'utf8');
-  if (format === 'json') {
-    return JSON.parse(content);
-  }
-
-  const parsed = yaml.load(content);
+  const parsed = format === 'json' ? JSON.parse(content) : yaml.load(content);
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('manifest must parse to an object');
   }
 
-  const pack = parsed.pack;
-  if (!pack || typeof pack !== 'object') {
-    throw new Error('YAML manifest must contain a top-level pack object');
+  if (!parsed.schemaVersion && parsed.pack && typeof parsed.pack === 'object') {
+    return parsed.pack;
   }
 
-  return pack;
+  return parsed;
 }
 
 export function parseRegistry(filePath) {

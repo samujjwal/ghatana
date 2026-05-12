@@ -7,45 +7,46 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
-
-const INCLUDE_ROOTS = [
-  "products/phr",
-  "products/finance",
-  "products/digital-marketing",
-  "products/flashit",
-];
-const FILE_ALLOWLIST = new Set([
-  "docs/SECRETS_CLASSIFICATION.md",
-  "docs/kernel/KERNEL_PURITY_RULES.md",
-  "docs/process/PRODUCT_TRUTHFULNESS_POLICY.md",
-]);
-const EXCLUDE_FRAGMENTS = [
-  "/node_modules/",
-  "/dist/",
-  "/build/",
-  "/.git/",
-  "/docs/archive/",
-  "/.env.development",
-  "/.env.local",
-  "/.env.production",
-  "/pnpm-lock.yaml",
-  "/package-lock.json",
-  "/yarn.lock",
-];
-const SCANNABLE_NAMES = new Set(["Dockerfile", "package.json", "README.md", "REVIEW_REPORT.md"]);
-const SCANNABLE_EXTENSIONS = new Set([".yml", ".yaml", ".env", ".example", ".sh"]);
-const PATTERNS = [
-  /\b(sk-placeholder|changeme|password123|your_super_secret_[a-z0-9_]*|your_[a-z0-9_]+(?:_id|_key|_secret|_dsn|_email)?|postgres:password|admin\/admin|minioadmin123|guest\/guest)\b/i,
-  /\b(ghatana123|redis123|flashit_dev_password|flashit_test_password)\b/,
-  /\$\{(?:[A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|KEY|DSN|DATABASE_URL|REDIS_URL)[A-Z0-9_]*):-[^}]+\}/,
-];
+const configPath = path.join(repoRoot, "config/security-secret-scan.json");
 
 const violations = [];
 
+function loadPolicy() {
+  const policy = JSON.parse(readFileSync(configPath, "utf8"));
+  const requiredArrays = [
+    "includeRoots",
+    "fileAllowlist",
+    "excludeFragments",
+    "scannableNames",
+    "scannableExtensions",
+    "patterns",
+  ];
+
+  for (const key of requiredArrays) {
+    if (!Array.isArray(policy[key])) {
+      throw new Error(`config/security-secret-scan.json must declare ${key}[]`);
+    }
+  }
+
+  return {
+    includeRoots: policy.includeRoots,
+    fileAllowlist: new Set(policy.fileAllowlist),
+    excludeFragments: policy.excludeFragments,
+    scannableNames: new Set(policy.scannableNames),
+    scannableExtensions: new Set(policy.scannableExtensions),
+    patterns: policy.patterns.map((entry) => ({
+      id: entry.id,
+      regex: new RegExp(entry.pattern, entry.flags ?? ""),
+    })),
+  };
+}
+
+const policy = loadPolicy();
+
 function shouldScan(relPath) {
   const normalized = relPath.replace(/\\/g, "/");
-  if (FILE_ALLOWLIST.has(normalized)) return false;
-  if (EXCLUDE_FRAGMENTS.some((fragment) => normalized.includes(fragment))) return false;
+  if (policy.fileAllowlist.has(normalized)) return false;
+  if (policy.excludeFragments.some((fragment) => normalized.includes(fragment))) return false;
   const base = path.basename(normalized);
   const extension = path.extname(base);
   const isProductDoc = base === "README.md" || base === "REVIEW_REPORT.md" || normalized.includes("/docs/");
@@ -59,12 +60,12 @@ function shouldScan(relPath) {
     extension === ".yml" ||
     extension === ".yaml" ||
     extension === ".sh";
-  return isProductDoc || isProductInfra || SCANNABLE_NAMES.has(base) || SCANNABLE_EXTENSIONS.has(extension);
+  return isProductDoc || isProductInfra || policy.scannableNames.has(base) || policy.scannableExtensions.has(extension);
 }
 
 const rgArgs = [
   "--files",
-  ...INCLUDE_ROOTS,
+  ...policy.includeRoots,
   "-g", "*.yml",
   "-g", "*.yaml",
   "-g", "*.env",
@@ -90,10 +91,10 @@ for (const { fullPath, relPath } of files) {
     if (/^\s*(#|\/\/)/.test(line)) {
       return;
     }
-    PATTERNS.forEach((pattern) => {
-      const match = line.match(pattern);
+    policy.patterns.forEach((pattern) => {
+      const match = line.match(pattern.regex);
       if (match) {
-        violations.push(`${relPath}:${index + 1} ${match[0]}`);
+        violations.push(`${relPath}:${index + 1} ${pattern.id} ${match[0]}`);
       }
     });
   });

@@ -5,12 +5,17 @@ import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname);
-const auditedProducts = [
-  'products/phr',
-  'products/finance',
-  'products/digital-marketing',
-  'products/flashit',
-];
+const registryPath = resolve(repoRoot, 'config/canonical-product-registry.json');
+const registry = JSON.parse(readFileSync(registryPath, 'utf8')).registry;
+const registryEntries = Object.values(registry);
+const bridgeProducts = registryEntries.filter((entry) =>
+  entry.kind === 'business-product' &&
+  entry.metadata?.status === 'active' &&
+  entry.conformance?.bridge === true,
+);
+const bridgeProductRoots = bridgeProducts.flatMap((entry) =>
+  (entry.surfaces ?? []).map((surface) => surface.path.split('/').slice(0, 2).join('/')),
+);
 const bridgeFiles = execSync(
   "rg --files products | rg '(KernelAdapterImpl|Bridge.*Impl)\\.java$'",
   { cwd: repoRoot, encoding: 'utf8' }
@@ -18,40 +23,27 @@ const bridgeFiles = execSync(
   .trim()
   .split('\n')
   .filter(Boolean);
-const auditedBridgeFiles = bridgeFiles.filter(file => auditedProducts.some(product => file.startsWith(`${product}/`)));
-const expectedAuditedBridgeTests = new Map([
-  [
-    'products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java',
-    [
-      {
-        file: 'products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java',
-        requiredEvidence: [
-          'shouldRejectAuthorizationBeforeStart',
-          'shouldDelegateAuthorization',
-          'shouldDenyConsentVerificationWhenUnauthorized',
-          'shouldRejectUnauthorizedApprovalRequests',
-          'shouldRecordAuditWithContextAttributes',
-          'shouldRejectUnauthorizedAuditRecording',
-          'shouldRejectUnauthorizedRiskEvaluation',
-          'shouldDelegateFeatureFlagEvaluation',
-          'shouldFailClosedForUnauthorizedFeatureFlagChecks',
-          'shouldNotifyUser',
-        ],
-      },
-      {
-        file: 'products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java',
-        requiredEvidence: [
-          'transientFailuresTriggerRetryWithBackoff',
-          'retryAttemptsPreserveOriginalContext',
-          'retryCountRespectsMaximum',
-        ],
-      },
-    ],
-  ],
-]);
+const auditedBridgeFiles = bridgeFiles.filter(file => bridgeProductRoots.some(product => file.startsWith(`${product}/`)));
+const expectedAuditedBridgeTests = new Map();
 
 const violations = [];
 const exemptMethodNames = new Set(['start', 'stop', 'started']);
+
+for (const product of bridgeProducts) {
+  const adapters = product.conformance?.bridgeAdapters;
+  if (!Array.isArray(adapters) || adapters.length === 0) {
+    violations.push(`${product.id}: bridge conformance is enabled but conformance.bridgeAdapters is empty`);
+    continue;
+  }
+
+  for (const adapter of adapters) {
+    if (!adapter.file || !Array.isArray(adapter.tests) || adapter.tests.length === 0) {
+      violations.push(`${product.id}: bridge adapter contract must declare file and tests`);
+      continue;
+    }
+    expectedAuditedBridgeTests.set(adapter.file, adapter.tests);
+  }
+}
 
 for (const file of auditedBridgeFiles) {
   if (!expectedAuditedBridgeTests.has(file)) {
@@ -68,7 +60,13 @@ for (const [bridgeFile, testContracts] of expectedAuditedBridgeTests.entries()) 
   }
 
   for (const { file, requiredEvidence } of testContracts) {
-    const content = readFileSync(resolve(repoRoot, file), 'utf8');
+    let content = '';
+    try {
+      content = readFileSync(resolve(repoRoot, file), 'utf8');
+    } catch {
+      violations.push(`${file}: expected bridge compliance test file is missing`);
+      continue;
+    }
     for (const token of requiredEvidence) {
       if (!content.includes(token)) {
         violations.push(`${file}: missing bridge compliance evidence token '${token}'`);

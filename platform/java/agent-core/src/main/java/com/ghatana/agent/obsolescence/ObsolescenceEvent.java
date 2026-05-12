@@ -4,10 +4,10 @@
  */
 package com.ghatana.agent.obsolescence;
 
-import com.ghatana.agent.mastery.MasteryItem;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,7 +25,7 @@ public record ObsolescenceEvent(
         @NotNull ObsolescenceReason reason,
         @NotNull String description,
         @NotNull Instant detectedAt,
-        @NotNull Map<String, String> evidence,
+        @NotNull List<ObsolescenceEvidenceRef> evidenceRefs,
         @NotNull Map<String, String> metadata
 ) {
     public ObsolescenceEvent {
@@ -34,9 +34,9 @@ public record ObsolescenceEvent(
         Objects.requireNonNull(reason, "reason must not be null");
         Objects.requireNonNull(description, "description must not be null");
         Objects.requireNonNull(detectedAt, "detectedAt must not be null");
-        Objects.requireNonNull(evidence, "evidence must not be null");
+        Objects.requireNonNull(evidenceRefs, "evidenceRefs must not be null");
         Objects.requireNonNull(metadata, "metadata must not be null");
-        evidence = Map.copyOf(evidence);
+        evidenceRefs = List.copyOf(evidenceRefs);
         metadata = Map.copyOf(metadata);
     }
 
@@ -60,7 +60,34 @@ public record ObsolescenceEvent(
                 reason,
                 description,
                 Instant.now(),
-                Map.of(),
+                List.of(),
+                Map.of()
+        );
+    }
+
+    /**
+     * Creates an obsolescence event with evidence references.
+     *
+     * @param masteryId mastery item identifier
+     * @param reason obsolescence reason
+     * @param description description of the obsolescence
+     * @param evidenceRefs evidence references supporting the detection
+     * @return obsolescence event
+     */
+    @NotNull
+    public static ObsolescenceEvent of(
+            @NotNull String masteryId,
+            @NotNull ObsolescenceReason reason,
+            @NotNull String description,
+            @NotNull List<ObsolescenceEvidenceRef> evidenceRefs
+    ) {
+        return new ObsolescenceEvent(
+                java.util.UUID.randomUUID().toString(),
+                masteryId,
+                reason,
+                description,
+                Instant.now(),
+                evidenceRefs,
                 Map.of()
         );
     }

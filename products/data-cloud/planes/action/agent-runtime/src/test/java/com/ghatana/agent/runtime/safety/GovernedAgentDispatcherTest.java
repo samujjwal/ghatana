@@ -134,16 +134,18 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     /** Creates a minimal valid release with TX-2/TX-5 required fields. */
-    private static AgentRelease release(String agentId, AgentReleaseState state) { 
-        return new AgentReleaseBuilder() 
-                .agentId(agentId) 
+    private static AgentRelease release(String agentId, AgentReleaseState state) {
+        return new AgentReleaseBuilder()
+                .agentId(agentId)
                 .releaseVersion("1.0.0")
-                .state(state) 
+                .state(state)
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
+                .evaluationPackId("ep-test")
+                .memoryContractId("mc-test")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); 
+                .build();
     }
 
     @Nested
@@ -386,13 +388,15 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("TURN_STARTED includes release metadata when release present")
-        void turnStartedIncludesReleaseMetadata() { 
-            AgentRelease rel = new AgentReleaseBuilder() 
+        void turnStartedIncludesReleaseMetadata() {
+            AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
                     .releaseVersion("2.0.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-prod")
                     .threatModelId("tm-prod")
+                    .evaluationPackId("ep-prod")
+                    .memoryContractId("mc-prod")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L2")
                     .policyPackId("pp-123")
@@ -489,13 +493,15 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("POLICY_EVALUATED (ALLOW) payload includes policyPackId when release is present")
-        void policyEvaluatedAllowIncludesPolicyPackId() { 
-            AgentRelease rel = new AgentReleaseBuilder() 
+        void policyEvaluatedAllowIncludesPolicyPackId() {
+            AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
                     .releaseVersion("1.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-t")
                     .threatModelId("tm-t")
+                    .evaluationPackId("ep-t")
+                    .memoryContractId("mc-t")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-456")
@@ -520,13 +526,15 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ACTION_EXECUTED payload includes policyPackId when release is present")
-        void actionExecutedIncludesPolicyPackId() { 
-            AgentRelease rel = new AgentReleaseBuilder() 
+        void actionExecutedIncludesPolicyPackId() {
+            AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
                     .releaseVersion("1.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-t")
                     .threatModelId("tm-t")
+                    .evaluationPackId("ep-t")
+                    .memoryContractId("mc-t")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-789")

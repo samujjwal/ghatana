@@ -1,5 +1,5 @@
 import {
-  isRouteAllowed,
+  createRouteAccessEvaluator,
   resolveHighestRole,
   type ProductRouteCapability,
 } from '@ghatana/product-shell';
@@ -12,6 +12,8 @@ import {
 
 export type { DmosRouteManifestEntry };
 export { DMOS_ROLE_ORDER };
+
+export const dmosRouteAccess = createRouteAccessEvaluator(DMOS_ROLE_ORDER);
 
 const DEFAULT_AUTHENTICATED_ROLE: ValidRole = 'viewer';
 
@@ -137,7 +139,7 @@ export function isRouteAllowedForRoles(
   roles: readonly string[],
 ): boolean {
   const currentRole = getHighestRole(roles);
-  return isRouteAllowed(route, currentRole, DMOS_ROLE_ORDER);
+  return dmosRouteAccess.isRouteAllowed(route, currentRole);
 }
 
 export function resolveDmosRoutePath(path: string, workspaceId: string | null | undefined): string {

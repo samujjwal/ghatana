@@ -26,3 +26,21 @@ generator:
     - perceive
     - reason
     - act
+
+governance:
+  learningLevel: L2
+  adaptationTargets:
+    - semantic-facts
+    - negative-knowledge
+    - episodic-capture
+  skillRefs:
+    - id: "finance.fraud-detection"
+      learningLevel: "L2"
+      requiredFor: "response-serving"
+  masteryBindings:
+    - skillId: "finance.fraud-detection"
+      learningLevel: "L2"
+      evaluationPackId: "finance-fraud-eval-pack-v1"
+      promotionPolicy: "require-eval-pass"
+  evaluationRefs:
+    - "finance-fraud-eval-pack-v1"

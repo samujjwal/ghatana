@@ -47,6 +47,7 @@ public class NegativeKnowledgePrioritizer {
 
     /**
      * Checks if a memory item represents negative knowledge.
+     * Performs comprehensive checks to ensure all negative knowledge is identified.
      *
      * @param item the memory item
      * @return true if negative knowledge
@@ -54,9 +55,36 @@ public class NegativeKnowledgePrioritizer {
     private boolean isNegativeKnowledge(@NotNull MemoryItem item) {
         String type = item.type();
         String negativeFlag = item.metadata().get("negativeKnowledge");
+        String action = item.metadata().get("action");
+        String learningTarget = item.metadata().get("learningTarget");
 
-        return "NEGATIVE_KNOWLEDGE".equals(type)
-                || "true".equalsIgnoreCase(negativeFlag)
-                || "prohibited".equalsIgnoreCase(item.metadata().get("action"));
+        // Check explicit negative knowledge type
+        if ("NEGATIVE_KNOWLEDGE".equals(type)) {
+            return true;
+        }
+
+        // Check explicit negative knowledge flag
+        if ("true".equalsIgnoreCase(negativeFlag)) {
+            return true;
+        }
+
+        // Check for prohibited actions
+        if ("prohibited".equalsIgnoreCase(action) || "blocked".equalsIgnoreCase(action)) {
+            return true;
+        }
+
+        // Check for negative knowledge learning target
+        if ("NEGATIVE_KNOWLEDGE".equals(learningTarget)) {
+            return true;
+        }
+
+        // Check for risk-related metadata
+        String riskFlag = item.metadata().get("risk");
+        String failureFlag = item.metadata().get("failureMode");
+        if ("true".equalsIgnoreCase(riskFlag) || "true".equalsIgnoreCase(failureFlag)) {
+            return true;
+        }
+
+        return false;
     }
 }

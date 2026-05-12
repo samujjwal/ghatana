@@ -1,38 +1,42 @@
-pack:
-  id: flashit
-  version: 1.0.0
-  product: flashit
-  domain: personal-reflection
-  rulePrefix: FLASHIT-BP-
-  kernelCapabilitiesConsumed:
-    - boundary-policy-evaluation
-    - audit-trail
-    - human-approval
-    - observability
-  policyActions:
-    - read
-    - write
-    - delete
-    - export
-  policyResources:
-    - moments
-    - moments/**
-  pluginsConsumed:
-    - plugin-audit-trail
-    - plugin-compliance
-    - plugin-human-approval
-  bridgesConsumed: []
-  domainPacksProvided:
-    - flashit-boundary-policy
-    - flashit-compliance-rule-pack
-  uiSurfaces:
-    - web
-    - mobile
-  runtimeServices:
-    - backend-agent
-    - web-api
-  dataSensitivity: personal-journal
-  productExtensions:
-    boundaryPolicyStoreClass: com.ghatana.flashit.kernel.policy.FlashItBoundaryPolicyStore
-    pluginBindingsClass: com.ghatana.flashit.kernel.policy.FlashItPluginBindings
-    defaultDenyRuleId: FLASHIT-BP-999
+schemaVersion: "1.0.0"
+id: flashit
+version: 1.0.0
+product: flashit
+domain: personal-reflection
+rulePrefix: FLASHIT-BP-
+kernelCapabilitiesConsumed:
+  - boundary-policy-evaluation
+  - audit-trail
+  - human-approval
+  - observability
+policyActions:
+  - read
+  - write
+  - delete
+  - export
+policyResources:
+  - flashit:moments
+  - flashit:moment-children
+pluginsConsumed:
+  - plugin-audit-trail
+  - plugin-compliance
+  - plugin-human-approval
+bridgesConsumed: []
+domainPacksProvided:
+  - flashit-boundary-policy
+  - flashit-compliance-rule-pack
+uiSurfaces:
+  - web
+  - mobile
+runtimeServices:
+  - backend-agent
+  - web-api
+dataSensitivity: personal-journal
+productExtensions:
+  boundaryPolicyStoreClass: com.ghatana.flashit.kernel.policy.FlashItBoundaryPolicyStore
+  pluginBindingsClass: com.ghatana.flashit.kernel.policy.FlashItPluginBindings
+  defaultDenyRuleId: FLASHIT-BP-999
+metadata:
+  productName: "FlashIt Domain Pack"
+  description: "Personal reflection domain pack for journaling and moment tracking"
+  type: domain-pack

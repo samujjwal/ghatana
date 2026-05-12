@@ -4,7 +4,7 @@
  * instead of maintaining local filtering logic.
  */
 
-import type { ProductRouteEntitlement, RouteEntitlement, ActionEntitlement, CardEntitlement } from '../contracts/product-route-entitlement.js';
+import type { RouteEntitlement, ActionEntitlement, CardEntitlement } from '../contracts/product-route-entitlement.js';
 
 export interface RoleOrder {
   readonly [role: string]: number;
@@ -22,20 +22,20 @@ export class RouteEntitlementEvaluator {
    */
   filterByRole(routes: readonly RouteEntitlement[], currentRole: string): readonly RouteEntitlement[] {
     if (!currentRole || currentRole === '') {
-      console.warn('Current role is empty, denying access to prevent privilege escalation');
       return [];
     }
 
     const currentOrder = this.roleOrder[currentRole];
     if (currentOrder === undefined) {
-      console.warn(`Unknown role '${currentRole}' in roleOrder. Denying access to prevent privilege escalation.`);
       return [];
     }
 
     return routes.filter((route) => {
+      if (!route.minimumRole) {
+        return true;
+      }
       const minimumOrder = this.roleOrder[route.minimumRole];
       if (minimumOrder === undefined) {
-        console.warn(`Route minimumRole '${route.minimumRole}' not found in roleOrder. Denying access.`);
         return false;
       }
       return currentOrder >= minimumOrder;
@@ -50,7 +50,7 @@ export class RouteEntitlementEvaluator {
       return routes;
     }
 
-    return routes.filter((route) => route.personas.includes(persona));
+    return routes.filter((route) => route.personas?.includes(persona) ?? true);
   }
 
   /**
@@ -61,7 +61,7 @@ export class RouteEntitlementEvaluator {
       return routes;
     }
 
-    return routes.filter((route) => route.tiers.includes(tier));
+    return routes.filter((route) => route.tiers?.includes(tier) ?? true);
   }
 
   /**
@@ -85,7 +85,7 @@ export class RouteEntitlementEvaluator {
   filterActionsByRole(routes: readonly RouteEntitlement[], currentRole: string): readonly ActionEntitlement[] {
     const filteredRoutes = this.filterByRole(routes, currentRole);
     return filteredRoutes.flatMap((route) =>
-      route.actions.map((action) => ({
+      (route.actions ?? []).map((action) => ({
         id: action,
         label: this.labelFromId(action),
         routePath: route.path,
@@ -99,7 +99,7 @@ export class RouteEntitlementEvaluator {
   filterCardsByRole(routes: readonly RouteEntitlement[], currentRole: string): readonly CardEntitlement[] {
     const filteredRoutes = this.filterByRole(routes, currentRole);
     return filteredRoutes.flatMap((route) =>
-      route.cards.map((card) => ({
+      (route.cards ?? []).map((card) => ({
         id: card,
         title: this.labelFromId(card),
         routePath: route.path,

@@ -1,179 +1,182 @@
 # Finance Domain Pack Manifest
 # Per KERNEL_CANONICALIZATION_DECISIONS.md - Domain packs declare their own capabilities
 
-pack:
-  id: finance
-  version: "1.0.0"
-  product: finance
-  domain: capital-markets
-  kernelCapabilitiesConsumed:
-    - boundary-policy-evaluation
-    - audit-trail
-    - approval-workflow
-    - tenant-context
-  policyActions:
-    - read
-    - write
-    - delete
-    - export
-    - download
-    - settle
-    - cancel
-  policyResources:
-    - finance:transactions
-    - finance:positions
-    - finance:market-data
-    - finance:risk-data
-  pluginsConsumed:
-    - plugin-audit-trail
-    - plugin-compliance
-    - plugin-ledger
-    - plugin-fraud-detection
-    - plugin-risk-management
-  bridgesConsumed:
-    - data-cloud-kernel-bridge
-  domainPacksProvided:
-    - finance-trading-boundary-policy
-    - finance-compliance-rule-pack
-  uiSurfaces: []
-  runtimeServices:
-    - launcher
-    - integration-testing
-  dataSensitivity: regulated-finance
-  capabilities:
-    - id: finance.trade-processing
-      name: "Trade Processing"
-      type: BUSINESS_LOGIC
-      description: "High-frequency trade order processing and execution"
-      metadata:
-        latency: microsecond
-        throughput: 100k-tps
+schemaVersion: "1.0.0"
+id: finance
+version: "1.0.0"
+product: finance
+domain: capital-markets
+kernelCapabilitiesConsumed:
+  - boundary-policy-evaluation
+  - audit-trail
+  - approval-workflow
+  - tenant-context
+policyActions:
+  - read
+  - write
+  - delete
+  - export
+  - download
+  - finance:settle
+  - finance:cancel
+policyResources:
+  - finance:transactions
+  - finance:positions
+  - finance:market-data
+  - finance:risk-data
+pluginsConsumed:
+  - plugin-audit-trail
+  - plugin-compliance
+  - plugin-ledger
+  - plugin-fraud-detection
+  - plugin-risk-management
+bridgesConsumed:
+  - data-cloud-kernel-bridge
+domainPacksProvided:
+  - finance-trading-boundary-policy
+  - finance-compliance-rule-pack
+uiSurfaces: []
+runtimeServices:
+  - launcher
+  - integration-testing
+dataSensitivity: regulated-finance
+capabilities:
+  - id: finance.trade-processing
+    name: "Trade Processing"
+    type: BUSINESS_LOGIC
+    description: "High-frequency trade order processing and execution"
+    metadata:
+      latency: microsecond
+      throughput: 100k-tps
 
-    - id: finance.risk-management
-      name: "Risk Management"
-      type: BUSINESS_LOGIC
-      description: "Real-time risk assessment and position monitoring"
-      metadata:
-        types: market,credit,operational,liquidity
-        calculation: real-time
+  - id: finance.risk-management
+    name: "Risk Management"
+    type: BUSINESS_LOGIC
+    description: "Real-time risk assessment and position monitoring"
+    metadata:
+      types: market,credit,operational,liquidity
+      calculation: real-time
 
-    - id: finance.compliance-checking
-      name: "Compliance Checking"
-      type: COMPLIANCE
-      description: "Financial compliance monitoring and regulatory reporting"
-      metadata:
-        regulations: securities,aml,kyc,mifid
-        reporting: automated
+  - id: finance.compliance-checking
+    name: "Compliance Checking"
+    type: COMPLIANCE
+    description: "Financial compliance monitoring and regulatory reporting"
+    metadata:
+      regulations: securities,aml,kyc,mifid
+      reporting: automated
 
-    - id: finance.portfolio-management
-      name: "Portfolio Management"
-      type: BUSINESS_LOGIC
-      description: "Investment portfolio tracking and performance analysis"
-      metadata:
-        analytics: real-time
-        rebalancing: automated
+  - id: finance.portfolio-management
+    name: "Portfolio Management"
+    type: BUSINESS_LOGIC
+    description: "Investment portfolio tracking and performance analysis"
+    metadata:
+      analytics: real-time
+      rebalancing: automated
 
-    - id: finance.market-data
-      name: "Market Data"
-      type: DATA_MANAGEMENT
-      description: "Real-time and historical market data"
-      metadata:
-        type: pricing,reference,corporate-actions
-        real_time: true
+  - id: finance.market-data
+    name: "Market Data"
+    type: DATA_MANAGEMENT
+    description: "Real-time and historical market data"
+    metadata:
+      type: pricing,reference,corporate-actions
+      real_time: true
 
-    - id: finance.ledger-management
-      name: "Ledger Management"
-      type: DATA_MANAGEMENT
-      description: "Double-entry bookkeeping and ledger operations"
-      metadata:
-        type: double-entry
-        currencies: multi-currency
+  - id: finance.ledger-management
+    name: "Ledger Management"
+    type: DATA_MANAGEMENT
+    description: "Double-entry bookkeeping and ledger operations"
+    metadata:
+      type: double-entry
+      currencies: multi-currency
 
-    - id: finance.settlement
-      name: "Settlement"
-      type: BUSINESS_LOGIC
-      description: "Post-trade settlement processing"
-      metadata:
-        type: dvp,pvp
-        reconciliation: nostro,vostro
+  - id: finance.settlement
+    name: "Settlement"
+    type: BUSINESS_LOGIC
+    description: "Post-trade settlement processing"
+    metadata:
+      type: dvp,pvp
+      reconciliation: nostro,vostro
 
-    - id: finance.regulatory-reporting
-      name: "Regulatory Reporting"
-      type: COMPLIANCE
-      description: "Automated regulatory reporting"
-      metadata:
-        regulations: mifid-ii,emir,sftr
-        automation: true
+  - id: finance.regulatory-reporting
+    name: "Regulatory Reporting"
+    type: COMPLIANCE
+    description: "Automated regulatory reporting"
+    metadata:
+      regulations: mifid-ii,emir,sftr
+      automation: true
 
-  extensions:
-    - id: finance.trading
-      name: "Trading Extension"
-      description: "Trading engine extension for OMS/EMS"
-      target_capability: finance.trade-processing
+extensions:
+  - id: finance.trading
+    name: "Trading Extension"
+    description: "Trading engine extension for OMS/EMS"
+    target_capability: finance.trade-processing
 
-    - id: finance.risk
-      name: "Risk Assessment Extension"
-      description: "Risk calculation and monitoring extension"
-      target_capability: finance.risk-management
+  - id: finance.risk
+    name: "Risk Assessment Extension"
+    description: "Risk calculation and monitoring extension"
+    target_capability: finance.risk-management
 
-    - id: finance.compliance
-      name: "Compliance Extension"
-      description: "Compliance checking and reporting extension"
-      target_capability: finance.compliance-checking
+  - id: finance.compliance
+    name: "Compliance Extension"
+    description: "Compliance checking and reporting extension"
+    target_capability: finance.compliance-checking
 
-    - id: finance.portfolio
-      name: "Portfolio Analytics Extension"
-      description: "Portfolio management and analytics extension"
-      target_capability: finance.portfolio-management
+  - id: finance.portfolio
+    name: "Portfolio Analytics Extension"
+    description: "Portfolio management and analytics extension"
+    target_capability: finance.portfolio-management
 
-  modules:
-    - name: oms
-      description: "Order Management System"
-    - name: ems
-      description: "Execution Management System"
-    - name: pms
-      description: "Portfolio Management System"
-    - name: risk
-      description: "Risk Management"
-    - name: compliance
-      description: "Compliance and Regulatory"
-    - name: rules
-      description: "Rules Engine"
-    - name: corporate-actions
-      description: "Corporate Actions Processing"
-    - name: market-data
-      description: "Market Data Management"
-    - name: post-trade
-      description: "Post-Trade Processing"
-    - name: pricing
-      description: "Pricing and Valuation"
-    - name: reconciliation
-      description: "Reconciliation Services"
-    - name: reference-data
-      description: "Reference Data Management"
-    - name: regulatory-reporting
-      description: "Regulatory Reporting"
-    - name: sanctions
-      description: "Sanctions Screening"
-    - name: surveillance
-      description: "Trade Surveillance"
-    - name: integration-testing
-      description: "Integration Testing"
-    - name: client-onboarding
-      description: "Client Onboarding with AML"
+modules:
+  - name: oms
+    description: "Order Management System"
+  - name: ems
+    description: "Execution Management System"
+  - name: pms
+    description: "Portfolio Management System"
+  - name: risk
+    description: "Risk Management"
+  - name: compliance
+    description: "Compliance and Regulatory"
+  - name: rules
+    description: "Rules Engine"
+  - name: corporate-actions
+    description: "Corporate Actions Processing"
+  - name: market-data
+    description: "Market Data Management"
+  - name: post-trade
+    description: "Post-Trade Processing"
+  - name: pricing
+    description: "Pricing and Valuation"
+  - name: reconciliation
+    description: "Reconciliation Services"
+  - name: reference-data
+    description: "Reference Data Management"
+  - name: regulatory-reporting
+    description: "Regulatory Reporting"
+  - name: sanctions
+    description: "Sanctions Screening"
+  - name: surveillance
+    description: "Trade Surveillance"
+  - name: integration-testing
+    description: "Integration Testing"
+  - name: client-onboarding
+    description: "Client Onboarding with AML"
 
-  deployment:
-    type: domain-pack
-    dependencies:
-      - platform:java:kernel
-      - platform:java:observability
-      - platform:java:security
-      - platform:java:audit
-      - platform:java:workflow
-      - platform:java:ai-integration
+deployment:
+  type: domain-pack
+  dependencies:
+    - platform:java:kernel
+    - platform:java:observability
+    - platform:java:security
+    - platform:java:audit
+    - platform:java:workflow
+    - platform:java:ai-integration
 
-  metadata:
-    created: "2026-03-19"
-    author: "Ghatana Finance Team"
-    documentation: "docs/README.md"
-    conformanceMode: "backend-only"
+metadata:
+  created: "2026-03-19"
+  author: "Ghatana Finance Team"
+  documentation: "docs/README.md"
+  conformanceMode: "backend-only"
+  productName: "Finance Domain Pack"
+  description: "Capital markets domain pack with trading, risk, compliance, and settlement capabilities"
+  type: domain-pack

@@ -36,9 +36,18 @@ import type { ProductShellConfig } from '../types';
 import { CapabilitySidebar } from './CapabilitySidebar';
 import { ProductHeader } from './ProductHeader';
 import { ActiveOperationsBar } from './ActiveOperationsBar';
-import { twLayout } from '@ghatana/design-system/tokens';
 
-interface ProductShellProps {
+const shellLayoutClasses = {
+  sidebarExpanded: 'lg:ml-64',
+  sidebarCollapsed: 'lg:ml-16',
+  transition: 'transition-all duration-300',
+  contentPadding: 'pt-16 p-6',
+  fullHeight: 'min-h-screen',
+  bgLight: 'bg-gray-50',
+  bgDark: 'dark:bg-gray-950',
+} as const;
+
+export interface ProductShellProps {
   config: ProductShellConfig;
   /**
    * Product-owned route/content slot. The shared shell intentionally does not
@@ -61,6 +70,91 @@ interface ProductShellProps {
    * Optional ARIA role override for the main content element.
    */
   mainContentRole?: React.AriaRole;
+}
+
+export interface ProductShellState {
+  readonly sidebarCollapsed: boolean;
+  readonly mobileMenuOpen: boolean;
+  readonly toggleSidebar: () => void;
+  readonly openMobileMenu: () => void;
+  readonly closeMobileMenu: () => void;
+}
+
+export function useProductShellState(): ProductShellState {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return {
+    sidebarCollapsed,
+    mobileMenuOpen,
+    toggleSidebar: () => setSidebarCollapsed((prev) => !prev),
+    openMobileMenu: () => setMobileMenuOpen(true),
+    closeMobileMenu: () => setMobileMenuOpen(false),
+  };
+}
+
+export interface ProductShellLayoutProps extends ProductShellProps {
+  readonly state: ProductShellState;
+}
+
+export function ProductShellLayout({
+  config,
+  children,
+  contentClassName,
+  mainContentId,
+  mainContentTabIndex,
+  mainContentRole,
+  state,
+}: ProductShellLayoutProps): React.ReactElement {
+  const mainContentProps: React.ComponentPropsWithoutRef<'main'> = {};
+
+  if (mainContentId) {
+    mainContentProps.id = mainContentId;
+  }
+  if (typeof mainContentTabIndex === 'number') {
+    mainContentProps.tabIndex = mainContentTabIndex;
+  }
+  if (mainContentRole) {
+    mainContentProps.role = mainContentRole;
+  }
+
+  return (
+    <div className={`${shellLayoutClasses.fullHeight} ${shellLayoutClasses.bgLight} ${shellLayoutClasses.bgDark}`}>
+      <CapabilitySidebar
+        config={config}
+        isCollapsed={state.sidebarCollapsed}
+        onToggle={state.toggleSidebar}
+        isMobileOpen={state.mobileMenuOpen}
+        onMobileClose={state.closeMobileMenu}
+      />
+
+      <div
+        className={
+          state.sidebarCollapsed
+            ? `${shellLayoutClasses.sidebarCollapsed} ${shellLayoutClasses.transition}`
+            : `${shellLayoutClasses.sidebarExpanded} ${shellLayoutClasses.transition}`
+        }
+      >
+        <ProductHeader
+          config={config}
+          sidebarCollapsed={state.sidebarCollapsed}
+          onMenuClick={state.openMobileMenu}
+        />
+
+        <main
+          {...mainContentProps}
+          className={contentClassName ?? shellLayoutClasses.contentPadding}
+        >
+          {children}
+        </main>
+      </div>
+
+      <ActiveOperationsBar
+        count={config.activeOperationsCount ?? 0}
+        {...(config.onActiveOperationsClick ? { onClick: config.onActiveOperationsClick } : {})}
+      />
+    </div>
+  );
 }
 
 /**
@@ -86,60 +180,29 @@ export function ProductShell({
   mainContentTabIndex,
   mainContentRole,
 }: ProductShellProps): React.ReactElement {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mainContentProps: React.ComponentPropsWithoutRef<'main'> = {};
+  const state = useProductShellState();
+  const layoutProps: Omit<ProductShellLayoutProps, 'children' | 'config' | 'state'> = {};
 
-  if (mainContentId) {
-    mainContentProps.id = mainContentId;
+  if (contentClassName !== undefined) {
+    layoutProps.contentClassName = contentClassName;
   }
-  if (typeof mainContentTabIndex === 'number') {
-    mainContentProps.tabIndex = mainContentTabIndex;
+  if (mainContentId !== undefined) {
+    layoutProps.mainContentId = mainContentId;
   }
-  if (mainContentRole) {
-    mainContentProps.role = mainContentRole;
+  if (mainContentTabIndex !== undefined) {
+    layoutProps.mainContentTabIndex = mainContentTabIndex;
+  }
+  if (mainContentRole !== undefined) {
+    layoutProps.mainContentRole = mainContentRole;
   }
 
   return (
-    <div className={`${twLayout.fullHeight} ${twLayout.bgLight} ${twLayout.bgDark}`}>
-      {/* Sidebar */}
-      <CapabilitySidebar
-        config={config}
-        isCollapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed((prev) => !prev)}
-        isMobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-      />
-
-      {/* Main area — offset by sidebar width */}
-      <div
-        className={
-          sidebarCollapsed
-            ? `${twLayout.sidebarCollapsed} ${twLayout.transition}`
-            : `${twLayout.sidebarExpanded} ${twLayout.transition}`
-        }
-      >
-        {/* Header */}
-        <ProductHeader
-          config={config}
-          sidebarCollapsed={sidebarCollapsed}
-          onMenuClick={() => setMobileMenuOpen(true)}
-        />
-
-        {/* Content */}
-        <main
-          {...mainContentProps}
-          className={contentClassName ?? twLayout.contentPadding}
-        >
-          {children}
-        </main>
-      </div>
-
-      {/* Active operations bar */}
-      <ActiveOperationsBar
-        count={config.activeOperationsCount ?? 0}
-        {...(config.onActiveOperationsClick ? { onClick: config.onActiveOperationsClick } : {})}
-      />
-    </div>
+    <ProductShellLayout
+      config={config}
+      state={state}
+      {...layoutProps}
+    >
+      {children}
+    </ProductShellLayout>
   );
 }

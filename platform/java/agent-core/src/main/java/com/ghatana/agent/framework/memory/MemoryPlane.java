@@ -80,6 +80,33 @@ public interface MemoryPlane {
     @NotNull
     Promise<ReflectionResult> reflect(@NotNull String agentId);
 
+    /**
+     * Queries the version context for a given skill and environment.
+     * Returns version information for tools, libraries, and ecosystem components
+     * relevant to the agent's execution context.
+     *
+     * @param agentId identifier of the agent
+     * @param skillId skill identifier to query version context for
+     * @return promise of version context
+     */
+    @NotNull
+    Promise<VersionContextQueryResult> queryVersionContext(
+            @NotNull String agentId,
+            @NotNull String skillId);
+
+    /**
+     * Queries the mastery state for a given skill and agent.
+     * Returns current mastery information including state, level, and applicability.
+     *
+     * @param agentId identifier of the agent
+     * @param skillId skill identifier to query mastery for
+     * @return promise of mastery state query result
+     */
+    @NotNull
+    Promise<MasteryStateQueryResult> queryMasteryState(
+            @NotNull String agentId,
+            @NotNull String skillId);
+
     // =========================================================================
     // Value types
     // =========================================================================
@@ -127,4 +154,36 @@ public interface MemoryPlane {
             int policiesCreated,
             int policiesUpdated,
             int lowConfidenceCount) {}
+
+    /**
+     * Result of a version context query.
+     *
+     * @param agentId agent identifier
+     * @param skillId skill identifier
+     * @param versionContext version context information
+     * @param applicable true if the version context applies to the current execution environment
+     */
+    record VersionContextQueryResult(
+            @NotNull String agentId,
+            @NotNull String skillId,
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext,
+            boolean applicable) {}
+
+    /**
+     * Result of a mastery state query.
+     *
+     * @param agentId agent identifier
+     * @param skillId skill identifier
+     * @param masteryState current mastery state
+     * @param masteryLevel mastery level (if available)
+     * @param confidence confidence score for the mastery assessment
+     * @param lastUpdated timestamp of last mastery state update
+     */
+    record MasteryStateQueryResult(
+            @NotNull String agentId,
+            @NotNull String skillId,
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState,
+            @NotNull String masteryLevel,
+            double confidence,
+            @NotNull java.time.Instant lastUpdated) {}
 }

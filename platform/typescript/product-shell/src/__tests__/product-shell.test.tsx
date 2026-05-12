@@ -4,6 +4,7 @@
  * Covers:
  * - RouteCapabilityNav role filtering
  * - RouteCapabilityNav lifecycle filtering (boundary excluded)
+ * - RouteCapabilityNav lifecycle filtering (deprecated excluded)
  * - RouteCapabilityNav discoverable filtering
  * - RouteCapabilityNav group rendering
  * - UnsupportedSurfaceBoundary lifecycle='boundary' renders notice
@@ -18,7 +19,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, renderHook, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { RouteCapabilityNav } from '../components/RouteCapabilityNav';
 import { UnsupportedSurfaceBoundary } from '../components/UnsupportedSurfaceBoundary';
@@ -26,12 +27,15 @@ import { ProductViewModeSelector } from '../components/ProductViewModeSelector';
 import { ActiveOperationsBar } from '../components/ActiveOperationsBar';
 import { ProductShell } from '../components/ProductShell';
 import {
+  createRouteAccessEvaluator,
   filterDiscoverableRoutes,
+  hasMinimumRole,
   hydrateRoutesFromEntitlement,
   isRouteAllowed,
   resolveHighestRole,
 } from '../access';
 import type { ProductRouteCapability, ProductShellConfig, UnsupportedSurfaceConfig } from '../types';
+import { useProductEntitlements } from '../useProductEntitlements';
 
 // ---------------------------------------------------------------------------
 // RouteCapabilityNav
@@ -55,6 +59,7 @@ const routes: ProductRouteCapability[] = [
     discoverable: true,
   },
   { path: '/reports', label: 'Reports', group: 'Core', lifecycle: 'boundary', discoverable: true },
+  { path: '/legacy', label: 'Legacy', group: 'Core', lifecycle: 'deprecated', discoverable: true },
   { path: '/beta', label: 'Beta Feature', group: 'Core', lifecycle: 'stable', discoverable: false },
   {
     path: '/trust',
@@ -127,6 +132,19 @@ describe('RouteCapabilityNav', () => {
     );
 
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+  });
+
+  it('excludes deprecated routes', () => {
+    render(
+      <MemoryRouter>
+        <RouteCapabilityNav
+          routes={routes}
+          config={{ currentRole: 'admin', roleOrder: ROLE_ORDER }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('Legacy')).not.toBeInTheDocument();
   });
 
   it('excludes routes with discoverable=false', () => {
@@ -351,6 +369,25 @@ describe('shared route access helpers', () => {
     expect(resolveHighestRole(['primary-user', 'admin', 'unknown'], ROLE_ORDER, 'primary-user')).toBe('admin');
   });
 
+  it('creates a reusable route access evaluator', () => {
+    const evaluator = createRouteAccessEvaluator(ROLE_ORDER);
+
+    expect(evaluator.resolveHighestRole(['primary-user', 'operator'], 'primary-user')).toBe('operator');
+    expect(evaluator.hasMinimumRole(['operator'], 'operator', 'primary-user')).toBe(true);
+    expect(evaluator.isRouteAllowed({ minimumRole: 'admin' }, 'operator')).toBe(false);
+    expect(evaluator.filterDiscoverableRoutes(routes, 'operator').map((route) => route.path)).toEqual([
+      '/',
+      '/data',
+      '/trust',
+      '/preview-thing',
+    ]);
+  });
+
+  it('checks minimum role from a role list with a fallback', () => {
+    expect(hasMinimumRole(['unknown'], 'operator', ROLE_ORDER, 'primary-user')).toBe(false);
+    expect(hasMinimumRole(['admin'], 'operator', ROLE_ORDER, 'primary-user')).toBe(true);
+  });
+
   it('denies unknown roles and unknown minimum roles', () => {
     expect(isRouteAllowed({ minimumRole: 'admin' }, 'unknown', ROLE_ORDER)).toBe(false);
     expect(isRouteAllowed({ minimumRole: 'owner' }, 'admin', ROLE_ORDER)).toBe(false);
@@ -376,5 +413,130 @@ describe('shared route access helpers', () => {
 
     expect(hydrated.find((route) => route.path === '/data')?.label).toBe('Server Data');
     expect(hydrated.find((route) => route.path === '/')?.discoverable).toBe(false);
+  });
+});
+
+describe('useProductEntitlements', () => {
+  const fallbackRoutes: ProductRouteCapability[] = [
+    { path: '/', label: 'Home', lifecycle: 'stable' },
+    { path: '/admin', label: 'Admin', minimumRole: 'admin', lifecycle: 'stable' },
+  ];
+
+  it('validates backend entitlements before hydrating routes', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          product: 'test',
+          principalId: 'principal-1',
+          tenantId: 'tenant-1',
+          role: 'admin',
+          routes: [{ path: '/', label: 'Server Home', actions: ['read'] }],
+          actions: [{ id: 'read', label: 'Read', routePath: '/' }],
+          cards: [{ id: 'summary', title: 'Summary', routePath: '/', surface: 'dashboard' }],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const { result } = renderHook(() =>
+      useProductEntitlements({
+        endpoint: '/route-entitlements?case=valid',
+        fallbackRoutes,
+        fetcher,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    expect(result.current.entitlement?.actions?.[0]?.id).toBe('read');
+    expect(result.current.routes.find((route) => route.path === '/')?.label).toBe('Server Home');
+    expect(result.current.routes.find((route) => route.path === '/admin')?.discoverable).toBe(false);
+  });
+
+  it('fails closed when entitlement payload shape is invalid', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          product: 'test',
+          principalId: 'principal-1',
+          tenantId: 'tenant-1',
+          role: 'admin',
+          routes: [{ path: '/', label: '' }],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const { result } = renderHook(() =>
+      useProductEntitlements({
+        endpoint: '/route-entitlements?case=invalid',
+        fallbackRoutes,
+        fetcher,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    expect(result.current.error?.message).toContain('must include a label');
+    expect(result.current.routes.every((route) => route.discoverable === false)).toBe(true);
+  });
+
+  it('does not expose fallback routes when backend denies entitlements', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 403 }));
+
+    const { result } = renderHook(() =>
+      useProductEntitlements({
+        endpoint: '/route-entitlements?case=denied',
+        fallbackRoutes,
+        fetcher,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('denied'));
+
+    expect(result.current.routes.every((route) => route.discoverable === false)).toBe(true);
+    expect(result.current.entitlement).toBeNull();
+  });
+
+  it('clears the cache when refreshed', async () => {
+    const firstResponse = new Response(
+      JSON.stringify({
+        product: 'test',
+        principalId: 'principal-1',
+        tenantId: 'tenant-1',
+        role: 'admin',
+        routes: [{ path: '/', label: 'First' }],
+      }),
+      { status: 200 },
+    );
+    const secondResponse = new Response(
+      JSON.stringify({
+        product: 'test',
+        principalId: 'principal-1',
+        tenantId: 'tenant-1',
+        role: 'admin',
+        routes: [{ path: '/', label: 'Second' }],
+      }),
+      { status: 200 },
+    );
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(firstResponse)
+      .mockResolvedValueOnce(secondResponse);
+
+    const { result } = renderHook(() =>
+      useProductEntitlements({
+        endpoint: '/route-entitlements?case=refresh',
+        fallbackRoutes,
+        fetcher,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.routes[0]?.label).toBe('First'));
+
+    act(() => result.current.refresh());
+
+    await waitFor(() => expect(result.current.routes[0]?.label).toBe('Second'));
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });

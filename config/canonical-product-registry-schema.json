@@ -26,6 +26,7 @@
         "id",
         "name",
         "description",
+        "kind",
         "type",
         "gradleModules",
         "surfaces"
@@ -47,7 +48,12 @@
         "type": {
           "type": "string",
           "enum": ["product", "platform", "shared-service"],
-          "description": "Classification of the module"
+          "description": "Legacy coarse classification of the module"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["platform-provider", "business-product", "shared-service", "domain-pack", "demo/example"],
+          "description": "Canonical registry kind used by generators and conformance filters"
         },
         "manifestPath": {
           "type": ["string", "null"],
@@ -57,6 +63,10 @@
           "type": ["string", "null"],
           "enum": ["yaml", "json", null],
           "description": "Format of the manifest file, or null if no manifest exists"
+        },
+        "buildFile": {
+          "type": "string",
+          "description": "Explicit Gradle build file that owns manifest-backed conformance"
         },
         "gradleModules": {
           "type": "array",
@@ -112,7 +122,30 @@
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "conformance": {
+                "properties": {
+                  "manifest": { "const": true }
+                },
+                "required": ["manifest"]
+              }
+            },
+            "required": ["conformance"]
+          },
+          "then": {
+            "required": ["manifestPath", "manifestFormat", "buildFile"],
+            "properties": {
+              "manifestPath": { "type": "string", "minLength": 1 },
+              "manifestFormat": { "enum": ["yaml", "json"] },
+              "buildFile": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
     },
     "Surface": {
       "type": "object",
@@ -176,6 +209,62 @@
         "bridge": {
           "type": "boolean",
           "description": "Require bridge compliance validation"
+        },
+        "bridgeAdapters": {
+          "type": "array",
+          "description": "Manifest-driven bridge adapter compliance contracts. Required when bridge conformance is enabled for active business products.",
+          "items": {
+            "type": "object",
+            "required": ["file", "tests"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Bridge adapter implementation path relative to the repository root"
+              },
+              "tests": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["file", "requiredEvidence"],
+                  "properties": {
+                    "file": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Bridge compliance test file path relative to the repository root"
+                    },
+                    "requiredEvidence": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "agentDefinitions": {
+          "type": "boolean",
+          "description": "Require agent definitions to validate against agent catalog schema"
+        },
+        "masteryBindings": {
+          "type": "boolean",
+          "description": "Require mastery bindings to be valid and reference existing skills"
+        },
+        "evaluationPacks": {
+          "type": "boolean",
+          "description": "Require evaluation packs to exist for procedural skills"
+        },
+        "runtimeModule": {
+          "type": "boolean",
+          "description": "Require agent runtime module to be included in product"
         }
       }
     }

@@ -21,6 +21,9 @@ const violations = [];
 const productShape = JSON.parse(
   readFileSync(path.join(repoRoot, 'config/product-shape.json'), 'utf8'),
 );
+const canonicalRegistry = JSON.parse(
+  readFileSync(path.join(repoRoot, 'config/canonical-product-registry.json'), 'utf8'),
+);
 
 const productDisplayNames = {
   finance: 'Finance',
@@ -30,7 +33,14 @@ const productDisplayNames = {
 };
 
 function productIdsFromShape() {
-  return Object.keys(productShape.products).sort();
+  return Object.entries(canonicalRegistry.registry)
+    .filter(([, product]) => product.metadata?.status === 'active')
+    .filter(([, product]) => product.kind === 'business-product')
+    .filter(([, product]) => product.ci?.enabled === true)
+    .filter(([, product]) => product.conformance?.manifest === true)
+    .map(([productId]) => productId)
+    .filter((productId) => productShape.products[productId])
+    .sort();
 }
 
 function productDisplayName(productId) {

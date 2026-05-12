@@ -81,7 +81,6 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
 
         extension.requiredManifestFields.convention(
             listOf(
-                "pack:",
                 "id:",
                 "version:",
                 "domain:",

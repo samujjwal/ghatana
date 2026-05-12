@@ -11,14 +11,20 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Data Cloud-backed implementation of LearningDeltaRepository.
  *
- * <p>TODO: Replace in-memory storage with actual Data Cloud persistence.
+ * <p>Stores learning deltas in Data Cloud collections for governance and promotion tracking.
+ * Uses LearningDeltaMapper for serialization/deserialization to/from Data Cloud entity data maps.
+ *
+ * <p>TODO: Replace in-memory storage with actual Data Cloud persistence using Data Cloud entity API.
  *
  * @doc.type class
  * @doc.purpose Data Cloud implementation of LearningDeltaRepository
@@ -27,161 +33,158 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class DataCloudLearningDeltaRepository implements LearningDeltaRepository {
 
-    private final ConcurrentHashMap<String, LearningDelta> deltas = new ConcurrentHashMap<>();
+    // TODO: Replace with actual Data Cloud entity storage
+    private final ConcurrentHashMap<String, Map<String, Object>> entityStore = new ConcurrentHashMap<>();
 
     @Override
     @NotNull
     public Promise<LearningDelta> save(@NotNull LearningDelta delta) {
-        deltas.put(delta.deltaId(), delta);
+        Map<String, Object> dataMap = LearningDeltaMapper.toDataMap(delta);
+        entityStore.put(delta.deltaId(), dataMap);
         return Promise.of(delta);
     }
 
     @Override
     @NotNull
     public Promise<Optional<LearningDelta>> findById(@NotNull String deltaId) {
-        return Promise.of(Optional.ofNullable(deltas.get(deltaId)));
+        Map<String, Object> dataMap = entityStore.get(deltaId);
+        if (dataMap == null) {
+            return Promise.of(Optional.empty());
+        }
+        try {
+            return Promise.of(Optional.of(LearningDeltaMapper.fromDataMap(dataMap)));
+        } catch (Exception e) {
+            return Promise.of(Optional.empty());
+        }
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findByAgentId(@NotNull String agentId) {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.agentId().equals(agentId))
-                .toList());
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> agentId.equals(data.get("agentId")))
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findBySkillId(@NotNull String skillId) {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.skillId().equals(skillId))
-                .toList());
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> skillId.equals(data.get("skillId")))
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findByState(@NotNull LearningDeltaState state) {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.state() == state)
-                .toList());
+        String stateName = state.name();
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> stateName.equals(data.get("state")))
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findPendingEvaluation() {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.state() == LearningDeltaState.PROPOSED || d.state() == LearningDeltaState.PENDING_EVALUATION)
-                .toList());
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> {
+                    String state = (String) data.get("state");
+                    return LearningDeltaState.PROPOSED.name().equals(state) 
+                            || LearningDeltaState.PENDING_EVALUATION.name().equals(state);
+                })
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findPromotable() {
-        return Promise.of(deltas.values().stream()
-                .filter(LearningDelta::isPromotable)
-                .toList());
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> {
+                    String state = (String) data.get("state");
+                    return LearningDeltaState.EVALUATED.name().equals(state) 
+                            || LearningDeltaState.APPROVED.name().equals(state);
+                })
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findObsolete(@NotNull Instant before) {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.proposedAt().isBefore(before))
-                .filter(d -> d.state() == LearningDeltaState.OBSOLETE)
-                .toList());
+        long beforeMillis = before.toEpochMilli();
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> {
+                    Object proposedAt = data.get("proposedAt");
+                    if (proposedAt == null) return false;
+                    long proposedAtMillis = proposedAt instanceof Instant 
+                            ? ((Instant) proposedAt).toEpochMilli()
+                            : ((Number) proposedAt).longValue();
+                    return proposedAtMillis < beforeMillis;
+                })
+                .filter(data -> LearningDeltaState.OBSOLETE.name().equals(data.get("state")))
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override
     @NotNull
     public Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState) {
-        LearningDelta delta = deltas.get(deltaId);
-        if (delta == null) {
+        Map<String, Object> dataMap = entityStore.get(deltaId);
+        if (dataMap == null) {
             return Promise.of(null);
         }
 
+        LearningDelta delta = LearningDeltaMapper.fromDataMap(dataMap);
         Instant now = Instant.now();
-        LearningDelta updated = new LearningDelta(
-                delta.deltaId(),
-                delta.type(),
-                delta.target(),
-                newState,
-                delta.agentId(),
-                delta.agentReleaseId(),
-                delta.skillId(),
-                delta.procedureId(),
-                delta.semanticFactId(),
-                delta.negativeKnowledgeId(),
-                delta.contentDigest(),
-                delta.proposedContent(),
-                delta.evidenceRefs(),
-                delta.evaluationRefs(),
-                delta.sourceEpisodeIds(),
-                delta.rollbackRef(),
-                delta.confidenceBefore(),
-                delta.confidenceAfter(),
-                delta.requiresHumanReview(),
-                delta.proposedBy(),
-                delta.proposedAt(),
-                newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt(),
-                newState == LearningDeltaState.PROMOTED ? now : delta.promotedAt(),
-                newState == LearningDeltaState.REJECTED ? now : delta.rejectedAt(),
-                delta.labels(),
-                delta.rejectionReason()
-        );
-
-        deltas.put(deltaId, updated);
-        return Promise.of(updated);
+        
+        Map<String, Object> updatedData = new HashMap<>(dataMap);
+        updatedData.put("state", newState.name());
+        updatedData.put("evaluatedAt", newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt());
+        updatedData.put("promotedAt", newState == LearningDeltaState.PROMOTED ? now : delta.promotedAt());
+        updatedData.put("rejectedAt", newState == LearningDeltaState.REJECTED ? now : delta.rejectedAt());
+        
+        entityStore.put(deltaId, updatedData);
+        return Promise.of(LearningDeltaMapper.fromDataMap(updatedData));
     }
 
     @Override
     @NotNull
     public Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState, @NotNull String rejectionReason) {
-        LearningDelta delta = deltas.get(deltaId);
-        if (delta == null) {
+        Map<String, Object> dataMap = entityStore.get(deltaId);
+        if (dataMap == null) {
             return Promise.of(null);
         }
 
+        LearningDelta delta = LearningDeltaMapper.fromDataMap(dataMap);
         Instant now = Instant.now();
-        LearningDelta updated = new LearningDelta(
-                delta.deltaId(),
-                delta.type(),
-                delta.target(),
-                newState,
-                delta.agentId(),
-                delta.agentReleaseId(),
-                delta.skillId(),
-                delta.procedureId(),
-                delta.semanticFactId(),
-                delta.negativeKnowledgeId(),
-                delta.contentDigest(),
-                delta.proposedContent(),
-                delta.evidenceRefs(),
-                delta.evaluationRefs(),
-                delta.sourceEpisodeIds(),
-                delta.rollbackRef(),
-                delta.confidenceBefore(),
-                delta.confidenceAfter(),
-                delta.requiresHumanReview(),
-                delta.proposedBy(),
-                delta.proposedAt(),
-                newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt(),
-                newState == LearningDeltaState.PROMOTED ? now : delta.promotedAt(),
-                newState == LearningDeltaState.REJECTED ? now : delta.rejectedAt(),
-                delta.labels(),
-                rejectionReason
-        );
-
-        deltas.put(deltaId, updated);
-        return Promise.of(updated);
+        
+        Map<String, Object> updatedData = new HashMap<>(dataMap);
+        updatedData.put("state", newState.name());
+        updatedData.put("evaluatedAt", newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt());
+        updatedData.put("promotedAt", newState == LearningDeltaState.PROMOTED ? now : delta.promotedAt());
+        updatedData.put("rejectedAt", newState == LearningDeltaState.REJECTED ? now : delta.rejectedAt());
+        updatedData.put("rejectionReason", rejectionReason);
+        
+        entityStore.put(deltaId, updatedData);
+        return Promise.of(LearningDeltaMapper.fromDataMap(updatedData));
     }
 
     @Override
     @NotNull
     public Promise<List<LearningDelta>> findPending(@NotNull String agentId) {
-        return Promise.of(deltas.values().stream()
-                .filter(d -> d.agentId().equals(agentId))
-                .filter(d -> d.state() == LearningDeltaState.PROPOSED || d.state() == LearningDeltaState.PENDING_EVALUATION)
-                .toList());
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> agentId.equals(data.get("agentId")))
+                .filter(data -> {
+                    String state = (String) data.get("state");
+                    return LearningDeltaState.PROPOSED.name().equals(state) 
+                            || LearningDeltaState.PENDING_EVALUATION.name().equals(state);
+                })
+                .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
     }
 
     @Override

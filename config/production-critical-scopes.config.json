@@ -62,7 +62,9 @@
     "templates/",
     "code-audits/",
     "integration-tests/",
-    "frontend/"
+    "frontend/dist/",
+    "frontend/build/",
+    "frontend/generated/"
   ],
   "excludedFilenamePatterns": [
     "\\.test\\.[jt]sx?$",

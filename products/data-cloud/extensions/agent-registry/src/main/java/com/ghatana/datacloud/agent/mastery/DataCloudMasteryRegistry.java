@@ -7,13 +7,15 @@ package com.ghatana.datacloud.agent.mastery;
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.*;
 import com.ghatana.agent.runtime.mode.ExecutionMode;
+import com.ghatana.datacloud.entity.Entity;
+import com.ghatana.datacloud.entity.EntityRepository;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
  *   <li>agent-mastery-evidence: evidence references and bundles</li>
  * </ul>
  *
- * <p>TODO: Replace in-memory storage with actual Data Cloud persistence.
+ * <p>Uses EntityRepository for durable persistence with tenant isolation.
  *
  * @doc.type class
  * @doc.purpose Data Cloud implementation of MasteryRegistry
@@ -35,9 +37,30 @@ import java.util.stream.Collectors;
  */
 public final class DataCloudMasteryRegistry implements MasteryRegistry {
 
-    private final Map<String, MasteryItem> masteryItems = new ConcurrentHashMap<>();
-    private final Map<String, MasteryTransition> transitions = new ConcurrentHashMap<>();
-    private final Map<String, List<String>> evidenceMap = new ConcurrentHashMap<>();
+    private static final String COLLECTION_MASTERY_ITEMS = "agent-mastery-items";
+    private static final String COLLECTION_MASTERY_TRANSITIONS = "agent-mastery-transitions";
+    private static final String COLLECTION_MASTERY_EVIDENCE = "agent-mastery-evidence";
+
+    private final EntityRepository entityRepository;
+    private final MasteryTransitionRepository transitionRepository;
+    private final MasteryEvidenceRepository evidenceRepository;
+
+    /**
+     * Creates a new DataCloudMasteryRegistry.
+     *
+     * @param entityRepository Data Cloud entity repository
+     * @param transitionRepository mastery transition repository
+     * @param evidenceRepository mastery evidence repository
+     */
+    public DataCloudMasteryRegistry(
+            @NotNull EntityRepository entityRepository,
+            @NotNull MasteryTransitionRepository transitionRepository,
+            @NotNull MasteryEvidenceRepository evidenceRepository
+    ) {
+        this.entityRepository = entityRepository;
+        this.transitionRepository = transitionRepository;
+        this.evidenceRepository = evidenceRepository;
+    }
 
     @Override
     @NotNull
@@ -45,178 +68,246 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
             @NotNull String skillId,
             @NotNull EnvironmentFingerprint env
     ) {
-        // Find mastery items matching the skill and environment
-        List<MasteryItem> matches = masteryItems.values().stream()
-                .filter(item -> item.skillId().equals(skillId))
-                .filter(item -> item.applicability().tenantId().equals(env.tenantId()))
-                .filter(MasteryItem::isActiveForRetrieval)
-                .filter(item -> item.isFresh(Instant.now()))
-                .collect(Collectors.toList());
+        String tenantId = env.tenantId();
+        Map<String, Object> filter = new HashMap<>();
+        filter.put("skillId", skillId);
+        filter.put("applicabilityTenantId", tenantId);
 
-        // TODO: Add version matching logic based on environment fingerprint
-        if (matches.isEmpty()) {
-            return Promise.of(Optional.empty());
-        }
-
-        // Return the highest-scored matching item
-        MasteryItem best = matches.stream()
-                .max(Comparator.comparingDouble(item -> item.score().executionScore()))
-                .orElse(matches.get(0));
-
-        return Promise.of(Optional.of(best));
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, "lastVerifiedAt:DESC", 0, 10)
+                .then(entities -> {
+                    Optional<MasteryItem> best = entities.stream()
+                            .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
+                            .filter(MasteryItem::isActiveForRetrieval)
+                            .filter(item -> item.isFresh(Instant.now()))
+                            .max(Comparator.comparingDouble(item -> item.score().executionScore()));
+                    return Promise.of(best);
+                });
     }
 
     @Override
     @NotNull
     public Promise<List<MasteryItem>> query(@NotNull MasteryQuery query) {
-        return Promise.of(masteryItems.values().stream()
-                .filter(item -> query.skillId() == null || item.skillId().equals(query.skillId()))
-                .filter(item -> query.agentId() == null || item.agentId().equals(query.agentId()))
-                .filter(item -> query.agentReleaseId() == null || item.agentReleaseId().equals(query.agentReleaseId()))
-                .filter(item -> query.tenantId() == null || item.applicability().tenantId().equals(query.tenantId()))
-                .filter(item -> query.domain() == null || item.domain().equals(query.domain()))
-                .filter(item -> query.states() == null || query.states().contains(item.state()))
-                .filter(item -> query.includeObsolete() != null && query.includeObsolete() || item.state() != MasteryState.OBSOLETE)
-                .filter(item -> query.includeRetired() != null && query.includeRetired() || item.state() != MasteryState.RETIRED)
-                .filter(item -> query.includeMaintenanceOnly() != null && query.includeMaintenanceOnly() || item.state() != MasteryState.MAINTENANCE_ONLY)
-                .filter(item -> query.requireFreshness() == null || !query.requireFreshness() || item.isFresh(query.currentTime() != null ? query.currentTime() : Instant.now()))
-                .sorted(Comparator.comparingDouble((MasteryItem item) -> item.score().executionScore()).reversed())
-                .skip(query.offset() != null ? query.offset() : 0)
-                .limit(query.limit() != null ? query.limit() : Long.MAX_VALUE)
-                .collect(Collectors.toList()));
+        String tenantId = query.tenantId() != null ? query.tenantId() : "default";
+        Map<String, Object> filter = new HashMap<>();
+
+        if (query.skillId() != null) {
+            filter.put("skillId", query.skillId());
+        }
+        if (query.agentId() != null) {
+            filter.put("agentId", query.agentId());
+        }
+        if (query.agentReleaseId() != null) {
+            filter.put("agentReleaseId", query.agentReleaseId());
+        }
+        if (query.domain() != null) {
+            filter.put("domain", query.domain());
+        }
+        if (query.states() != null && !query.states().isEmpty()) {
+            filter.put("state", query.states().iterator().next().name());
+        }
+
+        int offset = query.offset() != null ? query.offset() : 0;
+        int limit = query.limit() != null ? query.limit() : 100;
+
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, null, offset, limit)
+                .then(entities -> {
+                    Instant currentTime = query.currentTime() != null ? query.currentTime() : Instant.now();
+                    List<MasteryItem> items = entities.stream()
+                            .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
+                            .filter(item -> {
+                                if (query.includeObsolete() == null || !query.includeObsolete()) {
+                                    if (item.state() == MasteryState.OBSOLETE) return false;
+                                }
+                                if (query.includeRetired() == null || !query.includeRetired()) {
+                                    if (item.state() == MasteryState.RETIRED) return false;
+                                }
+                                if (query.includeMaintenanceOnly() == null || !query.includeMaintenanceOnly()) {
+                                    if (item.state() == MasteryState.MAINTENANCE_ONLY) return false;
+                                }
+                                if (query.requireFreshness() != null && query.requireFreshness()) {
+                                    if (!item.isFresh(currentTime)) return false;
+                                }
+                                return true;
+                            })
+                            .sorted(Comparator.comparingDouble((MasteryItem item) -> item.score().executionScore()).reversed())
+                            .collect(Collectors.toList());
+                    return Promise.of(items);
+                });
     }
 
     @Override
     @NotNull
     public Promise<MasteryItem> save(@NotNull MasteryItem item) {
-        masteryItems.put(item.masteryId(), item);
-        return Promise.of(item);
+        String tenantId = item.applicability().tenantId();
+        Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
+
+        Entity entity = Entity.builder()
+                .tenantId(tenantId)
+                .collectionName(COLLECTION_MASTERY_ITEMS)
+                .data(dataMap)
+                .createdBy(item.agentId())
+                .build();
+
+        return entityRepository.save(tenantId, entity)
+                .map(savedEntity -> MasteryItemMapper.fromDataMap(savedEntity.getData()));
     }
 
     @Override
     @NotNull
     public Promise<MasteryTransitionResult> transition(@NotNull MasteryTransition transition) {
-        MasteryItem item = masteryItems.get(transition.masteryId());
-        if (item == null) {
-            return Promise.of(MasteryTransitionResult.failure(
-                    transition.masteryId(),
-                    MasteryState.UNKNOWN,
-                    "Mastery item not found: " + transition.masteryId()
-            ));
-        }
+        // MasteryTransition doesn't have tenantId, get it from the mastery item
+        // TODO: Add tenantId to MasteryTransition when governance is fully implemented
+        String tenantId = "default";
+        
+        // First, find the current mastery item
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, 
+                Map.of("masteryId", transition.masteryId()), null, 0, 1)
+                .then(entities -> {
+                    if (entities.isEmpty()) {
+                        return Promise.of(MasteryTransitionResult.failure(
+                                transition.masteryId(),
+                                MasteryState.UNKNOWN,
+                                "Mastery item not found: " + transition.masteryId()
+                        ));
+                    }
 
-        // Validate transition
-        if (!isValidTransition(item.state(), transition.toState(), transition.evidenceRefs())) {
-            return Promise.of(MasteryTransitionResult.failure(
-                    transition.masteryId(),
-                    item.state(),
-                    "Invalid transition from " + item.state() + " to " + transition.toState()
-            ));
-        }
+                    MasteryItem item = MasteryItemMapper.fromDataMap(entities.get(0).getData());
 
-        // Record transition
-        transitions.put(transition.transitionId(), transition);
+                    // Validate transition
+                    if (!isValidTransition(item.state(), transition.toState(), transition.evidenceRefs())) {
+                        return Promise.of(MasteryTransitionResult.failure(
+                                transition.masteryId(),
+                                item.state(),
+                                "Invalid transition from " + item.state() + " to " + transition.toState()
+                        ));
+                    }
 
-        // Update mastery item state
-        MasteryItem updatedItem = new MasteryItem(
-                item.masteryId(),
-                item.skillId(),
-                item.domain(),
-                item.agentId(),
-                item.agentReleaseId(),
-                transition.toState(),
-                item.versionScope(),
-                item.applicability(),
-                item.score(),
-                item.procedureIds(),
-                item.semanticFactIds(),
-                item.negativeKnowledgeIds(),
-                item.evidenceRefs(),
-                item.evaluationRefs(),
-                item.knownFailureModeIds(),
-                Instant.now(),
-                item.staleAfter(),
-                item.labels()
-        );
+                    // Record transition (append-only)
+                    return transitionRepository.append(transition)
+                            .then(savedTransition -> {
+                                // Update mastery item state
+                                MasteryItem updatedItem = new MasteryItem(
+                                        item.masteryId(),
+                                        item.skillId(),
+                                        item.domain(),
+                                        item.agentId(),
+                                        item.agentReleaseId(),
+                                        transition.toState(),
+                                        item.versionScope(),
+                                        item.applicability(),
+                                        item.score(),
+                                        item.procedureIds(),
+                                        item.semanticFactIds(),
+                                        item.negativeKnowledgeIds(),
+                                        item.evidenceRefs(),
+                                        item.evaluationRefs(),
+                                        item.knownFailureModeIds(),
+                                        Instant.now(),
+                                        item.staleAfter(),
+                                        item.labels()
+                                );
 
-        masteryItems.put(item.masteryId(), updatedItem);
-
-        return Promise.of(MasteryTransitionResult.success(
-                item.masteryId(),
-                item.state(),
-                transition.toState(),
-                transition.transitionId()
-        ));
+                                return save(updatedItem)
+                                        .map(saved -> MasteryTransitionResult.success(
+                                                item.masteryId(),
+                                                item.state(),
+                                                transition.toState(),
+                                                transition.transitionId()
+                                        ));
+                            });
+                });
     }
 
     @Override
     @NotNull
     public Promise<List<MasteryItem>> findStale(@NotNull Instant now) {
-        return Promise.of(masteryItems.values().stream()
-                .filter(item -> !item.isFresh(now))
-                .collect(Collectors.toList()));
+        // Query all entities and filter for stale items
+        return entityRepository.count("default", COLLECTION_MASTERY_ITEMS)
+                .then(count -> {
+                    int limit = count > 1000 ? 1000 : (int) count.longValue();
+                    return entityRepository.findAll("default", COLLECTION_MASTERY_ITEMS, 
+                            Map.of(), null, 0, limit);
+                })
+                .then(entities -> {
+                    List<MasteryItem> staleItems = entities.stream()
+                            .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
+                            .filter(item -> !item.isFresh(now))
+                            .collect(Collectors.toList());
+                    return Promise.of(staleItems);
+                });
     }
 
     @Override
     @NotNull
     public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
+        String tenantId = query.tenantId() != null ? query.tenantId() : "default";
+        Map<String, Object> filter = new HashMap<>();
+
+        if (query.skillId() != null) {
+            filter.put("skillId", query.skillId());
+        }
+        if (query.agentId() != null) {
+            filter.put("agentId", query.agentId());
+        }
+
         // Find matching mastery items (including MAINTENANCE_ONLY for proper mode selection)
-        List<MasteryItem> matches = masteryItems.values().stream()
-                .filter(item -> query.skillId() == null || item.skillId().equals(query.skillId()))
-                .filter(item -> query.agentId() == null || item.agentId().equals(query.agentId()))
-                .filter(item -> query.tenantId() == null || item.applicability().tenantId().equals(query.tenantId()))
-                .filter(item -> query.states() == null || query.states().contains(item.state()))
-                .filter(item -> item.isFresh(Instant.now()))
-                .toList();
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, null, 0, 50)
+                .then(entities -> {
+                    List<MasteryItem> matches = entities.stream()
+                            .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
+                            .filter(item -> query.states() == null || query.states().contains(item.state()))
+                            .filter(item -> item.isFresh(Instant.now()))
+                            .toList();
 
-        if (matches.isEmpty()) {
-            // No matching mastery - return decision to block
-            String skillId = query.skillId() != null ? query.skillId() : "unknown";
-            return Promise.of(MasteryDecision.block(
-                    "unknown",
-                    skillId,
-                    ExecutionMode.BLOCKED,
-                    "No matching mastery item found"
-            ));
-        }
+                    if (matches.isEmpty()) {
+                        // No matching mastery - return decision to block
+                        String skillId = query.skillId() != null ? query.skillId() : "unknown";
+                        return Promise.of(MasteryDecision.block(
+                                "unknown",
+                                skillId,
+                                ExecutionMode.BLOCKED,
+                                "No matching mastery item found"
+                        ));
+                    }
 
-        // Get the best matching item (highest execution score)
-        MasteryItem best = matches.stream()
-                .max(Comparator.comparingDouble(item -> item.score().executionScore()))
-                .orElse(matches.get(0));
+                    // Get the best matching item (highest execution score)
+                    MasteryItem best = matches.stream()
+                            .max(Comparator.comparingDouble(item -> item.score().executionScore()))
+                            .orElse(matches.get(0));
 
-        // Determine execution mode based on mastery state
-        ExecutionMode mode = determineExecutionMode(best);
+                    // Determine execution mode based on mastery state
+                    ExecutionMode mode = determineExecutionMode(best);
 
-        // Determine if human approval or verification is required
-        boolean requiresHumanApproval = best.state() == MasteryState.PRACTICED;
-        boolean requiresVerification = best.state() == MasteryState.COMPETENT;
+                    // Determine if human approval or verification is required
+                    boolean requiresHumanApproval = best.state() == MasteryState.PRACTICED;
+                    boolean requiresVerification = best.state() == MasteryState.COMPETENT;
 
-        if (requiresHumanApproval) {
-            return Promise.of(MasteryDecision.requireApproval(
-                    best.masteryId(),
-                    best.skillId(),
-                    mode,
-                    "Mastery state is PRACTICED - requires human approval"
-            ));
-        }
+                    if (requiresHumanApproval) {
+                        return Promise.of(MasteryDecision.requireApproval(
+                                best.masteryId(),
+                                best.skillId(),
+                                mode,
+                                "Mastery state is PRACTICED - requires human approval"
+                        ));
+                    }
 
-        if (requiresVerification) {
-            return Promise.of(MasteryDecision.requireVerification(
-                    best.masteryId(),
-                    best.skillId(),
-                    mode,
-                    "Mastery state is COMPETENT - requires verification",
-                    best.evidenceRefs()
-            ));
-        }
+                    if (requiresVerification) {
+                        return Promise.of(MasteryDecision.requireVerification(
+                                best.masteryId(),
+                                best.skillId(),
+                                mode,
+                                "Mastery state is COMPETENT - requires verification",
+                                best.evidenceRefs()
+                        ));
+                    }
 
-        return Promise.of(MasteryDecision.allow(
-                best.masteryId(),
-                best.skillId(),
-                mode,
-                "Mastery state is " + best.state() + " - execution allowed"
-        ));
+                    return Promise.of(MasteryDecision.allow(
+                            best.masteryId(),
+                            best.skillId(),
+                            mode,
+                            "Mastery state is " + best.state() + " - execution allowed"
+                    ));
+                });
     }
 
     /**

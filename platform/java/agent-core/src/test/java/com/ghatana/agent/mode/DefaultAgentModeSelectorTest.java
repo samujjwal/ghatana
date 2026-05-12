@@ -116,6 +116,9 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 .threatModelId("default")
                 .addPermittedPurpose("treatment")
                 .capabilityMaturityProfile("L1")
+                .evaluationPackId("eval-pack-1")
+                .evaluationPackDigest("digest-1")
+                .memoryContractId("memory-contract-1")
                 .createdBy("test")
                 .build();
     }

@@ -5,6 +5,33 @@ export function createProductShellConfig(config: ProductShellConfig): ProductShe
   return config;
 }
 
+export function useProductShellConfig(config: ProductShellConfig): ProductShellConfig {
+  return useMemo(
+    () => config,
+    [
+      config.productName,
+      config.logo,
+      config.routes,
+      config.currentRole,
+      config.roleOrder,
+      config.roleLabels,
+      config.roleDescriptions,
+      config.availableRoles,
+      config.roleSelectorTitle,
+      config.roleSelectorLabel,
+      config.roleSelectorDisclosureNote,
+      config.onRoleChange,
+      config.onSearch,
+      config.notifications,
+      config.onNotificationAction,
+      config.activeOperationsCount,
+      config.onActiveOperationsClick,
+      config.sidebarFooter,
+      config.headerActions,
+    ],
+  );
+}
+
 export function useStableProductShellConfig(
   factory: () => ProductShellConfig,
   dependencies: readonly unknown[],

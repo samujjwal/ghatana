@@ -17,6 +17,8 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const flowManifestFile = "config/observability/product-observability-flows.json";
+const flowSchemaFile = "config/observability/product-observability-flows.schema.json";
+const registryFile = "config/canonical-product-registry.json";
 
 const violations = [];
 
@@ -26,6 +28,120 @@ const forbiddenProductStackFiles = [
   "products/flashit/monitoring/grafana/provisioning/dashboards/dashboards.yml",
 ];
 
+function loadJson(relativePath) {
+  return JSON.parse(readFileSync(path.join(repoRoot, relativePath), "utf8"));
+}
+
+function activeObservabilityProducts() {
+  const registry = loadJson(registryFile).registry;
+  return Object.values(registry)
+    .filter((entry) =>
+      entry.kind === "business-product" &&
+      entry.metadata?.status === "active" &&
+      entry.conformance?.observability === true &&
+      entry.conformance?.manifest === true,
+    )
+    .map((entry) => entry.id)
+    .sort();
+}
+
+function isNonEmptyString(value) {
+  return typeof value === "string" && value.length > 0;
+}
+
+function validateStringArray({ owner, field, value, allowEmpty = false }) {
+  if (!Array.isArray(value)) {
+    violations.push(`${flowManifestFile}: ${owner}.${field} must be an array`);
+    return [];
+  }
+  if (!allowEmpty && value.length === 0) {
+    violations.push(`${flowManifestFile}: ${owner}.${field} must not be empty`);
+  }
+  const seen = new Set();
+  for (const item of value) {
+    if (!isNonEmptyString(item)) {
+      violations.push(`${flowManifestFile}: ${owner}.${field} must contain only non-empty strings`);
+      continue;
+    }
+    if (seen.has(item)) {
+      violations.push(`${flowManifestFile}: ${owner}.${field} contains duplicate value ${item}`);
+    }
+    seen.add(item);
+  }
+  return value;
+}
+
+function validateFlowManifestSchema(manifest, schema) {
+  const allowedRootKeys = new Set(Object.keys(schema.properties ?? {}));
+  for (const key of Object.keys(manifest)) {
+    if (!allowedRootKeys.has(key)) {
+      violations.push(`${flowManifestFile}: unrecognized root key ${key}`);
+    }
+  }
+
+  if (manifest.schemaVersion !== schema.properties?.schemaVersion?.const) {
+    violations.push(
+      `${flowManifestFile}: schemaVersion must be ${schema.properties?.schemaVersion?.const}`,
+    );
+  }
+
+  validateStringArray({ owner: "<root>", field: "requiredFacets", value: manifest.requiredFacets });
+
+  if (!Array.isArray(manifest.flows) || manifest.flows.length === 0) {
+    violations.push(`${flowManifestFile}: flows must be a non-empty array`);
+    return;
+  }
+
+  const allowedFlowKeys = new Set(Object.keys(schema.$defs?.flow?.properties ?? {}));
+  const allowedKinds = new Set(schema.$defs?.flow?.properties?.kind?.enum ?? []);
+  const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  for (const [index, flow] of manifest.flows.entries()) {
+    const owner = `flows[${index}]`;
+    if (!flow || typeof flow !== "object" || Array.isArray(flow)) {
+      violations.push(`${flowManifestFile}: ${owner} must be an object`);
+      continue;
+    }
+    for (const key of Object.keys(flow)) {
+      if (!allowedFlowKeys.has(key)) {
+        violations.push(`${flowManifestFile}: ${owner} has unrecognized key ${key}`);
+      }
+    }
+    if (!isNonEmptyString(flow.product) || !slugPattern.test(flow.product)) {
+      violations.push(`${flowManifestFile}: ${owner}.product must be a product id`);
+    }
+    if (!isNonEmptyString(flow.flow) || !slugPattern.test(flow.flow)) {
+      violations.push(`${flowManifestFile}: ${owner}.flow must be a slug`);
+    }
+    if (!allowedKinds.has(flow.kind)) {
+      violations.push(`${flowManifestFile}: ${owner}.kind must be one of ${[...allowedKinds].join(", ")}`);
+    }
+    validateStringArray({ owner, field: "facets", value: flow.facets });
+
+    if (!Array.isArray(flow.evidence) || flow.evidence.length === 0) {
+      violations.push(`${flowManifestFile}: ${owner}.evidence must be a non-empty array`);
+      continue;
+    }
+    for (const [evidenceIndex, evidence] of flow.evidence.entries()) {
+      const evidenceOwner = `${owner}.evidence[${evidenceIndex}]`;
+      if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
+        violations.push(`${flowManifestFile}: ${evidenceOwner} must be an object`);
+        continue;
+      }
+      const allowedEvidenceKeys = new Set(Object.keys(schema.$defs?.evidence?.properties ?? {}));
+      for (const key of Object.keys(evidence)) {
+        if (!allowedEvidenceKeys.has(key)) {
+          violations.push(`${flowManifestFile}: ${evidenceOwner} has unrecognized key ${key}`);
+        }
+      }
+      if (!isNonEmptyString(evidence.file)) {
+        violations.push(`${flowManifestFile}: ${evidenceOwner}.file must be a non-empty path`);
+      }
+      validateStringArray({ owner: evidenceOwner, field: "tokens", value: evidence.tokens });
+    }
+  }
+}
+
 function validateFlowManifest() {
   const manifestPath = path.join(repoRoot, flowManifestFile);
   if (!existsSync(manifestPath)) {
@@ -33,10 +149,19 @@ function validateFlowManifest() {
     return;
   }
 
+  const schemaPath = path.join(repoRoot, flowSchemaFile);
+  if (!existsSync(schemaPath)) {
+    violations.push(`Missing observability flow schema ${flowSchemaFile}`);
+    return;
+  }
+
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+  validateFlowManifestSchema(manifest, schema);
+
   const requiredFacets = manifest.requiredFacets ?? [];
   const flows = manifest.flows ?? [];
-  const requiredProducts = ["phr", "finance", "digital-marketing", "flashit"];
+  const requiredProducts = activeObservabilityProducts();
   const coveredProducts = new Set();
   let bridgeFlowCount = 0;
 
@@ -98,22 +223,6 @@ function validateFlowManifest() {
 
   if (bridgeFlowCount === 0) {
     violations.push(`${flowManifestFile}: at least one bridge flow must be covered`);
-  }
-}
-
-for (const contract of contracts) {
-  const filePath = path.join(repoRoot, contract.file);
-  if (!existsSync(filePath)) {
-    violations.push(`${contract.name}: missing file ${contract.file}`);
-    continue;
-  }
-
-  const content = readFileSync(filePath, "utf8");
-  const missing = contract.required.filter((token) => !content.includes(token));
-  if (missing.length > 0) {
-    violations.push(
-      `${contract.name}: missing observability evidence ${missing.join(", ")} in ${contract.file}`,
-    );
   }
 }
 

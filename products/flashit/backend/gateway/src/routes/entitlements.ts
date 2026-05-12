@@ -13,7 +13,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import type { JwtPayload } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
-import { flashItRouteContracts, type FlashItRole } from './route-manifest.contract.js';
+import { flashItRouteContracts, type FlashItRole } from '@flashit/shared';
 
 const roleOrder: Readonly<Record<FlashItRole, number>> = {
   member: 0,

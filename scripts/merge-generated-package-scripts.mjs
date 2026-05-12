@@ -46,6 +46,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:doc-truth',
   'check:doc-claims-evidence',
   'check:circular-deps',
+  'check:kernel-boundaries',
   'check:product-ui-contracts',
   'check:product-doc-taxonomy',
   'check:product-manifest-contracts',

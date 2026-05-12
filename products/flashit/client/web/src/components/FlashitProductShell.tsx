@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@ghatana/design-system';
 import {
   ProductShell,
-  useStableProductShellConfig,
+  useProductShellConfig,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { useAtomValue } from 'jotai';
@@ -43,7 +43,7 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
   const navigate = useNavigate();
   const currentRole = resolveFlashitRole(currentUser);
 
-  const config = useStableProductShellConfig((): ProductShellConfig => ({
+  const config = useProductShellConfig({
     productName: 'FlashIt',
     logo: <span className="text-lg font-semibold tracking-tight text-sky-700">FI</span>,
     currentRole,
@@ -61,7 +61,7 @@ export function FlashitProductShell({ children }: FlashitProductShellProps): Rea
       </div>
     ),
     sidebarFooter,
-  }), [currentRole, currentUser?.displayName, currentUser?.email, logout, navigate]);
+  });
 
   return (
     <ProductShell

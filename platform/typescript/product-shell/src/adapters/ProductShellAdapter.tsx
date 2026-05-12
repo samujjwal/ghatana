@@ -11,7 +11,17 @@
  * @doc.pattern Adapter
  */
 import React from 'react';
-import { ProductShell, useStableProductShellConfig, type ProductShellConfig } from '../index';
+import { ProductShell, useProductShellConfig, type ProductShellConfig, type ProductShellProps } from '../index';
+
+type AdapterRoleOrder = readonly string[] | ProductShellConfig['roleOrder'];
+
+function toRoleOrder(roleOrder: AdapterRoleOrder): ProductShellConfig['roleOrder'] {
+  if (Array.isArray(roleOrder)) {
+    return Object.fromEntries(roleOrder.map((role, index) => [role, index]));
+  }
+
+  return roleOrder as ProductShellConfig['roleOrder'];
+}
 
 interface ProductShellAdapterProps {
   /** Product name */
@@ -19,13 +29,13 @@ interface ProductShellAdapterProps {
   /** Current role of the user */
   currentRole: string;
   /** Role order for role hierarchy */
-  roleOrder: string[];
+  roleOrder: AdapterRoleOrder;
   /** Role labels for display */
   roleLabels: ProductShellConfig['roleLabels'];
   /** Role descriptions for tooltips/help */
   roleDescriptions: ProductShellConfig['roleDescriptions'];
   /** Route manifest for navigation */
-  routeManifest: ProductShellConfig['routeManifest'];
+  routeManifest: ProductShellConfig['routes'];
   /** Optional custom logo */
   logo?: React.ReactNode;
   /** Optional logout handler */
@@ -33,7 +43,7 @@ interface ProductShellAdapterProps {
   /** Optional navigate handler */
   onNavigate?: (path: string) => void;
   /** Optional search handler */
-  onSearch?: (query: string) => void;
+  onSearch?: () => void;
   /** Optional notification handler */
   onNotificationClick?: () => void;
   /** Optional active operations count */
@@ -91,43 +101,43 @@ export function ProductShellAdapter({
   mainContentTabIndex,
   mainContentRole,
 }: ProductShellAdapterProps): React.ReactElement {
-  const config = useStableProductShellConfig((): ProductShellConfig => ({
+  const roleHierarchy = toRoleOrder(roleOrder);
+  const shellConfig: ProductShellConfig = {
     productName,
-    logo,
+    ...(logo !== undefined ? { logo } : {}),
     currentRole,
-    roleOrder,
-    roleLabels,
-    roleDescriptions,
-    routeManifest,
-    onLogout,
-    onNavigate,
-    onSearch,
-    onNotificationClick,
-    activeOperationsCount,
-    onActiveOperationsClick,
-  }), [
-    productName,
-    logo,
-    currentRole,
-    roleOrder,
-    roleLabels,
-    roleDescriptions,
-    routeManifest,
-    onLogout,
-    onNavigate,
-    onSearch,
-    onNotificationClick,
-    activeOperationsCount,
-    onActiveOperationsClick,
-  ]);
+    roleOrder: roleHierarchy,
+    routes: routeManifest,
+    ...(roleLabels !== undefined ? { roleLabels } : {}),
+    ...(roleDescriptions !== undefined ? { roleDescriptions } : {}),
+    ...(onSearch !== undefined ? { onSearch } : {}),
+    ...(activeOperationsCount !== undefined ? { activeOperationsCount } : {}),
+    ...(onActiveOperationsClick !== undefined ? { onActiveOperationsClick } : {}),
+  };
+  const config = useProductShellConfig(shellConfig);
+  const shellProps: Omit<ProductShellProps, 'children' | 'config'> = {};
+
+  if (contentClassName !== undefined) {
+    shellProps.contentClassName = contentClassName;
+  }
+  if (mainContentId !== undefined) {
+    shellProps.mainContentId = mainContentId;
+  }
+  if (mainContentTabIndex !== undefined) {
+    shellProps.mainContentTabIndex = mainContentTabIndex;
+  }
+  if (mainContentRole !== undefined) {
+    shellProps.mainContentRole = mainContentRole;
+  }
+
+  void onLogout;
+  void onNavigate;
+  void onNotificationClick;
 
   return (
     <ProductShell
       config={config}
-      contentClassName={contentClassName}
-      mainContentId={mainContentId}
-      mainContentTabIndex={mainContentTabIndex}
-      mainContentRole={mainContentRole}
+      {...shellProps}
     >
       {children}
     </ProductShell>

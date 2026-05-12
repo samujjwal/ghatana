@@ -324,12 +324,23 @@ public final class LearningEngine {
                     0, 0, 0, 0));
         }
 
-        // If delta repository is configured, create learning deltas instead of direct policy persistence
+        // For L3+ learning, deltaRepository is required for proper governance
+        if (learningContract.level().ordinal() >= LearningLevel.L3.ordinal()) {
+            if (deltaRepository == null) {
+                return Promise.ofException(new IllegalStateException(
+                        "LearningDeltaRepository is required for L3+ learning (level: " + learningContract.level() +
+                        "). L3+ learning requires proper governance through the learning delta system. " +
+                        "Configure a deltaRepository to enable L3+ learning."));
+            }
+            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+        }
+
+        // For L0-L2 learning, use deltaRepository if configured, otherwise fall back to direct policy persistence
         if (deltaRepository != null) {
             return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
         }
 
-        // Otherwise, use the original direct policy persistence path
+        // Otherwise, use the original direct policy persistence path (L0-L2 only)
         // Chain all store operations sequentially to avoid concurrent writes
         Promise<Integer> storeChain = Promise.of(0);
         for (CandidatePolicy candidate : approved) {

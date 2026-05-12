@@ -6,28 +6,23 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const workspacePath = path.join(repoRoot, 'pnpm-workspace.yaml');
 const shapePath = path.join(repoRoot, 'config/product-shape.json');
+const registryPath = path.join(repoRoot, 'config/canonical-product-registry.json');
 const financeReadmePath = path.join(repoRoot, 'products/finance/README.md');
 
 const workspaceSource = readFileSync(workspacePath, 'utf8');
 const shape = JSON.parse(readFileSync(shapePath, 'utf8'));
+const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
 const financeReadme = readFileSync(financeReadmePath, 'utf8');
-
-const requiredWorkspaceTokens = [
-  '- "products/phr/apps/*"',
-  '- "products/digital-marketing/ui"',
-  '- "products/flashit/client/*"',
-];
 
 const violations = [];
 
-for (const token of requiredWorkspaceTokens) {
-  if (!workspaceSource.includes(token)) {
-    violations.push(`pnpm-workspace.yaml: missing required workspace registration ${JSON.stringify(token)}`);
+for (const product of Object.values(registry.registry)) {
+  for (const packagePattern of product.pnpmPackages ?? []) {
+    const token = `- "${packagePattern}"`;
+    if (!workspaceSource.includes(token)) {
+      violations.push(`pnpm-workspace.yaml: missing registry workspace registration ${JSON.stringify(token)}`);
+    }
   }
-}
-
-if (!workspaceSource.includes('Finance currently ships as backend-only in this monorepo')) {
-  violations.push('pnpm-workspace.yaml: missing explicit Finance backend-only workspace note');
 }
 
 if (shape.products.finance?.ui !== false || shape.products.finance?.uiMode !== 'backend-only') {

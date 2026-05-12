@@ -2,7 +2,6 @@
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { productManifestSchema } from "../platform/typescript/product-manifest-contracts/index.mjs";
 
 function parseArgs(argv) {
   const args = new Map();
@@ -89,6 +88,7 @@ function registerProductShape({
 function registerWorkspace({
   root,
   id,
+  name,
   uiEnabled,
 }) {
   if (!uiEnabled) {
@@ -103,14 +103,16 @@ function registerWorkspace({
     throw new Error(`pnpm-workspace.yaml already contains workspace registration for ${id}`);
   }
 
-  const marker = '  # tutorputor product';
+  const marker = workspaceSource.includes('  # Shared services')
+    ? '  # Shared services'
+    : '  # tutorputor product';
   if (!workspaceSource.includes(marker)) {
-    throw new Error(`Unable to locate insertion marker ${JSON.stringify(marker)} in pnpm-workspace.yaml`);
+    throw new Error('Unable to locate product workspace insertion marker in pnpm-workspace.yaml');
   }
 
   const updated = workspaceSource.replace(
     marker,
-    `  # ${id} product\n${registrationLine}\n\n${marker}`,
+    `  # ${name} (${id})\n${registrationLine}\n\n${marker}`,
   );
   writeText(workspacePath, updated);
 }
@@ -414,37 +416,38 @@ configure<ProductPackValidationExtension> {
 
 writeFile(
   join(productDir, "domain-pack-manifest.yaml"),
-  `pack:
-  id: ${id}
-  version: 0.1.0
-  product: ${id}
-  domain: ${domain}
-  rulePrefix: ${rulePrefix}
+  `schemaVersion: 1.0.0
+id: ${id}
+version: 0.1.0
+product: ${id}
+domain: ${domain}
+rulePrefix: ${rulePrefix}
+kernelCapabilitiesConsumed:
+  - boundary-policy-evaluation
+  - audit-trail
+  - tenant-context
+policyActions:
+  - read
+  - write
+  - delete
+policyResources:
+  - ${id}:core
+pluginsConsumed:
+  - plugin-audit-trail
+  - plugin-compliance
+bridgesConsumed: []
+domainPacksProvided:
+  - ${id}-boundary-policy
+  - ${id}-compliance-rule-pack
+uiSurfaces:
+${uiEnabled ? "  - web" : "  []"}
+runtimeServices:
+  - launcher
+dataSensitivity: LOW
+productExtensions:
   boundaryPolicyStoreClass: com.ghatana.${packageSegment}.kernel.policy.${classPrefix}BoundaryPolicyStore
   pluginBindingsClass: com.ghatana.${packageSegment}.kernel.policy.${classPrefix}PluginBindings
   defaultDenyRuleId: ${rulePrefix}999
-  kernelCapabilitiesConsumed:
-    - boundary-policy-evaluation
-    - audit-trail
-    - tenant-context
-  policyActions:
-    - read
-    - write
-    - delete
-  policyResources:
-    - ${id}:core
-  pluginsConsumed:
-    - plugin-audit-trail
-    - plugin-compliance
-  bridgesConsumed: []
-  domainPacksProvided:
-    - ${id}-boundary-policy
-    - ${id}-compliance-rule-pack
-  uiSurfaces:
-${uiEnabled ? "    - web" : "    []"}
-  runtimeServices:
-    - launcher
-  dataSensitivity: LOW
 `
 );
 
@@ -1060,7 +1063,7 @@ if (shouldRegisterProductShape) {
 }
 
 if (shouldRegisterWorkspace) {
-  registerWorkspace({ root, id, uiEnabled });
+  registerWorkspace({ root, id, name, uiEnabled });
 }
 
 if (shouldRegisterGradleSettings) {

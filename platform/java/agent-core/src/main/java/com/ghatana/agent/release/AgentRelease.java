@@ -98,6 +98,13 @@ public record AgentRelease(
         if (capabilityMaturityProfile == null || capabilityMaturityProfile.isBlank()) {
             throw new IllegalArgumentException("capabilityMaturityProfile must not be blank (TX-5)");
         }
+        // Governance artifacts mandatory for response-serving releases
+        if (evaluationPackId == null || evaluationPackId.isBlank()) {
+            throw new IllegalArgumentException("evaluationPackId must not be blank (governance gate)");
+        }
+        if (memoryContractId == null || memoryContractId.isBlank()) {
+            throw new IllegalArgumentException("memoryContractId must not be blank (governance gate)");
+        }
         compatibleRuntimeVersions = List.copyOf(compatibleRuntimeVersions);
         dataClassesHandled        = Set.copyOf(dataClassesHandled);
         permittedPurposes         = Set.copyOf(permittedPurposes);

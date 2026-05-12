@@ -44,15 +44,18 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
     }
 
-    private AgentRelease minimalRelease(String agentId, String version) { 
-        return new AgentReleaseBuilder() 
-                .agentId(agentId) 
-                .releaseVersion(version) 
+    private AgentRelease minimalRelease(String agentId, String version) {
+        return new AgentReleaseBuilder()
+                .agentId(agentId)
+                .releaseVersion(version)
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); 
+                .evaluationPackId("eval-pack-1")
+                .evaluationPackDigest("digest-1")
+                .memoryContractId("memory-contract-1")
+                .build();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -136,23 +139,26 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns ACTIVE release when one exists")
-        void returnsActiveRelease() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void returnsActiveRelease() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
-                    .build(); 
-            runPromise(() -> repo.save(release)); 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build();
+            runPromise(() -> repo.save(release));
 
-            Optional<AgentRelease> active = runPromise(() -> 
-                    repo.findActiveRelease("agent-001", "tenant-1")); 
+            Optional<AgentRelease> active = runPromise(() ->
+                    repo.findActiveRelease("agent-001", "tenant-1"));
 
-            assertThat(active).isPresent(); 
-            assertThat(active.get().state()).isEqualTo(AgentReleaseState.ACTIVE); 
+            assertThat(active).isPresent();
+            assertThat(active.get().state()).isEqualTo(AgentReleaseState.ACTIVE);
         }
 
         @Test
@@ -215,23 +221,28 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findByState returns only releases in the given state")
-    void findByState() { 
-        AgentRelease draft1 = minimalRelease("agent-001", "1.0.0"); 
-        AgentRelease draft2 = minimalRelease("agent-002", "1.0.0"); 
-        AgentRelease active = new AgentReleaseBuilder() 
+    void findByState() {
+        AgentRelease draft1 = minimalRelease("agent-001", "1.0.0");
+        AgentRelease draft2 = minimalRelease("agent-002", "1.0.0");
+        AgentRelease active = new AgentReleaseBuilder()
                 .agentId("agent-003")
                 .releaseVersion("1.0.0")
-                .state(AgentReleaseState.ACTIVE)                .redactionProfileId("rp-test")
+                .state(AgentReleaseState.ACTIVE)
+                .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
                 .addPermittedPurpose("agent.inference")
-                .capabilityMaturityProfile("L1")                .build();
-        runPromise(() -> repo.save(draft1)); 
-        runPromise(() -> repo.save(draft2)); 
-        runPromise(() -> repo.save(active)); 
+                .capabilityMaturityProfile("L1")
+                .evaluationPackId("eval-pack-1")
+                .evaluationPackDigest("digest-1")
+                .memoryContractId("memory-contract-1")
+                .build();
+        runPromise(() -> repo.save(draft1));
+        runPromise(() -> repo.save(draft2));
+        runPromise(() -> repo.save(active));
 
-        List<AgentRelease> drafts = runPromise(() -> repo.findByState(AgentReleaseState.DRAFT)); 
+        List<AgentRelease> drafts = runPromise(() -> repo.findByState(AgentReleaseState.DRAFT));
 
-        assertThat(drafts).hasSize(2).allMatch(r -> r.state() == AgentReleaseState.DRAFT); 
+        assertThat(drafts).hasSize(2).allMatch(r -> r.state() == AgentReleaseState.DRAFT);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -244,15 +255,18 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns ACTIVE release as governing release")
-        void returnsActiveRelease() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void returnsActiveRelease() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-gov")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
                     .build(); 
             runPromise(() -> repo.save(release)); 
 
@@ -265,23 +279,26 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns BLOCKED release as governing release")
-        void returnsBlockedRelease() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void returnsBlockedRelease() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-gov")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.BLOCKED) 
+                    .state(AgentReleaseState.BLOCKED)
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
-                    .build(); 
-            runPromise(() -> repo.save(release)); 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build();
+            runPromise(() -> repo.save(release));
 
-            Optional<AgentRelease> governing = runPromise(() -> 
-                    repo.findGoverningRelease("agent-gov", "tenant-1")); 
+            Optional<AgentRelease> governing = runPromise(() ->
+                    repo.findGoverningRelease("agent-gov", "tenant-1"));
 
-            assertThat(governing).isPresent(); 
-            assertThat(governing.get().state()).isEqualTo(AgentReleaseState.BLOCKED); 
+            assertThat(governing).isPresent();
+            assertThat(governing.get().state()).isEqualTo(AgentReleaseState.BLOCKED);
         }
 
         @Test

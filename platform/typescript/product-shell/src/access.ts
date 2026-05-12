@@ -1,5 +1,15 @@
 import type { ProductRouteCapability, ProductRouteEntitlement } from './types';
 
+export type RoleHierarchy<Role extends string = string> = Readonly<Record<Role, number>>;
+
+export interface RouteAccessEvaluator<Role extends string = string> {
+  readonly roleOrder: RoleHierarchy<Role>;
+  resolveHighestRole(roles: readonly string[] | undefined, fallbackRole: Role): Role;
+  hasMinimumRole(roles: readonly string[] | undefined, minimumRole: Role, fallbackRole: Role): boolean;
+  isRouteAllowed(route: Pick<ProductRouteCapability, 'minimumRole'>, role: Role): boolean;
+  filterDiscoverableRoutes(routes: readonly ProductRouteCapability[], role: Role): readonly ProductRouteCapability[];
+}
+
 export function resolveHighestRole(
   roles: readonly string[] | undefined,
   roleOrder: Readonly<Record<string, number>>,
@@ -16,6 +26,22 @@ export function resolveHighestRole(
   }, fallbackRole);
 }
 
+export function createRoleHierarchy<Role extends string>(
+  roleOrder: RoleHierarchy<Role>,
+): RoleHierarchy<Role> {
+  return Object.freeze({ ...roleOrder });
+}
+
+export function hasMinimumRole<Role extends string>(
+  roles: readonly string[] | undefined,
+  minimumRole: Role,
+  roleOrder: RoleHierarchy<Role>,
+  fallbackRole: Role,
+): boolean {
+  const highestRole = resolveHighestRole(roles, roleOrder, fallbackRole) as Role;
+  return isRouteAllowed({ minimumRole }, highestRole, roleOrder);
+}
+
 export function isRouteAllowed(
   route: Pick<ProductRouteCapability, 'minimumRole'>,
   role: string,
@@ -27,15 +53,12 @@ export function isRouteAllowed(
 
   const currentOrder = roleOrder[role];
   const minimumOrder = roleOrder[route.minimumRole];
-  
-  // Fail closed: unknown roles cannot access routes
+
   if (currentOrder === undefined) {
-    console.warn(`Unknown role '${role}' in roleOrder. Denying access to prevent privilege escalation.`);
     return false;
   }
-  
+
   if (minimumOrder === undefined) {
-    console.warn(`Route minimumRole '${route.minimumRole}' not found in roleOrder. Denying access.`);
     return false;
   }
 
@@ -50,9 +73,35 @@ export function filterDiscoverableRoutes(
   return routes.filter(
     (route) =>
       route.lifecycle !== 'boundary' &&
+      route.lifecycle !== 'deprecated' &&
       route.discoverable !== false &&
       isRouteAllowed(route, role, roleOrder),
   );
+}
+
+export function createRouteAccessEvaluator<Role extends string>(
+  roleOrder: RoleHierarchy<Role>,
+): RouteAccessEvaluator<Role> {
+  const hierarchy = createRoleHierarchy(roleOrder);
+
+  return {
+    roleOrder: hierarchy,
+    resolveHighestRole(roles: readonly string[] | undefined, fallbackRole: Role): Role {
+      return resolveHighestRole(roles, hierarchy, fallbackRole) as Role;
+    },
+    hasMinimumRole(roles: readonly string[] | undefined, minimumRole: Role, fallbackRole: Role): boolean {
+      return hasMinimumRole(roles, minimumRole, hierarchy, fallbackRole);
+    },
+    isRouteAllowed(route: Pick<ProductRouteCapability, 'minimumRole'>, role: Role): boolean {
+      return isRouteAllowed(route, role, hierarchy);
+    },
+    filterDiscoverableRoutes(
+      routes: readonly ProductRouteCapability[],
+      role: Role,
+    ): readonly ProductRouteCapability[] {
+      return filterDiscoverableRoutes(routes, role, hierarchy);
+    },
+  };
 }
 
 export function hydrateRoutesFromEntitlement(

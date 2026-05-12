@@ -36,7 +36,17 @@ function loadManifestsFromRegistry() {
   const manifests = [];
   
   for (const [productId, product] of Object.entries(registry.registry)) {
-    // Only include products that have manifest paths
+    if (product.conformance?.manifest === true && (!product.manifestPath || !product.manifestFormat)) {
+      manifests.push({
+        product: productId,
+        file: product.manifestPath ?? `<missing manifestPath for ${productId}>`,
+        format: product.manifestFormat ?? null,
+        buildFile: product.buildFile ?? null,
+        registryViolation: 'manifest conformance requires manifestPath and manifestFormat',
+      });
+      continue;
+    }
+
     if (product.manifestPath && product.manifestFormat) {
       const entry = {
         product: productId,
@@ -44,11 +54,9 @@ function loadManifestsFromRegistry() {
         format: product.manifestFormat,
         buildFile: product.buildFile || null,
       };
-      
-      // If no explicit build file, try to infer from first gradle module
-      if (!entry.buildFile && product.gradleModules && product.gradleModules.length > 0) {
-        const firstModule = product.gradleModules[0];
-        entry.buildFile = firstModule.replace(':', '').replace(/:/g, '/') + '/build.gradle.kts';
+
+      if (product.conformance?.manifest === true && !entry.buildFile) {
+        entry.registryViolation = 'manifest conformance requires explicit buildFile';
       }
       
       manifests.push(entry);
@@ -275,6 +283,7 @@ function runNegativeFixtureAssertions() {
   }
 
   const invalidNestedCapability = validateProductManifestShape({
+    schemaVersion: '1.0.0',
     id: 'fixture',
     version: '1.0.0',
     kernelCapabilitiesConsumed: ['audit-trail'],
@@ -363,6 +372,7 @@ function runNegativeFixtureAssertions() {
 
   // Scaffolder golden test: validate that a scaffolded manifest would pass schema validation
   const scaffoldedManifest = {
+    schemaVersion: '1.0.0',
     id: 'test-scaffold',
     version: '0.1.0',
     product: 'test-scaffold',
@@ -388,6 +398,10 @@ function runNegativeFixtureAssertions() {
 }
 
 for (const entry of MANIFESTS) {
+  if (entry.registryViolation) {
+    addViolation('config/canonical-product-registry.json', `${entry.product}: ${entry.registryViolation}`);
+    continue;
+  }
   const manifest = normalizeManifest(entry);
   if (!manifest) {
     continue;

@@ -1,4 +1,4 @@
-import { isRouteAllowed } from '@ghatana/product-shell';
+import { createRouteAccessEvaluator } from '@ghatana/product-shell';
 
 export type FlashItRole = 'guest' | 'member' | 'premium' | 'admin';
 
@@ -18,11 +18,13 @@ export const FLASHIT_ROLE_ORDER: Readonly<Record<FlashItRole, number>> = {
   admin: 3,
 };
 
+export const flashitRouteAccess = createRouteAccessEvaluator(FLASHIT_ROLE_ORDER);
+
 export function isRouteAllowedForRole(
   route: Pick<{ minimumRole?: string }, 'minimumRole'>,
   role: FlashItRole,
 ): boolean {
-  return isRouteAllowed(route, role, FLASHIT_ROLE_ORDER);
+  return flashitRouteAccess.isRouteAllowed(route, role);
 }
 
 export function resolveFlashitRole(profile: FlashItAccessProfile | null | undefined): FlashItRole {

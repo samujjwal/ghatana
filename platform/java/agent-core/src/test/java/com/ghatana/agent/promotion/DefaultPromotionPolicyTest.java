@@ -92,7 +92,7 @@ class DefaultPromotionPolicyTest {
                 null,
                 "digest-123",
                 Map.of("content", "test"),
-                List.of("evidence-1"),
+                List.of("evidence-1", "evidence-2", "evidence-3"),
                 List.of("eval-1"),
                 List.of("episode-1", "episode-2"),
                 "rollback-1",

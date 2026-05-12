@@ -25,15 +25,18 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("AgentRelease")
 class AgentReleaseTest {
 
-    private static AgentRelease minimalRelease() { 
-        return new AgentReleaseBuilder() 
+    private static AgentRelease minimalRelease() {
+        return new AgentReleaseBuilder()
                 .agentId("agent-test-001")
                 .releaseVersion("1.0.0")
                 .redactionProfileId("rp-default")
                 .threatModelId("tm-default")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); 
+                .evaluationPackId("eval-pack-1")
+                .evaluationPackDigest("digest-1")
+                .memoryContractId("memory-contract-1")
+                .build();
     }
 
     @Nested
@@ -42,21 +45,27 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("builder fails when agentId is missing")
-        void missingAgentId() { 
-            assertThatThrownBy(() -> new AgentReleaseBuilder() 
+        void missingAgentId() {
+            assertThatThrownBy(() -> new AgentReleaseBuilder()
                     .releaseVersion("1.0.0")
-                    .build()) 
-                    .isInstanceOf(IllegalStateException.class) 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build())
+                    .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("agentId");
         }
 
         @Test
         @DisplayName("builder fails when releaseVersion is missing")
-        void missingReleaseVersion() { 
-            assertThatThrownBy(() -> new AgentReleaseBuilder() 
+        void missingReleaseVersion() {
+            assertThatThrownBy(() -> new AgentReleaseBuilder()
                     .agentId("agent-001")
-                    .build()) 
-                    .isInstanceOf(IllegalStateException.class) 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build())
+                    .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("releaseVersion");
         }
 
@@ -160,16 +169,19 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("ACTIVE release can run and serve")
-        void activeCanRunAndServe() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void activeCanRunAndServe() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.ACTIVE) 
+                    .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
-                    .build(); 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build();
 
             assertThat(release.isRunnable()).isTrue();
             assertThat(release.isResponseServing()).isTrue();
@@ -185,16 +197,19 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("BLOCKED release cannot run or serve")
-        void blockedNotRunnable() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void blockedNotRunnable() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.BLOCKED) 
+                    .state(AgentReleaseState.BLOCKED)
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
-                    .build(); 
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
+                    .build();
 
             assertThat(release.isRunnable()).isFalse();
             assertThat(release.isResponseServing()).isFalse();
@@ -207,36 +222,42 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("compatibleRuntimeVersions list is unmodifiable")
-        void runtimeVersionsUnmodifiable() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void runtimeVersionsUnmodifiable() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
                     .addCompatibleRuntime("aep:2.x")
-                    .build(); 
+                    .build();
 
             assertThatThrownBy(() -> release.compatibleRuntimeVersions().add("extra"))
-                    .isInstanceOf(UnsupportedOperationException.class); 
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
         @DisplayName("dataClassesHandled set is unmodifiable")
-        void dataClassesUnmodifiable() { 
-            AgentRelease release = new AgentReleaseBuilder() 
+        void dataClassesUnmodifiable() {
+            AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
+                    .evaluationPackId("eval-pack-1")
+                    .evaluationPackDigest("digest-1")
+                    .memoryContractId("memory-contract-1")
                     .addDataClass("PII")
-                    .build(); 
+                    .build();
 
             assertThatThrownBy(() -> release.dataClassesHandled().add("extra"))
-                    .isInstanceOf(UnsupportedOperationException.class); 
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 
