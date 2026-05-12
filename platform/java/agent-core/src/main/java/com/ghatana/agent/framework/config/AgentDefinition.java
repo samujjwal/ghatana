@@ -145,6 +145,9 @@ public final class AgentDefinition {
     private final List<String> evaluationRefs;
     private final Map<String, Object> observabilityContract;
     private final Map<String, Object> securityContract;
+    private final Map<String, Object> masteryBindings;
+    private final List<String> skillRefs;
+    private final List<String> masteryPolicyRefs;
 
     private AgentDefinition(Builder builder) {
         this.id = Objects.requireNonNull(builder.id, "id must not be null");
@@ -181,6 +184,9 @@ public final class AgentDefinition {
         this.evaluationRefs = List.copyOf(builder.evaluationRefs);
         this.observabilityContract = Map.copyOf(builder.observabilityContract);
         this.securityContract = Map.copyOf(builder.securityContract);
+        this.masteryBindings = Map.copyOf(builder.masteryBindings);
+        this.skillRefs = List.copyOf(builder.skillRefs);
+        this.masteryPolicyRefs = List.copyOf(builder.masteryPolicyRefs);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -221,6 +227,9 @@ public final class AgentDefinition {
     @NotNull public List<String> getEvaluationRefs() { return evaluationRefs; }
     @NotNull public Map<String, Object> getObservabilityContract() { return observabilityContract; }
     @NotNull public Map<String, Object> getSecurityContract() { return securityContract; }
+    @NotNull public Map<String, Object> getMasteryBindings() { return masteryBindings; }
+    @NotNull public List<String> getSkillRefs() { return skillRefs; }
+    @NotNull public List<String> getMasteryPolicyRefs() { return masteryPolicyRefs; }
 
     /** Canonical identifier: "{id}:{version}". */
     @NotNull
@@ -336,6 +345,62 @@ public final class AgentDefinition {
     }
 
     /**
+     * Materializes a typed MasteryBinding from this definition's mastery bindings.
+     *
+     * @return typed MasteryBinding
+     * @throws IllegalStateException if required mastery binding fields are missing
+     */
+    @NotNull
+    public com.ghatana.agent.mastery.MasteryBinding toMasteryBinding() {
+        if (masteryBindings.isEmpty()) {
+            throw new IllegalStateException("Mastery bindings are not configured for this agent");
+        }
+
+        String namespace = (String) masteryBindings.get("namespace");
+        String registryRef = (String) masteryBindings.get("registryRef");
+        String freshnessPolicyRef = (String) masteryBindings.get("freshnessPolicyRef");
+        String versionCompatibilityPolicyRef = (String) masteryBindings.get("versionCompatibilityPolicyRef");
+        String obsolescencePolicyRef = (String) masteryBindings.get("obsolescencePolicyRef");
+
+        if (namespace == null || namespace.isBlank()) {
+            throw new IllegalStateException("Mastery binding 'namespace' is required");
+        }
+        if (registryRef == null || registryRef.isBlank()) {
+            throw new IllegalStateException("Mastery binding 'registryRef' is required");
+        }
+
+        return new com.ghatana.agent.mastery.MasteryBinding(
+                namespace,
+                registryRef != null ? registryRef : "default",
+                freshnessPolicyRef,
+                versionCompatibilityPolicyRef,
+                obsolescencePolicyRef
+        );
+    }
+
+    /**
+     * Materializes a typed FreshnessPolicy from this definition's mastery bindings.
+     *
+     * @return typed FreshnessPolicy
+     */
+    @NotNull
+    public com.ghatana.agent.mastery.FreshnessPolicy toFreshnessPolicy() {
+        // This will be implemented when FreshnessPolicy is created
+        throw new UnsupportedOperationException("FreshnessPolicy not yet implemented");
+    }
+
+    /**
+     * Materializes a typed VersionCompatibilityPolicy from this definition's mastery bindings.
+     *
+     * @return typed VersionCompatibilityPolicy
+     */
+    @NotNull
+    public com.ghatana.agent.mastery.VersionCompatibilityPolicy toVersionCompatibilityPolicy() {
+        // This will be implemented when VersionCompatibilityPolicy is created
+        throw new UnsupportedOperationException("VersionCompatibilityPolicy not yet implemented");
+    }
+
+    /**
      * Validates that learning level configuration is consistent across the definition.
      *
      * @return list of validation error messages, empty if valid
@@ -414,7 +479,10 @@ public final class AgentDefinition {
                 "personas=" + new TreeSet<>(personas),
                 "labels=" + new TreeMap<>(labels),
                 "policyRefs=" + new ArrayList<>(policyRefs),
-                "evaluationRefs=" + new ArrayList<>(evaluationRefs));
+                "evaluationRefs=" + new ArrayList<>(evaluationRefs),
+                "masteryBindings=" + new TreeMap<>(masteryBindings),
+                "skillRefs=" + new ArrayList<>(skillRefs),
+                "masteryPolicyRefs=" + new ArrayList<>(masteryPolicyRefs));
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes = digest.digest(canonical.getBytes(StandardCharsets.UTF_8));
@@ -552,6 +620,9 @@ public final class AgentDefinition {
         private final List<String> evaluationRefs = new ArrayList<>();
         private final Map<String, Object> observabilityContract = new LinkedHashMap<>();
         private final Map<String, Object> securityContract = new LinkedHashMap<>();
+        private final Map<String, Object> masteryBindings = new LinkedHashMap<>();
+        private final List<String> skillRefs = new ArrayList<>();
+        private final List<String> masteryPolicyRefs = new ArrayList<>();
 
         private Builder() {}
 
@@ -593,6 +664,9 @@ public final class AgentDefinition {
         public Builder evaluationRefs(List<String> evaluationRefs) { this.evaluationRefs.addAll(evaluationRefs); return this; }
         public Builder observabilityContract(Map<String, Object> observabilityContract) { this.observabilityContract.putAll(observabilityContract); return this; }
         public Builder securityContract(Map<String, Object> securityContract) { this.securityContract.putAll(securityContract); return this; }
+        public Builder masteryBindings(Map<String, Object> masteryBindings) { this.masteryBindings.putAll(masteryBindings); return this; }
+        public Builder skillRefs(List<String> skillRefs) { this.skillRefs.addAll(skillRefs); return this; }
+        public Builder masteryPolicyRefs(List<String> masteryPolicyRefs) { this.masteryPolicyRefs.addAll(masteryPolicyRefs); return this; }
 
         public AgentDefinition build() {
             return new AgentDefinition(this);

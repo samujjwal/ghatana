@@ -43,4 +43,36 @@ public enum LearningLevel {
     public boolean isOfflineOnly() {
         return this == L5;
     }
+
+    /**
+     * Returns true if this learning level requires provenance for learned artifacts.
+     * L2 and above require provenance.
+     */
+    public boolean requiresProvenance() {
+        return this.ordinal() >= L2.ordinal();
+    }
+
+    /**
+     * Returns true if this learning level requires promotion for learned artifacts.
+     * L3 and above require promotion.
+     */
+    public boolean requiresPromotion() {
+        return this.ordinal() >= L3.ordinal();
+    }
+
+    /**
+     * Returns true if this learning level can run in online mode.
+     * All levels except L5 can run online.
+     */
+    public boolean canRunOnline() {
+        return this != L5;
+    }
+
+    /**
+     * Returns true if this learning level can serve responses directly.
+     * All levels except L5 can serve responses.
+     */
+    public boolean canServeResponses() {
+        return this != L5;
+    }
 }

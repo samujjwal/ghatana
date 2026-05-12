@@ -1,8 +1,11 @@
 package com.ghatana.digitalmarketing.persistence;
 
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,7 +33,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("P1-006: Flyway Migration Validation Tests")
 @Testcontainers
+@EnabledIf("isDockerAvailable")
 class FlywayMigrationValidationTest {
+
+    static boolean isDockerAvailable() {
+        return DockerClientFactory.instance().isDockerAvailable();
+    }
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
