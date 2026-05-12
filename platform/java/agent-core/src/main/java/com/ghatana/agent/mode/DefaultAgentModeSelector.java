@@ -10,6 +10,7 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.release.AgentRelease;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,6 +19,10 @@ import java.util.Optional;
 
 /**
  * Default implementation of AgentModeSelector with rule-based decision logic.
+ *
+ * <p><b>Deprecated:</b> This implementation is superseded by {@link com.ghatana.agent.runtime.mode.MasteryAwareModeSelector}
+ * which provides better integration with the mastery registry and version context.
+ * This class is retained for backward compatibility but should not be used in new code.
  *
  * <p>Decision rules:
  * <ul>
@@ -31,10 +36,12 @@ import java.util.Optional;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Default implementation of AgentModeSelector
+ * @doc.purpose Default implementation of AgentModeSelector (deprecated)
  * @doc.layer agent-core
  * @doc.pattern Service
+ * @deprecated Use {@link com.ghatana.agent.runtime.mode.MasteryAwareModeSelector} instead
  */
+@Deprecated
 public final class DefaultAgentModeSelector implements AgentModeSelector {
 
     private final TaskClassifier taskClassifier;
@@ -91,12 +98,12 @@ public final class DefaultAgentModeSelector implements AgentModeSelector {
 
         // Unknown tasks use fast-learning mode
         if (taskClass == TaskClass.UNKNOWN_TASK) {
-            return ExecutionMode.FAST_LEARNING;
+            return ExecutionMode.EXPLORATORY_FAST_LEARNING;
         }
 
         // Exploration tasks use fast-learning mode
         if (taskClass == TaskClass.EXPLORATION_TASK) {
-            return ExecutionMode.FAST_LEARNING;
+            return ExecutionMode.EXPLORATORY_FAST_LEARNING;
         }
 
         // Migration tasks use verification-first mode
@@ -108,7 +115,7 @@ public final class DefaultAgentModeSelector implements AgentModeSelector {
         if (taskClass == TaskClass.KNOWN_TASK && mastery.isPresent()) {
             MasteryItem item = mastery.get();
             if (item.state() == MasteryState.MASTERED && item.isFresh(env.observedAt())) {
-                return ExecutionMode.DETERMINISTIC;
+                return ExecutionMode.DETERMINISTIC_EXECUTION;
             }
         }
 
@@ -116,7 +123,7 @@ public final class DefaultAgentModeSelector implements AgentModeSelector {
         if (taskClass == TaskClass.KNOWN_VARIATION && mastery.isPresent()) {
             MasteryItem item = mastery.get();
             if (item.state() == MasteryState.COMPETENT || item.state() == MasteryState.MASTERED) {
-                return ExecutionMode.BOUNDED_PROBABILISTIC;
+                return ExecutionMode.BOUNDED_PROBABILISTIC_REASONING;
             }
         }
 

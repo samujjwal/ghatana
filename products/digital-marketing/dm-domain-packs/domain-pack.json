@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "product": "digital-marketing",
   "domain": "digital-marketing",
+  "productCode": "DM",
   "rulePrefix": "DM-",
   "kernelCapabilitiesConsumed": [
     "boundary-policy-evaluation",
@@ -15,22 +16,22 @@
     "write",
     "delete",
     "export",
-    "digital-marketing:sync",
-    "digital-marketing:launch",
-    "digital-marketing:pause",
-    "digital-marketing:resume",
-    "digital-marketing:increase",
-    "digital-marketing:publish",
-    "digital-marketing:execute"
+    "sync",
+    "launch",
+    "pause",
+    "resume",
+    "increase",
+    "publish",
+    "execute"
   ],
   "policyResources": [
-    "digital-marketing:workspaces",
-    "digital-marketing:contacts",
-    "digital-marketing:audiences",
-    "digital-marketing:campaigns",
-    "digital-marketing:budgets",
-    "digital-marketing:content",
-    "digital-marketing:connectors"
+    "workspaces",
+    "contacts",
+    "audiences",
+    "campaigns",
+    "budgets",
+    "content",
+    "connectors"
   ],
   "pluginsConsumed": [
     "plugin-audit-trail",
@@ -52,22 +53,21 @@
     "dm-application"
   ],
   "dataSensitivity": "marketing-consent",
+  "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
+  "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
+  "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
+  "complianceRuleSets": [
+    "DM_MARKETING_INTEGRITY",
+    "DM_CONSENT_LIFECYCLE",
+    "DM_AUDIT_TRACEABILITY",
+    "DM_CAMPAIGN_PREFLIGHT",
+    "DM_CLAIMS_DISCLOSURES",
+    "DM_EMAIL_COMPLIANCE",
+    "DM_CONNECTOR_EXECUTION_SAFETY"
+  ],
   "productExtensions": {
     "productName": "Digital Marketing Operating System",
-    "productCode": "DM",
     "mvpScope": "non-regulated local service and small B2B businesses",
-    "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
-    "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
-    "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
-    "complianceRuleSets": [
-      "DM_MARKETING_INTEGRITY",
-      "DM_CONSENT_LIFECYCLE",
-      "DM_AUDIT_TRACEABILITY",
-      "DM_CAMPAIGN_PREFLIGHT",
-      "DM_CLAIMS_DISCLOSURES",
-      "DM_EMAIL_COMPLIANCE",
-      "DM_CONNECTOR_EXECUTION_SAFETY"
-    ],
     "pluginBindings": {
       "compliance": "enabled",
       "consent": "enabled",

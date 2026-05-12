@@ -38,7 +38,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should create active-only version scope")
     void shouldCreateActiveOnlyVersionScope() {
-        VersionConstraint constraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
         VersionScope scope = VersionScope.activeOnly(List.of(constraint));
 
         assertThat(scope.active()).hasSize(1);
@@ -49,7 +49,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should classify version context as ACTIVE")
     void shouldClassifyAsActive() {
-        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
         VersionScope scope = VersionScope.activeOnly(List.of(activeConstraint));
 
         VersionContext context = new VersionContext(
@@ -67,7 +67,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should classify version context as MAINTENANCE")
     void shouldClassifyAsMaintenance() {
-        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(maintenanceConstraint),
@@ -89,7 +89,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should classify version context as OBSOLETE")
     void shouldClassifyAsObsolete() {
-        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(),
@@ -128,7 +128,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return true for supportsActive when active")
     void shouldReturnTrueForSupportsActiveWhenActive() {
-        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
         VersionScope scope = VersionScope.activeOnly(List.of(activeConstraint));
 
         VersionContext context = new VersionContext(
@@ -146,7 +146,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return false for supportsActive when maintenance")
     void shouldReturnFalseForSupportsActiveWhenMaintenance() {
-        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(maintenanceConstraint),
@@ -168,7 +168,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return true for supportsMaintenance when active")
     void shouldReturnTrueForSupportsMaintenanceWhenActive() {
-        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
         VersionScope scope = VersionScope.activeOnly(List.of(activeConstraint));
 
         VersionContext context = new VersionContext(
@@ -186,7 +186,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return true for supportsMaintenance when maintenance")
     void shouldReturnTrueForSupportsMaintenanceWhenMaintenance() {
-        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react", ">=17.0.0 <18.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(maintenanceConstraint),
@@ -208,7 +208,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return false for supportsMaintenance when obsolete")
     void shouldReturnFalseForSupportsMaintenanceWhenObsolete() {
-        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(),
@@ -230,7 +230,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return true for isObsolete when obsolete")
     void shouldReturnTrueForIsObsoleteWhenObsolete() {
-        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(),
                 List.of(),
@@ -252,7 +252,7 @@ class VersionScopeTest {
     @Test
     @DisplayName("Should return false for isObsolete when active")
     void shouldReturnFalseForIsObsoleteWhenActive() {
-        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
         VersionScope scope = VersionScope.activeOnly(List.of(activeConstraint));
 
         VersionContext context = new VersionContext(
@@ -270,8 +270,8 @@ class VersionScopeTest {
     @Test
     @DisplayName("Obsolete constraints should take precedence")
     void obsoleteConstraintsShouldTakePrecedence() {
-        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0");
-        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0");
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react", ">=18.0.0 <19.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react", "<16.0.0", "npm");
         VersionScope scope = new VersionScope(
                 List.of(activeConstraint),
                 List.of(),
@@ -289,5 +289,131 @@ class VersionScopeTest {
 
         // Obsolete should take precedence even if active also matches
         assertThat(scope.classify(context)).isEqualTo(VersionApplicability.OBSOLETE);
+    }
+
+    @Test
+    @DisplayName("Should match version with >= constraint")
+    void shouldMatchVersionWithGreaterOrEqualConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", ">=18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.5.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version below >= constraint")
+    void shouldRejectVersionBelowGreaterOrEqualConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", ">=18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "17.5.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should match version with <= constraint")
+    void shouldMatchVersionWithLessOrEqualConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "<=19.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.5.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version above <= constraint")
+    void shouldRejectVersionAboveLessOrEqualConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "<=19.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "19.5.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should match version with exact constraint")
+    void shouldMatchVersionWithExactConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version with different patch in exact constraint")
+    void shouldRejectVersionWithDifferentPatchInExactConstraint() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.0.1"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should handle multi-part version comparison")
+    void shouldHandleMultiPartVersionComparison() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("java", ">=17.0.0", "jvm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("java", "21.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
     }
 }

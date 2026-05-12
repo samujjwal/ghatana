@@ -346,7 +346,7 @@ class KernelPersistenceMigrationRetentionTest {
         @Test
         @DisplayName("Events with structured data payload survive round-trip")
         void eventDataPayloadRoundTrip() {
-            AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+            AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
                 .eventId("evt-data")
                 .eventType("MODULE_STARTED")
                 .entityId("platform:java:kernel")
@@ -417,7 +417,7 @@ class KernelPersistenceMigrationRetentionTest {
 
     private void persistEvent(String eventId, String tenantId, long timestamp,
                               String previousHash, String hash) {
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
             .eventId(eventId)
             .eventType("MODULE_EVENT")
             .entityId("kernel")

@@ -184,8 +184,16 @@ public final class PhrTestInfrastructure {
 
         @Override
         public Promise<Void> writeData(DataWriteRequest request) {
+            // Enrich metadata with required tenantId and principalId for regulated data operations
+            Map<String, String> enrichedMetadata = new java.util.HashMap<>(request.getMetadata());
+            if (!enrichedMetadata.containsKey("tenantId")) {
+                enrichedMetadata.put("tenantId", "test-tenant");
+            }
+            if (!enrichedMetadata.containsKey("principalId")) {
+                enrichedMetadata.put("principalId", "test-user");
+            }
             store.put(storeKey(request.getDatasetId(), request.getRecordId()),
-                    new StoredEntry(request.getData(), Map.copyOf(request.getMetadata())));
+                    new StoredEntry(request.getData(), Map.copyOf(enrichedMetadata)));
             return Promise.complete();
         }
 

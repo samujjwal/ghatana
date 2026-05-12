@@ -6,6 +6,7 @@ package com.ghatana.agent.mode;
 
 import com.ghatana.agent.framework.config.AgentDefinition;
 import com.ghatana.agent.release.AgentRelease;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;

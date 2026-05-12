@@ -191,7 +191,7 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> runPromise(() -> governed.storeProcedure(procedure)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("procedural memory writes require active promotion evidence");
+                .hasMessageContaining("procedural memory writes require promotionState=ACTIVE in labels or metadata");
 
         verifyNoInteractions(delegate);
     }

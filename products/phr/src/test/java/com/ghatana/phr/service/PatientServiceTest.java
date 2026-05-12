@@ -99,12 +99,12 @@ class PatientServiceTest {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
         AuditTrailService failingAuditTrail = new AuditTrailService() {
             @Override
-            public void recordAuditEvent(AuditEvent event) {
+            public void recordAuditEvent(AuditTrailEvent event) {
                 throw new IllegalStateException("audit storage unavailable");
             }
 
             @Override
-            public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) {
+            public java.util.List<AuditTrailEvent> queryAuditEvents(AuditQuery query) {
                 return java.util.List.of();
             }
 

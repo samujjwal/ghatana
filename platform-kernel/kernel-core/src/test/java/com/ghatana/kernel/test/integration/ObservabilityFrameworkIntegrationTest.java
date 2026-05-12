@@ -84,7 +84,7 @@ class ObservabilityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should record audit event")
     void testRecordAuditEvent() { 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder() 
             .eventId("event-1")
             .eventType("user.login")
             .entityId("user-1")
@@ -271,11 +271,11 @@ class ObservabilityFrameworkIntegrationTest {
 
     private static class MockAuditTrailService implements AuditTrailService {
         @Override
-        public void recordAuditEvent(AuditEvent event) { 
+        public void recordAuditEvent(AuditTrailEvent event) { 
         }
 
         @Override
-        public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) { 
+        public java.util.List<AuditTrailEvent> queryAuditEvents(AuditQuery query) { 
             return java.util.List.of(); 
         }
 
@@ -303,7 +303,7 @@ class ObservabilityFrameworkIntegrationTest {
         }
 
         @Override
-        public java.util.List<AuditTrailService.AuditEvent> getEvents() { 
+        public java.util.List<AuditTrailService.AuditTrailEvent> getEvents() { 
             return java.util.List.of(); 
         }
 

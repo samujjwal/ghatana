@@ -35,8 +35,8 @@ public final class VersionAwareMemoryQueryPolicy {
 
         // Check version compatibility
         for (var constraint : versionScope.active()) {
-            String packageName = constraint.type();
-            String requiredVersion = constraint.constraint();
+            String packageName = constraint.name();
+            String requiredVersion = constraint.range();
 
             String currentVersion = versionContext.dependencies().get(packageName);
             if (currentVersion != null && !isVersionCompatible(currentVersion, requiredVersion)) {

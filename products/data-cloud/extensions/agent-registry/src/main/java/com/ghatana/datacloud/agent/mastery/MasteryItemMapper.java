@@ -5,7 +5,7 @@
 package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.mastery.*;
-import com.ghatana.agent.mode.ExecutionMode;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +34,7 @@ public final class MasteryItemMapper {
     private static final String FIELD_VERSION_SCOPE_OBSOLETE = "versionScopeObsolete";
     private static final String FIELD_APPLICABILITY_TENANT_ID = "applicabilityTenantId";
     private static final String FIELD_APPLICABILITY_ENVIRONMENT = "applicabilityEnvironment";
+    private static final String FIELD_APPLICABILITY_DOMAIN_CONSTRAINTS = "applicabilityDomainConstraints";
     private static final String FIELD_SCORE_CORRECTNESS = "scoreCorrectness";
     private static final String FIELD_SCORE_FRESHNESS = "scoreFreshness";
     private static final String FIELD_SCORE_APPLICABILITY = "scoreApplicability";
@@ -80,6 +81,7 @@ public final class MasteryItemMapper {
         // Applicability
         data.put(FIELD_APPLICABILITY_TENANT_ID, item.applicability().tenantId());
         data.put(FIELD_APPLICABILITY_ENVIRONMENT, item.applicability().environment());
+        data.put(FIELD_APPLICABILITY_DOMAIN_CONSTRAINTS, new HashMap<>(item.applicability().domainConstraints()));
 
         // Confidence vector
         data.put(FIELD_SCORE_CORRECTNESS, item.score().correctness());
@@ -133,10 +135,11 @@ public final class MasteryItemMapper {
         // Applicability
         String tenantId = (String) data.get(FIELD_APPLICABILITY_TENANT_ID);
         String environment = (String) data.get(FIELD_APPLICABILITY_ENVIRONMENT);
+        Map<String, String> domainConstraints = toStringMap(data.get(FIELD_APPLICABILITY_DOMAIN_CONSTRAINTS));
         ApplicabilityScope applicability = new ApplicabilityScope(
                 tenantId != null ? tenantId : "",
                 environment != null ? environment : "",
-                Map.of()
+                domainConstraints
         );
 
         // Confidence vector
@@ -206,9 +209,10 @@ public final class MasteryItemMapper {
     private static List<Map<String, String>> serializeVersionConstraints(List<VersionConstraint> constraints) {
         return constraints.stream()
                 .map(c -> Map.of(
-                        "type", c.type(),
-                        "constraint", c.constraint(),
-                        "description", c.description()
+                        "kind", c.kind(),
+                        "name", c.name(),
+                        "range", c.range(),
+                        "ecosystem", c.ecosystem()
                 ))
                 .collect(Collectors.toList());
     }
@@ -221,9 +225,10 @@ public final class MasteryItemMapper {
                 .filter(Map.class::isInstance)
                 .map(Map.class::cast)
                 .map(m -> Map.of(
-                        "type", (String) m.get("type"),
-                        "constraint", (String) m.get("constraint"),
-                        "description", (String) m.get("description")
+                        "kind", (String) m.getOrDefault("kind", ""),
+                        "name", (String) m.getOrDefault("name", ""),
+                        "range", (String) m.getOrDefault("range", ""),
+                        "ecosystem", (String) m.getOrDefault("ecosystem", "")
                 ))
                 .collect(Collectors.toList());
     }
@@ -234,9 +239,10 @@ public final class MasteryItemMapper {
     private static List<VersionConstraint> toVersionConstraints(List<Map<String, String>> serialized) {
         return serialized.stream()
                 .map(m -> new VersionConstraint(
-                        m.get("type"),
-                        m.get("constraint"),
-                        m.get("description")
+                        m.get("kind"),
+                        m.get("name"),
+                        m.get("range"),
+                        m.get("ecosystem")
                 ))
                 .collect(Collectors.toList());
     }

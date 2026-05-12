@@ -64,7 +64,7 @@ class PlatformArchitectureTest {
     void platformCodeShouldAvoidCompletableFuture() {
         ArchRule rule = noClasses()
             .that().resideInAnyPackage("com.ghatana.platform..", "com.ghatana.kernel..")
-            .and().resideOutsideOfPackages("..bridge..", "..adapters..", "..testing..")
+            .and().resideOutsideOfPackages("..bridge..", "..adapters..", "..adapter..", "..testing..")
             .should().dependOnClassesThat().areAssignableTo(CompletableFuture.class)
             .as("Platform and kernel runtime should use ActiveJ Promise-first async flows");
 

@@ -4,8 +4,10 @@
  */
 package com.ghatana.datacloud.api.controller;
 
-import com.ghatana.agent.learning.delta.LearningDelta;
-import com.ghatana.agent.learning.delta.LearningDeltaState;
+import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.learning.LearningDeltaState;
+import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.learning.LearningDeltaService;
 import com.ghatana.platform.http.server.JsonServlet;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -25,12 +27,12 @@ import java.util.Optional;
  */
 public class LearningDeltaController extends JsonServlet {
 
-    private final com.ghatana.agent.learning.delta.LearningDeltaRepository repository;
-    private final com.ghatana.agent.learning.delta.LearningDeltaService service;
+    private final LearningDeltaRepository repository;
+    private final LearningDeltaService service;
 
     public LearningDeltaController(
-            @NotNull com.ghatana.agent.learning.delta.LearningDeltaRepository repository,
-            @NotNull com.ghatana.agent.learning.delta.LearningDeltaService service
+            @NotNull LearningDeltaRepository repository,
+            @NotNull LearningDeltaService service
     ) {
         this.repository = repository;
         this.service = service;

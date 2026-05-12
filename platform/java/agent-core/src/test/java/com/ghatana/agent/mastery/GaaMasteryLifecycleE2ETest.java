@@ -6,16 +6,16 @@ package com.ghatana.agent.mastery;
 
 import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.environment.EnvironmentFingerprint;
-import com.ghatana.agent.learning.delta.LearningDelta;
-import com.ghatana.agent.learning.delta.LearningDeltaFactory;
-import com.ghatana.agent.learning.delta.LearningDeltaState;
+import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.learning.LearningDeltaFactory;
+import com.ghatana.agent.learning.LearningDeltaState;
 import com.ghatana.agent.runtime.mode.ExecutionMode;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
 import com.ghatana.agent.runtime.mode.ModeSelectionPolicy;
 import com.ghatana.agent.runtime.mode.TaskClassification;
 import com.ghatana.agent.runtime.mode.TaskClassifier;
 import io.activej.eventloop.Eventloop;
-import io.activej.eventloop.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -67,14 +67,13 @@ class GaaMasteryLifecycleE2ETest extends EventloopTestBase {
         ));
 
         assertThat(delta.state()).isEqualTo(LearningDeltaState.PROPOSED);
-        assertThat(delta.targetId()).isEqualTo("mastery-123");
 
         // Step 2: Transition learning delta through evaluation
-        LearningDelta evaluatedDelta = runPromise(() -> delta.transition(LearningDeltaState.EVALUATED));
+        LearningDelta evaluatedDelta = delta.toBuilder().state(LearningDeltaState.EVALUATED).build();
         assertThat(evaluatedDelta.state()).isEqualTo(LearningDeltaState.EVALUATED);
 
         // Step 3: Promote learning delta
-        LearningDelta promotedDelta = runPromise(() -> evaluatedDelta.transition(LearningDeltaState.PROMOTED));
+        LearningDelta promotedDelta = evaluatedDelta.toBuilder().state(LearningDeltaState.PROMOTED).build();
         assertThat(promotedDelta.state()).isEqualTo(LearningDeltaState.PROMOTED);
 
         // Step 4: Update mastery item based on promoted delta

@@ -1,5 +1,6 @@
 package com.ghatana.agent.framework.runtime;
 
+import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.agent.framework.memory.*;
@@ -70,6 +71,9 @@ public abstract class BaseAgent<TInput, TOutput> {
      * Delegates to {@link AgentTurnPipeline} for lifecycle orchestration.
      * Follows GAA lifecycle: PERCEIVE → REASON → ACT → CAPTURE → REFLECT.
      *
+     * <p>For governed runtime with full trace, release ID, phase refs, and result envelope,
+     * use {@link #executeTurnResult(Object, AgentContext)} instead.
+     *
      * @param input Input data
      * @param context Execution context
      * @return Promise of output
@@ -81,6 +85,25 @@ public abstract class BaseAgent<TInput, TOutput> {
 
         AgentTurnPipeline<TInput, TOutput> pipeline = AgentTurnPipeline.of(this);
         return pipeline.execute(input, context);
+    }
+
+    /**
+     * Executes a complete agent turn with governed runtime result envelope.
+     * Delegates to {@link AgentTurnPipeline} for lifecycle orchestration.
+     * Returns full AgentResult with trace, release ID, phase refs, and result metadata.
+     * This is the recommended method for production/governed runtime calls.
+     *
+     * @param input Input data
+     * @param context Execution context
+     * @return Promise of AgentResult with full governance metadata
+     */
+    @NotNull
+    public final Promise<AgentResult<TOutput>> executeTurnResult(@NotNull TInput input, @NotNull AgentContext context) {
+        Objects.requireNonNull(input, "input cannot be null");
+        Objects.requireNonNull(context, "context cannot be null");
+
+        AgentTurnPipeline<TInput, TOutput> pipeline = AgentTurnPipeline.of(this);
+        return pipeline.executeResult(input, context);
     }
 
     /**

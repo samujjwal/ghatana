@@ -39,7 +39,7 @@ class PostgresAuditTrailPersistenceTest {
     @Test
     @DisplayName("persists and loads audit events with payload and hash")
     void persistsAndLoadsEvents() { 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder() 
             .eventId("evt-1")
             .eventType("PATIENT_READ")
             .entityId("patient-1")

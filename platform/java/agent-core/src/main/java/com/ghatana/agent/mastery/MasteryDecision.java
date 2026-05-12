@@ -7,7 +7,7 @@ package com.ghatana.agent.mastery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.ghatana.agent.mode.ExecutionMode;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 
 import java.util.List;
 import java.util.Objects;

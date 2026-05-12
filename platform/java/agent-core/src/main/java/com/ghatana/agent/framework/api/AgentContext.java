@@ -218,9 +218,84 @@ public interface AgentContext {
                 .build();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Governance typed context entries — v2.2 additions
+    // ─────────────────────────────────────────────────────────────────────────
+
     /**
-     * Creates a child context for nested operations.
-     * @return New context builder
+     * Gets the agent release ID for this execution.
+     * Used for governance and version tracking.
+     *
+     * @return Agent release ID, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default String getAgentReleaseId() {
+        Object value = getConfig("agentReleaseId");
+        return value != null ? value.toString() : null;
+    }
+
+    /**
+     * Gets the specification digest for this execution.
+     * Used for configuration validation.
+     *
+     * @return Spec digest, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default String getSpecDigest() {
+        Object value = getConfig("specDigest");
+        return value != null ? value.toString() : null;
+    }
+
+    /**
+     * Gets the environment fingerprint from metadata.
+     * Used for version context and dependency tracking.
+     *
+     * @return Environment fingerprint, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.environment.EnvironmentFingerprint getEnvironmentFingerprint() {
+        Object value = getMetadata().get("environmentFingerprint");
+        return value instanceof com.ghatana.agent.environment.EnvironmentFingerprint
+                ? (com.ghatana.agent.environment.EnvironmentFingerprint) value
+                : null;
+    }
+
+    /**
+     * Gets the mastery decision from metadata.
+     * Used for governance and mode selection.
+     *
+     * @return Mastery item, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.mastery.MasteryItem getMasteryItem() {
+        Object value = getMetadata().get("masteryItem");
+        return value instanceof com.ghatana.agent.mastery.MasteryItem
+                ? (com.ghatana.agent.mastery.MasteryItem) value
+                : null;
+    }
+
+    /**
+     * Gets the execution mode from metadata.
+     * Used for governance and mode selection.
+     *
+     * @return Execution mode, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.runtime.mode.ExecutionMode getExecutionMode() {
+        Object value = getMetadata().get("executionMode");
+        return value instanceof com.ghatana.agent.runtime.mode.ExecutionMode
+                ? (com.ghatana.agent.runtime.mode.ExecutionMode) value
+                : null;
+    }
+
+    /**
+     * Creates a new AgentContext builder.
+     * @return New builder
      */
     @NotNull
     Builder toBuilder();

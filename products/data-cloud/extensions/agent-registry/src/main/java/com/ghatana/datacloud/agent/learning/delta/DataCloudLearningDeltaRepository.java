@@ -114,6 +114,12 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
                 delta.contentDigest(),
                 delta.proposedContent(),
                 delta.evidenceRefs(),
+                delta.evaluationRefs(),
+                delta.sourceEpisodeIds(),
+                delta.rollbackRef(),
+                delta.confidenceBefore(),
+                delta.confidenceAfter(),
+                delta.requiresHumanReview(),
                 delta.proposedBy(),
                 delta.proposedAt(),
                 newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt(),
@@ -150,6 +156,12 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
                 delta.contentDigest(),
                 delta.proposedContent(),
                 delta.evidenceRefs(),
+                delta.evaluationRefs(),
+                delta.sourceEpisodeIds(),
+                delta.rollbackRef(),
+                delta.confidenceBefore(),
+                delta.confidenceAfter(),
+                delta.requiresHumanReview(),
                 delta.proposedBy(),
                 delta.proposedAt(),
                 newState == LearningDeltaState.EVALUATED ? now : delta.evaluatedAt(),
@@ -161,5 +173,20 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
 
         deltas.put(deltaId, updated);
         return Promise.of(updated);
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<LearningDelta>> findPending(@NotNull String agentId) {
+        return Promise.of(deltas.values().stream()
+                .filter(d -> d.agentId().equals(agentId))
+                .filter(d -> d.state() == LearningDeltaState.PROPOSED || d.state() == LearningDeltaState.PENDING_EVALUATION)
+                .toList());
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> transition(@NotNull String deltaId, @NotNull LearningDeltaState state) {
+        return updateState(deltaId, state);
     }
 }

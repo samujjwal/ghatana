@@ -336,9 +336,40 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 enrichedCtx = enrichedCtx.toBuilder()
                         .addConfig("executionMode", selectedMode.name())
                         .build();
+                
+                // Refuse execution if mode is BLOCKED
+                if (selectedMode == ExecutionMode.BLOCKED) {
+                    String reason = "Execution mode is BLOCKED for agent " + agentId;
+                    log.warn("Dispatch rejected: {}", reason);
+                    return denyDispatch(agentId, traceId, tenantId, reason);
+                }
             } catch (Exception e) {
                 log.warn("Mode selection failed for agent {}: {}", agentId, e.getMessage());
                 // Continue without mode selection
+            }
+        }
+
+        // Mastery decision approval check
+        if (masteryRegistry != null) {
+            try {
+                String skillId = enrichedCtx.getConfig("skillId") != null 
+                        ? enrichedCtx.getConfig("skillId").toString() 
+                        : null;
+                if (skillId != null) {
+                    // Check if mastery decision requires approval
+                    Object requiresApproval = enrichedCtx.getConfig("requiresApproval");
+                    if (Boolean.TRUE.equals(requiresApproval)) {
+                        Object hasApproval = enrichedCtx.getConfig("hasApproval");
+                        if (!Boolean.TRUE.equals(hasApproval)) {
+                            String reason = "Mastery decision for skill " + skillId + " requires approval but approval is absent";
+                            log.warn("Dispatch rejected: {}", reason);
+                            return denyDispatch(agentId, traceId, tenantId, reason);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Mastery approval check failed for agent {}: {}", agentId, e.getMessage());
+                // Continue without approval check
             }
         }
 

@@ -5,9 +5,9 @@
 package com.ghatana.agent.promotion;
 
 import com.ghatana.agent.evaluation.EvaluationResult;
-import com.ghatana.agent.learning.delta.LearningDelta;
-import com.ghatana.agent.learning.delta.LearningChangeType;
-import com.ghatana.agent.learning.delta.LearningDeltaState;
+import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.learning.LearningDeltaType;
+import com.ghatana.agent.learning.LearningDeltaState;
 import com.ghatana.agent.learning.LearningTarget;
 import com.ghatana.agent.mastery.MasteryState;
 import org.junit.jupiter.api.DisplayName;
@@ -79,14 +79,33 @@ class DefaultPromotionPolicyTest {
     }
 
     private LearningDelta createDelta() {
-        return LearningDelta.propose(
+        return new LearningDelta(
+                "delta-1",
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                LearningDeltaState.PROPOSED,
                 "agent-123",
                 "release-1",
-                LearningTarget.PROCEDURAL_SKILL,
-                LearningChangeType.CREATE,
                 "skill-123",
-                "artifact-123",
-                List.of("episode-1", "episode-2")
+                null,
+                null,
+                null,
+                "digest-123",
+                Map.of("content", "test"),
+                List.of("evidence-1"),
+                List.of("eval-1"),
+                List.of("episode-1", "episode-2"),
+                "rollback-1",
+                0.5,
+                0.8,
+                false,
+                "system",
+                Instant.now(),
+                null,
+                null,
+                null,
+                Map.of(),
+                null
         );
     }
 

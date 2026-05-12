@@ -23,7 +23,7 @@ public interface AuditTrailService {
      *
      * @param event the audit event to record
      */
-    void recordAuditEvent(AuditEvent event);
+    void recordAuditEvent(AuditTrailEvent event);
 
     /**
      * Queries audit events.
@@ -31,7 +31,7 @@ public interface AuditTrailService {
      * @param query the audit query
      * @return list of matching audit events
      */
-    List<AuditEvent> queryAuditEvents(AuditQuery query);
+    List<AuditTrailEvent> queryAuditEvents(AuditQuery query);
 
     /**
      * Gets immutable audit trail for an entity.
@@ -50,9 +50,9 @@ public interface AuditTrailService {
     VerificationResult verifyTrailIntegrity(String entityId);
 
     /**
-     * Represents an audit event.
+     * Represents an audit event in the audit trail.
      */
-    class AuditEvent {
+    class AuditTrailEvent {
         private final String eventId;
         private final String eventType;
         private final String entityId;
@@ -63,7 +63,7 @@ public interface AuditTrailService {
         private final long timestamp;
         private final String previousHash;
 
-        private AuditEvent(Builder builder) {
+        private AuditTrailEvent(Builder builder) {
             this.eventId = builder.eventId;
             this.eventType = builder.eventType;
             this.entityId = builder.entityId;
@@ -145,8 +145,8 @@ public interface AuditTrailService {
                 return this;
             }
 
-            public AuditEvent build() {
-                return new AuditEvent(this);
+            public AuditTrailEvent build() {
+                return new AuditTrailEvent(this);
             }
         }
     }
@@ -240,7 +240,7 @@ public interface AuditTrailService {
      */
     interface ImmutableAuditTrail {
         String getEntityId();
-        List<AuditEvent> getEvents();
+        List<AuditTrailEvent> getEvents();
         String getMerkleRoot();
         boolean isIntact();
     }

@@ -37,7 +37,7 @@ class PHRAuditTrailServiceTest {
 
     @Test
     void testRecordAuditEvent() {
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-001")
             .eventType("patient.records.accessed")
             .entityId("patient-1")
@@ -52,7 +52,7 @@ class PHRAuditTrailServiceTest {
 
     @Test
     void testQueryAuditEvents() {
-        AuditTrailService.AuditEvent event1 = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event1 = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-001")
             .eventType("patient.records.accessed")
             .entityId("patient-1")
@@ -62,7 +62,7 @@ class PHRAuditTrailServiceTest {
             .data(Map.of("record_count", 5))
             .build();
 
-        AuditTrailService.AuditEvent event2 = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event2 = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-002")
             .eventType("patient.records.created")
             .entityId("patient-1")
@@ -79,14 +79,14 @@ class PHRAuditTrailServiceTest {
             .entityId("patient-1")
             .build();
 
-        List<AuditTrailService.AuditEvent> events = auditTrailService.queryAuditEvents(query);
+        List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(query);
 
         assertEquals(2, events.size());
     }
 
     @Test
     void testGetImmutableTrail() {
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-001")
             .eventType("patient.records.accessed")
             .entityId("patient-1")
@@ -110,7 +110,7 @@ class PHRAuditTrailServiceTest {
 
     @Test
     void testVerifyTrailIntegrity() {
-        AuditTrailService.AuditEvent event1 = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event1 = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-001")
             .eventType("patient.records.accessed")
             .entityId("patient-1")
@@ -120,7 +120,7 @@ class PHRAuditTrailServiceTest {
             .data(Map.of("record_count", 5))
             .build();
 
-        AuditTrailService.AuditEvent event2 = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event2 = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-002")
             .eventType("patient.records.created")
             .entityId("patient-1")
@@ -146,7 +146,7 @@ class PHRAuditTrailServiceTest {
         InMemoryAuditAdapter adapter = new InMemoryAuditAdapter();
         AuditTrailService writer = new PHRAuditTrailServiceImpl(adapter);
 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-persist-001")
             .eventType("patient.audit.persisted")
             .entityId("patient-persisted")
@@ -159,7 +159,7 @@ class PHRAuditTrailServiceTest {
         writer.recordAuditEvent(event);
 
         AuditTrailService reader = new PHRAuditTrailServiceImpl(adapter);
-        List<AuditTrailService.AuditEvent> events = reader.queryAuditEvents(
+        List<AuditTrailService.AuditTrailEvent> events = reader.queryAuditEvents(
             AuditTrailService.AuditQuery.builder().entityId("patient-persisted").build()
         );
 
@@ -169,7 +169,7 @@ class PHRAuditTrailServiceTest {
 
     @Test
     void testDuplicateEventIdRecordedOnce() {
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
             .eventId("evt-duplicate-001")
             .eventType("patient.records.accessed")
             .entityId("patient-duplicate")
@@ -182,7 +182,7 @@ class PHRAuditTrailServiceTest {
         auditTrailService.recordAuditEvent(event);
         auditTrailService.recordAuditEvent(event);
 
-        List<AuditTrailService.AuditEvent> events = auditTrailService.queryAuditEvents(
+        List<AuditTrailService.AuditTrailEvent> events = auditTrailService.queryAuditEvents(
             AuditTrailService.AuditQuery.builder()
                 .entityId("patient-duplicate")
                 .limit(10)

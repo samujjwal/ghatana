@@ -15,7 +15,7 @@ import java.util.Objects;
  * Fingerprint of the execution environment for version-aware mastery matching.
  *
  * <p>Contains tenant, repository, project type, dependencies, tools, runtimes,
- * frameworks, and conventions to determine which mastery items are applicable.
+ * frameworks, conventions, and project files to determine which mastery items are applicable.
  *
  * @doc.type record
  * @doc.purpose Environment fingerprint for version-aware mastery
@@ -31,6 +31,7 @@ public record EnvironmentFingerprint(
         @NotNull Map<String, String> runtimes,
         @NotNull Map<String, String> frameworks,
         @NotNull Map<String, String> conventions,
+        @NotNull Map<String, String> projectFiles,
         @NotNull Instant observedAt,
         @NotNull List<String> evidenceRefs
 ) {
@@ -43,6 +44,7 @@ public record EnvironmentFingerprint(
         Objects.requireNonNull(runtimes, "runtimes must not be null");
         Objects.requireNonNull(frameworks, "frameworks must not be null");
         Objects.requireNonNull(conventions, "conventions must not be null");
+        Objects.requireNonNull(projectFiles, "projectFiles must not be null");
         Objects.requireNonNull(observedAt, "observedAt must not be null");
         Objects.requireNonNull(evidenceRefs, "evidenceRefs must not be null");
         dependencies = Map.copyOf(dependencies);
@@ -50,6 +52,7 @@ public record EnvironmentFingerprint(
         runtimes = Map.copyOf(runtimes);
         frameworks = Map.copyOf(frameworks);
         conventions = Map.copyOf(conventions);
+        projectFiles = Map.copyOf(projectFiles);
         evidenceRefs = List.copyOf(evidenceRefs);
     }
 
@@ -71,6 +74,7 @@ public record EnvironmentFingerprint(
                 tenantId,
                 repoId,
                 projectType,
+                Map.of(),
                 Map.of(),
                 Map.of(),
                 Map.of(),

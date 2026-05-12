@@ -6,7 +6,7 @@ package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.*;
-import com.ghatana.agent.mode.ExecutionMode;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -160,13 +160,12 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     @Override
     @NotNull
     public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
-        // Find matching mastery items
+        // Find matching mastery items (including MAINTENANCE_ONLY for proper mode selection)
         List<MasteryItem> matches = masteryItems.values().stream()
                 .filter(item -> query.skillId() == null || item.skillId().equals(query.skillId()))
                 .filter(item -> query.agentId() == null || item.agentId().equals(query.agentId()))
                 .filter(item -> query.tenantId() == null || item.applicability().tenantId().equals(query.tenantId()))
                 .filter(item -> query.states() == null || query.states().contains(item.state()))
-                .filter(MasteryItem::isActiveForRetrieval)
                 .filter(item -> item.isFresh(Instant.now()))
                 .toList();
 
@@ -228,9 +227,9 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
      */
     private ExecutionMode determineExecutionMode(MasteryItem item) {
         return switch (item.state()) {
-            case MASTERED -> ExecutionMode.DETERMINISTIC;
-            case COMPETENT -> ExecutionMode.BOUNDED_PROBABILISTIC;
-            case PRACTICED -> ExecutionMode.FAST_LEARNING;
+            case MASTERED -> ExecutionMode.DETERMINISTIC_EXECUTION;
+            case COMPETENT -> ExecutionMode.BOUNDED_PROBABILISTIC_REASONING;
+            case PRACTICED -> ExecutionMode.EXPLORATORY_FAST_LEARNING;
             case OBSERVED -> ExecutionMode.VERIFICATION_FIRST;
             case MAINTENANCE_ONLY -> ExecutionMode.MAINTENANCE_ONLY;
             case OBSOLETE, RETIRED, QUARANTINED, UNKNOWN -> ExecutionMode.BLOCKED;

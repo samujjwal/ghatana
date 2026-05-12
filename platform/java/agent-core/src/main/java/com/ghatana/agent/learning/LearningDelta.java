@@ -37,6 +37,12 @@ public record LearningDelta(
         @NotNull String contentDigest,
         @NotNull Map<String, Object> proposedContent,
         @NotNull List<String> evidenceRefs,
+        @NotNull List<String> evaluationRefs,
+        @NotNull List<String> sourceEpisodeIds,
+        @Nullable String rollbackRef,
+        double confidenceBefore,
+        double confidenceAfter,
+        boolean requiresHumanReview,
         @NotNull String proposedBy,
         @NotNull Instant proposedAt,
         @Nullable Instant evaluatedAt,
@@ -56,11 +62,15 @@ public record LearningDelta(
         Objects.requireNonNull(contentDigest, "contentDigest must not be null");
         Objects.requireNonNull(proposedContent, "proposedContent must not be null");
         Objects.requireNonNull(evidenceRefs, "evidenceRefs must not be null");
+        Objects.requireNonNull(evaluationRefs, "evaluationRefs must not be null");
+        Objects.requireNonNull(sourceEpisodeIds, "sourceEpisodeIds must not be null");
         Objects.requireNonNull(proposedBy, "proposedBy must not be null");
         Objects.requireNonNull(proposedAt, "proposedAt must not be null");
         Objects.requireNonNull(labels, "labels must not be null");
         proposedContent = Map.copyOf(proposedContent);
         evidenceRefs = List.copyOf(evidenceRefs);
+        evaluationRefs = List.copyOf(evaluationRefs);
+        sourceEpisodeIds = List.copyOf(sourceEpisodeIds);
         labels = Map.copyOf(labels);
     }
 

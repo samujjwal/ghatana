@@ -27,8 +27,6 @@
         "name",
         "description",
         "type",
-        "manifestPath",
-        "manifestFormat",
         "gradleModules",
         "surfaces"
       ],
@@ -52,13 +50,13 @@
           "description": "Classification of the module"
         },
         "manifestPath": {
-          "type": "string",
-          "description": "Relative path to product manifest file from repo root"
+          "type": ["string", "null"],
+          "description": "Relative path to product manifest file from repo root, or null if no manifest exists"
         },
         "manifestFormat": {
-          "type": "string",
-          "enum": ["yaml", "json"],
-          "description": "Format of the manifest file"
+          "type": ["string", "null"],
+          "enum": ["yaml", "json", null],
+          "description": "Format of the manifest file, or null if no manifest exists"
         },
         "gradleModules": {
           "type": "array",

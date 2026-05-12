@@ -93,7 +93,7 @@ public class KernelPerformanceBenchmark {
 
     @Benchmark
     public void benchmarkRecordAuditEvent() { 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder() 
             .eventId("event-1")
             .eventType("user.action")
             .entityId("entity-1")
@@ -277,11 +277,11 @@ public class KernelPerformanceBenchmark {
 
     private static class MockAuditTrailService implements AuditTrailService {
         @Override
-        public void recordAuditEvent(AuditEvent event) { 
+        public void recordAuditEvent(AuditTrailEvent event) { 
         }
 
         @Override
-        public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) { 
+        public java.util.List<AuditTrailEvent> queryAuditEvents(AuditQuery query) { 
             return java.util.List.of(); 
         }
 

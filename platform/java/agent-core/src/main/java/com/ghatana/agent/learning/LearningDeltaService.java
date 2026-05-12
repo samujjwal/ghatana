@@ -2,10 +2,8 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.agent.learning.delta;
+package com.ghatana.agent.learning;
 
-import com.ghatana.agent.learning.LearningContract;
-import com.ghatana.agent.learning.LearningTarget;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 

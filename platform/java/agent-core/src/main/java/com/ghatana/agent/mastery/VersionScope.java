@@ -125,19 +125,90 @@ public record VersionScope(
 
     /**
      * Checks if a version context matches a constraint.
-     * This is a simplified implementation - real implementation would parse version ranges.
+     * Implements basic semantic version range evaluation.
      *
      * @param context version context
      * @param constraint version constraint
      * @return true if matches
      */
     private boolean matchesConstraint(@NotNull VersionContext context, @NotNull VersionConstraint constraint) {
-        // Simplified matching - in production, this would parse semantic version ranges
-        String constraintStr = constraint.constraint();
-        String type = constraint.type();
+        String range = constraint.range();
+        String name = constraint.name();
 
-        // Extract package/tool/runtime from constraint and check against context
-        // This is a placeholder for actual version matching logic
-        return context.hasDependency(constraintStr.split("@")[0]);
+        // Get current version from context
+        String currentVersion = context.dependencies().get(name);
+        if (currentVersion == null) {
+            return false;
+        }
+
+        // Parse and evaluate version range
+        return evaluateVersionRange(currentVersion, range);
+    }
+
+    /**
+     * Evaluates if a version matches a range specification.
+     * Supports basic operators: >=, <=, >, <, =
+     *
+     * @param version current version
+     * @param range range specification
+     * @return true if version matches range
+     */
+    private boolean evaluateVersionRange(@NotNull String version, @NotNull String range) {
+        try {
+            // Handle exact match
+            if (!range.startsWith(">=") && !range.startsWith("<=") && !range.startsWith(">") && !range.startsWith("<")) {
+                return version.equals(range);
+            }
+
+            // Handle >=
+            if (range.startsWith(">=")) {
+                String required = range.substring(2).trim();
+                return compareVersions(version, required) >= 0;
+            }
+
+            // Handle <=
+            if (range.startsWith("<=")) {
+                String required = range.substring(2).trim();
+                return compareVersions(version, required) <= 0;
+            }
+
+            // Handle >
+            if (range.startsWith(">")) {
+                String required = range.substring(1).trim();
+                return compareVersions(version, required) > 0;
+            }
+
+            // Handle <
+            if (range.startsWith("<")) {
+                String required = range.substring(1).trim();
+                return compareVersions(version, required) < 0;
+            }
+
+            return false;
+        } catch (Exception e) {
+            // If parsing fails, conservatively return false
+            return false;
+        }
+    }
+
+    /**
+     * Compares two semantic version strings.
+     *
+     * @param v1 version 1
+     * @param v2 version 2
+     * @return comparison result (negative if v1 < v2, 0 if equal, positive if v1 > v2)
+     */
+    private int compareVersions(@NotNull String v1, @NotNull String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+
+        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            int n1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int n2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (n1 != n2) {
+                return n1 - n2;
+            }
+        }
+        return 0;
     }
 }

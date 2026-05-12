@@ -49,10 +49,16 @@ class AgentDefinitionMasteryValidationTest {
                 .type(AgentType.ADAPTIVE)
                 .learningLevel("L2")
                 .skillRefs(List.of("skill-1"))
+                .metadata("adaptationTargets", List.of("SEMANTIC_FACT"))
+                .metadata("driftControls", Map.of("enabled", true))
+                .metadata("provenanceRequired", true)
                 .build();
 
         AgentDefinitionValidator.ValidationResult result = AgentDefinitionValidator.validate(definition);
 
+        if (!result.isValid()) {
+            System.err.println("Validation errors: " + result.errors());
+        }
         assertThat(result.isValid()).isTrue();
     }
 
@@ -263,6 +269,10 @@ class AgentDefinitionMasteryValidationTest {
                 .type(AgentType.ADAPTIVE)
                 .learningLevel("L3")
                 .skillRefs(List.of("skill-1"))
+                .metadata("adaptationTargets", List.of("PROCEDURAL_SKILL"))
+                .metadata("driftControls", Map.of("enabled", true))
+                .metadata("promotionRequired", true)
+                .metadata("provenanceRequired", true)
                 .masteryBindings(Map.of(
                         "namespace", "default",
                         "registryRef", "default-registry",
@@ -270,12 +280,13 @@ class AgentDefinitionMasteryValidationTest {
                         "versionCompatibilityPolicyRef", "default-compat"
                 ))
                 .evaluationRefs(List.of("eval-pack-1"))
-                .metadata("adaptationTargets", List.of("PROCEDURAL_SKILL"))
-                .metadata("promotionRequired", true)
                 .build();
 
         AgentDefinitionValidator.ValidationResult result = AgentDefinitionValidator.validate(definition);
 
+        if (!result.isValid()) {
+            System.err.println("Validation errors: " + result.errors());
+        }
         assertThat(result.isValid()).isTrue();
     }
 }

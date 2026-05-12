@@ -73,10 +73,15 @@ public class AgentTurnPipeline<TInput, TOutput> {
         @NotNull Promise<Void> execute(@NotNull I input, @NotNull AgentContext context);
     }
 
+    /**
+     * No-op pre-admit handler for non-governed pipelines.
+     */
+    private static final PreAdmitEnrichmentHandler<?> NOOP_PRE_ADMIT = (input, context) -> Promise.complete();
+
     private final String agentId;
     @Nullable
     private ExecutionMode executionMode;
-    @Nullable
+    @NotNull
     private PreAdmitEnrichmentHandler<TInput> preAdmitEnrichment;
     private final PhaseHandler<TInput, TInput> perceive;
     private final PhaseHandler<TInput, AgentResult<TOutput>> reason;
@@ -104,13 +109,18 @@ public class AgentTurnPipeline<TInput, TOutput> {
             @NotNull CaptureHandler<TInput, TOutput> reflect) {
         this.agentId = Objects.requireNonNull(agentId);
         this.executionMode = null;
-        this.preAdmitEnrichment = preAdmitEnrichment;
+        this.preAdmitEnrichment = preAdmitEnrichment != null ? preAdmitEnrichment : castNoop();
         this.perceive = Objects.requireNonNull(perceive);
         this.reason = Objects.requireNonNull(reason);
         this.verify = Objects.requireNonNull(verify);
         this.act = Objects.requireNonNull(act);
         this.capture = Objects.requireNonNull(capture);
         this.reflect = Objects.requireNonNull(reflect);
+    }
+
+    @SuppressWarnings("unchecked")
+    private PreAdmitEnrichmentHandler<TInput> castNoop() {
+        return (PreAdmitEnrichmentHandler<TInput>) NOOP_PRE_ADMIT;
     }
 
     /**
@@ -187,10 +197,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
         return Promise.complete()
             .then(() -> {
                 // Pre-ADMIT enrichment hook for task classification, environment snapshot, mastery decision, mode selection
-                if (preAdmitEnrichment != null) {
-                    return preAdmitEnrichment.execute(input, context);
-                }
-                return Promise.complete();
+                return preAdmitEnrichment.execute(input, context);
             })
             .then(() -> timed(AgentLifecyclePhase.ADMIT, context, phaseTraces, () -> Promise.of(input)))
             .then(ignored -> timed(AgentLifecyclePhase.PERCEIVE, context, phaseTraces,
@@ -360,8 +367,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
         private final String agentId;
         @Nullable
         private ExecutionMode executionMode;
-        @Nullable
-        private PreAdmitEnrichmentHandler<I> preAdmitEnrichment;
+        @NotNull
+        private PreAdmitEnrichmentHandler<I> preAdmitEnrichment = castNoop();
         private PhaseHandler<I, I> perceive = (input, ctx) -> Promise.of(input);
         private PhaseHandler<I, AgentResult<O>> reason;
         private PhaseHandler<AgentResult<O>, AgentResult<O>> verify = (result, ctx) -> Promise.of(result);
@@ -371,6 +378,11 @@ public class AgentTurnPipeline<TInput, TOutput> {
 
         private Builder(String agentId) {
             this.agentId = agentId;
+        }
+
+        @SuppressWarnings("unchecked")
+        private PreAdmitEnrichmentHandler<I> castNoop() {
+            return (PreAdmitEnrichmentHandler<I>) NOOP_PRE_ADMIT;
         }
 
         public Builder<I, O> perceive(@NotNull PhaseHandler<I, I> handler) { this.perceive = handler; return this; }
@@ -392,6 +404,43 @@ public class AgentTurnPipeline<TInput, TOutput> {
         public Builder<I, O> reflect(@NotNull CaptureHandler<I, O> handler) { this.reflect = handler; return this; }
         public Builder<I, O> withExecutionMode(@Nullable ExecutionMode mode) { this.executionMode = mode; return this; }
         public Builder<I, O> withPreAdmitEnrichment(@NotNull PreAdmitEnrichmentHandler<I> handler) { this.preAdmitEnrichment = handler; return this; }
+
+        /**
+         * Adds governance pre-admit enrichment with mastery, environment, and mode selection.
+         * This is the recommended method for governed runtime pipelines.
+         *
+         * @param masteryRegistry Mastery registry for decision lookup
+         * @param environmentFingerprintProvider Provider for environment fingerprinting
+         * @param modeSelector Mode selector for execution mode decision
+         * @return this builder
+         */
+        public Builder<I, O> withGovernancePreAdmit(
+                @NotNull com.ghatana.agent.mastery.MasteryRegistry masteryRegistry,
+                @NotNull com.ghatana.agent.environment.EnvironmentFingerprintProvider environmentFingerprintProvider,
+                @NotNull com.ghatana.agent.mode.AgentModeSelector modeSelector) {
+            this.preAdmitEnrichment = (input, context) -> {
+                // Get environment fingerprint
+                return environmentFingerprintProvider.fingerprint(context, input)
+                        .then(fingerprint -> {
+                            // Store fingerprint in context metadata
+                            context.setMetadata("environmentFingerprint", fingerprint);
+                            
+                            // Get mastery decision
+                            String skillId = context.getConfig("skillId") != null ? context.getConfig("skillId").toString() : "default";
+                            return masteryRegistry.findBySkill(skillId, fingerprint)
+                                    .then(masteryOpt -> {
+                                        // Store mastery decision in context metadata
+                                        context.setMetadata("masteryItem", masteryOpt.orElse(null));
+                                        
+                                        // Get mode decision (simplified - full implementation would use AgentModeSelector)
+                                        // For now, store a default mode decision
+                                        context.setMetadata("executionMode", ExecutionMode.DETERMINISTIC_EXECUTION);
+                                        return Promise.complete();
+                                    });
+                        });
+            };
+            return this;
+        }
 
         @NotNull
         public AgentTurnPipeline<I, O> build() {

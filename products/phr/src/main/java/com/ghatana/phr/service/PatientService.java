@@ -77,7 +77,7 @@ public class PatientService {
                 "patient_id", sanitizedPatientId
             );
 
-            AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+            AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType("patient.records.accessed")
                 .entityId(sanitizedPatientId)
@@ -121,7 +121,7 @@ public class PatientService {
                 "patient_id", sanitizedPatientId
             );
 
-            AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+            AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType("patient.records.created")
                 .entityId(sanitizedPatientId)

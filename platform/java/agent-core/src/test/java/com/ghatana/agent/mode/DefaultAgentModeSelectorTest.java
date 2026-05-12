@@ -16,6 +16,7 @@ import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionScope;
 import com.ghatana.agent.mastery.ApplicabilityScope;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -60,7 +61,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
         MasteryItem mastery = createMasteredMastery();
 
         ModeDecision decision = runPromise(() -> selector.decide(definition, release, context, env, Optional.of(mastery), "test task"));
-        assertThat(decision.executionMode()).isEqualTo(ExecutionMode.DETERMINISTIC);
+        assertThat(decision.executionMode()).isEqualTo(ExecutionMode.DETERMINISTIC_EXECUTION);
     }
 
     @Test
@@ -85,7 +86,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
         EnvironmentFingerprint env = EnvironmentFingerprint.minimal("tenant-1", "repo-1", "typescript");
 
         ModeDecision decision = runPromise(() -> selector.decide(definition, release, context, env, Optional.empty(), "test task"));
-        assertThat(decision.executionMode()).isEqualTo(ExecutionMode.FAST_LEARNING);
+        assertThat(decision.executionMode()).isEqualTo(ExecutionMode.EXPLORATORY_FAST_LEARNING);
     }
 
     private static class SimpleTaskClassifier implements TaskClassifier {

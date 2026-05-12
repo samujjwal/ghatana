@@ -36,10 +36,10 @@ public class DefaultAuditTrailService implements AuditTrailService {
     }
 
     @Override
-    public void recordAuditEvent(AuditEvent event) {
+    public void recordAuditEvent(AuditTrailEvent event) {
         hydrateIfNeeded();
 
-        AuditEvent canonicalEvent = canonicalize(event);
+        AuditTrailEvent canonicalEvent = canonicalize(event);
         if (auditEventsById.containsKey(canonicalEvent.getEventId())) {
             return;
         }
@@ -55,14 +55,14 @@ public class DefaultAuditTrailService implements AuditTrailService {
     }
 
     @Override
-    public List<AuditEvent> queryAuditEvents(AuditQuery query) {
+    public List<AuditTrailEvent> queryAuditEvents(AuditQuery query) {
         hydrateIfNeeded();
 
         return auditLogs.values().stream()
             .flatMap(List::stream)
             .map(StoredAuditEvent::event)
             .filter(event -> matches(query, event))
-            .sorted(Comparator.comparingLong(AuditEvent::getTimestamp))
+            .sorted(Comparator.comparingLong(AuditTrailEvent::getTimestamp))
             .limit(query.getLimit())
             .toList();
     }
@@ -72,7 +72,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
         hydrateIfNeeded();
 
         List<StoredAuditEvent> entries = auditLogs.getOrDefault(entityId, List.of());
-        List<AuditEvent> events = entries.stream().map(StoredAuditEvent::event).toList();
+        List<AuditTrailEvent> events = entries.stream().map(StoredAuditEvent::event).toList();
         return new DefaultImmutableAuditTrail(entityId, events, calculateMerkleRoot(entries), verify(entityId).isValid());
     }
 
@@ -100,7 +100,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
         return layer.getFirst();
     }
 
-    protected String calculateHash(AuditEvent event, String previousHash) {
+    protected String calculateHash(AuditTrailEvent event, String previousHash) {
         try {
             return DigestUtils.sha256Hex(objectMapper.writeValueAsString(Map.of(
                 "eventId", event.getEventId(),
@@ -157,13 +157,13 @@ public class DefaultAuditTrailService implements AuditTrailService {
             });
     }
 
-    private AuditEvent canonicalize(AuditEvent event) {
+    private AuditTrailEvent canonicalize(AuditTrailEvent event) {
         String entityId = Objects.requireNonNull(event.getEntityId(), "event.entityId cannot be null");
         String eventId = event.getEventId() != null ? event.getEventId() : java.util.UUID.randomUUID().toString();
         Map<String, Object> data = normalizedData(event.getData());
         String previousHash = getLastHash(entityId);
 
-        return AuditEvent.builder()
+        return AuditTrailEvent.builder()
             .eventId(eventId)
             .eventType(Objects.requireNonNullElse(event.getEventType(), "unknown"))
             .entityId(entityId)
@@ -196,7 +196,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
         return Map.copyOf(ordered);
     }
 
-    private boolean matches(AuditQuery query, AuditEvent event) {
+    private boolean matches(AuditQuery query, AuditTrailEvent event) {
         if (query.getEntityId() != null && !query.getEntityId().equals(event.getEntityId())) {
             return false;
         }
@@ -222,7 +222,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
 
     private record DefaultImmutableAuditTrail(
         String entityId,
-        List<AuditEvent> events,
+        List<AuditTrailEvent> events,
         String merkleRoot,
         boolean intact
     ) implements ImmutableAuditTrail {
@@ -232,7 +232,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
         }
 
         @Override
-        public List<AuditEvent> getEvents() {
+        public List<AuditTrailEvent> getEvents() {
             return events;
         }
 
@@ -247,6 +247,6 @@ public class DefaultAuditTrailService implements AuditTrailService {
         }
     }
 
-    public record StoredAuditEvent(AuditEvent event, String hash) {
+    public record StoredAuditEvent(AuditTrailEvent event, String hash) {
     }
 }

@@ -111,4 +111,23 @@ public interface LearningDeltaRepository {
      */
     @NotNull
     Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState, @NotNull String rejectionReason);
+
+    /**
+     * Finds pending learning deltas for an agent.
+     *
+     * @param agentId agent identifier
+     * @return promise of list of pending deltas
+     */
+    @NotNull
+    Promise<List<LearningDelta>> findPending(@NotNull String agentId);
+
+    /**
+     * Transitions a learning delta to a new state.
+     *
+     * @param deltaId delta identifier
+     * @param state new state
+     * @return promise of updated delta
+     */
+    @NotNull
+    Promise<LearningDelta> transition(@NotNull String deltaId, @NotNull LearningDeltaState state);
 }

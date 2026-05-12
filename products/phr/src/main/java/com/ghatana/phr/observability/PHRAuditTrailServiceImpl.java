@@ -31,7 +31,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     private final ObjectMapper objectMapper;
     private final AuditTrailPersistence persistence;
     // Note: recordedEvents is NOT persisted across instances; use persistence layer for durability
-    private final Map<String, AuditTrailService.AuditEvent> recordedEvents = new ConcurrentHashMap<>();
+    private final Map<String, AuditTrailService.AuditTrailEvent> recordedEvents = new ConcurrentHashMap<>();
 
     public PHRAuditTrailServiceImpl() {
         this(new ObjectMapper().findAndRegisterModules(), new InMemoryAuditTrailPersistence());
@@ -47,7 +47,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     }
 
     @Override
-    public void recordAuditEvent(AuditTrailService.AuditEvent event) {
+    public void recordAuditEvent(AuditTrailService.AuditTrailEvent event) {
         // Store in memory cache (for single instance)
         recordedEvents.putIfAbsent(event.getEventId(), event);
         
@@ -56,13 +56,13 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     }
 
     @Override
-    public List<AuditTrailService.AuditEvent> queryAuditEvents(AuditTrailService.AuditQuery query) {
+    public List<AuditTrailService.AuditTrailEvent> queryAuditEvents(AuditTrailService.AuditQuery query) {
         // Query from the persistence layer to support cross-instance durability
-        List<AuditTrailService.AuditEvent> allEvents = persistence.loadAll();
+        List<AuditTrailService.AuditTrailEvent> allEvents = persistence.loadAll();
         String entityId = query.getEntityId();
         int limit = query.getLimit();
         
-        List<AuditTrailService.AuditEvent> results = allEvents.stream()
+        List<AuditTrailService.AuditTrailEvent> results = allEvents.stream()
             .filter(event -> entityId == null || entityId.isBlank() || entityId.equals(event.getEntityId()))
             .toList();
         
@@ -75,8 +75,8 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     @Override
     public AuditTrailService.ImmutableAuditTrail getImmutableTrail(String entityId) {
         // Get events from persistence layer
-        List<AuditTrailService.AuditEvent> allEvents = persistence.loadAll();
-        List<AuditTrailService.AuditEvent> events = allEvents.stream()
+        List<AuditTrailService.AuditTrailEvent> allEvents = persistence.loadAll();
+        List<AuditTrailService.AuditTrailEvent> events = allEvents.stream()
             .filter(event -> entityId.equals(event.getEntityId()))
             .toList();
             
@@ -84,7 +84,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
             @Override
             public String getEntityId() { return entityId; }
             @Override
-            public List<AuditTrailService.AuditEvent> getEvents() { return events; }
+            public List<AuditTrailService.AuditTrailEvent> getEvents() { return events; }
             @Override
             public String getMerkleRoot() { return Integer.toHexString(events.hashCode()); }
             @Override
@@ -95,7 +95,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     @Override
     public AuditTrailService.VerificationResult verifyTrailIntegrity(String entityId) {
         // Verify from persistence layer
-        List<AuditTrailService.AuditEvent> allEvents = persistence.loadAll();
+        List<AuditTrailService.AuditTrailEvent> allEvents = persistence.loadAll();
         boolean valid = allEvents.stream()
             .anyMatch(event -> entityId.equals(event.getEntityId()));
             
@@ -104,27 +104,27 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     }
 
     private interface AuditTrailPersistence {
-        void persist(AuditTrailService.AuditEvent event);
-        List<AuditTrailService.AuditEvent> loadAll();
+        void persist(AuditTrailService.AuditTrailEvent event);
+        List<AuditTrailService.AuditTrailEvent> loadAll();
     }
 
     private static final class InMemoryAuditTrailPersistence implements AuditTrailPersistence {
-        private final Map<String, AuditTrailService.AuditEvent> entries = new ConcurrentHashMap<>();
+        private final Map<String, AuditTrailService.AuditTrailEvent> entries = new ConcurrentHashMap<>();
 
         @Override
-        public void persist(AuditTrailService.AuditEvent event) {
+        public void persist(AuditTrailService.AuditTrailEvent event) {
             // De-duplicate based on event ID (prevents duplicate storage)
             entries.putIfAbsent(event.getEventId(), event);
         }
 
         @Override
-        public List<AuditTrailService.AuditEvent> loadAll() {
+        public List<AuditTrailService.AuditTrailEvent> loadAll() {
             return List.copyOf(entries.values());
         }
     }
 
     private static final class DataCloudAuditTrailPersistence implements AuditTrailPersistence {
-        private static final Map<String, List<AuditTrailService.AuditEvent>> DURABLE_ENTRIES = new ConcurrentHashMap<>();
+        private static final Map<String, List<AuditTrailService.AuditTrailEvent>> DURABLE_ENTRIES = new ConcurrentHashMap<>();
 
         private final DataCloudKernelAdapter dataCloud;
         private final String datasetId;
@@ -135,7 +135,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         }
 
         @Override
-        public void persist(AuditTrailService.AuditEvent event) {
+        public void persist(AuditTrailService.AuditTrailEvent event) {
             DURABLE_ENTRIES.computeIfAbsent(datasetId, ignored -> new CopyOnWriteArrayList<>()).add(event);
 
             byte[] payload = (
@@ -159,7 +159,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         }
 
         @Override
-        public List<AuditTrailService.AuditEvent> loadAll() {
+        public List<AuditTrailService.AuditTrailEvent> loadAll() {
             return List.copyOf(DURABLE_ENTRIES.getOrDefault(datasetId, List.of()));
         }
     }

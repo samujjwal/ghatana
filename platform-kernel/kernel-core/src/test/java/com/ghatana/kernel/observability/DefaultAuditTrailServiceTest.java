@@ -25,7 +25,7 @@ class DefaultAuditTrailServiceTest {
             persistence
         );
 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
+        AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder() 
             .eventId("audit-duplicate-1")
             .eventType("patient.read")
             .entityId("patient-1")
@@ -38,7 +38,7 @@ class DefaultAuditTrailServiceTest {
         service.recordAuditEvent(event); 
         service.recordAuditEvent(event); 
 
-        List<AuditTrailService.AuditEvent> events = service.queryAuditEvents( 
+        List<AuditTrailService.AuditTrailEvent> events = service.queryAuditEvents( 
             AuditTrailService.AuditQuery.builder().entityId("patient-1").limit(10).build()
         );
 

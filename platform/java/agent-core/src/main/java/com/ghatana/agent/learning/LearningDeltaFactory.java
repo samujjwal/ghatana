@@ -62,6 +62,12 @@ public class LearningDeltaFactory {
                 contentDigest,
                 proposedContent,
                 evidenceRefs,
+                List.of(), // evaluationRefs
+                List.of(), // sourceEpisodeIds
+                null, // rollbackRef
+                0.0, // confidenceBefore
+                0.0, // confidenceAfter
+                false, // requiresHumanReview
                 proposedBy,
                 Instant.now(),
                 null, // evaluatedAt
@@ -115,6 +121,12 @@ public class LearningDeltaFactory {
                 contentDigest,
                 proposedContent,
                 evidenceRefs,
+                List.of(), // evaluationRefs
+                List.of(), // sourceEpisodeIds
+                null, // rollbackRef
+                0.0, // confidenceBefore
+                0.0, // confidenceAfter
+                false, // requiresHumanReview
                 proposedBy,
                 Instant.now(),
                 null, // evaluatedAt
@@ -168,6 +180,12 @@ public class LearningDeltaFactory {
                 contentDigest,
                 proposedContent,
                 evidenceRefs,
+                List.of(), // evaluationRefs
+                List.of(), // sourceEpisodeIds
+                null, // rollbackRef
+                0.0, // confidenceBefore
+                0.0, // confidenceAfter
+                false, // requiresHumanReview
                 proposedBy,
                 Instant.now(),
                 null, // evaluatedAt
@@ -221,6 +239,12 @@ public class LearningDeltaFactory {
                 contentDigest,
                 proposedContent,
                 evidenceRefs,
+                List.of(), // evaluationRefs
+                List.of(), // sourceEpisodeIds
+                null, // rollbackRef
+                0.0, // confidenceBefore
+                0.0, // confidenceAfter
+                false, // requiresHumanReview
                 proposedBy,
                 Instant.now(),
                 null, // evaluatedAt

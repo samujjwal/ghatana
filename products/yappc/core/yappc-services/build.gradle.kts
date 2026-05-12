@@ -193,7 +193,7 @@ tasks.register<Exec>("generateRouteRegistry") {
         outputFile.parentFile.mkdirs()
     }
 
-    commandLine("python", scriptFile.absolutePath)
+    commandLine("python3", scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {
@@ -215,7 +215,7 @@ tasks.register<Exec>("validateRouteManifest") {
     inputs.file(layout.projectDirectory.file("../../docs/api/openapi.yaml"))
 
     environment("PYTHONIOENCODING", "utf-8")
-    commandLine("python", scriptFile.absolutePath)
+    commandLine("python3", scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {

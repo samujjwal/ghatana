@@ -5,7 +5,7 @@
 package com.ghatana.agent.promotion;
 
 import com.ghatana.agent.evaluation.EvaluationResult;
-import com.ghatana.agent.learning.delta.LearningDelta;
+import com.ghatana.agent.learning.LearningDelta;
 import org.jetbrains.annotations.NotNull;
 
 /**

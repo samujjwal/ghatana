@@ -73,7 +73,7 @@ public class PostgresAuditTrailPersistence implements AuditTrailPersistence {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
-        AuditTrailService.AuditEvent auditEvent = event.event();
+        AuditTrailService.AuditTrailEvent auditEvent = event.event();
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -108,7 +108,7 @@ public class PostgresAuditTrailPersistence implements AuditTrailPersistence {
              ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
-                AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+                AuditTrailService.AuditTrailEvent event = AuditTrailService.AuditTrailEvent.builder()
                     .eventId(resultSet.getString("event_id"))
                     .eventType(resultSet.getString("event_type"))
                     .entityId(resultSet.getString("entity_id"))

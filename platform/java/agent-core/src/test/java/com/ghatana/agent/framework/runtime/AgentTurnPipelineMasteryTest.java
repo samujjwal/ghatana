@@ -32,12 +32,12 @@ public class AgentTurnPipelineMasteryTest {
 
         AgentTurnPipeline.PreAdmitEnrichmentHandler<String> preAdmitHook = (input, ctx) -> {
             hookExecutionOrder.append("pre-admit:");
-            return com.io.activej.promise.Promise.complete();
+            return io.activej.promise.Promise.complete();
         };
 
         OutputGenerator<String, String> generator = (input, ctx) -> {
             hookExecutionOrder.append("reason:");
-            return com.io.activej.promise.Promise.of("output");
+            return io.activej.promise.Promise.of("output");
         };
 
         AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline.builder("test-agent")
@@ -61,7 +61,7 @@ public class AgentTurnPipelineMasteryTest {
 
         OutputGenerator<String, String> generator = (input, ctx) -> {
             hookExecutionOrder.append("reason:");
-            return com.io.activej.promise.Promise.of("output");
+            return io.activej.promise.Promise.of("output");
         };
 
         AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline.builder("test-agent")
@@ -81,11 +81,11 @@ public class AgentTurnPipelineMasteryTest {
     @DisplayName("Should handle pre-ADMIT enrichment hook errors gracefully")
     void testHandlePreAdmitEnrichmentHookErrors() {
         OutputGenerator<String, String> generator = (input, ctx) -> {
-            return com.io.activej.promise.Promise.of("output");
+            return io.activej.promise.Promise.of("output");
         };
 
         AgentTurnPipeline.PreAdmitEnrichmentHandler<String> failingHook = (input, ctx) -> {
-            return com.io.activej.promise.Promise.ofException(
+            return io.activej.promise.Promise.ofException(
                     new RuntimeException("Pre-ADMIT hook failed"));
         };
 
@@ -109,7 +109,7 @@ public class AgentTurnPipelineMasteryTest {
             Object taskRiskLevel = ctx.getConfig("taskRiskLevel");
             assertNotNull(taskRiskLevel);
             assertEquals("HIGH", taskRiskLevel);
-            return com.io.activej.promise.Promise.of("output");
+            return io.activej.promise.Promise.of("output");
         };
 
         AgentTurnPipeline.PreAdmitEnrichmentHandler<String> contextEnrichingHook = (input, ctx) -> {
@@ -121,7 +121,7 @@ public class AgentTurnPipelineMasteryTest {
                     .build();
             // Note: In actual implementation, the hook would need to return the enriched context
             // For this test, we're just demonstrating the concept
-            return com.io.activej.promise.Promise.complete();
+            return io.activej.promise.Promise.complete();
         };
 
         AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline.builder("test-agent")
@@ -211,76 +211,76 @@ public class AgentTurnPipelineMasteryTest {
 
     private static class NoopMemoryPlane implements com.ghatana.agent.memory.store.MemoryPlane {
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.episode.EnhancedEpisode> storeEpisode(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.episode.EnhancedEpisode> storeEpisode(
                 com.ghatana.agent.memory.model.episode.EnhancedEpisode episode) {
-            return com.io.activej.promise.Promise.of(episode);
+            return io.activej.promise.Promise.of(episode);
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.episode.EnhancedEpisode>> queryEpisodes(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.episode.EnhancedEpisode>> queryEpisodes(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.fact.EnhancedFact> storeFact(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.fact.EnhancedFact> storeFact(
                 com.ghatana.agent.memory.model.fact.EnhancedFact fact) {
-            return com.io.activej.promise.Promise.of(fact);
+            return io.activej.promise.Promise.of(fact);
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.fact.EnhancedFact>> queryFacts(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.fact.EnhancedFact>> queryFacts(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.procedure.EnhancedProcedure> storeProcedure(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.procedure.EnhancedProcedure> storeProcedure(
                 com.ghatana.agent.memory.model.procedure.EnhancedProcedure procedure) {
-            return com.io.activej.promise.Promise.of(procedure);
+            return io.activej.promise.Promise.of(procedure);
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.procedure.EnhancedProcedure>> queryProcedures(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.procedure.EnhancedProcedure>> queryProcedures(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.procedure.EnhancedProcedure> getProcedure(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.procedure.EnhancedProcedure> getProcedure(
                 String procedureId) {
-            return com.io.activej.promise.Promise.of(null);
+            return io.activej.promise.Promise.of(null);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.artifact.TypedArtifact> writeArtifact(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.artifact.TypedArtifact> writeArtifact(
                 com.ghatana.agent.memory.model.artifact.TypedArtifact artifact) {
-            return com.io.activej.promise.Promise.of(artifact);
+            return io.activej.promise.Promise.of(artifact);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.MemoryItem> store(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.MemoryItem> store(
                 com.ghatana.agent.memory.model.MemoryItem item) {
-            return com.io.activej.promise.Promise.of(item);
+            return io.activej.promise.Promise.of(item);
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.MemoryItem>> query(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.MemoryItem>> query(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.MemoryItem>> readItems(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.MemoryItem>> readItems(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.store.ScoredMemoryItem>> searchSemantic(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.store.ScoredMemoryItem>> searchSemantic(
                 String query, List<com.ghatana.agent.memory.model.MemoryItemType> itemTypes,
                 int k, java.time.Instant startTime, java.time.Instant endTime) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
@@ -297,73 +297,73 @@ public class AgentTurnPipelineMasteryTest {
         }
 
         @Override
-        public com.io.activej.promise.Promise<String> checkpoint(String taskId) {
-            return com.io.activej.promise.Promise.of(taskId);
+        public io.activej.promise.Promise<String> checkpoint(String taskId) {
+            return io.activej.promise.Promise.of(taskId);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.store.MemoryPlaneStats> getStats() {
-            return com.io.activej.promise.Promise.of(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.store.MemoryPlaneStats> getStats() {
+            return io.activej.promise.Promise.of(
                     com.ghatana.agent.memory.store.MemoryPlaneStats.builder().build());
         }
     }
 
     private static class NoopTaskStateStore implements com.ghatana.agent.memory.store.taskstate.TaskStateStore {
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> createTask(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> createTask(
                 com.ghatana.agent.memory.model.taskstate.TaskState task) {
-            return com.io.activej.promise.Promise.of(task);
+            return io.activej.promise.Promise.of(task);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> getTask(String taskId) {
-            return com.io.activej.promise.Promise.of(null);
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> getTask(String taskId) {
+            return io.activej.promise.Promise.of(null);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> updatePhase(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskState> updatePhase(
                 String taskId, String phaseId, String status) {
-            return com.io.activej.promise.Promise.ofException(new UnsupportedOperationException());
+            return io.activej.promise.Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskCheckpoint> addCheckpoint(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskCheckpoint> addCheckpoint(
                 String taskId, com.ghatana.agent.memory.model.taskstate.TaskCheckpoint checkpoint) {
-            return com.io.activej.promise.Promise.of(checkpoint);
+            return io.activej.promise.Promise.of(checkpoint);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskBlocker> reportBlocker(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskBlocker> reportBlocker(
                 String taskId, com.ghatana.agent.memory.model.taskstate.TaskBlocker blocker) {
-            return com.io.activej.promise.Promise.of(blocker);
+            return io.activej.promise.Promise.of(blocker);
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskBlocker> resolveBlocker(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.model.taskstate.TaskBlocker> resolveBlocker(
                 String taskId, String blockerId, String resolution) {
-            return com.io.activej.promise.Promise.ofException(new UnsupportedOperationException());
+            return io.activej.promise.Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public com.io.activej.promise.Promise<com.ghatana.agent.memory.store.taskstate.ReconcileResult> reconcileOnResume(
+        public io.activej.promise.Promise<com.ghatana.agent.memory.store.taskstate.ReconcileResult> reconcileOnResume(
                 String taskId) {
-            return com.io.activej.promise.Promise.ofException(new UnsupportedOperationException());
+            return io.activej.promise.Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public com.io.activej.promise.Promise<Void> archiveTask(String taskId) {
-            return com.io.activej.promise.Promise.complete();
+        public io.activej.promise.Promise<Void> archiveTask(String taskId) {
+            return io.activej.promise.Promise.complete();
         }
 
         @Override
-        public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.taskstate.TaskState>> listActiveTasks(
+        public io.activej.promise.Promise<List<com.ghatana.agent.memory.model.taskstate.TaskState>> listActiveTasks(
                 String agentId) {
-            return com.io.activej.promise.Promise.of(List.of());
+            return io.activej.promise.Promise.of(List.of());
         }
 
         @Override
-        public com.io.activej.promise.Promise<Integer> garbageCollect(java.time.Instant inactiveSince) {
-            return com.io.activej.promise.Promise.of(0);
+        public io.activej.promise.Promise<Integer> garbageCollect(java.time.Instant inactiveSince) {
+            return io.activej.promise.Promise.of(0);
         }
     }
 }
