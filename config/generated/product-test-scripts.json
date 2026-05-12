@@ -1,0 +1,104 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-12T03:16:15.844Z",
+  "standardScripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest",
+    "lint": "eslint src --max-warnings=0",
+    "type-check": "tsc --noEmit"
+  },
+  "productOverrides": {
+    "phr": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "digital-marketing": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "flashit": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "data-cloud": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "yappc": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "dcmaar": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
+    "tutorputor": {
+      "scripts": {
+        "test:compliance": "vitest run --config vitest.compliance.config.ts",
+        "test:audit": "vitest run --config vitest.audit.config.ts"
+      },
+      "coverageThreshold": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    }
+  }
+}

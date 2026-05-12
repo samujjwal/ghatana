@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Query parameters for reading memory items.
@@ -57,4 +58,32 @@ public class MemoryQuery {
 
     /** Offset for pagination. */
     @Builder.Default int offset = 0;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Mastery-aware query fields
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /** Filter by exact label key-value matches. */
+    @Nullable Map<String, String> labelEquals;
+
+    /** Exclude items with these tags. */
+    @Nullable List<String> excludeTags;
+
+    /** Filter by mastery states (e.g., MASTERED, COMPETENT, OBSOLETE). */
+    @Nullable List<String> masteryStates;
+
+    /** Filter by skill ID for procedural memory. */
+    @Nullable String skillId;
+
+    /** Filter by version context reference. */
+    @Nullable String versionContextRef;
+
+    /** Include obsolete/retired knowledge items. */
+    @Builder.Default boolean includeObsolete = false;
+
+    /** Include maintenance-only knowledge items. */
+    @Builder.Default boolean includeMaintenanceOnly = false;
+
+    /** Include negative knowledge items. */
+    @Builder.Default boolean includeNegativeKnowledge = true;
 }

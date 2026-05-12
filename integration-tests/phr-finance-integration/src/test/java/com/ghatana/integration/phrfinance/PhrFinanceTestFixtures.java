@@ -18,6 +18,7 @@ import io.activej.promise.Promise;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class PhrFinanceTestFixtures {
@@ -25,7 +26,53 @@ final class PhrFinanceTestFixtures {
     private PhrFinanceTestFixtures() {
     }
 
+    static com.ghatana.kernel.context.KernelTenantContext createTestTenantContext() {
+        com.ghatana.kernel.context.KernelTenantContext.SecurityContext securityContext = 
+            new com.ghatana.kernel.context.KernelTenantContext.SecurityContext() {
+                @Override
+                public String getUserId() {
+                    return "test-principal-123";
+                }
+
+                @Override
+                public java.util.Set<String> getRoles() {
+                    return java.util.Set.of("TEST_USER");
+                }
+
+                @Override
+                public java.util.Set<String> getPermissions() {
+                    return java.util.Set.of("READ", "WRITE");
+                }
+
+                @Override
+                public boolean isAuthenticated() {
+                    return true;
+                }
+
+                @Override
+                public boolean hasRole(String role) {
+                    return getRoles().contains(role);
+                }
+
+                @Override
+                public boolean hasPermission(String permission) {
+                    return getPermissions().contains(permission);
+                }
+            };
+
+        return new com.ghatana.kernel.context.KernelTenantContext(
+            "test-tenant",
+            com.ghatana.kernel.context.KernelTenantContext.TenantType.STANDARD,
+            Map.of("product", "phr-finance-test"),
+            Set.of("billing", "ledger"),
+            securityContext,
+            Runnable::run
+        );
+    }
+
     static KernelContext createTestContext(DataCloudKernelAdapter dataCloud) {
+        com.ghatana.kernel.context.KernelTenantContext tenantContext = createTestTenantContext();
+        
         return new KernelContext() {
             @SuppressWarnings("unchecked")
             @Override
@@ -67,12 +114,12 @@ final class PhrFinanceTestFixtures {
 
             @Override
             public com.ghatana.kernel.context.KernelTenantContext getTenantContext() {
-                return null;
+                return tenantContext;
             }
 
             @Override
             public com.ghatana.kernel.context.KernelTenantContext getTenantContext(String tenantId) {
-                return null;
+                return tenantContext;
             }
 
             @Override

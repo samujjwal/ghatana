@@ -29,6 +29,9 @@ export * from './hooks/media';
 export * from './hooks/media-playback';
 export * from './hooks/device-capabilities';
 
+// Export contracts
+export * from './contracts/routes';
+
 // Constants
 export const EMOTION_OPTIONS = [
   'happy', 'sad', 'excited', 'anxious', 'calm', 'frustrated',

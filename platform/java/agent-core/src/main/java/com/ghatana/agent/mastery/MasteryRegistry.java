@@ -57,6 +57,18 @@ public interface MasteryRegistry {
     Promise<List<MasteryItem>> query(@NotNull MasteryQuery query);
 
     /**
+     * Makes a mastery decision based on the query parameters.
+     *
+     * <p>Evaluates mastery state, version context, and environment to determine
+     * the appropriate execution mode and whether the skill is executable.
+     *
+     * @param query mastery query parameters
+     * @return promise of mastery decision
+     */
+    @NotNull
+    Promise<MasteryDecision> decide(@NotNull MasteryQuery query);
+
+    /**
      * Saves a mastery item (create or update).
      *
      * @param item mastery item to save

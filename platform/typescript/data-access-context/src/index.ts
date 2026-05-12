@@ -2,12 +2,13 @@
  * @ghatana/data-access-context — Kernel-owned data access context
  *
  * Provides tenant, principal, and request correlation information for database operations.
+ * Aligns with com.ghatana.platform.database.DataAccessContext (Java).
  */
 
 export interface DataAccessContext {
-  /** Tenant ID for multi-tenancy */
+  /** Tenant ID for multi-tenancy - never null for authenticated requests */
   readonly tenantId: string;
-  /** Principal/user ID */
+  /** Principal/user ID - never null for authenticated requests */
   readonly principalId: string;
   /** Correlation ID for request tracing */
   readonly correlationId?: string;
@@ -17,6 +18,8 @@ export interface DataAccessContext {
   readonly clientIp?: string;
   /** User agent string */
   readonly userAgent?: string;
+  /** Checks if the context is initialized with valid values */
+  isInitialized(): boolean;
 }
 
 export class DataAccessContextBuilder {
@@ -59,10 +62,10 @@ export class DataAccessContextBuilder {
 
   build(): DataAccessContext {
     if (!this.tenantId || this.tenantId.length === 0) {
-      throw new Error('tenantId is required');
+      throw new Error('DataAccessContext not initialized: tenantId is null or blank');
     }
     if (!this.principalId || this.principalId.length === 0) {
-      throw new Error('principalId is required');
+      throw new Error('DataAccessContext not initialized: principalId is null or blank');
     }
 
     return {
@@ -72,6 +75,10 @@ export class DataAccessContextBuilder {
       requestId: this.requestId,
       clientIp: this.clientIp,
       userAgent: this.userAgent,
+      isInitialized: () => {
+        return this.tenantId !== null && this.tenantId.length > 0
+          && this.principalId !== null && this.principalId.length > 0;
+      }
     };
   }
 }

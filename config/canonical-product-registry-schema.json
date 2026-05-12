@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.io/schemas/canonical-product-registry.json",
+  "title": "Canonical Product Registry Schema",
+  "description": "Single source of truth for product registration in the Ghatana monorepo. This registry drives generation of product-shape.json, Gradle includes, pnpm workspace entries, CI matrices, and conformance checks.",
+  "type": "object",
+  "required": ["version", "registry"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version for migration tracking",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "registry": {
+      "type": "object",
+      "description": "Map of product ID to product configuration",
+      "additionalProperties": {
+        "$ref": "#/definitions/Product"
+      }
+    }
+  },
+  "definitions": {
+    "Product": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type",
+        "manifestPath",
+        "manifestFormat",
+        "gradleModules",
+        "surfaces"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Canonical product identifier (kebab-case)",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable product name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Product description"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["product", "platform", "shared-service"],
+          "description": "Classification of the module"
+        },
+        "manifestPath": {
+          "type": "string",
+          "description": "Relative path to product manifest file from repo root"
+        },
+        "manifestFormat": {
+          "type": "string",
+          "enum": ["yaml", "json"],
+          "description": "Format of the manifest file"
+        },
+        "gradleModules": {
+          "type": "array",
+          "description": "Gradle module paths for this product",
+          "items": {
+            "type": "string",
+            "pattern": "^:[a-z0-9:-]+$"
+          }
+        },
+        "surfaces": {
+          "type": "array",
+          "description": "Product runtime surfaces (typed, not boolean)",
+          "items": {
+            "$ref": "#/definitions/Surface"
+          }
+        },
+        "pnpmPackages": {
+          "type": "array",
+          "description": "pnpm workspace package patterns for this product",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ci": {
+          "$ref": "#/definitions/CIConfiguration",
+          "description": "CI/CD configuration for this product"
+        },
+        "conformance": {
+          "$ref": "#/definitions/ConformanceConfiguration",
+          "description": "Conformance check configuration"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional product metadata",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Team or owner responsible for this product"
+            },
+            "created": {
+              "type": "string",
+              "format": "date",
+              "description": "Creation date"
+            },
+            "documentation": {
+              "type": "string",
+              "description": "Path to product documentation"
+            },
+            "status": {
+              "type": "string",
+              "enum": ["active", "deprecated", "experimental"],
+              "description": "Product status"
+            }
+          }
+        }
+      }
+    },
+    "Surface": {
+      "type": "object",
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["backend-api", "worker", "portal", "sdk", "web", "mobile", "cli", "operator"],
+          "description": "Surface type"
+        },
+        "path": {
+          "type": "string",
+          "description": "Relative path to the surface implementation"
+        },
+        "packagePath": {
+          "type": "string",
+          "description": "For UI surfaces: path to package.json"
+        }
+      }
+    },
+    "CIConfiguration": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether CI is enabled for this product"
+        },
+        "matrix": {
+          "type": "object",
+          "description": "CI matrix configuration",
+          "additionalProperties": true
+        },
+        "gates": {
+          "type": "array",
+          "description": "Required CI gates",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ConformanceConfiguration": {
+      "type": "object",
+      "properties": {
+        "manifest": {
+          "type": "boolean",
+          "description": "Require manifest validation"
+        },
+        "observability": {
+          "type": "boolean",
+          "description": "Require observability conformance"
+        },
+        "security": {
+          "type": "boolean",
+          "description": "Require security conformance"
+        },
+        "dataAccess": {
+          "type": "boolean",
+          "description": "Require data-access contract validation"
+        },
+        "bridge": {
+          "type": "boolean",
+          "description": "Require bridge compliance validation"
+        }
+      }
+    }
+  }
+}

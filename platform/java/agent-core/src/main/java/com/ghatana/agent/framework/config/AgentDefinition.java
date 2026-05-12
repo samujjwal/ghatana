@@ -381,23 +381,109 @@ public final class AgentDefinition {
     /**
      * Materializes a typed FreshnessPolicy from this definition's mastery bindings.
      *
+     * <p>If no freshness policy configuration is present in mastery bindings,
+     * returns the default policy.
+     *
      * @return typed FreshnessPolicy
      */
     @NotNull
     public com.ghatana.agent.mastery.FreshnessPolicy toFreshnessPolicy() {
-        // This will be implemented when FreshnessPolicy is created
-        throw new UnsupportedOperationException("FreshnessPolicy not yet implemented");
+        if (masteryBindings.isEmpty()) {
+            return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
+        }
+
+        String policyId = (String) masteryBindings.get("freshnessPolicyRef");
+        if (policyId == null || policyId.isBlank()) {
+            return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
+        }
+
+        // Extract policy configuration from metadata if present
+        Object policyConfigObj = metadata.get("freshnessPolicy");
+        if (policyConfigObj instanceof Map<?, ?> policyConfig) {
+            try {
+                String defaultStaleAfterStr = (String) policyConfig.get("defaultStaleAfter");
+                String maxStaleAfterStr = (String) policyConfig.get("maxStaleAfter");
+                Double minEvidenceStrength = (Double) policyConfig.get("minEvidenceStrength");
+                Boolean requireRecentVerification = (Boolean) policyConfig.get("requireRecentVerification");
+
+                java.time.Duration defaultStaleAfter = defaultStaleAfterStr != null
+                        ? java.time.Duration.parse(defaultStaleAfterStr)
+                        : java.time.Duration.ofDays(30);
+                java.time.Duration maxStaleAfter = maxStaleAfterStr != null
+                        ? java.time.Duration.parse(maxStaleAfterStr)
+                        : java.time.Duration.ofDays(90);
+                double minEvidenceStrengthVal = minEvidenceStrength != null ? minEvidenceStrength : 0.7;
+                boolean requireRecentVerificationVal = requireRecentVerification != null ? requireRecentVerification : true;
+
+                return new com.ghatana.agent.mastery.FreshnessPolicy(
+                        policyId,
+                        defaultStaleAfter,
+                        maxStaleAfter,
+                        minEvidenceStrengthVal,
+                        requireRecentVerificationVal
+                );
+            } catch (Exception e) {
+                // Fall back to default policy on any parsing error
+                return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
+            }
+        }
+
+        return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
     }
 
     /**
      * Materializes a typed VersionCompatibilityPolicy from this definition's mastery bindings.
      *
+     * <p>If no version compatibility policy configuration is present in mastery bindings,
+     * returns a default policy with an empty version scope.
+     *
      * @return typed VersionCompatibilityPolicy
      */
     @NotNull
     public com.ghatana.agent.mastery.VersionCompatibilityPolicy toVersionCompatibilityPolicy() {
-        // This will be implemented when VersionCompatibilityPolicy is created
-        throw new UnsupportedOperationException("VersionCompatibilityPolicy not yet implemented");
+        if (masteryBindings.isEmpty()) {
+            return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy("default");
+        }
+
+        String policyId = (String) masteryBindings.get("versionCompatibilityPolicyRef");
+        if (policyId == null || policyId.isBlank()) {
+            return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy("default");
+        }
+
+        // Extract policy configuration from metadata if present
+        Object policyConfigObj = metadata.get("versionCompatibilityPolicy");
+        if (policyConfigObj instanceof Map<?, ?> policyConfig) {
+            try {
+                Boolean strictMode = (Boolean) policyConfig.get("strictMode");
+                Boolean allowMinorVersionDrift = (Boolean) policyConfig.get("allowMinorVersionDrift");
+                Boolean allowPatchVersionDrift = (Boolean) policyConfig.get("allowPatchVersionDrift");
+
+                boolean strictModeVal = strictMode != null ? strictMode : false;
+                boolean allowMinorVersionDriftVal = allowMinorVersionDrift != null ? allowMinorVersionDrift : true;
+                boolean allowPatchVersionDriftVal = allowPatchVersionDrift != null ? allowPatchVersionDrift : true;
+
+                // Create a default version scope for now - in a real implementation,
+                // this would be extracted from the policy configuration
+                com.ghatana.agent.mastery.VersionScope versionScope = new com.ghatana.agent.mastery.VersionScope(
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of()
+                );
+
+                return new com.ghatana.agent.mastery.VersionCompatibilityPolicy(
+                        policyId,
+                        versionScope,
+                        strictModeVal,
+                        allowMinorVersionDriftVal,
+                        allowPatchVersionDriftVal
+                );
+            } catch (Exception e) {
+                // Fall back to default policy on any parsing error
+                return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy(policyId);
+            }
+        }
+
+        return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy(policyId);
     }
 
     /**

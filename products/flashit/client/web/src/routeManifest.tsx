@@ -12,7 +12,7 @@ import CollaborationPage from './pages/CollaborationPage';
 import MemoryExpansionPage from './pages/MemoryExpansionPage';
 import { LanguageInsightsPage } from './pages/LanguageInsightsPage';
 import { isRouteAllowedForRole, type FlashItRole } from './routeAccess';
-import { flashItRouteContracts } from '../../../backend/gateway/src/routes/route-manifest.contract';
+import { flashItRouteContracts } from '@flashit/shared';
 
 export interface FlashItRouteManifestEntry extends ProductRouteCapability {
   readonly element: React.ReactElement;

@@ -56,7 +56,7 @@ public class InMemoryMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         List<EnhancedEpisode> result = episodes.values().stream()
                 .filter(e -> matchesQuery(e, query))
                 .sorted(Comparator.comparing(EnhancedEpisode::getCreatedAt).reversed())
@@ -75,7 +75,7 @@ public class InMemoryMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedFact>> queryFacts(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedFact>> queryFacts(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         List<EnhancedFact> result = facts.values().stream()
                 .filter(f -> matchesQuery(f, query))
                 .sorted(Comparator.comparing(EnhancedFact::getCreatedAt).reversed())
@@ -94,7 +94,7 @@ public class InMemoryMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         List<EnhancedProcedure> result = procedures.values().stream()
                 .filter(p -> matchesQuery(p, query))
                 .sorted(Comparator.comparing(EnhancedProcedure::getCreatedAt).reversed())
@@ -134,13 +134,13 @@ public class InMemoryMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> query(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> query(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return readItems(query);
     }
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> readItems(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> readItems(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         List<MemoryItem> all = new ArrayList<>();
         episodes.values().stream().filter(e -> matchesQuery(e, query)).forEach(all::add);
         facts.values().stream().filter(f -> matchesQuery(f, query)).forEach(all::add);
@@ -221,7 +221,7 @@ public class InMemoryMemoryPlane implements MemoryPlane {
     // Private helpers
     // =========================================================================
 
-    private boolean matchesQuery(MemoryItem item, MemoryQuery query) {
+    private boolean matchesQuery(MemoryItem item, com.ghatana.agent.memory.store.MemoryQuery query) {
         if (query.getTenantId() != null && !query.getTenantId().equals(item.getTenantId())) return false;
         if (query.getItemTypes() != null && !query.getItemTypes().contains(item.getType())) return false;
         if (query.getStartTime() != null && item.getCreatedAt().isBefore(query.getStartTime())) return false;

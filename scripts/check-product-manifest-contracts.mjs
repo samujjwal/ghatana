@@ -24,32 +24,41 @@ const capabilityRegistry = parseRegistry(
   path.join(repoRoot, 'config/kernel-product-capability-registry.json'),
 );
 
-const MANIFESTS = [
-  {
-    product: 'phr',
-    file: 'products/phr/domain-pack-manifest.yaml',
-    format: 'yaml',
-    buildFile: 'products/phr/build.gradle.kts',
-  },
-  {
-    product: 'finance',
-    file: 'products/finance/domain-pack-manifest.yaml',
-    format: 'yaml',
-    buildFile: 'products/finance/build.gradle.kts',
-  },
-  {
-    product: 'digital-marketing',
-    file: 'products/digital-marketing/dm-domain-packs/domain-pack.json',
-    format: 'json',
-    buildFile: 'products/digital-marketing/dm-domain-packs/build.gradle.kts',
-  },
-  {
-    product: 'flashit',
-    file: 'products/flashit/domain-pack-manifest.yaml',
-    format: 'yaml',
-    buildFile: 'products/flashit/build.gradle.kts',
-  },
-];
+// Load manifests from canonical product registry instead of hardcoded array
+function loadManifestsFromRegistry() {
+  const registryPath = path.join(repoRoot, 'config/canonical-product-registry.json');
+  if (!existsSync(registryPath)) {
+    console.warn('Canonical product registry not found, using fallback');
+    return [];
+  }
+  
+  const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+  const manifests = [];
+  
+  for (const [productId, product] of Object.entries(registry.registry)) {
+    // Only include products that have manifest paths
+    if (product.manifestPath && product.manifestFormat) {
+      const entry = {
+        product: productId,
+        file: product.manifestPath,
+        format: product.manifestFormat,
+        buildFile: product.buildFile || null,
+      };
+      
+      // If no explicit build file, try to infer from first gradle module
+      if (!entry.buildFile && product.gradleModules && product.gradleModules.length > 0) {
+        const firstModule = product.gradleModules[0];
+        entry.buildFile = firstModule.replace(':', '').replace(/:/g, '/') + '/build.gradle.kts';
+      }
+      
+      manifests.push(entry);
+    }
+  }
+  
+  return manifests;
+}
+
+const MANIFESTS = loadManifestsFromRegistry();
 
 const violations = [];
 
@@ -199,31 +208,50 @@ function validatePluginOwnership(entry, manifest) {
     }
   }
 
-  if (entry.product === 'finance') {
-    validateFinanceDomainDependencyScopes(entry.buildFile, buildText);
+  // Load product-specific validation rules from canonical registry
+  validateProductSpecificRules(entry, manifest, buildText);
+}
+
+function validateProductSpecificRules(entry, manifest, buildText) {
+  const registryPath = path.join(repoRoot, 'config/canonical-product-registry.json');
+  if (!existsSync(registryPath)) {
+    return;
+  }
+  
+  const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+  const productConfig = registry.registry[entry.product];
+  
+  if (!productConfig || !productConfig.validationRules) {
+    return;
+  }
+  
+  // Execute product-specific validation rules declaratively
+  for (const rule of productConfig.validationRules) {
+    if (rule.type === 'domain-dependency-scope') {
+      validateDomainDependencyScopeRule(entry, buildText, rule);
+    }
   }
 }
 
-function validateFinanceDomainDependencyScopes(buildFile, buildText) {
-  const compileScopedDomainPattern =
-    /^\s*(?:api|implementation)\(project\(":(products:finance:domains:[^"]+)"\)\)/gm;
-  const runtimeScopedDomainPattern =
-    /^\s*runtimeOnly\(project\(":(products:finance:domains:[^"]+)"\)\)/gm;
+function validateDomainDependencyScopeRule(entry, buildText, rule) {
+  const domainPattern = rule.domainPattern || `:(products:${entry.product}:domains:[^"]+)`;
+  const compileScopedPattern = new RegExp(`^\\s*(?:api|implementation)\\(project\\("${domainPattern}"\\)\\)`, 'gm');
+  const runtimeScopedPattern = new RegExp(`^\\s*runtimeOnly\\(project\\("${domainPattern}"\\)\\)`, 'gm');
 
-  const compileScopedDomains = [...buildText.matchAll(compileScopedDomainPattern)].map((match) => match[1]);
-  const runtimeScopedDomains = [...buildText.matchAll(runtimeScopedDomainPattern)].map((match) => match[1]);
+  const compileScopedDomains = [...buildText.matchAll(compileScopedPattern)].map((match) => match[1]);
+  const runtimeScopedDomains = [...buildText.matchAll(runtimeScopedPattern)].map((match) => match[1]);
 
-  if (compileScopedDomains.length > 0) {
+  if (rule.requireRuntimeOnly && compileScopedDomains.length > 0) {
     addViolation(
-      buildFile,
-      `finance root must not compile-link domain modules; found compile-scoped dependencies: ${compileScopedDomains.join(', ')}`,
+      entry.buildFile,
+      `${entry.product} root must not compile-link domain modules; found compile-scoped dependencies: ${compileScopedDomains.join(', ')}`,
     );
   }
 
-  if (runtimeScopedDomains.length === 0) {
+  if (rule.requireRuntimeOnly && runtimeScopedDomains.length === 0) {
     addViolation(
-      buildFile,
-      'finance root must compose domain modules via runtimeOnly dependencies at the composition boundary',
+      entry.buildFile,
+      `${entry.product} root must compose domain modules via runtimeOnly dependencies at the composition boundary`,
     );
   }
 }

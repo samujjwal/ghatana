@@ -54,8 +54,14 @@ tasks.matching { task ->
 // Aggregate build task for all flashit components
 tasks.register("buildAll") {
     group = "build"
-    description = "Builds all flashit components (Java agent, TypeScript packages)"
-    dependsOn(":agent:build", "build")
+    description = "Builds all flashit components (Java modules, TypeScript packages)"
+    dependsOn(
+        ":products:flashit:backend:agent:build",
+        ":products:flashit:backend:gateway:build",
+        ":products:flashit:client/web:build",
+        ":products:flashit:libs/ts/shared:build",
+        "build"
+    )
 }
 
 configure<ProductPackValidationExtension> {

@@ -17,10 +17,13 @@
 package com.ghatana.agent;
 
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.learning.LearningContract;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -228,6 +231,19 @@ public interface TypedAgent<I, O> {
     }
 
     /**
+     * Returns the current execution mode for this agent.
+     *
+     * <p>The execution mode is determined by mastery state, task classification,
+     * and governance policies. Default implementation returns DETERMINISTIC_EXECUTION.
+     *
+     * @return the current execution mode
+     */
+    @NotNull
+    default ExecutionMode getExecutionMode() {
+        return ExecutionMode.DETERMINISTIC_EXECUTION;
+    }
+
+    /**
      * Validates whether the given input is acceptable for this agent.
      * Default accepts all input.
      *
@@ -236,5 +252,33 @@ public interface TypedAgent<I, O> {
      */
     default boolean validateInput(@NotNull I input) {
         return true;
+    }
+
+    /**
+     * Returns the skill references for mastery integration.
+     *
+     * <p>For ADAPTIVE agents, this should return the skill IDs that this agent
+     * uses from the mastery registry. Default implementation returns an empty list,
+     * indicating no mastery integration.
+     *
+     * @return list of skill references (never null, may be empty)
+     */
+    @NotNull
+    default List<String> skillRefs() {
+        return List.of();
+    }
+
+    /**
+     * Returns the learning contract for this agent.
+     *
+     * <p>The learning contract defines what the agent may learn and which targets
+     * it may propose changes for. Default implementation returns null, indicating
+     * no learning contract is configured.
+     *
+     * @return the learning contract, or null if not configured
+     */
+    @Nullable
+    default LearningContract learningContract() {
+        return null;
     }
 }

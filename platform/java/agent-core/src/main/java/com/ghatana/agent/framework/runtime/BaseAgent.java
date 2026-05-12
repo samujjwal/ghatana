@@ -126,21 +126,62 @@ public abstract class BaseAgent<TInput, TOutput> {
             @NotNull TOutput output,
             @NotNull AgentContext context) {
 
-        // Store episode in memory
-        Episode episode = Episode.builder()
-            .agentId(agentId)
-            .turnId(context.getTurnId())
-            .timestamp(Instant.now())
-            .input(input.toString())
-            .output(output.toString())
-            .context(context.getAllConfig())
-            .build();
+        // Extension point: beforeCapture - allows preprocessing before capture
+        return beforeCapture(input, output, context)
+                .then(ignored -> {
+                    // Store episode in memory
+                    Episode episode = Episode.builder()
+                            .agentId(agentId)
+                            .turnId(context.getTurnId())
+                            .timestamp(Instant.now())
+                            .input(input.toString())
+                            .output(output.toString())
+                            .context(context.getAllConfig())
+                            .build();
 
-        return context.getMemoryStore().storeEpisode(episode)
-            .map(stored -> {
-                context.getLogger().debug("Episode captured: {}", stored.getId());
-                return null;
-            });
+                    return context.getMemoryStore().storeEpisode(episode)
+                            .then(stored -> {
+                                context.getLogger().debug("Episode captured: {}", stored.getId());
+                                // Extension point: afterCapture - allows post-processing after capture
+                                return afterCapture(input, output, context);
+                            });
+                });
+    }
+
+    /**
+     * Extension point: Called before the CAPTURE phase.
+     * Allows preprocessing or enrichment before episode capture.
+     * Default implementation does nothing.
+     *
+     * @param input Turn input
+     * @param output Turn output
+     * @param context Execution context
+     * @return Promise of completion
+     */
+    @NotNull
+    protected Promise<Void> beforeCapture(
+            @NotNull TInput input,
+            @NotNull TOutput output,
+            @NotNull AgentContext context) {
+        return Promise.complete();
+    }
+
+    /**
+     * Extension point: Called after the CAPTURE phase.
+     * Allows post-processing or additional memory operations after episode capture.
+     * Default implementation does nothing.
+     *
+     * @param input Turn input
+     * @param output Turn output
+     * @param context Execution context
+     * @return Promise of completion
+     */
+    @NotNull
+    protected Promise<Void> afterCapture(
+            @NotNull TInput input,
+            @NotNull TOutput output,
+            @NotNull AgentContext context) {
+        return Promise.complete();
     }
 
     /**
@@ -159,8 +200,30 @@ public abstract class BaseAgent<TInput, TOutput> {
             @NotNull TOutput output,
             @NotNull AgentContext context) {
 
-        // Default: no reflection
-        // Products can override to implement learning
+        // Extension point: proposeLearning - allows proposing learning deltas
+        return proposeLearning(input, output, context)
+                .then(ignored -> {
+                    // Default: no reflection
+                    // Products can override to implement additional learning
+                    return Promise.complete();
+                });
+    }
+
+    /**
+     * Extension point: Called during the REFLECT phase to propose learning deltas.
+     * Allows proposing procedural skills, semantic facts, or other learning artifacts.
+     * Default implementation does nothing.
+     *
+     * @param input Turn input
+     * @param output Turn output
+     * @param context Execution context
+     * @return Promise of completion
+     */
+    @NotNull
+    protected Promise<Void> proposeLearning(
+            @NotNull TInput input,
+            @NotNull TOutput output,
+            @NotNull AgentContext context) {
         return Promise.complete();
     }
 

@@ -1,0 +1,156 @@
+#!/usr/bin/env node
+
+/**
+ * Merge generated package scripts into root package.json
+ * 
+ * Replaces product-specific scripts in package.json with generated ones from
+ * config/generated/package-scripts.json. Generic platform scripts are preserved.
+ */
+
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(__dirname, '..');
+
+const PACKAGE_JSON_PATH = join(repoRoot, 'package.json');
+const GENERATED_SCRIPTS_PATH = join(repoRoot, 'config/generated/package-scripts.json');
+
+// Generic platform scripts that should NOT be replaced by generated scripts
+const GENERIC_SCRIPTS = new Set([
+  'build',
+  'build:platform',
+  'dev',
+  'test',
+  'test:ui',
+  'lint',
+  'format',
+  'clean',
+  'typecheck',
+  'typecheck:workspace',
+  'check:deprecated-ui',
+  'check:duplicate-packages',
+  'check:platform-package-governance',
+  'check:truth-surfaces',
+  'check:tsconfig-strict',
+  'check:production-readiness',
+  'check:audit-todo-burndown',
+  'check:jwt-policy',
+  'check:license-policy',
+  'check:cross-workspace-deps',
+  'check:capability-schema-drift',
+  'check:openapi-canonical',
+  'check:production-stubs',
+  'check:doc-truth',
+  'check:doc-claims-evidence',
+  'check:circular-deps',
+  'check:product-ui-contracts',
+  'check:product-doc-taxonomy',
+  'check:product-manifest-contracts',
+  'check:product-ci-matrices',
+  'check:product-workspace-registration',
+  'check:product-scaffolder',
+  'check:product-kernel-audit-progress',
+  'generate:product-kernel-audit-progress',
+  'check:security-workflow-coverage',
+  'check:digital-marketing-root-docs',
+  'check:bridge-compliance',
+  'check:data-access-contract',
+  'check:observability-conformance',
+  'check:finance-transaction-workflow-proof',
+  'check:dmos-boundary-workflow-coverage',
+  'check:inmemory-policy-store-usage',
+  'check:secret-default-credentials',
+  'check:route-entitlement-contracts',
+  'check:flashit-client-conformance',
+  'check:local-dev-port-allocations',
+  'check:runtime-template-conformance',
+  'check:flashit-doc-content',
+  'check:audited-ui-workflows',
+  'check:audited-e2e-workflow',
+  'check:audited-performance-workflows',
+  'check:design-system-conformance',
+  'check:shared-product-shells',
+  'check:shared-layout-primitives',
+  'check:shared-ui-state-coverage',
+  'check:workspace-source-aliases',
+  'check:router-strategy',
+  'check:product-package-metadata',
+  'check:flashit-package-manager',
+  'check:kernel-product-boundary-audit',
+  'scaffold:product',
+  'test:eslint-rules',
+  'prepare',
+  'generate:data-cloud-feature-gates',
+  'check:data-cloud-feature-gates',
+  'generate:data-cloud-architecture-scorecard',
+  'check:data-cloud-architecture-scorecard',
+  'check:data-cloud-ui-contracts',
+  'check:data-cloud-sdk-drift',
+  'check:data-cloud-runbook-smoke',
+]);
+
+function main() {
+  console.log('=== Merging generated package scripts into package.json ===\n');
+
+  try {
+    // Read package.json
+    const packageJson = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf8'));
+    
+    // Read generated scripts
+    const generatedScripts = JSON.parse(readFileSync(GENERATED_SCRIPTS_PATH, 'utf8'));
+    
+    console.log(`Found ${Object.keys(generatedScripts).length} generated scripts`);
+    console.log(`Preserving ${GENERIC_SCRIPTS.size} generic platform scripts\n`);
+    
+    // Remove product-specific scripts (those not in GENERIC_SCRIPTS)
+    const currentScripts = packageJson.scripts || {};
+    const newScripts = {};
+    
+    // Preserve generic scripts
+    for (const [key, value] of Object.entries(currentScripts)) {
+      if (GENERIC_SCRIPTS.has(key)) {
+        newScripts[key] = value;
+      }
+    }
+    
+    // Add generated scripts
+    let addedCount = 0;
+    let replacedCount = 0;
+    
+    for (const [key, value] of Object.entries(generatedScripts)) {
+      if (GENERIC_SCRIPTS.has(key)) {
+        console.log(`  Skipping generic script: ${key}`);
+        continue;
+      }
+      
+      if (currentScripts[key]) {
+        console.log(`  Replacing: ${key}`);
+        replacedCount++;
+      } else {
+        console.log(`  Adding: ${key}`);
+        addedCount++;
+      }
+      
+      newScripts[key] = value;
+    }
+    
+    // Update package.json
+    packageJson.scripts = newScripts;
+    
+    // Write back
+    writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2) + '\n');
+    
+    console.log(`\n✓ Merged ${addedCount} new scripts and replaced ${replacedCount} existing scripts`);
+    console.log(`✓ Total scripts in package.json: ${Object.keys(newScripts).length}`);
+    
+  } catch (error) {
+    console.error('\n✗ Merge failed:');
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+main();

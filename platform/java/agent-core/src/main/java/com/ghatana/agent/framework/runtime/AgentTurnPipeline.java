@@ -6,9 +6,11 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.resilience.ResiliencePolicy;
 import com.ghatana.agent.lifecycle.AgentLifecyclePhase;
 import com.ghatana.agent.lifecycle.AgentPhaseTrace;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +57,27 @@ public class AgentTurnPipeline<TInput, TOutput> {
         @NotNull Promise<O> execute(@NotNull I input, @NotNull AgentContext context);
     }
 
+    /**
+     * Functional interface for pre-ADMIT enrichment hook.
+     *
+     * <p>This hook runs before the ADMIT phase and is used for:
+     * <ul>
+     *   <li>Task classification (risk level, novelty)</li>
+     *   <li>Environment snapshot (version context, dependencies)</li>
+     *   <li>Mastery decision (which skills to use)</li>
+     *   <li>Mode selection (online/offline, strict/lenient)</li>
+     * </ul>
+     */
+    @FunctionalInterface
+    public interface PreAdmitEnrichmentHandler<I> {
+        @NotNull Promise<Void> execute(@NotNull I input, @NotNull AgentContext context);
+    }
+
     private final String agentId;
+    @Nullable
+    private ExecutionMode executionMode;
+    @Nullable
+    private PreAdmitEnrichmentHandler<TInput> preAdmitEnrichment;
     private final PhaseHandler<TInput, TInput> perceive;
     private final PhaseHandler<TInput, AgentResult<TOutput>> reason;
     private final PhaseHandler<TOutput, TOutput> act;
@@ -73,6 +95,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
 
     private AgentTurnPipeline(
             @NotNull String agentId,
+            @Nullable PreAdmitEnrichmentHandler<TInput> preAdmitEnrichment,
             @NotNull PhaseHandler<TInput, TInput> perceive,
             @NotNull PhaseHandler<TInput, AgentResult<TOutput>> reason,
             @NotNull PhaseHandler<AgentResult<TOutput>, AgentResult<TOutput>> verify,
@@ -80,6 +103,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
             @NotNull CaptureHandler<TInput, TOutput> capture,
             @NotNull CaptureHandler<TInput, TOutput> reflect) {
         this.agentId = Objects.requireNonNull(agentId);
+        this.executionMode = null;
+        this.preAdmitEnrichment = preAdmitEnrichment;
         this.perceive = Objects.requireNonNull(perceive);
         this.reason = Objects.requireNonNull(reason);
         this.verify = Objects.requireNonNull(verify);
@@ -98,6 +123,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
     public static <I, O> AgentTurnPipeline<I, O> of(@NotNull BaseAgent<I, O> agent) {
         return new AgentTurnPipeline<>(
             agent.getAgentId(),
+            null, // no pre-ADMIT enrichment by default
             (input, ctx) -> Promise.of(agent.perceive(input, ctx)),
             (input, ctx) -> {
                 Instant start = Instant.now();
@@ -159,6 +185,13 @@ public class AgentTurnPipeline<TInput, TOutput> {
         List<AgentPhaseTrace> phaseTraces = new ArrayList<>();
 
         return Promise.complete()
+            .then(() -> {
+                // Pre-ADMIT enrichment hook for task classification, environment snapshot, mastery decision, mode selection
+                if (preAdmitEnrichment != null) {
+                    return preAdmitEnrichment.execute(input, context);
+                }
+                return Promise.complete();
+            })
             .then(() -> timed(AgentLifecyclePhase.ADMIT, context, phaseTraces, () -> Promise.of(input)))
             .then(ignored -> timed(AgentLifecyclePhase.PERCEIVE, context, phaseTraces,
                     () -> perceive.execute(input, context)))
@@ -325,6 +358,10 @@ public class AgentTurnPipeline<TInput, TOutput> {
      */
     public static class Builder<I, O> {
         private final String agentId;
+        @Nullable
+        private ExecutionMode executionMode;
+        @Nullable
+        private PreAdmitEnrichmentHandler<I> preAdmitEnrichment;
         private PhaseHandler<I, I> perceive = (input, ctx) -> Promise.of(input);
         private PhaseHandler<I, AgentResult<O>> reason;
         private PhaseHandler<AgentResult<O>, AgentResult<O>> verify = (result, ctx) -> Promise.of(result);
@@ -353,11 +390,17 @@ public class AgentTurnPipeline<TInput, TOutput> {
         public Builder<I, O> act(@NotNull PhaseHandler<O, O> handler) { this.act = handler; return this; }
         public Builder<I, O> capture(@NotNull CaptureHandler<I, O> handler) { this.capture = handler; return this; }
         public Builder<I, O> reflect(@NotNull CaptureHandler<I, O> handler) { this.reflect = handler; return this; }
+        public Builder<I, O> withExecutionMode(@Nullable ExecutionMode mode) { this.executionMode = mode; return this; }
+        public Builder<I, O> withPreAdmitEnrichment(@NotNull PreAdmitEnrichmentHandler<I> handler) { this.preAdmitEnrichment = handler; return this; }
 
         @NotNull
         public AgentTurnPipeline<I, O> build() {
             Objects.requireNonNull(reason, "reason phase handler is required");
-            return new AgentTurnPipeline<>(agentId, perceive, reason, verify, act, capture, reflect);
+            AgentTurnPipeline<I, O> pipeline = new AgentTurnPipeline<>(agentId, preAdmitEnrichment, perceive, reason, verify, act, capture, reflect);
+            if (executionMode != null) {
+                pipeline.executionMode = executionMode;
+            }
+            return pipeline;
         }
     }
 }

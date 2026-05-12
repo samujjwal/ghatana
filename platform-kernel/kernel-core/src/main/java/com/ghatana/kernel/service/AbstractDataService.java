@@ -31,14 +31,15 @@ import java.util.function.Function;
  *   <li>Serialization/deserialization utilities</li>
  *   <li>Audit trail integration with kernel audit service</li>
  *   <li>Dataset initialization</li>
- *   <li>Error handling patterns</li>
+ *   <li>Explicit failure modes for fail-closed behavior</li>
  * </ul></p>
  *
  * <p>This base class eliminates duplicate data access code across product services
- * and ensures consistent error handling and audit trail implementation.</p>
+ * and ensures consistent error handling and audit trail implementation.
+ * Services fail closed by default - they throw exceptions instead of returning empty results.</p>
  *
  * @doc.type class
- * @doc.purpose Shared data access base class for product services
+ * @doc.purpose Shared data access base class for product services with fail-closed behavior
  * @doc.layer kernel
  * @doc.pattern Template Method, Service
  * @author Ghatana Kernel Team
@@ -46,21 +47,46 @@ import java.util.function.Function;
  */
 public abstract class AbstractDataService implements KernelLifecycleAware {
 
+    /**
+     * Failure mode for data service operations.
+     */
+    public enum FailureMode {
+        /**
+         * Fail closed - throw exceptions on errors (default, recommended).
+         */
+        FAIL_CLOSED,
+        /**
+         * Fail open - return empty results on errors (not recommended, for compatibility only).
+         */
+        FAIL_OPEN
+    }
+
     protected final DataCloudKernelAdapter dataCloud;
     protected final CrossScopeAuditService auditService;
     protected final Executor executor;
     protected volatile boolean running = false;
+    protected FailureMode failureMode = FailureMode.FAIL_CLOSED;
 
     protected AbstractDataService(KernelContext context) {
-        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
-        this.auditService = context.getOptionalDependency(CrossScopeAuditService.class).orElse(null);
-        this.executor = ForkJoinPool.commonPool();
+        this(context, FailureMode.FAIL_CLOSED);
     }
 
     protected AbstractDataService(KernelContext context, Executor executor) {
+        this(context, executor, FailureMode.FAIL_CLOSED);
+    }
+
+    protected AbstractDataService(KernelContext context, FailureMode failureMode) {
+        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        this.auditService = context.getOptionalDependency(CrossScopeAuditService.class).orElse(null);
+        this.executor = ForkJoinPool.commonPool();
+        this.failureMode = failureMode;
+    }
+
+    protected AbstractDataService(KernelContext context, Executor executor, FailureMode failureMode) {
         this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
         this.auditService = context.getOptionalDependency(CrossScopeAuditService.class).orElse(null);
         this.executor = executor != null ? executor : ForkJoinPool.commonPool();
+        this.failureMode = failureMode;
     }
 
     @Override
@@ -114,17 +140,18 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
 
     /**
      * Read a record from the specified dataset.
+     * Fails closed by default - throws exception if service not running or on error.
      */
     protected <T> Promise<Optional<T>> readRecord(String datasetId, String recordId, Class<T> type) {
         if (!running) {
-            return Promise.of(Optional.empty());
+            return handleFailure(new IllegalStateException("Service not running"));
         }
 
         DataReadRequest request = new DataReadRequest(datasetId, recordId, Map.of());
 
         return dataCloud.readData(request)
             .<Optional<T>>map(result -> result == null ? Optional.empty() : Optional.ofNullable(deserialize(result.getData(), type)))
-            .whenException(e -> Promise.of(Optional.empty()));
+            .whenException(e -> handleFailure(e));
     }
 
     /**
@@ -158,12 +185,13 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
 
     /**
      * Query records from the specified dataset.
+     * Fails closed by default - throws exception if service not running or on error.
      */
     protected <T> Promise<List<T>> queryRecords(String datasetId, String query,
                                                 Map<String, Object> parameters,
                                                 int limit, int offset, Class<T> type) {
         if (!running) {
-            return Promise.of(List.of());
+            return handleFailure(new IllegalStateException("Service not running"));
         }
 
         DataQueryRequest request = new DataQueryRequest(datasetId, query, parameters, limit, offset);
@@ -173,7 +201,8 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
             .map(results -> results.stream()
                 .map(r -> deserialize(r.getData(), type))
                 .filter(Objects::nonNull)
-                .toList());
+                .toList())
+            .whenException(e -> handleFailure(e));
     }
 
     /**
@@ -190,13 +219,18 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
 
     /**
      * Create a schema in DataCloud.
+     * Fails closed by default - throws exception on error.
      */
     protected Promise<Void> createSchema(String datasetId, Map<String, String> schema,
                                         Map<String, String> options) {
         return dataCloud.createSchema(
             new SchemaCreateRequest(datasetId, schema, options)
-        ).whenException(e -> {
-            // Schema may already exist - log but don't fail
+        ).then(() -> Promise.complete())
+         .whenException(e -> {
+            if (failureMode == FailureMode.FAIL_CLOSED) {
+                throw new RuntimeException("Failed to create schema for dataset: " + datasetId, e);
+            }
+            // Schema may already exist - log but don't fail in FAIL_OPEN mode
         });
     }
 
@@ -209,14 +243,18 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
 
     /**
      * Audit an action with additional metadata.
+     * Fails closed by default - throws exception if service not running or audit fails.
      */
     protected Promise<Void> audit(String action, String entityId, String details,
                                  Map<String, String> metadata) {
         if (!running) {
-            return Promise.complete();
+            return handleFailure(new IllegalStateException("Service not running"));
         }
 
         if (auditService == null) {
+            if (failureMode == FailureMode.FAIL_CLOSED) {
+                return handleFailure(new IllegalStateException("Audit service not available"));
+            }
             return Promise.complete();
         }
 
@@ -226,8 +264,12 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
             entityId,
             details,
             metadata
-        ).whenException(e -> {
-            // Audit failure should not fail the operation
+        ).then(() -> Promise.complete())
+         .whenException(e -> {
+            if (failureMode == FailureMode.FAIL_CLOSED) {
+                throw new RuntimeException("Audit failed for action: " + action, e);
+            }
+            // Audit failure should not fail the operation in FAIL_OPEN mode
         });
     }
 
@@ -281,6 +323,36 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
         if (value instanceof String && ((String) value).isBlank()) {
             throw new IllegalArgumentException(fieldName + " cannot be blank");
         }
+    }
+
+    /**
+     * Handle an exception based on the configured failure mode.
+     * In FAIL_CLOSED mode (default), this throws the exception.
+     * In FAIL_OPEN mode, this returns an appropriate empty result.
+     */
+    @SuppressWarnings("unchecked")
+    protected <T> Promise<T> handleFailure(Exception e) {
+        if (failureMode == FailureMode.FAIL_CLOSED) {
+            return Promise.ofException(e);
+        }
+        // FAIL_OPEN mode - return empty/null based on expected return type
+        // This is a simplified fallback; in practice, callers should handle this explicitly
+        return Promise.of((T) null);
+    }
+
+    /**
+     * Get the current failure mode for this service.
+     */
+    public FailureMode getFailureMode() {
+        return failureMode;
+    }
+
+    /**
+     * Set the failure mode for this service.
+     * WARNING: Setting to FAIL_OPEN is not recommended for production use.
+     */
+    public void setFailureMode(FailureMode failureMode) {
+        this.failureMode = failureMode;
     }
 
     /**

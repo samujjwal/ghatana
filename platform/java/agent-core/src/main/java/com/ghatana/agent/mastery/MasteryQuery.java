@@ -144,4 +144,26 @@ public record MasteryQuery(
     public MasteryQuery withOffset(int offset) {
         return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
     }
+
+    /**
+     * Returns a new query with the agent ID set.
+     *
+     * @param agentId agent identifier
+     * @return new query with agent ID
+     */
+    @NotNull
+    public MasteryQuery withAgentId(@NotNull String agentId) {
+        return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
+    }
+
+    /**
+     * Returns a new query with the tenant ID set.
+     *
+     * @param tenantId tenant identifier
+     * @return new query with tenant ID
+     */
+    @NotNull
+    public MasteryQuery withTenantId(@NotNull String tenantId) {
+        return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
+    }
 }

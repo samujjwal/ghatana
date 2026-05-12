@@ -6,6 +6,7 @@ package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.*;
+import com.ghatana.agent.mode.ExecutionMode;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -154,6 +155,86 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         return Promise.of(masteryItems.values().stream()
                 .filter(item -> !item.isFresh(now))
                 .collect(Collectors.toList()));
+    }
+
+    @Override
+    @NotNull
+    public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
+        // Find matching mastery items
+        List<MasteryItem> matches = masteryItems.values().stream()
+                .filter(item -> query.skillId() == null || item.skillId().equals(query.skillId()))
+                .filter(item -> query.agentId() == null || item.agentId().equals(query.agentId()))
+                .filter(item -> query.tenantId() == null || item.applicability().tenantId().equals(query.tenantId()))
+                .filter(item -> query.states() == null || query.states().contains(item.state()))
+                .filter(MasteryItem::isActiveForRetrieval)
+                .filter(item -> item.isFresh(Instant.now()))
+                .toList();
+
+        if (matches.isEmpty()) {
+            // No matching mastery - return decision to block
+            String skillId = query.skillId() != null ? query.skillId() : "unknown";
+            return Promise.of(MasteryDecision.block(
+                    "unknown",
+                    skillId,
+                    ExecutionMode.BLOCKED,
+                    "No matching mastery item found"
+            ));
+        }
+
+        // Get the best matching item (highest execution score)
+        MasteryItem best = matches.stream()
+                .max(Comparator.comparingDouble(item -> item.score().executionScore()))
+                .orElse(matches.get(0));
+
+        // Determine execution mode based on mastery state
+        ExecutionMode mode = determineExecutionMode(best);
+
+        // Determine if human approval or verification is required
+        boolean requiresHumanApproval = best.state() == MasteryState.PRACTICED;
+        boolean requiresVerification = best.state() == MasteryState.COMPETENT;
+
+        if (requiresHumanApproval) {
+            return Promise.of(MasteryDecision.requireApproval(
+                    best.masteryId(),
+                    best.skillId(),
+                    mode,
+                    "Mastery state is PRACTICED - requires human approval"
+            ));
+        }
+
+        if (requiresVerification) {
+            return Promise.of(MasteryDecision.requireVerification(
+                    best.masteryId(),
+                    best.skillId(),
+                    mode,
+                    "Mastery state is COMPETENT - requires verification",
+                    best.evidenceRefs()
+            ));
+        }
+
+        return Promise.of(MasteryDecision.allow(
+                best.masteryId(),
+                best.skillId(),
+                mode,
+                "Mastery state is " + best.state() + " - execution allowed"
+        ));
+    }
+
+    /**
+     * Determines the execution mode based on mastery state.
+     *
+     * @param item mastery item
+     * @return execution mode
+     */
+    private ExecutionMode determineExecutionMode(MasteryItem item) {
+        return switch (item.state()) {
+            case MASTERED -> ExecutionMode.DETERMINISTIC;
+            case COMPETENT -> ExecutionMode.BOUNDED_PROBABILISTIC;
+            case PRACTICED -> ExecutionMode.FAST_LEARNING;
+            case OBSERVED -> ExecutionMode.VERIFICATION_FIRST;
+            case MAINTENANCE_ONLY -> ExecutionMode.MAINTENANCE_ONLY;
+            case OBSOLETE, RETIRED, QUARANTINED, UNKNOWN -> ExecutionMode.BLOCKED;
+        };
     }
 
     /**

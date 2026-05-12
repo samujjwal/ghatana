@@ -3,23 +3,43 @@
 
 pack:
   id: finance
-  name: "Finance Domain Pack"
   version: "1.0.0"
-  description: "Financial trading and risk management domain pack for capital markets"
-
-  # Domain classification
-  domain:
-    type: capital-markets
-    region: global
-    regulatory_frameworks:
-      - mifid-ii
-      - emir
-      - sftr
-      - sec
-      - aml
-      - kyc
-
-  # Capabilities provided by this domain pack
+  product: finance
+  domain: capital-markets
+  kernelCapabilitiesConsumed:
+    - boundary-policy-evaluation
+    - audit-trail
+    - approval-workflow
+    - tenant-context
+  policyActions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+    - settle
+    - cancel
+  policyResources:
+    - finance:transactions
+    - finance:positions
+    - finance:market-data
+    - finance:risk-data
+  pluginsConsumed:
+    - plugin-audit-trail
+    - plugin-compliance
+    - plugin-ledger
+    - plugin-fraud-detection
+    - plugin-risk-management
+  bridgesConsumed:
+    - data-cloud-kernel-bridge
+  domainPacksProvided:
+    - finance-trading-boundary-policy
+    - finance-compliance-rule-pack
+  uiSurfaces: []
+  runtimeServices:
+    - launcher
+    - integration-testing
+  dataSensitivity: regulated-finance
   capabilities:
     - id: finance.trade-processing
       name: "Trade Processing"
@@ -85,58 +105,6 @@ pack:
         regulations: mifid-ii,emir,sftr
         automation: true
 
-  # Required kernel capabilities
-  requires:
-    - event.processing
-    - data.storage
-    - ai.ml.framework
-    - observability.framework
-    - security.framework
-    - workflow.engine
-  kernelCapabilitiesConsumed:
-    - boundary-policy-evaluation
-    - audit-trail
-    - approval-workflow
-    - tenant-context
-  policyActions:
-    - read
-    - write
-    - delete
-    - export
-    - download
-    - settle
-    - cancel
-    - finance:settle
-    - finance:cancel
-    - "*"
-  policyResources:
-    - finance:transactions
-    - finance:transactions/*
-    - finance:positions
-    - finance:positions/*
-    - finance:market-data
-    - finance:market-data/*
-    - finance:risk-data
-    - finance:risk-data/*
-    - "**"
-  pluginsConsumed:
-    - plugin-audit-trail
-    - plugin-compliance
-    - plugin-ledger
-    - plugin-fraud-detection
-    - plugin-risk-management
-  bridgesConsumed:
-    - data-cloud-kernel-bridge
-  domainPacksProvided:
-    - finance-trading-boundary-policy
-    - finance-compliance-rule-pack
-  uiSurfaces: []
-  runtimeServices:
-    - launcher
-    - integration-testing
-  dataSensitivity: regulated-finance
-
-  # Extensions provided by this pack
   extensions:
     - id: finance.trading
       name: "Trading Extension"
@@ -158,7 +126,6 @@ pack:
       description: "Portfolio management and analytics extension"
       target_capability: finance.portfolio-management
 
-  # Sub-domains/modules within this pack
   modules:
     - name: oms
       description: "Order Management System"
@@ -195,35 +162,6 @@ pack:
     - name: client-onboarding
       description: "Client Onboarding with AML"
 
-  # Performance claims with evidence-backed validation
-  performance:
-    claims:
-      - capability: finance.trade-processing
-        metric: latency
-        target: "< 1ms"
-        evidence:
-          benchmark_suite: OrderProcessingPerformanceBaselineService
-          slo_id: finance.trade-processing.latency.p99
-          test_file: src/test/java/com/ghatana/finance/performance/OrderProcessingPerformanceTest.java
-      - capability: finance.trade-processing
-        metric: throughput
-        target: "100k-tps"
-        evidence:
-          benchmark_suite: OrderProcessingPerformanceBaselineService
-          slo_id: finance.trade-processing.throughput
-          test_file: src/test/java/com/ghatana/finance/performance/OrderProcessingPerformanceTest.java
-
-  # Integration testing configuration
-  integration_testing:
-    enabled: true
-    test_suites:
-      - OrderToSettlementE2eTestSuiteService
-      - LedgerDoubleEntryIntegrityTestSuiteService
-      - ComplianceScreeningE2eTestSuiteService
-      - PositionReconciliationIntegrityTestSuiteService
-      - OrderProcessingPerformanceBaselineService
-
-  # Deployment configuration
   deployment:
     type: domain-pack
     dependencies:
@@ -234,7 +172,6 @@ pack:
       - platform:java:workflow
       - platform:java:ai-integration
 
-  # Metadata
   metadata:
     created: "2026-03-19"
     author: "Ghatana Finance Team"

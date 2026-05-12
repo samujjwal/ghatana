@@ -35,10 +35,13 @@ public class StructuredContextInjector implements ContextInjector {
             return "";
         }
 
+        // Apply mastery-aware ordering
+        List<ScoredMemoryItem> orderedItems = orderByMasteryPriority(items);
+
         StringBuilder sb = new StringBuilder();
 
         if (config.isGroupByTier()) {
-            Map<MemoryItemType, List<ScoredMemoryItem>> grouped = items.stream()
+            Map<MemoryItemType, List<ScoredMemoryItem>> grouped = orderedItems.stream()
                     .collect(Collectors.groupingBy(
                             s -> s.getItem().getType(),
                             LinkedHashMap::new,
@@ -52,12 +55,71 @@ public class StructuredContextInjector implements ContextInjector {
                 sb.append('\n');
             }
         } else {
-            for (ScoredMemoryItem scored : items) {
+            for (ScoredMemoryItem scored : orderedItems) {
                 appendItem(sb, scored, config);
             }
         }
 
         return truncateToTokens(sb.toString(), config.getMaxTokens());
+    }
+
+    /**
+     * Orders memory items by mastery priority:
+     * 1. Blocking warnings / negative knowledge
+     * 2. Mastered procedures
+     * 3. Competent procedures
+     * 4. Semantic facts
+     * 5. Episodes
+     * 6. Tentative/exploratory context
+     */
+    @NotNull
+    private List<ScoredMemoryItem> orderByMasteryPriority(@NotNull List<ScoredMemoryItem> items) {
+        return items.stream()
+                .sorted((a, b) -> {
+                    int priorityA = getMasteryPriority(a.getItem());
+                    int priorityB = getMasteryPriority(b.getItem());
+                    if (priorityA != priorityB) {
+                        return Integer.compare(priorityB, priorityA); // Higher priority first
+                    }
+                    // Secondary sort by score
+                    return Double.compare(b.getScore(), a.getScore());
+                })
+                .toList();
+    }
+
+    /**
+     * Returns mastery priority for ordering (higher = more important).
+     */
+    private int getMasteryPriority(@NotNull MemoryItem item) {
+        String masteryState = item.getLabels().get("masteryState");
+        String negativeKnowledge = item.getLabels().get("negativeKnowledge");
+        String tentative = item.getLabels().get("tentative");
+
+        // Negative knowledge gets highest priority (blocking warnings)
+        if ("true".equalsIgnoreCase(negativeKnowledge)) {
+            return 100;
+        }
+
+        // Mastery state priorities
+        if (masteryState != null) {
+            return switch (masteryState) {
+                case "MASTERED" -> 90;
+                case "COMPETENT" -> 80;
+                case "PRACTICED" -> 70;
+                case "OBSERVED" -> 60;
+                case "MAINTENANCE_ONLY" -> 50;
+                case "OBSOLETE", "RETIRED" -> 10;
+                default -> 50;
+            };
+        }
+
+        // Type-based priorities for non-mastery items
+        return switch (item.getType()) {
+            case PROCEDURE -> 70;
+            case FACT -> 50;
+            case EPISODE -> 30;
+            default -> 20;
+        };
     }
 
     private void appendTierHeader(StringBuilder sb, MemoryItemType type, InjectionConfig config) {
@@ -81,6 +143,9 @@ public class StructuredContextInjector implements ContextInjector {
         MemoryItem item = scored.getItem();
         sb.append("- ");
 
+        // Mastery state markers
+        appendMasteryMarkers(sb, item);
+
         if (config.isIncludeConflictMarkers()) {
             boolean hasContradiction = item.getLinks().stream()
                     .anyMatch(l -> l.getLinkType() == com.ghatana.agent.memory.model.LinkType.CONTRADICTS);
@@ -103,6 +168,54 @@ public class StructuredContextInjector implements ContextInjector {
         String recency = formatRecency(item.getCreatedAt());
         sb.append(" (").append(recency).append(")");
         sb.append('\n');
+    }
+
+    /**
+     * Appends mastery state markers to the formatted output.
+     */
+    private void appendMasteryMarkers(StringBuilder sb, MemoryItem item) {
+        String masteryState = item.getLabels().get("masteryState");
+        String negativeKnowledge = item.getLabels().get("negativeKnowledge");
+        String tentative = item.getLabels().get("tentative");
+        String requiresVerification = item.getLabels().get("requiresVerification");
+        String versionMismatch = item.getLabels().get("versionMismatch");
+
+        // Negative knowledge marker (highest priority for safety)
+        if ("true".equalsIgnoreCase(negativeKnowledge)) {
+            sb.append("[NEGATIVE_KNOWLEDGE] ");
+            return; // Negative knowledge doesn't need other markers
+        }
+
+        // Obsolete/retired marker
+        if ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState)) {
+            sb.append("[OBSOLETE - DO NOT USE] ");
+            return; // Obsolete items are blocked
+        }
+
+        // Maintenance-only marker
+        if ("MAINTENANCE_ONLY".equals(masteryState)) {
+            sb.append("[MAINTENANCE_ONLY] ");
+        }
+
+        // Mastery state markers
+        if (masteryState != null) {
+            sb.append("[").append(masteryState).append("] ");
+        }
+
+        // Version mismatch marker
+        if ("true".equalsIgnoreCase(versionMismatch)) {
+            sb.append("[VERSION_MISMATCH] ");
+        }
+
+        // Verification marker
+        if ("true".equalsIgnoreCase(requiresVerification)) {
+            sb.append("[REQUIRES_VERIFICATION] ");
+        }
+
+        // Tentative marker
+        if ("true".equalsIgnoreCase(tentative)) {
+            sb.append("[TENTATIVE] ");
+        }
     }
 
     private void appendXmlItem(StringBuilder sb, ScoredMemoryItem scored, InjectionConfig config) {

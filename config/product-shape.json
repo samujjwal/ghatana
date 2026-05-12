@@ -3,13 +3,36 @@
     "phr": {
       "ui": true,
       "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "clientPackages": [
         "products/phr/apps/web/package.json"
       ]
     },
+    "finance": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api",
+        "portal",
+        "operator",
+        "sdk"
+      ],
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/finance/README.md",
+        "mustContain": "backend-only"
+      }
+    },
     "digital-marketing": {
       "ui": true,
       "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "clientPackages": [
         "products/digital-marketing/ui/package.json"
       ]
@@ -17,17 +40,118 @@
     "flashit": {
       "ui": true,
       "uiMode": "multi-surface",
+      "surfaces": [
+        "backend-api",
+        "web",
+        "mobile"
+      ],
       "clientPackages": [
         "products/flashit/client/web/package.json",
         "products/flashit/client/mobile/package.json"
       ]
     },
-    "finance": {
+    "data-cloud": {
+      "ui": true,
+      "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web",
+        "sdk"
+      ],
+      "clientPackages": [
+        "products/data-cloud/delivery/ui/package.json"
+      ]
+    },
+    "yappc": {
+      "ui": true,
+      "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
+      "clientPackages": [
+        "products/yappc/frontend/package.json"
+      ]
+    },
+    "audio-video": {
       "ui": false,
       "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api"
+      ],
       "clientPackages": [],
       "backendOnlyDeclaration": {
-        "file": "products/finance/README.md",
+        "file": "products/audio-video/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "dcmaar": {
+      "ui": true,
+      "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
+      "clientPackages": [
+        "products/dcmaar/apps/package.json"
+      ]
+    },
+    "tutorputor": {
+      "ui": true,
+      "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
+      "clientPackages": [
+        "products/tutorputor/apps/package.json"
+      ]
+    },
+    "aura": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api"
+      ],
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/aura/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "software-org": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api"
+      ],
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/software-org/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "virtual-org": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api"
+      ],
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/virtual-org/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "security-gateway": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "backend-api"
+      ],
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/security-gateway/README.md",
         "mustContain": "backend-only"
       }
     }

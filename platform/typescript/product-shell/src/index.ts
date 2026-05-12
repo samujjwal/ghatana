@@ -62,3 +62,6 @@ export {
   type UseProductEntitlementsOptions,
   type UseProductEntitlementsResult,
 } from './useProductEntitlements';
+
+// Composable adapters
+export { ProductShellAdapter } from './adapters/ProductShellAdapter';

@@ -8,6 +8,7 @@ import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,7 +147,7 @@ public class BillingService extends PhrServiceBase {
             ENCOUNTER_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(), "status", "OPEN"),
+            enrichMetadata(Map.of("patientId", toStore.patientId(), "status", "OPEN")),
             "BillingEncounter",
             1
         ).then(stored -> audit("CREATE_ENCOUNTER", stored.patientId(),
@@ -174,7 +175,7 @@ public class BillingService extends PhrServiceBase {
                     ENCOUNTER_DATASET,
                     encounterId,
                     closed,
-                    Map.of("status", "CLOSED"),
+                    enrichMetadata(Map.of("status", "CLOSED")),
                     "BillingEncounter",
                     1
                 ).then(updated -> audit("CLOSE_ENCOUNTER", updated.patientId(),
@@ -247,7 +248,7 @@ public class BillingService extends PhrServiceBase {
             CLAIM_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(), "status", "SUBMITTED"),
+            enrichMetadata(Map.of("patientId", toStore.patientId(), "status", "SUBMITTED")),
             "InsuranceClaim",
             1
         ).then(stored -> audit("SUBMIT_CLAIM", stored.patientId(),
@@ -281,7 +282,7 @@ public class BillingService extends PhrServiceBase {
                     CLAIM_DATASET,
                     sanitizedClaimId,
                     updated,
-                    Map.of("status", newStatus.name()),
+                    enrichMetadata(Map.of("status", newStatus.name())),
                     "InsuranceClaim",
                     1
                 ).then(saved -> audit("UPDATE_CLAIM_STATUS", saved.patientId(),
@@ -316,6 +317,21 @@ public class BillingService extends PhrServiceBase {
     }
 
     // ==================== Private Helpers ====================
+
+    private Map<String, String> enrichMetadata(Map<String, String> baseMetadata) {
+        String tenantId = Optional.ofNullable(kernelContext.getTenantContext())
+            .map(com.ghatana.kernel.context.KernelTenantContext::getTenantId)
+            .orElse("default");
+        String principalId = Optional.ofNullable(kernelContext.getTenantContext())
+            .map(ctx -> ctx.getSecurityContext())
+            .map(com.ghatana.kernel.context.KernelTenantContext.SecurityContext::getUserId)
+            .orElse("system");
+        
+        Map<String, String> enriched = new HashMap<>(baseMetadata);
+        enriched.put("tenantId", tenantId);
+        enriched.put("principalId", principalId);
+        return enriched;
+    }
 
     private List<ServiceLine> sanitizeServiceLines(List<ServiceLine> serviceLines) {
         if (serviceLines == null || serviceLines.isEmpty()) {

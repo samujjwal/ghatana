@@ -1,5 +1,15 @@
 #!/usr/bin/env node
 
+/**
+ * Observability Flow Conformance Check
+ *
+ * Validates observability flows defined in product-observability-flows.json.
+ * This replaces hardcoded product-specific checks with a manifest-driven approach.
+ * Flows are generated from product manifests in the canonical registry.
+ *
+ * Usage: node scripts/check-observability-conformance.mjs
+ */
+
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,115 +17,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const flowManifestFile = "config/observability/product-observability-flows.json";
-
-const contracts = [
-  {
-    name: "FlashIt API observability bootstrap",
-    file: "products/flashit/backend/gateway/src/server.ts",
-    required: [
-      "registerLoggerPlugin",
-      "registerTracingMiddleware",
-      "metricsPlugin",
-      "monitoring",
-      "tenant-isolation",
-    ],
-  },
-  {
-    name: "Kernel-owned FlashIt scrape config",
-    file: "monitoring/prometheus/prometheus.yml",
-    required: [
-      "job_name: 'flashit-gateway'",
-      "job_name: 'flashit-agent'",
-      "job_name: 'flashit-redis'",
-      "job_name: 'flashit-postgres'",
-      "product: 'flashit'",
-    ],
-  },
-  {
-    name: "Kernel-owned product dashboard overlay provisioning",
-    file: "monitoring/grafana/provisioning/dashboards-products.yaml",
-    required: [
-      "Product Observability Overlays",
-      "/etc/grafana/dashboards/products",
-      "foldersFromFilesStructure: true",
-    ],
-  },
-  {
-    name: "FlashIt observability overlay compose mounts",
-    file: "products/flashit/docker-compose.local.yml",
-    required: [
-      "${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/prometheus/prometheus.yml",
-      "${PRODUCT_OBSERVABILITY_ROOT:-../../monitoring}/grafana/provisioning",
-      "${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/alerts/flashit-rules.yml",
-      "${FLASHIT_OBSERVABILITY_OVERLAY_ROOT:-./monitoring}/grafana/dashboards",
-    ],
-  },
-  {
-    name: "DMOS API observability bootstrap",
-    file: "products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosApiServer.java",
-    required: [
-      "wireObservability()",
-      "DmosObservability",
-      "Metrics",
-      "TracingManager",
-    ],
-  },
-  {
-    name: "Finance trace metadata contract",
-    file: "products/finance/src/main/java/com/ghatana/finance/service/TransactionService.java",
-    required: [
-      "outcomeMetadata(",
-      "\"tenant_id\"",
-      "\"transaction_id\"",
-      "\"idempotency_key\"",
-      "\"audit_classification\"",
-    ],
-  },
-  {
-    name: "Finance transaction observability test evidence",
-    file: "products/finance/src/test/java/com/ghatana/finance/service/TransactionServiceTest.java",
-    required: [
-      "testProcessTransaction_LowRisk_ShouldApprove",
-      "get(\"tenant_id\")",
-      "get(\"transaction_id\")",
-      "get(\"idempotency_key\")",
-      "get(\"audit_classification\")",
-      "finance_transaction_manual_review",
-    ],
-  },
-  {
-    name: "PHR appointment audit trace metadata",
-    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/AppointmentService.java",
-    required: [
-      "PhrTraceContext.metadata(",
-      "correlationId",
-      "audit(\"APPOINTMENT_CREATE\"",
-    ],
-  },
-  {
-    name: "PHR consent boundary access gate audit contract",
-    file: "products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGate.java",
-    required: [
-      "auditRecorder.record(",
-      "matched_rule",
-      "emergencyOverride",
-      "MISSING_REQUIRED_FEATURE",
-      "BOUNDARY_DENY",
-    ],
-  },
-  {
-    name: "DMOS bridge audit and trace evidence",
-    file: "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
-    required: [
-      "shouldRecordAuditWithContextAttributes",
-      "workspaceId",
-      "correlationId",
-      "tenantId",
-      "shouldNotifyUser",
-      "shouldDelegateFeatureFlagEvaluation",
-    ],
-  },
-];
 
 const violations = [];
 
@@ -225,67 +126,6 @@ for (const file of forbiddenProductStackFiles) {
 }
 
 validateFlowManifest();
-
-// ---------------------------------------------------------------------------
-// Behavioral coverage checks — verify runtime test files exist and invoke real
-// production observability modules (anti-theater rule, Section 29/35.3).
-// ---------------------------------------------------------------------------
-
-/**
- * Each entry requires a test file that:
- *  - imports at least one symbol from the listed production module, and
- *  - contains all listed tokens (method names, assertion patterns) proving
- *    that the test exercises real behaviour, not object-literal stubs.
- */
-const behavioralCoverageChecks = [
-  {
-    name: 'FlashIt observability contract behavioral test',
-    testFile: 'products/flashit/backend/gateway/src/__tests__/observability-contract.test.ts',
-    required: [
-      'lib/logger.js',
-      'plugins/prometheus.js',
-      'registerLoggerPlugin',
-      'Logger',
-      '/metrics',
-      'flashit_http_requests_total',
-      '[REDACTED]',
-      'registerTracingMiddleware',
-    ],
-  },
-  {
-    name: 'FlashIt logger behavioral test',
-    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/logger.test.ts',
-    required: [
-      'logger',
-      'Logger',
-      'registerLoggerPlugin',
-      'correlationId',
-    ],
-  },
-  {
-    name: 'FlashIt session token redaction behavioral test',
-    testFile: 'products/flashit/backend/gateway/src/lib/__tests__/session.test.ts',
-    required: [
-      '[REDACTED]',
-      'accessToken',
-      'refreshToken',
-    ],
-  },
-];
-
-for (const check of behavioralCoverageChecks) {
-  const absolutePath = path.join(repoRoot, check.testFile);
-  if (!existsSync(absolutePath)) {
-    violations.push(`${check.name}: behavioral test file is missing — ${check.testFile}`);
-    continue;
-  }
-  const testSource = readFileSync(absolutePath, 'utf8');
-  for (const token of check.required) {
-    if (!testSource.includes(token)) {
-      violations.push(`${check.name}: behavioral test is missing evidence of "${token}" in ${check.testFile}`);
-    }
-  }
-}
 
 if (violations.length > 0) {
   console.error(`❌ Observability conformance check failed with ${violations.length} violation(s):\n`);

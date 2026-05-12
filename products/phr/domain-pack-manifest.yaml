@@ -3,21 +3,41 @@
 
 pack:
   id: phr
-  name: "PHR Domain Pack"
   version: "1.0.0"
-  description: "Personal Health Records domain pack with FHIR interoperability and Nepal-2081 compliance"
-
-  # Domain classification
-  domain:
-    type: healthcare
-    region: nepal
-    regulatory_frameworks:
-      - nepal-2081
-      - nepal-privacy-act-2075
-      - fhir-r4
-      - hipaa
-
-  # Capabilities provided by this domain pack
+  product: phr
+  domain: healthcare
+  kernelCapabilitiesConsumed:
+    - boundary-policy-evaluation
+    - audit-trail
+    - consent-enforcement
+    - tenant-context
+  policyActions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+  policyResources:
+    - phr:subject-records
+    - phr:interop
+    - phr:clinical-documents
+  pluginsConsumed:
+    - plugin-audit-trail
+    - plugin-compliance
+    - plugin-consent
+    - plugin-human-approval
+    - plugin-ledger
+  bridgesConsumed:
+    - data-cloud-kernel-bridge
+  domainPacksProvided:
+    - phr-healthcare-boundary-policy
+    - phr-compliance-rule-pack
+  uiSurfaces:
+    - web
+  runtimeServices:
+    - launcher
+    - fhir-server
+  dataSensitivity: regulated-health
   capabilities:
     - id: phr.patient-records
       name: "Patient Records"
@@ -66,48 +86,6 @@ pack:
         scheduling_types: in-person,virtual,phone
         notifications: email,sms,push
 
-  # Required kernel capabilities
-  requires:
-    - data.storage
-    - user.authentication
-    - workflow.engine
-    - security.framework
-    - audit.immutable-trail
-    - tenant.isolation
-  kernelCapabilitiesConsumed:
-    - boundary-policy-evaluation
-    - audit-trail
-    - consent-enforcement
-    - tenant-context
-  policyActions:
-    - read
-    - write
-    - delete
-    - export
-    - download
-  policyResources:
-    - phr:subject-records
-    - phr:interop
-    - phr:clinical-documents
-  pluginsConsumed:
-    - plugin-audit-trail
-    - plugin-compliance
-    - plugin-consent
-    - plugin-human-approval
-    - plugin-ledger
-  bridgesConsumed:
-    - data-cloud-kernel-bridge
-  domainPacksProvided:
-    - phr-healthcare-boundary-policy
-    - phr-compliance-rule-pack
-  uiSurfaces:
-    - web
-  runtimeServices:
-    - launcher
-    - fhir-server
-  dataSensitivity: regulated-health
-
-  # Extensions provided by this pack
   extensions:
     - id: phr.healthcare-consent
       name: "Healthcare Consent Extension"
@@ -129,7 +107,6 @@ pack:
       description: "Appointment notification and reminder extension"
       target_capability: phr.appointment-scheduling
 
-  # Sub-domains/modules within this pack
   modules:
     - name: patient-records
       description: "Patient record management with FHIR support"
@@ -152,7 +129,6 @@ pack:
     - name: pharmacy-integration
       description: "Pharmacy system integration"
 
-  # Deployment configuration
   deployment:
     type: domain-pack
     dependencies:
@@ -163,7 +139,6 @@ pack:
       - platform:java:database
       - platform:java:workflow
 
-  # Metadata
   metadata:
     created: "2026-03-19"
     author: "Ghatana PHR Team"

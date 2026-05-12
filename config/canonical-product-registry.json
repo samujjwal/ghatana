@@ -1,0 +1,777 @@
+{
+  "version": "1.0.0",
+  "registry": {
+    "phr": {
+      "id": "phr",
+      "name": "Personal Health Records",
+      "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
+      "type": "product",
+      "manifestPath": "products/phr/domain-pack-manifest.yaml",
+      "manifestFormat": "yaml",
+      "gradleModules": [
+        ":products:phr",
+        ":products:phr:launcher"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/phr"
+        },
+        {
+          "type": "web",
+          "path": "products/phr/apps/web",
+          "packagePath": "products/phr/apps/web/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/phr/apps/*"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "PHR Team",
+        "created": "2026-03-19",
+        "documentation": "products/phr/README.md",
+        "status": "active"
+      }
+    },
+    "finance": {
+      "id": "finance",
+      "name": "Finance",
+      "description": "Financial trading and risk management domain pack for capital markets",
+      "type": "product",
+      "manifestPath": "products/finance/domain-pack-manifest.yaml",
+      "manifestFormat": "yaml",
+      "gradleModules": [
+        ":products:finance",
+        ":products:finance:launcher",
+        ":products:finance:platform-sdk",
+        ":products:finance:operator-workflows",
+        ":products:finance:regulator-portal",
+        ":products:finance:rules-engine",
+        ":products:finance:data-governance",
+        ":products:finance:ledger-framework",
+        ":products:finance:calendar-service",
+        ":products:finance:incident-management",
+        ":products:finance:domains:oms",
+        ":products:finance:domains:ems",
+        ":products:finance:domains:pms",
+        ":products:finance:domains:risk",
+        ":products:finance:domains:compliance",
+        ":products:finance:domains:rules",
+        ":products:finance:domains:corporate-actions",
+        ":products:finance:domains:integration",
+        ":products:finance:domains:market-data-core",
+        ":products:finance:domains:market-data",
+        ":products:finance:domains:post-trade",
+        ":products:finance:domains:pricing",
+        ":products:finance:domains:reconciliation",
+        ":products:finance:domains:reference-data",
+        ":products:finance:domains:regulatory-reporting",
+        ":products:finance:domains:sanctions",
+        ":products:finance:domains:surveillance",
+        ":products:finance:extensions",
+        ":products:finance:integration-testing",
+        ":products:finance:client-onboarding"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/finance"
+        },
+        {
+          "type": "portal",
+          "path": "products/finance/regulator-portal"
+        },
+        {
+          "type": "operator",
+          "path": "products/finance/operator-workflows"
+        },
+        {
+          "type": "sdk",
+          "path": "products/finance/platform-sdk"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan",
+          "integration-test"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "validationRules": [
+        {
+          "type": "domain-dependency-scope",
+          "requireRuntimeOnly": true,
+          "description": "Finance root must compose domain modules via runtimeOnly dependencies"
+        }
+      ],
+      "metadata": {
+        "owner": "Finance Team",
+        "created": "2026-03-19",
+        "documentation": "products/finance/README.md",
+        "status": "active"
+      }
+    },
+    "digital-marketing": {
+      "id": "digital-marketing",
+      "name": "Digital Marketing Operating System",
+      "description": "Digital marketing campaign management for non-regulated local services and B2B businesses",
+      "type": "product",
+      "manifestPath": "products/digital-marketing/dm-domain-packs/domain-pack.json",
+      "manifestFormat": "json",
+      "gradleModules": [
+        ":products:digital-marketing:dm-core-contracts",
+        ":products:digital-marketing:dm-domain-packs",
+        ":products:digital-marketing:dm-kernel-bridge",
+        ":products:digital-marketing:dm-domain",
+        ":products:digital-marketing:dm-application",
+        ":products:digital-marketing:dm-infra",
+        ":products:digital-marketing:dm-persistence",
+        ":products:digital-marketing:dm-connector-google-ads",
+        ":products:digital-marketing:dm-api",
+        ":products:digital-marketing:dm-integration-tests"
+      ],
+      "buildFile": "products/digital-marketing/dm-domain-packs/build.gradle.kts",
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/digital-marketing/dm-api"
+        },
+        {
+          "type": "web",
+          "path": "products/digital-marketing/ui",
+          "packagePath": "products/digital-marketing/ui/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/digital-marketing/ui"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": true
+      },
+      "metadata": {
+        "owner": "Digital Marketing Team",
+        "created": "2026-03-19",
+        "documentation": "products/digital-marketing/README.md",
+        "status": "active"
+      }
+    },
+    "flashit": {
+      "id": "flashit",
+      "name": "FlashIt",
+      "description": "Personal reflection and journaling application",
+      "type": "product",
+      "manifestPath": "products/flashit/domain-pack-manifest.yaml",
+      "manifestFormat": "yaml",
+      "gradleModules": [
+        ":products:flashit"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/flashit/backend/gateway"
+        },
+        {
+          "type": "web",
+          "path": "products/flashit/client/web",
+          "packagePath": "products/flashit/client/web/package.json"
+        },
+        {
+          "type": "mobile",
+          "path": "products/flashit/client/mobile",
+          "packagePath": "products/flashit/client/mobile/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/flashit",
+        "products/flashit/client/*",
+        "products/flashit/backend/gateway",
+        "products/flashit/libs/ts/*"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "FlashIt Team",
+        "created": "2026-03-19",
+        "documentation": "products/flashit/README.md",
+        "status": "active"
+      }
+    },
+    "data-cloud": {
+      "id": "data-cloud",
+      "name": "Data Cloud",
+      "description": "Data cloud platform with planes architecture",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:data-cloud:planes:shared-spi",
+        ":products:data-cloud:planes:data:entity",
+        ":products:data-cloud:planes:event:core",
+        ":products:data-cloud:planes:operations:config",
+        ":products:data-cloud:planes:intelligence:analytics",
+        ":products:data-cloud:planes:governance:core",
+        ":products:data-cloud:delivery:runtime-composition",
+        ":products:data-cloud:extensions:plugins",
+        ":products:data-cloud:delivery:api",
+        ":products:data-cloud:delivery:launcher",
+        ":products:data-cloud:delivery:sdk",
+        ":products:data-cloud:contracts",
+        ":products:data-cloud:extensions:agent-registry",
+        ":products:data-cloud:extensions:agent-catalog",
+        ":products:data-cloud:delivery:api-contract-tests",
+        ":products:data-cloud:planes:intelligence:feature-ingest",
+        ":products:data-cloud:planes:event:store",
+        ":products:data-cloud:integration-tests",
+        ":products:data-cloud:planes:action",
+        ":products:data-cloud:planes:action:operator-contracts",
+        ":products:data-cloud:planes:action:central-runtime",
+        ":products:data-cloud:planes:action:engine",
+        ":products:data-cloud:planes:action:registry",
+        ":products:data-cloud:planes:action:analytics",
+        ":products:data-cloud:planes:action:security",
+        ":products:data-cloud:planes:action:event-bridge",
+        ":products:data-cloud:planes:action:agent-runtime",
+        ":products:data-cloud:planes:action:api",
+        ":products:data-cloud:planes:action:scaling",
+        ":products:data-cloud:planes:action:observability",
+        ":products:data-cloud:planes:action:orchestrator",
+        ":products:data-cloud:planes:action:server",
+        ":products:data-cloud:planes:action:identity",
+        ":products:data-cloud:planes:action:compliance",
+        ":products:data-cloud:planes:action:kernel-bridge",
+        ":products:data-cloud:extensions:kernel-bridge"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/data-cloud/delivery/api"
+        },
+        {
+          "type": "web",
+          "path": "products/data-cloud/delivery/ui",
+          "packagePath": "products/data-cloud/delivery/ui/package.json"
+        },
+        {
+          "type": "sdk",
+          "path": "products/data-cloud/delivery/sdk"
+        }
+      ],
+      "pnpmPackages": [
+        "products/data-cloud/delivery/ui",
+        "products/data-cloud/libs/*",
+        "products/data-cloud/planes/action/ui",
+        "products/data-cloud/planes/action/gateway"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan",
+          "integration-test"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": true
+      },
+      "metadata": {
+        "owner": "Data Cloud Team",
+        "created": "2026-03-19",
+        "documentation": "products/data-cloud/README.md",
+        "status": "active"
+      }
+    },
+    "yappc": {
+      "id": "yappc",
+      "name": "YAPPC",
+      "description": "AI-powered code analysis and refactoring platform",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:yappc",
+        ":products:yappc:platform",
+        ":products:yappc:services",
+        ":products:yappc:core:yappc-domain-impl",
+        ":products:yappc:core:yappc-facades",
+        ":products:yappc:core:yappc-infrastructure",
+        ":products:yappc:core:yappc-services",
+        ":products:yappc:core:yappc-api",
+        ":products:yappc:core:yappc-shared",
+        ":products:yappc:core:scaffold",
+        ":products:yappc:core:scaffold:api",
+        ":products:yappc:core:scaffold:core",
+        ":products:yappc:core:scaffold:templates",
+        ":products:yappc:core:scaffold:engine",
+        ":products:yappc:core:scaffold:generators",
+        ":products:yappc:core:ai",
+        ":products:yappc:core:agents",
+        ":products:yappc:core:agents:runtime",
+        ":products:yappc:core:agents:workflow",
+        ":products:yappc:core:agents:common",
+        ":products:yappc:core:agents:code-specialists",
+        ":products:yappc:core:agents:delivery-specialists",
+        ":products:yappc:core:agents:testing-specialists",
+        ":products:yappc:core:agents:architecture-specialists",
+        ":products:yappc:core:cli-tools",
+        ":products:yappc:core:knowledge-graph",
+        ":products:yappc:core:refactorer:api",
+        ":products:yappc:core:refactorer:engine",
+        ":products:yappc:infrastructure:datacloud",
+        ":products:yappc:libs:java:yappc-domain",
+        ":products:yappc:integration",
+        ":products:yappc:kernel-bridge"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/yappc/core/yappc-api"
+        },
+        {
+          "type": "web",
+          "path": "products/yappc/frontend",
+          "packagePath": "products/yappc/frontend/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/yappc/frontend",
+        "products/yappc/frontend/libs/*",
+        "products/yappc/frontend/apps/*",
+        "products/yappc/frontend/web",
+        "products/yappc/tools/*",
+        "products/yappc/frontend/docs-site",
+        "products/yappc/frontend/packages/*"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan",
+          "integration-test"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": true
+      },
+      "metadata": {
+        "owner": "YAPPC Team",
+        "created": "2026-03-19",
+        "documentation": "products/yappc/README.md",
+        "status": "active"
+      }
+    },
+    "audio-video": {
+      "id": "audio-video",
+      "name": "Audio-Video",
+      "description": "Audio and video processing services",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:audio-video",
+        ":products:audio-video:modules:infrastructure:persistence",
+        ":products:audio-video:modules:infrastructure:security",
+        ":products:audio-video:modules:infrastructure:cache",
+        ":products:audio-video:modules:infrastructure:messaging",
+        ":products:audio-video:modules:integration-tests",
+        ":products:audio-video:modules:intelligence:multimodal-service",
+        ":products:audio-video:modules:speech:stt-service",
+        ":products:audio-video:modules:speech:tts-service",
+        ":products:audio-video:modules:vision:vision-service",
+        ":products:audio-video:libs:java:common",
+        ":products:audio-video:libs:common"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/audio-video"
+        }
+      ],
+      "pnpmPackages": [
+        "products/audio-video/apps/*",
+        "products/audio-video/libs/*",
+        "products/audio-video/libs/typescript/*",
+        "products/audio-video/modules/intelligence/ai-voice/apps/*",
+        "products/audio-video/modules/intelligence/ai-voice/libs/*"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Audio-Video Team",
+        "created": "2026-03-19",
+        "documentation": "products/audio-video/README.md",
+        "status": "active"
+      }
+    },
+    "dcmaar": {
+      "id": "dcmaar",
+      "name": "DCMAAR",
+      "description": "Guardian threat detection and AI platform adapters",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:dcmaar:libs:java:ai-platform-adapters-guardian",
+        ":products:dcmaar:libs:java:guardian-threat-service"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/dcmaar"
+        },
+        {
+          "type": "web",
+          "path": "products/dcmaar/apps",
+          "packagePath": "products/dcmaar/apps/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/dcmaar/apps/*",
+        "products/dcmaar/libs/typescript/*",
+        "products/dcmaar/libs/guardian-dashboard-core"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "DCMAAR Team",
+        "created": "2026-03-19",
+        "documentation": "products/dcmaar/README.md",
+        "status": "active"
+      }
+    },
+    "tutorputor": {
+      "id": "tutorputor",
+      "name": "Tutorputor",
+      "description": "AI-powered content generation and tutoring platform",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:tutorputor:services:tutorputor-content-generation"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/tutorputor"
+        },
+        {
+          "type": "web",
+          "path": "products/tutorputor/apps",
+          "packagePath": "products/tutorputor/apps/package.json"
+        }
+      ],
+      "pnpmPackages": [
+        "products/tutorputor/contracts",
+        "products/tutorputor/libs/*",
+        "products/tutorputor/apps/*",
+        "products/tutorputor/services/*",
+        "products/tutorputor/tools/*"
+      ],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Tutorputor Team",
+        "created": "2026-03-19",
+        "documentation": "products/tutorputor/README.md",
+        "status": "active"
+      }
+    },
+    "aura": {
+      "id": "aura",
+      "name": "Aura",
+      "description": "AI-powered recommendation and explainability platform",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:aura",
+        ":products:aura:foundation",
+        ":products:aura:domain:profile",
+        ":products:aura:domain:catalog",
+        ":products:aura:domain:recommendation",
+        ":products:aura:domain:explainability",
+        ":products:aura:domain:community",
+        ":products:aura:agents:intelligence-agent",
+        ":products:aura:agents:task-agent",
+        ":products:aura:platform:api",
+        ":products:aura:platform:config",
+        ":products:aura:integration:aep",
+        ":products:aura:integration:knowledge-graph"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/aura/platform/api"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Aura Team",
+        "created": "2026-03-19",
+        "documentation": "products/aura/README.md",
+        "status": "active"
+      }
+    },
+    "software-org": {
+      "id": "software-org",
+      "name": "Software-Org",
+      "description": "Software organization management platform",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:software-org",
+        ":products:software-org:engine:boot",
+        ":products:software-org:engine:modules:domain-model",
+        ":products:software-org:engine:modules:integration",
+        ":products:software-org:engine:modules:integration:plugins",
+        ":products:software-org:engine:modules:integration:ci",
+        ":products:software-org:engine:modules:integration:jira",
+        ":products:software-org:engine:modules:integration:github",
+        ":products:software-org:libs:java:departments",
+        ":products:software-org:launcher"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/software-org"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Software-Org Team",
+        "created": "2026-03-19",
+        "documentation": "products/software-org/README.md",
+        "status": "active"
+      }
+    },
+    "virtual-org": {
+      "id": "virtual-org",
+      "name": "Virtual-Org",
+      "description": "Virtual organization management platform",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:virtual-org",
+        ":products:virtual-org:contracts:proto",
+        ":products:virtual-org:engine:service",
+        ":products:virtual-org:modules:agent",
+        ":products:virtual-org:modules:operator-adapter",
+        ":products:virtual-org:modules:framework",
+        ":products:virtual-org:modules:integration",
+        ":products:virtual-org:modules:workflow",
+        ":products:virtual-org:launcher"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/virtual-org"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Virtual-Org Team",
+        "created": "2026-03-19",
+        "documentation": "products/virtual-org/README.md",
+        "status": "active"
+      }
+    },
+    "security-gateway": {
+      "id": "security-gateway",
+      "name": "Security-Gateway",
+      "description": "Security gateway service",
+      "type": "product",
+      "manifestPath": null,
+      "manifestFormat": null,
+      "gradleModules": [
+        ":products:security-gateway:platform:java",
+        ":products:security-gateway:launcher"
+      ],
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/security-gateway"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": true,
+        "security": true,
+        "dataAccess": true,
+        "bridge": false
+      },
+      "metadata": {
+        "owner": "Security Team",
+        "created": "2026-03-19",
+        "documentation": "products/security-gateway/README.md",
+        "status": "active"
+      }
+    }
+  }
+}

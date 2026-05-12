@@ -182,6 +182,38 @@ public final class DataCloudAgentReleaseRepository implements AgentReleaseReposi
                 });
     }
 
+    /**
+     * Finds all agent releases associated with a specific evaluation pack.
+     *
+     * @param evaluationPackId the evaluation pack ID to filter by
+     * @return a Promise of a list of agent releases with the given evaluation pack
+     */
+    public Promise<List<AgentRelease>> findByEvaluationPack(String evaluationPackId) {
+        Objects.requireNonNull(evaluationPackId, "evaluationPackId");
+
+        QuerySpecInterface query = buildFieldEqQuery(F_EVAL_PACK_ID, evaluationPackId);
+        return dataCloud.queryEntities(tenantId, COLLECTION, query)
+                .map(entities -> entities.stream()
+                        .map(e -> fromDataMap(e.getData()))
+                        .collect(Collectors.toList()));
+    }
+
+    /**
+     * Finds all agent releases with a specific capability maturity profile.
+     *
+     * @param capabilityMaturity the capability maturity profile to filter by
+     * @return a Promise of a list of agent releases with the given capability maturity
+     */
+    public Promise<List<AgentRelease>> findByCapabilityMaturity(String capabilityMaturity) {
+        Objects.requireNonNull(capabilityMaturity, "capabilityMaturity");
+
+        QuerySpecInterface query = buildFieldEqQuery(F_CAPABILITY_MATURITY, capabilityMaturity);
+        return dataCloud.queryEntities(tenantId, COLLECTION, query)
+                .map(entities -> entities.stream()
+                        .map(e -> fromDataMap(e.getData()))
+                        .collect(Collectors.toList()));
+    }
+
     // ─── Serialization helpers ────────────────────────────────────────────────
 
     private static Map<String, Object> toDataMap(AgentRelease r) {

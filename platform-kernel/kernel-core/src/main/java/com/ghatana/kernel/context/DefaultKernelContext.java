@@ -158,16 +158,36 @@ public class DefaultKernelContext implements KernelContext {
 
     @Override
     public KernelTenantContext getTenantContext() {
-        // Return default/system tenant
-        return tenantContexts.getOrDefault("system", createDefaultTenantContext());
+        throw new IllegalStateException(
+            "Tenant context must be explicitly provided. " +
+            "Call getTenantContext(String tenantId) with a specific tenant ID, " +
+            "or register a tenant context using registerTenantContext(). " +
+            "Inferred default tenant context is not allowed."
+        );
     }
 
     @Override
     public KernelTenantContext getTenantContext(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Tenant ID cannot be null or blank");
+        }
+        
         KernelTenantContext ctx = tenantContexts.get(tenantId);
         if (ctx == null) {
-            throw new IllegalArgumentException("Tenant not found: " + tenantId);
+            throw new IllegalStateException(
+                "Tenant context not registered for tenant ID: " + tenantId + ". " +
+                "Explicitly register tenant context using registerTenantContext() before access."
+            );
         }
+        
+        // Validate that required context values are present
+        if (ctx.getSecurityContext() == null || !ctx.getSecurityContext().isAuthenticated()) {
+            throw new IllegalStateException(
+                "Tenant context for " + tenantId + " is missing required security context. " +
+                "Security context must be explicitly provided."
+            );
+        }
+        
         return ctx;
     }
 
@@ -178,18 +198,21 @@ public class DefaultKernelContext implements KernelContext {
      * @param context the tenant context
      */
     public void registerTenantContext(String tenantId, KernelTenantContext context) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Tenant ID cannot be null or blank");
+        }
+        if (context == null) {
+            throw new IllegalArgumentException("Tenant context cannot be null");
+        }
+        
+        // Validate that required context values are present
+        if (context.getSecurityContext() == null || !context.getSecurityContext().isAuthenticated()) {
+            throw new IllegalArgumentException(
+                "Tenant context must include an authenticated security context"
+            );
+        }
+        
         tenantContexts.put(tenantId, context);
-    }
-
-    private KernelTenantContext createDefaultTenantContext() {
-        return new KernelTenantContext(
-            "system",
-            KernelTenantContext.TenantType.SYSTEM,
-            Map.of(),
-            Set.of(),
-            null,
-            null
-        );
     }
 
     // ==================== Runtime ====================

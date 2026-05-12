@@ -54,7 +54,7 @@ public class TracedMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         long start = System.nanoTime();
         return delegate.queryEpisodes(query)
                 .whenComplete(() -> metrics.recordRead(System.nanoTime() - start));
@@ -72,7 +72,7 @@ public class TracedMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedFact>> queryFacts(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedFact>> queryFacts(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         long start = System.nanoTime();
         return delegate.queryFacts(query)
                 .whenComplete(() -> metrics.recordRead(System.nanoTime() - start));
@@ -90,7 +90,7 @@ public class TracedMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         long start = System.nanoTime();
         return delegate.queryProcedures(query)
                 .whenComplete(() -> metrics.recordRead(System.nanoTime() - start));
@@ -126,7 +126,7 @@ public class TracedMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> query(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> query(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         long start = System.nanoTime();
         return delegate.query(query)
                 .whenComplete(() -> metrics.recordRead(System.nanoTime() - start));
@@ -136,7 +136,7 @@ public class TracedMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> readItems(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> readItems(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         long start = System.nanoTime();
         return delegate.readItems(query)
                 .whenComplete(() -> metrics.recordRead(System.nanoTime() - start));

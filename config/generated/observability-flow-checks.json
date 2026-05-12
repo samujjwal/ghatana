@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-12T03:15:44.851Z",
+  "products": {
+    "digital-marketing": {
+      "requiredFlows": [
+        "request-latency",
+        "error-rate",
+        "throughput",
+        "dm-api-health",
+        "dm-application-health"
+      ],
+      "requiredMetrics": [
+        "cpu",
+        "memory",
+        "disk",
+        "network",
+        "dm-api-connections",
+        "dm-application-connections"
+      ],
+      "requiredTraces": [
+        "http-request",
+        "database-query",
+        "external-call"
+      ],
+      "requiredLogs": [
+        "info",
+        "warn",
+        "error"
+      ],
+      "dataSensitivity": "marketing-consent"
+    }
+  }
+}

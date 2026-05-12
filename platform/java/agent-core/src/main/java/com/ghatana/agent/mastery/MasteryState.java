@@ -92,4 +92,44 @@ public enum MasteryState {
     public boolean canTransitionFromUnknown() {
         return this == OBSERVED;
     }
+
+    /**
+     * Returns true if this state is executable.
+     * MASTERED and COMPETENT are executable.
+     *
+     * @return true if the state is executable
+     */
+    public boolean isExecutable() {
+        return this == MASTERED || this == COMPETENT;
+    }
+
+    /**
+     * Returns true if this state is retrievable for new work.
+     * MASTERED, COMPETENT, and PRACTICED are retrievable for new work.
+     *
+     * @return true if retrievable for new work
+     */
+    public boolean isRetrievableForNewWork() {
+        return this == MASTERED || this == COMPETENT || this == PRACTICED;
+    }
+
+    /**
+     * Returns true if this state is retrievable for legacy work.
+     * MAINTENANCE_ONLY is executable only in matching legacy context.
+     *
+     * @return true if retrievable for legacy work
+     */
+    public boolean isRetrievableForLegacyWork() {
+        return this == MAINTENANCE_ONLY;
+    }
+
+    /**
+     * Returns true if this state is terminal (no further transitions expected).
+     * OBSOLETE, RETIRED, and QUARANTINED are terminal states.
+     *
+     * @return true if the state is terminal
+     */
+    public boolean isTerminal() {
+        return this == OBSOLETE || this == RETIRED || this == QUARANTINED;
+    }
 }

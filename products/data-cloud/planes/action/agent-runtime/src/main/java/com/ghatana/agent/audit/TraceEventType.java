@@ -57,5 +57,22 @@ public enum TraceEventType {
     KILL_SWITCH_ACTIVATED,
 
     /** Cost or budget threshold crossed. */
-    BUDGET_ALERT
+    BUDGET_ALERT,
+
+    // ── Mastery and Learning Events ───────────────────────────────────────
+
+    /** Mastery state transition occurred for a skill. */
+    MASTERY_STATE_CHANGED,
+
+    /** Learning delta proposed for review and promotion. */
+    LEARNING_DELTA_PROPOSED,
+
+    /** Learning delta promoted to active knowledge. */
+    LEARNING_DELTA_PROMOTED,
+
+    /** Learning delta rejected by governance or evaluation. */
+    LEARNING_DELTA_REJECTED,
+
+    /** Skill benchmark evaluation completed. */
+    SKILL_BENCHMARK_COMPLETED
 }

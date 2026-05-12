@@ -12,50 +12,29 @@ packages:
   - "products/data-cloud/libs/*"
   - "products/data-cloud/planes/action/ui"
   - "products/data-cloud/planes/action/gateway"
-  - "products/phr/apps/*"
-  - "products/digital-marketing/ui"
-  # Finance currently ships as backend-only in this monorepo. Add a workspace entry here
-  # once a Finance UI/client package is introduced and aligned to the kernel shell contract.
-
-  # YAPPC frontend (existing)
   - "products/yappc/frontend"
   - "products/yappc/frontend/libs/*"
   - "products/yappc/frontend/apps/*"
   - "products/yappc/frontend/web"
   - "products/yappc/tools/*"
-
-  # Shared services
-  - "shared-services/*/ui"
-
-  # dcmaar product
-  - "products/dcmaar/apps/*"
-  - "products/dcmaar/libs/typescript/*"
-  - "products/dcmaar/libs/guardian-dashboard-core"
-
-  # audio-video product
+  - "products/yappc/frontend/docs-site"
+  - "products/yappc/frontend/packages/*"
   - "products/audio-video/apps/*"
   - "products/audio-video/libs/*"
   - "products/audio-video/libs/typescript/*"
   - "products/audio-video/modules/intelligence/ai-voice/apps/*"
   - "products/audio-video/modules/intelligence/ai-voice/libs/*"
-
-  # flashit product
-  - "products/flashit"
-  - "products/flashit/client/*"
-  - "products/flashit/backend/gateway"
-  - "products/flashit/libs/ts/*"
-
-  # tutorputor product
+  - "products/dcmaar/apps/*"
+  - "products/dcmaar/libs/typescript/*"
+  - "products/dcmaar/libs/guardian-dashboard-core"
   - "products/tutorputor/contracts"
   - "products/tutorputor/libs/*"
   - "products/tutorputor/apps/*"
   - "products/tutorputor/services/*"
   - "products/tutorputor/tools/*"
 
-  # software-org product
-  # - 'products/software-org/client/*'
-  # - 'products/software-org/services/*'
+  # Shared services
+  - "shared-services/*/ui"
 
   # YAPPC frontend extras (nested packages)
   - "products/yappc/frontend/docs-site"
-  - "products/yappc/frontend/packages/*"

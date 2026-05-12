@@ -24,6 +24,9 @@ dependencies {
     // Platform Observability (metrics for cache warming, pub/sub, replica lag monitoring)
     api(project(":platform:java:observability"))
 
+    // Kernel contracts (for DataCloudKernelAdapter, CrossScopeAuditService, KernelContext, KernelLifecycleAware, TypedDataSerializer)
+    api(project(":platform-kernel:kernel-core"))
+
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
 

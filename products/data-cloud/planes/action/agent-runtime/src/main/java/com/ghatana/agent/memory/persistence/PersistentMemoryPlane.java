@@ -131,17 +131,9 @@ public class PersistentMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull MemoryQuery query) {
-        return itemRepository.findByQuery(
-                MemoryQuery.builder()
-                        .itemTypes(List.of(MemoryItemType.EPISODE))
-                        .tenantId(query.getTenantId())
-                        .agentId(query.getAgentId())
-                        .startTime(query.getStartTime())
-                        .endTime(query.getEndTime())
-                        .limit(query.getLimit())
-                        .build()
-        ).map(items -> items.stream()
+    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
+        return itemRepository.findByQuery(query)
+        .map(items -> items.stream()
                 .filter(EnhancedEpisode.class::isInstance)
                 .map(EnhancedEpisode.class::cast)
                 .toList());
@@ -158,14 +150,9 @@ public class PersistentMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedFact>> queryFacts(@NotNull MemoryQuery query) {
-        return itemRepository.findByQuery(
-                MemoryQuery.builder()
-                        .itemTypes(List.of(MemoryItemType.FACT))
-                        .tenantId(query.getTenantId())
-                        .limit(query.getLimit())
-                        .build()
-        ).map(items -> items.stream()
+    public Promise<List<EnhancedFact>> queryFacts(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
+        return itemRepository.findByQuery(query)
+        .map(items -> items.stream()
                 .filter(EnhancedFact.class::isInstance)
                 .map(EnhancedFact.class::cast)
                 .toList());
@@ -182,14 +169,9 @@ public class PersistentMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull MemoryQuery query) {
-        return itemRepository.findByQuery(
-                MemoryQuery.builder()
-                        .itemTypes(List.of(MemoryItemType.PROCEDURE))
-                        .tenantId(query.getTenantId())
-                        .limit(query.getLimit())
-                        .build()
-        ).map(items -> items.stream()
+    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
+        return itemRepository.findByQuery(query)
+        .map(items -> items.stream()
                 .filter(EnhancedProcedure.class::isInstance)
                 .map(EnhancedProcedure.class::cast)
                 .toList());
@@ -230,13 +212,13 @@ public class PersistentMemoryPlane implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> query(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> query(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return readItems(query);
     }
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> readItems(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> readItems(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return itemRepository.findByQuery(query);
     }
 
@@ -252,7 +234,7 @@ public class PersistentMemoryPlane implements MemoryPlane {
 
         // Build a MemoryQuery with time bounds and type filters, then score by text relevance
         return Promise.ofBlocking(executor, () -> {
-            MemoryQuery.MemoryQueryBuilder qb = MemoryQuery.builder()
+            com.ghatana.agent.memory.store.MemoryQuery.MemoryQueryBuilder qb = com.ghatana.agent.memory.store.MemoryQuery.builder()
                     .limit(k * 3)  // Over-fetch for scoring and filtering
                     .textQuery(query);
 

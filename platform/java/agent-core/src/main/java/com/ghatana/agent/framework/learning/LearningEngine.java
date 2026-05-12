@@ -9,14 +9,21 @@ import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.memory.Policy;
 import com.ghatana.agent.learning.LearningContract;
+import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.learning.LearningDeltaFactory;
+import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.learning.LearningDeltaState;
+import com.ghatana.agent.learning.LearningDeltaType;
 import com.ghatana.agent.learning.LearningLevel;
 import com.ghatana.agent.learning.LearningTarget;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -85,6 +92,10 @@ public final class LearningEngine {
     private LearningContract learningContract;
     private double humanReviewThreshold;
     private int batchSize;
+    @Nullable
+    private LearningDeltaRepository deltaRepository;
+    @Nullable
+    private String agentReleaseId;
 
     private LearningEngine(@NotNull Executor executor) {
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
@@ -96,6 +107,8 @@ public final class LearningEngine {
         );
         this.humanReviewThreshold = DEFAULT_REVIEW_THRESHOLD;
         this.batchSize = DEFAULT_BATCH_SIZE;
+        this.deltaRepository = null;
+        this.agentReleaseId = null;
     }
 
     /**
@@ -162,6 +175,30 @@ public final class LearningEngine {
     public LearningEngine withBatchSize(int size) {
         if (size <= 0) throw new IllegalArgumentException("batchSize must be positive, got: " + size);
         this.batchSize = size;
+        return this;
+    }
+
+    /**
+     * Sets the learning delta repository for creating and managing learning deltas.
+     *
+     * @param repository learning delta repository
+     * @return this engine (fluent)
+     */
+    @NotNull
+    public LearningEngine withLearningDeltaRepository(@Nullable LearningDeltaRepository repository) {
+        this.deltaRepository = repository;
+        return this;
+    }
+
+    /**
+     * Sets the agent release ID for learning delta tracking.
+     *
+     * @param releaseId agent release identifier
+     * @return this engine (fluent)
+     */
+    @NotNull
+    public LearningEngine withAgentReleaseId(@Nullable String releaseId) {
+        this.agentReleaseId = releaseId;
         return this;
     }
 
@@ -251,6 +288,9 @@ public final class LearningEngine {
      * Persists approved candidate policies to the memory store and returns the final outcome.
      * Low-confidence candidates are flagged for human review and not persisted.
      *
+     * <p>If a learning delta repository is configured, creates learning deltas for promotion
+     * instead of directly persisting policies.
+     *
      * @param agentId     agent identifier
      * @param episodes    source episodes used for synthesis
      * @param candidates  all synthesised candidate policies
@@ -280,9 +320,16 @@ public final class LearningEngine {
         if (approved.isEmpty()) {
             Duration duration = Duration.between(start, Instant.now());
             return Promise.of(new LearningOutcome(
-                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, flagged));
+                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, flagged,
+                    0, 0, 0, 0));
         }
 
+        // If delta repository is configured, create learning deltas instead of direct policy persistence
+        if (deltaRepository != null) {
+            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+        }
+
+        // Otherwise, use the original direct policy persistence path
         // Chain all store operations sequentially to avoid concurrent writes
         Promise<Integer> storeChain = Promise.of(0);
         for (CandidatePolicy candidate : approved) {
@@ -302,7 +349,64 @@ public final class LearningEngine {
         return storeChain.map(created -> {
             Duration duration = Duration.between(start, Instant.now());
             return new LearningOutcome(
-                    agentId, start, duration, learningContract.level(), episodeCount, created, 0, totalFlagged);
+                    agentId, start, duration, learningContract.level(), episodeCount, created, 0, totalFlagged,
+                    0, 0, 0, 0);
+        });
+    }
+
+    /**
+     * Persists approved candidate policies as learning deltas for promotion.
+     *
+     * @param agentId     agent identifier
+     * @param episodes    source episodes used for synthesis
+     * @param candidates  approved candidate policies
+     * @param episodeIds  episode IDs as string
+     * @param start       reflect-pass start time
+     * @param flagged     number of flagged candidates
+     * @return promise of the {@link LearningOutcome}
+     */
+    @NotNull
+    private Promise<LearningOutcome> persistAsLearningDeltas(
+            @NotNull String agentId,
+            @NotNull List<Episode> episodes,
+            @NotNull List<CandidatePolicy> candidates,
+            @NotNull String episodeIds,
+            @NotNull Instant start,
+            int flagged) {
+        // Chain all delta creation operations sequentially
+        Promise<Integer> deltaChain = Promise.of(0);
+        for (CandidatePolicy candidate : candidates) {
+            String skillId = "skill-" + agentId + "-" + candidate.situation().hashCode();
+            Map<String, Object> content = Map.of(
+                    "situation", candidate.situation(),
+                    "action", candidate.action(),
+                    "confidence", candidate.confidence(),
+                    "episodeIds", episodeIds
+            );
+
+            LearningDelta delta = LearningDeltaFactory.propose(
+                    LearningDeltaType.PROCEDURAL_SKILL,
+                    LearningTarget.PROCEDURAL_SKILL,
+                    agentId,
+                    agentReleaseId != null ? agentReleaseId : "unknown",
+                    skillId,
+                    content,
+                    episodes.stream().map(e -> e.getId()).toList(),
+                    "learning-engine"
+            );
+
+            deltaChain = deltaChain.then(count ->
+                    deltaRepository.save(delta).map(d -> count + 1));
+        }
+
+        int episodeCount = episodes.size();
+        int totalProposed = candidates.size();
+        int totalRejectedByContract = 0; // TODO: track contract rejections
+        return deltaChain.map(created -> {
+            Duration duration = Duration.between(start, Instant.now());
+            return new LearningOutcome(
+                    agentId, start, duration, learningContract.level(), episodeCount, 0, created, flagged,
+                    totalProposed, totalRejectedByContract, flagged, created);
         });
     }
 
@@ -318,9 +422,13 @@ public final class LearningEngine {
      * @param duration             time taken
      * @param levelApplied         learning level used
      * @param episodesProcessed    number of episodes consumed
-     * @param policiesCreated      new policies stored (high confidence)
-     * @param policiesUpdated      existing policies whose confidence was updated
-     * @param policiesFlaggedForReview policies below threshold needing human review
+     * @param policiesCreated      new policies stored (high confidence) - legacy field for backward compatibility
+     * @param policiesUpdated      existing policies whose confidence was updated - legacy field for backward compatibility
+     * @param policiesFlaggedForReview policies below threshold needing human review - legacy field for backward compatibility
+     * @param deltasProposed       number of learning deltas proposed
+     * @param deltasRejectedByContract number of deltas rejected by learning contract
+     * @param deltasNeedingReview  number of deltas requiring human review
+     * @param deltasPromotable     number of deltas ready for promotion
      */
     public record LearningOutcome(
             @NotNull String agentId,
@@ -330,12 +438,16 @@ public final class LearningEngine {
             int episodesProcessed,
             int policiesCreated,
             int policiesUpdated,
-            int policiesFlaggedForReview) {
+            int policiesFlaggedForReview,
+            int deltasProposed,
+            int deltasRejectedByContract,
+            int deltasNeedingReview,
+            int deltasPromotable) {
 
         /** Returns a no-op outcome for agents with L0 learning or no episodes. */
         @NotNull
         static LearningOutcome noOp(@NotNull String agentId, @NotNull com.ghatana.agent.learning.LearningLevel level) {
-            return new LearningOutcome(agentId, Instant.now(), Duration.ZERO, level, 0, 0, 0, 0);
+            return new LearningOutcome(agentId, Instant.now(), Duration.ZERO, level, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 

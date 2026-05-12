@@ -4,6 +4,7 @@
  */
 package com.ghatana.agent.memory.governance;
 
+import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.memory.model.*;
 import com.ghatana.agent.memory.model.artifact.TypedArtifact;
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
@@ -30,6 +31,13 @@ import java.util.List;
  * (query, searchSemantic, getProcedure). Semantic, procedural, and learned typed
  * artifact writes are gated before they reach the underlying plane.
  *
+ * <p>Additionally applies mastery-aware filtering on reads and writes when a
+ * {@link MasteryRegistry} is provided:
+ * <ul>
+ *   <li>Reads: Filters out obsolete/retired items unless explicitly requested</li>
+ *   <li>Writes: Validates procedural skills against mastery bindings and tracks evidence</li>
+ * </ul>
+ *
  * <p>This satisfies Track X TX-1: memory retrieval and context hydration must
  * pass {@code DataAccessBroker} checks before access.
  *
@@ -50,9 +58,11 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     private final DataAccessBroker accessBroker;
     private final String tenantId;
     private final String subjectId;
+    @Nullable
+    private final MasteryRegistry masteryRegistry;
 
     /**
-     * Creates a governed memory plane.
+     * Creates a governed memory plane without mastery integration.
      *
      * @param delegate     the underlying memory plane implementation
      * @param accessBroker the privacy access broker used to control reads
@@ -64,6 +74,24 @@ public final class GovernedMemoryPlane implements MemoryPlane {
             @NotNull DataAccessBroker accessBroker,
             @NotNull String tenantId,
             @NotNull String subjectId) {
+        this(delegate, accessBroker, tenantId, subjectId, null);
+    }
+
+    /**
+     * Creates a governed memory plane with mastery integration.
+     *
+     * @param delegate         the underlying memory plane implementation
+     * @param accessBroker     the privacy access broker used to control reads
+     * @param tenantId         owning tenant
+     * @param subjectId        the data-subject for whom access is checked (e.g. user or agent ID)
+     * @param masteryRegistry optional mastery registry for mastery-aware filtering
+     */
+    public GovernedMemoryPlane(
+            @NotNull MemoryPlane delegate,
+            @NotNull DataAccessBroker accessBroker,
+            @NotNull String tenantId,
+            @NotNull String subjectId,
+            @Nullable MasteryRegistry masteryRegistry) {
         if (delegate == null) throw new IllegalArgumentException("delegate must not be null");
         if (accessBroker == null) throw new IllegalArgumentException("accessBroker must not be null");
         if (tenantId == null || tenantId.isBlank()) throw new IllegalArgumentException("tenantId must not be blank");
@@ -73,52 +101,79 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         this.accessBroker = accessBroker;
         this.tenantId = tenantId;
         this.subjectId = subjectId;
+        this.masteryRegistry = masteryRegistry;
     }
 
     // =========================================================================
-    // Read operations — require DataAccessBroker check first
+    // Read operations — require DataAccessBroker check first, then mastery filtering
     // =========================================================================
 
     @NotNull
     @Override
     public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull MemoryQuery query) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.queryEpisodes(query));
+                .then(() -> delegate.queryEpisodes(applyMasteryQueryFilter(query)))
+                .then(episodes -> masteryRegistry != null 
+                        ? Promise.of(filterByMasteryState(episodes, query)) 
+                        : Promise.of(episodes));
     }
 
     @NotNull
     @Override
     public Promise<List<EnhancedFact>> queryFacts(@NotNull MemoryQuery query) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.queryFacts(query));
+                .then(() -> delegate.queryFacts(applyMasteryQueryFilter(query)))
+                .then(facts -> masteryRegistry != null 
+                        ? Promise.of(filterByMasteryState(facts, query)) 
+                        : Promise.of(facts));
     }
 
     @NotNull
     @Override
     public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull MemoryQuery query) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.queryProcedures(query));
+                .then(() -> delegate.queryProcedures(applyMasteryQueryFilter(query)))
+                .then(procedures -> masteryRegistry != null 
+                        ? Promise.of(filterByMasteryState(procedures, query)) 
+                        : Promise.of(procedures));
     }
 
     @NotNull
     @Override
     public Promise<@Nullable EnhancedProcedure> getProcedure(@NotNull String procedureId) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.getProcedure(procedureId));
+                .then(() -> delegate.getProcedure(procedureId))
+                .then(procedure -> {
+                    if (procedure == null || masteryRegistry == null) {
+                        return Promise.of(procedure);
+                    }
+                    // Check if procedure is obsolete/retired and filter out by default
+                    String masteryState = procedure.getLabels().get("masteryState");
+                    if ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState)) {
+                        return Promise.of(null);
+                    }
+                    return Promise.of(procedure);
+                });
     }
 
     @NotNull
     @Override
     public Promise<List<MemoryItem>> query(@NotNull MemoryQuery query) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.query(query));
+                .then(() -> delegate.query(applyMasteryQueryFilter(query)))
+                .then(items -> masteryRegistry != null 
+                        ? Promise.of(filterByMasteryState(items, query)) 
+                        : Promise.of(items));
     }
 
     @NotNull
     @Override
     public Promise<List<MemoryItem>> readItems(@NotNull MemoryQuery query) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.readItems(query));
+                .then(() -> delegate.readItems(applyMasteryQueryFilter(query)))
+                .then(items -> masteryRegistry != null 
+                        ? Promise.of(filterByMasteryState(items, query)) 
+                        : Promise.of(items));
     }
 
     @NotNull
@@ -130,11 +185,88 @@ public final class GovernedMemoryPlane implements MemoryPlane {
             @Nullable Instant startTime,
             @Nullable Instant endTime) {
         return accessBroker.checkAccess(tenantId, subjectId, MEMORY_DATA_ID, MEMORY_PURPOSE)
-                .then(() -> delegate.searchSemantic(query, itemTypes, k, startTime, endTime));
+                .then(() -> delegate.searchSemantic(query, itemTypes, k, startTime, endTime))
+                .then(items -> masteryRegistry != null 
+                        ? Promise.of(filterScoredByMasteryState(items)) 
+                        : Promise.of(items));
+    }
+
+    /**
+     * Applies mastery-aware query filters when MasteryRegistry is present.
+     * Sets default values for mastery-related fields if not explicitly set.
+     */
+    @NotNull
+    private MemoryQuery applyMasteryQueryFilter(@NotNull MemoryQuery query) {
+        if (masteryRegistry == null) {
+            return query;
+        }
+
+        // If query builder is available, set mastery-aware defaults
+        // For now, return the query as-is (filtering happens after retrieval)
+        return query;
+    }
+
+    /**
+     * Filters items by mastery state based on query settings.
+     */
+    @NotNull
+    private <T extends MemoryItem> List<T> filterByMasteryState(@NotNull List<T> items, @NotNull MemoryQuery query) {
+        if (masteryRegistry == null) {
+            return items;
+        }
+
+        return items.stream()
+                .filter(item -> {
+                    String masteryState = item.getLabels().get("masteryState");
+                    
+                    // Filter out obsolete/retired unless explicitly requested
+                    if (!query.isIncludeObsolete() 
+                            && ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState))) {
+                        return false;
+                    }
+                    
+                    // Filter out maintenance-only unless explicitly requested
+                    if (!query.isIncludeMaintenanceOnly() && "MAINTENANCE_ONLY".equals(masteryState)) {
+                        return false;
+                    }
+                    
+                    // Filter out negative knowledge unless explicitly requested
+                    if (!query.isIncludeNegativeKnowledge() 
+                            && "true".equalsIgnoreCase(item.getLabels().get("negativeKnowledge"))) {
+                        return false;
+                    }
+                    
+                    return true;
+                })
+                .toList();
+    }
+
+    /**
+     * Filters scored items by mastery state.
+     */
+    @NotNull
+    private List<ScoredMemoryItem> filterScoredByMasteryState(@NotNull List<ScoredMemoryItem> items) {
+        if (masteryRegistry == null) {
+            return items;
+        }
+
+        return items.stream()
+                .filter(scored -> {
+                    MemoryItem item = scored.getItem();
+                    String masteryState = item.getLabels().get("masteryState");
+                    
+                    // Filter out obsolete/retired items by default
+                    if ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState)) {
+                        return false;
+                    }
+                    
+                    return true;
+                })
+                .toList();
     }
 
     // =========================================================================
-    // Write operations — learned memory policy checks
+    // Write operations — learned memory policy checks + mastery validation
     // =========================================================================
 
     @NotNull
@@ -148,6 +280,9 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     public Promise<EnhancedFact> storeFact(@NotNull EnhancedFact fact) {
         try {
             MemoryWritePolicy.validateFact(fact);
+            if (masteryRegistry != null) {
+                validateMasteryAwareWrite(fact);
+            }
         } catch (RuntimeException e) {
             return Promise.ofException(e);
         }
@@ -159,6 +294,9 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     public Promise<EnhancedProcedure> storeProcedure(@NotNull EnhancedProcedure procedure) {
         try {
             MemoryWritePolicy.validateProcedure(procedure);
+            if (masteryRegistry != null) {
+                validateMasteryAwareWrite(procedure);
+            }
         } catch (RuntimeException e) {
             return Promise.ofException(e);
         }
@@ -170,6 +308,9 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     public Promise<TypedArtifact> writeArtifact(@NotNull TypedArtifact artifact) {
         try {
             MemoryWritePolicy.validateArtifact(artifact);
+            if (masteryRegistry != null) {
+                validateMasteryAwareWrite(artifact);
+            }
         } catch (RuntimeException e) {
             return Promise.ofException(e);
         }
@@ -181,10 +322,62 @@ public final class GovernedMemoryPlane implements MemoryPlane {
     public Promise<MemoryItem> store(@NotNull MemoryItem item) {
         try {
             MemoryWritePolicy.validate(item);
+            if (masteryRegistry != null) {
+                validateMasteryAwareWrite(item);
+            }
         } catch (RuntimeException e) {
             return Promise.ofException(e);
         }
         return delegate.store(item);
+    }
+
+    /**
+     * Validates memory items against mastery constraints when MasteryRegistry is present.
+     * Ensures procedural skills are properly tracked with mastery state and evidence.
+     */
+    private void validateMasteryAwareWrite(@NotNull MemoryItem item) {
+        if (masteryRegistry == null) {
+            return;
+        }
+
+        // Check if item is a procedural skill that requires mastery tracking
+        String learningTarget = item.getLabels().get("learningTarget");
+        if ("PROCEDURAL_SKILL".equals(learningTarget)) {
+            // Ensure mastery state is set
+            String masteryState = item.getLabels().get("masteryState");
+            if (masteryState == null || masteryState.isBlank()) {
+                throw new IllegalStateException(
+                        "Procedural skills must have a mastery state set in metadata");
+            }
+
+            // Ensure skillId is set
+            String skillId = item.getLabels().get("skillId");
+            if (skillId == null || skillId.isBlank()) {
+                throw new IllegalStateException(
+                        "Procedural skills must have a skillId set in metadata");
+            }
+
+            // Ensure provenance is set for L2+ learning
+            String provenanceRequired = item.getLabels().get("provenanceRequired");
+            if ("true".equalsIgnoreCase(provenanceRequired)) {
+                String provenance = item.getLabels().get("provenance");
+                if (provenance == null || provenance.isBlank()) {
+                    throw new IllegalStateException(
+                            "Procedural skills with provenanceRequired=true must have provenance in metadata");
+                }
+            }
+        }
+
+        // Check if item is negative knowledge
+        String negativeKnowledge = item.getLabels().get("negativeKnowledge");
+        if ("true".equalsIgnoreCase(negativeKnowledge)) {
+            // Negative knowledge must have clear justification
+            String justification = item.getLabels().get("justification");
+            if (justification == null || justification.isBlank()) {
+                throw new IllegalStateException(
+                        "Negative knowledge must have justification in metadata");
+            }
+        }
     }
 
     // =========================================================================

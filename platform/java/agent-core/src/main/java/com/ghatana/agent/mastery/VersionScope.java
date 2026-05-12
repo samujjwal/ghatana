@@ -4,6 +4,7 @@
  */
 package com.ghatana.agent.mastery;
 
+import com.ghatana.agent.context.version.VersionContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -57,5 +58,86 @@ public record VersionScope(
     @NotNull
     public static VersionScope activeOnly(@NotNull List<VersionConstraint> active) {
         return new VersionScope(active, List.of(), List.of());
+    }
+
+    /**
+     * Classifies the applicability of a version context.
+     *
+     * @param context version context to classify
+     * @return version applicability decision
+     */
+    @NotNull
+    public VersionApplicability classify(@NotNull VersionContext context) {
+        // Check obsolete constraints first
+        for (VersionConstraint constraint : obsolete) {
+            if (matchesConstraint(context, constraint)) {
+                return VersionApplicability.OBSOLETE;
+            }
+        }
+
+        // Check maintenance constraints
+        for (VersionConstraint constraint : maintenance) {
+            if (matchesConstraint(context, constraint)) {
+                return VersionApplicability.MAINTENANCE;
+            }
+        }
+
+        // Check active constraints
+        for (VersionConstraint constraint : active) {
+            if (matchesConstraint(context, constraint)) {
+                return VersionApplicability.ACTIVE;
+            }
+        }
+
+        return VersionApplicability.UNKNOWN;
+    }
+
+    /**
+     * Returns true if the version context supports active mode.
+     *
+     * @param context version context to check
+     * @return true if active mode is supported
+     */
+    public boolean supportsActive(@NotNull VersionContext context) {
+        return classify(context) == VersionApplicability.ACTIVE;
+    }
+
+    /**
+     * Returns true if the version context supports maintenance mode.
+     *
+     * @param context version context to check
+     * @return true if maintenance mode is supported
+     */
+    public boolean supportsMaintenance(@NotNull VersionContext context) {
+        VersionApplicability applicability = classify(context);
+        return applicability == VersionApplicability.ACTIVE || applicability == VersionApplicability.MAINTENANCE;
+    }
+
+    /**
+     * Returns true if the version context is obsolete.
+     *
+     * @param context version context to check
+     * @return true if obsolete
+     */
+    public boolean isObsolete(@NotNull VersionContext context) {
+        return classify(context) == VersionApplicability.OBSOLETE;
+    }
+
+    /**
+     * Checks if a version context matches a constraint.
+     * This is a simplified implementation - real implementation would parse version ranges.
+     *
+     * @param context version context
+     * @param constraint version constraint
+     * @return true if matches
+     */
+    private boolean matchesConstraint(@NotNull VersionContext context, @NotNull VersionConstraint constraint) {
+        // Simplified matching - in production, this would parse semantic version ranges
+        String constraintStr = constraint.constraint();
+        String type = constraint.type();
+
+        // Extract package/tool/runtime from constraint and check against context
+        // This is a placeholder for actual version matching logic
+        return context.hasDependency(constraintStr.split("@")[0]);
     }
 }

@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-12T03:17:44.998Z",
+  "riskLevels": {
+    "critical": {
+      "description": "Production systems handling regulated data (healthcare, finance)",
+      "scanning": {
+        "sast": true,
+        "sca": true,
+        "secrets": true,
+        "dependencyAudit": true,
+        "licenseCompliance": true,
+        "securityTests": true,
+        "penetrationTests": true
+      },
+      "products": [
+        "digital-marketing",
+        "data-cloud",
+        "yappc"
+      ]
+    },
+    "high": {
+      "description": "Production systems with sensitive data",
+      "scanning": {
+        "sast": true,
+        "sca": true,
+        "secrets": true,
+        "dependencyAudit": true,
+        "licenseCompliance": true,
+        "securityTests": true,
+        "penetrationTests": false
+      },
+      "products": [
+        "phr",
+        "finance",
+        "flashit",
+        "audio-video",
+        "dcmaar",
+        "tutorputor",
+        "aura",
+        "software-org",
+        "virtual-org",
+        "security-gateway"
+      ]
+    },
+    "medium": {
+      "description": "Production systems with standard data",
+      "scanning": {
+        "sast": true,
+        "sca": true,
+        "secrets": true,
+        "dependencyAudit": true,
+        "licenseCompliance": false,
+        "securityTests": false,
+        "penetrationTests": false
+      },
+      "products": []
+    },
+    "low": {
+      "description": "Development and test environments",
+      "scanning": {
+        "sast": false,
+        "sca": false,
+        "secrets": false,
+        "dependencyAudit": true,
+        "licenseCompliance": false,
+        "securityTests": false,
+        "penetrationTests": false
+      },
+      "products": []
+    }
+  },
+  "scopedExclusions": []
+}

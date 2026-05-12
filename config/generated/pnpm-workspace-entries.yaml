@@ -1,0 +1,58 @@
+# Auto-generated from canonical-product-registry.json
+# DO NOT EDIT MANUALLY - run: node scripts/generate-product-registry-artifacts.mjs
+packages:
+  # Platform TypeScript libraries
+  - "platform/typescript/*"
+  - "platform/typescript/foundation/*"
+  - "platform/typescript/canvas/*"
+  - "platform/typescript/ghatana-studio"
+
+  # Product packages (from canonical registry)
+  # Personal Health Records (phr)
+  - "products/phr/apps/*"
+
+  # Digital Marketing Operating System (digital-marketing)
+  - "products/digital-marketing/ui"
+
+  # FlashIt (flashit)
+  - "products/flashit"
+  - "products/flashit/client/*"
+  - "products/flashit/backend/gateway"
+  - "products/flashit/libs/ts/*"
+
+  # Data Cloud (data-cloud)
+  - "products/data-cloud/delivery/ui"
+  - "products/data-cloud/libs/*"
+  - "products/data-cloud/planes/action/ui"
+  - "products/data-cloud/planes/action/gateway"
+
+  # YAPPC (yappc)
+  - "products/yappc/frontend"
+  - "products/yappc/frontend/libs/*"
+  - "products/yappc/frontend/apps/*"
+  - "products/yappc/frontend/web"
+  - "products/yappc/tools/*"
+  - "products/yappc/frontend/docs-site"
+  - "products/yappc/frontend/packages/*"
+
+  # Audio-Video (audio-video)
+  - "products/audio-video/apps/*"
+  - "products/audio-video/libs/*"
+  - "products/audio-video/libs/typescript/*"
+  - "products/audio-video/modules/intelligence/ai-voice/apps/*"
+  - "products/audio-video/modules/intelligence/ai-voice/libs/*"
+
+  # DCMAAR (dcmaar)
+  - "products/dcmaar/apps/*"
+  - "products/dcmaar/libs/typescript/*"
+  - "products/dcmaar/libs/guardian-dashboard-core"
+
+  # Tutorputor (tutorputor)
+  - "products/tutorputor/contracts"
+  - "products/tutorputor/libs/*"
+  - "products/tutorputor/apps/*"
+  - "products/tutorputor/services/*"
+  - "products/tutorputor/tools/*"
+
+  # Shared services
+  - "shared-services/*/ui"

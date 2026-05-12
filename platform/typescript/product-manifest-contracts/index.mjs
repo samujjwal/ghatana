@@ -5,16 +5,28 @@ import { z } from 'zod';
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const semverPattern = /^\d+\.\d+\.\d+(?:[-+].+)?$/;
 const namespacedPolicyPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const schemaVersionPattern = /^1\.0\.0$/;
 
 const stringArraySchema = z.array(z.string().min(1));
-const looseRecordSchema = z.record(z.string(), z.unknown());
+const strictRecordSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown())]));
+// Constrained schema for product extensions - allows structured JSON but not arbitrary code
+const productExtensionsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown()), z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))]));
+
+// Strict extension schema for product-specific extensions
+const productExtensionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  target_capability: z.string().min(1).optional(),
+  config: strictRecordSchema.optional(),
+});
 
 const capabilitySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   type: z.string().min(1),
   description: z.string().min(1),
-  metadata: looseRecordSchema.optional(),
+  metadata: strictRecordSchema.optional(),
 });
 
 const extensionSchema = z.object({
@@ -30,8 +42,12 @@ const moduleSchema = z.object({
 });
 
 export const productManifestSchema = z.object({
+  schemaVersion: z.string().regex(schemaVersionPattern).optional(),
   id: z.string().regex(slugPattern),
   version: z.string().regex(semverPattern),
+  product: z.string().regex(slugPattern).optional(),
+  domain: z.string().min(1).optional(),
+  rulePrefix: z.string().min(1).optional(),
   kernelCapabilitiesConsumed: stringArraySchema,
   policyActions: stringArraySchema,
   policyResources: stringArraySchema,
@@ -51,13 +67,15 @@ export const productManifestSchema = z.object({
     'marketing-consent',
     'personal-journal',
   ]),
-  domain: z.union([z.string().min(1), looseRecordSchema]).optional(),
+  // Extension sections
   capabilities: z.array(capabilitySchema).optional(),
   extensions: z.array(extensionSchema).optional(),
   modules: z.array(moduleSchema).optional(),
-  deployment: looseRecordSchema.optional(),
-  metadata: looseRecordSchema.optional(),
-}).passthrough();
+  deployment: strictRecordSchema.optional(),
+  metadata: strictRecordSchema.optional(),
+  // Product-specific extensions section - constrained for safety, versioned for evolution
+  productExtensions: productExtensionsSchema.optional(),
+}).strict();
 
 export function loadProductManifest(filePath, format) {
   const content = readFileSync(filePath, 'utf8');

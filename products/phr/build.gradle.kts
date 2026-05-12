@@ -20,16 +20,11 @@ java {
     }
 }
 
-sourceSets {
-    main {
-        java.srcDir("domains/healthcare/src/main/java")
-    }
-    test {
-        java.srcDir("domains/healthcare/src/test/java")
-    }
-}
-
 dependencies {
+    // =================================================================
+    // PHR Domain Modules (explicit submodules)
+    // =================================================================
+    api(project(":products:phr:domains:healthcare"))
     // =================================================================
     // Platform Kernel (NEW: extracted from platform/java)
     // =================================================================

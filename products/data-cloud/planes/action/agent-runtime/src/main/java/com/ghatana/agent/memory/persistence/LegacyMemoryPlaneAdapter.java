@@ -62,7 +62,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedEpisode>> queryEpisodes(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         MemoryFilter filter = toFilter(query);
         return legacyStore.queryEpisodes(filter, query.getLimit())
                 .map(episodes -> episodes.stream()
@@ -81,7 +81,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedFact>> queryFacts(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedFact>> queryFacts(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return legacyStore.searchFacts("*", query.getLimit())
                 .map(facts -> facts.stream()
                         .map(this::toEnhancedFact)
@@ -99,7 +99,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull MemoryQuery query) {
+    public Promise<List<EnhancedProcedure>> queryProcedures(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return legacyStore.queryPolicies("*", query.getMinConfidence())
                 .map(policies -> policies.stream()
                         .map(this::toEnhancedProcedure)
@@ -141,7 +141,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> query(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> query(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         return readItems(query);
     }
 
@@ -149,7 +149,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     @Override
     @NotNull
-    public Promise<List<MemoryItem>> readItems(@NotNull MemoryQuery query) {
+    public Promise<List<MemoryItem>> readItems(@NotNull com.ghatana.agent.memory.store.MemoryQuery query) {
         log.debug("readItems delegating to legacy episodic + semantic queries");
         return Promise.of(List.of());
     }
@@ -271,7 +271,7 @@ public class LegacyMemoryPlaneAdapter implements MemoryPlane {
                 .build();
     }
 
-    private MemoryFilter toFilter(MemoryQuery query) {
+    private MemoryFilter toFilter(com.ghatana.agent.memory.store.MemoryQuery query) {
         return MemoryFilter.builder()
                 .agentId(query.getAgentId())
                 .startTime(query.getStartTime())

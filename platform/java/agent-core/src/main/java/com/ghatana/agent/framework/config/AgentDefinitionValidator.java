@@ -11,7 +11,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Validates {@link AgentDefinition} and {@link AgentInstance} configurations
@@ -67,6 +69,8 @@ public final class AgentDefinitionValidator {
         validateCost(definition, errors);
         validateTypeSpecific(definition, errors);
         validateGovernance(definition, errors);
+        validateLearning(definition, errors);
+        validateMastery(definition, errors);
 
         return new ValidationResult(errors);
     }
@@ -334,6 +338,133 @@ public final class AgentDefinitionValidator {
         if (isHighRisk && !metadata.containsKey("assurance")) {
             errors.add("[governance] high-risk agents should declare 'assurance' metadata "
                     + "with evaluation pack references");
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Learning Validation
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Validates learning-related configuration including learning level,
+     * learning targets, and learning contract consistency.
+     */
+    @SuppressWarnings("unchecked")
+    private static void validateLearning(AgentDefinition def, List<String> errors) {
+        com.ghatana.agent.learning.LearningLevel level = null;
+        try {
+            String levelStr = def.getLearningLevel();
+            if (levelStr != null) {
+                level = com.ghatana.agent.learning.LearningLevel.valueOf(levelStr);
+            }
+        } catch (IllegalArgumentException e) {
+            errors.add("[learning] invalid learningLevel: " + def.getLearningLevel());
+            return;
+        }
+
+        // ADAPTIVE agents must declare learningLevel >= L2
+        if (def.getType() == AgentType.ADAPTIVE) {
+            if (level == null || level.ordinal() < com.ghatana.agent.learning.LearningLevel.L2.ordinal()) {
+                errors.add("[learning] ADAPTIVE agents must declare learningLevel >= L2");
+            }
+        }
+
+        // Extract adaptation targets from metadata
+        Set<com.ghatana.agent.learning.LearningTarget> adaptationTargets = Set.of();
+        Object adaptationTargetsObj = def.getMetadata().get("adaptationTargets");
+        if (adaptationTargetsObj instanceof List<?> targetsList) {
+            adaptationTargets = targetsList.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(targetStr -> {
+                        try {
+                            return com.ghatana.agent.learning.LearningTarget.valueOf(targetStr);
+                        } catch (IllegalArgumentException e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+        }
+
+        // Agents with PROCEDURAL_SKILL must require promotion
+        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.PROCEDURAL_SKILL)) {
+            boolean promotionRequired = def.getMetadata().containsKey("promotionRequired")
+                    && Boolean.TRUE.equals(def.getMetadata().get("promotionRequired"));
+            if (!promotionRequired) {
+                errors.add("[learning] PROCEDURAL_SKILL target requires promotionRequired=true");
+            }
+        }
+
+        // Agents with SEMANTIC_FACT must require provenance
+        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.SEMANTIC_FACT)) {
+            boolean provenanceRequired = def.getMetadata().containsKey("provenanceRequired")
+                    && Boolean.TRUE.equals(def.getMetadata().get("provenanceRequired"));
+            if (!provenanceRequired) {
+                errors.add("[learning] SEMANTIC_FACT target requires provenanceRequired=true");
+            }
+        }
+
+        // Agents with MODEL_ADAPTER must be L5
+        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.MODEL_ADAPTER)) {
+            if (level != com.ghatana.agent.learning.LearningLevel.L5) {
+                errors.add("[learning] MODEL_ADAPTER target requires learningLevel=L5");
+            }
+        }
+
+        // L5 must not be response-serving
+        if (level == com.ghatana.agent.learning.LearningLevel.L5) {
+            if (def.getType() == AgentType.PROBABILISTIC || def.getType() == AgentType.HYBRID) {
+                errors.add("[learning] L5 agents must not be response-serving (PROBABILISTIC/HYBRID)");
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Mastery Validation
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Validates mastery-related configuration including skill refs,
+     * mastery bindings, and mastery policy refs.
+     */
+    private static void validateMastery(AgentDefinition def, List<String> errors) {
+        // skillRefs must not be blank for adaptive agents
+        if (def.getType() == AgentType.ADAPTIVE) {
+            if (def.getSkillRefs().isEmpty()) {
+                errors.add("[mastery] ADAPTIVE agents must declare skillRefs");
+            }
+            for (String skillRef : def.getSkillRefs()) {
+                if (skillRef == null || skillRef.isBlank()) {
+                    errors.add("[mastery] skillRefs must not contain blank values");
+                }
+            }
+        }
+
+        // If masteryBindings exists, it must include required fields
+        if (!def.getMasteryBindings().isEmpty()) {
+            Map<String, Object> masteryBindings = def.getMasteryBindings();
+
+            if (!masteryBindings.containsKey("namespace")) {
+                errors.add("[mastery] masteryBindings must include 'namespace'");
+            }
+            if (!masteryBindings.containsKey("registryRef")) {
+                errors.add("[mastery] masteryBindings must include 'registryRef'");
+            }
+            if (!masteryBindings.containsKey("freshnessPolicyRef")) {
+                errors.add("[mastery] masteryBindings must include 'freshnessPolicyRef'");
+            }
+            if (!masteryBindings.containsKey("versionCompatibilityPolicyRef")) {
+                errors.add("[mastery] masteryBindings must include 'versionCompatibilityPolicyRef'");
+            }
+        }
+
+        // High-risk agents must include evaluationRefs
+        boolean isHighRisk = "critical".equalsIgnoreCase(def.getLabels().get("criticality"))
+                || "high".equalsIgnoreCase(def.getLabels().get("criticality"));
+
+        if (isHighRisk && def.getEvaluationRefs().isEmpty()) {
+            errors.add("[mastery] high-risk agents must include evaluationRefs");
         }
     }
 

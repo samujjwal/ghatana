@@ -1,5 +1,6 @@
 package com.ghatana.aep.engine.registry;
 
+import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
@@ -29,6 +30,8 @@ import java.util.Objects;
 /**
  * Thin facade over {@link MemoryPlane} for registry-facing agent memory access.
  *
+ * <p>Provides mastery-aware memory retrieval when a {@link MasteryRegistry} is configured.
+ *
  * @doc.type class
  * @doc.purpose Adapt the agent memory plane to AgentExecutionService memory responses
  * @doc.layer product
@@ -38,14 +41,24 @@ public class AgentMemoryPlaneClient {
 
     private final MemoryPlane memoryPlane;
     private final String tenantId;
+    @Nullable
+    private final MasteryRegistry masteryRegistry;
 
     public AgentMemoryPlaneClient(@NotNull MemoryPlane memoryPlane) {
-        this(memoryPlane, "default");
+        this(memoryPlane, "default", null);
     }
 
     public AgentMemoryPlaneClient(@NotNull MemoryPlane memoryPlane, @NotNull String tenantId) {
+        this(memoryPlane, tenantId, null);
+    }
+
+    public AgentMemoryPlaneClient(
+            @NotNull MemoryPlane memoryPlane,
+            @NotNull String tenantId,
+            @Nullable MasteryRegistry masteryRegistry) {
         this.memoryPlane = Objects.requireNonNull(memoryPlane, "memoryPlane");
         this.tenantId = Objects.requireNonNull(tenantId, "tenantId");
+        this.masteryRegistry = masteryRegistry;
     }
 
     public Promise<Void> recordExecution(
@@ -79,6 +92,63 @@ public class AgentMemoryPlaneClient {
             .then(episodes -> memoryPlane.queryFacts(query)
                 .then(facts -> memoryPlane.queryProcedures(query)
                     .map(procedures -> toMemoryResponse(episodes, facts, procedures))));
+    }
+
+    /**
+     * Mastery-aware memory retrieval that filters by mastery state when MasteryRegistry is configured.
+     * Excludes obsolete, retired, and maintenance-only items by default unless explicitly requested.
+     */
+    public Promise<AgentExecutionService.AgentMemory> getMemoryMasteryAware(
+            String agentId,
+            boolean includeObsolete,
+            boolean includeMaintenanceOnly,
+            boolean includeNegativeKnowledge) {
+        MemoryQuery query = MemoryQuery.builder()
+            .tenantId(tenantId)
+            .agentId(agentId)
+            .limit(25)
+            .includeObsolete(includeObsolete)
+            .includeMaintenanceOnly(includeMaintenanceOnly)
+            .includeNegativeKnowledge(includeNegativeKnowledge)
+            .build();
+
+        return memoryPlane.queryEpisodes(query)
+            .then(episodes -> memoryPlane.queryFacts(query)
+                .then(facts -> memoryPlane.queryProcedures(query)
+                    .map(procedures -> {
+                        if (masteryRegistry != null) {
+                            // Apply mastery-aware filtering
+                            procedures = filterByMasteryState(procedures, includeObsolete, includeMaintenanceOnly);
+                        }
+                        return toMemoryResponse(episodes, facts, procedures);
+                    })));
+    }
+
+    /**
+     * Filters procedures by mastery state based on the include flags.
+     */
+    private List<EnhancedProcedure> filterByMasteryState(
+            List<EnhancedProcedure> procedures,
+            boolean includeObsolete,
+            boolean includeMaintenanceOnly) {
+        return procedures.stream()
+                .filter(procedure -> {
+                    String masteryState = procedure.getLabels().get("masteryState");
+                    
+                    // Filter out obsolete/retired unless explicitly requested
+                    if (!includeObsolete 
+                            && ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState))) {
+                        return false;
+                    }
+                    
+                    // Filter out maintenance-only unless explicitly requested
+                    if (!includeMaintenanceOnly && "MAINTENANCE_ONLY".equals(masteryState)) {
+                        return false;
+                    }
+                    
+                    return true;
+                })
+                .toList();
     }
 
     private AgentExecutionService.AgentMemory toMemoryResponse(

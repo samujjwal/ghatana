@@ -1,0 +1,46 @@
+{
+  "products": [
+    "phr",
+    "finance",
+    "digital-marketing",
+    "flashit",
+    "data-cloud",
+    "yappc",
+    "audio-video",
+    "dcmaar",
+    "tutorputor",
+    "aura",
+    "software-org",
+    "virtual-org",
+    "security-gateway"
+  ],
+  "productsWithUI": [
+    "phr",
+    "digital-marketing",
+    "flashit",
+    "data-cloud",
+    "yappc",
+    "dcmaar",
+    "tutorputor"
+  ],
+  "productsWithTests": [
+    "phr",
+    "finance",
+    "digital-marketing",
+    "flashit",
+    "data-cloud",
+    "yappc",
+    "audio-video",
+    "dcmaar",
+    "tutorputor",
+    "aura",
+    "software-org",
+    "virtual-org",
+    "security-gateway"
+  ],
+  "productsWithIntegrationTests": [
+    "finance",
+    "data-cloud",
+    "yappc"
+  ]
+}
