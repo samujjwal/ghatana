@@ -22,12 +22,16 @@
   "definitions": {
     "LifecycleProfile": {
       "type": "object",
-      "required": ["status", "description", "defaultSurfaces", "requiredGates", "defaultAdapters"],
+      "required": ["status", "safeForDefault", "description", "defaultSurfaces", "requiredGates", "defaultAdapters", "phaseOutputs"],
       "properties": {
         "status": {
           "type": "string",
           "description": "Lifecycle profile maturity",
           "enum": ["stable", "experimental"]
+        },
+        "safeForDefault": {
+          "type": "boolean",
+          "description": "Whether this profile is safe as a default for enabled lifecycle products"
         },
         "description": {
           "type": "string",
@@ -70,9 +74,22 @@
             }
           }
         },
+        "phaseOutputs": {
+          "type": "object",
+          "description": "Expected output artifact types by phase and surface",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
         "expectedArtifacts": {
           "type": "object",
-          "description": "Expected artifact types by phase and surface",
+          "description": "Legacy alias for expected outputs by phase and surface",
           "additionalProperties": {
             "type": "object",
             "additionalProperties": {

@@ -3,183 +3,442 @@
   "adapters": {
     "gradle-java-service": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["backend-api", "worker", "operator"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["gradleModule"],
-      "outputs": ["jvm-classes", "test-report", "coverage-report", "jar"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "worker",
+        "operator"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "gradleModule"
+      ],
+      "outputs": [
+        "jvm-classes",
+        "test-report",
+        "coverage-report",
+        "jar"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleJavaServiceAdapter.ts",
       "status": "implemented",
       "safeForDefault": true,
       "tests": [
         "platform/typescript/kernel-toolchains/src/__tests__/GradleJavaServiceAdapter.test.ts"
-      ]
+      ],
+      "planningImplemented": true,
+      "executionImplemented": true,
+      "outputValidationImplemented": true
     },
     "gradle-java-library": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["sdk"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["gradleModule"],
-      "outputs": ["jvm-classes", "test-report", "coverage-report", "jar"],
+      "supportedSurfaceTypes": [
+        "sdk"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "gradleModule"
+      ],
+      "outputs": [
+        "jvm-classes",
+        "test-report",
+        "coverage-report",
+        "jar"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleJavaLibraryAdapter.ts",
       "status": "planned",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": false,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "pnpm-vite-react": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["web"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["packagePath"],
-      "outputs": ["static-web-bundle", "test-report", "typecheck-report"],
+      "supportedSurfaceTypes": [
+        "web"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "packagePath"
+      ],
+      "outputs": [
+        "static-web-bundle",
+        "test-report",
+        "typecheck-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/PnpmViteReactAdapter.ts",
       "status": "implemented",
       "safeForDefault": true,
       "tests": [
         "platform/typescript/kernel-toolchains/src/__tests__/PnpmViteReactAdapter.test.ts"
-      ]
+      ],
+      "planningImplemented": true,
+      "executionImplemented": true,
+      "outputValidationImplemented": true
     },
     "pnpm-node-api": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["backend-api", "worker"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["packagePath"],
-      "outputs": ["node-bundle", "test-report", "typecheck-report"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "worker"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "packagePath"
+      ],
+      "outputs": [
+        "node-bundle",
+        "test-report",
+        "typecheck-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/PnpmNodeApiAdapter.ts",
       "status": "planned",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": false,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "vitest": {
       "kind": "test-tool",
-      "supportedSurfaceTypes": ["web", "backend-api", "worker"],
-      "supportedPhases": ["test"],
-      "requires": ["packagePath"],
-      "outputs": ["test-report", "coverage-report"],
+      "supportedSurfaceTypes": [
+        "web",
+        "backend-api",
+        "worker"
+      ],
+      "supportedPhases": [
+        "test"
+      ],
+      "requires": [
+        "packagePath"
+      ],
+      "outputs": [
+        "test-report",
+        "coverage-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/VitestAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "playwright": {
       "kind": "test-tool",
-      "supportedSurfaceTypes": ["web"],
-      "supportedPhases": ["test", "verify"],
-      "requires": ["packagePath"],
-      "outputs": ["e2e-test-report", "screenshots", "traces"],
+      "supportedSurfaceTypes": [
+        "web"
+      ],
+      "supportedPhases": [
+        "test",
+        "verify"
+      ],
+      "requires": [
+        "packagePath"
+      ],
+      "outputs": [
+        "e2e-test-report",
+        "screenshots",
+        "traces"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/PlaywrightAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "docker-buildx": {
       "kind": "package-tool",
-      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
-      "supportedPhases": ["package"],
-      "requires": ["dockerfile", "context"],
-      "outputs": ["container-image", "image-digest"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "web",
+        "worker"
+      ],
+      "supportedPhases": [
+        "package"
+      ],
+      "requires": [
+        "dockerfile",
+        "context"
+      ],
+      "outputs": [
+        "container-image",
+        "image-digest"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/DockerBuildxAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "docker-static-web": {
       "kind": "package-tool",
-      "supportedSurfaceTypes": ["web"],
-      "supportedPhases": ["package"],
-      "requires": ["dockerfile", "context"],
-      "outputs": ["static-web-image", "image-digest"],
+      "supportedSurfaceTypes": [
+        "web"
+      ],
+      "supportedPhases": [
+        "package"
+      ],
+      "requires": [
+        "dockerfile",
+        "context"
+      ],
+      "outputs": [
+        "static-web-image",
+        "image-digest"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/DockerStaticWebAdapter.ts",
       "status": "planned",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": false,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "compose-local": {
       "kind": "deployment-tool",
-      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
-      "supportedPhases": ["deploy", "verify", "rollback"],
-      "requires": ["composeFile", "envFile"],
-      "outputs": ["deployment-manifest", "health-check-report"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "web",
+        "worker"
+      ],
+      "supportedPhases": [
+        "deploy",
+        "verify",
+        "rollback"
+      ],
+      "requires": [
+        "composeFile",
+        "envFile"
+      ],
+      "outputs": [
+        "deployment-manifest",
+        "health-check-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/ComposeLocalAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "kubernetes": {
       "kind": "deployment-tool",
-      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
-      "supportedPhases": ["deploy", "verify", "rollback"],
-      "requires": ["namespace", "helmChart", "valuesFile"],
-      "outputs": ["deployment-manifest", "health-check-report"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "web",
+        "worker"
+      ],
+      "supportedPhases": [
+        "deploy",
+        "verify",
+        "rollback"
+      ],
+      "requires": [
+        "namespace",
+        "helmChart",
+        "valuesFile"
+      ],
+      "outputs": [
+        "deployment-manifest",
+        "health-check-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/KubernetesDeploymentAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "helm": {
       "kind": "deployment-tool",
-      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
-      "supportedPhases": ["deploy", "verify", "rollback"],
-      "requires": ["namespace", "releaseName", "chartPath", "valuesFile"],
-      "outputs": ["deployment-manifest", "health-check-report"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "web",
+        "worker"
+      ],
+      "supportedPhases": [
+        "deploy",
+        "verify",
+        "rollback"
+      ],
+      "requires": [
+        "namespace",
+        "releaseName",
+        "chartPath",
+        "valuesFile"
+      ],
+      "outputs": [
+        "deployment-manifest",
+        "health-check-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/HelmDeploymentAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "terraform": {
       "kind": "deployment-tool",
-      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
-      "supportedPhases": ["deploy", "verify", "rollback"],
-      "requires": ["workspace", "configPath", "variablesFile"],
-      "outputs": ["deployment-manifest", "health-check-report"],
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "web",
+        "worker"
+      ],
+      "supportedPhases": [
+        "deploy",
+        "verify",
+        "rollback"
+      ],
+      "requires": [
+        "workspace",
+        "configPath",
+        "variablesFile"
+      ],
+      "outputs": [
+        "deployment-manifest",
+        "health-check-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/TerraformDeploymentAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "xcode-ios": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["mobile-ios"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["xcodeProject", "scheme"],
-      "outputs": ["ios-app", "test-report"],
+      "supportedSurfaceTypes": [
+        "mobile-ios"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "xcodeProject",
+        "scheme"
+      ],
+      "outputs": [
+        "ios-app",
+        "test-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/XcodeIosAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "gradle-android": {
       "kind": "build-tool",
-      "supportedSurfaceTypes": ["mobile-android"],
-      "supportedPhases": ["dev", "validate", "test", "build", "package"],
-      "requires": ["gradleModule", "variant"],
-      "outputs": ["android-apk", "android-aab", "test-report"],
+      "supportedSurfaceTypes": [
+        "mobile-android"
+      ],
+      "supportedPhases": [
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "gradleModule",
+        "variant"
+      ],
+      "outputs": [
+        "android-apk",
+        "android-aab",
+        "test-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleAndroidAdapter.ts",
       "status": "partial",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": true,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "maven-publish": {
       "kind": "package-tool",
-      "supportedSurfaceTypes": ["sdk"],
-      "supportedPhases": ["package"],
-      "requires": ["gradleModule"],
-      "outputs": ["maven-artifact"],
+      "supportedSurfaceTypes": [
+        "sdk"
+      ],
+      "supportedPhases": [
+        "package"
+      ],
+      "requires": [
+        "gradleModule"
+      ],
+      "outputs": [
+        "maven-artifact"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/MavenPublishAdapter.ts",
       "status": "planned",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": false,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     },
     "domain-pack-validator": {
       "kind": "validation-tool",
-      "supportedSurfaceTypes": ["domain-pack"],
-      "supportedPhases": ["validate", "build"],
-      "requires": ["packPath"],
-      "outputs": ["validation-report"],
+      "supportedSurfaceTypes": [
+        "domain-pack"
+      ],
+      "supportedPhases": [
+        "validate",
+        "build"
+      ],
+      "requires": [
+        "packPath"
+      ],
+      "outputs": [
+        "validation-report"
+      ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/DomainPackValidatorAdapter.ts",
       "status": "planned",
       "safeForDefault": false,
-      "tests": []
+      "tests": [],
+      "planningImplemented": false,
+      "executionImplemented": false,
+      "outputValidationImplemented": false
     }
   }
 }

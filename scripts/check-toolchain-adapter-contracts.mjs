@@ -49,13 +49,19 @@ function getUsedAdapters(registry) {
 }
 
 function getDefaultProfileAdapters(lifecycleProfiles) {
-  const usedByStableProfiles = [];
+  const profileDefaults = [];
   for (const [profileId, profile] of Object.entries(lifecycleProfiles)) {
     for (const [slot, adapterId] of Object.entries(profile.defaultAdapters ?? {})) {
-      usedByStableProfiles.push({ profileId, slot, adapterId, status: profile.status ?? 'experimental' });
+      profileDefaults.push({
+        profileId,
+        slot,
+        adapterId,
+        status: profile.status ?? 'experimental',
+        safeForDefault: profile.safeForDefault === true,
+      });
     }
   }
-  return usedByStableProfiles;
+  return profileDefaults;
 }
 
 function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycleProfiles) {
@@ -88,8 +94,28 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycle
       errors.push(`Adapter ${adapterId}: tests must be an array`);
     }
 
+    if (typeof adapter.planningImplemented !== 'boolean') {
+      errors.push(`Adapter ${adapterId}: planningImplemented must be a boolean`);
+    }
+
+    if (typeof adapter.executionImplemented !== 'boolean') {
+      errors.push(`Adapter ${adapterId}: executionImplemented must be a boolean`);
+    }
+
+    if (typeof adapter.outputValidationImplemented !== 'boolean') {
+      errors.push(`Adapter ${adapterId}: outputValidationImplemented must be a boolean`);
+    }
+
     if (adapter.status === 'planned' && adapter.safeForDefault !== false) {
       errors.push(`Adapter ${adapterId}: planned adapters must set safeForDefault to false`);
+    }
+
+    if (adapter.status === 'planned' && (adapter.planningImplemented || adapter.executionImplemented || adapter.outputValidationImplemented)) {
+      errors.push(`Adapter ${adapterId}: planned adapters must set planningImplemented/executionImplemented/outputValidationImplemented to false`);
+    }
+
+    if (adapter.status === 'implemented' && (!adapter.planningImplemented || !adapter.executionImplemented || !adapter.outputValidationImplemented)) {
+      errors.push(`Adapter ${adapterId}: implemented adapters must set planningImplemented/executionImplemented/outputValidationImplemented to true`);
     }
 
     const requiresImplementationFile = adapter.status === 'implemented' || adapter.status === 'partial' || usedAdapters.has(adapterId);
@@ -128,15 +154,29 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycle
     }
   }
 
-  for (const { profileId, slot, adapterId, status } of getDefaultProfileAdapters(lifecycleProfiles)) {
+  for (const [profileId, profile] of Object.entries(lifecycleProfiles)) {
+    if (typeof profile.safeForDefault !== 'boolean') {
+      errors.push(`Lifecycle profile ${profileId}: safeForDefault must be a boolean`);
+    }
+
+    if (profile.status === 'stable' && profile.safeForDefault !== true) {
+      errors.push(`Lifecycle profile ${profileId}: stable profiles must set safeForDefault to true`);
+    }
+
+    if (profile.status === 'experimental' && profile.safeForDefault === true) {
+      errors.push(`Lifecycle profile ${profileId}: experimental profiles cannot set safeForDefault to true`);
+    }
+  }
+
+  for (const { profileId, slot, adapterId, safeForDefault } of getDefaultProfileAdapters(lifecycleProfiles)) {
     const adapter = adapterRegistry[adapterId];
     if (!adapter) {
       errors.push(`Lifecycle profile ${profileId}: default adapter ${adapterId} for ${slot} is not registered`);
       continue;
     }
 
-    if (status === 'stable' && adapter.safeForDefault !== true) {
-      errors.push(`Lifecycle profile ${profileId}: stable profile cannot default ${slot} to unsafe adapter ${adapterId}`);
+    if (safeForDefault && adapter.safeForDefault !== true) {
+      errors.push(`Lifecycle profile ${profileId}: safe default profile cannot default ${slot} to unsafe adapter ${adapterId}`);
     }
   }
 

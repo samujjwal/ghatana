@@ -49,6 +49,35 @@ describe('PnpmViteReactAdapter', () => {
     expect(result.artifacts).toContain('products/digital-marketing/web/dist');
     expect(commandRunner.invocations[0].args).toEqual(['--dir', 'products/digital-marketing/web', 'run', 'build']);
   });
+
+  it('fails closed when required configured output is missing', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist'), { recursive: true });
+    await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'package.json'), '{"name":"web"}');
+    await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist', 'index.html'), '<html></html>');
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'vite build complete', stderr: '', durationMs: 15 },
+    ]);
+    const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+    const context = createContext(repoRoot);
+    context.surfaceConfig.expectedOutputs = {
+      build: ['products/digital-marketing/web/dist/missing.html'],
+    };
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('failed');
+    expect(result.failure?.message).toContain('Missing expected output');
+  });
+
+  it('rejects unsupported phases instead of falling back', async () => {
+    const adapter = new PnpmViteReactAdapter({ repoRoot });
+    const context = createContext(repoRoot);
+    context.phase = 'deploy';
+
+    await expect(adapter.plan(context)).rejects.toThrow('does not support phase deploy');
+  });
 });
 
 function createContext(repoRoot: string): ToolchainAdapterContext {

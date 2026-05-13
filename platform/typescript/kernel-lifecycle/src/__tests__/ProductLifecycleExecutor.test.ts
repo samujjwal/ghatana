@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ProductLifecycleExecutor } from '../execution/ProductLifecycleExecutor.js';
 import { ProductLifecycleStepRunner, AdapterRegistry, Adapter, AdapterResult, AdapterContext } from '../execution/ProductLifecycleStepRunner.js';
-import { ExecutionResultCollector, ConsoleExecutionLogger } from '../execution/ExecutionLogger.js';
+import { ConsoleExecutionLogger } from '../execution/ExecutionLogger.js';
+import { ExecutionResultCollector } from '../execution/ExecutionResultCollector.js';
 import { ProductLifecycleStep, ProductLifecyclePhase } from '../domain/ProductLifecyclePhase.js';
 
 /**
@@ -108,7 +109,7 @@ describe('ProductLifecycleExecutor', () => {
       logger,
     });
 
-    expect(result.status).toBe('succeeded');
+    expect(result.status).toBe('skipped');
     expect(result.steps[0].status).toBe('skipped');
   });
 

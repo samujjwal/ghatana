@@ -1,69 +1,56 @@
 # Product Toolchain Adapter Specification
 
-This document defines the contract for toolchain adapters.
+This document defines production requirements for toolchain adapters.
 
-## Adapter Interface
+## Adapter Contract
 
-Toolchain adapters implement a common interface to abstract build tools:
+Adapters implement the `ToolchainAdapter` contract in `platform/typescript/kernel-toolchains/src/ToolchainAdapter.ts`:
 
-```typescript
-interface ToolchainAdapter {
-  readonly id: string;
-  readonly name: string;
-  
-  // Phase operations
-  dev(surface: Surface, config: SurfaceConfig): Promise<AdapterResult>;
-  build(surface: Surface, config: SurfaceConfig): Promise<AdapterResult>;
-  test(surface: Surface, config: SurfaceConfig): Promise<AdapterResult>;
-  validate(surface: Surface, config: SurfaceConfig): Promise<AdapterResult>;
-  
-  // Artifact operations
-  package(surface: Surface, config: SurfaceConfig, targets: ArtifactTarget[]): Promise<ArtifactManifest>;
-}
-```
+- `plan(context)` returns executable command steps
+- `execute(context)` executes steps and returns normalized step/result status
+- `validateOutputs(context)` enforces expected outputs
 
-## Adapter Registration
+## Registry Contract
 
-Adapters are registered in the toolchain adapter registry:
+All adapters must be declared in `config/toolchain-adapter-registry.json` and validate against `config/toolchain-adapter-registry-schema.json`.
 
-```json
-{
-  "adapters": {
-    "gradle-java-service": {
-      "package": "@ghatana/kernel-toolchains",
-      "module": "./adapters/gradle-java-service"
-    },
-    "pnpm-vite-react": {
-      "package": "@ghatana/kernel-toolchains",
-      "module": "./adapters/pnpm-vite-react"
-    }
-  }
-}
-```
+Required registry fields include:
 
-## Adapter Responsibilities
+- `safeForDefault`
+- `planningImplemented`
+- `executionImplemented`
+- `outputValidationImplemented`
+- `status` and `tests`
 
-- Execute tool-specific commands (Gradle, pnpm, etc.)
-- Parse tool output into standard AdapterResult format
-- Emit artifact manifests during package phase
-- Validate tool availability before execution
-- Handle tool-specific error conditions
+Enforcement:
 
-## Adapter Constraints
+- `status: implemented` requires all three implementation flags to be `true`.
+- `status: planned` requires all three implementation flags to be `false`.
+- Stable/safe lifecycle profiles may only default to adapters with `safeForDefault: true`.
 
-- Adapters must not introduce product-specific logic
-- Adapters must not call Kernel lifecycle APIs (avoid circular dependencies)
-- Adapters must validate inputs before invoking tools
-- Adapters must surface tool errors with actionable messages
+## Output Validation
 
-## Built-in Adapters
+Adapters must fail closed on required outputs.
 
-### gradle-java-service
-- Handles Java backend services built with Gradle
-- Supports dev, build, test, validate, and package phases
-- Emits JAR and container artifacts
+- If `surfaceConfig.expectedOutputs[phase]` is defined in `kernel-product.yaml`, it is authoritative.
+- If not defined, adapters may use strict fallback checks.
+- Missing expected outputs must produce failed execution results.
 
-### pnpm-vite-react
-- Handles React web applications built with pnpm and Vite
-- Supports dev, build, test, validate, and package phases
-- Emits static-web-bundle artifacts
+## Phase Support
+
+Adapters must reject unsupported phases explicitly.
+
+- No fallback mapping from unsupported phases to build/test is allowed.
+- Unsupported phase usage must raise a hard error during planning.
+
+## Side-Effect Rules
+
+Adapters must not perform artifact manifest side effects.
+
+- Artifact manifest generation/writing is not performed in Gradle/pnpm adapter execution paths.
+- Adapters only execute tools, collect outputs, and validate outputs.
+
+## Implemented Adapters
+
+- `gradle-java-service`: strict phase support, YAML-driven expected output validation.
+- `pnpm-vite-react`: strict phase support, YAML-driven expected output validation.

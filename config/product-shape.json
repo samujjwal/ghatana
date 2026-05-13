@@ -104,12 +104,7 @@
       },
       "clientPackages": [
         "products/data-cloud/delivery/ui/package.json"
-      ],
-      "lifecycle": {
-        "profile": "platform-provider-product",
-        "enabled": false,
-        "configPath": "products/data-cloud/kernel-product.yaml"
-      }
+      ]
     },
     "yappc": {
       "ui": true,
@@ -124,12 +119,7 @@
       },
       "clientPackages": [
         "products/yappc/frontend/package.json"
-      ],
-      "lifecycle": {
-        "profile": "standard-web-api-product",
-        "enabled": false,
-        "configPath": "products/yappc/kernel-product.yaml"
-      }
+      ]
     },
     "audio-video": {
       "ui": false,

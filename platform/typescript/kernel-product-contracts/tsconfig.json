@@ -3,10 +3,6 @@
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@ghatana/kernel-product-contracts": ["../kernel-product-contracts/dist/index.d.ts"]
-    },
     "lib": ["ES2022"],
     "types": ["node"],
     "strict": true,
@@ -27,8 +23,7 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "ignoreDeprecations": "6.0"
+    "strictPropertyInitialization": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

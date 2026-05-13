@@ -67,6 +67,11 @@ Do NOT create a new library when:
 | `@ghatana/domain-components` | Canonical domain-specific components (privacy, security, voice, nlp, selection) | Platform | ✅ Active |
 | `@ghatana/accessibility` | Canonical accessibility audit + audit log components and hooks | Platform | ✅ Active |
 | `@ghatana/product-shell` | Shared product shell layout primitives — sidebar, header, nav, notifications, mode selector, boundary surfaces | Platform | ✅ Active |
+| `@ghatana/kernel-product-contracts` | Shared lifecycle, surface, artifact, environment, and deployment contracts for Kernel product orchestration | Platform | ✅ Active |
+| `@ghatana/kernel-lifecycle` | Kernel lifecycle planning and execution orchestration | Platform | ✅ Active |
+| `@ghatana/kernel-toolchains` | Toolchain adapters used by Kernel lifecycle phases | Platform | ✅ Active |
+| `@ghatana/kernel-artifacts` | Artifact validation, manifest generation, and fingerprinting for lifecycle outputs | Platform | ✅ Active |
+| `@ghatana/kernel-deployment` | Deployment planning and adapter orchestration for lifecycle deploy/verify phases | Platform | ✅ Active |
 
 ### Deprecated Packages — Fix Forward
 

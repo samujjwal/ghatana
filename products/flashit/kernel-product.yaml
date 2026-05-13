@@ -1,48 +1,8 @@
-schemaVersion: "1.0.0"
-id: "flashit"
-lifecycleProfile: "mobile-plus-api-product"
-
-surfaces:
-  - type: "backend-api"
-    adapter: "gradle-java-service"
-    config:
-      gradleModule: "products:flashit:backend:gateway"
-  - type: "web"
-    adapter: "pnpm-vite-react"
-    config:
-      packagePath: "products/flashit/client/web"
-  - type: "mobile-ios"
-    adapter: "xcode-ios"
-    config:
-      xcodeProject: "products/flashit/client/mobile/ios"
-      scheme: "FlashIt"
-  - type: "mobile-android"
-    adapter: "gradle-android"
-    config:
-      gradleModule: "products:flashit:client/mobile:android"
-      variant: "release"
-
-phases:
-  dev:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "parallel"
-  
-  validate:
-    defaultSurfaces: ["backend-api", "web", "mobile-ios", "mobile-android"]
-    mode: "parallel"
-  
-  test:
-    defaultSurfaces: ["backend-api", "web", "mobile-ios", "mobile-android"]
-    mode: "parallel"
-  
-  build:
-    defaultSurfaces: ["backend-api", "web", "mobile-ios", "mobile-android"]
-    mode: "parallel"
-  
-  package:
-    defaultSurfaces: ["backend-api", "mobile-ios", "mobile-android"]
-    mode: "parallel"
-  
-  deploy:
-    defaultSurfaces: ["backend-api"]
-    mode: "sequential"
+schemaVersion: 1.0.0
+productId: flashit
+lifecycleProfile: mobile-plus-api-product
+status: draft
+executionEnabled: false
+migration:
+  status: planned
+  reason: "FlashIt requires mobile surface and adapter normalization before lifecycle execution."

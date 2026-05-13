@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "excludedProducts": {
+    "yappc": {
+      "reason": "YAPPC is out of scope for Kernel lifecycle adoption in this stream.",
+      "allowedLegacyExecution": true
+    },
+    "data-cloud": {
+      "reason": "Data Cloud is out of scope for Kernel lifecycle adoption in this stream.",
+      "allowedLegacyExecution": true
+    }
+  }
+}

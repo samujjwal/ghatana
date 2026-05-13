@@ -31,6 +31,7 @@ const CI_MATRIX_OUTPUT_PATH = path.join(repoRoot, 'config/generated/ci-matrix.js
 const PACKAGE_SCRIPTS_OUTPUT_PATH = path.join(repoRoot, 'config/generated/package-scripts.json');
 const PNPM_WORKSPACE_PATH = path.join(repoRoot, 'pnpm-workspace.yaml');
 const WORKSPACE_DEPENDENCY_POLICY_PATH = path.join(repoRoot, 'config/workspace-dependency-policy.json');
+const LIFECYCLE_EXCLUSIONS_PATH = path.join(repoRoot, 'config/kernel-lifecycle-exclusions.json');
 const PRODUCT_GRADLE_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
 const PRODUCT_CI_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
 const PRODUCT_SCRIPT_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
@@ -64,6 +65,14 @@ function loadWorkspaceDependencyPolicy() {
   }
   const content = readFileSync(WORKSPACE_DEPENDENCY_POLICY_PATH, 'utf8');
   return JSON.parse(content);
+}
+
+function loadLifecycleExclusions() {
+  if (!existsSync(LIFECYCLE_EXCLUSIONS_PATH)) {
+    return {};
+  }
+  const content = readFileSync(LIFECYCLE_EXCLUSIONS_PATH, 'utf8');
+  return JSON.parse(content).excludedProducts ?? {};
 }
 
 // Validate registry against schema (basic validation)
@@ -225,13 +234,14 @@ function generatePnpmEntries(registry, dependencyPolicy) {
 }
 
 // Generate CI matrix configuration
-function generateCIMatrix(registry) {
+function generateCIMatrix(registry, lifecycleExclusions) {
   const matrix = {
     products: [],
     productsWithUI: [],
     productsWithTests: [],
     productsWithIntegrationTests: [],
     productsWithLifecycle: [],
+    excludedFromLifecycle: Object.keys(lifecycleExclusions).sort(),
     lifecycleProfiles: []
   };
 
@@ -254,7 +264,7 @@ function generateCIMatrix(registry) {
       }
 
       // Add lifecycle metadata
-      if (product.lifecycleProfile && product.lifecycle?.enabled) {
+      if (product.lifecycleProfile && product.lifecycle?.enabled && !lifecycleExclusions[productId]) {
         matrix.productsWithLifecycle.push(productId);
         if (!matrix.lifecycleProfiles.includes(product.lifecycleProfile)) {
           matrix.lifecycleProfiles.push(product.lifecycleProfile);
@@ -268,7 +278,7 @@ function generateCIMatrix(registry) {
 }
 
 // Generate root package.json scripts
-function generatePackageScripts(registry) {
+function generatePackageScripts(registry, lifecycleExclusions) {
   const scripts = {};
   
   // Generic platform scripts
@@ -283,7 +293,7 @@ function generatePackageScripts(registry) {
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
   scripts['product'] = 'node ./scripts/run-product-task.mjs';
   scripts['kernel'] = 'node ./scripts/kernel-product.mjs';
-  scripts['build:kernel-lifecycle-platform'] = 'pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build';
+  scripts['build:kernel-lifecycle-platform'] = 'pnpm --dir platform/typescript/kernel-product-contracts build && pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build';
   scripts['check:affected-products'] = 'node ./scripts/resolve-affected-products.test.mjs';
   scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
   scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';
@@ -296,7 +306,7 @@ function generatePackageScripts(registry) {
     }
 
     // Use kernel lifecycle CLI for products with lifecycle enabled
-    const useLifecycle = product.lifecycleProfile && product.lifecycle?.enabled;
+    const useLifecycle = product.lifecycleProfile && product.lifecycle?.enabled && !lifecycleExclusions[productId];
 
     const surfaces = product.surfaces || [];
     
@@ -337,9 +347,6 @@ function generatePackageScripts(registry) {
       scripts[`plan:package:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} package`;
       scripts[`plan:deploy:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} deploy --env local`;
       scripts[`plan:verify:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} verify --env local`;
-      scripts[`release:${productId}`] = `node scripts/kernel-product.mjs release ${productId}`;
-      scripts[`promote:${productId}`] = `node scripts/kernel-product.mjs promote ${productId} --from staging --to prod`;
-      scripts[`rollback:${productId}`] = `node scripts/kernel-product.mjs rollback ${productId} --env prod`;
     } else {
       scripts[`build:${productId}`] = `pnpm product ${productId} build`;
       scripts[`test:${productId}`] = `pnpm product ${productId} test`;
@@ -357,6 +364,7 @@ function main() {
   try {
     const registry = loadRegistry();
     const dependencyPolicy = loadWorkspaceDependencyPolicy();
+    const lifecycleExclusions = loadLifecycleExclusions();
     const productIds = validateRegistry(registry);
     
     console.log(`Processing ${productIds.length} products...\n`);
@@ -365,8 +373,8 @@ function main() {
     generateProductShape(registry);
     generateGradleIncludes(registry);
     generatePnpmEntries(registry, dependencyPolicy);
-    generateCIMatrix(registry);
-    generatePackageScripts(registry);
+    generateCIMatrix(registry, lifecycleExclusions);
+    generatePackageScripts(registry, lifecycleExclusions);
     
     // Merge generated package scripts into package.json
     console.log(`\n${checkMode ? 'Checking' : 'Merging'} generated package scripts ${checkMode ? 'against' : 'into'} package.json...`);

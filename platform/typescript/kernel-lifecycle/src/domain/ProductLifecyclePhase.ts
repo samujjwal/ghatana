@@ -78,16 +78,29 @@ export interface LifecyclePlanStep {
   adapter: string;
   description: string;
   dependsOn: string[];
+  estimatedDurationMs?: number;
+  execution?: {
+    command: string;
+    args: string[];
+    workingDirectory: string;
+  };
 }
 
 /**
  * Lifecycle plan
  */
 export interface LifecyclePlan {
+  schemaVersion?: '1.0.0';
   productId: string;
   phase: ProductLifecyclePhase;
+  lifecycleProfile?: string;
+  environment?: string;
+  sourceRef?: string;
   surfaces: string[];
+  gates?: ProductGatePlan[];
   steps: LifecyclePlanStep[];
+  expectedArtifacts?: ProductExpectedArtifact[];
+  outputDirectory?: string;
   estimatedDurationMs: number;
 }
 
@@ -200,6 +213,11 @@ export interface ProductLifecycleStep {
   description: string;
   dependsOn: string[];
   estimatedDurationMs: number;
+  execution?: {
+    command: string;
+    args: string[];
+    workingDirectory: string;
+  };
 }
 
 /**

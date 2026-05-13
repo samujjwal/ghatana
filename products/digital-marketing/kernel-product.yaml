@@ -1,6 +1,7 @@
 schemaVersion: 1.0.0
 productId: digital-marketing
 lifecycleProfile: standard-web-api-product
+allowExperimentalAdapters: false
 
 surfaces:
   backend-api:
@@ -12,6 +13,13 @@ surfaces:
     buildTask: build
     testTask: test
     validateTask: check
+    packageTask: assemble
+    expectedOutputs:
+      build:
+        - products/digital-marketing/dm-api/build/libs/*.jar
+      test:
+        - products/digital-marketing/dm-api/build/test-results/test
+        - products/digital-marketing/dm-api/build/reports/tests
     health:
       type: http
       path: /health
@@ -24,8 +32,14 @@ surfaces:
     adapter: pnpm-vite-react
     packagePath: products/digital-marketing/ui/package.json
     devScript: dev
+    validateScript: type-check
     buildScript: build
     testScript: test
+    packageScript: build
+    expectedOutputs:
+      build:
+        - products/digital-marketing/ui/dist
+        - products/digital-marketing/ui/dist/index.html
     health:
       type: http
       path: /
@@ -96,5 +110,9 @@ deployment:
     envFile: products/digital-marketing/deploy/local.env
     envExampleFile: products/digital-marketing/deploy/local.env.example
     healthChecks:
-      - backend-api
-      - web
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/

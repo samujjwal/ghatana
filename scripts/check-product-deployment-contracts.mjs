@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as yaml from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
@@ -17,9 +18,12 @@ function loadDeploymentTargets() {
   return JSON.parse(readFileSync(deploymentTargetsPath, 'utf8')).targets ?? {};
 }
 
-function extractField(content, fieldName) {
-  const match = content.match(new RegExp(`^\\s*${fieldName}:\\s*(.+)$`, 'm'));
-  return match ? match[1].trim() : null;
+function loadKernelProductConfig(productId, lifecycleConfigPath) {
+  const absolutePath = join(repoRoot, lifecycleConfigPath);
+  if (!existsSync(absolutePath)) {
+    throw new Error(`Product ${productId}: lifecycle config file not found at ${lifecycleConfigPath}`);
+  }
+  return yaml.parse(readFileSync(absolutePath, 'utf8'));
 }
 
 function checkProductDeploymentContracts(registry, deploymentTargets) {
@@ -27,17 +31,23 @@ function checkProductDeploymentContracts(registry, deploymentTargets) {
   const warnings = [];
 
   for (const [productId, product] of Object.entries(registry)) {
-    if (product.lifecycleStatus !== 'enabled') {
+    const enabled = product.lifecycleStatus === 'enabled' && product.lifecycle?.enabled === true;
+    if (!enabled) {
       continue;
     }
 
-    const targets = product.deployment?.targets ?? [];
-    if (targets.length === 0) {
-      errors.push(`Product ${productId}: enabled lifecycle product is missing deployment targets`);
+    if (typeof product.lifecycleConfigPath !== 'string' || product.lifecycleConfigPath.length === 0) {
+      errors.push(`Product ${productId}: enabled lifecycle product must declare lifecycleConfigPath`);
       continue;
     }
 
-    for (const target of targets) {
+    const registryTargets = product.deployment?.targets ?? [];
+    if (registryTargets.length === 0) {
+      errors.push(`Product ${productId}: enabled lifecycle product is missing deployment targets in registry`);
+      continue;
+    }
+
+    for (const target of registryTargets) {
       if (!deploymentTargets[target]) {
         errors.push(`Product ${productId}: deployment target "${target}" not found`);
       }
@@ -45,41 +55,62 @@ function checkProductDeploymentContracts(registry, deploymentTargets) {
 
     const supportedEnvironments = product.environments?.supported ?? [];
     if (!supportedEnvironments.includes('local')) {
-      errors.push(`Product ${productId}: enabled lifecycle product must support the local environment`);
+      errors.push(`Product ${productId}: enabled lifecycle product must support local environment in registry`);
     }
 
-    const localLifecyclePath = join(repoRoot, 'products', productId, 'lifecycle.local.yaml');
-    if (!existsSync(localLifecyclePath)) {
-      errors.push(`Product ${productId}: local lifecycle overlay not found at products/${productId}/lifecycle.local.yaml`);
+    let config;
+    try {
+      config = loadKernelProductConfig(productId, product.lifecycleConfigPath);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
       continue;
     }
 
-    const localLifecycleContent = readFileSync(localLifecyclePath, 'utf8');
-    const composeFile = extractField(localLifecycleContent, 'composeFile');
-    const envFile = extractField(localLifecycleContent, 'envFile');
-    const envExampleFile = extractField(localLifecycleContent, 'envExampleFile');
+    const localDeployment = config.deployment?.local;
+    if (!localDeployment || typeof localDeployment !== 'object') {
+      errors.push(`Product ${productId}: kernel-product.yaml is missing deployment.local`);
+      continue;
+    }
 
-    if (!composeFile) {
-      errors.push(`Product ${productId}: local lifecycle overlay is missing composeFile`);
+    const target = localDeployment.target;
+    if (typeof target !== 'string' || target.length === 0) {
+      errors.push(`Product ${productId}: deployment.local.target is required`);
+    } else if (!registryTargets.includes(target)) {
+      errors.push(`Product ${productId}: deployment.local.target ${target} is not listed in registry deployment targets`);
+    }
+
+    const composeFile = localDeployment.composeFile;
+    if (typeof composeFile !== 'string' || composeFile.length === 0) {
+      errors.push(`Product ${productId}: deployment.local.composeFile is required`);
     } else if (!existsSync(join(repoRoot, composeFile))) {
       errors.push(`Product ${productId}: compose file not found at ${composeFile}`);
     }
 
-    if (!envFile) {
-      errors.push(`Product ${productId}: local lifecycle overlay is missing envFile`);
+    const envFile = localDeployment.envFile;
+    if (typeof envFile !== 'string' || envFile.length === 0) {
+      warnings.push(`Product ${productId}: deployment.local.envFile is not declared`);
     } else if (!existsSync(join(repoRoot, envFile))) {
       warnings.push(`Product ${productId}: env file ${envFile} is not present locally`);
     }
 
-    if (!envExampleFile) {
-      errors.push(`Product ${productId}: local lifecycle overlay is missing envExampleFile`);
+    const envExampleFile = localDeployment.envExampleFile;
+    if (typeof envExampleFile !== 'string' || envExampleFile.length === 0) {
+      errors.push(`Product ${productId}: deployment.local.envExampleFile is required`);
     } else if (!existsSync(join(repoRoot, envExampleFile))) {
       errors.push(`Product ${productId}: env example file not found at ${envExampleFile}`);
     }
 
-    const healthChecksPath = join(repoRoot, 'products', productId, 'deploy', 'health-checks.json');
-    if (!existsSync(healthChecksPath)) {
-      errors.push(`Product ${productId}: health checks file not found at products/${productId}/deploy/health-checks.json`);
+    const healthChecks = localDeployment.healthChecks;
+    if (!healthChecks || typeof healthChecks !== 'object') {
+      errors.push(`Product ${productId}: deployment.local.healthChecks is required`);
+      continue;
+    }
+
+    const configuredSurfaces = Object.keys(config.surfaces ?? {});
+    for (const surfaceId of configuredSurfaces) {
+      if (!healthChecks[surfaceId]) {
+        errors.push(`Product ${productId}: deployment.local.healthChecks is missing ${surfaceId}`);
+      }
     }
   }
 
