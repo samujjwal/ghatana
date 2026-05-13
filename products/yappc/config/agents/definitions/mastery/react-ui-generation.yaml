@@ -1,0 +1,38 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: react-ui-generation
+  name: React UI Generation
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at generating correct,
+    accessible, and design-system-aligned React components.
+spec:
+  domain: engineering
+  skillFamily: ui-generation
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "react@18"
+      - "react@19"
+    maintenance:
+      - "react@17"
+    obsolete:
+      - "react@16"
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.90
+    requiresSafetyPass: true
+    evaluationPackRef: eval-pack-react-ui-quality-v1
+
+  evidenceRequirements:
+    minEpisodes: 10
+    minSuccessfulEpisodes: 9
+    requiresHumanReview: false
+    freshnessTtlDays: 60
+
+  observabilityHints:
+    tracePrefix: mastery.react-ui-generation
+    metricsNamespace: ghatana.yappc.mastery.react

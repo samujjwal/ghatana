@@ -1,0 +1,74 @@
+apiVersion: ghatana.yappc/v1
+kind: AgentDefinition
+metadata:
+  id: drift-detection-agent
+  name: Drift Detection Agent
+  namespace: devsecops.drift
+  version: 1.0.0
+  status: active
+  owners:
+    - team: platform-engineering
+  summary: Detects semantic, structural, and version drift across code, schemas, and agent definitions.
+
+identity:
+  agentType: DETERMINISTIC
+  subtype: pattern
+  criticality: critical
+  autonomyLevel: bounded-autonomous
+  determinismGuarantee: fully-deterministic
+  stateMutability: stateless
+  failureMode: fail-closed
+
+learning:
+  learningLevel: L2
+  adaptationTargets:
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+    - RETRIEVAL_POLICY
+    - CONFIDENCE_THRESHOLD
+  masteryBindings:
+    - skillRef: drift-detection
+      masteryPolicyRef: promotion-policy-v1
+  skillRefs:
+    - drift-detection
+  masteryPolicyRefs:
+    - promotion-policy-v1
+  evaluationRefs: []
+  provenanceRequired: true
+  promotionRequired: false
+
+memoryBindings:
+  episodic:
+    enabled: true
+    retentionDays: 30
+    tier: SHORT_TERM
+  semantic:
+    enabled: true
+    tier: LONG_TERM
+  procedural:
+    enabled: false
+
+securityContract:
+  inputValidation: strict
+  outputSanitization: true
+  tenantIsolation: required
+  trustedMemoryOnly: true
+  allowUntrustedToolOutput: false
+
+observabilityContract:
+  metricsRequired: true
+  tracingRequired: true
+  logLevel: warn
+  correlationIdPropagation: required
+  masteryDecisionLogged: true
+
+capabilities:
+  - drift-detection
+  - schema-comparison
+  - version-compatibility-check
+
+governance:
+  requiresApproval: false
+  requiresVerification: false
+  auditTrail: standard
+  supervision: AUTONOMOUS

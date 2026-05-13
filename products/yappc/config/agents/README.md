@@ -9,13 +9,23 @@ This directory contains the complete agent specification for the YAPPC platform,
 ```
 agents/
 ├── definitions/          # Agent definitions (stable blueprints)
-│   ├── products-officer.yaml
-│   ├── systems-architect.yaml
-│   ├── java-expert.yaml
-│   ├── java-class-writer.yaml
-│   ├── unit-test-writer.yaml
-│   ├── vuln-scanner.yaml
-│   └── sentinel.yaml
+│   ├── code-generation/  # Code generation agents
+│   │   └── java-code-generation-agent.yaml
+│   ├── drift-detection/  # Drift and schema analysis agents
+│   │   └── drift-detection-agent.yaml
+│   ├── mastery/          # Seed mastery registry entries (MasteryEntry kind)
+│   │   ├── java-class-writing.yaml
+│   │   ├── react-ui-generation.yaml
+│   │   ├── requirements-drafting.yaml
+│   │   ├── acceptance-criteria-formatting.yaml
+│   │   ├── drift-detection.yaml
+│   │   └── memory-capability.yaml
+│   ├── memory/           # Memory management agents
+│   │   └── memory-capability-agent.yaml
+│   ├── requirements/     # Requirements and acceptance criteria agents
+│   │   └── requirements-drafting-agent.yaml
+│   └── ui-generation/    # UI generation agents
+│       └── react-ui-generation-agent.yaml
 │
 ├── instances/           # Agent instances (tenant-specific runtime config)
 │   ├── products-officer-default.yaml
@@ -155,3 +165,75 @@ Promise<JavaCode> result = agent.executeTurn(request, context);
 - Framework: `libs/java/agent-framework`
 - Examples: `libs/java/agent-framework/examples/`
 - Documentation: `libs/java/agent-framework/README.md`
+
+---
+
+## Learning Governance Contract
+
+Every agent definition under `definitions/` must include a `learning:` block that declares its
+`LearningLevel` and associated mastery bindings. The following rules are enforced by
+`products/yappc/scripts/validate_agents.py`:
+
+| Level | Label         | Provenance Required | Promotion Required | evaluationRefs Required | Allowed Targets           |
+|-------|---------------|---------------------|--------------------|-------------------------|---------------------------|
+| L0    | None          | No                  | No                 | No                      | None                      |
+| L1    | Minimal       | No                  | No                 | No                      | EPISODIC_MEMORY           |
+| L2    | Observed      | **Yes**             | No                 | No                      | L1 + SEMANTIC_FACT, RETRIEVAL_POLICY, CONFIDENCE_THRESHOLD, ROUTING_POLICY |
+| L3    | Practiced     | **Yes**             | **Yes**            | **Yes**                 | L2 + PROCEDURAL_SKILL, NEGATIVE_KNOWLEDGE |
+| L4    | Competent     | **Yes**             | **Yes**            | **Yes**                 | L3 + PROMPT_TEMPLATE, PLANNER_POLICY |
+| L5    | Governance    | **Yes**             | **Yes**            | **Yes**                 | All (including MASTERY_STATE) — offline-only governance tier |
+
+### Required fields in `learning:` block
+
+```yaml
+learning:
+  learningLevel: L3           # L0..L5
+  adaptationTargets:          # subset of LearningTarget enum values
+    - PROCEDURAL_SKILL
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+  masteryBindings:            # required when skillRefs is non-empty
+    - skillRef: <mastery-entry-id>
+      masteryPolicyRef: <policy-id>
+  skillRefs:                  # IDs that must resolve to MasteryEntry files in definitions/mastery/
+    - java-class-writing
+  masteryPolicyRefs:          # promotion policy IDs
+    - promotion-policy-v1
+  evaluationRefs:             # evaluation pack IDs — required for L3+
+    - eval-pack-java-code-quality-v1
+  provenanceRequired: true    # must be true for L2+
+  promotionRequired: true     # must be true for L3+
+```
+
+### Valid `adaptationTargets` values (LearningTarget enum)
+
+```
+EPISODIC_MEMORY, SEMANTIC_FACT, RETRIEVAL_POLICY, CONFIDENCE_THRESHOLD,
+ROUTING_POLICY, PROCEDURAL_SKILL, NEGATIVE_KNOWLEDGE, PROMPT_TEMPLATE,
+PLANNER_POLICY, MODEL_ADAPTER, MASTERY_STATE
+```
+
+### Mastery Registry
+
+Seed mastery entries live under `definitions/mastery/`. Each `kind: MasteryEntry` file
+defines the initial state and promotion rules for a specific skill:
+
+| Skill ID                      | File                                          |
+|-------------------------------|-----------------------------------------------|
+| `java-class-writing`          | `mastery/java-class-writing.yaml`             |
+| `react-ui-generation`         | `mastery/react-ui-generation.yaml`            |
+| `requirements-drafting`       | `mastery/requirements-drafting.yaml`          |
+| `acceptance-criteria-formatting` | `mastery/acceptance-criteria-formatting.yaml` |
+| `drift-detection`             | `mastery/drift-detection.yaml`                |
+| `memory-capability`           | `mastery/memory-capability.yaml`              |
+
+### Validation
+
+Run from the repository root:
+
+```bash
+python3 products/yappc/scripts/validate_agents.py
+```
+
+Exit code 0 means all checks pass. Non-zero exit code means at least one validation error.
+

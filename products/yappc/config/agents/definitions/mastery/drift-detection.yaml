@@ -1,0 +1,35 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: drift-detection
+  name: Drift Detection
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at detecting semantic,
+    structural, and version drift across code, schemas, and agent definitions.
+spec:
+  domain: devsecops
+  skillFamily: drift-detection
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.95
+    requiresSafetyPass: true
+    evaluationPackRef: eval-pack-drift-detection-v1
+
+  evidenceRequirements:
+    minEpisodes: 12
+    minSuccessfulEpisodes: 11
+    requiresHumanReview: false
+    freshnessTtlDays: 30
+
+  observabilityHints:
+    tracePrefix: mastery.drift-detection
+    metricsNamespace: ghatana.yappc.mastery.drift

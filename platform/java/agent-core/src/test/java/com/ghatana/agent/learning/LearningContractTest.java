@@ -263,9 +263,16 @@ class LearningContractTest {
     }
 
     @Test
-    @DisplayName("MASTERY_STATE is not permitted by any learning level")
+    @DisplayName("MASTERY_STATE is not permitted by sub-L5 learning levels")
     void masteryStateNotPermittedByAnyLevel() {
+        // L5 is the privileged offline-only governance tier; at the level layer it
+        // returns true for MASTERY_STATE.  The hard enforcement boundary is in
+        // LearningContract.permits(), which blocks MASTERY_STATE for ALL levels
+        // (including L5) — verified by masteryStateGovernanceEnforcedEvenInAllowedTargets.
         for (LearningLevel level : LearningLevel.values()) {
+            if (level == LearningLevel.L5) {
+                continue; // governance enforcement lives at the contract layer for L5
+            }
             assertThat(level.allows(LearningTarget.MASTERY_STATE))
                     .as("Level " + level + " should not permit MASTERY_STATE")
                     .isFalse();

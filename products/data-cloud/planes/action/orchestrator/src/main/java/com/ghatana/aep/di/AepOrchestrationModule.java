@@ -408,18 +408,14 @@ public class AepOrchestrationModule extends AbstractModule {
             @Override
             @NotNull
             public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
-                return Promise.of(new MasteryDecision(
+                // Return a default decision that allows execution with no mastery tracking
+                return Promise.of(MasteryDecision.allow(
                         "no-mastery",
                         query.skillId(),
-                        ExecutionMode.AUTONOMOUS,
-                        true,
-                        false,
-                        false,
-                        "No mastery registry configured",
-                        List.of(),
-                        null,
-                        null,
-                        0.0
+                        com.ghatana.agent.mastery.MasteryState.UNKNOWN,
+                        com.ghatana.agent.mastery.MasteryScore.zero(),
+                        com.ghatana.agent.mastery.VersionScope.empty(),
+                        "No mastery registry configured - allowing execution by default"
                 ));
             }
 
@@ -458,6 +454,12 @@ public class AepOrchestrationModule extends AbstractModule {
             public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> getById(@NotNull String tenantId, @NotNull String masteryId) {
                 return Promise.of(Optional.empty());
             }
+
+            @Override
+            @NotNull
+            public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> findBest(@NotNull MasteryQuery query) {
+                return Promise.of(Optional.empty());
+            }
         };
     }
 
@@ -492,15 +494,14 @@ public class AepOrchestrationModule extends AbstractModule {
         return new ModeSelectionPolicy() {
             @Override
             @NotNull
-            public Promise<ModeSelectionPolicy.ModeSelectionResult> selectMode(
+            public Promise<com.ghatana.agent.runtime.mode.ModeSelectionResult> selectMode(
                     @NotNull MasteryDecision decision,
                     @NotNull TaskClassification classification,
-                    @NotNull VersionContext versionContext) {
-                return Promise.of(new ModeSelectionPolicy.ModeSelectionResult(
-                        decision.recommendedMode(),
-                        "No policy configured",
-                        true,
-                        false
+                    @NotNull com.ghatana.agent.context.version.VersionContext versionContext) {
+                // Return a default autonomous mode selection
+                return Promise.of(com.ghatana.agent.runtime.mode.ModeSelectionResult.autonomous(
+                        com.ghatana.agent.runtime.mode.ExecutionStrategy.DETERMINISTIC_EXECUTION,
+                        "No policy configured - using autonomous mode by default"
                 ));
             }
         };

@@ -1,0 +1,76 @@
+apiVersion: ghatana.yappc/v1
+kind: AgentDefinition
+metadata:
+  id: java-code-generation-agent
+  name: Java Code Generation Agent
+  namespace: engineering.code-generation
+  version: 1.0.0
+  status: active
+  owners:
+    - team: platform-engineering
+  summary: Generates well-structured, idiomatic Java code aligned with Ghatana platform conventions.
+
+identity:
+  agentType: HYBRID
+  subtype: llm
+  criticality: high
+  autonomyLevel: supervised
+  determinismGuarantee: non-deterministic
+  stateMutability: local-state
+  failureMode: fail-closed
+
+learning:
+  learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+    - NEGATIVE_KNOWLEDGE
+  masteryBindings:
+    - skillRef: java-class-writing
+      masteryPolicyRef: promotion-policy-v1
+  skillRefs:
+    - java-class-writing
+  masteryPolicyRefs:
+    - promotion-policy-v1
+  evaluationRefs:
+    - eval-pack-java-code-quality-v1
+  provenanceRequired: true
+  promotionRequired: true
+
+memoryBindings:
+  episodic:
+    enabled: true
+    retentionDays: 30
+    tier: SHORT_TERM
+  semantic:
+    enabled: true
+    tier: LONG_TERM
+  procedural:
+    enabled: true
+    tier: LONG_TERM
+
+securityContract:
+  inputValidation: strict
+  outputSanitization: true
+  tenantIsolation: required
+  trustedMemoryOnly: true
+  allowUntrustedToolOutput: false
+
+observabilityContract:
+  metricsRequired: true
+  tracingRequired: true
+  logLevel: info
+  correlationIdPropagation: required
+  masteryDecisionLogged: true
+
+capabilities:
+  - java-code-generation
+  - code-review
+  - refactoring
+
+governance:
+  requiresApproval: false
+  requiresVerification: true
+  auditTrail: full
+  supervision: SUPERVISED

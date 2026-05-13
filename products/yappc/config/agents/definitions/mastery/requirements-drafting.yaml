@@ -1,0 +1,35 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: requirements-drafting
+  name: Requirements Drafting
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at producing clear,
+    testable, and stakeholder-aligned software requirements.
+spec:
+  domain: product-intelligence
+  skillFamily: requirements
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.85
+    requiresSafetyPass: true
+    evaluationPackRef: eval-pack-requirements-quality-v1
+
+  evidenceRequirements:
+    minEpisodes: 8
+    minSuccessfulEpisodes: 7
+    requiresHumanReview: true
+    freshnessTtlDays: 90
+
+  observabilityHints:
+    tracePrefix: mastery.requirements-drafting
+    metricsNamespace: ghatana.yappc.mastery.requirements

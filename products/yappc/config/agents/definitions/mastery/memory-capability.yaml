@@ -1,0 +1,36 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: memory-capability
+  name: Memory Capability Management
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at correctly reading from,
+    writing to, and curating the multi-tier memory plane without poisoning
+    episodic, semantic, or procedural tiers.
+spec:
+  domain: platform
+  skillFamily: memory-management
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.95
+    requiresSafetyPass: true
+    evaluationPackRef: eval-pack-memory-capability-v1
+
+  evidenceRequirements:
+    minEpisodes: 15
+    minSuccessfulEpisodes: 14
+    requiresHumanReview: true
+    freshnessTtlDays: 30
+
+  observabilityHints:
+    tracePrefix: mastery.memory-capability
+    metricsNamespace: ghatana.yappc.mastery.memory
