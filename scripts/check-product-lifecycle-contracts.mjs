@@ -1,14 +1,6 @@
 #!/usr/bin/env node
 
-/**
- * Check product lifecycle contracts
- *
- * Validates that products with lifecycle enabled have:
- * - Valid lifecycle profile references
- * - Required lifecycle configuration files
- * - Valid lifecycle phase definitions
- */
-
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,17 +9,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
 const lifecycleProfilesPath = join(repoRoot, 'config/product-lifecycle-profiles.json');
+const toolchainRegistryPath = join(repoRoot, 'config/toolchain-adapter-registry.json');
 
 function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
 }
 
 function loadLifecycleProfiles() {
-  const data = JSON.parse(readFileSync(lifecycleProfilesPath, 'utf8'));
-  return data.profiles || {};
+  return JSON.parse(readFileSync(lifecycleProfilesPath, 'utf8')).profiles ?? {};
 }
 
-function checkProductLifecycleContracts(registry, lifecycleProfiles) {
+function loadToolchainRegistry() {
+  return JSON.parse(readFileSync(toolchainRegistryPath, 'utf8')).adapters ?? {};
+}
+
+function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains) {
   const errors = [];
   const warnings = [];
 
@@ -36,33 +32,56 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles) {
       continue;
     }
 
-    // Check that lifecycle profile exists
     if (!lifecycleProfiles[product.lifecycleProfile]) {
       errors.push(`Product ${productId}: lifecycle profile "${product.lifecycleProfile}" not found in registry`);
     }
 
-    // Check that lifecycle config path exists
-    if (product.lifecycleConfigPath) {
-      const configPath = join(repoRoot, product.lifecycleConfigPath);
-      if (!existsSync(configPath)) {
-        errors.push(`Product ${productId}: lifecycle config file not found at ${product.lifecycleConfigPath}`);
-      }
+    const lifecycleStatus = product.lifecycleStatus ?? (product.lifecycle?.enabled ? 'enabled' : 'partial');
+    if (!['disabled', 'planned', 'partial', 'enabled'].includes(lifecycleStatus)) {
+      errors.push(`Product ${productId}: lifecycleStatus "${lifecycleStatus}" is invalid`);
     }
 
-    // Check that lifecycle is enabled
-    if (!product.lifecycle?.enabled) {
-      warnings.push(`Product ${productId}: lifecycle profile defined but lifecycle.enabled is false`);
+    if (!product.lifecycleConfigPath) {
+      errors.push(`Product ${productId}: lifecycleConfigPath is required when lifecycleProfile is set`);
+      continue;
     }
 
-    // Check that lifecycle has required fields
-    if (product.lifecycle) {
-      if (!product.lifecycle.phases || Object.keys(product.lifecycle.phases).length === 0) {
-        errors.push(`Product ${productId}: lifecycle.phases is empty or missing`);
+    const configPath = join(repoRoot, product.lifecycleConfigPath);
+    if (!existsSync(configPath)) {
+      errors.push(`Product ${productId}: lifecycle config file not found at ${product.lifecycleConfigPath}`);
+      continue;
+    }
+
+    if (lifecycleStatus === 'enabled') {
+      if (!product.lifecycle?.enabled) {
+        errors.push(`Product ${productId}: lifecycleStatus is enabled but lifecycle.enabled is not true`);
       }
 
-      if (!product.lifecycle.toolchain || Object.keys(product.lifecycle.toolchain).length === 0) {
-        errors.push(`Product ${productId}: lifecycle.toolchain is empty or missing`);
+      if (!product.artifacts || Object.keys(product.artifacts).length === 0) {
+        errors.push(`Product ${productId}: enabled lifecycle product is missing artifact declarations`);
       }
+
+      if (!product.deployment?.targets?.length) {
+        errors.push(`Product ${productId}: enabled lifecycle product is missing deployment targets`);
+      }
+
+      for (const adapterId of new Set(Object.values(product.lifecycle?.toolchain ?? {}))) {
+        if (!toolchains[adapterId]) {
+          errors.push(`Product ${productId}: lifecycle references unknown adapter ${adapterId}`);
+        }
+      }
+
+      try {
+        execFileSync(
+          process.execPath,
+          [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, 'build', '--json'],
+          { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
+        );
+      } catch (error) {
+        errors.push(`Product ${productId}: build plan generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else if (product.lifecycle?.enabled) {
+      warnings.push(`Product ${productId}: lifecycle is enabled in config but lifecycleStatus is ${lifecycleStatus}`);
     }
   }
 
@@ -72,7 +91,8 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles) {
 function main() {
   const registry = loadRegistry();
   const lifecycleProfiles = loadLifecycleProfiles();
-  const { errors, warnings } = checkProductLifecycleContracts(registry, lifecycleProfiles);
+  const toolchains = loadToolchainRegistry();
+  const { errors, warnings } = checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains);
 
   if (warnings.length > 0) {
     console.warn('Warnings:');
@@ -90,12 +110,11 @@ function main() {
   }
 
   console.log('All product lifecycle contracts are valid');
-  process.exit(0);
 }
 
 try {
   main();
 } catch (error) {
-  console.error(`Lifecycle contract check failed: ${error.message}`);
+  console.error(`Lifecycle contract check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }

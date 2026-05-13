@@ -21,36 +21,75 @@ function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
 }
 
-const validArtifactTypes = new Set(['jar', 'war', 'static-web-bundle', 'docker-image', 'npm-package', 'test-report', 'coverage-report', 'source-map', 'documentation']);
+const validArtifactTypes = new Set([
+  'jvm-service',
+  'jvm-library',
+  'node-service',
+  'static-web-bundle',
+  'container-image',
+  'mobile-bundle',
+  'sdk-package',
+  'domain-pack',
+  'test-report',
+  'coverage-report',
+]);
+const validPackagings = new Set([
+  'jar',
+  'distribution',
+  'static-files',
+  'container',
+  'npm',
+  'maven',
+  'apk',
+  'aab',
+  'ipa',
+  'json',
+  'xml',
+]);
 
 function checkProductArtifactContracts(registry) {
   const errors = [];
   const warnings = [];
 
   for (const [productId, product] of Object.entries(registry)) {
+    const lifecycleActive = product.lifecycleStatus === 'enabled' || product.lifecycle?.enabled;
+    const lifecyclePartial = product.lifecycleStatus === 'partial' || product.lifecycleStatus === 'planned';
+
     if (!product.artifacts) {
+      if (lifecycleActive) {
+        errors.push(`Product ${productId}: lifecycle-enabled product is missing artifact declarations`);
+      }
       continue;
     }
 
     // Check artifact definitions
-    for (const [artifactId, artifact] of Object.entries(product.artifacts)) {
+    for (const [surfaceId, artifact] of Object.entries(product.artifacts)) {
+      if (!product.surfaces?.find((surface) => surface.type === surfaceId)) {
+        const message = `Product ${productId}: artifact ${surfaceId} does not map to a declared surface`;
+        if (lifecycleActive) {
+          errors.push(message);
+        } else if (lifecyclePartial) {
+          warnings.push(message);
+        } else {
+          errors.push(message);
+        }
+      }
+
       // Check artifact type
       if (!artifact.type) {
-        errors.push(`Product ${productId}: artifact ${artifactId} missing type`);
+        errors.push(`Product ${productId}: artifact ${surfaceId} missing type`);
       } else if (!validArtifactTypes.has(artifact.type)) {
-        errors.push(`Product ${productId}: artifact ${artifactId} has invalid type "${artifact.type}"`);
+        errors.push(`Product ${productId}: artifact ${surfaceId} has invalid type "${artifact.type}"`);
       }
 
-      // Check that artifact has fingerprint algorithm
-      if (artifact.fingerprint && !artifact.fingerprint.algorithm) {
-        errors.push(`Product ${productId}: artifact ${artifactId} has fingerprint but missing algorithm`);
+      if (!artifact.packaging) {
+        errors.push(`Product ${productId}: artifact ${surfaceId} missing packaging`);
+      } else if (!validPackagings.has(artifact.packaging)) {
+        errors.push(`Product ${productId}: artifact ${surfaceId} has invalid packaging "${artifact.packaging}"`);
       }
 
-      // Check that artifact has surface reference
-      if (!artifact.surface) {
-        errors.push(`Product ${productId}: artifact ${artifactId} missing surface`);
-      } else if (!product.surfaces?.find(s => s.type === artifact.surface)) {
-        warnings.push(`Product ${productId}: artifact ${artifactId} references unknown surface "${artifact.surface}"`);
+      if (artifact.required !== undefined && typeof artifact.required !== 'boolean') {
+        errors.push(`Product ${productId}: artifact ${surfaceId} has non-boolean required flag`);
       }
     }
   }

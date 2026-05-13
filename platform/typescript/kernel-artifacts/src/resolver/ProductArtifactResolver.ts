@@ -1,11 +1,18 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
-import type { ArtifactEntry, ArtifactFingerprint } from '../domain/ArtifactManifest.js';
+import type { ArtifactEntry, ArtifactFingerprint, ArtifactPackaging, ArtifactType } from '../domain/ArtifactManifest.js';
+import { ArtifactFingerprintCalculator } from '../fingerprint/ArtifactFingerprintCalculator.js';
 
 /**
  * Product artifact resolver
  */
 export class ProductArtifactResolver {
+  private readonly fingerprintCalculator: ArtifactFingerprintCalculator;
+
+  constructor(fingerprintCalculator: ArtifactFingerprintCalculator = new ArtifactFingerprintCalculator()) {
+    this.fingerprintCalculator = fingerprintCalculator;
+  }
+
   /**
    * Resolve artifact path by ID
    */
@@ -72,14 +79,8 @@ export class ProductArtifactResolver {
    * Calculate artifact fingerprint
    */
   async calculateFingerprint(filePath: string): Promise<ArtifactFingerprint> {
-    const crypto = await import('node:crypto');
-    const content = await fs.readFile(filePath);
-    const hash = crypto.createHash('sha256').update(content).digest('hex');
-    
-    return {
-      algorithm: 'sha256',
-      hash,
-    };
+    const result = await this.fingerprintCalculator.calculateForPath(filePath);
+    return result.fingerprint;
   }
 
   /**
@@ -94,21 +95,22 @@ export class ProductArtifactResolver {
 
       if (entry.isFile()) {
         const stats = await fs.stat(fullPath);
-        const fingerprint = await this.calculateFingerprint(fullPath);
+        const fingerprintResult = await this.fingerprintCalculator.calculateForPath(fullPath);
         
         artifacts.push({
           id: entry.name,
           path: fullPath,
           metadata: {
             type: this.inferArtifactType(entry.name),
+            packaging: this.inferArtifactPackaging(entry.name),
             version: '1.0.0',
             buildNumber: '0',
             gitCommit: undefined,
             gitBranch: undefined,
             timestamp: new Date().toISOString(),
-            sizeBytes: stats.size,
+            sizeBytes: stats.isDirectory() ? fingerprintResult.sizeBytes : stats.size,
           },
-          fingerprint,
+          fingerprint: fingerprintResult.fingerprint,
           expected: false,
           found: true,
         });
@@ -121,14 +123,26 @@ export class ProductArtifactResolver {
   /**
    * Infer artifact type from filename
    */
-  private inferArtifactType(filename: string): 'jar' | 'war' | 'static-web-bundle' | 'docker-image' | 'npm-package' | 'test-report' | 'coverage-report' | 'source-map' | 'documentation' {
-    if (filename.endsWith('.jar')) return 'jar';
-    if (filename.endsWith('.war')) return 'war';
-    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'docker-image';
-    if (filename.endsWith('.zip')) return 'npm-package';
+  private inferArtifactType(filename: string): ArtifactType {
+    if (filename.endsWith('.jar')) return 'jvm-service';
+    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'container-image';
+    if (filename.endsWith('.apk') || filename.endsWith('.aab') || filename.endsWith('.ipa')) return 'mobile-bundle';
+    if (filename.endsWith('.zip')) return 'sdk-package';
     if (filename.includes('test-report')) return 'test-report';
     if (filename.includes('coverage')) return 'coverage-report';
     if (filename.endsWith('.map')) return 'source-map';
     return 'documentation';
+  }
+
+  private inferArtifactPackaging(filename: string): ArtifactPackaging {
+    if (filename.endsWith('.jar')) return 'jar';
+    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'container';
+    if (filename.endsWith('.apk')) return 'apk';
+    if (filename.endsWith('.aab')) return 'aab';
+    if (filename.endsWith('.ipa')) return 'ipa';
+    if (filename.endsWith('.zip')) return 'distribution';
+    if (filename.endsWith('.json')) return 'json';
+    if (filename.endsWith('.xml')) return 'xml';
+    return 'static-files';
   }
 }

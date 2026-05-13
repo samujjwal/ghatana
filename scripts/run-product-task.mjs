@@ -28,7 +28,7 @@ const taskToPhaseMap = new Map([
 
 function usage(exitCode = 1) {
   const stream = exitCode === 0 ? process.stdout : process.stderr;
-  stream.write('Usage: pnpm product <productId> <task> [surface] [--dry-run]\n');
+  stream.write('Usage: pnpm product <productId> <task> [surface] [--dry-run] [--plan]\n');
   process.exit(exitCode);
 }
 
@@ -104,7 +104,8 @@ function main() {
   }
 
   const dryRun = args.includes('--dry-run');
-  const positional = args.filter((arg) => arg !== '--dry-run');
+  const planOnly = args.includes('--plan');
+  const positional = args.filter((arg) => arg !== '--dry-run' && arg !== '--plan');
   const [productId, task, requestedSurface] = positional;
   const registry = loadRegistry();
   const product = registry[productId];
@@ -118,9 +119,9 @@ function main() {
     const phase = taskToPhaseMap.get(task);
     if (phase) {
       console.log(`Product ${productId} has lifecycle enabled, delegating to lifecycle engine...`);
-      const lifecycleArgs = ['plan', productId, phase];
+      const lifecycleArgs = planOnly ? ['product', 'plan', productId, phase] : ['product', phase, productId];
       if (dryRun) lifecycleArgs.push('--dry-run');
-      if (requestedSurface) lifecycleArgs.push(`--surfaces=${requestedSurface}`);
+      if (requestedSurface) lifecycleArgs.push('--surface', normalizeSurfaceName(requestedSurface));
       
       const result = spawnSync('node', [join(repoRoot, 'scripts/kernel-product.mjs'), ...lifecycleArgs], {
         cwd: repoRoot,

@@ -1,4 +1,51 @@
 /**
+ * Lifecycle phases (synchronized with kernel-lifecycle ProductLifecyclePhase)
+ * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
+ */
+export type ProductLifecyclePhase =
+  | 'create'
+  | 'bootstrap'
+  | 'dev'
+  | 'validate'
+  | 'test'
+  | 'build'
+  | 'package'
+  | 'release'
+  | 'deploy'
+  | 'verify'
+  | 'promote'
+  | 'rollback'
+  | 'operate'
+  | 'retire';
+
+/**
+ * Surface types (synchronized with kernel-lifecycle ProductSurfaceType)
+ * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
+ */
+export type ProductSurfaceType =
+  | 'backend-api'
+  | 'web'
+  | 'worker'
+  | 'operator'
+  | 'mobile-ios'
+  | 'mobile-android'
+  | 'sdk'
+  | 'domain-pack';
+
+/**
+ * Product surface (synchronized with kernel-lifecycle ProductSurface)
+ * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
+ */
+export interface ProductSurface {
+  type: ProductSurfaceType;
+  adapter: string;
+  path: string;
+  implementationStatus?: 'implemented' | 'planned' | 'backend-only';
+  packagePath?: string;
+  [key: string]: unknown;
+}
+
+/**
  * A toolchain adapter abstracts a specific tool (Gradle, pnpm, Docker, etc.)
  * for executing lifecycle phases on product surfaces.
  */
@@ -33,48 +80,6 @@ export interface ToolchainAdapter {
    * Validate that the expected outputs were produced by execution.
    */
   validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult>;
-}
-
-/**
- * Lifecycle phases
- */
-export type ProductLifecyclePhase =
-  | 'create'
-  | 'bootstrap'
-  | 'dev'
-  | 'validate'
-  | 'test'
-  | 'build'
-  | 'package'
-  | 'release'
-  | 'deploy'
-  | 'verify'
-  | 'promote'
-  | 'rollback'
-  | 'operate'
-  | 'retire';
-
-/**
- * Surface types
- */
-export type ProductSurfaceType =
-  | 'backend-api'
-  | 'web'
-  | 'worker'
-  | 'operator'
-  | 'mobile-ios'
-  | 'mobile-android'
-  | 'sdk'
-  | 'domain-pack';
-
-/**
- * Product surface
- */
-export interface ProductSurface {
-  type: ProductSurfaceType;
-  adapter: string;
-  path: string;
-  [key: string]: unknown;
 }
 
 /**

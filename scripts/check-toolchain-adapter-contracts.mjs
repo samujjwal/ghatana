@@ -17,6 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const adapterRegistryPath = join(repoRoot, 'config/toolchain-adapter-registry.json');
 const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
+const lifecycleProfilesPath = join(repoRoot, 'config/product-lifecycle-profiles.json');
 
 function loadAdapterRegistry() {
   return JSON.parse(readFileSync(adapterRegistryPath, 'utf8')).adapters;
@@ -24,6 +25,10 @@ function loadAdapterRegistry() {
 
 function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
+}
+
+function loadLifecycleProfiles() {
+  return JSON.parse(readFileSync(lifecycleProfilesPath, 'utf8')).profiles ?? {};
 }
 
 function getUsedAdapters(registry) {
@@ -43,7 +48,17 @@ function getUsedAdapters(registry) {
   return usedAdapters;
 }
 
-function checkToolchainAdapterContracts(adapterRegistry, usedAdapters) {
+function getDefaultProfileAdapters(lifecycleProfiles) {
+  const usedByStableProfiles = [];
+  for (const [profileId, profile] of Object.entries(lifecycleProfiles)) {
+    for (const [slot, adapterId] of Object.entries(profile.defaultAdapters ?? {})) {
+      usedByStableProfiles.push({ profileId, slot, adapterId, status: profile.status ?? 'experimental' });
+    }
+  }
+  return usedByStableProfiles;
+}
+
+function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycleProfiles) {
   const errors = [];
   const warnings = [];
 
@@ -61,11 +76,45 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters) {
       errors.push(`Adapter ${adapterId}: missing or empty supportedSurfaceTypes`);
     }
 
-    // Only check implementation file if adapter is used by a product
-    if (adapter.implementation && usedAdapters.has(adapterId)) {
+    if (!adapter.status || !['implemented', 'partial', 'planned'].includes(adapter.status)) {
+      errors.push(`Adapter ${adapterId}: status must be one of implemented, partial, planned`);
+    }
+
+    if (typeof adapter.safeForDefault !== 'boolean') {
+      errors.push(`Adapter ${adapterId}: safeForDefault must be a boolean`);
+    }
+
+    if (!Array.isArray(adapter.tests)) {
+      errors.push(`Adapter ${adapterId}: tests must be an array`);
+    }
+
+    if (adapter.status === 'planned' && adapter.safeForDefault !== false) {
+      errors.push(`Adapter ${adapterId}: planned adapters must set safeForDefault to false`);
+    }
+
+    const requiresImplementationFile = adapter.status === 'implemented' || adapter.status === 'partial' || usedAdapters.has(adapterId);
+    if (requiresImplementationFile) {
+      if (!adapter.implementation) {
+        errors.push(`Adapter ${adapterId}: implementation path is required for ${adapter.status ?? 'used'} adapters`);
+      }
+    }
+
+    if (adapter.implementation && requiresImplementationFile) {
       const implPath = join(repoRoot, adapter.implementation);
       if (!existsSync(implPath)) {
         errors.push(`Adapter ${adapterId}: implementation file not found at ${adapter.implementation}`);
+      }
+    }
+
+    if (adapter.status === 'implemented') {
+      if (!adapter.tests.length) {
+        errors.push(`Adapter ${adapterId}: implemented adapters must declare executable tests`);
+      }
+
+      for (const testPath of adapter.tests) {
+        if (!existsSync(join(repoRoot, testPath))) {
+          errors.push(`Adapter ${adapterId}: declared test file not found at ${testPath}`);
+        }
       }
     }
 
@@ -79,14 +128,27 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters) {
     }
   }
 
+  for (const { profileId, slot, adapterId, status } of getDefaultProfileAdapters(lifecycleProfiles)) {
+    const adapter = adapterRegistry[adapterId];
+    if (!adapter) {
+      errors.push(`Lifecycle profile ${profileId}: default adapter ${adapterId} for ${slot} is not registered`);
+      continue;
+    }
+
+    if (status === 'stable' && adapter.safeForDefault !== true) {
+      errors.push(`Lifecycle profile ${profileId}: stable profile cannot default ${slot} to unsafe adapter ${adapterId}`);
+    }
+  }
+
   return { errors, warnings };
 }
 
 function main() {
   const adapterRegistry = loadAdapterRegistry();
   const registry = loadRegistry();
+  const lifecycleProfiles = loadLifecycleProfiles();
   const usedAdapters = getUsedAdapters(registry);
-  const { errors, warnings } = checkToolchainAdapterContracts(adapterRegistry, usedAdapters);
+  const { errors, warnings } = checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycleProfiles);
 
   if (warnings.length > 0) {
     console.warn('Warnings:');

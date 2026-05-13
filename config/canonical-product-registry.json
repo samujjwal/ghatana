@@ -57,9 +57,14 @@
         "status": "active"
       },
       "lifecycleProfile": "standard-web-api-product",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "web"],
@@ -84,12 +89,14 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "web": {
           "type": "static-web-bundle",
-          "surface": "web"
+          "packaging": "static-files",
+          "required": true
         }
       },
       "deployment": {
@@ -203,9 +210,14 @@
         "status": "active"
       },
       "lifecycleProfile": "backend-only-java-service",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/finance/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "worker", "operator"],
@@ -232,16 +244,19 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "worker": {
-          "type": "jar",
-          "surface": "worker"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "operator": {
-          "type": "jar",
-          "surface": "operator"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         }
       },
       "deployment": {
@@ -333,6 +348,11 @@
         "status": "active"
       },
       "lifecycleProfile": "standard-web-api-product",
+      "lifecycleStatus": "enabled",
+      "lifecycleMigration": {
+        "status": "ready",
+        "notes": "Digital Marketing is the validated lifecycle pilot."
+      },
       "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
       "lifecycle": {
         "enabled": true,
@@ -360,12 +380,14 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "web": {
           "type": "static-web-bundle",
-          "surface": "web"
+          "packaging": "static-files",
+          "required": true
         }
       },
       "deployment": {
@@ -444,9 +466,14 @@
         "status": "active"
       },
       "lifecycleProfile": "mobile-plus-api-product",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/flashit/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "web"],
@@ -475,16 +502,19 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "mobile-ios": {
-          "type": "docker-image",
-          "surface": "mobile-ios"
+          "type": "mobile-bundle",
+          "packaging": "ipa",
+          "required": true
         },
         "mobile-android": {
-          "type": "docker-image",
-          "surface": "mobile-android"
+          "type": "mobile-bundle",
+          "packaging": "aab",
+          "required": true
         }
       },
       "deployment": {
@@ -598,9 +628,14 @@
         "status": "active"
       },
       "lifecycleProfile": "platform-provider-product",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/data-cloud/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "worker"],
@@ -625,12 +660,14 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "worker": {
-          "type": "jar",
-          "surface": "worker"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         }
       },
       "deployment": {
@@ -738,9 +775,14 @@
         "status": "active"
       },
       "lifecycleProfile": "standard-web-api-product",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/yappc/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "web"],
@@ -765,12 +807,14 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "web": {
           "type": "static-web-bundle",
-          "surface": "web"
+          "packaging": "static-files",
+          "required": true
         }
       },
       "deployment": {
@@ -958,9 +1002,14 @@
         "status": "active"
       },
       "lifecycleProfile": "standard-web-api-product",
+      "lifecycleStatus": "partial",
+      "lifecycleMigration": {
+        "status": "partial",
+        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
       "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
       "lifecycle": {
-        "enabled": true,
+        "enabled": false,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "web"],
@@ -985,12 +1034,14 @@
       },
       "artifacts": {
         "backend-api": {
-          "type": "jar",
-          "surface": "backend-api"
+          "type": "jvm-service",
+          "packaging": "jar",
+          "required": true
         },
         "web": {
           "type": "static-web-bundle",
-          "surface": "web"
+          "packaging": "static-files",
+          "required": true
         }
       },
       "deployment": {

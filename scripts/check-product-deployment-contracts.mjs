@@ -1,14 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * Check product deployment contracts
- *
- * Validates that:
- * - Products with lifecycle have deployment definitions
- * - Deployment targets are valid
- * - Environment configurations are present
- */
-
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,23 +7,19 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
-const deploymentTargetsPath = join(repoRoot, 'config/deployment/deployment-targets.json');
-const environmentsPath = join(repoRoot, 'config/environments');
+const deploymentTargetsPath = join(repoRoot, 'config/deployment-targets.json');
 
 function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
 }
 
 function loadDeploymentTargets() {
-  return JSON.parse(readFileSync(deploymentTargetsPath, 'utf8')).targets;
+  return JSON.parse(readFileSync(deploymentTargetsPath, 'utf8')).targets ?? {};
 }
 
-function loadEnvironment(envName) {
-  const envPath = join(environmentsPath, `${envName}.json`);
-  if (!existsSync(envPath)) {
-    return null;
-  }
-  return JSON.parse(readFileSync(envPath, 'utf8'));
+function extractField(content, fieldName) {
+  const match = content.match(new RegExp(`^\\s*${fieldName}:\\s*(.+)$`, 'm'));
+  return match ? match[1].trim() : null;
 }
 
 function checkProductDeploymentContracts(registry, deploymentTargets) {
@@ -40,41 +27,59 @@ function checkProductDeploymentContracts(registry, deploymentTargets) {
   const warnings = [];
 
   for (const [productId, product] of Object.entries(registry)) {
-    if (!product.deployment) {
+    if (product.lifecycleStatus !== 'enabled') {
       continue;
     }
 
-    // Check deployment target exists
-    if (product.deployment.target) {
-      if (!deploymentTargets[product.deployment.target]) {
-        errors.push(`Product ${productId}: deployment target "${product.deployment.target}" not found`);
+    const targets = product.deployment?.targets ?? [];
+    if (targets.length === 0) {
+      errors.push(`Product ${productId}: enabled lifecycle product is missing deployment targets`);
+      continue;
+    }
+
+    for (const target of targets) {
+      if (!deploymentTargets[target]) {
+        errors.push(`Product ${productId}: deployment target "${target}" not found`);
       }
     }
 
-    // Check environment references
-    if (product.environments && Array.isArray(product.environments)) {
-      for (const envName of product.environments) {
-        const envConfig = loadEnvironment(envName);
-        if (!envConfig) {
-          errors.push(`Product ${productId}: environment "${envName}" not found`);
-        } else {
-          // Validate environment has required fields
-          if (!envConfig.name) {
-            errors.push(`Product ${productId}: environment ${envName} missing name`);
-          }
-          if (!envConfig.type) {
-            errors.push(`Product ${productId}: environment ${envName} missing type`);
-          }
-        }
-      }
+    const supportedEnvironments = product.environments?.supported ?? [];
+    if (!supportedEnvironments.includes('local')) {
+      errors.push(`Product ${productId}: enabled lifecycle product must support the local environment`);
     }
 
-    // Check deployment adapter
-    if (product.deployment.adapter) {
-      const validAdapters = new Set(['compose-local', 'kubernetes', 'helm', 'terraform']);
-      if (!validAdapters.has(product.deployment.adapter)) {
-        errors.push(`Product ${productId}: deployment adapter "${product.deployment.adapter}" is not valid`);
-      }
+    const localLifecyclePath = join(repoRoot, 'products', productId, 'lifecycle.local.yaml');
+    if (!existsSync(localLifecyclePath)) {
+      errors.push(`Product ${productId}: local lifecycle overlay not found at products/${productId}/lifecycle.local.yaml`);
+      continue;
+    }
+
+    const localLifecycleContent = readFileSync(localLifecyclePath, 'utf8');
+    const composeFile = extractField(localLifecycleContent, 'composeFile');
+    const envFile = extractField(localLifecycleContent, 'envFile');
+    const envExampleFile = extractField(localLifecycleContent, 'envExampleFile');
+
+    if (!composeFile) {
+      errors.push(`Product ${productId}: local lifecycle overlay is missing composeFile`);
+    } else if (!existsSync(join(repoRoot, composeFile))) {
+      errors.push(`Product ${productId}: compose file not found at ${composeFile}`);
+    }
+
+    if (!envFile) {
+      errors.push(`Product ${productId}: local lifecycle overlay is missing envFile`);
+    } else if (!existsSync(join(repoRoot, envFile))) {
+      warnings.push(`Product ${productId}: env file ${envFile} is not present locally`);
+    }
+
+    if (!envExampleFile) {
+      errors.push(`Product ${productId}: local lifecycle overlay is missing envExampleFile`);
+    } else if (!existsSync(join(repoRoot, envExampleFile))) {
+      errors.push(`Product ${productId}: env example file not found at ${envExampleFile}`);
+    }
+
+    const healthChecksPath = join(repoRoot, 'products', productId, 'deploy', 'health-checks.json');
+    if (!existsSync(healthChecksPath)) {
+      errors.push(`Product ${productId}: health checks file not found at products/${productId}/deploy/health-checks.json`);
     }
   }
 
@@ -102,12 +107,11 @@ function main() {
   }
 
   console.log('All product deployment contracts are valid');
-  process.exit(0);
 }
 
 try {
   main();
 } catch (error) {
-  console.error(`Deployment contract check failed: ${error.message}`);
+  console.error(`Deployment contract check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }

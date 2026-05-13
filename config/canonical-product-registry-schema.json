@@ -126,6 +126,15 @@
           "type": "string",
           "description": "Lifecycle profile ID from product-lifecycle-profiles.json (e.g., standard-web-api-product)"
         },
+        "lifecycleStatus": {
+          "type": "string",
+          "enum": ["disabled", "planned", "partial", "enabled"],
+          "description": "Lifecycle rollout status for this product"
+        },
+        "lifecycleMigration": {
+          "$ref": "#/definitions/ProductLifecycleMigration",
+          "description": "Lifecycle migration status for this product"
+        },
         "lifecycleConfigPath": {
           "type": "string",
           "description": "Path to kernel-product.yaml lifecycle configuration file"
@@ -348,32 +357,49 @@
     "ProductArtifactsConfiguration": {
       "type": "object",
       "description": "Product artifacts configuration",
-      "properties": {
-        "backend-api": {
-          "$ref": "#/definitions/ProductArtifactDeclaration"
-        },
-        "web": {
-          "$ref": "#/definitions/ProductArtifactDeclaration"
-        },
-        "worker": {
-          "$ref": "#/definitions/ProductArtifactDeclaration"
-        }
+      "additionalProperties": {
+        "$ref": "#/definitions/ProductArtifactDeclaration"
       }
     },
     "ProductArtifactDeclaration": {
       "type": "object",
       "description": "Artifact declaration for a surface",
       "required": ["type", "packaging"],
+      "additionalProperties": false,
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["jvm-service", "static-web-bundle", "node-bundle", "container-image", "mobile-bundle", "sdk-package"],
+          "enum": ["jvm-service", "jvm-library", "node-service", "static-web-bundle", "container-image", "mobile-bundle", "sdk-package", "domain-pack", "test-report", "coverage-report"],
           "description": "Artifact type"
         },
         "packaging": {
           "type": "string",
-          "enum": ["jar", "container", "static-web-container", "apk", "aab", "npm", "maven"],
+          "enum": ["jar", "distribution", "static-files", "container", "npm", "maven", "apk", "aab", "ipa", "json", "xml"],
           "description": "Packaging format"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the artifact is required for a successful phase"
+        }
+      }
+    },
+    "ProductLifecycleMigration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["not-started", "partial", "ready", "blocked"]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "blockingFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

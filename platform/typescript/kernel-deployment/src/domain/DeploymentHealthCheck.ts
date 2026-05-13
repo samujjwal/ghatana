@@ -67,7 +67,7 @@ export const DeploymentHealthCheckSchema = z.object({
     http: z.object({
       url: z.string().url(),
       method: z.enum(['GET', 'POST', 'PUT', 'DELETE']).optional(),
-      headers: z.record(z.string()).optional(),
+      headers: z.record(z.string(), z.string()).optional(),
       expectedStatus: z.number().int().optional(),
       expectedBody: z.string().optional(),
     }).optional(),
@@ -79,9 +79,9 @@ export const DeploymentHealthCheckSchema = z.object({
     command: z.object({
       command: z.array(z.string()),
       workingDirectory: z.string().optional(),
-      env: z.record(z.string()).optional(),
+      env: z.record(z.string(), z.string()).optional(),
     }).optional(),
-    custom: z.record(z.unknown()).optional(),
+    custom: z.record(z.string(), z.unknown()).optional(),
   }),
   timeoutMs: z.number().int().nonnegative(),
   retries: z.number().int().nonnegative(),

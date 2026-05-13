@@ -283,10 +283,11 @@ function generatePackageScripts(registry) {
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
   scripts['product'] = 'node ./scripts/run-product-task.mjs';
   scripts['kernel'] = 'node ./scripts/kernel-product.mjs';
+  scripts['build:kernel-lifecycle-platform'] = 'pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build';
   scripts['check:affected-products'] = 'node ./scripts/resolve-affected-products.test.mjs';
   scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
   scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';
-  scripts['check:kernel-platform-lifecycle'] = 'node ./scripts/check-product-lifecycle-contracts.mjs && node ./scripts/check-toolchain-adapter-contracts.mjs && node ./scripts/check-product-artifact-contracts.mjs && node ./scripts/check-product-deployment-contracts.mjs';
+  scripts['check:kernel-platform-lifecycle'] = 'pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs';
   
   // Generate product-specific scripts from registry
   for (const [productId, product] of Object.entries(registry.registry)) {
@@ -304,10 +305,13 @@ function generatePackageScripts(registry) {
       const surfaceFlag = surface.type === 'backend-api' ? 'backend-api' : surface.type;
       
       if (useLifecycle) {
-        scripts[`build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} build --surfaces=${surfaceFlag}`;
-        scripts[`test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} test --surfaces=${surfaceFlag}`;
+        scripts[`build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product build ${productId} --surface ${surfaceFlag}`;
+        scripts[`test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product test ${productId} --surface ${surfaceFlag}`;
+        scripts[`plan:build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} build --surface ${surfaceFlag}`;
+        scripts[`plan:test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} test --surface ${surfaceFlag}`;
         if (surface.packagePath) {
-          scripts[`dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} dev --surfaces=${surfaceFlag}`;
+          scripts[`dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product dev ${productId} --surface ${surfaceFlag}`;
+          scripts[`plan:dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} dev --surface ${surfaceFlag}`;
         }
       } else {
         scripts[`build:${productId}-${surfaceName}`] = `pnpm product ${productId} build ${surfaceName}`;
@@ -319,13 +323,20 @@ function generatePackageScripts(registry) {
     }
     
     if (useLifecycle) {
-      scripts[`build:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} build`;
-      scripts[`test:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} test`;
-      scripts[`dev:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} dev`;
-      scripts[`validate:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} validate`;
-      scripts[`package:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} package`;
-      scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} deploy`;
-      scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} verify`;
+      scripts[`build:${productId}`] = `node scripts/kernel-product.mjs product build ${productId}`;
+      scripts[`test:${productId}`] = `node scripts/kernel-product.mjs product test ${productId}`;
+      scripts[`dev:${productId}`] = `node scripts/kernel-product.mjs product dev ${productId}`;
+      scripts[`validate:${productId}`] = `node scripts/kernel-product.mjs product validate ${productId}`;
+      scripts[`package:${productId}`] = `node scripts/kernel-product.mjs product package ${productId}`;
+      scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs product deploy ${productId} --env local`;
+      scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs product verify ${productId} --env local`;
+      scripts[`plan:build:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} build`;
+      scripts[`plan:test:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} test`;
+      scripts[`plan:dev:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} dev`;
+      scripts[`plan:validate:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} validate`;
+      scripts[`plan:package:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} package`;
+      scripts[`plan:deploy:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} deploy --env local`;
+      scripts[`plan:verify:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} verify --env local`;
       scripts[`release:${productId}`] = `node scripts/kernel-product.mjs release ${productId}`;
       scripts[`promote:${productId}`] = `node scripts/kernel-product.mjs promote ${productId} --from staging --to prod`;
       scripts[`rollback:${productId}`] = `node scripts/kernel-product.mjs rollback ${productId} --env prod`;

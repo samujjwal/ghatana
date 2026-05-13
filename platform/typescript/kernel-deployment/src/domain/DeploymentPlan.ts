@@ -79,7 +79,7 @@ export const DeploymentPlanSchema = z.object({
       checkId: z.string().min(1),
       checkName: z.string().min(1),
       type: z.enum(['http', 'tcp', 'command']),
-      config: z.record(z.unknown()),
+      config: z.record(z.string(), z.unknown()),
       timeoutMs: z.number().int().nonnegative(),
       retries: z.number().int().nonnegative(),
     }),

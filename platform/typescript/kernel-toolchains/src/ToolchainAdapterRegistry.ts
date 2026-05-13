@@ -9,7 +9,7 @@ export class ToolchainAdapterRegistry {
   private registryPath: string;
   private adapters: Map<string, ToolchainAdapter> = new Map();
 
-  constructor(configDir: string = '/Users/samujjwal/Development/ghatana/config') {
+  constructor(configDir: string = path.join(process.cwd(), 'config')) {
     this.registryPath = path.join(configDir, 'toolchain-adapter-registry.json');
   }
 

@@ -43,7 +43,7 @@ export class ProductArtifactValidator {
    * Validate fingerprint
    */
   validateFingerprint(fingerprint: ArtifactFingerprint, errors: ValidationError[]): void {
-    const validAlgorithms = ['sha256', 'sha512', 'md5'];
+    const validAlgorithms = ['sha256', 'sha512'];
 
     if (!validAlgorithms.includes(fingerprint.algorithm)) {
       errors.push({
@@ -59,7 +59,6 @@ export class ProductArtifactValidator {
     const expectedLengths: Record<string, number> = {
       sha256: 64,
       sha512: 128,
-      md5: 32,
     };
 
     const expectedLength = expectedLengths[fingerprint.algorithm];
@@ -80,7 +79,7 @@ export class ProductArtifactValidator {
    */
   validateArtifactType(type: string): ValidationError[] {
     const errors: ValidationError[] = [];
-    const validTypes = ['jar', 'war', 'static-web-bundle', 'docker-image', 'npm-package', 'test-report', 'coverage-report', 'source-map', 'documentation'];
+    const validTypes = ['jvm-service', 'jvm-library', 'node-service', 'static-web-bundle', 'container-image', 'mobile-bundle', 'sdk-package', 'domain-pack', 'test-report', 'coverage-report', 'source-map', 'documentation'];
 
     if (!validTypes.includes(type)) {
       errors.push({
@@ -127,6 +126,20 @@ export class ProductArtifactValidator {
       }
     } catch {
       errors.push({ path: 'path', message: `Cannot read artifact size: ${path}` });
+    }
+
+    return errors;
+  }
+
+  validatePackaging(packaging: string): ValidationError[] {
+    const errors: ValidationError[] = [];
+    const validPackagings = ['jar', 'distribution', 'static-files', 'container', 'npm', 'maven', 'apk', 'aab', 'ipa', 'json', 'xml'];
+
+    if (!validPackagings.includes(packaging)) {
+      errors.push({
+        path: 'packaging',
+        message: `Invalid artifact packaging: ${packaging}. Must be one of: ${validPackagings.join(', ')}`,
+      });
     }
 
     return errors;

@@ -51,3 +51,50 @@ phases:
     defaultTargets: [container, static-web]
   deploy:
     defaultEnvironment: local
+
+artifacts:
+  build:
+    backend-api:
+      type: jvm-service
+      packaging: jar
+      required: true
+      paths:
+        - products/digital-marketing/dm-api/build/libs/*.jar
+    web:
+      type: static-web-bundle
+      packaging: static-files
+      required: true
+      paths:
+        - products/digital-marketing/ui/dist
+  package:
+    backend-api:
+      type: container-image
+      packaging: container
+      required: true
+    web:
+      type: container-image
+      packaging: container
+      required: true
+
+gates:
+  validate:
+    - registry-validation
+    - manifest-validation
+    - lifecycle-contract-validation
+    - bridge-compliance
+    - dmos-boundary-workflow-coverage
+  build:
+    - backend-check
+    - web-route-contract
+    - web-typecheck
+    - web-bundle-budget
+
+deployment:
+  local:
+    target: compose-local
+    composeFile: products/digital-marketing/deploy/local.compose.yaml
+    envFile: products/digital-marketing/deploy/local.env
+    envExampleFile: products/digital-marketing/deploy/local.env.example
+    healthChecks:
+      - backend-api
+      - web

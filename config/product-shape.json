@@ -16,7 +16,7 @@
       ],
       "lifecycle": {
         "profile": "standard-web-api-product",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/phr/kernel-product.yaml"
       }
     },
@@ -38,7 +38,7 @@
       "clientPackages": [],
       "lifecycle": {
         "profile": "backend-only-java-service",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/finance/kernel-product.yaml"
       },
       "backendOnlyDeclaration": {
@@ -85,7 +85,7 @@
       ],
       "lifecycle": {
         "profile": "mobile-plus-api-product",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/flashit/kernel-product.yaml"
       }
     },
@@ -107,7 +107,7 @@
       ],
       "lifecycle": {
         "profile": "platform-provider-product",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/data-cloud/kernel-product.yaml"
       }
     },
@@ -127,7 +127,7 @@
       ],
       "lifecycle": {
         "profile": "standard-web-api-product",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/yappc/kernel-product.yaml"
       }
     },
@@ -177,7 +177,7 @@
       ],
       "lifecycle": {
         "profile": "standard-web-api-product",
-        "enabled": true,
+        "enabled": false,
         "configPath": "products/tutorputor/kernel-product.yaml"
       }
     },

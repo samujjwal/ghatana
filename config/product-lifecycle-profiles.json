@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "profiles": {
     "standard-web-api-product": {
+      "status": "stable",
       "description": "A product with backend API and web UI surfaces",
       "defaultSurfaces": {
         "dev": ["backend-api", "web"],
@@ -38,16 +39,21 @@
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
-        "web": "pnpm-vite-react",
-        "package.backend-api": "docker-buildx",
-        "package.web": "docker-static-web",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "web": "pnpm-vite-react"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": ["jvm-service"],
+          "web": ["static-web-bundle"]
+        },
+        "package": {
+          "backend-api": ["container-image"],
+          "web": ["container-image"]
+        }
       }
     },
     "backend-only-java-service": {
+      "status": "stable",
       "description": "A product with only backend Java service surfaces",
       "defaultSurfaces": {
         "dev": ["backend-api"],
@@ -83,15 +89,19 @@
         "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
       },
       "defaultAdapters": {
-        "backend-api": "gradle-java-service",
-        "package.backend-api": "docker-buildx",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "backend-api": "gradle-java-service"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": ["jvm-service"]
+        },
+        "package": {
+          "backend-api": ["container-image"]
+        }
       }
     },
     "frontend-only-web-product": {
+      "status": "stable",
       "description": "A product with only frontend web UI surfaces",
       "defaultSurfaces": {
         "dev": ["web"],
@@ -127,15 +137,19 @@
         "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
       },
       "defaultAdapters": {
-        "web": "pnpm-vite-react",
-        "package.web": "docker-static-web",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "web": "pnpm-vite-react"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "web": ["static-web-bundle"]
+        },
+        "package": {
+          "web": ["container-image"]
+        }
       }
     },
     "mobile-plus-api-product": {
+      "status": "experimental",
       "description": "A product with mobile app and backend API surfaces",
       "defaultSurfaces": {
         "dev": ["backend-api", "mobile-ios", "mobile-android"],
@@ -174,14 +188,18 @@
         "backend-api": "gradle-java-service",
         "mobile-ios": "xcode-ios",
         "mobile-android": "gradle-android",
-        "package.backend-api": "docker-buildx",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "deploy.local": "compose-local"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": ["jvm-service"],
+          "mobile-ios": ["mobile-bundle"],
+          "mobile-android": ["mobile-bundle"]
+        }
       }
     },
     "sdk-product": {
+      "status": "experimental",
       "description": "A product that provides an SDK for external consumers",
       "defaultSurfaces": {
         "dev": ["sdk"],
@@ -213,9 +231,18 @@
       "defaultAdapters": {
         "sdk": "gradle-java-library",
         "package.sdk": "maven-publish"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "sdk": ["jvm-library"]
+        },
+        "package": {
+          "sdk": ["sdk-package"]
+        }
       }
     },
     "platform-provider-product": {
+      "status": "experimental",
       "description": "A platform provider product that offers shared capabilities",
       "defaultSurfaces": {
         "dev": ["backend-api", "worker"],
@@ -255,15 +282,21 @@
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
         "worker": "gradle-java-service",
-        "package.backend-api": "docker-buildx",
-        "package.worker": "docker-buildx",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "deploy.local": "compose-local"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": ["jvm-service"],
+          "worker": ["jvm-service"]
+        },
+        "package": {
+          "backend-api": ["container-image"],
+          "worker": ["container-image"]
+        }
       }
     },
     "shared-service-product": {
+      "status": "experimental",
       "description": "A shared service product used by multiple other products",
       "defaultSurfaces": {
         "dev": ["backend-api"],
@@ -302,14 +335,19 @@
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
-        "package.backend-api": "docker-buildx",
-        "deploy.local": "compose-local",
-        "deploy.dev": "kubernetes",
-        "deploy.staging": "kubernetes",
-        "deploy.prod": "kubernetes"
+        "deploy.local": "compose-local"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": ["jvm-service"]
+        },
+        "package": {
+          "backend-api": ["container-image"]
+        }
       }
     },
     "domain-pack-only-product": {
+      "status": "experimental",
       "description": "A product that provides only domain packs without runtime services",
       "defaultSurfaces": {
         "dev": [],
@@ -339,6 +377,11 @@
       },
       "defaultAdapters": {
         "domain-pack": "domain-pack-validator"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "domain-pack": ["domain-pack"]
+        }
       }
     }
   }

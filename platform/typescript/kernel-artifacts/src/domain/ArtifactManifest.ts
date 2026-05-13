@@ -4,21 +4,40 @@ import { z } from 'zod';
  * Artifact types
  */
 export type ArtifactType =
-  | 'jar'
-  | 'war'
+  | 'jvm-service'
+  | 'jvm-library'
+  | 'node-service'
   | 'static-web-bundle'
-  | 'docker-image'
-  | 'npm-package'
+  | 'container-image'
+  | 'mobile-bundle'
+  | 'sdk-package'
+  | 'domain-pack'
   | 'test-report'
   | 'coverage-report'
   | 'source-map'
   | 'documentation';
 
 /**
+ * Artifact packaging
+ */
+export type ArtifactPackaging =
+  | 'jar'
+  | 'distribution'
+  | 'static-files'
+  | 'container'
+  | 'npm'
+  | 'maven'
+  | 'apk'
+  | 'aab'
+  | 'ipa'
+  | 'json'
+  | 'xml';
+
+/**
  * Artifact fingerprint
  */
 export interface ArtifactFingerprint {
-  algorithm: 'sha256' | 'sha512' | 'md5';
+  algorithm: 'sha256' | 'sha512';
   hash: string;
 }
 
@@ -27,6 +46,7 @@ export interface ArtifactFingerprint {
  */
 export interface ArtifactMetadata {
   type: ArtifactType;
+  packaging: ArtifactPackaging;
   version: string;
   buildNumber: string;
   gitCommit: string | undefined;
@@ -84,7 +104,8 @@ export const ArtifactManifestSchema = z.object({
       id: z.string().min(1),
       path: z.string().min(1),
       metadata: z.object({
-        type: z.enum(['jar', 'war', 'static-web-bundle', 'docker-image', 'npm-package', 'test-report', 'coverage-report', 'source-map', 'documentation']),
+        type: z.enum(['jvm-service', 'jvm-library', 'node-service', 'static-web-bundle', 'container-image', 'mobile-bundle', 'sdk-package', 'domain-pack', 'test-report', 'coverage-report', 'source-map', 'documentation']),
+        packaging: z.enum(['jar', 'distribution', 'static-files', 'container', 'npm', 'maven', 'apk', 'aab', 'ipa', 'json', 'xml']),
         version: z.string().min(1),
         buildNumber: z.string(),
         gitCommit: z.string().optional(),
@@ -93,7 +114,7 @@ export const ArtifactManifestSchema = z.object({
         sizeBytes: z.number().int().nonnegative(),
       }),
       fingerprint: z.object({
-        algorithm: z.enum(['sha256', 'sha512', 'md5']),
+        algorithm: z.enum(['sha256', 'sha512']),
         hash: z.string().min(1),
       }),
       expected: z.boolean(),
@@ -129,7 +150,7 @@ export class ArtifactManifestGenerator {
           ...artifact.metadata,
           buildNumber: artifact.metadata.buildNumber || '0',
         },
-        found: false, // Will be updated after validation
+        found: true,
       })),
     };
   }

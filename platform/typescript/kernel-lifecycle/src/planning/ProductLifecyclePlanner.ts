@@ -15,10 +15,13 @@ import {
 export class ProductLifecyclePlanner {
   private registryPath: string;
   private profilesPath: string;
+  private repoRoot: string;
 
-  constructor(configDir: string = '/Users/samujjwal/Development/ghatana/config') {
-    this.registryPath = path.join(configDir, 'canonical-product-registry.json');
-    this.profilesPath = path.join(configDir, 'product-lifecycle-profiles.json');
+  constructor(repoRoot: string, configDir?: string) {
+    this.repoRoot = repoRoot;
+    const actualConfigDir = configDir || path.join(repoRoot, 'config');
+    this.registryPath = path.join(actualConfigDir, 'canonical-product-registry.json');
+    this.profilesPath = path.join(actualConfigDir, 'product-lifecycle-profiles.json');
   }
 
   /**
@@ -36,7 +39,7 @@ export class ProductLifecyclePlanner {
       throw new Error(`Product ${productId} does not have lifecycleConfigPath`);
     }
 
-    const configPath = path.join('/Users/samujjwal/Development/ghatana', product.lifecycleConfigPath);
+    const configPath = path.join(this.repoRoot, product.lifecycleConfigPath);
     const configContent = await fs.readFile(configPath, 'utf-8');
     const config = yaml.parse(configContent);
 

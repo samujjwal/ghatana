@@ -15,3 +15,4 @@ deployment:
   target: compose-local
   composeFile: products/digital-marketing/deploy/local.compose.yaml
   envFile: products/digital-marketing/deploy/local.env
+  envExampleFile: products/digital-marketing/deploy/local.env.example

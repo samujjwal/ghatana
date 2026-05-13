@@ -28,3 +28,5 @@ export { ProductSurfaceValidator } from './validation/ProductSurfaceValidator.js
 export { ProductEnvironmentValidator } from './validation/ProductEnvironmentValidator.js';
 export { ProductArtifactValidator } from './validation/ProductArtifactValidator.js';
 export { ProductGateValidator } from './validation/ProductGateValidator.js';
+
+export { SchemaValidator } from './SchemaValidator.js';

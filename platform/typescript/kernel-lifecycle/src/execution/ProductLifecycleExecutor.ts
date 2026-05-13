@@ -1,4 +1,4 @@
-import { LifecyclePlan, LifecyclePlanStep, AdapterResult } from '../domain/ProductLifecyclePhase.js';
+import { LifecyclePlan, LifecyclePlanStep, ProductLifecyclePhase, ExecutionResult, ExecutionStepResult } from '../domain/ProductLifecyclePhase.js';
 
 /**
  * Product lifecycle executor
@@ -14,33 +14,53 @@ export class ProductLifecycleExecutor {
   /**
    * Execute a lifecycle plan
    */
-  async execute(plan: LifecyclePlan): Promise<AdapterResult[]> {
-    const results: AdapterResult[] = [];
+  async execute(plan: LifecyclePlan): Promise<ExecutionResult> {
+    const steps: ExecutionStepResult[] = [];
+    const startTime = Date.now();
+    let failure: { stepId: string; message: string; cause?: string } | undefined;
 
     for (const step of plan.steps) {
-      const result = await this.executeStep(step);
-      results.push(result);
+      const stepResult = await this.executeStep(step);
+      steps.push(stepResult);
 
-      if (!result.success) {
-        // Stop execution on first failure
+      if (stepResult.status === 'failed') {
+        const failureObj: { stepId: string; message: string; cause?: string } = {
+          stepId: step.id,
+          message: `Lifecycle step failed for ${step.surface}`,
+        };
+        if (stepResult.stderr) {
+          failureObj.cause = stepResult.stderr;
+        }
+        failure = failureObj;
         break;
       }
     }
 
-    return results;
+    const result: ExecutionResult = {
+      status: failure ? 'failed' : this.dryRun ? 'skipped' : 'succeeded',
+      steps,
+      artifacts: [],
+      durationMs: Date.now() - startTime,
+    };
+
+    if (failure) {
+      result.failure = failure;
+    }
+
+    return result;
   }
 
   /**
    * Execute a single lifecycle step
    */
-  async executeStep(step: LifecyclePlanStep): Promise<AdapterResult> {
+  async executeStep(step: LifecyclePlanStep): Promise<ExecutionStepResult> {
     if (this.dryRun) {
       return {
-        success: true,
-        surface: step.surface,
-        phase: step.phase,
-        adapter: step.adapter,
-        output: `Dry run: would execute ${step.phase} phase for ${step.surface} using ${step.adapter}`,
+        stepId: step.id,
+        status: 'skipped',
+        exitCode: 0,
+        stdout: `[DRY-RUN] Would execute ${step.phase} phase for ${step.surface} using ${step.adapter}`,
+        stderr: '',
         durationMs: 0,
       };
     }
@@ -52,11 +72,11 @@ export class ProductLifecycleExecutor {
 
     // For now, return a placeholder result
     return {
-      success: true,
-      surface: step.surface,
-      phase: step.phase,
-      adapter: step.adapter,
-      output: `Executed ${step.phase} phase for ${step.surface} using ${step.adapter}`,
+      stepId: step.id,
+      status: 'succeeded',
+      exitCode: 0,
+      stdout: `Executed ${step.phase} phase for ${step.surface} using ${step.adapter}`,
+      stderr: '',
       durationMs: 1000,
     };
   }
@@ -65,29 +85,29 @@ export class ProductLifecycleExecutor {
    * Execute a step for a specific surface
    */
   async executeSurface(
-    productId: string,
+    _productId: string,
     surface: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     adapter: string,
-  ): Promise<AdapterResult> {
+  ): Promise<ExecutionStepResult> {
     if (this.dryRun) {
       return {
-        success: true,
-        surface,
-        phase: phase as any,
-        adapter,
-        output: `Dry run: would execute ${phase} phase for ${surface} using ${adapter}`,
+        stepId: `${phase}-${surface}`,
+        status: 'skipped',
+        exitCode: 0,
+        stdout: `[DRY-RUN] Would execute ${phase} phase for ${surface} using ${adapter}`,
+        stderr: '',
         durationMs: 0,
       };
     }
 
     // Placeholder implementation
     return {
-      success: true,
-      surface,
-      phase: phase as any,
-      adapter,
-      output: `Executed ${phase} phase for ${surface} using ${adapter}`,
+      stepId: `${phase}-${surface}`,
+      status: 'succeeded',
+      exitCode: 0,
+      stdout: `Executed ${phase} phase for ${surface} using ${adapter}`,
+      stderr: '',
       durationMs: 1000,
     };
   }

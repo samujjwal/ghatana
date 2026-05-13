@@ -22,7 +22,7 @@
   "definitions": {
     "ToolchainAdapter": {
       "type": "object",
-      "required": ["kind", "supportedSurfaceTypes", "supportedPhases", "requires", "outputs"],
+      "required": ["kind", "supportedSurfaceTypes", "supportedPhases", "requires", "outputs", "implementation", "status", "safeForDefault", "tests"],
       "properties": {
         "kind": {
           "type": "string",
@@ -62,6 +62,22 @@
         "implementation": {
           "type": "string",
           "description": "Path to adapter implementation (for TypeScript adapters)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Adapter implementation maturity",
+          "enum": ["implemented", "partial", "planned"]
+        },
+        "safeForDefault": {
+          "type": "boolean",
+          "description": "Whether stable lifecycle profiles may reference this adapter by default"
+        },
+        "tests": {
+          "type": "array",
+          "description": "Executable regression tests covering this adapter",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
-import type { ArtifactEntry } from '../domain/ArtifactManifest.js';
+import type { ArtifactEntry, ArtifactPackaging, ArtifactType } from '../domain/ArtifactManifest.js';
 
 /**
  * Artifact storage
@@ -99,6 +99,7 @@ export class ArtifactStorage {
           path: fullPath,
           metadata: {
             type: this.inferArtifactType(entry.name),
+            packaging: this.inferArtifactPackaging(entry.name),
             version: '1.0.0',
             buildNumber: '0',
             gitCommit: undefined,
@@ -120,14 +121,22 @@ export class ArtifactStorage {
   /**
    * Infer artifact type from filename
    */
-  private inferArtifactType(filename: string): 'jar' | 'war' | 'static-web-bundle' | 'docker-image' | 'npm-package' | 'test-report' | 'coverage-report' | 'source-map' | 'documentation' {
-    if (filename.endsWith('.jar')) return 'jar';
-    if (filename.endsWith('.war')) return 'war';
-    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'docker-image';
-    if (filename.endsWith('.zip')) return 'npm-package';
+  private inferArtifactType(filename: string): ArtifactType {
+    if (filename.endsWith('.jar')) return 'jvm-service';
+    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'container-image';
+    if (filename.endsWith('.zip')) return 'sdk-package';
     if (filename.includes('test-report')) return 'test-report';
     if (filename.includes('coverage')) return 'coverage-report';
     if (filename.endsWith('.map')) return 'source-map';
     return 'documentation';
+  }
+
+  private inferArtifactPackaging(filename: string): ArtifactPackaging {
+    if (filename.endsWith('.jar')) return 'jar';
+    if (filename.endsWith('.tar.gz') || filename.endsWith('.tgz')) return 'container';
+    if (filename.endsWith('.zip')) return 'distribution';
+    if (filename.endsWith('.json')) return 'json';
+    if (filename.endsWith('.xml')) return 'xml';
+    return 'static-files';
   }
 }

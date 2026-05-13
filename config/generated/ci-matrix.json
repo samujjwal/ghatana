@@ -30,17 +30,9 @@
     "yappc"
   ],
   "productsWithLifecycle": [
-    "phr",
-    "finance",
-    "digital-marketing",
-    "flashit",
-    "data-cloud",
-    "yappc"
+    "digital-marketing"
   ],
   "lifecycleProfiles": [
-    "standard-web-api-product",
-    "backend-only-java-service",
-    "mobile-plus-api-product",
-    "platform-provider-product"
+    "standard-web-api-product"
   ]
 }
