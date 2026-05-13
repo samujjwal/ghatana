@@ -29,7 +29,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL, LearningTarget.SEMANTIC_FACT),
                 true,
-                true
+                true,
+                false
         );
 
         assertTrue(contract.permits(LearningTarget.PROCEDURAL_SKILL));
@@ -43,7 +44,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         assertFalse(contract.permits(LearningTarget.SEMANTIC_FACT));
@@ -58,6 +60,7 @@ class LearningContractEnforcementTest {
                 LearningLevel.L0,
                 Set.of(),
                 false,
+                false,
                 false
         );
 
@@ -69,7 +72,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL, LearningTarget.SEMANTIC_FACT),
                 true,
-                true
+                true,
+                false
         );
 
         assertTrue(l5Contract.permits(LearningTarget.PROCEDURAL_SKILL));
@@ -83,7 +87,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> contract.requirePermitted(LearningTarget.SEMANTIC_FACT));
@@ -97,7 +102,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         assertDoesNotThrow(() -> contract.requirePermitted(LearningTarget.PROCEDURAL_SKILL));
@@ -110,7 +116,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         assertThrows(IllegalStateException.class, () -> contract.requirePermitted(LearningTarget.SEMANTIC_FACT));
@@ -123,7 +130,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,  // L3 requires provenance
-                true   // L3 requires promotion
+                true,  // L3 requires promotion
+                false
         );
 
         assertTrue(l3Contract.requiresProvenanceFor(LearningTarget.PROCEDURAL_SKILL));
@@ -136,7 +144,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,  // L3 requires provenance
-                true   // L3 requires promotion
+                true,  // L3 requires promotion
+                false
         );
 
         assertTrue(l3Contract.requiresPromotionFor(LearningTarget.PROCEDURAL_SKILL));
@@ -150,6 +159,7 @@ class LearningContractEnforcementTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 false, // provenanceRequired=false but L3 requires it
+                false,
                 false
         ));
         assertTrue(ex1.getMessage().contains("provenanceRequired=true"));
@@ -159,7 +169,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                false // promotionRequired=false but L3 requires it
+                false, // promotionRequired=false but L3 requires it
+                false
         ));
         assertTrue(ex2.getMessage().contains("promotionRequired=true"));
     }
@@ -171,7 +182,8 @@ class LearningContractEnforcementTest {
                 LearningLevel.L5,
                 Set.of(LearningTarget.PROCEDURAL_SKILL, LearningTarget.SEMANTIC_FACT),
                 true,
-                true
+                true,
+                false
         );
 
         assertTrue(contract.permitsAny(Set.of(

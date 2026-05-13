@@ -1,0 +1,74 @@
+apiVersion: ghatana.yappc/v1
+kind: EvaluationPack
+metadata:
+  id: eval-pack-react-ui-generation-v1
+  name: React UI Generation Evaluation Pack
+  version: 1.0.0
+  description: >
+    Evaluation pack for validating React component quality, TypeScript correctness,
+    accessibility compliance, and design system alignment.
+spec:
+  skillId: react-ui-generation
+  versionScope:
+    active:
+      - "react@18"
+      - "react@19"
+    maintenance:
+      - "react@17"
+    obsolete:
+      - "react@16"
+
+  requiredTests:
+    - name: typescript-compilation
+      type: build
+      description: "TypeScript must compile without errors"
+      required: true
+    - name: eslint-validation
+      type: lint
+      description: "Code must pass ESLint validation"
+      required: true
+    - name: accessibility-audit
+      type: a11y
+      description: "Components must meet accessibility standards"
+      required: true
+    - name: design-system-compliance
+      type: style
+      description: "Components must use design system correctly"
+      required: true
+
+  safetyGates:
+    - name: no-xss-vulnerabilities
+      description: "No XSS vulnerabilities in generated code"
+      severity: critical
+      blockOnFailure: true
+    - name: no-unsafe-refs
+      description: "No unsafe useRef usage patterns"
+      severity: high
+      blockOnFailure: true
+    - name: proper-state-management
+      description: "Proper state management patterns"
+      severity: high
+      blockOnFailure: false
+
+  regressionGates:
+    - name: component-api-stability
+      description: "Component API changes must be backward compatible"
+      severity: critical
+    - name: render-performance
+      description: "No significant render performance degradation"
+      severity: high
+
+  minimumScores:
+    correctness: 0.85
+    safety: 0.95
+    accessibility: 0.90
+    designSystem: 0.80
+
+  requiredEvidenceTypes:
+    - compilation-log
+    - eslint-report
+    - a11y-audit-report
+    - design-system-validation
+    - render-performance-metrics
+
+  evaluationTimeoutSeconds: 300

@@ -7,7 +7,6 @@ package com.ghatana.yappc.services.phase;
 import com.ghatana.core.runtime.PreviewRuntimeService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
-import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.yappc.api.PhasePacket;
@@ -32,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Production implementation of PhasePacketService.
@@ -53,15 +51,12 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private final DataCloudClient dataCloudClient;
     private final YappcArtifactRepository artifactRepository;
     private final PhaseGateValidator phaseGateValidator;
-    private final PolicyEngine policyEngine;
     private final CapabilityEvaluationService capabilityEvaluationService;
     private final TransitionConfigLoader transitionConfigLoader;
     private final PlatformIntegrationClient platformIntegrationClient;
     @Nullable
     private final BusinessMetrics metrics;
-    @Nullable
     private final AuditService auditService;
-    @Nullable
     private final PreviewRuntimeService previewRuntimeService;
     @Nullable
     private final com.ghatana.audit.AuditLogger auditLogger;
@@ -124,13 +119,16 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
         this.dataCloudClient = dataCloudClient;
         this.artifactRepository = artifactRepository;
         this.phaseGateValidator = phaseGateValidator;
-        this.policyEngine = policyEngine;
         this.capabilityEvaluationService = capabilityEvaluationService;
         this.transitionConfigLoader = transitionConfigLoader;
         this.platformIntegrationClient = platformIntegrationClient;
         this.metrics = metrics;
-        this.auditService = auditService;
-        this.previewRuntimeService = previewRuntimeService;
+        this.auditService = auditService != null
+            ? auditService
+            : new DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE");
+        this.previewRuntimeService = previewRuntimeService != null
+            ? previewRuntimeService
+            : new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
         this.auditLogger = auditLogger;
     }
 
@@ -166,46 +164,44 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         degradedReason
                     ));
                 }
-                // Query phase-specific blockers
-                List<PhasePacket.PhaseBlocker> blockers = queryPhaseBlockers(phase, projectId, projectState);
-                
+                return queryPhaseBlockers(phase, projectId, projectState)
+                    .then(blockers -> {
+
                 // Query phase evidence from AEP
                 List<PhasePacket.PhaseEvidence> evidence = queryPhaseEvidence(phase, projectId, principal.getTenantId());
-                
+
                 // Query governance records
                 List<PhasePacket.GovernanceRecord> governance = queryGovernanceRecords(phase, projectId, principal.getTenantId());
-                
+
                 // Determine tenant tier from project state or principal
                 PhasePacket.TenantTier tier = determineTenantTier(projectState, principal);
-                
+
                 // Determine enabled feature flags
                 Set<String> enabledFlags = determineEnabledFlags(projectState, principal);
-                
+
                 // Determine available actions based on role/permissions
                 List<PhasePacket.PhaseAction> actions = determineAvailableActions(phase, projectId, principal, tier, enabledFlags);
-                
+
                 // Calculate phase readiness
                 PhasePacket.PhaseReadiness readiness = calculatePhaseReadiness(phase, projectId, blockers, projectState);
-                
-                // Query required and completed artifacts
+
+                // Query required artifacts
                 List<PhasePacket.RequiredArtifact> requiredArtifacts = queryRequiredArtifacts(phase, projectId);
-                List<PhasePacket.CompletedArtifact> completedArtifacts = queryCompletedArtifacts(phase, projectId, principal.getTenantId());
-                
-                // Query activity feed
-                List<PhasePacket.ActivityFeedEntry> activityFeed = queryActivityFeed(phase, projectId, principal.getTenantId());
-                
-                // Build capability model using CapabilityEvaluationService
-                return capabilityEvaluationService.evaluate(
-                    new CapabilityEvaluationService.CapabilityEvaluationRequest(
-                        principal.getTenantId(),
-                        principal.getName(),
-                        workspaceId,
-                        projectId,
-                        null, // artifactId - can be added if needed
-                        phase,
-                        null // operation - can be added if needed
-                    )
-                ).then(capabilities -> {
+                return queryCompletedArtifacts(phase, projectId, principal.getTenantId())
+                    .then(completedArtifacts -> queryActivityFeed(phase, projectId, principal.getTenantId())
+                        .then(activityFeed ->
+                            // Build capability model using CapabilityEvaluationService
+                            capabilityEvaluationService.evaluate(
+                                new CapabilityEvaluationService.CapabilityEvaluationRequest(
+                                    principal.getTenantId(),
+                                    principal.getName(),
+                                    workspaceId,
+                                    projectId,
+                                    null, // artifactId - can be added if needed
+                                    phase,
+                                    null // operation - can be added if needed
+                                )
+                            ).then(capabilities -> {
                 
                 // Build dashboard action classification
                 PhasePacket.DashboardActionClassification dashboardActions = buildDashboardActionClassification(actions, blockers);
@@ -264,6 +260,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     phase, projectId, effectiveCorrelationId);
 
                 return Promise.of(packet);
+                })
+                ));
                 });
             });
     }
@@ -287,8 +285,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                             "projectId", projectId,
                             "workspaceId", workspaceId,
                             "tenantId", tenantId,
-                            "name", "Project-" + projectId,
-                            "tier", "PRO"
+                            "degraded", true,
+                            "degradedReason", "PROJECT_STATE_NOT_FOUND"
                         );
                     }
                     // Parse JSON response (simplified - in production use ObjectMapper)
@@ -308,8 +306,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 "projectId", projectId,
                 "workspaceId", workspaceId,
                 "tenantId", tenantId,
-                "name", "Project-" + projectId,
-                "tier", "PRO"
+                "degraded", true,
+                "degradedReason", "PROJECT_STATE_QUERY_FAILED"
             ));
         }
     }
@@ -317,7 +315,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     /**
      * Queries phase-specific blockers using PhaseGateValidator.
      */
-    private List<PhasePacket.PhaseBlocker> queryPhaseBlockers(
+        private Promise<List<PhasePacket.PhaseBlocker>> queryPhaseBlockers(
             String phase,
             String projectId,
             Map<String, Object> projectState
@@ -334,34 +332,35 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             }
             
             // Validate gate with empty conditions for now - in production, these would come from project state
-            var validationResult = phaseGateValidator.validate(projectId, phaseType, Map.of())
-                .getResult();
-            
-            if (validationResult == null || validationResult.allClear()) {
-                return List.of();
-            }
-            
-            // Convert ValidationResult blockers to PhasePacket.PhaseBlocker
-            return validationResult.blockers().stream()
-                .<PhasePacket.PhaseBlocker>map(blocker -> {
-                    String severity = blocker.startsWith("missing-artifact") ? "CRITICAL" : "WARNING";
-                    String title = blocker.replace("entry-criterion: ", "")
-                                        .replace("prior-exit-criterion: ", "")
-                                        .replace("missing-artifact: ", "");
-                    return new PhasePacket.PhaseBlocker(
-                        blocker,
-                        blocker.startsWith("missing-artifact") ? "ARTIFACT" : "CRITERION",
-                        title,
-                        blocker,
-                        severity,
-                        blocker,
-                        true
-                    );
+            return phaseGateValidator.validate(projectId, phaseType, Map.of())
+                .map(validationResult -> {
+                    if (validationResult == null || validationResult.allClear()) {
+                        return List.<PhasePacket.PhaseBlocker>of();
+                    }
+
+                    // Convert ValidationResult blockers to PhasePacket.PhaseBlocker
+                    return validationResult.blockers().stream()
+                        .<PhasePacket.PhaseBlocker>map(blocker -> {
+                            String severity = blocker.startsWith("missing-artifact") ? "CRITICAL" : "WARNING";
+                            String title = blocker.replace("entry-criterion: ", "")
+                                                .replace("prior-exit-criterion: ", "")
+                                                .replace("missing-artifact: ", "");
+                            return new PhasePacket.PhaseBlocker(
+                                blocker,
+                                blocker.startsWith("missing-artifact") ? "ARTIFACT" : "CRITERION",
+                                title,
+                                blocker,
+                                severity,
+                                blocker,
+                                true
+                            );
+                        })
+                        .toList();
                 })
-                .toList();
+                .whenException(e -> log.error("Error querying phase blockers: phase={}, projectId={}", phase, projectId, e));
         } catch (Exception e) {
             log.error("Error querying phase blockers: phase={}, projectId={}", phase, projectId, e);
-            return List.of();
+            return Promise.of(List.<PhasePacket.PhaseBlocker>of());
         }
     }
 
@@ -662,7 +661,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     /**
      * Queries completed artifacts for the phase.
      */
-    private List<PhasePacket.CompletedArtifact> queryCompletedArtifacts(
+        private Promise<List<PhasePacket.CompletedArtifact>> queryCompletedArtifacts(
             String phase,
             String projectId,
             String tenantId
@@ -678,87 +677,67 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             }
             
             // List artifact versions for this project and phase
-            var versionsPromise = artifactRepository.listVersions(projectId, phaseType);
-            var versions = versionsPromise.getResult();
-            
-            if (versions == null || versions.isEmpty()) {
-                return List.of();
-            }
-            
-            // Convert to CompletedArtifact records
-            return versions.stream()
-                .<PhasePacket.CompletedArtifact>map(version -> new PhasePacket.CompletedArtifact(
-                    phase + "-" + version,
-                    phase + "-" + version,
-                    phase,
-                    Instant.now(),
-                    null
-                ))
-                .toList();
+            return artifactRepository.listVersions(projectId, phaseType)
+                .map(versions -> {
+                    if (versions == null || versions.isEmpty()) {
+                        return List.of();
+                    }
+
+                    // Convert to CompletedArtifact records
+                    return versions.stream()
+                        .<PhasePacket.CompletedArtifact>map(version -> new PhasePacket.CompletedArtifact(
+                            phase + "-" + version,
+                            phase + "-" + version,
+                            phase,
+                            Instant.now(),
+                            null
+                        ))
+                        .toList();
+                });
         } catch (Exception e) {
             log.error("Error querying completed artifacts: phase={}, projectId={}, tenantId={}", phase, projectId, tenantId, e);
-            return List.of();
+            return Promise.of(List.of());
         }
     }
 
     /**
      * Queries activity feed for the phase.
      */
-    private List<PhasePacket.ActivityFeedEntry> queryActivityFeed(
+    private Promise<List<PhasePacket.ActivityFeedEntry>> queryActivityFeed(
             String phase,
             String projectId,
             String tenantId
     ) {
         try {
-            if (auditService == null) {
-                if (auditLogger == null) {
-                    log.warn("AuditService not available, returning empty activity feed");
-                    return List.of();
-                }
-                // Fallback to old behavior if only auditLogger is available
-                log.warn("Using deprecated auditLogger, please migrate to platform AuditService");
-                return List.of(
-                    new PhasePacket.ActivityFeedEntry(
-                        "phase-query",
-                        "PHASE_PACKET_REQUEST",
-                        phase,
-                        "Phase packet requested",
-                        "System",
-                        Instant.now(),
-                        "INFO"
-                    )
-                );
-            }
-
             // Query recent audit events for this project and phase using the platform AuditService
             Instant endDate = Instant.now();
             Instant startDate = endDate.minus(java.time.Duration.ofDays(30)); // Last 30 days
 
-            List<AuditEvent> auditEvents = auditService.queryByPhase(projectId, phase, startDate, endDate)
-                .getResult();
+            return auditService.queryByPhase(projectId, phase, startDate, endDate)
+                .map(auditEvents -> {
+                    if (auditEvents == null || auditEvents.isEmpty()) {
+                        log.debug("No audit events found for phase={}, projectId={}", phase, projectId);
+                        return List.of();
+                    }
 
-            if (auditEvents == null || auditEvents.isEmpty()) {
-                log.debug("No audit events found for phase={}, projectId={}", phase, projectId);
-                return List.of();
-            }
-
-            // Convert AuditEvent to ActivityFeedEntry
-            return auditEvents.stream()
-                .limit(50) // Limit to most recent 50 events
-                .map(event -> new PhasePacket.ActivityFeedEntry(
-                    event.getId(),
-                    event.getEventType(),
-                    phase,
-                    event.getDetails().getOrDefault("description", "Audit event").toString(),
-                    event.getPrincipal() != null ? event.getPrincipal() : "System",
-                    event.getTimestamp(),
-                    event.getSuccess() != null && event.getSuccess() ? "INFO" : "ERROR"
-                ))
-                .collect(Collectors.toList());
+                    // Convert AuditEvent to ActivityFeedEntry
+                    return auditEvents.stream()
+                        .limit(50) // Limit to most recent 50 events
+                        .map(event -> new PhasePacket.ActivityFeedEntry(
+                            event.getId(),
+                            event.getEventType(),
+                            phase,
+                            event.getDetails().getOrDefault("description", "Audit event").toString(),
+                            event.getPrincipal() != null ? event.getPrincipal() : "System",
+                            event.getTimestamp(),
+                            event.getSuccess() != null && event.getSuccess() ? "INFO" : "ERROR"
+                        ))
+                        .toList();
+                });
 
         } catch (Exception e) {
             log.error("Error querying activity feed: phase={}, projectId={}, tenantId={}", phase, projectId, tenantId, e);
-            return List.of();
+            return Promise.of(List.of());
         }
     }
 
@@ -817,15 +796,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String projectId
     ) {
         try {
-            if (previewRuntimeService == null) {
-                log.warn("PreviewRuntimeService not available, returning default healthy signals");
-                return new PhasePacket.HealthSignals(
-                    new PhasePacket.PreviewHealth(true, "healthy", List.of()),
-                    new PhasePacket.GenerationHealth(true, "healthy", null, List.of()),
-                    new PhasePacket.RuntimeHealth(true, "healthy", null, List.of())
-                );
-            }
-
             // Query actual health signals from preview runtime service
             // Use projectId as the previewId for now - in production, this would be derived from project state
             String previewId = projectId + "-" + phase.toLowerCase();
@@ -971,13 +941,13 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
         return new PhasePacket(
             phase,
             projectId,
-            "Project-" + projectId, // fallback name
+            "degraded-project", // explicit degraded sentinel
             principal.getTenantId(),
             workspaceId,
-            "Workspace-" + workspaceId, // fallback name
+            "degraded-workspace", // explicit degraded sentinel
             actor,
             phase,
-            PhasePacket.TenantTier.PRO, // default to PRO tier in degraded state
+            PhasePacket.TenantTier.FREE, // fail-closed default in degraded state
             Set.of(), // no feature flags in degraded state
             capabilities,
             blockers,

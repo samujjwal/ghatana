@@ -144,6 +144,84 @@ public interface MemoryStore {
     @NotNull
     Promise<Policy> getPolicy(@NotNull String policyId);
 
+    // ========== NEGATIVE KNOWLEDGE MEMORY ==========
+
+    /**
+     * Stores negative knowledge (known failure modes and anti-patterns).
+     * Negative knowledge is used to avoid repeating mistakes.
+     *
+     * @param negativeKnowledge Negative knowledge to store
+     * @return Promise of stored negative knowledge with ID
+     */
+    @NotNull
+    Promise<NegativeKnowledge> storeNegativeKnowledge(@NotNull NegativeKnowledge negativeKnowledge);
+
+    /**
+     * Queries negative knowledge by skill ID.
+     *
+     * @param skillId Skill identifier
+     * @param limit Maximum results
+     * @return Promise of negative knowledge items, ordered by recency
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledgeBySkill(@NotNull String skillId, int limit);
+
+    /**
+     * Queries negative knowledge by mastery state.
+     *
+     * @param masteryState Mastery state to filter by
+     * @param limit Maximum results
+     * @return Promise of negative knowledge items
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState,
+            int limit);
+
+    /**
+     * Queries negative knowledge by version context applicability.
+     *
+     * @param versionContext Version context to check applicability
+     * @param limit Maximum results
+     * @return Promise of applicable negative knowledge items
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext,
+            int limit);
+
+    /**
+     * Queries negative knowledge with freshness threshold.
+     *
+     * @param freshnessThreshold Maximum age of items to return
+     * @param limit Maximum results
+     * @return Promise of fresh negative knowledge items
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByFreshness(
+            @NotNull java.time.Duration freshnessThreshold,
+            int limit);
+
+    /**
+     * Queries negative knowledge by tenant ID.
+     *
+     * @param tenantId Tenant identifier
+     * @param limit Maximum results
+     * @return Promise of negative knowledge items for tenant
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit);
+
+    /**
+     * Queries negative knowledge with comprehensive filters.
+     *
+     * @param filter Memory filter with skillId, masteryState, versionContext, freshnessThreshold, tenantId
+     * @param limit Maximum results
+     * @return Promise of filtered negative knowledge items
+     */
+    @NotNull
+    Promise<List<NegativeKnowledge>> queryNegativeKnowledge(@NotNull MemoryFilter filter, int limit);
+
     // ========== PREFERENCE MEMORY ==========
 
     /**

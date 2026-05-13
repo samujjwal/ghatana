@@ -45,11 +45,12 @@ public interface ObsolescenceDetector {
     );
 
     /**
-     * Scans all mastery items for obsolescence.
+     * Scans all mastery items for obsolescence within a tenant scope.
      *
+     * @param tenantId tenant identifier to scope the scan
      * @param env current environment fingerprint
      * @return promise of list of obsolescence events
      */
     @NotNull
-    Promise<List<ObsolescenceEvent>> scanAll(@NotNull EnvironmentFingerprint env);
+    Promise<List<ObsolescenceEvent>> scanAll(@NotNull String tenantId, @NotNull EnvironmentFingerprint env);
 }

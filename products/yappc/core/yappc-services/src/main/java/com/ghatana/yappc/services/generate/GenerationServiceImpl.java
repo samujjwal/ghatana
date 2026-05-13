@@ -1,5 +1,7 @@
 package com.ghatana.yappc.services.generate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
@@ -10,6 +12,7 @@ import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.generate.*;
+import com.ghatana.yappc.domain.intent.IntentInput;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -36,17 +39,20 @@ public class GenerationServiceImpl implements GenerationService {
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
     private final GenerationRunRepository generationRunRepository;
+    private final ObjectMapper objectMapper;
     private volatile boolean aiDegraded = false;
 
     public GenerationServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            @NotNull GenerationRunRepository generationRunRepository) {
+            @NotNull GenerationRunRepository generationRunRepository,
+            @NotNull ObjectMapper objectMapper) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.generationRunRepository = generationRunRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -73,7 +79,7 @@ public class GenerationServiceImpl implements GenerationService {
             .projectId(context.projectId())
             .tenantId(context.tenantId())
             .workspaceId(context.workspaceId())
-            .intent(null) // TODO: Load actual Intent from intentRef
+            .intent(buildIntentRef(context))
             .status(GenerationRun.RunStatus.GENERATING)
             .reviewStatus(GenerationRun.ReviewStatus.REVIEW_PENDING)
             .createdAt(createdAt)
@@ -102,7 +108,7 @@ public class GenerationServiceImpl implements GenerationService {
                     .projectId(context.projectId())
                     .tenantId(context.tenantId())
                     .workspaceId(context.workspaceId())
-                    .intent(null) // TODO: Load actual Intent from intentRef
+                    .intent(buildIntentRef(context))
                     .status(GenerationRun.RunStatus.COMPLETED)
                     .artifactIds(artifacts.artifacts().stream().map(Artifact::id).toList())
                     .reviewStatus(GenerationRun.ReviewStatus.REVIEW_PENDING)
@@ -354,40 +360,31 @@ public class GenerationServiceImpl implements GenerationService {
             });
     }
 
-    /**er edits to JSON for storage.
+    /**
+     * Serializes user edits to JSON for storage using the injected ObjectMapper.
      */
     private String serializeUserEdits(List<GenerationReviewRequest.UserEdit> userEdits) {
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < userEdits.size(); i++) {
-            GenerationReviewRequest.UserEdit edit = userEdits.get(i);
-            json.append("{");
-            json.append("\"artifactId\":\"").append(escapeJson(edit.artifactId())).append("\",");
-            json.append("\"regionId\":\"").append(escapeJson(edit.regionId())).append("\",");
-            json.append("\"startLine\":").append(edit.startLine()).append(",");
-            json.append("\"endLine\":").append(edit.endLine()).append(",");
-            json.append("\"editType\":\"").append(escapeJson(edit.editType())).append("\",");
-            json.append("\"editTimestamp\":\"").append(edit.editTimestamp().toString()).append("\",");
-            json.append("\"originalContent\":\"").append(escapeJson(edit.originalContent())).append("\",");
-            json.append("\"editedContent\":\"").append(escapeJson(edit.editedContent())).append("\"");
-            json.append("}");
-            if (i < userEdits.size() - 1) {
-                json.append(",");
-            }
+        try {
+            return objectMapper.writeValueAsString(userEdits);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize user edits to JSON", e);
+            throw new IllegalStateException("User edits serialization failed", e);
         }
-        json.append("]");
-        return json.toString();
     }
 
     /**
-     * Escapes special characters in JSON strings.
+     * Builds a provenance-only IntentInput reference from the generation context.
+     * The intent content is captured and persisted at the intent phase; this stores
+     * the intent ID reference for traceability in the generation run record.
      */
-    private String escapeJson(String value) {
-        if (value == null) return "";
-        return value.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "\\r")
-                   .replace("\t", "\\t");
+    private IntentInput buildIntentRef(GenerationContext context) {
+        return IntentInput.builder()
+                .rawText("intent-ref:" + context.intentId())
+                .format("ref")
+                .structuredData(Map.of("intentId", context.intentId()))
+                .tenantId(context.tenantId())
+                .userId(context.actorId())
+                .build();
     }
 
     private Promise<GeneratedArtifacts> generateArtifactsWithAI(ValidatedSpec spec) {

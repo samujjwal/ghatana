@@ -190,6 +190,7 @@ function generatePnpmEntries(registry, dependencyPolicy) {
   lines.push('  - "platform/typescript/foundation/*"');
   lines.push('  - "platform/typescript/canvas/*"');
   lines.push('  - "platform/typescript/ghatana-studio"');
+  lines.push('  - "platform/agent-catalog"');
   lines.push('');
   
   // Add product packages

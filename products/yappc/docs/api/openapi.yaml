@@ -1918,6 +1918,23 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Canvas"
+    post:
+      operationId: saveCanvas
+      summary: Save canvas snapshot for a project
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Canvas saved
+          content:
+            application/json:
+              schema:
+                type: object
 
   /api/canvas/{projectId}/{canvasId}:
     parameters:
@@ -4611,6 +4628,532 @@ paths:
       responses:
         "200":
           description: Configuration
+
+  # ── Frontend parity endpoints (canonical REST client coverage) ───────────
+
+  /api/activity:
+    get:
+      tags: [projects]
+      summary: Get collaboration activity feed
+      operationId: getActivityFeed
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/ai/assist:
+    post:
+      tags: [agents]
+      summary: Request AI assistant response
+      operationId: assistWithAi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/ai/phase-gate-readiness:
+    post:
+      tags: [lifecycle]
+      summary: Evaluate AI phase gate readiness
+      operationId: evaluatePhaseGateReadiness
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Readiness evaluation
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/anomalies:
+    post:
+      tags: [observe]
+      summary: Query anomalies by tenant and date range
+      operationId: queryAnomalies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Anomaly query result
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/anomalies/{anomalyId}/investigation:
+    post:
+      tags: [observe]
+      summary: Create investigation for anomaly
+      operationId: createAnomalyInvestigation
+      parameters:
+        - name: anomalyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Investigation created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/auth/profile:
+    patch:
+      tags: [auth]
+      summary: Update authenticated user auth profile
+      operationId: updateAuthProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/auth/sso/callback:
+    post:
+      tags: [auth]
+      summary: Handle SSO callback exchange
+      operationId: handleSsoCallback
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                state:
+                  type: string
+      responses:
+        "200":
+          description: SSO callback accepted
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/billing:
+    get:
+      tags: [projects]
+      summary: Get billing summary view model
+      operationId: getBillingSummary
+      responses:
+        "200":
+          description: Billing summary
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/calendar/events:
+    get:
+      tags: [projects]
+      summary: Get collaboration calendar events
+      operationId: getCalendarEvents
+      responses:
+        "200":
+          description: Calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/errors:
+    post:
+      tags: [observe]
+      summary: Report frontend client error payload
+      operationId: reportFrontendErrorEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "202":
+          description: Error report accepted
+
+  /api/messages/channels:
+    get:
+      tags: [projects]
+      summary: List collaboration message channels
+      operationId: listMessageChannels
+      responses:
+        "200":
+          description: Channel list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/messages/channels/{channelId}:
+    get:
+      tags: [projects]
+      summary: Get messages for a channel
+      operationId: getMessageChannel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Channel messages
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/oncall:
+    get:
+      tags: [projects]
+      summary: Get on-call schedule
+      operationId: getOncallSchedule
+      responses:
+        "200":
+          description: On-call schedule
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/projects/{projectId}/artifacts:
+    get:
+      tags: [projects]
+      summary: List artifacts for a project
+      operationId: listProjectArtifacts
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project artifact list
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/projects/{projectId}/backlog:
+    get:
+      tags: [projects]
+      summary: Get project backlog
+      operationId: getProjectBacklog
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Backlog items
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/projects/{projectId}/runs:
+    get:
+      tags: [run]
+      summary: List recent runs for a project
+      operationId: listProjectRuns
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run list
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/projects/{projectId}/sprints/current:
+    get:
+      tags: [projects]
+      summary: Get current sprint for a project
+      operationId: getCurrentProjectSprint
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current sprint
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rate-limit/downgrade:
+    post:
+      tags: [auth]
+      summary: Request downgrade of current rate limit tier
+      operationId: downgradeRateLimitTier
+      responses:
+        "200":
+          description: Downgrade accepted
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rate-limit/reset:
+    post:
+      tags: [auth]
+      summary: Reset user rate limit counters
+      operationId: resetRateLimitCounters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Reset response
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rate-limit/status/{identifier}:
+    get:
+      tags: [auth]
+      summary: Get current rate limit status for identifier
+      operationId: getRateLimitStatus
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rate limit status
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rate-limit/tiers:
+    get:
+      tags: [auth]
+      summary: List available rate limit tiers
+      operationId: listRateLimitTiers
+      responses:
+        "200":
+          description: Available tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rate-limit/upgrade:
+    post:
+      tags: [auth]
+      summary: Request upgrade of rate limit tier
+      operationId: requestRateLimitUpgrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Upgrade request created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rate-limit/upgrade-requests:
+    get:
+      tags: [auth]
+      summary: List rate limit upgrade requests
+      operationId: listRateLimitUpgradeRequests
+      responses:
+        "200":
+          description: Upgrade requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/services/topology:
+    get:
+      tags: [projects]
+      summary: Get service topology model
+      operationId: getServiceTopology
+      responses:
+        "200":
+          description: Service topology
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/settings:
+    get:
+      tags: [workspaces]
+      summary: Get workspace settings
+      operationId: getWorkspaceSettings
+      responses:
+        "200":
+          description: Workspace settings
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/teams/hub:
+    get:
+      tags: [projects]
+      summary: Get team hub view model
+      operationId: getTeamHub
+      responses:
+        "200":
+          description: Team hub payload
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/user/profile:
+    get:
+      tags: [auth]
+      summary: Get current user profile
+      operationId: getUserProfile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+    patch:
+      tags: [auth]
+      summary: Update current user profile
+      operationId: updateUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/page-artifacts/{artifactId}/document:
+    get:
+      tags: [artifact-graph]
+      summary: Load page artifact document
+      operationId: getPageArtifactDocument
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Artifact document payload
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [artifact-graph]
+      summary: Save page artifact document
+      operationId: savePageArtifactDocument
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Document saved
+          content:
+            application/json:
+              schema:
+                type: object
+        "409":
+          description: Document version conflict
 
 # ─────────────────────────────────────────────────────────────────────────────
 components:

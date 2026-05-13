@@ -341,26 +341,69 @@ public final class AgentDefinition {
             promotionRequired = true;
         }
 
-        return new LearningContract(level, allowedTargets, provenanceRequired, promotionRequired);
+        // Extract governance workflow flag - only true for L5 agents with explicit governance label
+        boolean governanceWorkflow = level == LearningLevel.L5
+                && "governance".equalsIgnoreCase(labels.get("agentType"))
+                && Boolean.TRUE.equals(metadata.get("governanceWorkflow"));
+
+        // Silently filter MASTERY_STATE from allowedTargets for non-governance workflows;
+        // governance workflows at L5 may include it only when the governanceWorkflow flag is set.
+        if (!governanceWorkflow) {
+            allowedTargets = allowedTargets.stream()
+                    .filter(t -> t != LearningTarget.MASTERY_STATE)
+                    .collect(Collectors.toSet());
+        }
+
+        return new LearningContract(level, allowedTargets, provenanceRequired, promotionRequired, governanceWorkflow);
     }
 
     /**
-     * Materializes a typed MasteryBinding from this definition's mastery bindings.
+     * Materializes typed MasteryBindings from this definition's mastery bindings.
      *
-     * @return typed MasteryBinding
-     * @throws IllegalStateException if required mastery binding fields are missing
+     * <p>Supports multiple mastery bindings for agents that need to interact with
+     * multiple mastery registries or have multiple binding configurations.
+     *
+     * @return list of typed MasteryBindings (empty if not configured)
      */
     @NotNull
-    public com.ghatana.agent.mastery.MasteryBinding toMasteryBinding() {
+    public List<com.ghatana.agent.mastery.MasteryBinding> toMasteryBindings() {
         if (masteryBindings.isEmpty()) {
-            throw new IllegalStateException("Mastery bindings are not configured for this agent");
+            return List.of();
         }
 
-        String namespace = (String) masteryBindings.get("namespace");
-        String registryRef = (String) masteryBindings.get("registryRef");
-        String freshnessPolicyRef = (String) masteryBindings.get("freshnessPolicyRef");
-        String versionCompatibilityPolicyRef = (String) masteryBindings.get("versionCompatibilityPolicyRef");
-        String obsolescencePolicyRef = (String) masteryBindings.get("obsolescencePolicyRef");
+        // Check if masteryBindings is a list (multiple bindings) or a map (single binding)
+        if (masteryBindings.containsKey("namespace")) {
+            // Single binding as a map - backward compatible format
+            return List.of(parseSingleMasteryBinding(masteryBindings));
+        }
+
+        // Multiple bindings as a list
+        Object bindingsListObj = metadata.get("masteryBindingsList");
+        if (bindingsListObj instanceof List<?> bindingsList) {
+            return bindingsList.stream()
+                    .filter(Map.class::isInstance)
+                    .map(Map.class::cast)
+                    .map(this::parseSingleMasteryBinding)
+                    .toList();
+        }
+
+        return List.of();
+    }
+
+    /**
+     * Parses a single mastery binding from a map.
+     *
+     * @param bindingMap the binding configuration map
+     * @return typed MasteryBinding
+     * @throws IllegalStateException if required fields are missing
+     */
+    @NotNull
+    private com.ghatana.agent.mastery.MasteryBinding parseSingleMasteryBinding(Map<String, Object> bindingMap) {
+        String namespace = (String) bindingMap.get("namespace");
+        String registryRef = (String) bindingMap.get("registryRef");
+        String freshnessPolicyRef = (String) bindingMap.get("freshnessPolicyRef");
+        String versionCompatibilityPolicyRef = (String) bindingMap.get("versionCompatibilityPolicyRef");
+        String obsolescencePolicyRef = (String) bindingMap.get("obsolescencePolicyRef");
 
         if (namespace == null || namespace.isBlank()) {
             throw new IllegalStateException("Mastery binding 'namespace' is required");
@@ -371,11 +414,30 @@ public final class AgentDefinition {
 
         return new com.ghatana.agent.mastery.MasteryBinding(
                 namespace,
-                registryRef != null ? registryRef : "default",
+                registryRef,
                 freshnessPolicyRef,
                 versionCompatibilityPolicyRef,
                 obsolescencePolicyRef
         );
+    }
+
+    /**
+     * Materializes a typed MasteryBinding from this definition's mastery bindings.
+     *
+     * <p>Legacy method for backward compatibility. Returns the first binding if multiple exist.
+     *
+     * @return typed MasteryBinding
+     * @throws IllegalStateException if required mastery binding fields are missing
+     * @deprecated Use {@link #toMasteryBindings()} to get all bindings
+     */
+    @Deprecated
+    @NotNull
+    public com.ghatana.agent.mastery.MasteryBinding toMasteryBinding() {
+        List<com.ghatana.agent.mastery.MasteryBinding> bindings = toMasteryBindings();
+        if (bindings.isEmpty()) {
+            throw new IllegalStateException("Mastery bindings are not configured for this agent");
+        }
+        return bindings.get(0);
     }
 
     /**

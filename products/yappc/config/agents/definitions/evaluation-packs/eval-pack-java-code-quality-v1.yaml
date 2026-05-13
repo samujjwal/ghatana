@@ -1,0 +1,74 @@
+apiVersion: ghatana.yappc/v1
+kind: EvaluationPack
+metadata:
+  id: eval-pack-java-code-quality-v1
+  name: Java Code Quality Evaluation Pack
+  version: 1.0.0
+  description: >
+    Evaluation pack for validating Java code quality, style compliance,
+    compilation success, and ActiveJ framework correctness.
+spec:
+  skillId: java-class-writing
+  versionScope:
+    active:
+      - "21"
+    maintenance:
+      - "17"
+    obsolete:
+      - "11"
+      - "8"
+
+  requiredTests:
+    - name: compilation-check
+      type: build
+      description: "Code must compile without errors"
+      required: true
+    - name: checkstyle-validation
+      type: lint
+      description: "Code must pass checkstyle validation"
+      required: true
+    - name: activej-async-pattern
+      type: pattern
+      description: "Async code must use ActiveJ patterns correctly"
+      required: true
+    - name: test-coverage
+      type: coverage
+      description: "Code must have minimum test coverage"
+      required: true
+
+  safetyGates:
+    - name: no-blocking-threads
+      description: "No direct thread blocking in async context"
+      severity: critical
+      blockOnFailure: true
+    - name: no-unsafe-casts
+      description: "No unsafe type casts"
+      severity: high
+      blockOnFailure: true
+    - name: resource-cleanup
+      description: "Proper resource cleanup and closing"
+      severity: high
+      blockOnFailure: false
+
+  regressionGates:
+    - name: api-compatibility
+      description: "API changes must be backward compatible"
+      severity: critical
+    - name: performance-regression
+      description: "No significant performance degradation"
+      severity: high
+
+  minimumScores:
+    correctness: 0.85
+    safety: 0.95
+    performance: 0.70
+    codeStyle: 0.80
+
+  requiredEvidenceTypes:
+    - compilation-log
+    - checkstyle-report
+    - test-results
+    - coverage-report
+    - async-pattern-validation
+
+  evaluationTimeoutSeconds: 300

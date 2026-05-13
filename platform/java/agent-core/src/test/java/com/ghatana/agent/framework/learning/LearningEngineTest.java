@@ -84,7 +84,8 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         LearningEngine engine = LearningEngine.create(EXECUTOR)
@@ -114,7 +115,8 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         LearningEngine engine = LearningEngine.create(EXECUTOR)
@@ -143,7 +145,8 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         LearningEngine engine = LearningEngine.create(EXECUTOR)
@@ -188,7 +191,8 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         LearningEngine engine = LearningEngine.create(EXECUTOR)
@@ -219,6 +223,7 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L0,
                 Set.of(),
                 false,
+                false,
                 false
         );
 
@@ -241,7 +246,8 @@ class LearningEngineTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         LearningEngine engine = LearningEngine.create(EXECUTOR)

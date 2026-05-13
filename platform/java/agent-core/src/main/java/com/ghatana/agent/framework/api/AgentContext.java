@@ -250,6 +250,79 @@ public interface AgentContext {
     }
 
     /**
+     * Gets the agent release state for this execution.
+     * Used for governance and release lifecycle tracking.
+     *
+     * @return Agent release state, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default String getReleaseState() {
+        Object value = getConfig("releaseState");
+        return value != null ? value.toString() : null;
+    }
+
+    /**
+     * Gets the learning contract for this execution.
+     * Used for governance and learning policy enforcement.
+     *
+     * @return Learning contract, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.learning.LearningContract getLearningContract() {
+        Object value = getMetadata().get("learningContract");
+        return value instanceof com.ghatana.agent.learning.LearningContract
+                ? (com.ghatana.agent.learning.LearningContract) value
+                : null;
+    }
+
+    /**
+     * Gets the mastery decision for this execution.
+     * Used for governance and mode selection.
+     *
+     * @return Mastery decision, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.mastery.MasteryDecision getMasteryDecision() {
+        Object value = getMetadata().get("masteryDecision");
+        return value instanceof com.ghatana.agent.mastery.MasteryDecision
+                ? (com.ghatana.agent.mastery.MasteryDecision) value
+                : null;
+    }
+
+    /**
+     * Gets the mode selection result for this execution.
+     * Used for governance and execution strategy.
+     *
+     * @return Mode selection result, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.runtime.mode.ModeSelectionResult getModeSelection() {
+        Object value = getMetadata().get("modeSelection");
+        return value instanceof com.ghatana.agent.runtime.mode.ModeSelectionResult
+                ? (com.ghatana.agent.runtime.mode.ModeSelectionResult) value
+                : null;
+    }
+
+    /**
+     * Gets the version context for this execution.
+     * Used for version compatibility and dependency tracking.
+     *
+     * @return Version context, or null if not set
+     * @since 2.2.0
+     */
+    @Nullable
+    default com.ghatana.agent.context.version.VersionContext getVersionContext() {
+        Object value = getMetadata().get("versionContext");
+        return value instanceof com.ghatana.agent.context.version.VersionContext
+                ? (com.ghatana.agent.context.version.VersionContext) value
+                : null;
+    }
+
+    /**
      * Gets the specification digest for this execution.
      * Used for configuration validation.
      *

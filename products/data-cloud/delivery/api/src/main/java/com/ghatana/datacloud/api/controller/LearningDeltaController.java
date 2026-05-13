@@ -71,6 +71,7 @@ public class LearningDeltaController extends JsonServlet {
                                         com.ghatana.agent.learning.LearningLevel.L2,
                                         java.util.Set.of(),
                                         true,
+                                        false,
                                         false
                                 );
                                 return service.propose(delta, contract).map(this::created);

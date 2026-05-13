@@ -8,9 +8,16 @@ metadata:
     Mastery entry tracking an agent release's skill at generating correct,
     accessible, and design-system-aligned React components.
 spec:
+  skillId: react-ui-generation
   domain: engineering
-  skillFamily: ui-generation
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -21,17 +28,43 @@ spec:
     obsolete:
       - "react@16"
 
+  procedureRefs:
+    - procedure-id: react-component-template-v1
+      version: "1.0.0"
+    - procedure-id: typescript-prop-types-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: deprecated-class-components-v1
+      version: "1.0.0"
+      failurePattern: "Class components instead of functional components"
+
+  evaluationRefs:
+    - eval-pack-react-ui-generation-v1
+    - eval-pack-drift-detection-v1
+
+  knownFailureModes:
+    - type: accessibility-violation
+      frequency: medium
+      mitigation: "Apply a11y validation step"
+    - type: type-error
+      frequency: low
+      mitigation: "Use TypeScript strict mode"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.90
     requiresSafetyPass: true
-    evaluationPackRef: eval-pack-react-ui-quality-v1
+
+  freshnessPolicy:
+    staleAfterDays: 90
+    requiresVerification: true
+    minSuccessfulEpisodes: 5
 
   evidenceRequirements:
     minEpisodes: 10
     minSuccessfulEpisodes: 9
     requiresHumanReview: false
-    freshnessTtlDays: 60
 
   observabilityHints:
     tracePrefix: mastery.react-ui-generation

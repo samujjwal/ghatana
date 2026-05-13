@@ -1,5 +1,6 @@
 package com.ghatana.yappc.services.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
@@ -112,7 +113,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
         GenerationRunRepository generationRunRepository = mock(GenerationRunRepository.class);
         intentService    = new IntentServiceImpl(completionService, auditLogger, metrics);
         shapeService     = new ShapeServiceImpl(completionService, auditLogger, metrics);
-        generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository);
+        generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
         runService       = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         observeService   = new ObserveServiceImpl(metrics, auditLogger);
         learningService  = new LearningServiceImpl(completionService, auditLogger, metrics);

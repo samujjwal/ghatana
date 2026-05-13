@@ -34,9 +34,19 @@ public enum TaskClass {
     HIGH_RISK_TASK,
 
     /**
+     * Task is critical risk (security-critical, data-destructive, production-critical).
+     */
+    CRITICAL_RISK_TASK,
+
+    /**
      * Task is for maintaining legacy code (old versions, deprecated patterns).
      */
     MAINTENANCE_TASK,
+
+    /**
+     * Task is maintenance-only (read-only, read-write on deprecated components).
+     */
+    MAINTENANCE_ONLY_TASK,
 
     /**
      * Task is exploratory (research, prototyping, experimentation).

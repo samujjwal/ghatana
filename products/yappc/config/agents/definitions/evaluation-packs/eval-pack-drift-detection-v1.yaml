@@ -1,0 +1,67 @@
+apiVersion: ghatana.yappc/v1
+kind: EvaluationPack
+metadata:
+  id: eval-pack-drift-detection-v1
+  name: Drift Detection Evaluation Pack
+  version: 1.0.0
+  description: >
+    Evaluation pack for validating drift detection accuracy, false positive rate,
+    and coverage across code, schemas, and agent definitions.
+spec:
+  skillId: drift-detection
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  requiredTests:
+    - name: semantic-drift-detection
+      type: detection
+      description: "Semantic drift must be detected"
+      required: true
+    - name: structural-drift-detection
+      type: detection
+      description: "Structural drift must be detected"
+      required: true
+    - name: version-drift-detection
+      type: detection
+      description: "Version drift must be detected"
+      required: true
+    - name: false-positive-check
+      type: validation
+      description: "False positive rate must be acceptable"
+      required: true
+
+  safetyGates:
+    - name: no-missed-critical-drift
+      description: "No critical drift missed"
+      severity: critical
+      blockOnFailure: true
+    - name: acceptable-false-positive-rate
+      description: "False positive rate must be acceptable"
+      severity: high
+      blockOnFailure: false
+
+  regressionGates:
+    - name: detection-consistency
+      description: "Detection results must be consistent"
+      severity: high
+    - name: coverage-completeness
+      description: "Coverage must be complete"
+      severity: high
+
+  minimumScores:
+    detectionAccuracy: 0.90
+    falsePositiveRate: 0.15
+    coverage: 0.95
+    consistency: 0.85
+
+  requiredEvidenceTypes:
+    - semantic-drift-report
+    - structural-drift-report
+    - version-drift-report
+    - false-positive-analysis
+    - coverage-report
+
+  evaluationTimeoutSeconds: 300

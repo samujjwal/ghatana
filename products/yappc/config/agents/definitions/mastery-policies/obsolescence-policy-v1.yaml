@@ -1,0 +1,116 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryPolicy
+metadata:
+  id: obsolescence-policy-v1
+  name: Obsolescence Policy v1
+  version: 1.0.0
+  description: >
+    Default obsolescence policy for detecting and handling obsolete skills,
+    patterns, and knowledge.
+spec:
+  policyType: obsolescence
+  
+  obsolescenceTriggers:
+    - trigger: stale-dependency
+      description: "Dependency version is no longer maintained"
+      severity: medium
+      recommendedState: MAINTENANCE_ONLY
+      requiresEvidence: true
+      
+    - trigger: api-deprecation
+      description: "Critical API has been deprecated"
+      severity: high
+      recommendedState: OBSOLETE
+      requiresEvidence: true
+      
+    - trigger: security-advisory
+      description: "Security vulnerability detected"
+      severity: critical
+      recommendedState: QUARANTINED
+      requiresEvidence: true
+      immediateAction: true
+      
+    - trigger: repeated-failure
+      description: "Repeated failure pattern detected"
+      severity: high
+      recommendedState: OBSOLETE
+      requiresEvidence: true
+      failureThreshold: 5
+      failureWindowDays: 30
+      
+    - trigger: runtime-incompatibility
+      description: "Runtime environment incompatibility"
+      severity: high
+      recommendedState: OBSOLETE
+      requiresEvidence: true
+      
+    - trigger: documentation-contradiction
+      description: "Documentation contradicts implementation"
+      severity: low
+      recommendedState: OBSERVED
+      requiresEvidence: true
+      
+  detectionCriteria:
+    minEvidenceCount: 2
+    evidenceTypes:
+      - trace
+      - episode
+      - failure-log
+      
+    confidenceThreshold: 0.75
+    requiresTenantScopedScan: true
+    
+  transitionRules:
+    toMaintenanceOnly:
+      allowedFrom:
+        - MASTERED
+        - COMPETENT
+      requiresNewerActiveVersion: true
+      requiresMigrationPath: false
+      
+    toObsolete:
+      allowedFrom:
+        - MASTERED
+        - COMPETENT
+        - PRACTICED
+        - OBSERVED
+        - MAINTENANCE_ONLY
+      requiresNoActiveUse: false
+      requiresMigrationPath: true
+      
+    toQuarantined:
+      allowedFrom:
+        - ANY
+      requiresSafetyIssue: true
+      requiresImmediateAction: true
+      
+    toRetired:
+      allowedFrom:
+        - OBSOLETE
+        - QUARANTINED
+      requiresNoUseCase: true
+      requiresRetentionPeriod: 180
+      
+  mitigationActions:
+    - action: notify-stakeholders
+      description: "Notify relevant stakeholders"
+      severity: all
+      
+    - action: suggest-migration
+      description: "Suggest migration path"
+      severity: medium
+      requiresMigrationPath: true
+      
+    - action: block-new-use
+      description: "Block new use of obsolete skill"
+      severity: high
+      
+    - action: enable-legacy-mode
+      description: "Enable legacy maintenance mode"
+      severity: medium
+      
+  scanConfiguration:
+    enabled: true
+    scanIntervalDays: 30
+    tenantScoped: true
+    includeAllStates: true

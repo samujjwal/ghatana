@@ -8,9 +8,16 @@ metadata:
     Mastery entry tracking an agent release's skill at authoring well-structured,
     idiomatic, and standards-compliant Java classes for the Ghatana platform.
 spec:
+  skillId: java-class-writing
   domain: engineering
-  skillFamily: code-generation
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -21,17 +28,43 @@ spec:
       - "11"
       - "8"
 
+  procedureRefs:
+    - procedure-id: java-class-template-v1
+      version: "1.0.0"
+    - procedure-id: activej-async-pattern-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: deprecated-thread-blocking-v1
+      version: "1.0.0"
+      failurePattern: "Direct thread blocking in async context"
+
+  evaluationRefs:
+    - eval-pack-java-code-quality-v1
+    - eval-pack-drift-detection-v1
+
+  knownFailureModes:
+    - type: compilation-error
+      frequency: low
+      mitigation: "Use template-based generation with compile verification"
+    - type: style-violation
+      frequency: medium
+      mitigation: "Apply checkstyle validation step"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.90
     requiresSafetyPass: true
-    evaluationPackRef: eval-pack-java-code-quality-v1
+
+  freshnessPolicy:
+    staleAfterDays: 90
+    requiresVerification: true
+    minSuccessfulEpisodes: 5
 
   evidenceRequirements:
     minEpisodes: 10
     minSuccessfulEpisodes: 9
     requiresHumanReview: false
-    freshnessTtlDays: 60
 
   observabilityHints:
     tracePrefix: mastery.java-class-writing

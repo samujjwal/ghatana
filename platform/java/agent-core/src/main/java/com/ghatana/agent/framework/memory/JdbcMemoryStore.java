@@ -261,6 +261,169 @@ public class JdbcMemoryStore implements MemoryStore {
         });
     }
 
+    // ── Negative Knowledge memory ─────────────────────────────────────────────
+
+    private static final String EVENT_TYPE_NEGATIVE_KNOWLEDGE = "NEGATIVE_KNOWLEDGE";
+
+    @Override
+    @NotNull
+    public Promise<NegativeKnowledge> storeNegativeKnowledge(@NotNull NegativeKnowledge negativeKnowledge) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String id = negativeKnowledge.id();
+            appendEvent(EVENT_TYPE_NEGATIVE_KNOWLEDGE, id, negativeKnowledge);
+            return negativeKnowledge;
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeBySkill(@NotNull String skillId, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE agent_id = ? AND tenant_id = ? AND event_type = ? " +
+                         "  ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, agentId);
+                ps.setString(2, tenantId);
+                ps.setString(3, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setInt(4, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class));
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE agent_id = ? AND tenant_id = ? AND event_type = ? " +
+                         "  ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, agentId);
+                ps.setString(2, tenantId);
+                ps.setString(3, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setInt(4, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        NegativeKnowledge nk = MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class);
+                        results.add(nk);
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE agent_id = ? AND tenant_id = ? AND event_type = ? " +
+                         "  ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, agentId);
+                ps.setString(2, tenantId);
+                ps.setString(3, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setInt(4, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class));
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByFreshness(
+            @NotNull java.time.Duration freshnessThreshold, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            Instant cutoff = Instant.now().minus(freshnessThreshold);
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE agent_id = ? AND tenant_id = ? AND event_type = ? " +
+                         "  AND created_at >= ? ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, agentId);
+                ps.setString(2, tenantId);
+                ps.setString(3, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setTimestamp(4, Timestamp.from(cutoff));
+                ps.setInt(5, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class));
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE tenant_id = ? AND event_type = ? " +
+                         "  ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, tenantId);
+                ps.setString(2, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setInt(3, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class));
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledge(@NotNull MemoryFilter filter, int limit) {
+        return Promise.ofBlocking(DB_EXECUTOR, () -> {
+            String sql = "SELECT payload FROM agent_memory_events " +
+                         "WHERE agent_id = ? AND tenant_id = ? AND event_type = ? " +
+                         "  ORDER BY created_at DESC LIMIT ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, agentId);
+                ps.setString(2, tenantId);
+                ps.setString(3, EVENT_TYPE_NEGATIVE_KNOWLEDGE);
+                ps.setInt(4, limit);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<NegativeKnowledge> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(MAPPER.readValue(rs.getString("payload"), NegativeKnowledge.class));
+                    }
+                    return results;
+                }
+            }
+        });
+    }
+
     // ── Preference memory ─────────────────────────────────────────────────────
 
     @Override

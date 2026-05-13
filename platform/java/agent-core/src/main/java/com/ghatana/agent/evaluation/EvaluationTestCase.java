@@ -6,6 +6,7 @@ package com.ghatana.agent.evaluation;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,7 +26,14 @@ public record EvaluationTestCase(
         @NotNull String input,
         @NotNull String expectedOutput,
         @NotNull Map<String, String> context,
-        @NotNull Map<String, String> metadata
+        @NotNull Map<String, String> metadata,
+        @NotNull String targetArtifactId,
+        @NotNull String versionScope,
+        double outputTolerance,
+        @NotNull List<String> expectedToolCalls,
+        @NotNull List<String> actualToolCalls,
+        double toolCallTolerance,
+        @NotNull Map<String, String> safetyRequirements
 ) {
     public EvaluationTestCase {
         Objects.requireNonNull(caseId, "caseId must not be null");
@@ -36,7 +44,13 @@ public record EvaluationTestCase(
         Objects.requireNonNull(expectedOutput, "expectedOutput must not be null");
         Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(metadata, "metadata must not be null");
+        Objects.requireNonNull(targetArtifactId, "targetArtifactId must not be null");
+        Objects.requireNonNull(versionScope, "versionScope must not be null");
+        Objects.requireNonNull(expectedToolCalls, "expectedToolCalls must not be null");
+        Objects.requireNonNull(actualToolCalls, "actualToolCalls must not be null");
+        Objects.requireNonNull(safetyRequirements, "safetyRequirements must not be null");
         context = Map.copyOf(context);
         metadata = Map.copyOf(metadata);
+        safetyRequirements = Map.copyOf(safetyRequirements);
     }
 }

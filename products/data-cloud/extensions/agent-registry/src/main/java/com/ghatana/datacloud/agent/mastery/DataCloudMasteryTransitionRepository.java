@@ -53,6 +53,30 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
         if (tenantId == null || tenantId.isEmpty()) {
             return Promise.ofException(new IllegalArgumentException("tenantId is required for transition append"));
         }
+
+        // Enforce idempotency: check if transition with same idempotency key already exists
+        String idempotencyKey = transition.metadata().get("idempotencyKey");
+        if (idempotencyKey != null && !idempotencyKey.isEmpty()) {
+            return checkIdempotency(tenantId, idempotencyKey)
+                    .then(existing -> {
+                        if (existing.isPresent()) {
+                            // Return existing transition for idempotency
+                            return Promise.of(existing.get());
+                        }
+                        // Proceed with append
+                        return doAppend(transition);
+                    });
+        }
+
+        return doAppend(transition);
+    }
+
+    /**
+     * Performs the actual append operation.
+     */
+    @NotNull
+    private Promise<MasteryTransition> doAppend(@NotNull MasteryTransition transition) {
+        String tenantId = transition.tenantId();
         Map<String, Object> dataMap = MasteryTransitionMapper.toDataMap(transition);
 
         Entity entity = Entity.builder()
@@ -64,6 +88,18 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
 
         return entityRepository.save(tenantId, entity)
                 .map(savedEntity -> MasteryTransitionMapper.fromDataMap(savedEntity.getData()));
+    }
+
+    /**
+     * Checks for existing transition with the same idempotency key.
+     */
+    @NotNull
+    private Promise<java.util.Optional<MasteryTransition>> checkIdempotency(@NotNull String tenantId, @NotNull String idempotencyKey) {
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS,
+                Map.of("idempotencyKey", idempotencyKey), null, 0, 1)
+                .then(entities -> entities.isEmpty()
+                        ? Promise.of(java.util.Optional.empty())
+                        : Promise.of(java.util.Optional.of(MasteryTransitionMapper.fromDataMap(entities.get(0).getData()))));
     }
 
     @Override
@@ -147,18 +183,18 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
 
     /**
      * Finds transitions by time range for a specific tenant.
+     * Uses time range filtering for efficient queries.
      */
     @NotNull
     public Promise<List<MasteryTransition>> findByTimeRange(@NotNull String tenantId, @NotNull Instant from, @NotNull Instant to) {
         if (tenantId == null || tenantId.isEmpty()) {
             return Promise.ofException(new IllegalArgumentException("tenantId is required for findByTimeRange"));
         }
-        return entityRepository.count(tenantId, COLLECTION_MASTERY_TRANSITIONS)
-                .then(count -> {
-                    int limit = count > 1000 ? 1000 : (int) count.longValue();
-                    return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
-                            Map.of(), "transitionedAt:ASC", 0, limit);
-                })
+        
+        // Use time range filter in the query if supported by EntityRepository
+        // For now, use a reasonable limit and filter in-memory as fallback
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
+                Map.of("transitionedAt", from + ":" + to), "transitionedAt:ASC", 0, 1000)
                 .then(entities -> {
                     List<MasteryTransition> transitions = entities.stream()
                             .map(e -> MasteryTransitionMapper.fromDataMap(e.getData()))

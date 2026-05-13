@@ -6,6 +6,7 @@ import com.ghatana.audit.AuditLogger;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
@@ -28,6 +29,8 @@ import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
 import com.ghatana.yappc.services.phase.PhasePacketService;
 import com.ghatana.yappc.services.phase.PhasePacketServiceImpl;
+import com.ghatana.yappc.services.phase.DegradedAuditService;
+import com.ghatana.yappc.services.phase.DegradedPreviewRuntimeService;
 import com.ghatana.yappc.services.run.CiCdPort;
 import com.ghatana.yappc.services.run.GitHubActionsCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
@@ -40,7 +43,6 @@ import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -83,8 +85,9 @@ public class YappcApiModule extends AbstractModule {
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            GenerationRunRepository generationRunRepository) {
-        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository);
+            GenerationRunRepository generationRunRepository,
+            ObjectMapper objectMapper) {
+        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper);
     }
 
     @Provides
@@ -281,6 +284,16 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    AuditService phasePacketAuditService() {
+        return new DegradedAuditService("PLATFORM_AUDIT_SERVICE_UNAVAILABLE");
+    }
+
+    @Provides
+    com.ghatana.core.runtime.PreviewRuntimeService phasePacketPreviewRuntimeService() {
+        return new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
+    }
+
+    @Provides
     PhasePacketService phasePacketService(
             DataCloudClient dataCloudClient,
             YappcArtifactRepository artifactRepository,
@@ -290,10 +303,22 @@ public class YappcApiModule extends AbstractModule {
             TransitionConfigLoader transitionConfigLoader,
             PlatformIntegrationClient platformIntegrationClient,
             @Nullable BusinessMetrics metrics,
+            AuditService phasePacketAuditService,
+            com.ghatana.core.runtime.PreviewRuntimeService phasePacketPreviewRuntimeService,
             @Nullable com.ghatana.audit.AuditLogger auditLogger) {
-        // Phase 3.5/3.6: Pass null for platform AuditService and PreviewRuntimeService
-        // These will be wired in when platform services are fully integrated
-        return new PhasePacketServiceImpl(dataCloudClient, artifactRepository, phaseGateValidator, policyEngine, capabilityEvaluationService, transitionConfigLoader, platformIntegrationClient, metrics, null, null, auditLogger);
+        return new PhasePacketServiceImpl(
+            dataCloudClient,
+            artifactRepository,
+            phaseGateValidator,
+            policyEngine,
+            capabilityEvaluationService,
+            transitionConfigLoader,
+            platformIntegrationClient,
+            metrics,
+            phasePacketAuditService,
+            phasePacketPreviewRuntimeService,
+            auditLogger
+        );
     }
 
     @Provides

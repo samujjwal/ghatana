@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -105,7 +104,6 @@ public final class RouteAuthorizationRegistry {
         String workspaceId = extractScopeValue("workspaceId", request, pathParameters);
         String projectId = extractScopeValue("projectId", request, pathParameters);
         String artifactId = extractScopeValue("artifactId", request, pathParameters);
-        String runId = extractScopeValue("runId", request, pathParameters);
 
         // Validate tenant scope (principal's tenant must match request tenant)
         if (definition.resourceScope() == ResourceScope.TENANT
@@ -129,7 +127,7 @@ public final class RouteAuthorizationRegistry {
                     throw new AccessDeniedException("Workspace ID is required for this route");
                 }
                 authorizationService.authorizeWorkspaceAccess(
-                    principal, workspaceId, Permission.WORKSPACE_READ
+                    principal, workspaceId, definition.requiredPermission()
                 );
             }
             case PROJECT -> {
@@ -228,7 +226,7 @@ public final class RouteAuthorizationRegistry {
                 if (scope.startsWith("project")) return Permission.PROJECT_DELETE;
                 if (scope.startsWith("artifact")) return Permission.PROJECT_DELETE;
             }
-            if (scope.contains(":admin")) {
+            if ("admin".equals(scope) || scope.endsWith(":admin") || scope.contains(":admin")) {
                 return Permission.ADMIN_SYSTEM;
             }
         }
@@ -428,7 +426,7 @@ public final class RouteAuthorizationRegistry {
                         }
                     }
                 }
-                return new RoutePatternMatch(pattern.definition(), parameters);
+                return new RoutePatternMatch(pattern.routePath(), pattern.definition(), parameters);
             }
         }
 
@@ -469,10 +467,6 @@ public final class RouteAuthorizationRegistry {
             }
         }
         return queryParams;
-    }
-
-    private boolean hasPermission(Principal principal, String permission) {
-        return authorizationService.hasPermission(principal, permission);
     }
 
     /**
@@ -527,12 +521,13 @@ public final class RouteAuthorizationRegistry {
      * Route pattern for parameterized route matching.
      */
     private record RoutePattern(
+            String routePath,
             Pattern pattern,
             RouteDefinition definition,
             Map<String, Integer> parameterNames
     ) {
         RoutePattern(String path, RouteDefinition definition) {
-            this(compilePattern(path), definition, extractParameterNames(path));
+            this(path, compilePattern(path), definition, extractParameterNames(path));
         }
 
         private static Pattern compilePattern(String path) {
@@ -557,6 +552,7 @@ public final class RouteAuthorizationRegistry {
      * Result of matching a route pattern.
      */
     private record RoutePatternMatch(
+            String routePath,
             RouteDefinition definition,
             Map<String, String> parameters
     ) {}
@@ -677,6 +673,7 @@ public final class RouteAuthorizationRegistry {
     ) {
         RouteKey key = new RouteKey(method, path);
         RouteDefinition definition = routes.get(key);
+        String matchedPath = path;
         
         if (definition == null) {
             RoutePatternMatch match = findMatchingRoute(method, path);
@@ -686,17 +683,20 @@ public final class RouteAuthorizationRegistry {
                 );
             }
             definition = match.definition();
+            matchedPath = match.routePath();
         }
+
+        final String lookupPath = matchedPath;
 
         // Get the route entry from generated registry to extract scopes
         // Use the same server key as route registration (yappc-services)
         RouteEntry routeEntry = GeneratedRouteRegistry.getManifest()
             .getRoutesForServer("yappc-services")
             .stream()
-            .filter(r -> r.method().equals(method.name()) && r.path().equals(path))
+            .filter(r -> r.method().equals(method.name()) && r.path().equals(lookupPath))
             .findFirst()
             .orElseThrow(() -> new AccessDeniedException(
-                String.format("Route %s %s not found in generated registry", method, path)
+                String.format("Route %s %s not found in generated registry", method, lookupPath)
             ));
 
         return routeEntry.scopes();

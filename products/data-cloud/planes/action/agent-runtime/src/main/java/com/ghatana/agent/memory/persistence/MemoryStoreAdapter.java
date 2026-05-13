@@ -277,4 +277,58 @@ public class MemoryStoreAdapter implements MemoryStore {
                 .limit(limit)
                 .build();
     }
+
+    // ========== NEGATIVE KNOWLEDGE (not natively supported by MemoryPlane) ==========
+
+    @Override
+    @NotNull
+    public Promise<NegativeKnowledge> storeNegativeKnowledge(@NotNull NegativeKnowledge negativeKnowledge) {
+        log.debug("storeNegativeKnowledge() — not natively supported by MemoryPlane; returning as-is");
+        return Promise.of(negativeKnowledge);
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeBySkill(@NotNull String skillId, int limit) {
+        log.debug("queryNegativeKnowledgeBySkill() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState, int limit) {
+        log.debug("queryNegativeKnowledgeByMasteryState() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext, int limit) {
+        log.debug("queryNegativeKnowledgeByVersionContext() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByFreshness(
+            @NotNull java.time.Duration freshnessThreshold, int limit) {
+        log.debug("queryNegativeKnowledgeByFreshness() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit) {
+        log.debug("queryNegativeKnowledgeByTenant() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledge(@NotNull MemoryFilter filter, int limit) {
+        log.debug("queryNegativeKnowledge() — not natively supported by MemoryPlane; returning empty list");
+        return Promise.of(List.of());
+    }
 }

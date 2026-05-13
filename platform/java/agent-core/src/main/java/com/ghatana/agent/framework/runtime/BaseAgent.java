@@ -1,8 +1,10 @@
 package com.ghatana.agent.framework.runtime;
 
 import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.OutputGenerator;
+import com.ghatana.agent.framework.learning.LearningContract;
 import com.ghatana.agent.framework.memory.*;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -235,6 +237,7 @@ public abstract class BaseAgent<TInput, TOutput> {
     /**
      * Extension point: Called during the REFLECT phase to propose learning deltas.
      * Allows proposing procedural skills, semantic facts, or other learning artifacts.
+     * Uses the LearningContract to determine if learning is allowed and at what level.
      * Default implementation does nothing.
      *
      * @param input Turn input
@@ -247,6 +250,54 @@ public abstract class BaseAgent<TInput, TOutput> {
             @NotNull TInput input,
             @NotNull TOutput output,
             @NotNull AgentContext context) {
+        // Default: no learning
+        // Products can override to implement learning based on LearningContract
+        return Promise.complete();
+    }
+
+    /**
+     * Hook: Builds the version context for this agent turn.
+     * Version context includes dependency versions, runtimes, tools, and API contracts.
+     * This is used for version-aware mastery querying and applicability classification.
+     * Default implementation returns an empty version context.
+     * Override to provide actual version information from the environment.
+     *
+     * @param context Execution context
+     * @return Version context for this turn
+     */
+    @NotNull
+    protected VersionContext buildVersionContext(@NotNull AgentContext context) {
+        // Default: empty version context
+        // Products should override to provide actual version information
+        return VersionContext.empty();
+    }
+
+    /**
+     * Extension point: Called during the REFLECT phase to propose learning deltas
+     * with explicit LearningContract validation.
+     * Allows proposing procedural skills, semantic facts, or other learning artifacts
+     * while respecting the learning contract constraints.
+     * Default implementation does nothing.
+     *
+     * @param input Turn input
+     * @param output Turn output
+     * @param context Execution context
+     * @param learningContract Learning contract governing learning behavior
+     * @return Promise of completion
+     */
+    @NotNull
+    protected Promise<Void> proposeLearning(
+            @NotNull TInput input,
+            @NotNull TOutput output,
+            @NotNull AgentContext context,
+            @NotNull LearningContract learningContract) {
+        // Check if learning is enabled in the contract
+        if (learningContract.level() == LearningContract.Level.NONE) {
+            return Promise.complete();
+        }
+
+        // Default: no learning
+        // Products can override to implement learning based on LearningContract
         return Promise.complete();
     }
 

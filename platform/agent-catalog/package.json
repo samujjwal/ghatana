@@ -1,0 +1,24 @@
+{
+  "name": "@ghatana/agent-catalog",
+  "version": "1.0.0",
+  "description": "Platform agent catalog with canonicalization and migration tooling",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "migrate:check": "node --import tsx/esm schema-migration.ts --check",
+    "migrate:fix": "node --import tsx/esm schema-migration.ts --fix"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.6.0",
+    "js-yaml": "^4.1.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

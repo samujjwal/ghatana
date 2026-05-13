@@ -143,4 +143,32 @@ public enum MasteryState {
     public boolean isTerminal() {
         return this == OBSOLETE || this == RETIRED || this == QUARANTINED;
     }
+
+    /**
+     * Returns true if this state is potentially executable with appropriate conditions.
+     * States that can execute (with or without constraints):
+     * <ul>
+     *   <li>MASTERED - fully executable</li>
+     *   <li>COMPETENT - fully executable</li>
+     *   <li>PRACTICED - executable with human approval</li>
+     *   <li>MAINTENANCE_ONLY - executable in legacy context only</li>
+     *   <li>OBSERVED - executable with human approval (observed but not practiced)</li>
+     * </ul>
+     *
+     * @return true if potentially executable with appropriate conditions
+     */
+    public boolean isPotentiallyExecutable() {
+        return this == MASTERED || this == COMPETENT || this == PRACTICED || 
+               this == MAINTENANCE_ONLY || this == OBSERVED;
+    }
+
+    /**
+     * Returns true if this state requires legacy context for execution.
+     * Only MAINTENANCE_ONLY requires legacy context.
+     *
+     * @return true if legacy context is required
+     */
+    public boolean requiresLegacyContext() {
+        return this == MAINTENANCE_ONLY;
+    }
 }

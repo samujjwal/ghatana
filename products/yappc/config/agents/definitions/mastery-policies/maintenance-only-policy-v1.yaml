@@ -1,0 +1,85 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryPolicy
+metadata:
+  id: maintenance-only-policy-v1
+  name: Maintenance Only Policy v1
+  version: 1.0.0
+  description: >
+    Default maintenance-only policy for governing the use of skills in
+    maintenance mode, ensuring legacy knowledge is only used for appropriate
+    legacy work.
+spec:
+  policyType: maintenance-only
+  
+  taskIntentClassification:
+    - intent: MAINTENANCE_FIX
+      description: "Fixing bugs in legacy code"
+      allowedForMaintenance: true
+      requiresVersionMatch: true
+      
+    - intent: LEGACY_FEATURE_UPDATE
+      description: "Updating features in legacy system"
+      allowedForMaintenance: true
+      requiresVersionMatch: true
+      
+    - intent: MIGRATION
+      description: "Migrating from legacy to new system"
+      allowedForMaintenance: true
+      requiresVersionMatch: false
+      allowDualAccess: true
+      
+    - intent: NEW_DEVELOPMENT
+      description: "New development work"
+      allowedForMaintenance: false
+      blockExecution: true
+      
+    - intent: GREENFIELD_PROJECT
+      description: "New project development"
+      allowedForMaintenance: false
+      blockExecution: true
+      
+  versionMatchingRules:
+    strictMatching: true
+    allowedDeviation: 0
+    requiresExactVersion: true
+    allowPatchLevelOnly: false
+    
+  retrievalConstraints:
+    negativeKnowledgeAllowed: true
+    negativeKnowledgePriority: high
+    proceduralMemoryAllowed: true
+    semanticMemoryAllowed: true
+    episodicMemoryAllowed: true
+    
+  executionGates:
+    - gate: version-compatibility
+      description: "Verify version compatibility"
+      required: true
+      blockOnFailure: true
+      
+    - gate: task-intent
+      description: "Verify task intent is appropriate"
+      required: true
+      blockOnFailure: true
+      
+    - gate: human-approval
+      description: "Require human approval for maintenance work"
+      required: true
+      blockOnFailure: true
+      
+  modeSelection:
+    defaultMode: MAINTENANCE_ONLY
+    supervisionMode: HUMAN_GATED
+    executionMode: DETERMINISTIC_EXECUTION
+    requiresApproval: true
+    
+  migrationGuidance:
+    enabled: true
+    suggestNewPatterns: true
+    provideMigrationPath: true
+    requireMigrationPlan: false
+    
+  observability:
+    tracePrefix: maintenance-only
+    logLevel: info
+    metricsEnabled: true

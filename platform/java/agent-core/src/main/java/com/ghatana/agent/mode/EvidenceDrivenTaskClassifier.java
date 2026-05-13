@@ -46,12 +46,24 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
             Pattern.compile("(?i)(deploy|release|publish)")
     };
 
+    // Critical risk patterns (higher severity than high-risk)
+    private static final Pattern[] CRITICAL_RISK_PATTERNS = {
+            Pattern.compile("(?i)(delete.*production|drop.*production|truncate.*production)"),
+            Pattern.compile("(?i)(delete.*all|drop.*all|truncate.*all)"),
+            Pattern.compile("(?i)(shutdown|restart|stop.*service)"),
+            Pattern.compile("(?i)(root|admin|sudo)"),
+            Pattern.compile("(?i)(firewall|security.*group|acl)"),
+            Pattern.compile("(?i)(sudo.*rm|rm.*-rf)"),
+            Pattern.compile("(?i)(disable.*security|bypass.*auth)")
+    };
+
     // Maintenance patterns
     private static final Pattern[] MAINTENANCE_PATTERNS = {
             Pattern.compile("(?i)(legacy|deprecated|old)"),
             Pattern.compile("(?i)(refactor|cleanup|debt)"),
             Pattern.compile("(?i)(bugfix|hotfix|patch)"),
-            Pattern.compile("(?i)(upgrade.*version|migration.*to)")
+            Pattern.compile("(?i)(upgrade.*version|migration.*to)"),
+            Pattern.compile("(?i)(backport|downgrade)")
     };
 
     // Exploration patterns
@@ -60,6 +72,13 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
             Pattern.compile("(?i)(poc|proof of concept)"),
             Pattern.compile("(?i)(experiment|test|trial)"),
             Pattern.compile("(?i)(spike|feasibility)")
+    };
+
+    // New work patterns (non-maintenance)
+    private static final Pattern[] NEW_WORK_PATTERNS = {
+            Pattern.compile("(?i)(implement|create|build|develop)"),
+            Pattern.compile("(?i)(feature|new|add)"),
+            Pattern.compile("(?i)(design|architecture)")
     };
 
     /**
@@ -83,13 +102,22 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
             @NotNull Optional<MasteryItem> mastery,
             @NotNull EnvironmentFingerprint env
     ) {
-        // Check for high-risk patterns first
+        // Check for critical risk patterns first (highest severity)
+        if (isCriticalRisk(taskDescription)) {
+            return TaskClass.CRITICAL_RISK_TASK;
+        }
+
+        // Check for high-risk patterns
         if (isHighRisk(taskDescription)) {
             return TaskClass.HIGH_RISK_TASK;
         }
 
         // Check for maintenance patterns
         if (isMaintenance(taskDescription)) {
+            // If mastery item exists and is in MAINTENANCE_ONLY state, classify as maintenance-only
+            if (mastery.isPresent() && mastery.get().state() == MasteryState.MAINTENANCE_ONLY) {
+                return TaskClass.MAINTENANCE_ONLY_TASK;
+            }
             return TaskClass.MAINTENANCE_TASK;
         }
 
@@ -101,6 +129,20 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
         // Check for migration patterns
         if (isMigration(taskDescription)) {
             return TaskClass.MIGRATION_TASK;
+        }
+
+        // Check for new work patterns
+        if (isNewWork(taskDescription)) {
+            // New work on mastered skills is still known
+            if (mastery.isPresent() && mastery.get().state() == MasteryState.MASTERED) {
+                return TaskClass.KNOWN_TASK;
+            }
+            // New work on competent skills is variation
+            if (mastery.isPresent() && mastery.get().state() == MasteryState.COMPETENT) {
+                return TaskClass.KNOWN_VARIATION;
+            }
+            // New work on practiced or lower is unknown
+            return TaskClass.UNKNOWN_TASK;
         }
 
         // Use mastery evidence to determine if task is known or variation
@@ -122,10 +164,30 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
             if (item.state() == MasteryState.PRACTICED) {
                 return TaskClass.UNKNOWN_TASK;
             }
+
+            if (item.state() == MasteryState.OBSERVED) {
+                return TaskClass.UNKNOWN_TASK;
+            }
+
+            if (item.state() == MasteryState.MAINTENANCE_ONLY) {
+                return TaskClass.MAINTENANCE_ONLY_TASK;
+            }
         }
 
         // No mastery item or low mastery state
         return TaskClass.UNKNOWN_TASK;
+    }
+
+    /**
+     * Checks if the task description matches critical risk patterns.
+     */
+    private boolean isCriticalRisk(String description) {
+        for (Pattern pattern : CRITICAL_RISK_PATTERNS) {
+            if (pattern.matcher(description).find()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -157,6 +219,18 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
      */
     private boolean isExploration(String description) {
         for (Pattern pattern : EXPLORATION_PATTERNS) {
+            if (pattern.matcher(description).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the task description matches new work patterns.
+     */
+    private boolean isNewWork(String description) {
+        for (Pattern pattern : NEW_WORK_PATTERNS) {
             if (pattern.matcher(description).find()) {
                 return true;
             }

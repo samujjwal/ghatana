@@ -44,8 +44,33 @@ interoperability:
     - integration-test-writer
     - test-generator-agent
     escalation: testing-orchestrator-agent
-learningModel:
+learning:
   learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - SEMANTIC_FACT
+    - NEGATIVE_KNOWLEDGE
+  skillRefs:
+    - skillId: test-strategy-design
+      requiredLevel: L3
+    - skillId: coverage-analysis
+      requiredLevel: L2
+    - skillId: edge-case-identification
+      requiredLevel: L2
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  masteryPolicyRefs:
+    - promotion-policy-v1
+    - freshness-policy-v1
+  evaluationRefs:
+    - eval-pack-java-code-quality-v1
+  provenanceRequired: true
+  promotionRequired: true
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: true

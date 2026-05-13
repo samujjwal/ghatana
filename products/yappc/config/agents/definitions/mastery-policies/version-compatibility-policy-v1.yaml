@@ -1,0 +1,91 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryPolicy
+metadata:
+  id: version-compatibility-policy-v1
+  name: Version Compatibility Policy v1
+  version: 1.0.0
+  description: >
+    Default version compatibility policy for evaluating agent skill compatibility
+    across different runtime environments and dependency versions.
+spec:
+  policyType: version-compatibility
+  
+  versionClassifiers:
+    npm:
+      - pattern: "^\\d+\\.\\d+\\.\\d+$"
+        type: exact
+      - pattern: "^\\^\\d+\\.\\d+\\.\\d+$"
+        type: caret
+      - pattern: "^~\\d+\\.\\d+\\.\\d+$"
+        type: tilde
+      - pattern: "^\\d+\\.\\d+\\.\\d+.*-.*$"
+        type: pre-release
+        
+    maven:
+      - pattern: "\\[\\d+,\\d+\\]"
+        type: range
+      - pattern: "\\(\\d+,\\d+\\]"
+        type: exclusive-range
+      - pattern: "\\d+\\.\\d+\\.\\d+"
+        type: exact
+        
+    semver:
+      - pattern: "\\d+\\.\\d+\\.\\d+"
+        type: exact
+      - pattern: "v\\d+\\.\\d+\\.\\d+"
+        type: exact-with-prefix
+        
+  compatibilityRules:
+    - rule: active-version-match
+      description: "Active version matches current environment"
+      applicability: ACTIVE
+      required: true
+      blockOnMismatch: false
+      
+    - rule: maintenance-version-match
+      description: "Maintenance version matches legacy context"
+      applicability: MAINTENANCE_ONLY
+      required: true
+      blockOnMismatch: true
+      
+    - rule: obsolete-version-block
+      description: "Obsolete versions are blocked"
+      applicability: OBSOLETE
+      required: true
+      blockOnMismatch: true
+      
+    - rule: unknown-version-cautious
+      description: "Unknown versions require cautious mode"
+      applicability: UNKNOWN
+      required: false
+      blockOnMismatch: false
+      mode: exploratory
+      
+  versionScopeEvaluation:
+    active:
+      matchStrategy: highest-compatible
+      fallbackAllowed: true
+      fallbackMode: exploratory
+      
+    maintenance:
+      matchStrategy: exact-match
+      fallbackAllowed: false
+      requiresLegacyContext: true
+      
+    obsolete:
+      matchStrategy: none
+      fallbackAllowed: false
+      blockExecution: true
+      
+  preReleaseHandling:
+    allowedForState:
+      - OBSERVED
+      - PRACTICED
+    requiresExplicitOptIn: true
+    humanReviewRequired: true
+    
+  dependencyMismatch:
+    severity: high
+    action: require-verification
+    blockExecution: false
+    notify: true

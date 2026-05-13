@@ -1,0 +1,67 @@
+apiVersion: ghatana.yappc/v1
+kind: EvaluationPack
+metadata:
+  id: eval-pack-requirements-drafting-v1
+  name: Requirements Drafting Evaluation Pack
+  version: 1.0.0
+  description: >
+    Evaluation pack for validating requirements clarity, testability, completeness,
+    and stakeholder alignment.
+spec:
+  skillId: requirements-drafting
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  requiredTests:
+    - name: clarity-check
+      type: semantic
+      description: "Requirements must be clear and unambiguous"
+      required: true
+    - name: testability-check
+      type: validation
+      description: "Requirements must be testable"
+      required: true
+    - name: completeness-check
+      type: validation
+      description: "Requirements must be complete"
+      required: true
+    - name: acceptance-criteria-validation
+      type: validation
+      description: "Acceptance criteria must follow GWT format"
+      required: true
+
+  safetyGates:
+    - name: no-ambiguous-language
+      description: "No ambiguous or vague language"
+      severity: high
+      blockOnFailure: false
+    - name: measurable-outcomes
+      description: "All outcomes must be measurable"
+      severity: high
+      blockOnFailure: false
+
+  regressionGates:
+    - name: requirement-stability
+      description: "Requirements should not change frequently"
+      severity: medium
+    - name: stakeholder-alignment
+      description: "Stakeholder feedback alignment"
+      severity: high
+
+  minimumScores:
+    clarity: 0.85
+    testability: 0.90
+    completeness: 0.80
+    stakeholderAlignment: 0.75
+
+  requiredEvidenceTypes:
+    - semantic-analysis-report
+    - testability-validation
+    - completeness-check
+    - acceptance-criteria-validation
+    - stakeholder-feedback
+
+  evaluationTimeoutSeconds: 180

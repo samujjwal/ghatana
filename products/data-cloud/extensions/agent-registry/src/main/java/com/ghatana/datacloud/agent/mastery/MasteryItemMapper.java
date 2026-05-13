@@ -51,6 +51,8 @@ public final class MasteryItemMapper {
     private static final String FIELD_LAST_VERIFIED_AT = "lastVerifiedAt";
     private static final String FIELD_STALE_AFTER = "staleAfter";
     private static final String FIELD_LABELS = "labels";
+    private static final String FIELD_SCHEMA_VERSION = "schemaVersion";
+    private static final String CURRENT_SCHEMA_VERSION = "1.0";
 
     private MasteryItemMapper() {
         // Utility class
@@ -65,6 +67,9 @@ public final class MasteryItemMapper {
     @NotNull
     public static Map<String, Object> toDataMap(@NotNull MasteryItem item) {
         Map<String, Object> data = new HashMap<>();
+
+        // Schema version for backward compatibility
+        data.put(FIELD_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
 
         data.put(FIELD_MASTERY_ID, item.masteryId());
         data.put(FIELD_SKILL_ID, item.skillId());
@@ -124,6 +129,9 @@ public final class MasteryItemMapper {
      */
     @NotNull
     public static MasteryItem fromDataMap(@NotNull Map<String, Object> data) {
+        // Schema version for backward compatibility
+        String schemaVersion = (String) data.getOrDefault(FIELD_SCHEMA_VERSION, "0.0");
+
         // Version scope
         List<Map<String, String>> activeConstraints = deserializeVersionConstraints(
                 (List<?>) data.getOrDefault(FIELD_VERSION_SCOPE_ACTIVE, List.of()));
@@ -188,14 +196,24 @@ public final class MasteryItemMapper {
                 ? (Map<String, String>) m
                 : Map.of();
 
+        // Parse state with backward-compatible default
+        String stateStr = strOrDefault(data, FIELD_STATE, "UNKNOWN");
+        MasteryState state;
+        try {
+            state = MasteryState.valueOf(stateStr);
+        } catch (IllegalArgumentException e) {
+            // Backward compatibility: unknown states default to OBSERVED
+            state = MasteryState.OBSERVED;
+        }
+
         return new MasteryItem(
-                (String) data.get(FIELD_MASTERY_ID),
+                strOrDefault(data, FIELD_MASTERY_ID, "unknown-mastery-" + UUID.randomUUID()),
                 tenantId != null ? tenantId : "",
-                (String) data.get(FIELD_SKILL_ID),
-                (String) data.get(FIELD_DOMAIN),
-                (String) data.get(FIELD_AGENT_ID),
-                (String) data.get(FIELD_AGENT_RELEASE_ID),
-                MasteryState.valueOf((String) data.get(FIELD_STATE)),
+                strOrDefault(data, FIELD_SKILL_ID, "unknown-skill"),
+                strOrDefault(data, FIELD_DOMAIN, "unknown"),
+                strOrDefault(data, FIELD_AGENT_ID, "unknown-agent"),
+                strOrDefault(data, FIELD_AGENT_RELEASE_ID, ""),
+                state,
                 versionScope,
                 applicability,
                 masteryScore,

@@ -56,11 +56,14 @@ class ObsolescenceRouterTest extends EventloopTestBase {
         ObsolescenceEvent event = new ObsolescenceEvent(
                 "event-1",
                 item.masteryId(),
+                "tenant-123",
                 ObsolescenceReason.VERSION_MISMATCH,
                 "Version mismatch detected",
                 Instant.now(),
                 List.of(),
-                Map.of()
+                Map.of(),
+                ObsolescenceEvent.Severity.MEDIUM,
+                MasteryState.OBSOLETE
         );
 
         MasteryTransitionResult transitionResult = runPromise(() -> router.route(event));
@@ -89,11 +92,14 @@ class ObsolescenceRouterTest extends EventloopTestBase {
         ObsolescenceEvent event = new ObsolescenceEvent(
                 "event-1",
                 item.masteryId(),
+                "tenant-123",
                 ObsolescenceReason.SECURITY_VULNERABILITY,
                 "Security vulnerability detected",
                 Instant.now(),
                 List.of(),
-                Map.of()
+                Map.of(),
+                ObsolescenceEvent.Severity.HIGH,
+                MasteryState.RETIRED
         );
 
         MasteryTransitionResult transitionResult = runPromise(() -> router.route(event));
@@ -122,11 +128,14 @@ class ObsolescenceRouterTest extends EventloopTestBase {
         ObsolescenceEvent event = new ObsolescenceEvent(
                 "event-1",
                 item.masteryId(),
+                "tenant-123",
                 ObsolescenceReason.REPEATED_FAILURES,
                 "Repeated failures detected",
                 Instant.now(),
                 List.of(),
-                Map.of()
+                Map.of(),
+                ObsolescenceEvent.Severity.HIGH,
+                MasteryState.QUARANTINED
         );
 
         MasteryTransitionResult transitionResult = runPromise(() -> router.route(event));
@@ -156,20 +165,26 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                 new ObsolescenceEvent(
                         "event-1",
                         item.masteryId(),
+                        "tenant-123",
                         ObsolescenceReason.VERSION_MISMATCH,
                         "Version mismatch detected",
                         Instant.now(),
                         List.of(),
-                        Map.of()
+                        Map.of(),
+                        ObsolescenceEvent.Severity.MEDIUM,
+                        MasteryState.OBSOLETE
                 ),
                 new ObsolescenceEvent(
                         "event-2",
                         item.masteryId(),
+                        "tenant-123",
                         ObsolescenceReason.API_CHANGE,
                         "API changed",
                         Instant.now(),
                         List.of(),
-                        Map.of()
+                        Map.of(),
+                        ObsolescenceEvent.Severity.MEDIUM,
+                        MasteryState.OBSOLETE
                 )
         );
 
@@ -191,11 +206,14 @@ class ObsolescenceRouterTest extends EventloopTestBase {
         ObsolescenceEvent event = new ObsolescenceEvent(
                 "event-1",
                 "unknown-mastery",
+                "tenant-123",
                 ObsolescenceReason.VERSION_MISMATCH,
                 "Version mismatch detected",
                 Instant.now(),
                 List.of(),
-                Map.of()
+                Map.of(),
+                ObsolescenceEvent.Severity.MEDIUM,
+                MasteryState.OBSOLETE
         );
 
         MasteryTransitionResult transitionResult = runPromise(() -> router.route(event));

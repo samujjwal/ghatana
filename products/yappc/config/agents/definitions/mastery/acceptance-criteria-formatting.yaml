@@ -8,9 +8,16 @@ metadata:
     Mastery entry tracking an agent release's skill at formatting acceptance
     criteria in canonical Given/When/Then (GWT) style with measurable outcomes.
 spec:
+  skillId: acceptance-criteria-formatting
   domain: product-intelligence
-  skillFamily: requirements
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -18,17 +25,42 @@ spec:
     maintenance: []
     obsolete: []
 
+  procedureRefs:
+    - procedure-id: gwt-template-v1
+      version: "1.0.0"
+    - procedure-id: measurable-outcome-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: non-measurable-criteria-v1
+      version: "1.0.0"
+      failurePattern: "Acceptance criteria without measurable outcomes"
+
+  evaluationRefs:
+    - eval-pack-requirements-drafting-v1
+
+  knownFailureModes:
+    - type: non-measurable-criteria
+      frequency: medium
+      mitigation: "Apply measurable outcome validation"
+    - type: invalid-gwt-structure
+      frequency: low
+      mitigation: "Use structured template"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.90
     requiresSafetyPass: false
-    evaluationPackRef: eval-pack-ac-formatting-v1
+
+  freshnessPolicy:
+    staleAfterDays: 90
+    requiresVerification: true
+    minSuccessfulEpisodes: 5
 
   evidenceRequirements:
     minEpisodes: 8
     minSuccessfulEpisodes: 7
     requiresHumanReview: false
-    freshnessTtlDays: 90
 
   observabilityHints:
     tracePrefix: mastery.acceptance-criteria-formatting

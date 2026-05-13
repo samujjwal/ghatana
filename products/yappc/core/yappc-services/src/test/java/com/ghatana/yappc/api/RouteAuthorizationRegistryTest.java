@@ -40,6 +40,7 @@ class RouteAuthorizationRegistryTest {
     void shouldRegisterAllYappcRoutes() {
         YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
         RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+        assertThat(registry).isNotNull();
 
         // Verify registry is not empty
         // This test ensures new routes are explicitly registered
@@ -80,6 +81,7 @@ class RouteAuthorizationRegistryTest {
     void shouldValidateTenantScopeMatch() {
         YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
         RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+        assertThat(registry).isNotNull();
 
         Principal principal = mock(Principal.class);
         when(principal.getTenantId()).thenReturn("tenant-123");
@@ -111,6 +113,7 @@ class RouteAuthorizationRegistryTest {
     void shouldMatchRouteWithSingleParameter() {
         YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
         RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+        assertThat(registry).isNotNull();
 
         Principal principal = mock(Principal.class);
         when(principal.getTenantId()).thenReturn("tenant-123");
@@ -130,6 +133,7 @@ class RouteAuthorizationRegistryTest {
     void shouldMatchRouteWithMultipleParameters() {
         YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
         RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+        assertThat(registry).isNotNull();
 
         Principal principal = mock(Principal.class);
         when(principal.getTenantId()).thenReturn("tenant-123");
@@ -187,6 +191,33 @@ class RouteAuthorizationRegistryTest {
         assertThatThrownBy(() -> registry.authorize(request))
             .isInstanceOf(com.ghatana.platform.security.rbac.AccessDeniedException.class)
             .hasMessageContaining("Unauthenticated");
+    }
+
+    @Test
+    void shouldMapPlainAdminScopeToAdminSystemPermission() {
+        YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
+        RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+
+        RouteAuthorizationRegistry.RouteDefinition definition =
+            registry.getRouteDefinition(HttpMethod.POST, "/api/v1/capabilities");
+
+        assertThat(definition).isNotNull();
+        assertThat(definition.requiredPermission()).isEqualTo(Permission.ADMIN_SYSTEM);
+    }
+
+    @Test
+    void shouldResolveAuthorizedScopesForParameterizedRoute() {
+        YappcAuthorizationService authService = mock(YappcAuthorizationService.class);
+        RouteAuthorizationRegistry registry = new RouteAuthorizationRegistry(authService);
+        Principal principal = mock(Principal.class);
+
+        Set<String> scopes = registry.getAuthorizedScopesForRoute(
+            HttpMethod.GET,
+            "/api/v1/yappc/intent/project-123",
+            principal
+        );
+
+        assertThat(scopes).containsExactly("project:read");
     }
 
     @Test

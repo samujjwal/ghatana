@@ -14,12 +14,20 @@ import java.util.Set;
  */
 /**
  * Declares what an agent may learn and which targets it may propose changes for.
+ *
+ * <p>This record enforces hard governance boundaries:
+ * <ul>
+ *   <li>Normal agents (governanceWorkflow=false) cannot propose MASTERY_STATE targets</li>
+ *   <li>Only governance workflows (governanceWorkflow=true) at L5 can propose MASTERY_STATE</li>
+ *   <li>L2+ requires provenance, L3+ requires promotion</li>
+ * </ul>
  */
 public record LearningContract(
         LearningLevel level,
         Set<LearningTarget> allowedTargets,
         boolean provenanceRequired,
-        boolean promotionRequired
+        boolean promotionRequired,
+        boolean governanceWorkflow
 ) {
     public LearningContract {
         level = level == null ? LearningLevel.L0 : level;
@@ -34,24 +42,30 @@ public record LearningContract(
             throw new IllegalArgumentException(
                     "LearningLevel " + level + " requires promotionRequired=true");
         }
+
+        // Governance workflows must be L5 to propose MASTERY_STATE
+        if (governanceWorkflow && level != LearningLevel.L5) {
+            throw new IllegalArgumentException(
+                    "Governance workflows require LearningLevel L5");
+        }
     }
 
     /**
      * Returns true if the given target is permitted by this contract.
-     * 
+     *
      * <p>Both the learning level and the allowed targets set must permit the target.
-     * Additionally, MASTERY_STATE is never permitted for normal agents as a hard
+     * MASTERY_STATE is only permitted for governance workflows at L5 as a hard
      * governance boundary.
-     * 
+     *
      * @param target the learning target to check
      * @return true if permitted, false otherwise
      */
     public boolean permits(LearningTarget target) {
-        // Hard governance boundary: MASTERY_STATE is never permitted for normal agents
+        // Hard governance boundary: MASTERY_STATE only for governance workflows at L5
         if (target == LearningTarget.MASTERY_STATE) {
-            return false;
+            return governanceWorkflow && level == LearningLevel.L5;
         }
-        
+
         return allowedTargets.contains(target) && level.allows(target);
     }
 

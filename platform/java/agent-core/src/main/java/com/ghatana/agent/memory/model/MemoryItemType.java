@@ -38,6 +38,9 @@ public enum MemoryItemType {
     /** Procedural memory: reusable skills and procedures. */
     PROCEDURE,
 
+    /** Negative knowledge: known failure modes and anti-patterns to avoid. */
+    NEGATIVE_KNOWLEDGE,
+
     /** Task-state memory: long-running multi-session workflow state. */
     TASK_STATE,
 

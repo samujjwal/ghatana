@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -27,6 +28,7 @@ class LearningContractTest {
                 LearningLevel.L1,
                 Set.of(LearningTarget.EPISODIC_MEMORY),
                 true,
+                false,
                 false
         );
 
@@ -55,6 +57,7 @@ class LearningContractTest {
                         LearningTarget.ROUTING_POLICY
                 ),
                 true,
+                false,
                 false
         );
 
@@ -85,7 +88,8 @@ class LearningContractTest {
                         LearningTarget.ROUTING_POLICY
                 ),
                 true,
-                true
+                true,
+                false
         );
 
         assertThat(contract.permits(LearningTarget.EPISODIC_MEMORY)).isTrue();
@@ -117,7 +121,8 @@ class LearningContractTest {
                         LearningTarget.PLANNER_POLICY
                 ),
                 true,
-                true
+                true,
+                false
         );
 
         assertThat(contract.permits(LearningTarget.PROMPT_TEMPLATE)).isTrue();
@@ -143,7 +148,8 @@ class LearningContractTest {
                         LearningTarget.MODEL_ADAPTER
                 ),
                 true,
-                true
+                true,
+                false
         );
 
         assertThat(contract.permits(LearningTarget.EPISODIC_MEMORY)).isTrue();
@@ -178,6 +184,7 @@ class LearningContractTest {
                 LearningLevel.L2,
                 Set.of(LearningTarget.PROCEDURAL_SKILL), // In allowedTargets but level doesn't permit
                 true,
+                false,
                 false
         );
 
@@ -192,7 +199,8 @@ class LearningContractTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
 
         // L3 permits the target
@@ -210,7 +218,8 @@ class LearningContractTest {
                 LearningLevel.L3,
                 Set.of(), // Empty allowed targets
                 true,
-                true
+                true,
+                false
         );
         assertThat(contract1.permits(LearningTarget.PROCEDURAL_SKILL)).isFalse();
 
@@ -219,6 +228,7 @@ class LearningContractTest {
                 LearningLevel.L2,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
+                false,
                 false
         );
         assertThat(contract2.permits(LearningTarget.PROCEDURAL_SKILL)).isFalse();
@@ -228,7 +238,8 @@ class LearningContractTest {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true
+                true,
+                false
         );
         assertThat(contract3.permits(LearningTarget.PROCEDURAL_SKILL)).isTrue();
     }
@@ -239,6 +250,7 @@ class LearningContractTest {
         LearningContract contract = new LearningContract(
                 LearningLevel.L0,
                 Set.of(),
+                false,
                 false,
                 false
         );
@@ -251,12 +263,13 @@ class LearningContractTest {
     @Test
     @DisplayName("MASTERY_STATE is never permitted for normal agents")
     void masteryStateIsNeverPermitted() {
-        // Even L5 with MASTERY_STATE in allowedTargets should not permit it
+        // Even L5 with MASTERY_STATE in allowedTargets should not permit it without governanceWorkflow
         LearningContract contract = new LearningContract(
                 LearningLevel.L5,
                 Set.of(LearningTarget.MASTERY_STATE),
                 true,
-                true
+                true,
+                false
         );
 
         assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
@@ -287,12 +300,78 @@ class LearningContractTest {
                     level,
                     Set.of(LearningTarget.MASTERY_STATE),
                     level.requiresProvenance(),
-                    level.requiresPromotion()
+                    level.requiresPromotion(),
+                    false // non-governance contracts never permit MASTERY_STATE
             );
 
             assertThat(contract.permits(LearningTarget.MASTERY_STATE))
                     .as("Level " + level + " contract should not permit MASTERY_STATE")
                     .isFalse();
         }
+    }
+
+    @Test
+    @DisplayName("Governance workflow at L5 may permit MASTERY_STATE")
+    void governanceWorkflowAtL5PermitsMasteryState() {
+        LearningContract contract = new LearningContract(
+                LearningLevel.L5,
+                Set.of(LearningTarget.MASTERY_STATE),
+                true,
+                true,
+                true // governanceWorkflow — only path that permits MASTERY_STATE
+        );
+
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isTrue();
+        assertThat(contract.governanceWorkflow()).isTrue();
+        assertThat(contract.level()).isEqualTo(LearningLevel.L5);
+        assertThat(LearningLevel.L5.isOfflineOnly()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Governance workflow requires L5 — constructor rejects sub-L5 governance flag")
+    void governanceWorkflowRequiresL5() {
+        for (LearningLevel level : LearningLevel.values()) {
+            if (level == LearningLevel.L5) {
+                continue; // L5 with governanceWorkflow=true is valid
+            }
+            final LearningLevel finalLevel = level;
+            assertThatThrownBy(() -> new LearningContract(
+                    finalLevel,
+                    Set.of(),
+                    finalLevel.requiresProvenance(),
+                    finalLevel.requiresPromotion(),
+                    true // governanceWorkflow=true at sub-L5 is forbidden
+            ))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Governance workflows require LearningLevel L5");
+        }
+    }
+
+    @Test
+    @DisplayName("L2+ requires provenanceRequired=true — constructor enforces invariant")
+    void l2PlusRequiresProvenanceRequired() {
+        assertThatThrownBy(() -> new LearningContract(
+                LearningLevel.L2,
+                Set.of(),
+                false, // provenanceRequired=false violates L2 invariant
+                false,
+                false
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("requires provenanceRequired=true");
+    }
+
+    @Test
+    @DisplayName("L3+ requires promotionRequired=true — constructor enforces invariant")
+    void l3PlusRequiresPromotionRequired() {
+        assertThatThrownBy(() -> new LearningContract(
+                LearningLevel.L3,
+                Set.of(),
+                true,
+                false, // promotionRequired=false violates L3 invariant
+                false
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("requires promotionRequired=true");
     }
 }

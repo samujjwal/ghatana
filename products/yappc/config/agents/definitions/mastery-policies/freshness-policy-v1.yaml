@@ -1,0 +1,89 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryPolicy
+metadata:
+  id: freshness-policy-v1
+  name: Freshness Policy v1
+  version: 1.0.0
+  description: >
+    Default freshness policy for determining when mastery items become stale
+    and require verification or re-evaluation.
+spec:
+  policyType: freshness
+  
+  staleThresholds:
+    UNKNOWN:
+      staleAfterDays: 30
+      requiresVerification: true
+      minSuccessfulEpisodes: 1
+      
+    OBSERVED:
+      staleAfterDays: 60
+      requiresVerification: true
+      minSuccessfulEpisodes: 3
+      
+    PRACTICED:
+      staleAfterDays: 90
+      requiresVerification: true
+      minSuccessfulEpisodes: 5
+      
+    COMPETENT:
+      staleAfterDays: 180
+      requiresVerification: true
+      minSuccessfulEpisodes: 8
+      
+    MASTERED:
+      staleAfterDays: 365
+      requiresVerification: true
+      minSuccessfulEpisodes: 10
+      requiresReevaluation: false
+      
+    MAINTENANCE_ONLY:
+      staleAfterDays: 730
+      requiresVerification: false
+      minSuccessfulEpisodes: 0
+      
+  verificationCriteria:
+    requiredEvidenceTypes:
+      - episode
+      - trace
+      
+    minVerificationScore: 0.75
+    requiresRecentSuccess: true
+    recentSuccessWindowDays: 30
+    
+  reevaluationTriggers:
+    - trigger: environment-change
+      description: "Significant environment change detected"
+      requiresFullReevaluation: true
+      
+    - trigger: dependency-update
+      description: "Major dependency version update"
+      requiresFullReevaluation: false
+      
+    - trigger: pattern-failure
+      description: "Repeated failure pattern detected"
+      requiresFullReevaluation: true
+      
+    - trigger: score-degradation
+      description: "Mastery score degradation beyond threshold"
+      threshold: 0.15
+      requiresFullReevaluation: true
+      
+  staleActions:
+    - action: mark-stale
+      description: "Mark item as stale in registry"
+      notify: true
+      
+    - action: require-verification
+      description: "Require verification before next use"
+      blockExecution: false
+      
+    - action: downgrade-state
+      description: "Consider state downgrade if verification fails"
+      condition: verification-failure
+      
+  autoRefresh:
+    enabled: true
+    refreshIntervalDays: 30
+    requiresRecentActivity: true
+    activityThresholdEpisodes: 3

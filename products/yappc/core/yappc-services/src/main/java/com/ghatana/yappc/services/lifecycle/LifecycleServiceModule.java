@@ -204,9 +204,10 @@ public class LifecycleServiceModule extends AbstractModule {
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics,
-            GenerationRunRepository generationRunRepository) {
+            GenerationRunRepository generationRunRepository,
+            ObjectMapper objectMapper) {
         logger.info("Creating GenerationService");
-        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository);
+        return new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper);
     }
 
     // ========== Phase 4: Run ==========

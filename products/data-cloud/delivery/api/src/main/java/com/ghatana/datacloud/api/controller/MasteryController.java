@@ -4,10 +4,12 @@
  */
 package com.ghatana.datacloud.api.controller;
 
+import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.mastery.MasteryTransitionResult;
+import com.ghatana.agent.obsolescence.ObsolescenceDetector;
 import com.ghatana.datacloud.governance.approval.ApprovalService;
 import com.ghatana.platform.http.server.JsonServlet;
 import io.activej.http.HttpRequest;
@@ -15,7 +17,9 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -32,13 +36,16 @@ public class MasteryController extends JsonServlet {
 
     private final com.ghatana.agent.mastery.MasteryRegistry masteryRegistry;
     private final ApprovalService approvalService;
+    private final ObsolescenceDetector obsolescenceDetector;
 
     public MasteryController(
             @NotNull com.ghatana.agent.mastery.MasteryRegistry masteryRegistry,
-            @NotNull ApprovalService approvalService
+            @NotNull ApprovalService approvalService,
+            @NotNull ObsolescenceDetector obsolescenceDetector
     ) {
         this.masteryRegistry = masteryRegistry;
         this.approvalService = approvalService != null ? approvalService : ApprovalService.getInstance();
+        this.obsolescenceDetector = obsolescenceDetector;
     }
 
     /**
@@ -443,6 +450,85 @@ public class MasteryController extends JsonServlet {
                             })
                             .whenException(e -> Promise.of(internalError(e)));
                 });
+    }
+
+    /**
+     * Scan for obsolescence events with governance check.
+     */
+    public Promise<HttpResponse> scanObsolescence(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        // Governance check: tenant must have access to mastery data
+        return approvalService.checkAccess(tenantId, "mastery:read")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to mastery data"));
+                    }
+
+                    // Create environment fingerprint from request parameters
+                    EnvironmentFingerprint env = buildEnvironmentFingerprint(request);
+
+                    // Scan for obsolescence events (tenant-scoped)
+                    return obsolescenceDetector.scanAll(tenantId, env)
+                            .map(this::ok)
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Builds an environment fingerprint from request parameters.
+     */
+    @NotNull
+    private EnvironmentFingerprint buildEnvironmentFingerprint(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) tenantId = "unknown";
+
+        String repoId = request.getQueryParameter("repoId");
+        if (repoId == null || repoId.isBlank()) repoId = "unknown";
+
+        String projectType = request.getQueryParameter("projectType");
+        if (projectType == null || projectType.isBlank()) projectType = "unknown";
+
+        Map<String, String> dependencies = new HashMap<>();
+        String deps = request.getQueryParameter("dependencies");
+        if (deps != null && !deps.isBlank()) {
+            // Parse comma-separated dependencies (format: name:version,name:version)
+            for (String dep : deps.split(",")) {
+                String[] parts = dep.split(":");
+                if (parts.length == 2) {
+                    dependencies.put(parts[0], parts[1]);
+                }
+            }
+        }
+
+        Map<String, String> runtimes = new HashMap<>();
+        String runtimesParam = request.getQueryParameter("runtimes");
+        if (runtimesParam != null && !runtimesParam.isBlank()) {
+            // Parse comma-separated runtimes (format: name:version,name:version)
+            for (String runtime : runtimesParam.split(",")) {
+                String[] parts = runtime.split(":");
+                if (parts.length == 2) {
+                    runtimes.put(parts[0], parts[1]);
+                }
+            }
+        }
+
+        return new EnvironmentFingerprint(
+                tenantId,
+                repoId,
+                projectType,
+                dependencies,
+                Map.of(),
+                runtimes,
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                java.time.Instant.now(),
+                List.of()
+        );
     }
 
     /**

@@ -53,7 +53,7 @@ function wrapperToMethod(wrapperName: string): HttpMethod | null {
 
 function normalizeClientPath(pathLiteral: string): string {
   return pathLiteral
-    .replace(/\$\{encodeQuery\([^)]*\)\}/g, '')
+    .replace(/\$\{encodeQuery\([\s\S]*?\)\}/g, '')
     .replace(/\$\{qs\}/g, '')
     .replace(/\?\$\{[^}]+\}/g, '')
     .replace(/\$\{encodeURIComponent\(([^)]+)\)\}/g, (_match: string, expression: string) => {
@@ -214,6 +214,21 @@ describe('OpenAPI Contract Compliance', () => {
       missingEndpoints.map((endpoint) => `${endpoint.method.toUpperCase()} ${endpoint.path}`),
       'Every yappcApi REST method/path used by the frontend client must be documented in products/yappc/docs/api/openapi.yaml'
     ).toEqual([]);
+  });
+
+  it('enforces generated-client auth adapter usage in canonical client.ts', () => {
+    const clientSource = readWebApiClientSource();
+
+    expect(clientSource).toContain('GeneratedAuthService.login(');
+    expect(clientSource).not.toContain('GeneratedAuthService.loginSession(');
+    expect(clientSource).toContain('return adaptLoginResponse(response);');
+  });
+
+  it('enforces explicit workspace scope for projects.list generated call', () => {
+    const clientSource = readWebApiClientSource();
+
+    expect(clientSource).not.toContain('ProjectsService.listProjects(workspaceId || \'\')');
+    expect(clientSource).toContain('workspaceId is required for projects.list');
   });
 
   it('keeps frontend telemetry and audit schemas aligned with the active REST client', () => {

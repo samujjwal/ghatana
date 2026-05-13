@@ -7,7 +7,9 @@ package com.ghatana.agent.obsolescence;
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.VersionRangeEvaluator;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,7 +42,6 @@ import java.util.regex.Pattern;
 public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
 
     private final MasteryRegistry masteryRegistry;
-
     /**
      * Creates a default obsolescence detector.
      *
@@ -80,8 +81,8 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
 
     @Override
     @NotNull
-    public Promise<List<ObsolescenceEvent>> scanAll(@NotNull EnvironmentFingerprint env) {
-        return masteryRegistry.query(com.ghatana.agent.mastery.MasteryQuery.activeOnly())
+    public Promise<List<ObsolescenceEvent>> scanAll(@NotNull String tenantId, @NotNull EnvironmentFingerprint env) {
+        return masteryRegistry.query(com.ghatana.agent.mastery.MasteryQuery.activeOnly().withTenantId(tenantId))
                 .then(items -> {
                     // Chain detection for each item and collect results
                     Promise<List<ObsolescenceEvent>> result = Promise.of(new ArrayList<>());
@@ -106,14 +107,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
             @NotNull EnvironmentFingerprint env) {
         // Check if version scope is stale based on staleness timestamp
         if (item.staleAfter().isBefore(Instant.now())) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.VERSION_MISMATCH,
                     "Mastery item is stale (staleAfter: " + item.staleAfter() + ")",
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.versionScope(item.versionScope().toString())),
-                    Map.of("staleAfter", item.staleAfter().toString())
+                    Map.of("staleAfter", item.staleAfter().toString()),
+                    ObsolescenceEvent.Severity.MEDIUM,
+                    MasteryState.MAINTENANCE_ONLY
             ));
         }
 
@@ -146,20 +148,21 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
 
             if (actualVersion == null) {
                 changes.add("Missing dependency: " + depName);
-            } else if (!isVersionInRange(actualVersion, expectedRange)) {
+            } else if (!VersionRangeEvaluator.evaluate(actualVersion, expectedRange)) {
                 changes.add("Version mismatch for " + depName + ": expected " + expectedRange + ", actual " + actualVersion);
             }
         }
 
         if (!changes.isEmpty()) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.VERSION_MISMATCH,
                     "Dependency changes detected: " + String.join(", ", changes),
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.dependencyChanges(changes)),
-                    Map.of("changes", String.join("; ", changes))
+                    Map.of("changes", String.join("; ", changes)),
+                    ObsolescenceEvent.Severity.HIGH,
+                    MasteryState.MAINTENANCE_ONLY
             ));
         }
 
@@ -178,63 +181,6 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
     }
 
     /**
-     * Checks if a version falls within a version range.
-     * Simplified check for dependency version compatibility.
-     */
-    private boolean isVersionInRange(@NotNull String version, @NotNull String range) {
-        // Handle exact match
-        if (!range.startsWith("^") && !range.startsWith("~") && !range.startsWith(">=") && !range.startsWith("<=")) {
-            return version.equals(range);
-        }
-
-        // Handle caret range (^1.2.3 means >=1.2.3 <2.0.0)
-        if (range.startsWith("^")) {
-            String base = range.substring(1);
-            String[] baseParts = base.split("\\.");
-            String[] versionParts = version.split("\\.");
-            if (baseParts.length > 0 && versionParts.length > 0) {
-                return versionParts[0].equals(baseParts[0]);
-            }
-        }
-
-        // Handle tilde range (~1.2.3 means >=1.2.3 <1.3.0)
-        if (range.startsWith("~")) {
-            String base = range.substring(1);
-            String[] baseParts = base.split("\\.");
-            String[] versionParts = version.split("\\.");
-            if (baseParts.length >= 2 && versionParts.length >= 2) {
-                return versionParts[0].equals(baseParts[0]) && versionParts[1].equals(baseParts[1]);
-            }
-        }
-
-        // Handle >=
-        if (range.startsWith(">=")) {
-            String required = range.substring(2);
-            return compareVersions(version, required) >= 0;
-        }
-
-        return false;
-    }
-
-    /**
-     * Simple semantic version comparison.
-     */
-    private int compareVersions(@NotNull String v1, @NotNull String v2) {
-        String[] parts1 = v1.split("\\.");
-        String[] parts2 = v2.split("\\.");
-
-        for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-
-            if (p1 < p2) return -1;
-            if (p1 > p2) return 1;
-        }
-
-        return 0;
-    }
-
-    /**
      * Detects obsolescence due to API deprecations and API diffs.
      * Uses evidence from evaluation refs and known failure modes.
      */
@@ -242,14 +188,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
         // Check for explicit deprecation label (legacy support)
         String deprecatedFlag = item.labels().get("deprecated");
         if ("true".equalsIgnoreCase(deprecatedFlag)) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.API_CHANGE,
                     "API is deprecated",
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.of("deprecation", "true")),
-                    Map.of("deprecated", "true")
+                    Map.of("deprecated", "true"),
+                    ObsolescenceEvent.Severity.MEDIUM,
+                    MasteryState.MAINTENANCE_ONLY
             ));
         }
 
@@ -284,14 +231,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
         }
 
         if (!apiChanges.isEmpty()) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.API_CHANGE,
                     "API changes detected: " + String.join(", ", apiChanges),
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.apiDiffs(apiChanges)),
-                    Map.of("apiChanges", String.join("; ", apiChanges))
+                    Map.of("apiChanges", String.join("; ", apiChanges)),
+                    ObsolescenceEvent.Severity.HIGH,
+                    MasteryState.MAINTENANCE_ONLY
             ));
         }
 
@@ -309,14 +257,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
             // Check if required runtime is in the environment's runtimes map
             String actualRuntime = env.runtimes().get(requiredRuntime);
             if (actualRuntime == null) {
-                return java.util.Optional.of(new ObsolescenceEvent(
-                        java.util.UUID.randomUUID().toString(),
+                return java.util.Optional.of(ObsolescenceEvent.of(
                         item.masteryId(),
+                        item.tenantId(),
                         ObsolescenceReason.RUNTIME_INCOMPATIBILITY,
                         "Runtime not available: required=" + requiredRuntime,
-                        Instant.now(),
                         List.of(ObsolescenceEvidenceRef.of("runtime", requiredRuntime)),
-                        Map.of()
+                        Map.of(),
+                        ObsolescenceEvent.Severity.HIGH,
+                        MasteryState.MAINTENANCE_ONLY
                 ));
             }
         }
@@ -334,14 +283,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
             try {
                 int failureCount = Integer.parseInt(failureCountStr);
                 if (failureCount >= 5) { // Threshold for repeated failures
-                    return java.util.Optional.of(new ObsolescenceEvent(
-                            java.util.UUID.randomUUID().toString(),
+                    return java.util.Optional.of(ObsolescenceEvent.of(
                             item.masteryId(),
+                            item.tenantId(),
                             ObsolescenceReason.REPEATED_FAILURES,
                             "Repeated failures detected: " + failureCount + " occurrences",
-                            Instant.now(),
                             List.of(ObsolescenceEvidenceRef.of("failure_count", failureCountStr)),
-                            Map.of("failureCount", failureCountStr)
+                            Map.of("failureCount", failureCountStr),
+                            ObsolescenceEvent.Severity.HIGH,
+                            MasteryState.QUARANTINED
                     ));
                 }
             } catch (NumberFormatException e) {
@@ -381,14 +331,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
 
         // If there are multiple test failures, consider the item obsolete
         if (testFailures.size() >= 3) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.REPEATED_FAILURES,
                     "Test failures detected: " + testFailures.size() + " occurrences",
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.testFailures(testFailures)),
-                    Map.of("testFailureCount", String.valueOf(testFailures.size()))
+                    Map.of("testFailureCount", String.valueOf(testFailures.size())),
+                    ObsolescenceEvent.Severity.HIGH,
+                    MasteryState.QUARANTINED
             ));
         }
 
@@ -403,14 +354,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
         // Check for explicit security flag (legacy support)
         String securityFlag = item.labels().get("securityVulnerability");
         if ("true".equalsIgnoreCase(securityFlag)) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.SECURITY_VULNERABILITY,
                     "Security vulnerability detected",
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.securityReport(item.masteryId())),
-                    Map.of("securityVulnerability", "true")
+                    Map.of("securityVulnerability", "true"),
+                    ObsolescenceEvent.Severity.CRITICAL,
+                    MasteryState.QUARANTINED
             ));
         }
 
@@ -445,14 +397,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
         }
 
         if (!securityIssues.isEmpty()) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.SECURITY_VULNERABILITY,
                     "Security advisories detected: " + String.join(", ", securityIssues),
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.securityAdvisories(securityIssues)),
-                    Map.of("securityIssues", String.join("; ", securityIssues))
+                    Map.of("securityIssues", String.join("; ", securityIssues)),
+                    ObsolescenceEvent.Severity.CRITICAL,
+                    MasteryState.QUARANTINED
             ));
         }
 
@@ -465,14 +418,15 @@ public final class DefaultObsolescenceDetector implements ObsolescenceDetector {
     private java.util.Optional<ObsolescenceEvent> detectDocumentationContradictions(@NotNull MasteryItem item) {
         String docContradictionFlag = item.labels().get("documentationContradiction");
         if ("true".equalsIgnoreCase(docContradictionFlag)) {
-            return java.util.Optional.of(new ObsolescenceEvent(
-                    java.util.UUID.randomUUID().toString(),
+            return java.util.Optional.of(ObsolescenceEvent.of(
                     item.masteryId(),
+                    item.tenantId(),
                     ObsolescenceReason.DOCUMENTATION_CONTRADICTION,
                     "Documentation contradiction detected",
-                    Instant.now(),
                     List.of(ObsolescenceEvidenceRef.documentation(item.masteryId())),
-                    Map.of()
+                    Map.of(),
+                    ObsolescenceEvent.Severity.LOW,
+                    MasteryState.OBSERVED
             ));
         }
         return java.util.Optional.empty();

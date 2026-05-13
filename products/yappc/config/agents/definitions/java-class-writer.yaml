@@ -41,8 +41,22 @@ interoperability:
     protocol: ghatana-a2a-v1
     escalation: &id001
     - java-expert
-learningModel:
+learning:
   learningLevel: L1
+  adaptationTargets:
+    - EPISODIC_CAPTURE
+  skillRefs:
+    - skillId: java-class-generation
+      requiredLevel: L1
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  provenanceRequired: false
+  promotionRequired: false
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: false

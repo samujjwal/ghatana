@@ -246,99 +246,24 @@ public final class AgentDefinitionValidator {
     // Governance Validation
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** Canonical five-tier autonomy values recognized by the runtime. */
-    private static final Set<String> CANONICAL_AUTONOMY_LEVELS = Set.of(
-            "advisory", "draft", "supervised", "bounded-autonomous", "autonomous"
-    );
-
-    /** Valid action class values. */
-    private static final Set<String> VALID_ACTION_CLASSES = Set.of(
-            "READ", "DRAFT", "WRITE_REVERSIBLE", "WRITE_IRREVERSIBLE",
-            "CALL_EXTERNAL", "DELEGATE", "MEMORY_MUTATION", "POLICY_CHANGE"
-    );
-
     /**
      * Validates governance-related configuration including autonomy level,
-     * action governance constraints, and memory governance completeness.
+     * action governance constraints, and L5 governance workflow requirements.
      *
-     * <p>Governance attributes are read from labels and metadata:
-     * <ul>
-     *   <li>{@code labels["autonomyLevel"]} — canonical five-tier autonomy</li>
-     *   <li>{@code metadata["actionGovernance"]} — action governance map</li>
-     *   <li>{@code metadata["memoryGovernance"]} — memory governance map</li>
-     * </ul>
-     *
-     * <p>High-risk agents (critical/high criticality or privileged action classes)
-     * must declare evaluation gates.
+     * Delegates to {@link AgentGovernanceValidator} for detailed validation.
      */
-    @SuppressWarnings("unchecked")
     private static void validateGovernance(AgentDefinition def, List<String> errors) {
-        Map<String, String> labels = def.getLabels();
-        Map<String, Object> metadata = def.getMetadata();
-
-        // -- Autonomy level normalization check --
-        String autonomy = labels.get("autonomyLevel");
-        if (autonomy != null && !CANONICAL_AUTONOMY_LEVELS.contains(autonomy.toLowerCase())) {
-            errors.add("[governance] autonomyLevel '" + autonomy
-                    + "' is not a canonical value; expected one of: " + CANONICAL_AUTONOMY_LEVELS);
+        String levelStr = def.getLearningLevel();
+        if (levelStr == null) {
+            // No learning level - skip governance validation that depends on it
+            return;
         }
 
-        // -- Action governance check --
-        Object agObj = metadata.get("actionGovernance");
-        if (agObj instanceof Map<?, ?> actionGov) {
-            // Validate allowed action classes
-            Object aacObj = actionGov.get("allowedActionClasses");
-            if (aacObj instanceof List<?> classes) {
-                for (Object cls : classes) {
-                    if (cls instanceof String s && !VALID_ACTION_CLASSES.contains(s)) {
-                        errors.add("[governance] unknown action class '" + s
-                                + "'; expected one of: " + VALID_ACTION_CLASSES);
-                    }
-                }
-            }
-
-            // Validate delegation depth bounds
-            Object depthObj = actionGov.get("maxDelegationDepth");
-            if (depthObj instanceof Number n && n.intValue() > 10) {
-                errors.add("[governance] maxDelegationDepth=" + n.intValue()
-                        + " is very high; consider capping at 10 for safety");
-            }
-        }
-
-        // -- Memory governance completeness --
-        Object mgObj = metadata.get("memoryGovernance");
-        if (mgObj instanceof Map<?, ?> memGov) {
-            if (!memGov.containsKey("namespace")) {
-                errors.add("[governance] memoryGovernance declared but 'namespace' is missing");
-            }
-            if (!memGov.containsKey("provenanceRequired")) {
-                errors.add("[governance] memoryGovernance declared but 'provenanceRequired' is missing");
-            }
-        }
-
-        // -- High-risk agents must have evaluation gates --
-        boolean isHighRisk = "critical".equalsIgnoreCase(labels.get("criticality"))
-                || "high".equalsIgnoreCase(labels.get("criticality"));
-
-        if (agObj instanceof Map<?, ?> actionGov) {
-            Object aacObj = actionGov.get("allowedActionClasses");
-            if (aacObj instanceof List<?> classes) {
-                boolean hasPrivileged = classes.stream()
-                        .filter(String.class::isInstance)
-                        .map(String.class::cast)
-                        .anyMatch(c -> c.equals("WRITE_IRREVERSIBLE")
-                                || c.equals("POLICY_CHANGE")
-                                || c.equals("DELEGATE"));
-                if (hasPrivileged) {
-                    isHighRisk = true;
-                }
-            }
-        }
-
-        if (isHighRisk && !metadata.containsKey("assurance")) {
-            errors.add("[governance] high-risk agents should declare 'assurance' metadata "
-                    + "with evaluation pack references");
-        }
+        errors.addAll(AgentGovernanceValidator.validate(
+                levelStr,
+                def.getLabels(),
+                def.getMetadata()
+        ));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -348,76 +273,22 @@ public final class AgentDefinitionValidator {
     /**
      * Validates learning-related configuration including learning level,
      * learning targets, and learning contract consistency.
+     *
+     * Delegates to {@link LearningContractValidator} for detailed validation.
      */
-    @SuppressWarnings("unchecked")
     private static void validateLearning(AgentDefinition def, List<String> errors) {
-        com.ghatana.agent.learning.LearningLevel level = null;
-        try {
-            String levelStr = def.getLearningLevel();
-            if (levelStr != null) {
-                level = com.ghatana.agent.learning.LearningLevel.valueOf(levelStr);
-            }
-        } catch (IllegalArgumentException e) {
-            errors.add("[learning] invalid learningLevel: " + def.getLearningLevel());
+        String levelStr = def.getLearningLevel();
+        if (levelStr == null) {
+            // No learning level - skip learning validation
             return;
         }
 
-        // ADAPTIVE agents must declare learningLevel >= L2
-        if (def.getType() == AgentType.ADAPTIVE) {
-            if (level == null || level.ordinal() < com.ghatana.agent.learning.LearningLevel.L2.ordinal()) {
-                errors.add("[learning] ADAPTIVE agents must declare learningLevel >= L2");
-            }
-        }
-
-        // Extract adaptation targets from metadata
-        Set<com.ghatana.agent.learning.LearningTarget> adaptationTargets = Set.of();
-        Object adaptationTargetsObj = def.getMetadata().get("adaptationTargets");
-        if (adaptationTargetsObj instanceof List<?> targetsList) {
-            adaptationTargets = targetsList.stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .map(targetStr -> {
-                        try {
-                            return com.ghatana.agent.learning.LearningTarget.valueOf(targetStr);
-                        } catch (IllegalArgumentException e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-        }
-
-        // Agents with PROCEDURAL_SKILL must require promotion
-        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.PROCEDURAL_SKILL)) {
-            boolean promotionRequired = def.getMetadata().containsKey("promotionRequired")
-                    && Boolean.TRUE.equals(def.getMetadata().get("promotionRequired"));
-            if (!promotionRequired) {
-                errors.add("[learning] PROCEDURAL_SKILL target requires promotionRequired=true");
-            }
-        }
-
-        // Agents with SEMANTIC_FACT must require provenance
-        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.SEMANTIC_FACT)) {
-            boolean provenanceRequired = def.getMetadata().containsKey("provenanceRequired")
-                    && Boolean.TRUE.equals(def.getMetadata().get("provenanceRequired"));
-            if (!provenanceRequired) {
-                errors.add("[learning] SEMANTIC_FACT target requires provenanceRequired=true");
-            }
-        }
-
-        // Agents with MODEL_ADAPTER must be L5
-        if (adaptationTargets.contains(com.ghatana.agent.learning.LearningTarget.MODEL_ADAPTER)) {
-            if (level != com.ghatana.agent.learning.LearningLevel.L5) {
-                errors.add("[learning] MODEL_ADAPTER target requires learningLevel=L5");
-            }
-        }
-
-        // L5 must not be response-serving
-        if (level == com.ghatana.agent.learning.LearningLevel.L5) {
-            if (def.getType() == AgentType.PROBABILISTIC || def.getType() == AgentType.HYBRID) {
-                errors.add("[learning] L5 agents must not be response-serving (PROBABILISTIC/HYBRID)");
-            }
-        }
+        errors.addAll(LearningContractValidator.validate(
+                levelStr,
+                def.getMetadata(),
+                def.getEvaluationRefs(),
+                def.getType()
+        ));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -427,49 +298,20 @@ public final class AgentDefinitionValidator {
     /**
      * Validates mastery-related configuration including skill refs,
      * mastery bindings, and mastery policy refs.
+     *
+     * Delegates to {@link MasteryBindingValidator} for detailed validation.
      */
     private static void validateMastery(AgentDefinition def, List<String> errors) {
-        // skillRefs must not be blank for adaptive agents
-        if (def.getType() == AgentType.ADAPTIVE) {
-            if (def.getSkillRefs().isEmpty()) {
-                errors.add("[mastery] ADAPTIVE agents must declare skillRefs");
-            }
-            for (String skillRef : def.getSkillRefs()) {
-                if (skillRef == null || skillRef.isBlank()) {
-                    errors.add("[mastery] skillRefs must not contain blank values");
-                }
-            }
-        }
+        errors.addAll(MasteryBindingValidator.validate(
+                def.getMasteryBindings(),
+                def.getSkillRefs(),
+                def.getMasteryPolicyRefs(),
+                def.getEvaluationRefs()
+        ));
 
-        // If masteryBindings exists, it must include required fields
-        if (!def.getMasteryBindings().isEmpty()) {
-            Map<String, Object> masteryBindings = def.getMasteryBindings();
-
-            if (!masteryBindings.containsKey("namespace")) {
-                errors.add("[mastery] masteryBindings must include 'namespace'");
-            }
-            if (!masteryBindings.containsKey("registryRef")) {
-                errors.add("[mastery] masteryBindings must include 'registryRef'");
-            }
-            if (!masteryBindings.containsKey("freshnessPolicyRef")) {
-                errors.add("[mastery] masteryBindings must include 'freshnessPolicyRef'");
-            }
-            if (!masteryBindings.containsKey("versionCompatibilityPolicyRef")) {
-                errors.add("[mastery] masteryBindings must include 'versionCompatibilityPolicyRef'");
-            }
-        }
-
-        // High-risk agents must include evaluationRefs
-        boolean isHighRisk = "critical".equalsIgnoreCase(def.getLabels().get("criticality"))
-                || "high".equalsIgnoreCase(def.getLabels().get("criticality"));
-
-        if (isHighRisk && def.getEvaluationRefs().isEmpty()) {
-            errors.add("[mastery] high-risk agents must include evaluationRefs");
-        }
-
-        // Any agent with masteryBindings must declare skillRefs (not just ADAPTIVE)
-        if (!def.getMasteryBindings().isEmpty() && def.getSkillRefs().isEmpty()) {
-            errors.add("[mastery] agents with masteryBindings must declare skillRefs");
+        // ADAPTIVE agents must always declare skillRefs
+        if (com.ghatana.agent.AgentType.ADAPTIVE == def.getType() && def.getSkillRefs().isEmpty()) {
+            errors.add("[mastery] ADAPTIVE agents must declare skillRefs");
         }
 
         // L3+ agents must declare masteryPolicyRefs and evaluationRefs

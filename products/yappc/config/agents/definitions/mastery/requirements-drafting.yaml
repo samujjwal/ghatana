@@ -8,9 +8,16 @@ metadata:
     Mastery entry tracking an agent release's skill at producing clear,
     testable, and stakeholder-aligned software requirements.
 spec:
+  skillId: requirements-drafting
   domain: product-intelligence
-  skillFamily: requirements
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -18,17 +25,42 @@ spec:
     maintenance: []
     obsolete: []
 
+  procedureRefs:
+    - procedure-id: user-story-template-v1
+      version: "1.0.0"
+    - procedure-id: acceptance-criteria-template-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: ambiguous-requirements-v1
+      version: "1.0.0"
+      failurePattern: "Unclear or ambiguous requirement language"
+
+  evaluationRefs:
+    - eval-pack-requirements-drafting-v1
+
+  knownFailureModes:
+    - type: ambiguous-requirement
+      frequency: medium
+      mitigation: "Use structured template validation"
+    - type: missing-acceptance-criteria
+      frequency: high
+      mitigation: "Apply acceptance criteria checklist"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.85
     requiresSafetyPass: true
-    evaluationPackRef: eval-pack-requirements-quality-v1
+
+  freshnessPolicy:
+    staleAfterDays: 90
+    requiresVerification: true
+    minSuccessfulEpisodes: 5
 
   evidenceRequirements:
     minEpisodes: 8
     minSuccessfulEpisodes: 7
     requiresHumanReview: true
-    freshnessTtlDays: 90
 
   observabilityHints:
     tracePrefix: mastery.requirements-drafting

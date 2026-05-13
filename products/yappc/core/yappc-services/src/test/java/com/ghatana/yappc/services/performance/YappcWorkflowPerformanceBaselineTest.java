@@ -1,5 +1,6 @@
 package com.ghatana.yappc.services.performance;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
@@ -78,7 +79,7 @@ class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
                 .build()));
         when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
 
-        generationService = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository);
+        generationService = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
         runService = new RunServiceImpl(auditLogger, metrics, new NoOpCiCdAdapter());
     }
 

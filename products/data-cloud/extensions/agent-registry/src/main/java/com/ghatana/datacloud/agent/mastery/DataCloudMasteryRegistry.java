@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
+import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.mastery.*;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
@@ -79,6 +80,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
      * execution score, and freshness.
      *
      * <p>Tenant ID from the query is required for tenant isolation.
+     * Version context from the query is used for version-aware ranking.
      */
     @Override
     @NotNull
@@ -86,13 +88,54 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         return query(query.withLimit(50))
                 .then(items -> {
                     Instant currentTime = query.currentTime() != null ? query.currentTime() : Instant.now();
+                    String versionContextStr = query.versionContext();
+
+                    // Build VersionContext if provided
+                    VersionContext versionContext = null;
+                    if (versionContextStr != null && !versionContextStr.isEmpty()) {
+                        // Parse version context string into dependencies map
+                        // Format: "component1=1.0.0,component2=2.0.0"
+                        Map<String, String> dependencies = new HashMap<>();
+                        String[] pairs = versionContextStr.split(",");
+                        for (String pair : pairs) {
+                            String[] kv = pair.split("=", 2);
+                            if (kv.length == 2) {
+                                dependencies.put(kv[0].trim(), kv[1].trim());
+                            }
+                        }
+                        versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
+                    }
+
+                    final VersionContext finalVersionContext = versionContext;
+
                     Optional<MasteryItem> best = items.stream()
                             .filter(item -> item.isFresh(currentTime))
                             .max(Comparator
-                                    .comparingInt((MasteryItem item) -> stateRank(item.state()))
+                                    .comparingInt((MasteryItem item) -> {
+                                        // Rank by version applicability if version context is provided
+                                        if (finalVersionContext != null && item.versionScope() != null) {
+                                            VersionApplicability applicability = item.versionScope().classify(finalVersionContext);
+                                            return versionApplicabilityRank(applicability);
+                                        }
+                                        return 1; // Default rank if no version context
+                                    })
+                                    .thenComparingInt((MasteryItem item) -> stateRank(item.state()))
                                     .thenComparingDouble(item -> item.score().executionScore()));
                     return Promise.of(best);
                 });
+    }
+
+    /**
+     * Rank version applicability for findBest selection.
+     * ACTIVE(3) > MAINTENANCE(2) > UNKNOWN(1) > OBSOLETE/BLOCKED(0).
+     */
+    private static int versionApplicabilityRank(@NotNull VersionApplicability applicability) {
+        return switch (applicability) {
+            case ACTIVE -> 3;
+            case MAINTENANCE -> 2;
+            case UNKNOWN -> 1;
+            case OBSOLETE -> 0;
+        };
     }
 
     /**
@@ -167,9 +210,12 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         if (query.domain() != null) {
             filter.put("domain", query.domain());
         }
-        if (query.states() != null && !query.states().isEmpty()) {
-            filter.put("state", query.states().iterator().next().name());
-        }
+
+        // Handle multiple states - if states are provided, we'll filter in-memory after query
+        // since Data Cloud may not support multi-value queries efficiently
+        Set<String> requestedStates = (query.states() != null && !query.states().isEmpty())
+                ? query.states().stream().map(MasteryState::name).collect(Collectors.toSet())
+                : null;
 
         int offset = query.offset() != null ? query.offset() : 0;
         int limit = query.limit() != null ? query.limit() : 100;
@@ -180,6 +226,12 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                     List<MasteryItem> items = entities.stream()
                             .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
                             .filter(item -> {
+                                // Filter by requested states if provided
+                                if (requestedStates != null && !requestedStates.isEmpty()) {
+                                    if (!requestedStates.contains(item.state().name())) {
+                                        return false;
+                                    }
+                                }
                                 if (query.includeObsolete() == null || !query.includeObsolete()) {
                                     if (item.state() == MasteryState.OBSOLETE) return false;
                                 }
@@ -240,6 +292,17 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     @NotNull
     public Promise<MasteryItem> save(@NotNull MasteryItem item) {
         String tenantId = item.applicability().tenantId();
+        
+        // Validate tenantId matches item.tenantId for tenant isolation
+        if (item.tenantId() != null && !item.tenantId().isEmpty()) {
+            if (!tenantId.equals(item.tenantId())) {
+                return Promise.ofException(new IllegalArgumentException(
+                        "Tenant ID mismatch: applicability.tenantId='" + tenantId + 
+                        "' does not match item.tenantId='" + item.tenantId() + "'"
+                ));
+            }
+        }
+
         Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
 
         // Maintain reverse indexes so transition() and findStale() can look up the tenant.

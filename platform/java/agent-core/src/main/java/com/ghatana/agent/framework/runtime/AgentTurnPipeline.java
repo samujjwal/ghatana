@@ -74,9 +74,30 @@ public class AgentTurnPipeline<TInput, TOutput> {
     }
 
     /**
+     * Functional interface for post-ACT verification hook.
+     *
+     * <p>This hook runs after the ACT phase and is used for:
+     * <ul>
+     *   <li>Post-execution verification of actions taken</li>
+     *   <li>Safety checks after side effects</li>
+     *   <li>Validation of execution results</li>
+     *   <li>Rollback decisions if verification fails</li>
+     * </ul>
+     */
+    @FunctionalInterface
+    public interface PostActVerificationHandler<O> {
+        @NotNull Promise<AgentResult<O>> execute(@NotNull O output, @NotNull AgentContext context);
+    }
+
+    /**
      * No-op pre-admit handler for non-governed pipelines.
      */
     private static final PreAdmitEnrichmentHandler<?> NOOP_PRE_ADMIT = (input, context) -> Promise.complete();
+
+    /**
+     * No-op post-ACT verification handler for non-governed pipelines.
+     */
+    private static final PostActVerificationHandler<?> NOOP_POST_ACT = (output, context) -> Promise.of(AgentResult.success(output, "no-op", Duration.ZERO));
 
     private final String agentId;
     @Nullable
@@ -87,6 +108,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
     private final PhaseHandler<TInput, AgentResult<TOutput>> reason;
     private final PhaseHandler<TOutput, TOutput> act;
     private final PhaseHandler<AgentResult<TOutput>, AgentResult<TOutput>> verify;
+    private final PostActVerificationHandler<TOutput> postActVerification;
     private final CaptureHandler<TInput, TOutput> capture;
     private final CaptureHandler<TInput, TOutput> reflect;
 
@@ -105,6 +127,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
             @NotNull PhaseHandler<TInput, AgentResult<TOutput>> reason,
             @NotNull PhaseHandler<AgentResult<TOutput>, AgentResult<TOutput>> verify,
             @NotNull PhaseHandler<TOutput, TOutput> act,
+            @Nullable PostActVerificationHandler<TOutput> postActVerification,
             @NotNull CaptureHandler<TInput, TOutput> capture,
             @NotNull CaptureHandler<TInput, TOutput> reflect) {
         this.agentId = Objects.requireNonNull(agentId);
@@ -114,6 +137,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
         this.reason = Objects.requireNonNull(reason);
         this.verify = Objects.requireNonNull(verify);
         this.act = Objects.requireNonNull(act);
+        this.postActVerification = postActVerification != null ? postActVerification : castNoopPostAct();
         this.capture = Objects.requireNonNull(capture);
         this.reflect = Objects.requireNonNull(reflect);
     }
@@ -121,6 +145,11 @@ public class AgentTurnPipeline<TInput, TOutput> {
     @SuppressWarnings("unchecked")
     private PreAdmitEnrichmentHandler<TInput> castNoop() {
         return (PreAdmitEnrichmentHandler<TInput>) NOOP_PRE_ADMIT;
+    }
+
+    @SuppressWarnings("unchecked")
+    private PostActVerificationHandler<TOutput> castNoopPostAct() {
+        return (PostActVerificationHandler<TOutput>) NOOP_POST_ACT;
     }
 
     /**
@@ -140,11 +169,12 @@ public class AgentTurnPipeline<TInput, TOutput> {
                 return agent.getOutputGenerator().generate(input, ctx)
                         .map(output -> AgentResult.success(
                                 output,
-                                agent.getAgentId(),
+                                "generated output",
                                 Duration.between(start, Instant.now())));
             },
             (result, ctx) -> Promise.of(result),
             agent::act,
+            null, // no post-ACT verification by default
             agent::capture,
             agent::reflect
         );
@@ -206,7 +236,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
                     () -> reason.execute(perceived, context)))
             .then(result -> timed(AgentLifecyclePhase.VERIFY, context, phaseTraces,
                     () -> verify.execute(result, context)))
-            .then(result -> {
+            .then((AgentResult<TOutput> result) -> {
                 if (result.isFailed() || result.getStatus() == AgentResultStatus.DENIED) {
                     return Promise.of(result);
                 }
@@ -215,7 +245,16 @@ public class AgentTurnPipeline<TInput, TOutput> {
                     return Promise.of(result);
                 }
                 return timed(AgentLifecyclePhase.ACT, context, phaseTraces, () -> act.execute(output, context))
-                        .map(actedOutput -> result.toBuilder().output(actedOutput).build());
+                        .then((TOutput actedOutput) -> {
+                            // Post-ACT verification hook for safety checks and validation
+                            return postActVerification.execute(actedOutput, context)
+                                    .map((AgentResult<TOutput> verifiedResult) ->
+                                        result.toBuilder()
+                                                .output(verifiedResult.getOutput())
+                                                .status(verifiedResult.getStatus())
+                                                .explanation(verifiedResult.getExplanation())
+                                                .build());
+                                });
             })
             .then(result -> {
                 TOutput captured = result.getOutput();
@@ -373,6 +412,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
         private PhaseHandler<I, AgentResult<O>> reason;
         private PhaseHandler<AgentResult<O>, AgentResult<O>> verify = (result, ctx) -> Promise.of(result);
         private PhaseHandler<O, O> act = (output, ctx) -> Promise.of(output);
+        @NotNull
+        private PostActVerificationHandler<O> postActVerification = castNoopPostAct();
         private CaptureHandler<I, O> capture = (in, out, ctx) -> Promise.complete();
         private CaptureHandler<I, O> reflect = (in, out, ctx) -> Promise.complete();
 
@@ -383,6 +424,11 @@ public class AgentTurnPipeline<TInput, TOutput> {
         @SuppressWarnings("unchecked")
         private PreAdmitEnrichmentHandler<I> castNoop() {
             return (PreAdmitEnrichmentHandler<I>) NOOP_PRE_ADMIT;
+        }
+
+        @SuppressWarnings("unchecked")
+        private PostActVerificationHandler<O> castNoopPostAct() {
+            return (PostActVerificationHandler<O>) NOOP_POST_ACT;
         }
 
         public Builder<I, O> perceive(@NotNull PhaseHandler<I, I> handler) { this.perceive = handler; return this; }
@@ -400,6 +446,7 @@ public class AgentTurnPipeline<TInput, TOutput> {
         public Builder<I, O> reasonResult(@NotNull PhaseHandler<I, AgentResult<O>> handler) { this.reason = handler; return this; }
         public Builder<I, O> verify(@NotNull PhaseHandler<AgentResult<O>, AgentResult<O>> handler) { this.verify = handler; return this; }
         public Builder<I, O> act(@NotNull PhaseHandler<O, O> handler) { this.act = handler; return this; }
+        public Builder<I, O> postActVerification(@NotNull PostActVerificationHandler<O> handler) { this.postActVerification = handler; return this; }
         public Builder<I, O> capture(@NotNull CaptureHandler<I, O> handler) { this.capture = handler; return this; }
         public Builder<I, O> reflect(@NotNull CaptureHandler<I, O> handler) { this.reflect = handler; return this; }
         public Builder<I, O> withExecutionMode(@Nullable ExecutionMode mode) { this.executionMode = mode; return this; }
@@ -447,7 +494,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
                             com.ghatana.agent.mastery.MasteryQuery query = new com.ghatana.agent.mastery.MasteryQuery(
                                     skillId, resolvedAgentId, null, tenantId,
                                     null, null, null, null, null, null,
-                                    java.time.Instant.now(), null, null);
+                                    java.time.Instant.now(), null, null,
+                                    null, null, null, null);
                             
                             return masteryRegistry.decide(query)
                                     .then(masteryDecision -> {
@@ -479,14 +527,14 @@ public class AgentTurnPipeline<TInput, TOutput> {
                                                             .then(modeSelectionResult -> {
                                                                 // Store mode selection result in context metadata
                                                                 context.setMetadata("modeSelectionResult", modeSelectionResult);
-                                                                context.addTraceTag("mode.strategy", modeSelectionResult.strategy().name());
-                                                                context.addTraceTag("mode.supervision", modeSelectionResult.supervision().name());
-                                                                context.addTraceTag("mode.reasoning", modeSelectionResult.reasoning());
-                                                                
+                                                                context.addTraceTag("mode.strategy", modeSelectionResult.executionStrategy().name());
+                                                                context.addTraceTag("mode.supervision", modeSelectionResult.supervisionMode().name());
+                                                                context.addTraceTag("mode.reasoning", modeSelectionResult.reason());
+
                                                                 // Map ExecutionStrategy + SupervisionMode to deprecated ExecutionMode for compatibility
                                                                 ExecutionMode legacyMode = mapToLegacyMode(
-                                                                        modeSelectionResult.strategy(), 
-                                                                        modeSelectionResult.supervision());
+                                                                        modeSelectionResult.executionStrategy(),
+                                                                        modeSelectionResult.supervisionMode());
                                                                 context.setMetadata("executionMode", legacyMode);
                                                                 context.addTraceTag("executionMode", legacyMode.name());
                                                                 
@@ -525,7 +573,8 @@ public class AgentTurnPipeline<TInput, TOutput> {
         @NotNull
         public AgentTurnPipeline<I, O> build() {
             Objects.requireNonNull(reason, "reason phase handler is required");
-            AgentTurnPipeline<I, O> pipeline = new AgentTurnPipeline<>(agentId, preAdmitEnrichment, perceive, reason, verify, act, capture, reflect);
+            AgentTurnPipeline<I, O> pipeline = new AgentTurnPipeline<>(
+                    agentId, preAdmitEnrichment, perceive, reason, verify, act, postActVerification, capture, reflect);
             if (executionMode != null) {
                 pipeline.executionMode = executionMode;
             }

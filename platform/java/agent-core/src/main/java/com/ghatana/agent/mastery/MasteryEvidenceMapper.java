@@ -30,6 +30,9 @@ public final class MasteryEvidenceMapper {
     private static final String FIELD_WEIGHT = "weight";
     private static final String FIELD_LABELS = "labels";
     private static final String FIELD_TENANT_ID = "tenantId";
+    private static final String FIELD_TRACE_ID = "traceId";
+    private static final String FIELD_EPISODE_ID = "episodeId";
+    private static final String FIELD_EVALUATION_ID = "evaluationId";
 
     private MasteryEvidenceMapper() {
         // Utility class
@@ -45,6 +48,7 @@ public final class MasteryEvidenceMapper {
     public static Map<String, Object> toDataMap(@NotNull MasteryEvidence evidence) {
         Map<String, Object> data = new HashMap<>();
         data.put(FIELD_EVIDENCE_ID, evidence.evidenceId());
+        data.put(FIELD_TENANT_ID, evidence.tenantId());
         data.put(FIELD_TYPE, evidence.type().name());
         data.put(FIELD_REF, evidence.ref());
         data.put(FIELD_DIGEST, evidence.digest());
@@ -52,6 +56,9 @@ public final class MasteryEvidenceMapper {
         data.put(FIELD_CREATED_BY, evidence.createdBy());
         data.put(FIELD_WEIGHT, evidence.weight());
         data.put(FIELD_LABELS, new HashMap<>(evidence.labels()));
+        data.put(FIELD_TRACE_ID, evidence.traceId());
+        data.put(FIELD_EPISODE_ID, evidence.episodeId());
+        data.put(FIELD_EVALUATION_ID, evidence.evaluationId());
         return data;
     }
 
@@ -74,6 +81,11 @@ public final class MasteryEvidenceMapper {
                 ? (Map<String, String>) m
                 : Map.of();
 
+        // Backward-compatible defaults for new fields
+        String traceId = (String) data.getOrDefault(FIELD_TRACE_ID, "");
+        String episodeId = (String) data.getOrDefault(FIELD_EPISODE_ID, "");
+        String evaluationId = (String) data.getOrDefault(FIELD_EVALUATION_ID, "");
+
         return new MasteryEvidence(
                 (String) data.get(FIELD_EVIDENCE_ID),
                 (String) data.get(FIELD_TENANT_ID),
@@ -83,7 +95,10 @@ public final class MasteryEvidenceMapper {
                 parseInstant(data.get(FIELD_CREATED_AT)),
                 createdBy,
                 weight,
-                labels
+                labels,
+                traceId,
+                episodeId,
+                evaluationId
         );
     }
 

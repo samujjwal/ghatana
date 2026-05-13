@@ -4,8 +4,8 @@ import type {
   PhaseTransitionPreviewSnapshot,
   TenantTier,
 } from './types';
-import type { components } from '@/clients/generated/api';
-import { ProjectsService, PhasesService } from '@/clients/generated/api';
+import type { Project, ProjectResponse } from '@/clients/generated/api';
+import { LifecycleService, ProjectsService } from '@/clients/generated/api';
 
 export type LifecyclePhase =
   | 'INTENT'
@@ -150,7 +150,11 @@ export async function parseProjectResponse(
 }
 
 export function normalizeProjectSnapshot(
-  project: Project | RawPhaseProjectSnapshot | { readonly project: RawPhaseProjectSnapshot },
+  project:
+    | Project
+    | ProjectResponse
+    | RawPhaseProjectSnapshot
+    | { readonly project: RawPhaseProjectSnapshot },
 ): PhaseProjectSnapshot {
   const rawProject = (
     typeof project === 'object' &&
@@ -200,7 +204,7 @@ export async function fetchProjectSnapshot(
   if (!projectId) {
     throw new MissingScopeContextError('projectId', 'fetchProjectSnapshot');
   }
-  const project = await yappcApi.projects.getScoped(projectId, workspaceId);
+  const project = await ProjectsService.getProject(projectId, workspaceId);
   return normalizeProjectSnapshot(project);
 }
 
@@ -208,5 +212,21 @@ export async function fetchPhaseTransitionPreview(
   currentPhase: LifecyclePhase,
   projectId: string,
 ): Promise<PhaseTransitionPreviewSnapshot> {
-  return PhasesService.getNextPhase({ currentPhase, projectId });
+  const nextPhase = await LifecycleService.getNextPhase(currentPhase);
+  const checkedAt = new Date().toISOString();
+
+  return {
+    projectId,
+    currentPhase,
+    nextPhase: nextPhase?.id ?? null,
+    canAdvance: Boolean(nextPhase?.id),
+    readiness: nextPhase?.id ? 100 : 0,
+    blockers: [],
+    requiredArtifacts: [],
+    completedArtifacts: [],
+    estimatedReadyIn: nextPhase?.id ? 'Ready now' : null,
+    estimatedReadyInHours: nextPhase?.id ? 0 : null,
+    predictionConfidence: nextPhase?.id ? 1 : null,
+    checkedAt,
+  };
 }

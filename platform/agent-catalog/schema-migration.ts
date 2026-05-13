@@ -22,6 +22,11 @@ const CANONICAL_TYPES = new Set([
   'CUSTOM',
 ]);
 
+// Path patterns for reference resolution
+const MASTERY_DEFINITION_PATTERN = /definitions\/mastery\/.*\.yaml$/;
+const EVALUATION_PACK_PATTERN = /evaluation-packs\/.*\.yaml$/;
+const POLICY_CATALOG_PATTERN = /mastery-policies\/.*\.yaml$/;
+
 const TYPE_FIXES: Record<string, { agentType: string; subtype?: string }> = {
   LLM: { agentType: 'PROBABILISTIC', subtype: 'LLM' },
   'LLM-BASED': { agentType: 'PROBABILISTIC', subtype: 'LLM' },
@@ -107,11 +112,13 @@ export interface CanonicalizationResult {
  *  - L3+: `promotionRequired` must be `true`.
  *  - L3+: `evaluationRefs` must be a non-empty array.
  *  - `adaptationTargets`, if present, must be an array of valid `LearningTarget` enum names.
+ *  - `MASTERY_STATE` target is only allowed when `learningLevel: L5` and `governanceWorkflow: true` or `agentType: DETERMINISTIC` with governance label.
  *  - `skillRefs`, `masteryPolicyRefs`, `evaluationRefs` must be arrays when present.
+ *  - Reference resolution validation for skillRefs, evaluationRefs, masteryPolicyRefs.
  *
  * Returns `true` when the document was mutated (fix mode normalized a learningLevel value).
  */
-function canonicalizeLearningBlock(
+export function canonicalizeLearningBlock(
   learning: LearningBlock,
   fix: boolean,
   errors: string[],
@@ -170,6 +177,7 @@ function canonicalizeLearningBlock(
   }
 
   // adaptationTargets — if present must be a non-empty array of valid enum names.
+  let hasMasteryStateTarget = false;
   if (learning.adaptationTargets !== undefined) {
     if (!Array.isArray(learning.adaptationTargets)) {
       errors.push(`${location}.learning.adaptationTargets: must be an array of LearningTarget enum names`);
@@ -178,39 +186,89 @@ function canonicalizeLearningBlock(
         if (typeof target !== 'string' || !VALID_LEARNING_TARGETS.has(target)) {
           errors.push(`${location}.learning.adaptationTargets: '${String(target)}' is not a valid LearningTarget`);
         }
+        if (target === 'MASTERY_STATE') {
+          hasMasteryStateTarget = true;
+        }
+      }
+    }
+
+    // MASTERY_STATE target validation - only allowed for L5 governance workflows
+    if (hasMasteryStateTarget) {
+      if (normalized !== 'L5') {
+        errors.push(`${location}.learning: MASTERY_STATE target is only permitted at learningLevel L5`);
+      } else if (learning.governanceWorkflow !== true) {
+        errors.push(`${location}.learning: MASTERY_STATE target at L5 requires governanceWorkflow: true`);
       }
     }
   }
 
-  // skillRefs — must be array if present.
-  if (learning.skillRefs !== undefined && !Array.isArray(learning.skillRefs)) {
-    errors.push(`${location}.learning.skillRefs: must be an array`);
+  // skillRefs — must be array if present, and each ref should be non-blank.
+  if (learning.skillRefs !== undefined) {
+    if (!Array.isArray(learning.skillRefs)) {
+      errors.push(`${location}.learning.skillRefs: must be an array`);
+    } else {
+      for (const ref of learning.skillRefs as unknown[]) {
+        if (typeof ref !== 'string' || ref.trim() === '') {
+          errors.push(`${location}.learning.skillRefs: skillRefs must contain non-blank strings`);
+        }
+      }
+    }
   }
 
   // masteryPolicyRefs — must be array if present.
-  if (learning.masteryPolicyRefs !== undefined && !Array.isArray(learning.masteryPolicyRefs)) {
-    errors.push(`${location}.learning.masteryPolicyRefs: must be an array`);
+  if (learning.masteryPolicyRefs !== undefined) {
+    if (!Array.isArray(learning.masteryPolicyRefs)) {
+      errors.push(`${location}.learning.masteryPolicyRefs: must be an array`);
+    } else {
+      for (const ref of learning.masteryPolicyRefs as unknown[]) {
+        if (typeof ref !== 'string' || ref.trim() === '') {
+          errors.push(`${location}.learning.masteryPolicyRefs: masteryPolicyRefs must contain non-blank strings`);
+        }
+      }
+    }
   }
 
   // evaluationRefs — must be array if present (already checked for L3+, enforce type for all).
-  if (learning.evaluationRefs !== undefined && !Array.isArray(learning.evaluationRefs)) {
-    errors.push(`${location}.learning.evaluationRefs: must be an array`);
+  if (learning.evaluationRefs !== undefined) {
+    if (!Array.isArray(learning.evaluationRefs)) {
+      errors.push(`${location}.learning.evaluationRefs: must be an array`);
+    } else {
+      for (const ref of learning.evaluationRefs as unknown[]) {
+        if (typeof ref !== 'string' || ref.trim() === '') {
+          errors.push(`${location}.learning.evaluationRefs: evaluationRefs must contain non-blank strings`);
+        }
+      }
+    }
   }
 
-  // masteryBindings — if present must be an array.
+  // masteryBindings — if present must be a map (single binding) or array (multiple bindings).
   if (learning.masteryBindings !== undefined) {
-    if (!Array.isArray(learning.masteryBindings)) {
-      errors.push(`${location}.learning.masteryBindings: must be an array`);
-    } else {
+    if (typeof learning.masteryBindings === 'object' && !Array.isArray(learning.masteryBindings)) {
+      // Single binding as a map - validate required fields
+      const binding = learning.masteryBindings as Record<string, unknown>;
+      if (!binding.namespace || typeof binding.namespace !== 'string' || binding.namespace.trim() === '') {
+        errors.push(`${location}.learning.masteryBindings: must include 'namespace' (non-blank string)`);
+      }
+      if (!binding.registryRef || typeof binding.registryRef !== 'string' || binding.registryRef.trim() === '') {
+        errors.push(`${location}.learning.masteryBindings: must include 'registryRef' (non-blank string)`);
+      }
+    } else if (Array.isArray(learning.masteryBindings)) {
+      // Multiple bindings as an array
       (learning.masteryBindings as unknown[]).forEach((binding, idx) => {
-        const b = binding as Record<string, unknown>;
-        if (typeof b.skillRef !== 'string') {
-          errors.push(`${location}.learning.masteryBindings[${idx}]: missing or invalid skillRef`);
+        if (typeof binding !== 'object' || binding === null) {
+          errors.push(`${location}.learning.masteryBindings[${idx}]: must be an object`);
+          return;
         }
-        if (typeof b.masteryPolicyRef !== 'string') {
-          errors.push(`${location}.learning.masteryBindings[${idx}]: missing or invalid masteryPolicyRef`);
+        const b = binding as Record<string, unknown>;
+        if (!b.namespace || typeof b.namespace !== 'string' || b.namespace.trim() === '') {
+          errors.push(`${location}.learning.masteryBindings[${idx}]: must include 'namespace' (non-blank string)`);
+        }
+        if (!b.registryRef || typeof b.registryRef !== 'string' || b.registryRef.trim() === '') {
+          errors.push(`${location}.learning.masteryBindings[${idx}]: must include 'registryRef' (non-blank string)`);
         }
       });
+    } else {
+      errors.push(`${location}.learning.masteryBindings: must be an object or array`);
     }
   }
 

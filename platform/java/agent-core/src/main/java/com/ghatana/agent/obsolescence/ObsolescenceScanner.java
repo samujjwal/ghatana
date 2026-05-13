@@ -81,7 +81,7 @@ public final class ObsolescenceScanner {
     @NotNull
     public Promise<ObsolescenceScanResult> scan() {
         EnvironmentFingerprint env = environmentFingerprintProvider.provide();
-        return detector.scanAll(env)
+        return detector.scanAll("system", env)
                 .then(events -> router.routeAll(events)
                         .map(transitionResults -> new ObsolescenceScanResult(
                                 events,

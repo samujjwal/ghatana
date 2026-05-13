@@ -43,8 +43,33 @@ interoperability:
     - story-writer-agent
     - documentation-writer
     escalation: products-officer
-learningModel:
+learning:
   learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - SEMANTIC_FACT
+    - EPISODIC_CAPTURE
+  skillRefs:
+    - skillId: requirements-analysis
+      requiredLevel: L3
+    - skillId: user-story-creation
+      requiredLevel: L2
+    - skillId: acceptance-criteria-definition
+      requiredLevel: L2
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  masteryPolicyRefs:
+    - promotion-policy-v1
+    - freshness-policy-v1
+  evaluationRefs:
+    - eval-pack-requirements-drafting-v1
+  provenanceRequired: true
+  promotionRequired: true
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: true

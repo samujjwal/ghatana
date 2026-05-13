@@ -1,5 +1,6 @@
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
@@ -100,7 +101,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
         IntentService intentService = new IntentServiceImpl(llm, audit, metrics);
         ShapeService shapeService = new ShapeServiceImpl(llm, audit, metrics);
         ValidationService validationService = new ValidationServiceImpl(policy, audit, metrics);
-        GenerationService generationService = new GenerationServiceImpl(llm, audit, metrics, generationRunRepository);
+        GenerationService generationService = new GenerationServiceImpl(llm, audit, metrics, generationRunRepository, new ObjectMapper());
         RunService runService = new RunServiceImpl(audit, metrics, ciCd);
         ObserveService observeService = new ObserveServiceImpl(metrics, audit);
         LearningService learningService = new LearningServiceImpl(llm, audit, metrics);
@@ -272,7 +273,7 @@ class YappcWorkflowE2ETest extends EventloopTestBase {
                 new IntentServiceImpl(llm, audit, metrics),
                 new ShapeServiceImpl(llm, audit, metrics),
                 blockingValidation,
-                new GenerationServiceImpl(llm, audit, metrics, generationRunRepository2),
+                new GenerationServiceImpl(llm, audit, metrics, generationRunRepository2, new ObjectMapper()),
                 new RunServiceImpl(audit, metrics, ciCd),
                 new ObserveServiceImpl(metrics, audit),
                 new LearningServiceImpl(llm, audit, metrics),

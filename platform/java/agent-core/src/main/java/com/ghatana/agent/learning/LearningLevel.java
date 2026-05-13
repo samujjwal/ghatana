@@ -12,6 +12,21 @@ package com.ghatana.agent.learning;
  */
 /**
  * Declared learning authority for an agent release.
+ *
+ * <h2>Canonical Learning Level Semantics</h2>
+ * <ul>
+ *   <li><b>L0</b>: No learning - agent operates with static configuration only</li>
+ *   <li><b>L1</b>: Episodic memory - can capture and replay execution traces</li>
+ *   <li><b>L2</b>: Semantic/retrieval/confidence/routing - can learn semantic facts,
+ *       retrieval policies, confidence thresholds, and routing policies</li>
+ *   <li><b>L3</b>: Procedural/negative knowledge - can learn procedural skills and
+ *       negative knowledge (what not to do)</li>
+ *   <li><b>L4</b>: Prompt/planner - can learn prompt templates and planner policies</li>
+ *   <li><b>L5</b>: Offline governance/model adapter/mastery-state workflows -
+ *       can learn model adapters and participate in offline governance workflows
+ *       including mastery state transitions. L5 is offline-only and cannot serve
+ *       responses directly.</li>
+ * </ul>
  */
 public enum LearningLevel {
     L0,
@@ -98,5 +113,37 @@ public enum LearningLevel {
      */
     public boolean canServeResponses() {
         return this != L5;
+    }
+
+    /**
+     * Returns true if this learning level requires evaluation references for learning.
+     * L3 and above require evaluation refs to validate learned artifacts.
+     *
+     * @return true if evaluation refs are required
+     */
+    public boolean requiresEvaluationRefs() {
+        return this.ordinal() >= L3.ordinal();
+    }
+
+    /**
+     * Returns true if the given learning target requires human review by default
+     * at this learning level.
+     *
+     * <p>Certain targets are high-risk and require human review regardless of level:
+     * <ul>
+     *   <li>PROMPT_TEMPLATE - affects all subsequent reasoning</li>
+     *   <li>PLANNER_POLICY - affects task decomposition and strategy</li>
+     *   <li>MODEL_ADAPTER - affects which model is used for execution</li>
+     *   <li>MASTERY_STATE - affects execution permissions and mode selection</li>
+     * </ul>
+     *
+     * @param target the learning target to check
+     * @return true if human review is required by default
+     */
+    public boolean requiresHumanReviewByDefault(LearningTarget target) {
+        return switch (target) {
+            case PROMPT_TEMPLATE, PLANNER_POLICY, MODEL_ADAPTER, MASTERY_STATE -> true;
+            default -> false;
+        };
     }
 }

@@ -57,28 +57,64 @@ public final class DefaultModeSelectionPolicy implements ModeSelectionPolicy {
             @NotNull TaskClassification taskClassification,
             @NotNull VersionContext versionContext
     ) {
-        VersionApplicability applicability = masteryDecision.versionScope().classify(versionContext);
+        // Use the version applicability from the decision (already computed), but
+        // override with a live classification if the versionScope can resolve it.
+        VersionApplicability applicability = masteryDecision.versionApplicability();
+        if (!masteryDecision.versionScope().active().isEmpty()
+                || !masteryDecision.versionScope().maintenance().isEmpty()
+                || !masteryDecision.versionScope().obsolete().isEmpty()) {
+            VersionApplicability live = masteryDecision.versionScope().classify(versionContext);
+            if (live != VersionApplicability.UNKNOWN) {
+                applicability = live;
+            }
+        }
 
         // Obsolete version overrides mastery state — agent must not act
         if (applicability == VersionApplicability.OBSOLETE) {
             return ModeSelectionResult.blocked(
-                    "Version is obsolete for mastery " + masteryDecision.masteryItemId());
+                    "VERSION_OBSOLETE: Version is obsolete for mastery " + masteryDecision.masteryItemId());
+        }
+
+        // Maintenance version requires legacy context
+        if (applicability == VersionApplicability.MAINTENANCE) {
+            if (!masteryDecision.state().requiresLegacyContext()) {
+                return ModeSelectionResult.blocked(
+                        "VERSION_MISMATCH: Maintenance version requires legacy context for state " + masteryDecision.state());
+            }
         }
 
         MasteryState state = masteryDecision.state();
 
         // Terminal mastery states — agent must not act regardless of version
-        if (state == MasteryState.OBSOLETE
-                || state == MasteryState.RETIRED
-                || state == MasteryState.QUARANTINED) {
+        if (state.isTerminal()) {
             return ModeSelectionResult.blocked(
-                    "Mastery state is " + state + " for skill " + masteryDecision.skillId());
+                    "TERMINAL_STATE: Mastery state is " + state + " for skill " + masteryDecision.skillId());
+        }
+
+        // Stale mastery items require refresh
+        if (masteryDecision.stale()) {
+            return ModeSelectionResult.blocked(
+                    "STALE_MASTERY: Mastery item is stale and requires refresh for skill " + masteryDecision.skillId());
         }
 
         // Blocked by registry decision
         if (!masteryDecision.executable()) {
             return ModeSelectionResult.blocked(
-                    "Mastery registry blocked execution: " + masteryDecision.reason());
+                    "BLOCKED_BY_REGISTRY: " + masteryDecision.reason());
+        }
+
+        // Honor explicit requiresHumanApproval flag from decision
+        if (masteryDecision.requiresHumanApproval()) {
+            return ModeSelectionResult.humanGated(
+                    ExecutionStrategy.EXPLORATORY_FAST_LEARNING,
+                    "HUMAN_APPROVAL_REQUIRED: " + masteryDecision.reason() + " (state=" + state + ", applicability=" + applicability + ")");
+        }
+
+        // Honor explicit requiresVerification flag from decision
+        if (masteryDecision.requiresVerification()) {
+            return ModeSelectionResult.supervised(
+                    ExecutionStrategy.BOUNDED_PROBABILISTIC_REASONING,
+                    "VERIFICATION_REQUIRED: " + masteryDecision.reason() + " (state=" + state + ", applicability=" + applicability + ")");
         }
 
         boolean isHighRisk = taskClassification.riskLevel() == TaskRiskLevel.HIGH
@@ -89,36 +125,36 @@ public final class DefaultModeSelectionPolicy implements ModeSelectionPolicy {
                 if (isHighRisk || applicability != VersionApplicability.ACTIVE) {
                     yield ModeSelectionResult.supervised(
                             ExecutionStrategy.DETERMINISTIC_EXECUTION,
-                            "MASTERED skill with high-risk task or non-active version — supervised");
+                            "MASTERED_HIGH_RISK_OR_NON_ACTIVE: " + masteryDecision.reason() + " (risk=" + taskClassification.riskLevel() + ", applicability=" + applicability + ")");
                 }
                 yield ModeSelectionResult.autonomous(
                         ExecutionStrategy.DETERMINISTIC_EXECUTION,
-                        "MASTERED skill on active version — autonomous execution");
+                        "MASTERED_ACTIVE: " + masteryDecision.reason() + " (applicability=" + applicability + ", score=" + masteryDecision.executionScore() + ")");
             }
             case COMPETENT -> {
                 if (isHighRisk) {
                     yield ModeSelectionResult.humanGated(
                             ExecutionStrategy.BOUNDED_PROBABILISTIC_REASONING,
-                            "COMPETENT skill with high-risk task — human-gated");
+                            "COMPETENT_HIGH_RISK: " + masteryDecision.reason() + " (risk=" + taskClassification.riskLevel() + ")");
                 }
                 yield ModeSelectionResult.supervised(
                         ExecutionStrategy.BOUNDED_PROBABILISTIC_REASONING,
-                        "COMPETENT skill — supervised with verification");
+                        "COMPETENT_SUPERVISED: " + masteryDecision.reason() + " (score=" + masteryDecision.executionScore() + ")");
             }
             case PRACTICED -> ModeSelectionResult.humanGated(
                     ExecutionStrategy.EXPLORATORY_FAST_LEARNING,
-                    "PRACTICED skill — human approval required before acting");
+                    "PRACTICED_HUMAN_GATED: " + masteryDecision.reason() + " (score=" + masteryDecision.executionScore() + ")");
             case OBSERVED -> ModeSelectionResult.humanGated(
                     ExecutionStrategy.VERIFICATION_FIRST,
-                    "OBSERVED skill — verification-first with human gate");
+                    "OBSERVED_VERIFICATION_FIRST: " + masteryDecision.reason());
             case MAINTENANCE_ONLY -> ModeSelectionResult.humanGated(
                     ExecutionStrategy.MAINTENANCE_ONLY,
-                    "MAINTENANCE_ONLY skill — human approval required for maintenance operations");
+                    "MAINTENANCE_ONLY_HUMAN_GATED: " + masteryDecision.reason() + " (applicability=" + applicability + ")");
             case UNKNOWN -> ModeSelectionResult.humanGated(
                     ExecutionStrategy.EXPLORATORY_FAST_LEARNING,
-                    "Unknown mastery state — cautious fast-learning with human gate");
+                    "UNKNOWN_CAUTIOUS: " + masteryDecision.reason() + " (applicability=" + applicability + ")");
             default -> ModeSelectionResult.blocked(
-                    "Unhandled mastery state " + state + " — blocking as safety default");
+                    "UNHANDLED_STATE: Unhandled mastery state " + state + " — blocking as safety default");
         };
     }
 }

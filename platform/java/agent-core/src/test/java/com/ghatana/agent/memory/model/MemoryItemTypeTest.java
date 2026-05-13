@@ -35,12 +35,13 @@ class MemoryItemTypeTest {
     class BuiltInValuesTests {
 
         @Test
-        @DisplayName("All seven built-in types are present")
+        @DisplayName("All eight built-in types are present")
         void allBuiltInTypes_present() { 
             assertThat(MemoryItemType.values()).containsExactlyInAnyOrder( 
                     MemoryItemType.EPISODE,
                     MemoryItemType.FACT,
                     MemoryItemType.PROCEDURE,
+                    MemoryItemType.NEGATIVE_KNOWLEDGE,
                     MemoryItemType.TASK_STATE,
                     MemoryItemType.WORKING,
                     MemoryItemType.PREFERENCE,

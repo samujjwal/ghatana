@@ -44,7 +44,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
 
         VersionContext versionContext = VersionContext.empty();
 
-        ModeSelectionResult selection = runPromise(() -> selector.selectMode(
+        var selection = runPromise(() -> selector.selectMode(
                 "skill-123",
                 "agent-123",
                 "test-tenant",
@@ -73,7 +73,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
         TaskClassification classification = TaskClassification.of(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR);
         VersionContext versionContext = VersionContext.empty();
 
-        ModeSelectionResult selection = runPromise(() -> selector.selectMode(
+        var selection = runPromise(() -> selector.selectMode(
                 query,
                 classification,
                 versionContext
@@ -256,7 +256,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
                 new DefaultModeSelectionPolicy()
         );
 
-        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+        var result = runPromise(() -> selector.selectMode(
                 "skill-p", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
         ));
 
@@ -272,7 +272,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
                 new DefaultModeSelectionPolicy()
         );
 
-        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+        var result = runPromise(() -> selector.selectMode(
                 "skill-c", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
         ));
 
@@ -288,7 +288,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
                 new DefaultModeSelectionPolicy()
         );
 
-        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+        var result = runPromise(() -> selector.selectMode(
                 "skill-m", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
         ));
 
@@ -310,7 +310,7 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
 
         VersionContext contextWithNoDeps = VersionContext.empty();
         // Should not throw, and should use "explicit-tenant" (not "default")
-        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+        var result = runPromise(() -> selector.selectMode(
                 "skill-t", "agent-1", "explicit-tenant", "task", "ctx", contextWithNoDeps
         ));
 

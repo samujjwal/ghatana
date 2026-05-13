@@ -9,9 +9,16 @@ metadata:
     writing to, and curating the multi-tier memory plane without poisoning
     episodic, semantic, or procedural tiers.
 spec:
+  skillId: memory-capability
   domain: platform
-  skillFamily: memory-management
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -19,17 +26,42 @@ spec:
     maintenance: []
     obsolete: []
 
+  procedureRefs:
+    - procedure-id: memory-retrieval-pattern-v1
+      version: "1.0.0"
+    - procedure-id: memory-storage-pattern-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: memory-poisoning-v1
+      version: "1.0.0"
+      failurePattern: "Writing incorrect or hallucinated data to memory"
+
+  evaluationRefs:
+    - eval-pack-memory-capability-v1
+
+  knownFailureModes:
+    - type: memory-poisoning
+      frequency: critical
+      mitigation: "Strict validation before memory writes"
+    - type: retrieval-error
+      frequency: medium
+      mitigation: "Query validation and result filtering"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.95
     requiresSafetyPass: true
-    evaluationPackRef: eval-pack-memory-capability-v1
+
+  freshnessPolicy:
+    staleAfterDays: 30
+    requiresVerification: true
+    minSuccessfulEpisodes: 10
 
   evidenceRequirements:
     minEpisodes: 15
     minSuccessfulEpisodes: 14
     requiresHumanReview: true
-    freshnessTtlDays: 30
 
   observabilityHints:
     tracePrefix: mastery.memory-capability

@@ -302,6 +302,179 @@ public class EventLogMemoryStore implements MemoryStore {
         }
     }
 
+    // ── Negative Knowledge memory ─────────────────────────────────────────────
+
+    private final Map<String, NegativeKnowledge> negativeKnowledge = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> negativeKnowledgeBySkill = new ConcurrentHashMap<>();
+
+    @Override
+    @NotNull
+    public Promise<NegativeKnowledge> storeNegativeKnowledge(@NotNull NegativeKnowledge negativeKnowledge) {
+        try {
+            String nkId = negativeKnowledge.id() != null ? negativeKnowledge.id() : generateId("negative-knowledge");
+            NegativeKnowledge stored = NegativeKnowledge.builder()
+                    .id(nkId)
+                    .skillId(negativeKnowledge.skillId())
+                    .failureMode(negativeKnowledge.failureMode())
+                    .description(negativeKnowledge.description())
+                    .timestamp(negativeKnowledge.timestamp())
+                    .tenantId(negativeKnowledge.tenantId())
+                    .metadata(negativeKnowledge.metadata())
+                    .build();
+
+            synchronized (eventLog) {
+                this.negativeKnowledge.put(nkId, stored);
+
+                // Append event
+                eventLog.add(new MemoryEvent(
+                        generateEventId(),
+                        "NEGATIVE_KNOWLEDGE_STORED",
+                        Instant.now(),
+                        stored.skillId(),
+                        Map.of("nkId", nkId, "skillId", stored.skillId())));
+            }
+
+            // Update indexes
+            negativeKnowledgeBySkill.computeIfAbsent(stored.skillId(), k -> ConcurrentHashMap.newKeySet())
+                    .add(nkId);
+
+            log.debug("Stored negative knowledge: {} for skill: {}", nkId, stored.skillId());
+            return Promise.of(stored);
+
+        } catch (Exception e) {
+            log.error("Failed to store negative knowledge", e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeBySkill(@NotNull String skillId, int limit) {
+        try {
+            Set<String> skillNks = negativeKnowledgeBySkill.getOrDefault(skillId, Set.of());
+
+            List<NegativeKnowledge> results = skillNks.stream()
+                    .map(negativeKnowledge::get)
+                    .filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} negative knowledge items for skill: {}", results.size(), skillId);
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge by skill: {}", skillId, e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState, int limit) {
+        try {
+            // For this in-memory implementation, return all negative knowledge
+            // In real implementation, would filter by mastery state
+            List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} negative knowledge items for mastery state: {}", results.size(), masteryState);
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge by mastery state: {}", masteryState, e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext, int limit) {
+        try {
+            // For this in-memory implementation, return all negative knowledge
+            // In real implementation, would filter by version context
+            List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} negative knowledge items for version context", results.size());
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge by version context", e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByFreshness(
+            @NotNull java.time.Duration freshnessThreshold, int limit) {
+        try {
+            Instant cutoff = Instant.now().minus(freshnessThreshold);
+            List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .filter(nk -> nk.timestamp().isAfter(cutoff))
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} fresh negative knowledge items", results.size());
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge by freshness", e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit) {
+        try {
+            // For this in-memory implementation, return all negative knowledge
+            // In real implementation, would filter by tenant
+            List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} negative knowledge items for tenant: {}", results.size(), tenantId);
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge by tenant: {}", tenantId, e);
+            return Promise.ofException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<NegativeKnowledge>> queryNegativeKnowledge(@NotNull MemoryFilter filter, int limit) {
+        try {
+            String skillId = filter.getSkillId();
+            if (skillId != null) {
+                return queryNegativeKnowledgeBySkill(skillId, limit);
+            }
+
+            List<NegativeKnowledge> results = negativeKnowledge.values().stream()
+                    .sorted(Comparator.comparing(NegativeKnowledge::timestamp).reversed())
+                    .limit(limit)
+                    .collect(Collectors.toList());
+
+            log.debug("Queried {} negative knowledge items with filter", results.size());
+            return Promise.of(results);
+
+        } catch (Exception e) {
+            log.error("Failed to query negative knowledge", e);
+            return Promise.ofException(e);
+        }
+    }
+
     @Override
     @NotNull
     public Promise<Preference> storePreference(@NotNull Preference preference) {

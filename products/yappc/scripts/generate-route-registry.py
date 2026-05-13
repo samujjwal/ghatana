@@ -80,6 +80,9 @@ def parse_yaml_manifest(manifest_path):
             
             # Detect server section (lines ending with : at start of line)
             if stripped.endswith(':') and not line.startswith(' ') and not line.startswith('-'):
+                if current_route:
+                    current_routes.append(current_route)
+                    current_route = {}
                 if current_server and current_routes:
                     routes_by_server[current_server] = current_routes
                 current_server = stripped.rstrip(':')

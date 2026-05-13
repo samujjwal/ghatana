@@ -37,8 +37,30 @@ interoperability:
     enabled: true
     protocol: ghatana-a2a-v1
     escalation: documentation-orchestrator
-learningModel:
+learning:
   learningLevel: L2
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - SEMANTIC_FACT
+  skillRefs:
+    - skillId: c4-diagram-generation
+      requiredLevel: L2
+    - skillId: sequence-diagram-generation
+      requiredLevel: L2
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  masteryPolicyRefs:
+    - promotion-policy-v1
+    - freshness-policy-v1
+  evaluationRefs:
+    - eval-pack-requirements-drafting-v1
+  provenanceRequired: true
+  promotionRequired: false
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: true

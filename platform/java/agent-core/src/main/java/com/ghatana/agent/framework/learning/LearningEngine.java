@@ -106,6 +106,7 @@ public final class LearningEngine {
                 com.ghatana.agent.learning.LearningLevel.L0,
                 Set.of(),
                 false,
+                false,
                 false
         );
         this.humanReviewThreshold = DEFAULT_REVIEW_THRESHOLD;
@@ -149,7 +150,7 @@ public final class LearningEngine {
     @Deprecated
     public LearningEngine withLearningLevel(@NotNull com.ghatana.agent.learning.LearningLevel level) {
         Objects.requireNonNull(level, "level must not be null");
-        this.learningContract = new LearningContract(level, Set.of(), level.ordinal() >= 2, level.ordinal() >= 3);
+        this.learningContract = new LearningContract(level, Set.of(), level.ordinal() >= 2, level.ordinal() >= 3, false);
         return this;
     }
 

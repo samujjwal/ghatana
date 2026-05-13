@@ -1,0 +1,124 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryPolicy
+metadata:
+  id: promotion-policy-v1
+  name: Promotion Policy v1
+  version: 1.0.0
+  description: >
+    Default promotion policy for advancing mastery states based on evidence
+    accumulation and evaluation results.
+spec:
+  policyType: promotion
+  
+  stateTransitions:
+    - from: UNKNOWN
+      to: OBSERVED
+      requiredEvidence:
+        minEpisodes: 1
+        minSuccessfulEpisodes: 1
+        evidenceTypes:
+          - trace
+          - episode
+      evaluationRequired: false
+      humanReviewRequired: false
+      
+    - from: OBSERVED
+      to: PRACTICED
+      requiredEvidence:
+        minEpisodes: 5
+        minSuccessfulEpisodes: 4
+        evidenceTypes:
+          - episode
+          - trace
+      evaluationRequired: false
+      humanReviewRequired: false
+      
+    - from: PRACTICED
+      to: COMPETENT
+      requiredEvidence:
+        minEpisodes: 10
+        minSuccessfulEpisodes: 9
+        evidenceTypes:
+          - episode
+          - evaluation
+      evaluationRequired: true
+      evaluationPassRate: 0.85
+      humanReviewRequired: false
+      
+    - from: COMPETENT
+      to: MASTERED
+      requiredEvidence:
+        minEpisodes: 20
+        minSuccessfulEpisodes: 18
+        evidenceTypes:
+          - episode
+          - evaluation
+          - regression
+      evaluationRequired: true
+      evaluationPassRate: 0.90
+      safetyPassRequired: true
+      regressionPassRequired: true
+      humanReviewRequired: false
+      
+  targetSpecificCriteria:
+    proceduralSkill:
+      minProcedureCount: 1
+      requiresProcedureLink: true
+      evaluationRefsRequired: true
+      
+    negativeKnowledge:
+      requiresFailureEvidence: true
+      minFailureCount: 1
+      requiresNegativeLink: true
+      
+    semanticFact:
+      requiresProvenance: true
+      contradictionCheckRequired: true
+      minEvidenceCount: 2
+      
+    retrievalPolicy:
+      requiresABTestEvidence: false
+      requiresShadowEvidence: true
+      minEvidenceCount: 5
+      
+    promptPolicy:
+      requiresRegressionSuite: true
+      regressionPassRate: 0.95
+      humanReviewRequired: true
+      
+    plannerPolicy:
+      requiresRegressionSuite: true
+      regressionPassRate: 0.95
+      humanReviewRequired: true
+      
+    modelAdapter:
+      requiresOfflineReview: true
+      requiresEvaluationRefs: true
+      humanReviewRequired: true
+      
+  scoreThresholds:
+    practiced:
+      correctness: 0.70
+      safety: 0.90
+      
+    competent:
+      correctness: 0.80
+      safety: 0.95
+      evidenceStrength: 0.70
+      
+    mastered:
+      correctness: 0.90
+      safety: 0.98
+      evidenceStrength: 0.85
+      regressionStability: 0.80
+      
+  rollbackRequirements:
+    executionAffecting:
+      requiresRollbackRef: true
+      rollbackTestRequired: true
+      
+  safetyQuarantine:
+    enabled: true
+    safetyFailureThreshold: 0.80
+    quarantineState: QUARANTINED
+    requiresHumanReview: true

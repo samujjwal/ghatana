@@ -76,6 +76,46 @@ final class NoOpMemoryStore implements MemoryStore {
         return Promise.of(null);
     }
 
+    // ── Negative Knowledge ─────────────────────────────────────────────────────
+
+    @Override
+    public @NotNull Promise<NegativeKnowledge> storeNegativeKnowledge(@NotNull NegativeKnowledge negativeKnowledge) {
+        return Promise.of(negativeKnowledge);
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledgeBySkill(@NotNull String skillId, int limit) {
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByMasteryState(
+            @NotNull com.ghatana.agent.mastery.MasteryState masteryState, int limit) {
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByVersionContext(
+            @NotNull com.ghatana.agent.context.version.VersionContext versionContext, int limit) {
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByFreshness(
+            @NotNull java.time.Duration freshnessThreshold, int limit) {
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledgeByTenant(@NotNull String tenantId, int limit) {
+        return Promise.of(List.of());
+    }
+
+    @Override
+    public @NotNull Promise<List<NegativeKnowledge>> queryNegativeKnowledge(@NotNull MemoryFilter filter, int limit) {
+        return Promise.of(List.of());
+    }
+
     // ── Preference ───────────────────────────────────────────────────────────
 
     @Override

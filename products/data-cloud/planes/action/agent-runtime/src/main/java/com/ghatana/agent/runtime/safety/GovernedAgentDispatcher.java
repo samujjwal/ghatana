@@ -21,6 +21,7 @@ import com.ghatana.agent.dispatch.ExecutionTier;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.memory.MemoryRetriever;
 import com.ghatana.agent.pluggability.AgentCapabilityManifest;
 import com.ghatana.agent.pluggability.InteractionMode;
 import com.ghatana.agent.release.AgentInstanceConfig;
@@ -92,12 +93,14 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
     private final TaskClassifier taskClassifier;
     @Nullable
     private final MasteryAwareModeSelector modeSelector;
+    @Nullable
+    private final MemoryRetriever memoryRetriever;
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger) {
-        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -105,7 +108,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
             @Nullable AgentReleaseRepository releaseRepository) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -114,7 +117,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull AgentTraceLedger traceLedger,
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -124,7 +127,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -137,7 +140,8 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable MasteryRegistry masteryRegistry,
             @Nullable VersionContextResolver versionContextResolver,
             @Nullable TaskClassifier taskClassifier,
-            @Nullable MasteryAwareModeSelector modeSelector) {
+            @Nullable MasteryAwareModeSelector modeSelector,
+            @Nullable MemoryRetriever memoryRetriever) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
         this.invariantMonitor = Objects.requireNonNull(invariantMonitor, "invariantMonitor");
         this.traceLedger = Objects.requireNonNull(traceLedger, "traceLedger");
@@ -148,6 +152,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         this.versionContextResolver = versionContextResolver;
         this.taskClassifier = taskClassifier;
         this.modeSelector = modeSelector;
+        this.memoryRetriever = memoryRetriever;
     }
 
     /**
@@ -159,7 +164,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
             @Nullable MasteryAwareModeSelector modeSelector) {
-        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, modeSelector);
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, modeSelector, null);
     }
 
     /**
@@ -171,7 +176,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull AgentTraceLedger traceLedger,
             @Nullable MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, modeSelector);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, modeSelector, null);
     }
 
     /**
@@ -185,7 +190,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, modeSelector);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, modeSelector, null);
     }
 
     @Override

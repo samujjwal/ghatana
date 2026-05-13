@@ -428,7 +428,7 @@ public final class GeneratedRouteRegistry {
             "DASHBOARD_ACTIONS_REQUEST",
             PrivacyClassification.CONFIDENTIAL
         ));
-        MANIFEST.addRoute("yappc-api", new RouteEntry(
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/dashboard/actions",
             AuthMode.REQUIRED,
@@ -791,7 +791,7 @@ public final class GeneratedRouteRegistry {
             "WORKFLOW_PLAN_STEPS_UPDATE",
             PrivacyClassification.CONFIDENTIAL
         ));
-        MANIFEST.addRoute("scaffold-api", new RouteEntry(
+        MANIFEST.addRoute("yappc-api", new RouteEntry(
             "POST",
             "/api/v1/workflows/{id}/route",
             AuthMode.REQUIRED,
@@ -1088,7 +1088,7 @@ public final class GeneratedRouteRegistry {
             "DEPENDENCY_CONFLICTS_DETECT",
             PrivacyClassification.CONFIDENTIAL
         ));
-        MANIFEST.addRoute("refactorer-api", new RouteEntry(
+        MANIFEST.addRoute("scaffold-api", new RouteEntry(
             "POST",
             "/api/v1/dependencies/add-conflicts",
             AuthMode.REQUIRED,

@@ -23,6 +23,14 @@ import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.ApplicabilityScope;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.memory.MemoryRetriever;
+import com.ghatana.agent.promotion.DefaultPromotionEngine;
+import com.ghatana.agent.promotion.PromotionEngine;
+import com.ghatana.agent.learning.DefaultLearningDeltaEvaluator;
+import com.ghatana.agent.learning.LearningDeltaEvaluator;
+import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.obsolescence.ObsolescenceDetector;
+import com.ghatana.agent.obsolescence.DefaultObsolescenceDetector;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -538,6 +546,54 @@ public class AepOrchestrationModule extends AbstractModule {
                 null, // traceLedger - optional
                 masteryAwareModeSelector
         );
+    }
+
+    /**
+     * Provides a no-op memory retriever for the orchestrator.
+     */
+    @Provides
+    MemoryRetriever memoryRetriever() {
+        return new MemoryRetriever() {
+            @Override
+            @NotNull
+            public Promise<List<Object>> retrieve(@NotNull String query, @NotNull String context) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            @NotNull
+            public Promise<List<Object>> retrieve(
+                    @NotNull String query,
+                    @NotNull String context,
+                    @NotNull java.util.Map<String, String> options) {
+                return Promise.of(List.of());
+            }
+        };
+    }
+
+    /**
+     * Provides a no-op promotion engine for the orchestrator.
+     */
+    @Provides
+    PromotionEngine promotionEngine(MasteryRegistry masteryRegistry,
+                                   LearningDeltaRepository deltaRepository) {
+        return new DefaultPromotionEngine(masteryRegistry, deltaRepository);
+    }
+
+    /**
+     * Provides a learning delta evaluator for the orchestrator.
+     */
+    @Provides
+    LearningDeltaEvaluator learningDeltaEvaluator() {
+        return new DefaultLearningDeltaEvaluator();
+    }
+
+    /**
+     * Provides an obsolescence detector for the orchestrator.
+     */
+    @Provides
+    ObsolescenceDetector obsolescenceDetector(MasteryRegistry masteryRegistry) {
+        return new DefaultObsolescenceDetector(masteryRegistry);
     }
 
     /**

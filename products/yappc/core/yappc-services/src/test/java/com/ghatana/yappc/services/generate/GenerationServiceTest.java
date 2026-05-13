@@ -1,10 +1,13 @@
 package com.ghatana.yappc.services.generate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.api.GenerationRun;
 import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.domain.generate.DiffResult;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
@@ -16,7 +19,6 @@ import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,13 +37,13 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("GenerationService")
-@Disabled("All tests failing due to GenerationRunRepository mock configuration issues")
 class GenerationServiceTest extends EventloopTestBase {
 
     private CompletionService aiService;
     private AuditLogger auditLogger;
     private MetricsCollector metrics;
     private GenerationRunRepository generationRunRepository;
+    private ObjectMapper objectMapper;
     private GenerationService service;
 
     @BeforeEach
@@ -56,7 +58,10 @@ class GenerationServiceTest extends EventloopTestBase {
                         .modelUsed("gpt-4")
                         .build()));
         when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
-        service = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository); 
+        when(generationRunRepository.save(any(GenerationRun.class))).thenReturn(Promise.complete());
+        lenient().when(generationRunRepository.findById(anyString())).thenReturn(Promise.of(null));
+        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        service = new GenerationServiceImpl(aiService, auditLogger, metrics, generationRunRepository, objectMapper);
     }
 
     private ValidatedSpec specWithoutEntities() { 

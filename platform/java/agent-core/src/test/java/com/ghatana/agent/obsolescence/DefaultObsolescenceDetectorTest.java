@@ -192,12 +192,12 @@ class DefaultObsolescenceDetectorTest extends EventloopTestBase {
                 Instant.now().minusSeconds(3600)
         );
 
-        when(registry.query(com.ghatana.agent.mastery.MasteryQuery.activeOnly()))
+        when(registry.query(com.ghatana.agent.mastery.MasteryQuery.activeOnly().withTenantId("tenant-123")))
                 .thenReturn(Promise.of(List.of(staleItem)));
 
         EnvironmentFingerprint env = createEnvironmentFingerprint();
 
-        List<ObsolescenceEvent> events = runPromise(() -> detector.scanAll(env));
+        List<ObsolescenceEvent> events = runPromise(() -> detector.scanAll("tenant-123", env));
 
         assertThat(events).hasSize(1);
         assertThat(events.get(0).masteryId()).isEqualTo("mastery-1");

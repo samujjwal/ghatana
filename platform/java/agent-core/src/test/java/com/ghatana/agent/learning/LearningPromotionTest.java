@@ -29,7 +29,8 @@ class LearningPromotionTest extends EventloopTestBase {
                 LearningLevel.L2,
                 Set.of(LearningTarget.RETRIEVAL_POLICY),
                 true,
-                true);
+                true,
+                false);
         AgentResult<String> result = AgentResult.success("ok", "ok", java.time.Duration.ZERO)
                 .toBuilder()
                 .traceId("trace-1")
@@ -57,7 +58,8 @@ class LearningPromotionTest extends EventloopTestBase {
                 LearningLevel.L3,
                 Set.of(LearningTarget.PROCEDURAL_SKILL),
                 true,
-                true);
+                true,
+                false);
         AgentTurnTrace trace = new AgentTurnTrace(
                 "trace-1",
                 "turn-1",

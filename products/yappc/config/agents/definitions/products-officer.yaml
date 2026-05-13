@@ -51,8 +51,33 @@ interoperability:
     - ideation-orchestrator-agent
     escalation: &id001
     - master-orchestrator-agent
-learningModel:
+learning:
   learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - SEMANTIC_FACT
+    - EPISODIC_CAPTURE
+  skillRefs:
+    - skillId: product-vision
+      requiredLevel: L3
+    - skillId: roadmap-planning
+      requiredLevel: L2
+    - skillId: requirement-prioritization
+      requiredLevel: L2
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  masteryPolicyRefs:
+    - promotion-policy-v1
+    - freshness-policy-v1
+  evaluationRefs:
+    - eval-pack-requirements-drafting-v1
+  provenanceRequired: true
+  promotionRequired: true
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: true

@@ -39,10 +39,10 @@ import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, Projec
 import type {
   LoginRequest as GeneratedLoginRequestType,
   LoginResponse as GeneratedLoginResponseType,
-  RefreshTokenRequest,
-  LogoutResponse,
   Workspace as GeneratedWorkspace,
   Project as GeneratedProject,
+  CreateProjectRequest as GeneratedCreateProjectRequest,
+  UpdateProjectRequest as GeneratedUpdateProjectRequest,
   CreateWorkspaceRequest as GeneratedCreateWorkspaceRequest,
   UpdateWorkspaceRequest as GeneratedUpdateWorkspaceRequest,
 } from '../../clients/generated/api';
@@ -436,36 +436,45 @@ function adaptLoginResponse(response: GeneratedLoginResponseType): LoginSessionR
 }
 
 export const auth = {
-  // Task 3.2.2: Delegate to generated client
-  loginSession: (body: LoginRequest): Promise<LoginSessionResponse> => {
-    return GeneratedAuthService.loginSession({ requestBody: body });
+  // Delegates to generated AuthService.login; adapts response to LoginSessionResponse shape.
+  loginSession: async (body: LoginRequest): Promise<LoginSessionResponse> => {
+    const response = await GeneratedAuthService.login(adaptLoginRequest(body));
+    return adaptLoginResponse(response);
   },
-  // Task 3.2.2: For cookie-session mode, refresh is handled via cookies
-  // Keep existing implementation until generated client supports cookie refresh
+  // Cookie-session mode: the session cookie is the credential; no refresh token is exchanged.
+  // The generated AuthService.refreshAuthToken requires a RefreshTokenRequest body which is
+  // incompatible with cookie-session. Raw call used to keep semantics correct.
   refresh: (): Promise<AuthTokenResponse> => {
     return post<Record<string, never>, AuthTokenResponse>('/api/auth/refresh', {}, 'auth.refresh');
   },
-  // Task 3.2.2: For cookie-session mode, logout is handled via cookies
-  // Delegate to generated client
+  // Cookie-session mode: logout invalidates the server-side session via cookie.
+  // The generated AuthService.logout requires a RefreshTokenRequest body which is
+  // incompatible with cookie-session. Raw call used to keep semantics correct.
   logout: (): Promise<void> => {
-    return GeneratedAuthService.logout();
+    return post<Record<string, never>, void>('/api/auth/logout', {}, 'auth.logout');
   },
-  // Task 3.2.2: Delegate to generated client for updateProfile
+  // Profile update endpoint is not present in the generated OpenAPI client.
+  // Uses the typed raw helper until the endpoint is added to the OpenAPI contract.
   updateProfile: (body: AuthProfileUpdateRequest): Promise<AuthProfileUpdateRequest> => {
-    return GeneratedAuthService.updateProfile({ requestBody: body });
+    return patch<AuthProfileUpdateRequest, AuthProfileUpdateRequest>(
+      '/api/auth/profile',
+      body,
+      'auth.updateProfile',
+    );
   },
-  // Task 3.2.2: Keep existing implementation for ssoCallback (not in generated client yet)
+  // SSO callback endpoint is not present in the generated OpenAPI client.
+  // Uses the typed raw helper until the endpoint is added to the OpenAPI contract.
   ssoCallback: (body: { code: string; state?: string | null }) =>
     post<{ code: string; state?: string | null }, { token: string }>(
       '/api/auth/sso/callback',
       body,
       'auth.ssoCallback',
     ),
-  // Task 3.2.2: Delegate to generated client for validate
+  // Delegates to generated AuthService.validateToken.
   validate: (): Promise<{ valid: boolean }> => {
     return GeneratedAuthService.validateToken().then(response => ({ valid: response.valid || false }));
   },
-  // Task 3.2.2: Delegate to generated client for me
+  // Delegates to generated AuthService.currentUser.
   me: (): Promise<UserProfile> => {
     return GeneratedAuthService.currentUser().then(response => ({
       id: response.id || '',
@@ -804,7 +813,12 @@ function unwrapProjectResource(response: Project | ProjectResourceResponse): Pro
 
 export const projects = {
   // Task 3.2.3: Delegate to generated client for basic CRUD
-  list: (workspaceId?: string) => ProjectsService.listProjects(workspaceId || ''),
+  list: (workspaceId?: string) => {
+    if (!workspaceId) {
+      throw new ApiRequestError(400, 'workspaceId is required for projects.list');
+    }
+    return ProjectsService.listProjects(workspaceId);
+  },
   get: (projectId: string, workspaceId?: string) => ProjectsService.getProject(projectId, workspaceId),
   create: (body: CreateProjectRequest) => ProjectsService.createProject(body),
   update: (projectId: string, workspaceId: string, body: UpdateProjectRequest) =>

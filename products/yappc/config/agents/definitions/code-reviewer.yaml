@@ -42,8 +42,33 @@ interoperability:
     - vuln-scanner
     - performance-optimizer
     escalation: sentinel
-learningModel:
+learning:
   learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - NEGATIVE_KNOWLEDGE
+    - SEMANTIC_FACT
+  skillRefs:
+    - skillId: static-code-analysis
+      requiredLevel: L3
+    - skillId: security-review
+      requiredLevel: L2
+    - skillId: performance-review
+      requiredLevel: L2
+  masteryBindings:
+    - namespace: yappc
+      registryRef: yappc-mastery-registry
+      freshnessPolicy: default
+      versionPolicy: semver
+      obsolescencePolicy: default
+  masteryPolicyRefs:
+    - promotion-policy-v1
+    - freshness-policy-v1
+  evaluationRefs:
+    - eval-pack-java-code-quality-v1
+  provenanceRequired: true
+  promotionRequired: true
+  governanceWorkflow: false
   batchSize: 50
   humanReviewThreshold: 0.75
   reflectionEnabled: true

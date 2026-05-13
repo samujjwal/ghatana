@@ -19,6 +19,9 @@ import java.util.Objects;
  *
  * <p>Evidence is tenant-scoped for governance and isolation.
  *
+ * <p>Structured evidence bundle includes type, trace/episode/eval IDs, trust score (weight),
+ * and tenant for comprehensive evidence tracking.
+ *
  * @doc.type record
  * @doc.purpose Evidence for mastery transitions
  * @doc.layer agent-core
@@ -33,7 +36,10 @@ public record MasteryEvidence(
         @NotNull Instant createdAt,
         @NotNull String createdBy,
         double weight,
-        @NotNull Map<String, String> labels
+        @NotNull Map<String, String> labels,
+        @NotNull String traceId,
+        @NotNull String episodeId,
+        @NotNull String evaluationId
 ) {
     public MasteryEvidence {
         Objects.requireNonNull(evidenceId, "evidenceId must not be null");
@@ -44,6 +50,9 @@ public record MasteryEvidence(
         Objects.requireNonNull(createdAt, "createdAt must not be null");
         Objects.requireNonNull(createdBy, "createdBy must not be null");
         Objects.requireNonNull(labels, "labels must not be null");
+        Objects.requireNonNull(traceId, "traceId must not be null");
+        Objects.requireNonNull(episodeId, "episodeId must not be null");
+        Objects.requireNonNull(evaluationId, "evaluationId must not be null");
         if (weight < 0.0 || weight > 1.0) {
             throw new IllegalArgumentException("weight must be between 0.0 and 1.0");
         }
@@ -80,6 +89,9 @@ public record MasteryEvidence(
      * @param type evidence type
      * @param ref reference to the evidence source
      * @param createdBy creator of the evidence
+     * @param traceId trace identifier
+     * @param episodeId episode identifier
+     * @param evaluationId evaluation identifier
      * @return new mastery evidence
      */
     @NotNull
@@ -87,7 +99,10 @@ public record MasteryEvidence(
             @NotNull String tenantId,
             @NotNull MasteryEvidenceType type,
             @NotNull String ref,
-            @NotNull String createdBy
+            @NotNull String createdBy,
+            @NotNull String traceId,
+            @NotNull String episodeId,
+            @NotNull String evaluationId
     ) {
         return new MasteryEvidence(
                 java.util.UUID.randomUUID().toString(),
@@ -98,7 +113,10 @@ public record MasteryEvidence(
                 Instant.now(),
                 createdBy,
                 1.0,
-                Map.of()
+                Map.of(),
+                traceId,
+                episodeId,
+                evaluationId
         );
     }
 
@@ -112,6 +130,9 @@ public record MasteryEvidence(
      * @param ref reference to the evidence source
      * @param createdBy creator of the evidence
      * @param weight evidence weight (0.0 to 1.0)
+     * @param traceId trace identifier
+     * @param episodeId episode identifier
+     * @param evaluationId evaluation identifier
      * @return new mastery evidence
      */
     @NotNull
@@ -120,7 +141,10 @@ public record MasteryEvidence(
             @NotNull MasteryEvidenceType type,
             @NotNull String ref,
             @NotNull String createdBy,
-            double weight
+            double weight,
+            @NotNull String traceId,
+            @NotNull String episodeId,
+            @NotNull String evaluationId
     ) {
         return new MasteryEvidence(
                 java.util.UUID.randomUUID().toString(),
@@ -131,7 +155,10 @@ public record MasteryEvidence(
                 Instant.now(),
                 createdBy,
                 weight,
-                Map.of()
+                Map.of(),
+                traceId,
+                episodeId,
+                evaluationId
         );
     }
 }

@@ -8,9 +8,16 @@ metadata:
     Mastery entry tracking an agent release's skill at detecting semantic,
     structural, and version drift across code, schemas, and agent definitions.
 spec:
+  skillId: drift-detection
   domain: devsecops
-  skillFamily: drift-detection
   initialState: OBSERVED
+  seedScore:
+    correctness: 0.6
+    freshness: 0.8
+    applicability: 0.7
+    safety: 0.9
+    evidenceStrength: 0.5
+    regressionStability: 0.0
 
   versionScope:
     active:
@@ -18,17 +25,42 @@ spec:
     maintenance: []
     obsolete: []
 
+  procedureRefs:
+    - procedure-id: semantic-drift-detection-v1
+      version: "1.0.0"
+    - procedure-id: structural-drift-detection-v1
+      version: "1.0.0"
+
+  negativeKnowledgeRefs:
+    - negative-id: false-positive-drift-v1
+      version: "1.0.0"
+      failurePattern: "Flagging intentional changes as drift"
+
+  evaluationRefs:
+    - eval-pack-drift-detection-v1
+
+  knownFailureModes:
+    - type: false-positive
+      frequency: medium
+      mitigation: "Configure drift thresholds per domain"
+    - type: missed-drift
+      frequency: low
+      mitigation: "Multi-layer detection strategy"
+
   promotionPolicy:
     ref: promotion-policy-v1
     minPassRate: 0.95
     requiresSafetyPass: true
-    evaluationPackRef: eval-pack-drift-detection-v1
+
+  freshnessPolicy:
+    staleAfterDays: 30
+    requiresVerification: true
+    minSuccessfulEpisodes: 8
 
   evidenceRequirements:
     minEpisodes: 12
     minSuccessfulEpisodes: 11
     requiresHumanReview: false
-    freshnessTtlDays: 30
 
   observabilityHints:
     tracePrefix: mastery.drift-detection

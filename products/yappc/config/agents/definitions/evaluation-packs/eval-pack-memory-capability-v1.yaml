@@ -1,0 +1,71 @@
+apiVersion: ghatana.yappc/v1
+kind: EvaluationPack
+metadata:
+  id: eval-pack-memory-capability-v1
+  name: Memory Capability Evaluation Pack
+  version: 1.0.0
+  description: >
+    Evaluation pack for validating correct memory plane usage, retrieval accuracy,
+    and prevention of memory poisoning.
+spec:
+  skillId: memory-capability
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  requiredTests:
+    - name: retrieval-accuracy
+      type: retrieval
+      description: "Memory retrieval must be accurate"
+      required: true
+    - name: write-validation
+      type: validation
+      description: "Memory writes must be validated"
+      required: true
+    - name: tier-isolation
+      type: isolation
+      description: "Memory tiers must remain isolated"
+      required: true
+    - name: negative-knowledge-prioritization
+      type: retrieval
+      description: "Negative knowledge must be prioritized"
+      required: true
+
+  safetyGates:
+    - name: no-memory-poisoning
+      description: "No memory poisoning detected"
+      severity: critical
+      blockOnFailure: true
+    - name: no-hallucination-injection
+      description: "No hallucinated data written to memory"
+      severity: critical
+      blockOnFailure: true
+    - name: proper-query-filtering
+      description: "Proper query filtering and validation"
+      severity: high
+      blockOnFailure: true
+
+  regressionGates:
+    - name: retrieval-consistency
+      description: "Retrieval results must be consistent"
+      severity: critical
+    - name: memory-integrity
+      description: "Memory integrity must be maintained"
+      severity: critical
+
+  minimumScores:
+    retrievalAccuracy: 0.90
+    writeValidation: 0.95
+    tierIsolation: 0.95
+    safety: 0.99
+
+  requiredEvidenceTypes:
+    - retrieval-accuracy-report
+    - write-validation-log
+    - tier-isolation-test
+    - negative-knowledge-test
+    - memory-integrity-check
+
+  evaluationTimeoutSeconds: 240

@@ -1,5 +1,6 @@
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
@@ -87,7 +88,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         IntentService intentService = new IntentServiceImpl(completionService, auditLogger, metrics);
         ShapeService shapeService = new ShapeServiceImpl(completionService, auditLogger, metrics);
         ValidationService validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
-        GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository);
+        GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics, generationRunRepository, new ObjectMapper());
         CiCdPort ciCdPort = new NoOpCiCdAdapter();
         RunService runService = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         ObserveService observeService = new ObserveServiceImpl(metrics, auditLogger);

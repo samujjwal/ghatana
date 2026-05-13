@@ -6,6 +6,7 @@ packages:
   - "platform/typescript/foundation/*"
   - "platform/typescript/canvas/*"
   - "platform/typescript/ghatana-studio"
+  - "platform/agent-catalog"
 
   # Product packages (from canonical registry)
   # Personal Health Records (phr)
