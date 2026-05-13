@@ -32,7 +32,16 @@ public enum LearningLevel {
      * @return true if permitted, false otherwise
      */
     public boolean allows(LearningTarget target) {
-        // Hard governance boundary: no agent level can directly learn MASTERY_STATE
+        // L5 is the privileged offline-only governance level: it permits all targets
+        // including MASTERY_STATE (used exclusively by PromotionEngine, ObsolescenceDetector,
+        // and other approved governance workflows).
+        if (this == L5) {
+            return true;
+        }
+
+        // Hard governance boundary: sub-L5 agents cannot directly learn MASTERY_STATE.
+        // Only PromotionEngine, ObsolescenceDetector, or approved governance workflows
+        // (running at L5) should emit mastery transitions.
         if (target == LearningTarget.MASTERY_STATE) {
             return false;
         }
@@ -51,7 +60,7 @@ public enum LearningLevel {
             case L4 -> L3.allows(target)
                     || target == LearningTarget.PROMPT_TEMPLATE
                     || target == LearningTarget.PLANNER_POLICY;
-            case L5 -> true;
+            default -> false;
         };
     }
 

@@ -1,0 +1,38 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: java-class-writing
+  name: Java Class Writing
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at authoring well-structured,
+    idiomatic, and standards-compliant Java classes for the Ghatana platform.
+spec:
+  domain: engineering
+  skillFamily: code-generation
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "21"
+    maintenance:
+      - "17"
+    obsolete:
+      - "11"
+      - "8"
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.90
+    requiresSafetyPass: true
+    evaluationPackRef: eval-pack-java-code-quality-v1
+
+  evidenceRequirements:
+    minEpisodes: 10
+    minSuccessfulEpisodes: 9
+    requiresHumanReview: false
+    freshnessTtlDays: 60
+
+  observabilityHints:
+    tracePrefix: mastery.java-class-writing
+    metricsNamespace: ghatana.yappc.mastery.java

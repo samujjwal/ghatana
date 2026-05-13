@@ -1,0 +1,80 @@
+apiVersion: ghatana.yappc/v1
+kind: AgentDefinition
+metadata:
+  id: requirements-drafting-agent
+  name: Requirements Drafting Agent
+  namespace: product-intelligence.requirements
+  version: 1.0.0
+  status: active
+  owners:
+    - team: product-engineering
+  summary: Produces clear, testable, and stakeholder-aligned software requirements from discovery inputs.
+
+identity:
+  agentType: PLANNING
+  subtype: workflow
+  criticality: high
+  autonomyLevel: supervised
+  determinismGuarantee: non-deterministic
+  stateMutability: local-state
+  failureMode: fail-closed
+
+learning:
+  learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+    - NEGATIVE_KNOWLEDGE
+  masteryBindings:
+    - skillRef: requirements-drafting
+      masteryPolicyRef: promotion-policy-v1
+    - skillRef: acceptance-criteria-formatting
+      masteryPolicyRef: promotion-policy-v1
+  skillRefs:
+    - requirements-drafting
+    - acceptance-criteria-formatting
+  masteryPolicyRefs:
+    - promotion-policy-v1
+  evaluationRefs:
+    - eval-pack-requirements-quality-v1
+    - eval-pack-ac-formatting-v1
+  provenanceRequired: true
+  promotionRequired: true
+
+memoryBindings:
+  episodic:
+    enabled: true
+    retentionDays: 90
+    tier: SHORT_TERM
+  semantic:
+    enabled: true
+    tier: LONG_TERM
+  procedural:
+    enabled: true
+    tier: LONG_TERM
+
+securityContract:
+  inputValidation: strict
+  outputSanitization: true
+  tenantIsolation: required
+  trustedMemoryOnly: true
+  allowUntrustedToolOutput: false
+
+observabilityContract:
+  metricsRequired: true
+  tracingRequired: true
+  logLevel: info
+  correlationIdPropagation: required
+  masteryDecisionLogged: true
+
+capabilities:
+  - requirements-drafting
+  - acceptance-criteria-formatting
+  - stakeholder-alignment
+
+governance:
+  requiresApproval: true
+  requiresVerification: true
+  auditTrail: full
+  supervision: SUPERVISED

@@ -33,9 +33,47 @@ const TYPE_FIXES: Record<string, { agentType: string; subtype?: string }> = {
   PATTERN: { agentType: 'DETERMINISTIC', subtype: 'PATTERN_MATCHER' },
 };
 
+const CANONICAL_LEARNING_LEVELS = new Set(['L0', 'L1', 'L2', 'L3', 'L4', 'L5']);
+
+const VALID_LEARNING_TARGETS = new Set([
+  'EPISODIC_MEMORY',
+  'SEMANTIC_FACT',
+  'RETRIEVAL_POLICY',
+  'CONFIDENCE_THRESHOLD',
+  'ROUTING_POLICY',
+  'PROCEDURAL_SKILL',
+  'NEGATIVE_KNOWLEDGE',
+  'PROMPT_TEMPLATE',
+  'PLANNER_POLICY',
+  'MODEL_ADAPTER',
+  'MASTERY_STATE',
+]);
+
+const LEVEL_ORDINAL: Record<string, number> = {
+  L0: 0, L1: 1, L2: 2, L3: 3, L4: 4, L5: 5,
+};
+
 export interface AgentIdentity {
   agentType?: string;
   subtype?: string;
+  [key: string]: unknown;
+}
+
+export interface MasteryBinding {
+  skillRef?: string;
+  masteryPolicyRef?: string;
+  [key: string]: unknown;
+}
+
+export interface LearningBlock {
+  learningLevel?: string;
+  adaptationTargets?: unknown;
+  skillRefs?: unknown;
+  masteryBindings?: unknown;
+  masteryPolicyRefs?: unknown;
+  evaluationRefs?: unknown;
+  provenanceRequired?: unknown;
+  promotionRequired?: unknown;
   [key: string]: unknown;
 }
 
@@ -49,6 +87,7 @@ export interface AgentDefinition {
   type?: string;
   subtype?: string;
   identity?: AgentIdentity;
+  learning?: LearningBlock;
   [key: string]: unknown;
 }
 
@@ -57,6 +96,125 @@ export interface CanonicalizationResult {
   changed: string[];
   failed: string[];
   errors: string[];
+}
+
+/**
+ * Canonicalize and validate a `learning:` block on an AgentDefinition.
+ *
+ * Rules enforced:
+ *  - `learningLevel` must be one of L0–L5 (case-insensitive input is normalized to uppercase).
+ *  - L2+: `provenanceRequired` must be `true`.
+ *  - L3+: `promotionRequired` must be `true`.
+ *  - L3+: `evaluationRefs` must be a non-empty array.
+ *  - `adaptationTargets`, if present, must be an array of valid `LearningTarget` enum names.
+ *  - `skillRefs`, `masteryPolicyRefs`, `evaluationRefs` must be arrays when present.
+ *
+ * Returns `true` when the document was mutated (fix mode normalized a learningLevel value).
+ */
+function canonicalizeLearningBlock(
+  learning: LearningBlock,
+  fix: boolean,
+  errors: string[],
+  location: string,
+): boolean {
+  let changed = false;
+
+  const rawLevel = learning.learningLevel;
+  if (rawLevel === undefined) {
+    // No learning level — nothing to canonicalize or enforce further.
+    return false;
+  }
+
+  if (typeof rawLevel !== 'string') {
+    errors.push(`${location}.learning.learningLevel: must be a string`);
+    return false;
+  }
+
+  // Normalize casing: accept "l3" → "L3".
+  const normalized = rawLevel.trim().toUpperCase();
+  if (!CANONICAL_LEARNING_LEVELS.has(normalized)) {
+    errors.push(`${location}.learning.learningLevel: '${rawLevel}' is not a valid learning level (L0–L5)`);
+    return false;
+  }
+
+  if (rawLevel !== normalized) {
+    if (fix) {
+      learning.learningLevel = normalized;
+      changed = true;
+    } else {
+      errors.push(`${location}.learning.learningLevel: '${rawLevel}' must be uppercase canonical form '${normalized}'`);
+    }
+  }
+
+  const ordinal = LEVEL_ORDINAL[normalized] ?? 0;
+
+  // L2+: provenanceRequired must be true.
+  if (ordinal >= LEVEL_ORDINAL['L2']) {
+    if (learning.provenanceRequired !== true) {
+      errors.push(`${location}.learning: L2+ agents must set provenanceRequired: true`);
+    }
+  }
+
+  // L3+: promotionRequired must be true.
+  if (ordinal >= LEVEL_ORDINAL['L3']) {
+    if (learning.promotionRequired !== true) {
+      errors.push(`${location}.learning: L3+ agents must set promotionRequired: true`);
+    }
+  }
+
+  // L3+: evaluationRefs must be a non-empty array.
+  if (ordinal >= LEVEL_ORDINAL['L3']) {
+    if (!Array.isArray(learning.evaluationRefs) || (learning.evaluationRefs as unknown[]).length === 0) {
+      errors.push(`${location}.learning: L3+ agents must provide at least one evaluationRefs entry`);
+    }
+  }
+
+  // adaptationTargets — if present must be a non-empty array of valid enum names.
+  if (learning.adaptationTargets !== undefined) {
+    if (!Array.isArray(learning.adaptationTargets)) {
+      errors.push(`${location}.learning.adaptationTargets: must be an array of LearningTarget enum names`);
+    } else {
+      for (const target of learning.adaptationTargets as unknown[]) {
+        if (typeof target !== 'string' || !VALID_LEARNING_TARGETS.has(target)) {
+          errors.push(`${location}.learning.adaptationTargets: '${String(target)}' is not a valid LearningTarget`);
+        }
+      }
+    }
+  }
+
+  // skillRefs — must be array if present.
+  if (learning.skillRefs !== undefined && !Array.isArray(learning.skillRefs)) {
+    errors.push(`${location}.learning.skillRefs: must be an array`);
+  }
+
+  // masteryPolicyRefs — must be array if present.
+  if (learning.masteryPolicyRefs !== undefined && !Array.isArray(learning.masteryPolicyRefs)) {
+    errors.push(`${location}.learning.masteryPolicyRefs: must be an array`);
+  }
+
+  // evaluationRefs — must be array if present (already checked for L3+, enforce type for all).
+  if (learning.evaluationRefs !== undefined && !Array.isArray(learning.evaluationRefs)) {
+    errors.push(`${location}.learning.evaluationRefs: must be an array`);
+  }
+
+  // masteryBindings — if present must be an array.
+  if (learning.masteryBindings !== undefined) {
+    if (!Array.isArray(learning.masteryBindings)) {
+      errors.push(`${location}.learning.masteryBindings: must be an array`);
+    } else {
+      (learning.masteryBindings as unknown[]).forEach((binding, idx) => {
+        const b = binding as Record<string, unknown>;
+        if (typeof b.skillRef !== 'string') {
+          errors.push(`${location}.learning.masteryBindings[${idx}]: missing or invalid skillRef`);
+        }
+        if (typeof b.masteryPolicyRef !== 'string') {
+          errors.push(`${location}.learning.masteryBindings[${idx}]: missing or invalid masteryPolicyRef`);
+        }
+      });
+    }
+  }
+
+  return changed;
 }
 
 function normalizeType(value: string): string {
@@ -149,6 +307,11 @@ function visit(value: unknown, fix: boolean, errors: string[], location: string)
     || typeof obj.subtype === 'string';
   if (hasAgentShape && typeof obj.agentType !== 'string') {
     changed = canonicalizeType(obj, 'type', fix, errors, location) || changed;
+  }
+
+  // Validate the learning: block when present on an AgentDefinition.
+  if (obj.learning && typeof obj.learning === 'object' && !Array.isArray(obj.learning)) {
+    changed = canonicalizeLearningBlock(obj.learning as LearningBlock, fix, errors, location) || changed;
   }
 
   if (obj.identity && typeof obj.identity === 'object') {

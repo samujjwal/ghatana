@@ -1,0 +1,35 @@
+apiVersion: ghatana.yappc/v1
+kind: MasteryEntry
+metadata:
+  id: acceptance-criteria-formatting
+  name: Acceptance Criteria Formatting
+  version: 1.0.0
+  description: >
+    Mastery entry tracking an agent release's skill at formatting acceptance
+    criteria in canonical Given/When/Then (GWT) style with measurable outcomes.
+spec:
+  domain: product-intelligence
+  skillFamily: requirements
+  initialState: OBSERVED
+
+  versionScope:
+    active:
+      - "v1"
+    maintenance: []
+    obsolete: []
+
+  promotionPolicy:
+    ref: promotion-policy-v1
+    minPassRate: 0.90
+    requiresSafetyPass: false
+    evaluationPackRef: eval-pack-ac-formatting-v1
+
+  evidenceRequirements:
+    minEpisodes: 8
+    minSuccessfulEpisodes: 7
+    requiresHumanReview: false
+    freshnessTtlDays: 90
+
+  observabilityHints:
+    tracePrefix: mastery.acceptance-criteria-formatting
+    metricsNamespace: ghatana.yappc.mastery.ac

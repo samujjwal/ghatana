@@ -191,16 +191,16 @@ tasks.register<Exec>("generateRouteRegistry") {
 
     doFirst {
         outputFile.parentFile.mkdirs()
+
+        // Cross-platform Python executable detection (lazy, at execution time)
+        val pythonExec = if (System.getProperty("os.name").lowercase().contains("windows")) {
+            if (File("C:/Windows/py.exe").exists()) "py" else "python"
+        } else {
+            "python3"
+        }
+        commandLine(pythonExec, scriptFile.absolutePath)
     }
 
-    // Cross-platform Python executable detection
-    val pythonExec = System.getProperty("os.name").lowercase().contains("windows")?.let {
-        // Try py launcher first, then python
-        if (File("C:/Windows/py.exe").exists() || which("py") != null) "py"
-        else "python"
-    } ?: "python3"
-
-    commandLine(pythonExec, scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {
@@ -208,7 +208,7 @@ tasks.register<Exec>("generateRouteRegistry") {
     }
 }
 
-// Helper function to find executable in PATH
+// Helper function to find executable in PATH (used at execution time)
 fun which(executable: String): String? {
     try {
         val process = ProcessBuilder(if (System.getProperty("os.name").lowercase().contains("windows")) "where" else "which", executable)
@@ -218,6 +218,20 @@ fun which(executable: String): String? {
         return if (process.waitFor() == 0 && output.isNotBlank()) output.lines().first() else null
     } catch (e: Exception) {
         return null
+    }
+}
+
+// Cross-platform Python executable detection (lazy, safe for configuration cache)
+fun detectPythonExecutable(): String {
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    return if (isWindows) {
+        // Try py launcher first, then python
+        if (File("C:/Windows/py.exe").exists() || which("py") != null) "py"
+        else "python"
+    } else {
+        // On macOS/Linux, try python3 first, then python
+        if (which("python3") != null) "python3"
+        else "python"
     }
 }
 
@@ -236,14 +250,16 @@ tasks.register<Exec>("validateRouteManifest") {
 
     environment("PYTHONIOENCODING", "utf-8")
 
-    // Cross-platform Python executable detection
-    val pythonExec = System.getProperty("os.name").lowercase().contains("windows")?.let {
-        // Try py launcher first, then python
-        if (File("C:/Windows/py.exe").exists() || which("py") != null) "py"
-        else "python"
-    } ?: "python3"
+    doFirst {
+        // Cross-platform Python executable detection (lazy, at execution time)
+        val pythonExec = if (System.getProperty("os.name").lowercase().contains("windows")) {
+            if (File("C:/Windows/py.exe").exists()) "py" else "python"
+        } else {
+            "python3"
+        }
+        commandLine(pythonExec, scriptFile.absolutePath)
+    }
 
-    commandLine(pythonExec, scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {

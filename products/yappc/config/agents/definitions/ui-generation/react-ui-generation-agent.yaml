@@ -1,0 +1,76 @@
+apiVersion: ghatana.yappc/v1
+kind: AgentDefinition
+metadata:
+  id: react-ui-generation-agent
+  name: React UI Generation Agent
+  namespace: engineering.ui-generation
+  version: 1.0.0
+  status: active
+  owners:
+    - team: platform-engineering
+  summary: Generates accessible, design-system-aligned React components for YAPPC products.
+
+identity:
+  agentType: HYBRID
+  subtype: llm
+  criticality: medium
+  autonomyLevel: supervised
+  determinismGuarantee: non-deterministic
+  stateMutability: local-state
+  failureMode: fail-closed
+
+learning:
+  learningLevel: L3
+  adaptationTargets:
+    - PROCEDURAL_SKILL
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+    - NEGATIVE_KNOWLEDGE
+  masteryBindings:
+    - skillRef: react-ui-generation
+      masteryPolicyRef: promotion-policy-v1
+  skillRefs:
+    - react-ui-generation
+  masteryPolicyRefs:
+    - promotion-policy-v1
+  evaluationRefs:
+    - eval-pack-react-ui-quality-v1
+  provenanceRequired: true
+  promotionRequired: true
+
+memoryBindings:
+  episodic:
+    enabled: true
+    retentionDays: 30
+    tier: SHORT_TERM
+  semantic:
+    enabled: true
+    tier: LONG_TERM
+  procedural:
+    enabled: true
+    tier: LONG_TERM
+
+securityContract:
+  inputValidation: strict
+  outputSanitization: true
+  tenantIsolation: required
+  trustedMemoryOnly: true
+  allowUntrustedToolOutput: false
+
+observabilityContract:
+  metricsRequired: true
+  tracingRequired: true
+  logLevel: info
+  correlationIdPropagation: required
+  masteryDecisionLogged: true
+
+capabilities:
+  - react-component-generation
+  - accessibility-review
+  - design-system-alignment
+
+governance:
+  requiresApproval: false
+  requiresVerification: true
+  auditTrail: standard
+  supervision: SUPERVISED

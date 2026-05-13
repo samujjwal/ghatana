@@ -1,0 +1,84 @@
+apiVersion: ghatana.yappc/v1
+kind: AgentDefinition
+metadata:
+  id: memory-capability-agent
+  name: Memory Capability Agent
+  namespace: platform.memory
+  version: 1.0.0
+  status: active
+  owners:
+    - team: platform-engineering
+  summary: Manages multi-tier memory plane operations including read, write, and curation without poisoning.
+
+identity:
+  agentType: DETERMINISTIC
+  subtype: rule-based
+  criticality: critical
+  autonomyLevel: supervised
+  determinismGuarantee: config-scoped
+  stateMutability: persistent
+  failureMode: fail-closed
+
+learning:
+  learningLevel: L5
+  adaptationTargets:
+    - EPISODIC_MEMORY
+    - SEMANTIC_FACT
+    - RETRIEVAL_POLICY
+    - CONFIDENCE_THRESHOLD
+    - ROUTING_POLICY
+    - PROCEDURAL_SKILL
+    - NEGATIVE_KNOWLEDGE
+    - PROMPT_TEMPLATE
+    - PLANNER_POLICY
+    - MODEL_ADAPTER
+    - MASTERY_STATE
+  masteryBindings:
+    - skillRef: memory-capability
+      masteryPolicyRef: promotion-policy-v1
+  skillRefs:
+    - memory-capability
+  masteryPolicyRefs:
+    - promotion-policy-v1
+  evaluationRefs:
+    - eval-pack-memory-capability-v1
+  provenanceRequired: true
+  promotionRequired: true
+
+memoryBindings:
+  episodic:
+    enabled: true
+    retentionDays: 30
+    tier: SHORT_TERM
+  semantic:
+    enabled: true
+    tier: LONG_TERM
+  procedural:
+    enabled: true
+    tier: LONG_TERM
+
+securityContract:
+  inputValidation: strict
+  outputSanitization: true
+  tenantIsolation: required
+  trustedMemoryOnly: true
+  allowUntrustedToolOutput: false
+
+observabilityContract:
+  metricsRequired: true
+  tracingRequired: true
+  logLevel: info
+  correlationIdPropagation: required
+  masteryDecisionLogged: true
+
+capabilities:
+  - memory-read
+  - memory-write
+  - memory-curation
+  - mastery-state-management
+
+governance:
+  requiresApproval: true
+  requiresVerification: true
+  auditTrail: full
+  supervision: HUMAN_GATED
