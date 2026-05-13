@@ -49,9 +49,10 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
     @Override
     @NotNull
     public Promise<MasteryTransition> append(@NotNull MasteryTransition transition) {
-        // MasteryTransition doesn't have tenantId, use default
-        // TODO: Add tenantId to MasteryTransition when governance is fully implemented
-        String tenantId = "default";
+        String tenantId = transition.tenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for transition append"));
+        }
         Map<String, Object> dataMap = MasteryTransitionMapper.toDataMap(transition);
 
         Entity entity = Entity.builder()
@@ -62,14 +63,25 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
                 .build();
 
         return entityRepository.save(tenantId, entity)
-                .map(savedEntity -> Promise.of(MasteryTransitionMapper.fromDataMap(savedEntity.getData())))
-                .then(p -> p);
+                .map(savedEntity -> MasteryTransitionMapper.fromDataMap(savedEntity.getData()));
     }
 
     @Override
     @NotNull
     public Promise<Optional<MasteryTransition>> findById(@NotNull String transitionId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_TRANSITIONS, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findById(transitionId) is deprecated. Use findById(tenantId, transitionId) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds transition by ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<Optional<MasteryTransition>> findById(@NotNull String tenantId, @NotNull String transitionId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findById"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
                 Map.of("transitionId", transitionId), null, 0, 1)
                 .then(entities -> entities.isEmpty() 
                         ? Promise.of(Optional.empty()) 
@@ -79,7 +91,19 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
     @Override
     @NotNull
     public Promise<List<MasteryTransition>> findByMasteryId(@NotNull String masteryId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_TRANSITIONS, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByMasteryId(masteryId) is deprecated. Use findByMasteryId(tenantId, masteryId) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds transitions by mastery ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryTransition>> findByMasteryId(@NotNull String tenantId, @NotNull String masteryId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByMasteryId"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
                 Map.of("masteryId", masteryId), "transitionedAt:ASC", 0, 100)
                 .then(entities -> {
                     List<MasteryTransition> transitions = entities.stream()
@@ -92,7 +116,19 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
     @Override
     @NotNull
     public Promise<List<MasteryTransition>> findByInitiatedBy(@NotNull String initiatedBy) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_TRANSITIONS, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByInitiatedBy(initiatedBy) is deprecated. Use findByInitiatedBy(tenantId, initiatedBy) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds transitions by initiator for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryTransition>> findByInitiatedBy(@NotNull String tenantId, @NotNull String initiatedBy) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByInitiatedBy"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
                 Map.of("initiatedBy", initiatedBy), "transitionedAt:DESC", 0, 100)
                 .then(entities -> {
                     List<MasteryTransition> transitions = entities.stream()
@@ -105,10 +141,22 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
     @Override
     @NotNull
     public Promise<List<MasteryTransition>> findByTimeRange(@NotNull Instant from, @NotNull Instant to) {
-        return entityRepository.count("default", COLLECTION_MASTERY_TRANSITIONS)
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByTimeRange(from, to) is deprecated. Use findByTimeRange(tenantId, from, to) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds transitions by time range for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryTransition>> findByTimeRange(@NotNull String tenantId, @NotNull Instant from, @NotNull Instant to) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByTimeRange"));
+        }
+        return entityRepository.count(tenantId, COLLECTION_MASTERY_TRANSITIONS)
                 .then(count -> {
                     int limit = count > 1000 ? 1000 : (int) count.longValue();
-                    return entityRepository.findAll("default", COLLECTION_MASTERY_TRANSITIONS, 
+                    return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
                             Map.of(), "transitionedAt:ASC", 0, limit);
                 })
                 .then(entities -> {
@@ -123,7 +171,19 @@ public final class DataCloudMasteryTransitionRepository implements MasteryTransi
     @Override
     @NotNull
     public Promise<Optional<MasteryTransition>> findLatestByMasteryId(@NotNull String masteryId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_TRANSITIONS, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findLatestByMasteryId(masteryId) is deprecated. Use findLatestByMasteryId(tenantId, masteryId) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds latest transition by mastery ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<Optional<MasteryTransition>> findLatestByMasteryId(@NotNull String tenantId, @NotNull String masteryId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findLatestByMasteryId"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_TRANSITIONS, 
                 Map.of("masteryId", masteryId), "transitionedAt:DESC", 0, 1)
                 .then(entities -> entities.isEmpty() 
                         ? Promise.of(Optional.empty()) 

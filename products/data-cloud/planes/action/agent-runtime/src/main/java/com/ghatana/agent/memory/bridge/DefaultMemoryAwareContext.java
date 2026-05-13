@@ -68,6 +68,8 @@ public class DefaultMemoryAwareContext implements MemoryAwareContext {
     @Override @Nullable public String getUserId() { return delegate.getUserId(); }
     @Override @Nullable public String getSessionId() { return delegate.getSessionId(); }
     @Override @NotNull public Instant getStartTime() { return delegate.getStartTime(); }
+    @Override @Nullable public String getRepoId() { return delegate.getRepoId(); }
+    @Override @Nullable public String getWorkingDirectory() { return delegate.getWorkingDirectory(); }
 
     /**
      * Returns the legacy MemoryStore adapter backed by the MemoryPlane.

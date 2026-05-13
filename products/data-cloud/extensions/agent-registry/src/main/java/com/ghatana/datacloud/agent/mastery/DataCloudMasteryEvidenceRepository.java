@@ -47,9 +47,10 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<MasteryEvidence> save(@NotNull MasteryEvidence evidence) {
-        // MasteryEvidence doesn't have tenantId, use default
-        // TODO: Add tenantId to MasteryEvidence when governance is fully implemented
-        String tenantId = "default";
+        String tenantId = evidence.tenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for evidence save"));
+        }
         Map<String, Object> dataMap = MasteryEvidenceMapper.toDataMap(evidence);
 
         Entity entity = Entity.builder()
@@ -60,14 +61,25 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
                 .build();
 
         return entityRepository.save(tenantId, entity)
-                .map(savedEntity -> Promise.of(MasteryEvidenceMapper.fromDataMap(savedEntity.getData())))
-                .then(p -> p);
+                .map(savedEntity -> MasteryEvidenceMapper.fromDataMap(savedEntity.getData()));
     }
 
     @Override
     @NotNull
     public Promise<Optional<MasteryEvidence>> findById(@NotNull String evidenceId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findById(evidenceId) is deprecated. Use findById(tenantId, evidenceId) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds evidence by ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<Optional<MasteryEvidence>> findById(@NotNull String tenantId, @NotNull String evidenceId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findById"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE, 
                 Map.of("evidenceId", evidenceId), null, 0, 1)
                 .then(entities -> entities.isEmpty() 
                         ? Promise.of(Optional.empty()) 
@@ -77,7 +89,19 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<List<MasteryEvidence>> findByMasteryId(@NotNull String masteryId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByMasteryId(masteryId) is deprecated. Use findByMasteryId(tenantId, masteryId) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds evidence by mastery ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryEvidence>> findByMasteryId(@NotNull String tenantId, @NotNull String masteryId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByMasteryId"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE, 
                 Map.of("masteryId", masteryId), null, 0, 100)
                 .then(entities -> {
                     List<MasteryEvidence> evidenceList = entities.stream()
@@ -90,7 +114,19 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<List<MasteryEvidence>> findByType(@NotNull MasteryEvidenceType type) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByType(type) is deprecated. Use findByType(tenantId, type) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds evidence by type for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryEvidence>> findByType(@NotNull String tenantId, @NotNull MasteryEvidenceType type) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByType"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE, 
                 Map.of("type", type.name()), null, 0, 100)
                 .then(entities -> {
                     List<MasteryEvidence> evidenceList = entities.stream()
@@ -103,7 +139,19 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<List<MasteryEvidence>> findByRef(@NotNull String ref) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByRef(ref) is deprecated. Use findByRef(tenantId, ref) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds evidence by reference for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryEvidence>> findByRef(@NotNull String tenantId, @NotNull String ref) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByRef"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE,
                 Map.of("ref", ref), null, 0, 100)
                 .then(entities -> {
                     List<MasteryEvidence> evidenceList = entities.stream()
@@ -116,7 +164,19 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<List<MasteryEvidence>> findByCreatedBy(@NotNull String createdBy) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "findByCreatedBy(createdBy) is deprecated. Use findByCreatedBy(tenantId, createdBy) for tenant-scoped queries."));
+    }
+
+    /**
+     * Finds evidence by creator for a specific tenant.
+     */
+    @NotNull
+    public Promise<List<MasteryEvidence>> findByCreatedBy(@NotNull String tenantId, @NotNull String createdBy) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for findByCreatedBy"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE,
                 Map.of("createdBy", createdBy), null, 0, 100)
                 .then(entities -> {
                     List<MasteryEvidence> evidenceList = entities.stream()
@@ -129,14 +189,26 @@ public final class DataCloudMasteryEvidenceRepository implements MasteryEvidence
     @Override
     @NotNull
     public Promise<Void> deleteById(@NotNull String evidenceId) {
-        return entityRepository.findAll("default", COLLECTION_MASTERY_EVIDENCE, 
+        return Promise.ofException(new UnsupportedOperationException(
+                "deleteById(evidenceId) is deprecated. Use deleteById(tenantId, evidenceId) for tenant-scoped operations."));
+    }
+
+    /**
+     * Deletes evidence by ID for a specific tenant.
+     */
+    @NotNull
+    public Promise<Void> deleteById(@NotNull String tenantId, @NotNull String evidenceId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for deleteById"));
+        }
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_EVIDENCE, 
                 Map.of("evidenceId", evidenceId), null, 0, 1)
                 .then(entities -> {
                     if (entities.isEmpty()) {
                         return Promise.complete();
                     }
                     UUID entityId = entities.get(0).getId();
-                    return entityRepository.delete("default", COLLECTION_MASTERY_EVIDENCE, entityId);
+                    return entityRepository.delete(tenantId, COLLECTION_MASTERY_EVIDENCE, entityId);
                 });
     }
 }

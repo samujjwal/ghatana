@@ -7,7 +7,11 @@ package com.ghatana.agent.learning;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +45,7 @@ public class LearningDeltaFactory {
             @NotNull String agentId,
             @NotNull String agentReleaseId,
             @NotNull String skillId,
+            @NotNull String tenantId,
             @NotNull Map<String, Object> proposedContent,
             @NotNull List<String> evidenceRefs,
             @NotNull String proposedBy
@@ -56,6 +61,7 @@ public class LearningDeltaFactory {
                 agentId,
                 agentReleaseId,
                 skillId,
+                tenantId,
                 null, // procedureId
                 null, // semanticFactId
                 null, // negativeKnowledgeId
@@ -99,6 +105,7 @@ public class LearningDeltaFactory {
             @NotNull String agentId,
             @NotNull String agentReleaseId,
             @NotNull String skillId,
+            @NotNull String tenantId,
             @NotNull String procedureId,
             @NotNull Map<String, Object> proposedContent,
             @NotNull List<String> evidenceRefs,
@@ -115,6 +122,7 @@ public class LearningDeltaFactory {
                 agentId,
                 agentReleaseId,
                 skillId,
+                tenantId,
                 procedureId,
                 null, // semanticFactId
                 null, // negativeKnowledgeId
@@ -158,6 +166,7 @@ public class LearningDeltaFactory {
             @NotNull String agentId,
             @NotNull String agentReleaseId,
             @NotNull String skillId,
+            @NotNull String tenantId,
             @NotNull String semanticFactId,
             @NotNull Map<String, Object> proposedContent,
             @NotNull List<String> evidenceRefs,
@@ -174,6 +183,7 @@ public class LearningDeltaFactory {
                 agentId,
                 agentReleaseId,
                 skillId,
+                tenantId,
                 null, // procedureId
                 semanticFactId,
                 null, // negativeKnowledgeId
@@ -217,6 +227,7 @@ public class LearningDeltaFactory {
             @NotNull String agentId,
             @NotNull String agentReleaseId,
             @NotNull String skillId,
+            @NotNull String tenantId,
             @NotNull String negativeKnowledgeId,
             @NotNull Map<String, Object> proposedContent,
             @NotNull List<String> evidenceRefs,
@@ -233,6 +244,7 @@ public class LearningDeltaFactory {
                 agentId,
                 agentReleaseId,
                 skillId,
+                tenantId,
                 null, // procedureId
                 null, // semanticFactId
                 negativeKnowledgeId,
@@ -256,14 +268,41 @@ public class LearningDeltaFactory {
     }
 
     /**
-     * Computes a digest of the proposed content.
-     * This is a simplified implementation - production would use proper hashing.
+     * Computes a SHA-256 digest of the proposed content for integrity verification.
+     *
+     * <p>The digest is computed from a canonical string representation of the content,
+     * ensuring deterministic hashing regardless of insertion order.
      *
      * @param content content to digest
-     * @return content digest
+     * @return SHA-256 hex digest
      */
     @NotNull
     private static String computeDigest(@NotNull Map<String, Object> content) {
-        return String.valueOf(java.util.Objects.hash(content.toString()));
+        // Create a canonical string representation for deterministic hashing
+        String canonicalContent = content.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + "|" + b)
+                .orElse("");
+        
+        return sha256Hex(canonicalContent);
+    }
+
+    /**
+     * Computes SHA-256 hash of a string and returns hex representation.
+     *
+     * @param input string to hash
+     * @return hexadecimal hash string
+     */
+    @NotNull
+    private static String sha256Hex(@NotNull String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to be available in all Java implementations
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
     }
 }

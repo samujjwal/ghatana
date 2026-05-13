@@ -72,7 +72,7 @@ public final class MasteryAwareModeSelector {
                             .then(taskClassification -> {
                                 // Apply selection policy
                                 return selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
-                                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning()));
+                                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning(), false, false));
                             });
                 });
     }
@@ -93,6 +93,6 @@ public final class MasteryAwareModeSelector {
     ) {
         return masteryRegistry.decide(query)
                 .then(masteryDecision -> selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
-                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning())));
+                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning(), false, false)));
     }
 }

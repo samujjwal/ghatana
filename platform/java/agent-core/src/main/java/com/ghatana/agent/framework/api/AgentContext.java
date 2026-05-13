@@ -67,6 +67,20 @@ public interface AgentContext {
     String getSessionId();
 
     /**
+     * Gets the working directory for file operations.
+     * @return Working directory path, or null if not set
+     */
+    @Nullable
+    String getWorkingDirectory();
+
+    /**
+     * Gets the repository ID for version control operations.
+     * @return Repository ID, or null if not set
+     */
+    @Nullable
+    String getRepoId();
+
+    /**
      * Gets the timestamp when this turn started.
      * @return Turn start time (never null)
      */

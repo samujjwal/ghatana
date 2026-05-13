@@ -6,12 +6,18 @@ package com.ghatana.agent.mastery;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
 
 /**
  * Evidence supporting a mastery state transition.
+ *
+ * <p>Evidence is tenant-scoped for governance and isolation.
  *
  * @doc.type record
  * @doc.purpose Evidence for mastery transitions
@@ -20,6 +26,7 @@ import java.util.Objects;
  */
 public record MasteryEvidence(
         @NotNull String evidenceId,
+        @NotNull String tenantId,
         @NotNull MasteryEvidenceType type,
         @NotNull String ref,
         @NotNull String digest,
@@ -30,6 +37,7 @@ public record MasteryEvidence(
 ) {
     public MasteryEvidence {
         Objects.requireNonNull(evidenceId, "evidenceId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(ref, "ref must not be null");
         Objects.requireNonNull(digest, "digest must not be null");
@@ -39,12 +47,36 @@ public record MasteryEvidence(
         if (weight < 0.0 || weight > 1.0) {
             throw new IllegalArgumentException("weight must be between 0.0 and 1.0");
         }
+        if (digest.isEmpty()) {
+            throw new IllegalArgumentException("digest must not be empty");
+        }
         labels = Map.copyOf(labels);
+    }
+
+    /**
+     * Computes SHA-256 digest of a string.
+     *
+     * @param input string to digest
+     * @return hexadecimal digest string
+     */
+    @NotNull
+    private static String computeDigest(@NotNull String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to be available in all Java implementations
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
     }
 
     /**
      * Creates a new evidence with a generated ID and current timestamp.
      *
+     * <p>Digest is computed from the ref for auditability.
+     *
+     * @param tenantId tenant identifier
      * @param type evidence type
      * @param ref reference to the evidence source
      * @param createdBy creator of the evidence
@@ -52,15 +84,17 @@ public record MasteryEvidence(
      */
     @NotNull
     public static MasteryEvidence create(
+            @NotNull String tenantId,
             @NotNull MasteryEvidenceType type,
             @NotNull String ref,
             @NotNull String createdBy
     ) {
         return new MasteryEvidence(
                 java.util.UUID.randomUUID().toString(),
+                tenantId,
                 type,
                 ref,
-                "", // digest would be computed from actual content
+                computeDigest(ref),
                 Instant.now(),
                 createdBy,
                 1.0,
@@ -71,6 +105,9 @@ public record MasteryEvidence(
     /**
      * Creates a new evidence with custom weight.
      *
+     * <p>Digest is computed from the ref for auditability.
+     *
+     * @param tenantId tenant identifier
      * @param type evidence type
      * @param ref reference to the evidence source
      * @param createdBy creator of the evidence
@@ -79,6 +116,7 @@ public record MasteryEvidence(
      */
     @NotNull
     public static MasteryEvidence create(
+            @NotNull String tenantId,
             @NotNull MasteryEvidenceType type,
             @NotNull String ref,
             @NotNull String createdBy,
@@ -86,9 +124,10 @@ public record MasteryEvidence(
     ) {
         return new MasteryEvidence(
                 java.util.UUID.randomUUID().toString(),
+                tenantId,
                 type,
                 ref,
-                "",
+                computeDigest(ref),
                 Instant.now(),
                 createdBy,
                 weight,

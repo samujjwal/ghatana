@@ -29,6 +29,18 @@ public enum ExecutionMode {
     BOUNDED_PROBABILISTIC_REASONING,
 
     /**
+     * Supervised execution requiring human oversight.
+     * Used for skills that require human monitoring.
+     */
+    SUPERVISED,
+
+    /**
+     * Autonomous execution without human intervention.
+     * Used for fully mastered and trusted skills.
+     */
+    AUTONOMOUS,
+
+    /**
      * Exploratory fast learning mode for new or unknown tasks.
      * Used when mastery is low or context is novel.
      */

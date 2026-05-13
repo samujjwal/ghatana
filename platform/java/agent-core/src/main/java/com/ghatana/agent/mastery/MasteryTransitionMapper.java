@@ -22,7 +22,11 @@ import java.util.Map;
 public final class MasteryTransitionMapper {
 
     private static final String FIELD_TRANSITION_ID = "transitionId";
+    private static final String FIELD_TENANT_ID = "tenantId";
     private static final String FIELD_MASTERY_ID = "masteryId";
+    private static final String FIELD_AGENT_ID = "agentId";
+    private static final String FIELD_AGENT_RELEASE_ID = "agentReleaseId";
+    private static final String FIELD_SKILL_ID = "skillId";
     private static final String FIELD_FROM_STATE = "fromState";
     private static final String FIELD_TO_STATE = "toState";
     private static final String FIELD_REASON = "reason";
@@ -30,7 +34,6 @@ public final class MasteryTransitionMapper {
     private static final String FIELD_TRANSITIONED_AT = "transitionedAt";
     private static final String FIELD_EVIDENCE_REFS = "evidenceRefs";
     private static final String FIELD_METADATA = "metadata";
-    private static final String FIELD_TENANT_ID = "tenantId";
 
     private MasteryTransitionMapper() {
         // Utility class
@@ -80,7 +83,11 @@ public final class MasteryTransitionMapper {
 
         return new MasteryTransition(
                 (String) data.get(FIELD_TRANSITION_ID),
+                (String) data.get(FIELD_TENANT_ID),
                 (String) data.get(FIELD_MASTERY_ID),
+                (String) data.get(FIELD_AGENT_ID),
+                (String) data.get(FIELD_AGENT_RELEASE_ID),
+                (String) data.get(FIELD_SKILL_ID),
                 MasteryState.valueOf(fromState),
                 MasteryState.valueOf(toState),
                 (String) data.get(FIELD_REASON),

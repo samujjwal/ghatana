@@ -7,6 +7,8 @@ package com.ghatana.agent.mastery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.runtime.mode.ExecutionMode;
 
 import java.util.List;
@@ -28,7 +30,10 @@ public record MasteryDecision(
         boolean requiresHumanApproval,
         boolean requiresVerification,
         @NotNull String reason,
-        @NotNull List<String> evidenceRefs
+        @NotNull List<String> evidenceRefs,
+        @Nullable MasteryState state,
+        @Nullable VersionScope versionScope,
+        double confidence
 ) {
     public MasteryDecision {
         Objects.requireNonNull(masteryItemId, "masteryItemId must not be null");
@@ -63,7 +68,10 @@ public record MasteryDecision(
                 false,
                 false,
                 reason,
-                List.of()
+                List.of(),
+                null,
+                null,
+                0.0
         );
     }
 
@@ -91,7 +99,10 @@ public record MasteryDecision(
                 false,
                 false,
                 reason,
-                List.of()
+                List.of(),
+                null,
+                null,
+                0.0
         );
     }
 
@@ -119,7 +130,10 @@ public record MasteryDecision(
                 true,
                 false,
                 reason,
-                List.of()
+                List.of(),
+                null,
+                null,
+                0.0
         );
     }
 
@@ -149,7 +163,10 @@ public record MasteryDecision(
                 false,
                 true,
                 reason,
-                evidenceRefs
+                evidenceRefs,
+                null,
+                null,
+                0.0
         );
     }
 }

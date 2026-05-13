@@ -193,11 +193,31 @@ tasks.register<Exec>("generateRouteRegistry") {
         outputFile.parentFile.mkdirs()
     }
 
-    commandLine("python3", scriptFile.absolutePath)
+    // Cross-platform Python executable detection
+    val pythonExec = System.getProperty("os.name").lowercase().contains("windows")?.let {
+        // Try py launcher first, then python
+        if (File("C:/Windows/py.exe").exists() || which("py") != null) "py"
+        else "python"
+    } ?: "python3"
+
+    commandLine(pythonExec, scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {
         println("Generated route registry: ${outputFile.absolutePath}")
+    }
+}
+
+// Helper function to find executable in PATH
+fun which(executable: String): String? {
+    try {
+        val process = ProcessBuilder(if (System.getProperty("os.name").lowercase().contains("windows")) "where" else "which", executable)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().readText()
+        return if (process.waitFor() == 0 && output.isNotBlank()) output.lines().first() else null
+    } catch (e: Exception) {
+        return null
     }
 }
 
@@ -215,7 +235,15 @@ tasks.register<Exec>("validateRouteManifest") {
     inputs.file(layout.projectDirectory.file("../../docs/api/openapi.yaml"))
 
     environment("PYTHONIOENCODING", "utf-8")
-    commandLine("python3", scriptFile.absolutePath)
+
+    // Cross-platform Python executable detection
+    val pythonExec = System.getProperty("os.name").lowercase().contains("windows")?.let {
+        // Try py launcher first, then python
+        if (File("C:/Windows/py.exe").exists() || which("py") != null) "py"
+        else "python"
+    } ?: "python3"
+
+    commandLine(pythonExec, scriptFile.absolutePath)
     workingDir(layout.projectDirectory.file("../..").asFile)
 
     doLast {

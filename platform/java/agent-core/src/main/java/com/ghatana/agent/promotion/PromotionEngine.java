@@ -24,12 +24,14 @@ public interface PromotionEngine {
      *
      * @param delta learning delta to promote
      * @param result evaluation result
+     * @param tenantId tenant identifier for tenant-scoped promotion
      * @return promise of promotion result
      */
     @NotNull
     Promise<PromotionResult> promote(
             @NotNull LearningDelta delta,
-            @NotNull EvaluationResult result
+            @NotNull EvaluationResult result,
+            @NotNull String tenantId
     );
 
     /**

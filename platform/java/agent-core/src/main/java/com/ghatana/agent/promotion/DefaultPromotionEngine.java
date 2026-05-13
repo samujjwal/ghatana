@@ -64,7 +64,8 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     @NotNull
     public Promise<PromotionResult> promote(
             @NotNull LearningDelta delta,
-            @NotNull EvaluationResult result
+            @NotNull EvaluationResult result,
+            @NotNull String tenantId
     ) {
         // Check if promotion is allowed by policy
         if (!promotionPolicy.canPromote(delta, result)) {
@@ -108,14 +109,18 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                             }
                         }
                         
-                        com.ghatana.agent.mastery.MasteryTransition transition = 
+                        com.ghatana.agent.mastery.MasteryTransition transition =
                                 new com.ghatana.agent.mastery.MasteryTransition(
                                         java.util.UUID.randomUUID().toString(),
+                                        tenantId,
                                         item.masteryId(),
+                                        delta.agentId(),
+                                        delta.agentReleaseId(),
+                                        delta.skillId(),
                                         item.state(),
                                         targetState,
                                         "Promoted via learning delta: " + delta.deltaId(),
-                                        "system",
+                                        "promotion-engine",
                                         Instant.now(),
                                         evidenceMap,
                                         Map.of("deltaId", delta.deltaId(), "evaluatedBy", "promotion-engine")

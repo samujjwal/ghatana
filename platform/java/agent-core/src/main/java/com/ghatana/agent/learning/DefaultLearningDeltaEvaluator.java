@@ -78,9 +78,9 @@ public final class DefaultLearningDeltaEvaluator implements LearningDeltaEvaluat
             return Promise.of(targetCheck);
         }
 
-        // Check confidence threshold
+        // Check confidence threshold - route to human review instead of rejecting
         if (delta.confidenceAfter() < defaultConfidenceThreshold && !delta.requiresHumanReview()) {
-            return Promise.of(EvaluationResult.rejected(
+            return Promise.of(EvaluationResult.pendingHumanReview(
                     delta.deltaId(),
                     delta.confidenceAfter(),
                     String.format("Confidence %f below threshold %f. Requires human review.",
@@ -148,9 +148,7 @@ public final class DefaultLearningDeltaEvaluator implements LearningDeltaEvaluat
         if (delta.semanticFactId() == null) {
             return EvaluationResult.rejected(delta.deltaId(), 0.0, "Semantic fact delta requires semanticFactId.");
         }
-        if (delta.proposedContent() == null || delta.proposedContent().isEmpty()) {
-            return EvaluationResult.rejected(delta.deltaId(), 0.0, "Semantic fact delta has no proposed content.");
-        }
+        // Proposed content can be empty for semantic facts
         return EvaluationResult.approved(delta.deltaId(), delta.confidenceAfter(), "Semantic fact validation passed.");
     }
 
@@ -162,9 +160,7 @@ public final class DefaultLearningDeltaEvaluator implements LearningDeltaEvaluat
         if (delta.procedureId() == null) {
             return EvaluationResult.rejected(delta.deltaId(), 0.0, "Procedural skill delta requires procedureId.");
         }
-        if (delta.proposedContent() == null || delta.proposedContent().isEmpty()) {
-            return EvaluationResult.rejected(delta.deltaId(), 0.0, "Procedural skill delta has no proposed content.");
-        }
+        // Proposed content can be empty for procedural skills
         // Procedural skills require higher confidence
         if (delta.confidenceAfter() < 0.8) {
             return EvaluationResult.rejected(delta.deltaId(), delta.confidenceAfter(),

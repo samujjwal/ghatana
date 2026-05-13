@@ -33,14 +33,15 @@ public final class FlashItBoundaryPolicyStore implements BoundaryPolicyStore {
             BoundaryPolicyActionRegistry.ofDeclaredActions(
                     Set.of("read", "write", "delete", "export"));
     private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
-            BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of("flashit:moments", "flashit:moment-children"));
+            BoundaryPolicyResourceRegistry.ofDeclaredResources(
+                    Set.of("flashit:moments", "flashit:moment-children"));
 
     private static final List<BoundaryPolicyRule> RULES = List.of(
             BoundaryPolicyRule.builder()
                     .ruleId("FLASHIT-BP-001")
                     .sourceScopePattern("flashit.*")
                     .targetScopePattern("flashit.*")
-                    .resourcePattern("flashit:moments/*")
+                    .resourcePattern("flashit:moments/**")
                     .actions("read")
                     .requiresAudit(true)
                     .effect(BoundaryPolicyRule.Effect.ALLOW)
@@ -50,7 +51,7 @@ public final class FlashItBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FLASHIT-BP-002")
                     .sourceScopePattern("flashit.*")
                     .targetScopePattern("flashit.*")
-                    .resourcePattern("flashit:moments/*")
+                    .resourcePattern("flashit:moments/**")
                     .actions("write", "delete", "export")
                     .requiresAudit(true)
                     .effect(BoundaryPolicyRule.Effect.REQUIRE_APPROVAL)

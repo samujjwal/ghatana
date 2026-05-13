@@ -54,11 +54,10 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .build();
     private static final BoundaryPolicyActionRegistry ACTION_REGISTRY =
             BoundaryPolicyActionRegistry.ofDeclaredActions(
-                    Set.of("read", "write", "delete", "export", "download", "settle", "cancel", "*"));
+                    Set.of("read", "write", "delete", "export", "download", "finance:settle", "finance:cancel", "*"));
     private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
             BoundaryPolicyResourceRegistry.ofDeclaredResources(
-                    Set.of("finance:transactions", "finance:transactions/*", "finance:positions", "finance:positions/*", 
-                          "finance:market-data", "finance:market-data/*", "finance:risk-data", "finance:risk-data/*", "**"));
+                    Set.of("finance:transactions", "finance:positions", "finance:market-data", "finance:risk-data"));
 
     /**
      * Immutable list of Finance boundary rules, evaluated in declaration order.
@@ -72,7 +71,7 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FIN-BP-001")
                     .sourceScopePattern("finance.*")
                     .targetScopePattern("finance.*")
-                    .resourcePattern("finance:transactions/*")
+                    .resourcePattern("finance:transactions/**")
                     .actions("read")
                     .classificationCondition("*")
                     .requiresConsent(false)
@@ -86,8 +85,8 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FIN-BP-002")
                     .sourceScopePattern("finance.*")
                     .targetScopePattern("finance.*")
-                    .resourcePattern("finance:transactions/*")
-                    .actions("write", "settle", "cancel")
+                    .resourcePattern("finance:transactions/**")
+                    .actions("write", "finance:settle", "finance:cancel")
                     .classificationCondition("*")
                     .requiresConsent(false)
                     .requiresAudit(true)
@@ -101,7 +100,7 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FIN-BP-003")
                     .sourceScopePattern("**")
                     .targetScopePattern("**")
-                    .resourcePattern("finance:positions/*")
+                    .resourcePattern("finance:positions/**")
                     .actions("export", "download")
                     .classificationCondition("*")
                     .requiresConsent(false)
@@ -117,7 +116,7 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FIN-BP-004")
                     .sourceScopePattern("finance.*")
                     .targetScopePattern("finance.*")
-                    .resourcePattern("finance:market-data/*")
+                    .resourcePattern("finance:market-data/**")
                     .actions("read")
                     .classificationCondition("*")
                     .requiredFeatures(Set.of("finance.market-data.interop.enabled"))
@@ -132,7 +131,7 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .ruleId("FIN-BP-005")
                     .sourceScopePattern("finance.*")
                     .targetScopePattern("finance.*")
-                    .resourcePattern("finance:risk-data/*")
+                    .resourcePattern("finance:risk-data/**")
                     .actions("read")
                     .classificationCondition("*")
                     .requiresConsent(false)

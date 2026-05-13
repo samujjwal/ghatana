@@ -87,6 +87,7 @@ class DefaultPromotionPolicyTest {
                 "agent-123",
                 "release-1",
                 "skill-123",
+                "tenant-123",
                 null,
                 null,
                 null,
@@ -101,10 +102,10 @@ class DefaultPromotionPolicyTest {
                 false,
                 "system",
                 Instant.now(),
+                Instant.now(),
                 null,
                 null,
-                null,
-                Map.of(),
+                Map.of("label", "test"),
                 null
         );
     }

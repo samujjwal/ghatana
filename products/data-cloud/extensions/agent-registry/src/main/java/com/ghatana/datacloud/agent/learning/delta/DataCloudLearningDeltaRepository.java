@@ -9,6 +9,7 @@ import com.ghatana.agent.learning.LearningDeltaRepository;
 import com.ghatana.agent.learning.LearningDeltaState;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -73,6 +74,18 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
         return Promise.of(entityStore.values().stream()
                 .filter(data -> skillId.equals(data.get("skillId")))
                 .map(LearningDeltaMapper::fromDataMap)
+                .collect(Collectors.toList()));
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<LearningDelta>> findByTenant(@NotNull String tenantId, @Nullable String agentId, @Nullable Integer limit, @Nullable Integer offset) {
+        return Promise.of(entityStore.values().stream()
+                .filter(data -> tenantId.equals(data.get("tenantId")))
+                .filter(data -> agentId == null || agentId.equals(data.get("agentId")))
+                .map(LearningDeltaMapper::fromDataMap)
+                .skip(offset != null ? offset : 0)
+                .limit(limit != null ? limit : Integer.MAX_VALUE)
                 .collect(Collectors.toList()));
     }
 

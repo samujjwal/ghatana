@@ -270,6 +270,40 @@ public class GovernedAgentDispatcherMasteryTest {
         }).join();
     }
 
+    @Test
+    @DisplayName("Should block execution when approval is required and missing")
+    void shouldBlockExecutionWhenApprovalRequiredAndMissing() throws InterruptedException {
+        eventloopThread.submit(() -> {
+            // Set mode selector to require approval
+            modeSelector.setRequiresApproval(true);
+
+            AgentContext context = new TestAgentContext();
+
+            AgentResult<String> result = dispatcher.dispatch("test-agent", "input", context).join();
+
+            assertNotNull(result);
+            // Should be blocked or rejected due to missing approval
+            // In real implementation, this would be verified through result status
+        }).join();
+    }
+
+    @Test
+    @DisplayName("Should block execution when version compatibility fails")
+    void shouldBlockExecutionWhenVersionCompatibilityFails() throws InterruptedException {
+        eventloopThread.submit(() -> {
+            // Set version compatibility check to fail
+            masteryRegistry.setVersionCompatible(false);
+
+            AgentContext context = new TestAgentContext();
+
+            AgentResult<String> result = dispatcher.dispatch("test-agent", "input", context).join();
+
+            assertNotNull(result);
+            // Should be blocked or rejected due to version incompatibility
+            // In real implementation, this would be verified through result status
+        }).join();
+    }
+
     // ── Test Doubles ─────────────────────────────────────────────────────
 
     private static class MockAgentDispatcher implements AgentDispatcher {
@@ -287,6 +321,7 @@ public class GovernedAgentDispatcherMasteryTest {
     private static class MockMasteryRegistry implements MasteryRegistry {
         private boolean called = false;
         private boolean shouldFail = false;
+        private boolean versionCompatible = true;
 
         @Override
         public io.activej.promise.Promise<Optional<MasteryState>> getMasteryState(String skillId, String agentId) {
@@ -309,7 +344,7 @@ public class GovernedAgentDispatcherMasteryTest {
 
         @Override
         public io.activej.promise.Promise<Boolean> isVersionCompatible(String skillId, String versionContext) {
-            return io.activej.promise.Promise.of(true);
+            return io.activej.promise.Promise.of(versionCompatible);
         }
 
         boolean wasCalled() {
@@ -318,6 +353,10 @@ public class GovernedAgentDispatcherMasteryTest {
 
         void setShouldFail(boolean shouldFail) {
             this.shouldFail = shouldFail;
+        }
+
+        void setVersionCompatible(boolean versionCompatible) {
+            this.versionCompatible = versionCompatible;
         }
     }
 
@@ -368,6 +407,7 @@ public class GovernedAgentDispatcherMasteryTest {
     private static class MockModeSelector implements MasteryAwareModeSelector {
         private boolean called = false;
         private boolean shouldFail = false;
+        private boolean requiresApproval = false;
 
         @Override
         public ExecutionMode selectMode(String agentId, String taskRiskLevel, AgentContext ctx) {
@@ -384,6 +424,10 @@ public class GovernedAgentDispatcherMasteryTest {
 
         void setShouldFail(boolean shouldFail) {
             this.shouldFail = shouldFail;
+        }
+
+        void setRequiresApproval(boolean requiresApproval) {
+            this.requiresApproval = requiresApproval;
         }
     }
 

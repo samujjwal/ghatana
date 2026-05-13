@@ -14,6 +14,11 @@ package com.ghatana.agent.runtime.mode;
  */
 public enum TaskNovelty {
     /**
+     * Novelty level is unknown or not yet classified.
+     */
+    UNKNOWN,
+
+    /**
      * Task is well-known and frequently executed.
      */
     FAMILIAR,

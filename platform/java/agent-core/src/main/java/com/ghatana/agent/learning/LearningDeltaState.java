@@ -34,6 +34,11 @@ public enum LearningDeltaState {
     APPROVED,
 
     /**
+     * Delta is pending human review due to low confidence or uncertainty.
+     */
+    PENDING_HUMAN_REVIEW,
+
+    /**
      * Delta has been promoted to active knowledge.
      */
     PROMOTED,

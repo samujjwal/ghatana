@@ -44,6 +44,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     private final EntityRepository entityRepository;
     private final MasteryTransitionRepository transitionRepository;
     private final MasteryEvidenceRepository evidenceRepository;
+    private final com.ghatana.agent.mastery.transition.MasteryTransitionPolicy transitionPolicy;
 
     /**
      * Creates a new DataCloudMasteryRegistry.
@@ -51,15 +52,18 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
      * @param entityRepository Data Cloud entity repository
      * @param transitionRepository mastery transition repository
      * @param evidenceRepository mastery evidence repository
+     * @param transitionPolicy mastery transition policy
      */
     public DataCloudMasteryRegistry(
             @NotNull EntityRepository entityRepository,
             @NotNull MasteryTransitionRepository transitionRepository,
-            @NotNull MasteryEvidenceRepository evidenceRepository
+            @NotNull MasteryEvidenceRepository evidenceRepository,
+            @NotNull com.ghatana.agent.mastery.transition.MasteryTransitionPolicy transitionPolicy
     ) {
         this.entityRepository = entityRepository;
         this.transitionRepository = transitionRepository;
         this.evidenceRepository = evidenceRepository;
+        this.transitionPolicy = transitionPolicy;
     }
 
     @Override
@@ -87,7 +91,10 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     @Override
     @NotNull
     public Promise<List<MasteryItem>> query(@NotNull MasteryQuery query) {
-        String tenantId = query.tenantId() != null ? query.tenantId() : "default";
+        String tenantId = query.tenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for mastery queries"));
+        }
         Map<String, Object> filter = new HashMap<>();
 
         if (query.skillId() != null) {
@@ -137,6 +144,38 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
 
     @Override
     @NotNull
+    public Promise<Optional<MasteryDecision>> queryMastery(@NotNull MasteryQuery query) {
+        return query(query).then(items -> {
+            if (items.isEmpty()) {
+                return Promise.of(Optional.empty());
+            }
+            MasteryItem best = items.get(0);
+            // Determine execution mode based on mastery state
+            ExecutionMode recommendedMode = switch (best.state()) {
+                case MASTERED, COMPETENT -> ExecutionMode.AUTONOMOUS;
+                case PRACTICED -> ExecutionMode.SUPERVISED;
+                default -> ExecutionMode.BLOCKED;
+            };
+            
+            MasteryDecision decision = new MasteryDecision(
+                    best.masteryId(),
+                    best.skillId(),
+                    recommendedMode,
+                    best.state().isActiveForRetrieval(),
+                    false,
+                    false,
+                    "Mastery query result",
+                    best.evidenceRefs(),
+                    best.state(),
+                    best.versionScope(),
+                    best.confidence()
+            );
+            return Promise.of(Optional.of(decision));
+        });
+    }
+
+    @Override
+    @NotNull
     public Promise<MasteryItem> save(@NotNull MasteryItem item) {
         String tenantId = item.applicability().tenantId();
         Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
@@ -155,9 +194,14 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     @Override
     @NotNull
     public Promise<MasteryTransitionResult> transition(@NotNull MasteryTransition transition) {
-        // MasteryTransition doesn't have tenantId, get it from the mastery item
-        // TODO: Add tenantId to MasteryTransition when governance is fully implemented
-        String tenantId = "default";
+        String tenantId = transition.tenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.of(MasteryTransitionResult.failure(
+                    transition.masteryId(),
+                    MasteryState.UNKNOWN,
+                    "tenantId is required for mastery transitions"
+            ));
+        }
         
         // First, find the current mastery item
         return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, 
@@ -173,42 +217,52 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
 
                     MasteryItem item = MasteryItemMapper.fromDataMap(entities.get(0).getData());
 
-                    // Validate transition
-                    if (!isValidTransition(item.state(), transition.toState(), transition.evidenceRefs())) {
+                    // Validate transition using centralized policy
+                    var validation = transitionPolicy.canTransition(
+                            item.state(),
+                            transition.toState(),
+                            transition.evidenceRefs()
+                    );
+
+                    if (!validation.allowed()) {
                         return Promise.of(MasteryTransitionResult.failure(
                                 transition.masteryId(),
                                 item.state(),
-                                "Invalid transition from " + item.state() + " to " + transition.toState()
+                                validation.errorMessage().orElse("Invalid transition")
                         ));
                     }
 
-                    // Record transition (append-only)
-                    return transitionRepository.append(transition)
-                            .then(savedTransition -> {
-                                // Update mastery item state
-                                MasteryItem updatedItem = new MasteryItem(
-                                        item.masteryId(),
-                                        item.skillId(),
-                                        item.domain(),
-                                        item.agentId(),
-                                        item.agentReleaseId(),
-                                        transition.toState(),
-                                        item.versionScope(),
-                                        item.applicability(),
-                                        item.score(),
-                                        item.procedureIds(),
-                                        item.semanticFactIds(),
-                                        item.negativeKnowledgeIds(),
-                                        item.evidenceRefs(),
-                                        item.evaluationRefs(),
-                                        item.knownFailureModeIds(),
-                                        Instant.now(),
-                                        item.staleAfter(),
-                                        item.labels()
-                                );
+                    // Build the updated mastery item first (before any persistence)
+                    MasteryItem updatedItem = new MasteryItem(
+                            item.masteryId(),
+                            item.tenantId(),
+                            item.skillId(),
+                            item.domain(),
+                            item.agentId(),
+                            item.agentReleaseId(),
+                            transition.toState(),
+                            item.versionScope(),
+                            item.applicability(),
+                            item.score(),
+                            item.procedureIds(),
+                            item.semanticFactIds(),
+                            item.negativeKnowledgeIds(),
+                            item.evidenceRefs(),
+                            item.evaluationRefs(),
+                            item.knownFailureModeIds(),
+                            Instant.now(),
+                            item.staleAfter(),
+                            item.labels(),
+                            item.stateHistory(),
+                            item.confidence()
+                    );
 
-                                return save(updatedItem)
-                                        .map(saved -> MasteryTransitionResult.success(
+                    // Attempt to save the updated mastery item first (this is the critical state change)
+                    return save(updatedItem)
+                            .then(savedItem -> {
+                                // Item saved successfully, now append transition (append-only, safe to retry)
+                                return transitionRepository.append(transition)
+                                        .map(savedTransition -> MasteryTransitionResult.success(
                                                 item.masteryId(),
                                                 item.state(),
                                                 transition.toState(),
@@ -219,13 +273,26 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     @NotNull
     public Promise<List<MasteryItem>> findStale(@NotNull Instant now) {
-        // Query all entities and filter for stale items
-        return entityRepository.count("default", COLLECTION_MASTERY_ITEMS)
+        // Deprecated method - throw exception to force migration to tenant-scoped version
+        return Promise.ofException(new UnsupportedOperationException(
+                "findStale(Instant) is deprecated. Use findStale(tenantId, Instant) for tenant-scoped stale detection."));
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<MasteryItem>> findStale(@NotNull String tenantId, @NotNull Instant now) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for stale detection"));
+        }
+        
+        // Query all entities for the tenant and filter for stale items
+        return entityRepository.count(tenantId, COLLECTION_MASTERY_ITEMS)
                 .then(count -> {
                     int limit = count > 1000 ? 1000 : (int) count.longValue();
-                    return entityRepository.findAll("default", COLLECTION_MASTERY_ITEMS, 
+                    return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, 
                             Map.of(), null, 0, limit);
                 })
                 .then(entities -> {
@@ -239,8 +306,38 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
 
     @Override
     @NotNull
+    public Promise<Optional<MasteryItem>> getById(@NotNull String tenantId, @NotNull String masteryId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("tenantId is required for getById"));
+        }
+        if (masteryId == null || masteryId.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("masteryId is required for getById"));
+        }
+        
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, 
+                Map.of("masteryId", masteryId), null, 0, 1)
+                .then(entities -> {
+                    if (entities.isEmpty()) {
+                        return Promise.of(Optional.empty());
+                    }
+                    MasteryItem item = MasteryItemMapper.fromDataMap(entities.get(0).getData());
+                    return Promise.of(Optional.of(item));
+                });
+    }
+
+    @Override
+    @NotNull
     public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
-        String tenantId = query.tenantId() != null ? query.tenantId() : "default";
+        String tenantId = query.tenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            String skillId = query.skillId() != null ? query.skillId() : "unknown";
+            return Promise.of(MasteryDecision.block(
+                    "unknown",
+                    skillId,
+                    ExecutionMode.BLOCKED,
+                    "tenantId is required for mastery decisions"
+            ));
+        }
         Map<String, Object> filter = new HashMap<>();
 
         if (query.skillId() != null) {
@@ -327,68 +424,4 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         };
     }
 
-    /**
-     * Validates whether a transition is allowed based on state and evidence.
-     *
-     * @param fromState current state
-     * @param toState target state
-     * @param evidenceRefs evidence references
-     * @return true if transition is valid
-     */
-    private boolean isValidTransition(MasteryState fromState, MasteryState toState, Map<String, String> evidenceRefs) {
-        // Direct UNKNOWN to MASTERED is not allowed
-        if (fromState == MasteryState.UNKNOWN && toState == MasteryState.MASTERED) {
-            return false;
-        }
-
-        // MASTERED requires evaluation evidence
-        if (toState == MasteryState.MASTERED && evidenceRefs.isEmpty()) {
-            return false;
-        }
-
-        // COMPETENT requires some evidence
-        if (toState == MasteryState.COMPETENT && evidenceRefs.isEmpty()) {
-            return false;
-        }
-
-        // OBSERVED can transition from UNKNOWN with minimal evidence
-        if (toState == MasteryState.OBSERVED && fromState == MasteryState.UNKNOWN) {
-            return true;
-        }
-
-        // QUARANTINED can be reached from any state (for safety)
-        if (toState == MasteryState.QUARANTINED) {
-            return true;
-        }
-
-        // OBSOLETE can be reached from any active state
-        if (toState == MasteryState.OBSOLETE && fromState.isActiveForRetrieval()) {
-            return true;
-        }
-
-        // RETIRED can only be reached from OBSOLETE
-        if (toState == MasteryState.RETIRED && fromState == MasteryState.OBSOLETE) {
-            return true;
-        }
-
-        // MAINTENANCE_ONLY can be reached from MASTERED
-        if (toState == MasteryState.MAINTENANCE_ONLY && fromState == MasteryState.MASTERED) {
-            return true;
-        }
-
-        // Forward progression through lifecycle
-        if (fromState == MasteryState.OBSERVED && toState == MasteryState.PRACTICED) {
-            return true;
-        }
-
-        if (fromState == MasteryState.PRACTICED && toState == MasteryState.COMPETENT) {
-            return true;
-        }
-
-        if (fromState == MasteryState.COMPETENT && toState == MasteryState.MASTERED) {
-            return !evidenceRefs.isEmpty();
-        }
-
-        return false;
-    }
 }

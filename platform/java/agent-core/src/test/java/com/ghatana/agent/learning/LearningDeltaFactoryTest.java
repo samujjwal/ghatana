@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for LearningDeltaFactory.
@@ -35,23 +35,24 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.deltaId()).isNotNull();
-        assertThat(delta.deltaId()).isNotEmpty();
-        assertThat(delta.type()).isEqualTo(LearningDeltaType.PROCEDURAL_SKILL);
-        assertThat(delta.target()).isEqualTo(LearningTarget.PROCEDURAL_SKILL);
-        assertThat(delta.state()).isEqualTo(LearningDeltaState.PROPOSED);
-        assertThat(delta.agentId()).isEqualTo("agent-123");
-        assertThat(delta.agentReleaseId()).isEqualTo("release-1.0.0");
-        assertThat(delta.skillId()).isEqualTo("skill-123");
-        assertThat(delta.proposedContent()).isEqualTo(content);
-        assertThat(delta.evidenceRefs()).isEqualTo(evidenceRefs);
-        assertThat(delta.proposedBy()).isEqualTo("learning-engine");
-        assertThat(delta.proposedAt()).isNotNull();
+        assertNotNull(delta.deltaId());
+        assertFalse(delta.deltaId().isEmpty());
+        assertEquals(LearningDeltaType.PROCEDURAL_SKILL, delta.type());
+        assertEquals(LearningTarget.PROCEDURAL_SKILL, delta.target());
+        assertEquals(LearningDeltaState.PROPOSED, delta.state());
+        assertEquals("agent-123", delta.agentId());
+        assertEquals("release-1.0.0", delta.agentReleaseId());
+        assertEquals("skill-123", delta.skillId());
+        assertEquals(content, delta.proposedContent());
+        assertEquals(evidenceRefs, delta.evidenceRefs());
+        assertEquals("learning-engine", delta.proposedBy());
+        assertNotNull(delta.proposedAt());
     }
 
     @Test
@@ -66,15 +67,16 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 "procedure-456",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.procedureId()).isEqualTo("procedure-456");
-        assertThat(delta.semanticFactId()).isNull();
-        assertThat(delta.negativeKnowledgeId()).isNull();
+        assertEquals("procedure-456", delta.procedureId());
+        assertNull(delta.semanticFactId());
+        assertNull(delta.negativeKnowledgeId());
     }
 
     @Test
@@ -89,15 +91,16 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 "semantic-fact-456",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.procedureId()).isNull();
-        assertThat(delta.semanticFactId()).isEqualTo("semantic-fact-456");
-        assertThat(delta.negativeKnowledgeId()).isNull();
+        assertNull(delta.procedureId());
+        assertEquals("semantic-fact-456", delta.semanticFactId());
+        assertNull(delta.negativeKnowledgeId());
     }
 
     @Test
@@ -112,15 +115,16 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 "negative-knowledge-456",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.procedureId()).isNull();
-        assertThat(delta.semanticFactId()).isNull();
-        assertThat(delta.negativeKnowledgeId()).isEqualTo("negative-knowledge-456");
+        assertNull(delta.procedureId());
+        assertNull(delta.semanticFactId());
+        assertEquals("negative-knowledge-456", delta.negativeKnowledgeId());
     }
 
     @Test
@@ -135,13 +139,103 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.contentDigest()).isNotNull();
-        assertThat(delta.contentDigest()).isNotEmpty();
+        assertNotNull(delta.contentDigest());
+        assertFalse(delta.contentDigest().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Content digest should be deterministic for same content")
+    void contentDigestShouldBeDeterministicForSameContent() {
+        Map<String, Object> content = Map.of("action", "test-action", "param", "value");
+        List<String> evidenceRefs = List.of("evidence-1");
+
+        LearningDelta delta1 = LearningDeltaFactory.propose(
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                "tenant-123",
+                content,
+                evidenceRefs,
+                "learning-engine"
+        );
+
+        LearningDelta delta2 = LearningDeltaFactory.propose(
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                "tenant-123",
+                content,
+                evidenceRefs,
+                "learning-engine"
+        );
+
+        assertEquals(delta1.contentDigest(), delta2.contentDigest());
+    }
+
+    @Test
+    @DisplayName("Content digest should differ for different content")
+    void contentDigestShouldDifferForDifferentContent() {
+        Map<String, Object> content1 = Map.of("action", "test-action");
+        Map<String, Object> content2 = Map.of("action", "different-action");
+        List<String> evidenceRefs = List.of("evidence-1");
+
+        LearningDelta delta1 = LearningDeltaFactory.propose(
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                "tenant-123",
+                content1,
+                evidenceRefs,
+                "learning-engine"
+        );
+
+        LearningDelta delta2 = LearningDeltaFactory.propose(
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                "tenant-123",
+                content2,
+                evidenceRefs,
+                "learning-engine"
+        );
+
+        assertNotEquals(delta1.contentDigest(), delta2.contentDigest());
+    }
+
+    @Test
+    @DisplayName("Content digest should use SHA-256 format (64 hex characters)")
+    void contentDigestShouldUseSha256Format() {
+        Map<String, Object> content = Map.of("action", "test-action");
+        List<String> evidenceRefs = List.of("evidence-1");
+
+        LearningDelta delta = LearningDeltaFactory.propose(
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                "tenant-123",
+                content,
+                evidenceRefs,
+                "learning-engine"
+        );
+
+        assertEquals(64, delta.contentDigest().length());
+        assertTrue(delta.contentDigest().matches("[a-f0-9]{64}"));
     }
 
     @Test
@@ -156,15 +250,16 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.proposedAt()).isNotNull();
-        assertThat(delta.evaluatedAt()).isNull();
-        assertThat(delta.promotedAt()).isNull();
-        assertThat(delta.rejectedAt()).isNull();
+        assertNotNull(delta.proposedAt());
+        assertNull(delta.evaluatedAt());
+        assertNull(delta.promotedAt());
+        assertNull(delta.rejectedAt());
     }
 
     @Test
@@ -179,12 +274,13 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.labels()).isEmpty();
+        assertTrue(delta.labels().isEmpty());
     }
 
     @Test
@@ -199,12 +295,13 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta.rejectionReason()).isNull();
+        assertNull(delta.rejectionReason());
     }
 
     @Test
@@ -219,6 +316,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -230,12 +328,13 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(delta1.deltaId()).isNotEqualTo(delta2.deltaId());
+        assertNotEquals(delta1.deltaId(), delta2.deltaId());
     }
 
     @Test
@@ -250,6 +349,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -260,13 +360,14 @@ class LearningDeltaFactoryTest {
                 LearningTarget.SEMANTIC_FACT,
                 "agent-123",
                 "release-1.0.0",
-                "skill-456",
+                "skill-123",
+                "tenant-123",
                 content,
                 evidenceRefs,
                 "learning-engine"
         );
 
-        assertThat(proceduralDelta.type()).isEqualTo(LearningDeltaType.PROCEDURAL_SKILL);
-        assertThat(semanticDelta.type()).isEqualTo(LearningDeltaType.SEMANTIC_FACT);
+        assertEquals(LearningDeltaType.PROCEDURAL_SKILL, proceduralDelta.type());
+        assertEquals(LearningDeltaType.SEMANTIC_FACT, semanticDelta.type());
     }
 }

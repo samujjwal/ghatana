@@ -29,9 +29,8 @@ import com.ghatana.agent.release.AgentReleaseRepository;
 import com.ghatana.agent.runtime.mode.ExecutionMode;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
 import com.ghatana.agent.runtime.mode.TaskClassification;
-import com.ghatana.agent.runtime.mode.TaskClassifier;
-import com.ghatana.agent.runtime.mode.TaskNovelty;
 import com.ghatana.agent.runtime.mode.TaskRiskLevel;
+import com.ghatana.agent.runtime.mode.TaskNovelty;
 import com.ghatana.platform.observability.agent.AgentRunTracer;
 import com.ghatana.platform.observability.agent.AgentRunTracer.AgentRunSpan;
 import io.activej.promise.Promise;
@@ -60,8 +59,7 @@ import java.util.Optional;
  *   <li><b>Invariant monitoring</b>: Evaluates pre-dispatch invariants</li>
  *   <li><b>Mastery checks</b>: Validates mastery state compatibility when MasteryRegistry is configured</li>
  *   <li><b>Version context checks</b>: Validates version compatibility when VersionContextResolver is configured</li>
- *   <li><b>Task classification</b>: Classifies task risk and novelty when TaskClassifier is configured</li>
- *   <li><b>Mode selection</b>: Selects appropriate execution mode when MasteryAwareModeSelector is configured</li>
+ *   <li><b>Mode selection</b>: Selects appropriate execution mode using MasteryAwareModeSelector (required)</li>
  *   <li><b>Trace recording</b>: Appends evidence to the trace ledger</li>
  *   <li><b>OTel tracing</b>: Emits structured lifecycle spans via {@link AgentRunTracer} when configured</li>
  * </ul>
@@ -90,66 +88,78 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
     private final MasteryRegistry masteryRegistry;
     @Nullable
     private final VersionContextResolver versionContextResolver;
-    @Nullable
-    private final TaskClassifier taskClassifier;
-    @Nullable
+    @NotNull
     private final MasteryAwareModeSelector modeSelector;
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
-            @NotNull AgentTraceLedger traceLedger) {
-        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null);
+            @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector) {
+        this(delegate, invariantMonitor, traceLedger, modeSelector, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository, agentRunTracer, null, null, null);
     }
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository, agentRunTracer, capabilityManifest, null, null);
     }
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector,
+            @Nullable AgentReleaseRepository releaseRepository,
+            @Nullable AgentRunTracer agentRunTracer,
+            @Nullable AgentCapabilityManifest capabilityManifest,
+            @Nullable MasteryRegistry masteryRegistry) {
+        this(delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository, agentRunTracer, capabilityManifest, masteryRegistry, null);
+    }
+
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @NotNull MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest,
             @Nullable MasteryRegistry masteryRegistry,
-            @Nullable VersionContextResolver versionContextResolver,
-            @Nullable TaskClassifier taskClassifier,
-            @Nullable MasteryAwareModeSelector modeSelector) {
+            @Nullable VersionContextResolver versionContextResolver) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
         this.invariantMonitor = Objects.requireNonNull(invariantMonitor, "invariantMonitor");
         this.traceLedger = Objects.requireNonNull(traceLedger, "traceLedger");
+        this.modeSelector = Objects.requireNonNull(modeSelector, "modeSelector");
         this.releaseRepository = releaseRepository;
         this.agentRunTracer = agentRunTracer;
         this.capabilityManifest = capabilityManifest;
         this.masteryRegistry = masteryRegistry;
         this.versionContextResolver = versionContextResolver;
-        this.taskClassifier = taskClassifier;
-        this.modeSelector = modeSelector;
     }
 
     @Override
@@ -256,41 +266,40 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         }
 
         // ── Mastery-aware checks ─────────────────────────────────────────────
-        // Task classification - skip for now as input is generic
-        // if (taskClassifier != null) {
-        //     try {
-        //         TaskClassification classification = taskClassifier.classify(input.toString(), enrichedCtx);
-        //         enrichedCtx = enrichedCtx.toBuilder()
-        //                 .addConfig("taskRiskLevel", classification.riskLevel().name())
-        //                 .addConfig("taskNovelty", classification.novelty().name())
-        //                 .build();
-        //     } catch (Exception e) {
-        //         log.warn("Task classification failed for agent {}: {}", agentId, e.getMessage());
-        //         // Continue without classification
-        //     }
-        // }
-
         // Version context resolution and compatibility check
         if (versionContextResolver != null) {
             try {
-                VersionContext versionContext = versionContextResolver.resolve(
-                        new EnvironmentSnapshot(
-                                VersionContext.empty(),
-                                new DependencyFingerprint(Map.of(), ""),
-                                new RuntimeFingerprint("", "", "", "", "", Map.of(), ""),
-                                new RepositoryConventionFingerprint(Map.of(), ""),
-                                Instant.now()
-                        )).getResult();
+                // Capture real environment snapshot
+                EnvironmentSnapshot snapshot = com.ghatana.agent.context.version.EnvironmentSnapshot.capture();
+                VersionContext versionContext = versionContextResolver.resolve(snapshot).getResult();
                 enrichedCtx = enrichedCtx.toBuilder()
                         .addConfig("versionContext", versionContext.toString())
                         .build();
+                
+                // Record version context in trace
+                traceLedger.append(new TraceEvent(
+                        java.util.UUID.randomUUID().toString(),
+                        traceId,
+                        0L,
+                        TraceEventType.VERSION_CONTEXT_RESOLVED,
+                        agentId,
+                        tenantId,
+                        "",
+                        "",
+                        "Version context resolved for agent " + agentId,
+                        java.util.Map.of(
+                                "versionContext", versionContext.toString(),
+                                "dependencies", versionContext.dependencies().toString()
+                        ),
+                        java.time.Instant.now()
+                ));
                 
                 // Check version compatibility
                 if (release != null && !isVersionCompatible(release, versionContext)) {
                     String reason = "Version incompatibility: release " + release.agentReleaseId() 
                             + " is not compatible with current version context " + versionContext;
                     log.warn("Dispatch rejected by version compatibility check: {}", reason);
-                    return denyDispatch(agentId, extractTraceId(ctx), tenantId, reason);
+                    return denyDispatch(agentId, traceId, tenantId, reason);
                 }
             } catch (Exception e) {
                 log.warn("Version context resolution failed for agent {}: {}", agentId, e.getMessage());
@@ -306,9 +315,35 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                         ? enrichedCtx.getConfig("skillId").toString() 
                         : null;
                 if (skillId != null) {
-                    // Additional mastery checks would go here
-                    // For now, just log that mastery registry is available
-                    log.debug("Mastery registry available for agent {} with skillId {}", agentId, skillId);
+                    // Query mastery for this skill
+                    var masteryQuery = MasteryQuery.bySkill(skillId).withTenantId(tenantId);
+                    var masteryDecision = masteryRegistry.queryMastery(masteryQuery).getResult();
+                    
+                    if (masteryDecision.isPresent()) {
+                        var decision = masteryDecision.get();
+                        // Record mastery decision in trace
+                        traceLedger.append(new TraceEvent(
+                                java.util.UUID.randomUUID().toString(),
+                                traceId,
+                                0L,
+                                TraceEventType.MASTERY_DECISION,
+                                agentId,
+                                tenantId,
+                                "",
+                                "",
+                                "Mastery decision for skill " + skillId,
+                                java.util.Map.of(
+                                        "skillId", skillId,
+                                        "masteryState", decision.state() != null ? decision.state().name() : "null",
+                                        "isExecutable", String.valueOf(decision.executable()),
+                                        "confidence", String.valueOf(decision.confidence())
+                                ),
+                                java.time.Instant.now()
+                        ));
+                        
+                        log.debug("Mastery registry available for agent {} with skillId {}, state: {}", 
+                                agentId, skillId, decision.state());
+                    }
                 }
             } catch (Exception e) {
                 log.warn("Mastery check failed for agent {}: {}", agentId, e.getMessage());
@@ -316,26 +351,77 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             }
         }
 
-        // Mode selection
-        if (modeSelector != null) {
-            try {
-                String taskRiskLevel = enrichedCtx.getConfig("taskRiskLevel") != null
-                        ? enrichedCtx.getConfig("taskRiskLevel").toString()
-                        : "UNKNOWN";
-                // Create a simple version context for mode selection
-                VersionContext simpleContext = VersionContext.empty();
-                TaskClassification simpleClassification = new TaskClassification(
-                        TaskRiskLevel.LOW,
-                        TaskNovelty.FAMILIAR,
-                        Map.of()
+        // ── Mode selection (MasteryAwareModeSelector is required) ──────────────
+        try {
+                // Extract task classification from context if available
+                TaskRiskLevel riskLevel = TaskRiskLevel.UNKNOWN;
+                TaskNovelty novelty = TaskNovelty.UNKNOWN;
+                
+                if (enrichedCtx.getConfig("taskRiskLevel") != null) {
+                    try {
+                        riskLevel = TaskRiskLevel.valueOf(enrichedCtx.getConfig("taskRiskLevel").toString());
+                    } catch (IllegalArgumentException e) {
+                        riskLevel = TaskRiskLevel.UNKNOWN;
+                    }
+                }
+                
+                if (enrichedCtx.getConfig("taskNovelty") != null) {
+                    try {
+                        novelty = TaskNovelty.valueOf(enrichedCtx.getConfig("taskNovelty").toString());
+                    } catch (IllegalArgumentException e) {
+                        novelty = TaskNovelty.UNKNOWN;
+                    }
+                }
+                
+                TaskClassification classification = new TaskClassification(
+                        riskLevel,
+                        novelty,
+                        Map.of("taskDescription", input.toString())
                 );
-                ExecutionMode selectedMode = modeSelector.selectMode(
+                
+                // Get version context if available
+                VersionContext versionContext = VersionContext.empty();
+                if (versionContextResolver != null) {
+                    try {
+                        // Capture real environment snapshot
+                        EnvironmentSnapshot snapshot = com.ghatana.agent.context.version.EnvironmentSnapshot.capture();
+                        versionContext = versionContextResolver.resolve(snapshot).getResult();
+                    } catch (Exception e) {
+                        log.warn("Version context resolution failed for agent {}: {}", agentId, e.getMessage());
+                    }
+                }
+                
+                // Select mode with real parameters
+                var modeResult = modeSelector.selectMode(
                         MasteryQuery.byAgent(agentId).withTenantId(tenantId),
-                        simpleClassification,
-                        simpleContext).getResult().selectedMode();
+                        classification,
+                        versionContext);
+                
+                ExecutionMode selectedMode = modeResult.getResult().selectedMode();
                 enrichedCtx = enrichedCtx.toBuilder()
                         .addConfig("executionMode", selectedMode.name())
                         .build();
+                
+                // Record mode selection in trace
+                traceLedger.append(new TraceEvent(
+                        java.util.UUID.randomUUID().toString(),
+                        traceId,
+                        0L,
+                        TraceEventType.MODE_SELECTED,
+                        agentId,
+                        tenantId,
+                        "",
+                        "",
+                        "Mode selected for agent " + agentId,
+                        java.util.Map.of(
+                                "selectedMode", selectedMode.name(),
+                                "riskLevel", riskLevel.name(),
+                                "novelty", novelty.name(),
+                                "requiresApproval", String.valueOf(modeResult.getResult().requiresApproval()),
+                                "requiresVerification", String.valueOf(modeResult.getResult().requiresVerification())
+                        ),
+                        java.time.Instant.now()
+                ));
                 
                 // Refuse execution if mode is BLOCKED
                 if (selectedMode == ExecutionMode.BLOCKED) {
@@ -343,11 +429,32 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                     log.warn("Dispatch rejected: {}", reason);
                     return denyDispatch(agentId, traceId, tenantId, reason);
                 }
+                
+                // Refuse execution if approval is required and missing
+                if (modeResult.getResult().requiresApproval()) {
+                    boolean hasApproval = enrichedCtx.getConfig("approval") != null 
+                            && Boolean.parseBoolean(enrichedCtx.getConfig("approval").toString());
+                    if (!hasApproval) {
+                        String reason = "Execution requires approval for agent " + agentId + " but approval is missing";
+                        log.warn("Dispatch rejected: {}", reason);
+                        return denyDispatch(agentId, traceId, tenantId, reason);
+                    }
+                }
+                
+                // Refuse execution if verification is required and verification proof is missing
+                if (modeResult.getResult().requiresVerification()) {
+                    boolean hasVerificationProof = enrichedCtx.getConfig("verificationProof") != null 
+                            && !enrichedCtx.getConfig("verificationProof").toString().isBlank();
+                    if (!hasVerificationProof) {
+                        String reason = "Execution requires verification proof for agent " + agentId + " but verification proof is missing";
+                        log.warn("Dispatch rejected: {}", reason);
+                        return denyDispatch(agentId, traceId, tenantId, reason);
+                    }
+                }
             } catch (Exception e) {
-                log.warn("Mode selection failed for agent {}: {}", agentId, e.getMessage());
-                // Continue without mode selection
+                log.error("Mode selection failed for agent {}: {}", agentId, e.getMessage());
+                throw new RuntimeException("Mode selection is required and failed", e);
             }
-        }
 
         // Mastery decision approval check
         if (masteryRegistry != null) {
@@ -496,13 +603,106 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
      * Checks if an agent release is compatible with the current version context.
      */
     private boolean isVersionCompatible(@NotNull AgentRelease release, @NotNull VersionContext versionContext) {
-        // Version compatibility logic would go here
-        // For now, return true as a placeholder
-        // In a real implementation, this would check:
-        // - Dependency versions match
-        // - Runtime versions match
-        // - API contract versions are compatible
+        // Check if release has version constraints
+        if (release.versionConstraints() == null || release.versionConstraints().isEmpty()) {
+            // No constraints - assume compatible
+            return true;
+        }
+
+        // If mastery registry is available, check version scope compatibility
+        if (masteryRegistry != null) {
+            try {
+                // Query mastery for this agent to get version scope
+                var masteryQuery = MasteryQuery.byAgent(release.agentId()).withTenantId(release.tenantId());
+                var masteryDecision = masteryRegistry.decide(masteryQuery).getResult();
+
+                // Check if mastery decision has version scope
+                if (masteryDecision.versionScope() != null && !masteryDecision.versionScope().equals(com.ghatana.agent.mastery.VersionScope.empty())) {
+                    // Use version scope to classify applicability
+                    var applicability = masteryDecision.versionScope().classify(versionContext);
+                    
+                    // Block if version is obsolete
+                    if (applicability == com.ghatana.agent.mastery.VersionApplicability.OBSOLETE) {
+                        log.warn("Version compatibility check failed: version is obsolete for agent {}", release.agentId());
+                        return false;
+                    }
+
+                    // Allow if version is active or maintenance
+                    if (applicability == com.ghatana.agent.mastery.VersionApplicability.ACTIVE 
+                            || applicability == com.ghatana.agent.mastery.VersionApplicability.MAINTENANCE) {
+                        return true;
+                    }
+
+                    // Unknown applicability - fall through to constraint checking
+                }
+            } catch (Exception e) {
+                log.warn("Mastery version scope check failed for agent {}: {}", release.agentId(), e.getMessage());
+                // Fall through to constraint checking
+            }
+        }
+
+        // Fall back to checking release version constraints against version context
+        // This is a simplified check - in production, this would parse and evaluate
+        // the version constraints from the release against the actual dependencies
+        // in the version context
+        for (String constraint : release.versionConstraints()) {
+            // Parse constraint string (format: "dependency:range")
+            String[] parts = constraint.split(":");
+            if (parts.length != 2) {
+                log.warn("Invalid version constraint format: {}", constraint);
+                continue;
+            }
+            String dependency = parts[0];
+            String requiredRange = parts[1];
+            
+            // Get actual version from version context
+            String actualVersion = versionContext.dependencies().get(dependency);
+            if (actualVersion == null) {
+                log.warn("Version compatibility check failed: dependency {} not found in version context", dependency);
+                return false;
+            }
+
+            // Simple version check - in production, use semantic version comparison
+            // For now, do exact match or prefix match
+            if (!isVersionInRange(actualVersion, requiredRange)) {
+                log.warn("Version compatibility check failed: {} version {} does not satisfy range {}", 
+                        dependency, actualVersion, requiredRange);
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    /**
+     * Checks if a version falls within a version range.
+     * Uses VersionScope for semantic version comparison with npm ^, ~, Maven ranges, and pre-release support.
+     *
+     * @param version actual version
+     * @param range required version range
+     * @return true if version is in range
+     */
+    private boolean isVersionInRange(@NotNull String version, @NotNull String range) {
+        // Use VersionScope's evaluator for robust semantic version comparison
+        // Create a temporary VersionScope with the constraint
+        var constraint = com.ghatana.agent.mastery.VersionConstraint.of("dependency", "dependency", range, "unknown");
+        var versionScope = com.ghatana.agent.mastery.VersionScope.activeOnly(java.util.List.of(constraint));
+        
+        // Create a temporary VersionContext with the dependency
+        var versionContext = com.ghatana.agent.context.version.VersionContext.of(
+                java.util.Map.of("dependency", version),
+                java.util.Map.of(),
+                java.util.Map.of(),
+                java.util.Map.of(),
+                "isVersionInRange",
+                java.time.Instant.now()
+        );
+        
+        // Use VersionScope's classify to check applicability
+        var applicability = versionScope.classify(versionContext);
+        
+        // Version is in range if it's active (matches constraint)
+        return applicability == com.ghatana.agent.mastery.VersionApplicability.ACTIVE;
     }
 
     /** Builds the TURN_STARTED payload capturing perceived context and release metadata. */

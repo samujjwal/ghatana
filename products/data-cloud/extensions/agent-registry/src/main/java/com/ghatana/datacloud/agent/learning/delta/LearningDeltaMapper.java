@@ -34,6 +34,7 @@ public final class LearningDeltaMapper {
     private static final String FIELD_AGENT_ID = "agentId";
     private static final String FIELD_AGENT_RELEASE_ID = "agentReleaseId";
     private static final String FIELD_SKILL_ID = "skillId";
+    private static final String FIELD_TENANT_ID = "tenantId";
     private static final String FIELD_PROCEDURE_ID = "procedureId";
     private static final String FIELD_SEMANTIC_FACT_ID = "semanticFactId";
     private static final String FIELD_NEGATIVE_KNOWLEDGE_ID = "negativeKnowledgeId";
@@ -74,6 +75,7 @@ public final class LearningDeltaMapper {
         data.put(FIELD_AGENT_ID, delta.agentId());
         data.put(FIELD_AGENT_RELEASE_ID, delta.agentReleaseId());
         data.put(FIELD_SKILL_ID, delta.skillId());
+        data.put(FIELD_TENANT_ID, delta.tenantId());
         data.put(FIELD_PROCEDURE_ID, delta.procedureId());
         data.put(FIELD_SEMANTIC_FACT_ID, delta.semanticFactId());
         data.put(FIELD_NEGATIVE_KNOWLEDGE_ID, delta.negativeKnowledgeId());
@@ -111,6 +113,7 @@ public final class LearningDeltaMapper {
         String agentId = (String) Objects.requireNonNull(data.get(FIELD_AGENT_ID), FIELD_AGENT_ID);
         String agentReleaseId = (String) Objects.requireNonNull(data.get(FIELD_AGENT_RELEASE_ID), FIELD_AGENT_RELEASE_ID);
         String skillId = (String) Objects.requireNonNull(data.get(FIELD_SKILL_ID), FIELD_SKILL_ID);
+        String tenantId = (String) Objects.requireNonNull(data.get(FIELD_TENANT_ID), FIELD_TENANT_ID);
         String procedureId = (String) data.get(FIELD_PROCEDURE_ID);
         String semanticFactId = (String) data.get(FIELD_SEMANTIC_FACT_ID);
         String negativeKnowledgeId = (String) data.get(FIELD_NEGATIVE_KNOWLEDGE_ID);
@@ -144,6 +147,7 @@ public final class LearningDeltaMapper {
                 agentId,
                 agentReleaseId,
                 skillId,
+                tenantId,
                 procedureId,
                 semanticFactId,
                 negativeKnowledgeId,

@@ -16,7 +16,11 @@ import com.ghatana.agent.learning.LearningDeltaState;
 import com.ghatana.agent.learning.LearningDeltaType;
 import com.ghatana.agent.learning.LearningLevel;
 import com.ghatana.agent.learning.LearningTarget;
+import com.ghatana.agent.learning.SkillIdResolver;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Learning engine that implements the REFLECT phase of the GAA lifecycle.
@@ -87,6 +92,8 @@ public final class LearningEngine {
     private static final double DEFAULT_REVIEW_THRESHOLD = 0.7;
     /** Default batch size for episode processing. */
     private static final int DEFAULT_BATCH_SIZE = 100;
+
+    private static final Logger log = LoggerFactory.getLogger(LearningEngine.class);
 
     private final Executor executor;
     private LearningContract learningContract;
@@ -332,12 +339,12 @@ public final class LearningEngine {
                         "). L3+ learning requires proper governance through the learning delta system. " +
                         "Configure a deltaRepository to enable L3+ learning."));
             }
-            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+            return persistAsLearningDeltas(agentId, "default", episodes, approved, episodeIds, start, flagged);
         }
 
         // For L0-L2 learning, use deltaRepository if configured, otherwise fall back to direct policy persistence
         if (deltaRepository != null) {
-            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+            return persistAsLearningDeltas(agentId, "default", episodes, approved, episodeIds, start, flagged);
         }
 
         // Otherwise, use the original direct policy persistence path (L0-L2 only)
@@ -379,6 +386,7 @@ public final class LearningEngine {
     @NotNull
     private Promise<LearningOutcome> persistAsLearningDeltas(
             @NotNull String agentId,
+            @NotNull String tenantId,
             @NotNull List<Episode> episodes,
             @NotNull List<CandidatePolicy> candidates,
             @NotNull String episodeIds,
@@ -386,8 +394,19 @@ public final class LearningEngine {
             int flagged) {
         // Chain all delta creation operations sequentially
         Promise<Integer> deltaChain = Promise.of(0);
+        AtomicInteger totalRejectedByContract = new AtomicInteger(0);
+        
         for (CandidatePolicy candidate : candidates) {
-            String skillId = "skill-" + agentId + "-" + candidate.situation().hashCode();
+            // Check if learning contract permits this target before creating delta
+            LearningTarget target = LearningTarget.PROCEDURAL_SKILL;
+            if (!learningContract.permits(target)) {
+                totalRejectedByContract.incrementAndGet();
+                log.warn("Learning contract rejected target {} for agent {}: not permitted by contract", target, agentId);
+                continue; // Skip this candidate
+            }
+            
+            // Use stable skill ID resolver instead of unstable hashCode
+            String skillId = SkillIdResolver.resolveSkillId(agentId, candidate.situation());
             Map<String, Object> content = Map.of(
                     "situation", candidate.situation(),
                     "action", candidate.action(),
@@ -397,10 +416,11 @@ public final class LearningEngine {
 
             LearningDelta delta = LearningDeltaFactory.propose(
                     LearningDeltaType.PROCEDURAL_SKILL,
-                    LearningTarget.PROCEDURAL_SKILL,
+                    target,
                     agentId,
                     agentReleaseId != null ? agentReleaseId : "unknown",
                     skillId,
+                    tenantId,
                     content,
                     episodes.stream().map(e -> e.getId()).toList(),
                     "learning-engine"
@@ -412,12 +432,11 @@ public final class LearningEngine {
 
         int episodeCount = episodes.size();
         int totalProposed = candidates.size();
-        int totalRejectedByContract = 0; // TODO: track contract rejections
         return deltaChain.map(created -> {
             Duration duration = Duration.between(start, Instant.now());
             return new LearningOutcome(
                     agentId, start, duration, learningContract.level(), episodeCount, 0, created, flagged,
-                    totalProposed, totalRejectedByContract, flagged, created);
+                    totalProposed, totalRejectedByContract.get(), flagged, created);
         });
     }
 

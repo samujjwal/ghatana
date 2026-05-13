@@ -6,6 +6,7 @@ package com.ghatana.agent.learning;
 
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.List;
@@ -56,6 +57,18 @@ public interface LearningDeltaRepository {
      */
     @NotNull
     Promise<List<LearningDelta>> findBySkillId(@NotNull String skillId);
+
+    /**
+     * Finds learning deltas by tenant ID.
+     *
+     * @param tenantId tenant identifier
+     * @param agentId optional agent identifier
+     * @param limit maximum number of results
+     * @param offset number of results to skip
+     * @return promise of list of learning deltas
+     */
+    @NotNull
+    Promise<List<LearningDelta>> findByTenant(@NotNull String tenantId, @Nullable String agentId, @Nullable Integer limit, @Nullable Integer offset);
 
     /**
      * Finds learning deltas by state.

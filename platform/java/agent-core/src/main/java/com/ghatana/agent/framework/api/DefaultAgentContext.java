@@ -90,6 +90,18 @@ public final class DefaultAgentContext implements AgentContext {
     }
 
     @Override
+    @Nullable
+    public String getWorkingDirectory() {
+        return null;
+    }
+
+    @Override
+    @Nullable
+    public String getRepoId() {
+        return null;
+    }
+
+    @Override
     @NotNull
     public Instant getStartTime() {
         return startTime;

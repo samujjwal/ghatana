@@ -77,5 +77,22 @@ public interface LearningDeltaEvaluator {
         ) {
             return new EvaluationResult(deltaId, false, confidence, reason, "Reject: " + reason);
         }
+
+        /**
+         * Creates an evaluation result pending human review.
+         *
+         * @param deltaId delta identifier
+         * @param confidence confidence score
+         * @param reason evaluation reason
+         * @return evaluation result pending human review
+         */
+        @NotNull
+        public static EvaluationResult pendingHumanReview(
+                @NotNull String deltaId,
+                double confidence,
+                @NotNull String reason
+        ) {
+            return new EvaluationResult(deltaId, false, confidence, reason, "Pending human review: " + reason);
+        }
     }
 }

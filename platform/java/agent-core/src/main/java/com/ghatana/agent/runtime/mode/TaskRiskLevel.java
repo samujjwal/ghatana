@@ -14,6 +14,11 @@ package com.ghatana.agent.runtime.mode;
  */
 public enum TaskRiskLevel {
     /**
+     * Unknown risk level - not yet classified.
+     */
+    UNKNOWN,
+
+    /**
      * Low risk - safe to execute with minimal safeguards.
      */
     LOW,

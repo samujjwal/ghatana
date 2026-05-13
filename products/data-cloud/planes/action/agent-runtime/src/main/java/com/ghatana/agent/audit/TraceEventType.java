@@ -74,5 +74,19 @@ public enum TraceEventType {
     LEARNING_DELTA_REJECTED,
 
     /** Skill benchmark evaluation completed. */
-    SKILL_BENCHMARK_COMPLETED
+    SKILL_BENCHMARK_COMPLETED,
+
+    // ── Runtime Decision Events ───────────────────────────────────────────────
+
+    /** Task classification completed. */
+    TASK_CLASSIFIED,
+
+    /** Version context resolved for agent execution. */
+    VERSION_CONTEXT_RESOLVED,
+
+    /** Mastery decision computed for skill execution. */
+    MASTERY_DECISION,
+
+    /** Execution mode selected for agent dispatch. */
+    MODE_SELECTED
 }

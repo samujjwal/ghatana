@@ -168,10 +168,7 @@ public final class MasteryItemMapper {
         List<String> procedureIds = toStringList(data.get(FIELD_PROCEDURE_IDS));
         List<String> semanticFactIds = toStringList(data.get(FIELD_SEMANTIC_FACT_IDS));
         List<String> negativeKnowledgeIds = toStringList(data.get(FIELD_NEGATIVE_KNOWLEDGE_IDS));
-        Map<String, String> evidenceRefsMap = toStringMap(data.get(FIELD_EVIDENCE_REFS));
-        List<String> evidenceRefs = evidenceRefsMap.entrySet().stream()
-                .map(entry -> entry.getKey() + ":" + entry.getValue())
-                .toList();
+        List<String> evidenceRefs = toStringList(data.get(FIELD_EVIDENCE_REFS));
         List<String> evaluationRefs = toStringList(data.get(FIELD_EVALUATION_REFS));
         List<String> knownFailureModeIds = toStringList(data.get(FIELD_KNOWN_FAILURE_MODE_IDS));
 
@@ -183,6 +180,7 @@ public final class MasteryItemMapper {
 
         return new MasteryItem(
                 (String) data.get(FIELD_MASTERY_ID),
+                tenantId != null ? tenantId : "",
                 (String) data.get(FIELD_SKILL_ID),
                 (String) data.get(FIELD_DOMAIN),
                 (String) data.get(FIELD_AGENT_ID),
@@ -199,7 +197,9 @@ public final class MasteryItemMapper {
                 knownFailureModeIds,
                 parseInstant(data.get(FIELD_LAST_VERIFIED_AT)),
                 parseInstant(data.get(FIELD_STALE_AFTER)),
-                labels
+                labels,
+                List.of(),
+                0.0
         );
     }
 
@@ -220,6 +220,7 @@ public final class MasteryItemMapper {
     /**
      * Deserializes version constraints from a list of maps.
      */
+    @SuppressWarnings("unchecked")
     private static List<Map<String, String>> deserializeVersionConstraints(List<?> constraints) {
         return constraints.stream()
                 .filter(Map.class::isInstance)

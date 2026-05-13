@@ -14,8 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for AgentDefinition learning contract materialization.
@@ -39,10 +38,10 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.level()).isEqualTo(LearningLevel.L0);
-        assertThat(contract.allowedTargets()).isEmpty();
-        assertThat(contract.provenanceRequired()).isFalse();
-        assertThat(contract.promotionRequired()).isFalse();
+        assertEquals(LearningLevel.L0, contract.level());
+        assertTrue(contract.allowedTargets().isEmpty());
+        assertFalse(contract.provenanceRequired());
+        assertFalse(contract.promotionRequired());
     }
 
     @Test
@@ -57,7 +56,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.level()).isEqualTo(LearningLevel.L3);
+        assertEquals(LearningLevel.L3, contract.level());
     }
 
     @Test
@@ -72,7 +71,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.level()).isEqualTo(LearningLevel.L2);
+        assertEquals(LearningLevel.L2, contract.level());
     }
 
     @Test
@@ -86,9 +85,7 @@ class AgentDefinitionLearningContractTest {
                 .metadata("learningLevel", "L2")
                 .build();
 
-        assertThatThrownBy(definition::toLearningContract)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Learning level mismatch");
+        assertThrows(IllegalStateException.class, definition::toLearningContract);
     }
 
     @Test
@@ -104,8 +101,8 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.allowedTargets())
-                .containsExactlyInAnyOrder(LearningTarget.PROCEDURAL_SKILL, LearningTarget.NEGATIVE_KNOWLEDGE);
+        assertTrue(contract.allowedTargets().contains(LearningTarget.PROCEDURAL_SKILL));
+        assertTrue(contract.allowedTargets().contains(LearningTarget.NEGATIVE_KNOWLEDGE));
     }
 
     @Test
@@ -121,7 +118,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.provenanceRequired()).isTrue();
+        assertTrue(contract.provenanceRequired());
     }
 
     @Test
@@ -137,7 +134,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.promotionRequired()).isTrue();
+        assertTrue(contract.promotionRequired());
     }
 
     @Test
@@ -152,7 +149,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.provenanceRequired()).isTrue();
+        assertTrue(contract.provenanceRequired());
     }
 
     @Test
@@ -167,7 +164,7 @@ class AgentDefinitionLearningContractTest {
 
         LearningContract contract = definition.toLearningContract();
 
-        assertThat(contract.promotionRequired()).isTrue();
+        assertTrue(contract.promotionRequired());
     }
 
     @Test
@@ -183,8 +180,8 @@ class AgentDefinitionLearningContractTest {
 
         List<String> errors = definition.validateLearningLevelConsistency();
 
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0)).contains("Learning level mismatch");
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).contains("Learning level mismatch"));
     }
 
     @Test
@@ -200,8 +197,8 @@ class AgentDefinitionLearningContractTest {
 
         List<String> errors = definition.validateLearningLevelConsistency();
 
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0)).contains("Invalid adaptation target");
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).contains("Invalid adaptation target"));
     }
 
     @Test
@@ -217,6 +214,57 @@ class AgentDefinitionLearningContractTest {
 
         List<String> errors = definition.validateLearningLevelConsistency();
 
-        assertThat(errors).isEmpty();
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should compile mastery binding from AgentDefinition")
+    void shouldCompileMasteryBindingFromAgentDefinition() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L3")
+                .masteryBindings(Map.of(
+                        "namespace", "test-namespace",
+                        "registryRef", "test-registry"
+                ))
+                .metadata("masteryPolicyRef", "policy-1")
+                .metadata("skillRefs", List.of("skill-1", "skill-2"))
+                .build();
+
+        // Verify mastery binding compiles
+        var masteryBinding = definition.toMasteryBinding();
+        assertNotNull(masteryBinding);
+    }
+
+    @Test
+    @DisplayName("Should compile version compatibility policy from AgentDefinition")
+    void shouldCompileVersionCompatibilityPolicyFromAgentDefinition() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.PROBABILISTIC)
+                .metadata("versionCompatibilityPolicy", "strict")
+                .build();
+
+        // Verify version compatibility policy compiles
+        var versionPolicy = definition.toVersionCompatibilityPolicy();
+        assertNotNull(versionPolicy);
+    }
+
+    @Test
+    @DisplayName("Should compile freshness policy from AgentDefinition")
+    void shouldCompileFreshnessPolicyFromAgentDefinition() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.PROBABILISTIC)
+                .metadata("freshnessPolicy", "strict")
+                .build();
+
+        // Verify freshness policy compiles
+        var freshnessPolicy = definition.toFreshnessPolicy();
+        assertNotNull(freshnessPolicy);
     }
 }

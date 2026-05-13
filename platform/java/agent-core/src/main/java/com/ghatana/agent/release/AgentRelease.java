@@ -157,4 +157,22 @@ public record AgentRelease(
     public boolean isResponseServing() {
         return state.isResponseServing();
     }
+
+    /**
+     * Returns the version constraints for this release.
+     *
+     * @return list of compatible runtime versions as version constraints
+     */
+    public List<String> versionConstraints() {
+        return compatibleRuntimeVersions;
+    }
+
+    /**
+     * Returns the tenant ID for this release.
+     *
+     * @return tenant ID (derived from agentId for now)
+     */
+    public String tenantId() {
+        return agentId; // TODO: Add explicit tenantId field when multi-tenant is implemented
+    }
 }

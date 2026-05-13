@@ -58,6 +58,28 @@ public record VersionContext(
     }
 
     /**
+     * Creates a version context from the given parameters.
+     *
+     * @param dependencies dependency versions
+     * @param runtimes runtime versions
+     * @param tools tool versions
+     * @param apiContracts API contract versions
+     * @param sourceRef source reference
+     * @param resolvedAt resolution timestamp
+     * @return version context
+     */
+    @NotNull
+    public static VersionContext of(
+            @NotNull Map<String, String> dependencies,
+            @NotNull Map<String, String> runtimes,
+            @NotNull Map<String, String> tools,
+            @NotNull Map<String, String> apiContracts,
+            @NotNull String sourceRef,
+            @NotNull Instant resolvedAt) {
+        return new VersionContext(dependencies, runtimes, tools, apiContracts, sourceRef, resolvedAt);
+    }
+
+    /**
      * Gets the version of a dependency if present.
      *
      * @param packageName package name

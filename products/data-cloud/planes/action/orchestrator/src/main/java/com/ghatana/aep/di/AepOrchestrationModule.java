@@ -8,6 +8,27 @@ import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.dispatch.CatalogAgentDispatcher;
 import com.ghatana.agent.runtime.safety.GovernedAgentDispatcher;
+import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
+import com.ghatana.agent.runtime.mode.ModeSelectionPolicy;
+import com.ghatana.agent.runtime.mode.TaskClassifier;
+import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryQuery;
+import com.ghatana.agent.mastery.MasteryDecision;
+import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.runtime.mode.TaskClassification;
+import com.ghatana.agent.runtime.mode.TaskRiskLevel;
+import com.ghatana.agent.runtime.mode.TaskNovelty;
+import com.ghatana.agent.runtime.mode.ExecutionMode;
+import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.ApplicabilityScope;
+import com.ghatana.agent.mastery.MasteryScore;
+import com.ghatana.agent.context.version.VersionContext;
+import io.activej.promise.Promise;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import com.ghatana.agent.dispatch.tier.DefaultLlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
@@ -358,27 +379,163 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides {@link GovernedAgentDispatcher} wrapping {@link CatalogAgentDispatcher}.
-     * This ensures all agent execution goes through governance checks including release guards,
-     * mastery validation, version context checks, and task classification.
+     * Provides a no-op mastery registry for the orchestrator.
+     * The orchestrator does not require mastery tracking, so this returns empty results.
+     */
+    @Provides
+    MasteryRegistry masteryRegistry() {
+        return new MasteryRegistry() {
+            @Override
+            @NotNull
+            public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
+                    @NotNull String skillId,
+                    @NotNull com.ghatana.agent.environment.EnvironmentFingerprint env) {
+                return Promise.of(Optional.empty());
+            }
+
+            @Override
+            @NotNull
+            public Promise<List<com.ghatana.agent.mastery.MasteryItem>> query(@NotNull MasteryQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            @NotNull
+            public Promise<Optional<MasteryDecision>> queryMastery(@NotNull MasteryQuery query) {
+                return Promise.of(Optional.empty());
+            }
+
+            @Override
+            @NotNull
+            public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
+                return Promise.of(new MasteryDecision(
+                        "no-mastery",
+                        query.skillId(),
+                        ExecutionMode.AUTONOMOUS,
+                        true,
+                        false,
+                        false,
+                        "No mastery registry configured",
+                        List.of(),
+                        null,
+                        null,
+                        0.0
+                ));
+            }
+
+            @Override
+            @NotNull
+            public Promise<com.ghatana.agent.mastery.MasteryItem> save(@NotNull com.ghatana.agent.mastery.MasteryItem item) {
+                return Promise.of(item);
+            }
+
+            @Override
+            @NotNull
+            public Promise<com.ghatana.agent.mastery.MasteryTransitionResult> transition(@NotNull com.ghatana.agent.mastery.MasteryTransition transition) {
+                return Promise.of(com.ghatana.agent.mastery.MasteryTransitionResult.success(
+                        transition.masteryId(),
+                        transition.fromState(),
+                        transition.toState(),
+                        transition.transitionId()
+                ));
+            }
+
+            @Override
+            @NotNull
+            @Deprecated
+            public Promise<List<com.ghatana.agent.mastery.MasteryItem>> findStale(@NotNull Instant now) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            @NotNull
+            public Promise<List<com.ghatana.agent.mastery.MasteryItem>> findStale(@NotNull String tenantId, @NotNull Instant now) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            @NotNull
+            public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> getById(@NotNull String tenantId, @NotNull String masteryId) {
+                return Promise.of(Optional.empty());
+            }
+        };
+    }
+
+    /**
+     * Provides a no-op task classifier for the orchestrator.
+     */
+    @Provides
+    TaskClassifier taskClassifier() {
+        return new TaskClassifier() {
+            @Override
+            @NotNull
+            public Promise<TaskClassification> classify(@NotNull String taskDescription, @NotNull String context) {
+                return Promise.of(new TaskClassification(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR, Map.of()));
+            }
+
+            @Override
+            @NotNull
+            public Promise<TaskClassification> classify(
+                    @NotNull String taskDescription,
+                    @NotNull String context,
+                    @NotNull java.util.Map<String, String> metadata) {
+                return Promise.of(new TaskClassification(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR, metadata));
+            }
+        };
+    }
+
+    /**
+     * Provides a no-op mode selection policy for the orchestrator.
+     */
+    @Provides
+    ModeSelectionPolicy modeSelectionPolicy() {
+        return new ModeSelectionPolicy() {
+            @Override
+            @NotNull
+            public Promise<ModeSelectionPolicy.ModeSelectionResult> selectMode(
+                    @NotNull MasteryDecision decision,
+                    @NotNull TaskClassification classification,
+                    @NotNull VersionContext versionContext) {
+                return Promise.of(new ModeSelectionPolicy.ModeSelectionResult(
+                        decision.recommendedMode(),
+                        "No policy configured",
+                        true,
+                        false
+                ));
+            }
+        };
+    }
+
+    /**
+     * Provides a mastery-aware mode selector for the orchestrator.
+     */
+    @Provides
+    MasteryAwareModeSelector masteryAwareModeSelector(
+            MasteryRegistry masteryRegistry,
+            TaskClassifier taskClassifier,
+            ModeSelectionPolicy modeSelectionPolicy) {
+        return new MasteryAwareModeSelector(masteryRegistry, taskClassifier, modeSelectionPolicy);
+    }
+
+    /**
+     * Provides a governed agent dispatcher wrapping the catalog dispatcher.
+     *
+     * <p>This uses no-op implementations for governance components since the orchestrator
+     * does not require full mastery tracking and mode selection.
      *
      * @param catalogAgentDispatcher the base catalog dispatcher to wrap
+     * @param masteryAwareModeSelector the mode selector
      * @return governed agent dispatcher
      */
     @Provides
     GovernedAgentDispatcher governedAgentDispatcher(
-            CatalogAgentDispatcher catalogAgentDispatcher) {
+            CatalogAgentDispatcher catalogAgentDispatcher,
+            MasteryAwareModeSelector masteryAwareModeSelector) {
         return new GovernedAgentDispatcher(
                 catalogAgentDispatcher,
                 null, // invariantMonitor - optional
                 null, // traceLedger - optional
-                null, // releaseRepository - optional
-                null, // agentRunTracer - optional
-                null, // capabilityManifest - optional
-                null, // masteryRegistry - optional
-                null, // versionContextResolver - optional
-                null, // taskClassifier - optional
-                null  // modeSelector - optional
+                masteryAwareModeSelector
         );
     }
 

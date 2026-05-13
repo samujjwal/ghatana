@@ -83,8 +83,8 @@ public class TraceEventTypeMasteryTest {
     @DisplayName("Should have correct number of trace event types")
     void testCorrectNumberOfEventTypes() {
         TraceEventType[] eventTypes = TraceEventType.values();
-        // Should have original 14 + 5 new mastery/learning events = 19
-        assertEquals(19, eventTypes.length);
+        // Should have original 14 + 5 new mastery/learning events + 4 new runtime decision events = 23
+        assertEquals(23, eventTypes.length);
     }
 
     @Test

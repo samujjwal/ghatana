@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for MasteryTransition.
@@ -27,42 +27,50 @@ class MasteryTransitionTest {
     @DisplayName("Should create manual transition with generated ID")
     void shouldCreateManualTransitionWithGeneratedId() {
         MasteryTransition transition = MasteryTransition.manual(
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
                 MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
                 "Evaluation passed",
                 "user-123"
         );
 
-        assertThat(transition.transitionId()).isNotNull();
-        assertThat(transition.transitionId()).isNotEmpty();
-        assertThat(transition.masteryId()).isEqualTo("mastery-123");
-        assertThat(transition.fromState()).isEqualTo(MasteryState.PRACTICED);
-        assertThat(transition.toState()).isEqualTo(MasteryState.COMPETENT);
-        assertThat(transition.reason()).isEqualTo("Evaluation passed");
-        assertThat(transition.initiatedBy()).isEqualTo("user-123");
-        assertThat(transition.transitionedAt()).isNotNull();
-        assertThat(transition.evidenceRefs()).isEmpty();
-        assertThat(transition.metadata()).isEmpty();
+        assertNotNull(transition.transitionId());
+        assertFalse(transition.transitionId().isEmpty());
+        assertEquals("mastery-123", transition.masteryId());
+        assertEquals(MasteryState.PRACTICED, transition.fromState());
+        assertEquals(MasteryState.COMPETENT, transition.toState());
+        assertEquals("Evaluation passed", transition.reason());
+        assertEquals("user-123", transition.initiatedBy());
+        assertNotNull(transition.transitionedAt());
+        assertTrue(transition.evidenceRefs().isEmpty());
+        assertTrue(transition.metadata().isEmpty());
     }
 
     @Test
     @DisplayName("Should create automatic transition with system initiator")
     void shouldCreateAutomaticTransitionWithSystemInitiator() {
         MasteryTransition transition = MasteryTransition.automatic(
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
-                MasteryState.MASTERED,
-                "Regression tests passed"
+                "Auto-promotion"
         );
 
-        assertThat(transition.transitionId()).isNotNull();
-        assertThat(transition.masteryId()).isEqualTo("mastery-123");
-        assertThat(transition.fromState()).isEqualTo(MasteryState.COMPETENT);
-        assertThat(transition.toState()).isEqualTo(MasteryState.MASTERED);
-        assertThat(transition.reason()).isEqualTo("Regression tests passed");
-        assertThat(transition.initiatedBy()).isEqualTo("system");
-        assertThat(transition.transitionedAt()).isNotNull();
+        assertNotNull(transition.transitionId());
+        assertEquals("mastery-123", transition.masteryId());
+        assertEquals(MasteryState.PRACTICED, transition.fromState());
+        assertEquals(MasteryState.COMPETENT, transition.toState());
+        assertEquals("Auto-promotion", transition.reason());
+        assertEquals("system", transition.initiatedBy());
+        assertNotNull(transition.transitionedAt());
     }
 
     @Test
@@ -72,17 +80,21 @@ class MasteryTransitionTest {
 
         MasteryTransition transition = new MasteryTransition(
                 "transition-123",
+                "tenant-123",
                 "mastery-123",
-                MasteryState.UNKNOWN,
-                MasteryState.OBSERVED,
-                "First observation",
-                "system",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                MasteryState.PRACTICED,
+                MasteryState.COMPETENT,
+                "Custom transition",
+                "user-123",
                 customTime,
-                Map.of("trace-1", "trace-ref-1"),
-                Map.of("source", "manual-review")
+                Map.of("evidence-1", "ref-1"),
+                Map.of("meta-1", "value-1")
         );
 
-        assertThat(transition.transitionedAt()).isEqualTo(customTime);
+        assertEquals(customTime, transition.transitionedAt());
     }
 
     @Test
@@ -99,7 +111,11 @@ class MasteryTransitionTest {
 
         MasteryTransition transition = new MasteryTransition(
                 "transition-123",
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
                 MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
                 "Evaluation passed",
@@ -109,68 +125,83 @@ class MasteryTransitionTest {
                 metadata
         );
 
-        assertThat(transition.evidenceRefs()).isEqualTo(evidenceRefs);
-        assertThat(transition.metadata()).isEqualTo(metadata);
+        assertEquals(evidenceRefs, transition.evidenceRefs());
+        assertEquals(metadata, transition.metadata());
     }
 
     @Test
     @DisplayName("Should create transition for obsolescence")
     void shouldCreateTransitionForObsolescence() {
         MasteryTransition transition = MasteryTransition.automatic(
+                "tenant-123",
                 "mastery-123",
-                MasteryState.MASTERED,
-                MasteryState.OBSOLETE,
-                "API contract changed"
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
+                MasteryState.PRACTICED,
+                MasteryState.COMPETENT,
+                "Auto-promotion"
         );
 
-        assertThat(transition.fromState()).isEqualTo(MasteryState.MASTERED);
-        assertThat(transition.toState()).isEqualTo(MasteryState.OBSOLETE);
-        assertThat(transition.reason()).contains("API contract");
+        assertEquals(MasteryState.PRACTICED, transition.fromState());
+        assertEquals(MasteryState.COMPETENT, transition.toState());
+        assertTrue(transition.reason().contains("Auto-promotion"));
     }
 
     @Test
     @DisplayName("Should create transition for retirement")
     void shouldCreateTransitionForRetirement() {
-        MasteryTransition transition = MasteryTransition.manual(
+        MasteryTransition transition = MasteryTransition.automatic(
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
                 MasteryState.OBSOLETE,
                 MasteryState.RETIRED,
-                "No longer needed",
-                "admin"
+                "No longer needed"
         );
 
-        assertThat(transition.fromState()).isEqualTo(MasteryState.OBSOLETE);
-        assertThat(transition.toState()).isEqualTo(MasteryState.RETIRED);
-        assertThat(transition.initiatedBy()).isEqualTo("admin");
+        assertEquals(MasteryState.OBSOLETE, transition.fromState());
+        assertEquals(MasteryState.RETIRED, transition.toState());
+        assertEquals("system", transition.initiatedBy());
     }
 
     @Test
     @DisplayName("Should create transition for quarantine")
     void shouldCreateTransitionForQuarantine() {
         MasteryTransition transition = MasteryTransition.automatic(
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
                 MasteryState.COMPETENT,
                 MasteryState.QUARANTINED,
                 "Safety evaluation failed"
         );
 
-        assertThat(transition.fromState()).isEqualTo(MasteryState.COMPETENT);
-        assertThat(transition.toState()).isEqualTo(MasteryState.QUARANTINED);
-        assertThat(transition.reason()).contains("Safety");
+        assertEquals(MasteryState.COMPETENT, transition.fromState());
+        assertEquals(MasteryState.QUARANTINED, transition.toState());
+        assertTrue(transition.reason().contains("Safety"));
     }
 
     @Test
     @DisplayName("Should create transition for maintenance mode")
     void shouldCreateTransitionForMaintenanceMode() {
         MasteryTransition transition = MasteryTransition.automatic(
+                "tenant-123",
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                "skill-123",
                 MasteryState.MASTERED,
                 MasteryState.MAINTENANCE_ONLY,
                 "New version available"
         );
 
-        assertThat(transition.fromState()).isEqualTo(MasteryState.MASTERED);
-        assertThat(transition.toState()).isEqualTo(MasteryState.MAINTENANCE_ONLY);
-        assertThat(transition.reason()).contains("version");
+        assertEquals(MasteryState.MASTERED, transition.fromState());
+        assertEquals(MasteryState.MAINTENANCE_ONLY, transition.toState());
+        assertTrue(transition.reason().contains("version"));
     }
 }
