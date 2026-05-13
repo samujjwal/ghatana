@@ -210,6 +210,7 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     private MasteryItem createMasteryItem() {
         return new MasteryItem(
                 "mastery-123",
+                "tenant-123",
                 "skill-123",
                 "test-domain",
                 "agent-123",
@@ -227,7 +228,8 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                 List.of(),
                 Instant.now(),
                 Instant.now().plusSeconds(86400),
-                Map.of()
+                Map.of(),
+                0.8
         );
     }
 }

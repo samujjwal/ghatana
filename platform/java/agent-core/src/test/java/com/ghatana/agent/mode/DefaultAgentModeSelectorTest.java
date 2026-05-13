@@ -136,6 +136,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
     private MasteryItem createMasteredMastery() {
         return new MasteryItem(
                 "mastery-1",
+                "tenant-1",
                 "skill-1",
                 "domain-1",
                 "agent-1",
@@ -153,13 +154,15 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 List.of(),
                 Instant.now(),
                 Instant.now().plus(30, ChronoUnit.DAYS),
-                Map.of()
+                Map.of(),
+                0.9
         );
     }
 
     private MasteryItem createObsoleteMastery() {
         return new MasteryItem(
                 "mastery-1",
+                "tenant-1",
                 "skill-1",
                 "domain-1",
                 "agent-1",
@@ -177,7 +180,8 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 List.of(),
                 Instant.now().minus(100, ChronoUnit.DAYS),
                 Instant.now().minus(1, ChronoUnit.DAYS),
-                Map.of()
+                Map.of(),
+                0.9
         );
     }
 }

@@ -76,6 +76,7 @@ public final class MasteryEvidenceMapper {
 
         return new MasteryEvidence(
                 (String) data.get(FIELD_EVIDENCE_ID),
+                (String) data.get(FIELD_TENANT_ID),
                 MasteryEvidenceType.valueOf(type),
                 ref,
                 digest,

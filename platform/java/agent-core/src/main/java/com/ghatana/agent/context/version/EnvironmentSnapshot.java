@@ -41,9 +41,9 @@ public record EnvironmentSnapshot(
     @NotNull
     public static EnvironmentSnapshot capture() {
         VersionContext versionContext = VersionContext.empty();
-        DependencyFingerprint dependencyFingerprint = DependencyFingerprint.fromVersions(Map.of());
+        DependencyFingerprint dependencyFingerprint = DependencyFingerprint.fromProject();
         RuntimeFingerprint runtimeFingerprint = RuntimeFingerprint.fromSystem();
-        RepositoryConventionFingerprint repositoryConventionFingerprint = RepositoryConventionFingerprint.fromConventions(Map.of());
+        RepositoryConventionFingerprint repositoryConventionFingerprint = RepositoryConventionFingerprint.fromProject();
 
         return new EnvironmentSnapshot(
                 versionContext,

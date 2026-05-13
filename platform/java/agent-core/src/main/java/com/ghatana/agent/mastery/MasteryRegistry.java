@@ -72,6 +72,15 @@ public interface MasteryRegistry {
     Promise<List<MasteryItem>> query(@NotNull MasteryQuery query);
 
     /**
+     * Queries mastery items and returns a mastery decision for the first match.
+     *
+     * @param query mastery query parameters
+     * @return promise of optional mastery decision
+     */
+    @NotNull
+    Promise<Optional<MasteryDecision>> queryMastery(@NotNull MasteryQuery query);
+
+    /**
      * Makes a mastery decision based on the query parameters.
      *
      * <p>Evaluates mastery state, version context, and environment to determine
@@ -118,7 +127,29 @@ public interface MasteryRegistry {
      *
      * @param now current time
      * @return promise of list of stale mastery items
+     * @deprecated Use {@link #findStale(String, Instant)} for tenant-scoped stale detection
      */
+    @Deprecated
     @NotNull
     Promise<List<MasteryItem>> findStale(@NotNull Instant now);
+
+    /**
+     * Finds mastery items that are stale (past their staleAfter timestamp) for a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param now current time
+     * @return promise of list of stale mastery items
+     */
+    @NotNull
+    Promise<List<MasteryItem>> findStale(@NotNull String tenantId, @NotNull Instant now);
+
+    /**
+     * Finds a mastery item by ID for a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param masteryId mastery item identifier
+     * @return promise of optional mastery item
+     */
+    @NotNull
+    Promise<Optional<MasteryItem>> getById(@NotNull String tenantId, @NotNull String masteryId);
 }

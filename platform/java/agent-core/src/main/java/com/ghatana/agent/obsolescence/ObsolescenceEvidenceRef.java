@@ -7,6 +7,7 @@ package com.ghatana.agent.obsolescence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -38,6 +39,10 @@ public final class ObsolescenceEvidenceRef {
         ENVIRONMENT_FINGERPRINT,
         SECURITY_REPORT,
         DOCUMENTATION,
+        DEPENDENCY_CHANGE,
+        API_DIFF,
+        TEST_FAILURE,
+        SECURITY_ADVISORY,
         CUSTOM
     }
 
@@ -133,6 +138,50 @@ public final class ObsolescenceEvidenceRef {
     @NotNull
     public static ObsolescenceEvidenceRef documentation(@NotNull String docId) {
         return new ObsolescenceEvidenceRef(RefType.DOCUMENTATION.name(), docId, null);
+    }
+
+    /**
+     * Creates a dependency changes evidence reference.
+     *
+     * @param changes list of dependency changes
+     * @return evidence reference
+     */
+    @NotNull
+    public static ObsolescenceEvidenceRef dependencyChanges(@NotNull List<String> changes) {
+        return new ObsolescenceEvidenceRef(RefType.DEPENDENCY_CHANGE.name(), "dependency-changes", String.join("; ", changes));
+    }
+
+    /**
+     * Creates an API diff evidence reference.
+     *
+     * @param changes list of API changes
+     * @return evidence reference
+     */
+    @NotNull
+    public static ObsolescenceEvidenceRef apiDiffs(@NotNull List<String> changes) {
+        return new ObsolescenceEvidenceRef(RefType.API_DIFF.name(), "api-diffs", String.join("; ", changes));
+    }
+
+    /**
+     * Creates a test failures evidence reference.
+     *
+     * @param failures list of test failures
+     * @return evidence reference
+     */
+    @NotNull
+    public static ObsolescenceEvidenceRef testFailures(@NotNull List<String> failures) {
+        return new ObsolescenceEvidenceRef(RefType.TEST_FAILURE.name(), "test-failures", String.join("; ", failures));
+    }
+
+    /**
+     * Creates a security advisories evidence reference.
+     *
+     * @param advisories list of security advisories
+     * @return evidence reference
+     */
+    @NotNull
+    public static ObsolescenceEvidenceRef securityAdvisories(@NotNull List<String> advisories) {
+        return new ObsolescenceEvidenceRef(RefType.SECURITY_ADVISORY.name(), "security-advisories", String.join("; ", advisories));
     }
 
     @NotNull

@@ -76,4 +76,18 @@ public record VersionConstraint(
     public static VersionConstraint runtimeVersion(@NotNull String runtimeName, @NotNull String versionRange, @NotNull String ecosystem) {
         return new VersionConstraint("runtime", runtimeName, versionRange, ecosystem);
     }
+
+    /**
+     * Creates a version constraint from the given parameters.
+     *
+     * @param kind constraint kind (e.g., "package", "tool", "runtime")
+     * @param name constraint name
+     * @param range version range
+     * @param ecosystem ecosystem
+     * @return version constraint
+     */
+    @NotNull
+    public static VersionConstraint of(@NotNull String kind, @NotNull String name, @NotNull String range, @NotNull String ecosystem) {
+        return new VersionConstraint(kind, name, range, ecosystem);
+    }
 }

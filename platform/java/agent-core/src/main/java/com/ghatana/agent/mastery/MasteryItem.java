@@ -25,6 +25,7 @@ import java.util.Objects;
  */
 public record MasteryItem(
         @NotNull String masteryId,
+        @NotNull String tenantId,
         @NotNull String skillId,
         @NotNull String domain,
         @NotNull String agentId,
@@ -42,10 +43,12 @@ public record MasteryItem(
         @NotNull List<MasteryTransition> stateHistory,
         @NotNull Instant lastVerifiedAt,
         @NotNull Instant staleAfter,
-        @NotNull Map<String, String> labels
+        @NotNull Map<String, String> labels,
+        double confidence
 ) {
     public MasteryItem {
         Objects.requireNonNull(masteryId, "masteryId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(skillId, "skillId must not be null");
         Objects.requireNonNull(domain, "domain must not be null");
         Objects.requireNonNull(agentId, "agentId must not be null");

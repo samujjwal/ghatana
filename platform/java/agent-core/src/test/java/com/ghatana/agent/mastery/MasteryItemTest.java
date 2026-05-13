@@ -30,6 +30,7 @@ class MasteryItemTest {
         Instant now = Instant.now();
         return new MasteryItem(
                 "mastery-1",
+                "tenant-1",
                 "skill-1",
                 "domain-1",
                 "agent-1",
@@ -47,7 +48,8 @@ class MasteryItemTest {
                 stateHistory,
                 now,
                 now.plusSeconds(86400),
-                Map.of()
+                Map.of(),
+                0.8
         );
     }
 
@@ -70,7 +72,11 @@ class MasteryItemTest {
         // Mutate the original list — the record must remain unchanged
         mutableHistory.add(new MasteryTransition(
                 "txn-1",
+                "tenant-1",
                 "mastery-1",
+                "agent-1",
+                "release-1.0.0",
+                null,
                 MasteryState.UNKNOWN,
                 MasteryState.COMPETENT,
                 "test transition",

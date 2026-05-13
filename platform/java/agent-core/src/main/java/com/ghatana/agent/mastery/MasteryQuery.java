@@ -175,4 +175,15 @@ public record MasteryQuery(
     public MasteryQuery withTenantId(@NotNull String tenantId) {
         return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
     }
+
+    /**
+     * Returns a new query with the states set.
+     *
+     * @param states set of mastery states
+     * @return new query with states
+     */
+    @NotNull
+    public MasteryQuery withStates(@NotNull Set<MasteryState> states) {
+        return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
+    }
 }

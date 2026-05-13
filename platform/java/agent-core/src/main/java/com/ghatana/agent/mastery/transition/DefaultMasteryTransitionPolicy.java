@@ -96,6 +96,19 @@ public final class DefaultMasteryTransitionPolicy implements MasteryTransitionPo
             return TransitionValidation.success();
         }
 
+        // MASTERED cannot go directly to OBSOLETE; must go through MAINTENANCE_ONLY first
+        if (fromState == MasteryState.MASTERED && toState == MasteryState.OBSOLETE) {
+            return TransitionValidation.denied("MASTERED → OBSOLETE is not allowed; must transition through MAINTENANCE_ONLY");
+        }
+
+        // MAINTENANCE_ONLY to OBSOLETE requires version end-of-life or replacement
+        if (fromState == MasteryState.MAINTENANCE_ONLY && toState == MasteryState.OBSOLETE) {
+            if (!evidence.containsKey("end_of_life") && !evidence.containsKey("replaced_by_newer")) {
+                return TransitionValidation.denied("MAINTENANCE_ONLY → OBSOLETE requires end-of-life or replacement evidence");
+            }
+            return TransitionValidation.success();
+        }
+
         // QUARANTINED can be reached from any state (for safety)
         if (toState == MasteryState.QUARANTINED) {
             if (!evidence.containsKey("safety_violation") && !evidence.containsKey("unsafe_behavior")) {
@@ -104,10 +117,26 @@ public final class DefaultMasteryTransitionPolicy implements MasteryTransitionPo
             return TransitionValidation.success();
         }
 
-        // OBSOLETE can be reached from any active state
-        if (toState == MasteryState.OBSOLETE && fromState.isActiveForRetrieval()) {
-            if (!evidence.containsKey("contradiction") && !evidence.containsKey("repeated_failures")) {
-                return TransitionValidation.denied("OBSOLETE requires contradiction or repeated failures");
+        // QUARANTINED can only exit with explicit human/security review
+        if (fromState == MasteryState.QUARANTINED) {
+            if (!evidence.containsKey("human_review_approved") && !evidence.containsKey("security_review_approved")) {
+                return TransitionValidation.denied("QUARANTINED exit requires explicit human or security review approval");
+            }
+            // Additional check: ensure the target state is appropriate for quarantine exit
+            if (toState != MasteryState.OBSERVED && toState != MasteryState.PRACTICED && toState != MasteryState.COMPETENT) {
+                return TransitionValidation.denied("QUARANTINED can only exit to OBSERVED, PRACTICED, or COMPETENT states after review");
+            }
+            return TransitionValidation.success();
+        }
+
+        // OBSOLETE can be reached from any active state or MAINTENANCE_ONLY
+        if (toState == MasteryState.OBSOLETE) {
+            if (!fromState.isActiveForRetrieval() && fromState != MasteryState.MAINTENANCE_ONLY) {
+                return TransitionValidation.denied("OBSOLETE can only be reached from active states or MAINTENANCE_ONLY");
+            }
+            if (!evidence.containsKey("contradiction") && !evidence.containsKey("repeated_failures") 
+                    && !evidence.containsKey("security_advisory") && !evidence.containsKey("api_break")) {
+                return TransitionValidation.denied("OBSOLETE requires contradiction, repeated failures, security advisory, or API break");
             }
             return TransitionValidation.success();
         }
@@ -121,19 +150,6 @@ public final class DefaultMasteryTransitionPolicy implements MasteryTransitionPo
                 return TransitionValidation.denied("RETIRED requires confirmation of no active use case");
             }
             return TransitionValidation.success();
-        }
-
-        // Forward progression through lifecycle
-        if (fromState == MasteryState.OBSERVED && toState == MasteryState.PRACTICED) {
-            return TransitionValidation.success();
-        }
-
-        if (fromState == MasteryState.PRACTICED && toState == MasteryState.COMPETENT) {
-            return TransitionValidation.success();
-        }
-
-        if (fromState == MasteryState.COMPETENT && toState == MasteryState.MASTERED) {
-            return !evidence.isEmpty() ? TransitionValidation.success() : TransitionValidation.denied("COMPETENT → MASTERED requires evaluation evidence");
         }
 
         return TransitionValidation.denied("Invalid transition from " + fromState + " to " + toState);

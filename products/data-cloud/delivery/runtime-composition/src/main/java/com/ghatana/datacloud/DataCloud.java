@@ -729,6 +729,7 @@ public final class DataCloud {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<Optional<Entity>> findById(TenantContext tenant, EntityId id) {
             // Without collection context the key is ambiguous; return empty to signal that
             // callers must use findByRef for collection-scoped lookup.
@@ -745,6 +746,7 @@ public final class DataCloud {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<List<Entity>> findByIds(TenantContext tenant, List<EntityId> ids) {
             // Without collection context we cannot do a scoped look-up; return empty.
             return Promise.of(List.of());
@@ -840,6 +842,7 @@ public final class DataCloud {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<Void> delete(TenantContext tenant, EntityId id) {
             // Without collection context we cannot safely delete; no-op.
             return Promise.of(null);
@@ -855,6 +858,7 @@ public final class DataCloud {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids) {
             // Without collection context, cannot do scoped deletes; return zero affected.
             return Promise.of(new BatchResult<String>(ids.size(), 0, ids.size(),
@@ -888,6 +892,7 @@ public final class DataCloud {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<Boolean> exists(TenantContext tenant, EntityId id) {
             // Without collection context this is unreliable; return false.
             return Promise.of(false);

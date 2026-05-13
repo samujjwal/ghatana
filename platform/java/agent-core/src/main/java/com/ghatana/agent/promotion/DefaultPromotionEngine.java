@@ -71,7 +71,8 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     @NotNull
     public Promise<PromotionResult> promote(
             @NotNull LearningDelta delta,
-            @NotNull EvaluationResult result
+            @NotNull EvaluationResult result,
+            @NotNull String tenantId
     ) {
         // Check if promotion is allowed by policy
         if (!promotionPolicy.canPromote(delta, result)) {
@@ -134,7 +135,11 @@ public final class DefaultPromotionEngine implements PromotionEngine {
 
         MasteryTransition transition = new MasteryTransition(
                 UUID.randomUUID().toString(),
+                delta.tenantId(),
                 item.masteryId(),
+                delta.agentId(),
+                delta.agentReleaseId(),
+                delta.skillId(),
                 previousState,
                 targetState,
                 "Promoted via learning delta: " + delta.deltaId(),
@@ -174,6 +179,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
         Instant now = Instant.now();
         return new MasteryItem(
                 UUID.randomUUID().toString(),
+                delta.tenantId(),
                 delta.skillId(),
                 delta.skillId(),               // domain defaults to skillId until richer metadata arrives
                 delta.agentId(),
@@ -191,7 +197,8 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 List.of(),                     // stateHistory
                 now,
                 now.plus(java.time.Duration.ofDays(30)),
-                Map.of()
+                Map.of(),
+                0.0
         );
     }
 

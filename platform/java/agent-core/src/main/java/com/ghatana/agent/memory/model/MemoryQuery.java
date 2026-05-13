@@ -7,6 +7,7 @@ package com.ghatana.agent.memory.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,11 +21,13 @@ import java.util.Set;
  */
 public record MemoryQuery(
     @NotNull String agentId,
+    @Nullable String tenantId,
     @Nullable String situation,
     @Nullable Set<String> skillTags,
     @Nullable Map<String, Object> metadata,
     @Nullable Integer limit,
-    boolean requireFreshness
+    boolean requireFreshness,
+    @Nullable List<?> items
 ) {
     public MemoryQuery {
         if (agentId == null || agentId.isBlank()) {
@@ -38,14 +41,21 @@ public record MemoryQuery(
 
     public static class Builder {
         private String agentId;
+        private String tenantId;
         private String situation;
         private Set<String> skillTags;
         private Map<String, Object> metadata;
         private Integer limit;
         private boolean requireFreshness = false;
+        private List<?> items;
 
         public Builder agentId(String agentId) {
             this.agentId = agentId;
+            return this;
+        }
+
+        public Builder tenantId(String tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
@@ -74,8 +84,13 @@ public record MemoryQuery(
             return this;
         }
 
+        public Builder items(List<?> items) {
+            this.items = items;
+            return this;
+        }
+
         public MemoryQuery build() {
-            return new MemoryQuery(agentId, situation, skillTags, metadata, limit, requireFreshness);
+            return new MemoryQuery(agentId, tenantId, situation, skillTags, metadata, limit, requireFreshness, items);
         }
     }
 }

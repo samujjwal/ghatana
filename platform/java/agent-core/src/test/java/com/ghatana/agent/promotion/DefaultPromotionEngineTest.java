@@ -83,6 +83,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         Instant now = Instant.now();
         return new MasteryItem(
                 masteryId,
+                "tenant-1",
                 "skill-abc",
                 "skill-abc",
                 "agent-123",
@@ -100,7 +101,8 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
                 List.of(),
                 now,
                 now.plusSeconds(86400),
-                Map.of()
+                Map.of(),
+                0.0
         );
     }
 
@@ -145,7 +147,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         when(deltaRepository.updateState(any(), eq(LearningDeltaState.PROMOTED)))
                 .thenReturn(Promise.of(delta));
 
-        runPromise(() -> promotionEngine.promote(delta, evaluation));
+        runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         ArgumentCaptor<MasteryQuery> queryCaptor = ArgumentCaptor.forClass(MasteryQuery.class);
         verify(masteryRegistry).query(queryCaptor.capture());
@@ -171,7 +173,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         when(deltaRepository.updateState(any(), eq(LearningDeltaState.PROMOTED)))
                 .thenReturn(Promise.of(delta));
 
-        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation));
+        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isTrue();
         // save() must NOT be called when item already exists
@@ -192,7 +194,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         when(deltaRepository.updateState(any(), eq(LearningDeltaState.PROMOTED)))
                 .thenReturn(Promise.of(delta));
 
-        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation));
+        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isTrue();
         // save() must be called to bootstrap the initial item
@@ -212,7 +214,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
                 .thenReturn(Promise.of(MasteryTransitionResult.failure(
                         "mastery-fail", MasteryState.OBSERVED, "Transition constraint violated")));
 
-        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation));
+        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isFalse();
         // updateState to PROMOTED must NOT be called when transition fails
@@ -234,7 +236,7 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         when(deltaRepository.updateState(eq(delta.deltaId()), eq(LearningDeltaState.PROMOTED)))
                 .thenReturn(Promise.of(delta));
 
-        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation));
+        PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isTrue();
         verify(deltaRepository).updateState(delta.deltaId(), LearningDeltaState.PROMOTED);

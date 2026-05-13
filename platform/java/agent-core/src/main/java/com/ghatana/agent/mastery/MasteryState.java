@@ -10,6 +10,17 @@ package com.ghatana.agent.mastery;
  * <p>The mastery lifecycle represents an agent's progression from unknown
  * to mastered knowledge, with branches for maintenance, obsolescence, and quarantine.
  *
+ * <p><b>MASTERY_STATE vs Normal Self-Learning:</b>
+ * MasteryState governance is distinct from normal self-learning:
+ * <ul>
+ *   <li>MasteryState tracks procedural skill lifecycle and execution permissions
+ *       (UNKNOWN → OBSERVED → PRACTICED → COMPETENT → MASTERED → MAINTENANCE_ONLY → OBSOLETE → RETIRED → QUARANTINED)</li>
+ *   <li>Normal self-learning uses LearningDelta and the promotion pipeline to propose
+ *       and promote changes to agent behavior (semantic facts, retrieval policies, etc.)</li>
+ *   <li>MasteryState is about runtime execution control based on skill proficiency</li>
+ *   <li>LearningDelta is about governance of what changes an agent may propose and promote</li>
+ * </ul>
+ *
  * @doc.type enum
  * @doc.purpose Lifecycle states for skill mastery tracking
  * @doc.layer agent-core

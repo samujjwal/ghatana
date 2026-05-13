@@ -141,6 +141,23 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
 
     @Override
     @NotNull
+    public Promise<List<LearningDelta>> findByTenant(@NotNull String tenantId, @Nullable String agentId, @Nullable Integer limit, @Nullable Integer offset) {
+        Map<String, Object> filter = new HashMap<>();
+        if (agentId != null) {
+            filter.put("agentId", agentId);
+        }
+        int effectiveOffset = offset != null ? offset : 0;
+        int effectiveLimit = limit != null ? limit : MAX_RESULTS;
+        return entityRepository.findAll(tenantId, COLLECTION, filter, null, 0, MAX_RESULTS)
+                .map(entities -> entities.stream()
+                        .map(e -> LearningDeltaMapper.fromDataMap(e.getData()))
+                        .skip(effectiveOffset)
+                        .limit(effectiveLimit)
+                        .collect(Collectors.toList()));
+    }
+
+    @Override
+    @NotNull
     public Promise<List<LearningDelta>> findByState(@NotNull LearningDeltaState state) {
         return scanAllTenants()
                 .map(deltas -> deltas.stream()

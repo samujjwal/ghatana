@@ -150,6 +150,44 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         this.modeSelector = modeSelector;
     }
 
+    /**
+     * Convenience constructor — modeSelector first, no release repository.
+     * Useful when only supervised execution mode selection is needed.
+     */
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @Nullable MasteryAwareModeSelector modeSelector) {
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, modeSelector);
+    }
+
+    /**
+     * Convenience constructor — modeSelector first, with release repository.
+     */
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @Nullable MasteryAwareModeSelector modeSelector,
+            @Nullable AgentReleaseRepository releaseRepository) {
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, modeSelector);
+    }
+
+    /**
+     * Convenience constructor — modeSelector first, with release repository, tracer, and capability manifest.
+     */
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @Nullable MasteryAwareModeSelector modeSelector,
+            @Nullable AgentReleaseRepository releaseRepository,
+            @Nullable AgentRunTracer agentRunTracer,
+            @Nullable AgentCapabilityManifest capabilityManifest) {
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, modeSelector);
+    }
+
     @Override
     @NotNull
     public <I, O> Promise<AgentResult<O>> dispatch(

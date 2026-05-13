@@ -102,10 +102,10 @@ class DefaultPromotionPolicyTest {
                 false,
                 "system",
                 Instant.now(),
+                Instant.now(),
                 null,
                 null,
-                null,
-                Map.of(),
+                Map.of("label", "test"),
                 null
         );
     }

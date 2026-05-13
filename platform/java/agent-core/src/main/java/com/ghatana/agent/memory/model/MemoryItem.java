@@ -30,6 +30,9 @@ public interface MemoryItem {
     /** The memory tier this item belongs to. */
     @NotNull MemoryItemType getType();
 
+    /** Skill ID for mastery tracking. */
+    @Nullable String getSkillId();
+
     /** When this item was first created. */
     @NotNull Instant getCreatedAt();
 

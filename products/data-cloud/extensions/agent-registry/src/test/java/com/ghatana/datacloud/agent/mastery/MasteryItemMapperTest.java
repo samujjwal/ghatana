@@ -38,6 +38,7 @@ class MasteryItemMapperTest {
         MasteryItem restored = MasteryItemMapper.fromDataMap(data);
 
         assertThat(restored.masteryId()).isEqualTo(original.masteryId());
+        assertThat(restored.tenantId()).isEqualTo(original.tenantId());
         assertThat(restored.skillId()).isEqualTo(original.skillId());
         assertThat(restored.domain()).isEqualTo(original.domain());
         assertThat(restored.agentId()).isEqualTo(original.agentId());
@@ -70,6 +71,7 @@ class MasteryItemMapperTest {
         // Timestamps
         assertThat(restored.lastVerifiedAt()).isEqualTo(original.lastVerifiedAt());
         assertThat(restored.staleAfter()).isEqualTo(original.staleAfter());
+        assertThat(restored.confidence()).isEqualTo(original.confidence());
     }
 
     // -----------------------------------------------------------------------
@@ -129,8 +131,8 @@ class MasteryItemMapperTest {
     void stateHistoryRoundTrips() {
         Instant transitionedAt = Instant.parse("2026-02-10T08:30:00Z");
         MasteryTransition transition = new MasteryTransition(
-                "txn-001",
-                "mastery-rt-001",
+                "txn-001", "tenant-sh", "mastery-rt-001", "agent-sh", "release-sh-01",
+                null,
                 MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
                 "passed evaluation suite",
@@ -169,7 +171,8 @@ class MasteryItemMapperTest {
         MasteryScore score = new MasteryScore(0.9, 0.85, 0.8, 0.95, 0.7, 0.88, 0.92);
 
         MasteryTransition txn = new MasteryTransition(
-                "txn-full-01", "mastery-full-01",
+                "txn-full-01", "tenant-rt", "mastery-full-01", "agent-dc-v2", "release-dc-2026-01",
+                null,
                 MasteryState.OBSERVED, MasteryState.PRACTICED,
                 "initial evidence batch", "system",
                 Instant.parse("2026-01-10T09:00:00Z"),
@@ -179,6 +182,7 @@ class MasteryItemMapperTest {
 
         return new MasteryItem(
                 "mastery-full-01",
+                "tenant-rt",
                 "skill-data-modeling",
                 "data-cloud",
                 "agent-dc-v2",
@@ -196,7 +200,8 @@ class MasteryItemMapperTest {
                 List.of(txn),
                 LAST_VERIFIED,
                 STALE_AFTER,
-                Map.of("env", "staging", "tier", "critical")
+                Map.of("env", "staging", "tier", "critical"),
+                0.9
         );
     }
 
@@ -206,14 +211,14 @@ class MasteryItemMapperTest {
         MasteryScore score = new MasteryScore(0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8);
 
         return new MasteryItem(
-                "mastery-ev-01", "skill-ev", "test", "agent-ev", "release-ev-01",
+                "mastery-ev-01", "tenant-ev", "skill-ev", "test", "agent-ev", "release-ev-01",
                 MasteryState.PRACTICED,
                 versionScope, applicability, score,
                 List.of(), List.of(), List.of(),
                 evidenceRefs,
                 List.of(), List.of(), List.of(),
                 LAST_VERIFIED, STALE_AFTER,
-                Map.of()
+                Map.of(), 0.8
         );
     }
 
@@ -222,12 +227,12 @@ class MasteryItemMapperTest {
         MasteryScore score = new MasteryScore(0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8);
 
         return new MasteryItem(
-                "mastery-vs-01", "skill-vs", "test", "agent-vs", "release-vs-01",
+                "mastery-vs-01", "tenant-vs", "skill-vs", "test", "agent-vs", "release-vs-01",
                 MasteryState.MASTERED,
                 versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 LAST_VERIFIED, STALE_AFTER,
-                Map.of()
+                Map.of(), 0.8
         );
     }
 
@@ -237,13 +242,13 @@ class MasteryItemMapperTest {
         MasteryScore score = new MasteryScore(0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8);
 
         return new MasteryItem(
-                "mastery-rt-001", "skill-sh", "test", "agent-sh", "release-sh-01",
+                "mastery-rt-001", "tenant-sh", "skill-sh", "test", "agent-sh", "release-sh-01",
                 MasteryState.COMPETENT,
                 versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 history,
                 LAST_VERIFIED, STALE_AFTER,
-                Map.of()
+                Map.of(), 0.8
         );
     }
 }

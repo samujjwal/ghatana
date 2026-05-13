@@ -120,6 +120,21 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
         }
 
         @Override
+        public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(String tenantId, java.time.Instant now) {
+            return io.activej.promise.Promise.of(java.util.List.of());
+        }
+
+        @Override
+        public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> getById(String tenantId, String masteryId) {
+            return io.activej.promise.Promise.of(java.util.Optional.empty());
+        }
+
+        @Override
+        public io.activej.promise.Promise<java.util.Optional<MasteryDecision>> queryMastery(MasteryQuery query) {
+            return io.activej.promise.Promise.of(java.util.Optional.empty());
+        }
+
+        @Override
         public io.activej.promise.Promise<MasteryDecision> decide(MasteryQuery query) {
             return io.activej.promise.Promise.of(MasteryDecision.allow(
                     "mastery-123",
@@ -199,6 +214,21 @@ class MasteryAwareModeSelectorTest extends EventloopTestBase {
             @Override
             public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(java.time.Instant now) {
                 return Promise.of(java.util.List.of());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(String tenantId, java.time.Instant now) {
+                return Promise.of(java.util.List.of());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> getById(String tenantId, String masteryId) {
+                return Promise.of(java.util.Optional.empty());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.Optional<MasteryDecision>> queryMastery(MasteryQuery query) {
+                return Promise.of(java.util.Optional.empty());
             }
 
             @Override

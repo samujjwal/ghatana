@@ -6,6 +6,8 @@ package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.mastery.*;
+import com.ghatana.agent.mastery.transition.DefaultMasteryTransitionPolicy;
+import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -43,7 +45,8 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         return new DataCloudMasteryRegistry(
                 new InMemoryEntityRepository(),
                 new InMemoryMasteryTransitionRepository(),
-                new InMemoryMasteryEvidenceRepository()
+                new InMemoryMasteryEvidenceRepository(),
+                new DefaultMasteryTransitionPolicy()
         );
     }
 
@@ -52,10 +55,11 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         VersionScope versionScope = VersionScope.empty();
         MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
         return new MasteryItem(
-                masteryId, skillId, "domain-1", "agent-123", "release-1.0.0",
+                masteryId, TENANT, skillId, "domain-1", "agent-123", "release-1.0.0",
                 state, versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of("ev-1"), List.of(), List.of(), List.of(),
-                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of()
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
         );
     }
 
@@ -87,7 +91,7 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         runPromise(() -> registry.save(item1));
         runPromise(() -> registry.save(item2));
 
-        MasteryQuery query = MasteryQuery.bySkill("skill-123");
+        MasteryQuery query = MasteryQuery.bySkill("skill-123").withTenantId(TENANT);
         List<MasteryItem> results = runPromise(() -> registry.query(query));
 
         assertThat(results).hasSize(1);
@@ -104,13 +108,17 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
 
         MasteryTransition transition = new MasteryTransition(
                 UUID.randomUUID().toString(),
+                TENANT,
                 "mastery-123",
+                "agent-123",
+                "release-1.0.0",
+                null,
                 MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
                 "Evaluation passed",
                 "user-123",
                 Instant.now(),
-                Map.of("eval-1", "competency-check-passed"),
+                Map.of("procedure_id", "proc-123", "basic_eval_passed", "true"),
                 Map.of()
         );
 
@@ -131,17 +139,18 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
 
         MasteryItem staleItem = new MasteryItem(
-                "mastery-1", "skill-123", "domain-1", "agent-123", "release-1.0.0",
+                "mastery-1", TENANT, "skill-123", "domain-1", "agent-123", "release-1.0.0",
                 MasteryState.COMPETENT, versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                past, past, Map.of()
+                past, past, Map.of(),
+                0.9
         );
         MasteryItem freshItem = buildItem("mastery-2", "skill-456", MasteryState.COMPETENT);
 
         runPromise(() -> registry.save(staleItem));
         runPromise(() -> registry.save(freshItem));
 
-        List<MasteryItem> staleItems = runPromise(() -> registry.findStale(Instant.now()));
+        List<MasteryItem> staleItems = runPromise(() -> registry.findStale(TENANT, Instant.now()));
 
         assertThat(staleItems).hasSize(1);
         assertThat(staleItems.get(0).masteryId()).isEqualTo("mastery-1");
@@ -156,15 +165,16 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         VersionScope versionScope = VersionScope.empty();
 
         MasteryItem item = new MasteryItem(
-                "mastery-123", "skill-123", "domain-1", "agent-123", "release-1.0.0",
+                "mastery-123", TENANT, "skill-123", "domain-1", "agent-123", "release-1.0.0",
                 MasteryState.MASTERED, versionScope, applicability, highScore,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of()
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
         );
 
         runPromise(() -> registry.save(item));
 
-        MasteryQuery query = MasteryQuery.bySkill("skill-123");
+        MasteryQuery query = MasteryQuery.bySkill("skill-123").withTenantId(TENANT);
         MasteryDecision decision = runPromise(() -> registry.decide(query));
 
         assertThat(decision.allowed()).isTrue();
@@ -179,7 +189,7 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
 
         runPromise(() -> registry.save(item));
 
-        MasteryQuery query = MasteryQuery.bySkill("skill-123");
+        MasteryQuery query = MasteryQuery.bySkill("skill-123").withTenantId(TENANT);
         MasteryDecision decision = runPromise(() -> registry.decide(query));
 
         assertThat(decision.allowed()).isTrue();
@@ -249,10 +259,11 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
         Instant past = Instant.now().minus(java.time.Duration.ofDays(60));
         return new MasteryItem(
-                masteryId, skillId, "domain-1", "agent-123", "release-1.0.0",
+                masteryId, TENANT, skillId, "domain-1", "agent-123", "release-1.0.0",
                 state, versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of("ev-1"), List.of(), List.of(), List.of(),
-                past, past, Map.of()
+                past, past, Map.of(),
+                0.9
         );
     }
 
@@ -260,7 +271,8 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         return new DataCloudMasteryRegistry(
                 new InMemoryEntityRepository(),
                 new FailingTransitionRepository(),
-                new InMemoryMasteryEvidenceRepository()
+                new InMemoryMasteryEvidenceRepository(),
+                new DefaultMasteryTransitionPolicy()
         );
     }
 
@@ -325,10 +337,11 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
 
         // PRACTICED → MASTERED (skipping COMPETENT) must be rejected
         MasteryTransition transition = new MasteryTransition(
-                UUID.randomUUID().toString(), "mastery-pol",
+                UUID.randomUUID().toString(), TENANT, "mastery-pol",
+                "agent-123", "release-1.0.0", null,
                 MasteryState.PRACTICED, MasteryState.MASTERED,
                 "skip check", "tester", Instant.now(),
-                Map.of("ev-1", "passed"), Map.of()
+                Map.of("procedure_id", "proc-123", "basic_eval_passed", "true"), Map.of()
         );
 
         MasteryTransitionResult result = runPromise(() -> registry.transition(transition));
@@ -345,10 +358,11 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         runPromise(() -> registry.save(item));
 
         MasteryTransition transition = new MasteryTransition(
-                UUID.randomUUID().toString(), "mastery-atomic",
+                UUID.randomUUID().toString(), TENANT, "mastery-atomic",
+                "agent-123", "release-1.0.0", null,
                 MasteryState.PRACTICED, MasteryState.COMPETENT,
                 "append will fail", "tester", Instant.now(),
-                Map.of("ev-1", "passed"), Map.of()
+                Map.of("procedure_id", "proc-123", "basic_eval_passed", "true"), Map.of()
         );
 
         // Append fails → Promise propagates the failure (explicit, not silent)
@@ -379,22 +393,27 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         VersionScope versionScope = VersionScope.empty();
         MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
         MasteryItem item = new MasteryItem(
-                "mastery-prod-1", "skill-prod", "domain-1", "agent-prod", "release-2.0.0",
+                "mastery-prod-1", tenantProd, "skill-prod", "domain-1", "agent-prod", "release-2.0.0",
                 MasteryState.PRACTICED, versionScope, applicability, score,
                 List.of(), List.of(), List.of(), List.of("ev-1"), List.of(), List.of(), List.of(),
-                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of()
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
         );
         runPromise(() -> registry.save(item));
 
         MasteryTransition transition = new MasteryTransition(
                 UUID.randomUUID().toString(),
+                tenantProd,
                 "mastery-prod-1",
+                "agent-prod",
+                "release-2.0.0",
+                null,
                 MasteryState.PRACTICED,
                 MasteryState.COMPETENT,
                 "Evaluation passed",
                 "tester",
                 Instant.now(),
-                Map.of("ev-1", "passed"),
+                Map.of("procedure_id", "proc-123", "basic_eval_passed", "true"),
                 Map.of()
         );
 
@@ -416,14 +435,15 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
 
         MasteryItem staleOtherTenant = new MasteryItem(
-                "mastery-stale-other", "skill-stale-other", "domain-1", "agent-other", "release-1.0.0",
+                "mastery-stale-other", tenantOther, "skill-stale-other", "domain-1", "agent-other", "release-1.0.0",
                 MasteryState.COMPETENT, versionScope, otherApplicability, score,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                past, past, Map.of()
+                past, past, Map.of(),
+                0.9
         );
         runPromise(() -> registry.save(staleOtherTenant));
 
-        List<MasteryItem> staleItems = runPromise(() -> registry.findStale(Instant.now()));
+        List<MasteryItem> staleItems = runPromise(() -> registry.findStale(tenantOther, Instant.now()));
 
         assertThat(staleItems).hasSize(1);
         assertThat(staleItems.get(0).masteryId()).isEqualTo("mastery-stale-other");

@@ -110,6 +110,9 @@ public final class MasteryItemMapper {
         // Labels
         data.put(FIELD_LABELS, new HashMap<>(item.labels()));
 
+        // Scalar confidence
+        data.put("confidence", item.confidence());
+
         return data;
     }
 
@@ -187,6 +190,7 @@ public final class MasteryItemMapper {
 
         return new MasteryItem(
                 (String) data.get(FIELD_MASTERY_ID),
+                tenantId != null ? tenantId : "",
                 (String) data.get(FIELD_SKILL_ID),
                 (String) data.get(FIELD_DOMAIN),
                 (String) data.get(FIELD_AGENT_ID),
@@ -204,7 +208,8 @@ public final class MasteryItemMapper {
                 stateHistory,
                 parseInstant(data.get(FIELD_LAST_VERIFIED_AT)),
                 parseInstant(data.get(FIELD_STALE_AFTER)),
-                labels
+                labels,
+                ((Number) data.getOrDefault("confidence", 0.0)).doubleValue()
         );
     }
 
@@ -218,7 +223,11 @@ public final class MasteryItemMapper {
                 .map(t -> {
                     Map<String, Object> m = new HashMap<>();
                     m.put("transitionId", t.transitionId());
+                    m.put("tenantId", t.tenantId());
                     m.put("masteryId", t.masteryId());
+                    m.put("agentId", t.agentId());
+                    m.put("agentReleaseId", t.agentReleaseId());
+                    if (t.skillId() != null) m.put("skillId", t.skillId());
                     m.put("fromState", t.fromState().name());
                     m.put("toState", t.toState().name());
                     m.put("reason", t.reason());
@@ -245,7 +254,11 @@ public final class MasteryItemMapper {
             try {
                 result.add(new MasteryTransition(
                         strOrEmpty(m, "transitionId"),
+                        strOrEmpty(m, "tenantId"),
                         strOrEmpty(m, "masteryId"),
+                        strOrEmpty(m, "agentId"),
+                        strOrEmpty(m, "agentReleaseId"),
+                        strOrNull(m, "skillId"),
                         MasteryState.valueOf(strOrDefault(m, "fromState", "UNKNOWN")),
                         MasteryState.valueOf(strOrDefault(m, "toState", "UNKNOWN")),
                         strOrEmpty(m, "reason"),
@@ -278,6 +291,7 @@ public final class MasteryItemMapper {
     /**
      * Deserializes version constraints from a list of maps.
      */
+    @SuppressWarnings("unchecked")
     private static List<Map<String, String>> deserializeVersionConstraints(List<?> constraints) {
         return constraints.stream()
                 .filter(Map.class::isInstance)
@@ -363,5 +377,11 @@ public final class MasteryItemMapper {
     /** Extracts a String from a wildcard map by key, returning {@code defaultValue} when absent or non-String. */
     private static String strOrDefault(@NotNull Map<?, ?> map, @NotNull String key, @NotNull String defaultValue) {
         return map.get(key) instanceof String s ? s : defaultValue;
+    }
+
+    /** Extracts a nullable String from a wildcard map by key, returning {@code null} when absent or non-String. */
+    @Nullable
+    private static String strOrNull(@NotNull Map<?, ?> map, @NotNull String key) {
+        return map.get(key) instanceof String s ? s : null;
     }
 }

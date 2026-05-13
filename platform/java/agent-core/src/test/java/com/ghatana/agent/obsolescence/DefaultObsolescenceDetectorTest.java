@@ -212,6 +212,7 @@ class DefaultObsolescenceDetectorTest extends EventloopTestBase {
     private MasteryItem createMasteryItem(String masteryId, Instant staleAfter, Map<String, String> labels) {
         return new MasteryItem(
                 masteryId,
+                "tenant-123",
                 "skill-123",
                 "test-domain",
                 "agent-123",
@@ -229,7 +230,8 @@ class DefaultObsolescenceDetectorTest extends EventloopTestBase {
                 List.of(),
                 Instant.now(),
                 staleAfter,
-                labels
+                labels,
+                0.8
         );
     }
 

@@ -75,7 +75,11 @@ public final class ObsolescenceRouter {
                     // Create and execute transition
                     MasteryTransition transition = new MasteryTransition(
                             java.util.UUID.randomUUID().toString(),
+                            item.tenantId(),
                             item.masteryId(),
+                            item.agentId(),
+                            item.agentReleaseId(),
+                            item.skillId(),
                             item.state(),
                             targetState,
                             "Obsolescence detected: " + event.reason() + " - " + event.description(),

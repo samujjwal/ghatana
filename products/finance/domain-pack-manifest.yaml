@@ -18,8 +18,8 @@ policyActions:
   - delete
   - export
   - download
-  - settle
-  - cancel
+  - finance:settle
+  - finance:cancel
 policyResources:
   - finance:transactions
   - finance:positions
@@ -32,8 +32,8 @@ policies:
     - delete
     - export
     - download
-    - settle
-    - cancel
+    - finance:settle
+    - finance:cancel
   resources:
     - finance:transactions
     - finance:positions

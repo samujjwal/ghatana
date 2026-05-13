@@ -113,7 +113,7 @@ public final class LearningDeltaMapper {
         String agentId = (String) Objects.requireNonNull(data.get(FIELD_AGENT_ID), FIELD_AGENT_ID);
         String agentReleaseId = (String) Objects.requireNonNull(data.get(FIELD_AGENT_RELEASE_ID), FIELD_AGENT_RELEASE_ID);
         String skillId = (String) Objects.requireNonNull(data.get(FIELD_SKILL_ID), FIELD_SKILL_ID);
-        String tenantId = (String) data.getOrDefault(FIELD_TENANT_ID, "unknown");
+        String tenantId = (String) Objects.requireNonNull(data.get(FIELD_TENANT_ID), FIELD_TENANT_ID);
         String procedureId = (String) data.get(FIELD_PROCEDURE_ID);
         String semanticFactId = (String) data.get(FIELD_SEMANTIC_FACT_ID);
         String negativeKnowledgeId = (String) data.get(FIELD_NEGATIVE_KNOWLEDGE_ID);

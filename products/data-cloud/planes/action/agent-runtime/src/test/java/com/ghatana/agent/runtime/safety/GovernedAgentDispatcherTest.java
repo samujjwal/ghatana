@@ -23,6 +23,9 @@ import com.ghatana.agent.release.AgentReleaseBuilder;
 import com.ghatana.agent.release.AgentReleaseRepository;
 import com.ghatana.agent.release.AgentReleaseState;
 import com.ghatana.agent.release.InMemoryAgentReleaseRepository;
+import com.ghatana.agent.runtime.mode.ExecutionStrategy;
+import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
+import com.ghatana.agent.runtime.mode.ModeSelectionResult;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,9 +46,6 @@ import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionScope;
-import com.ghatana.agent.runtime.mode.ExecutionStrategy;
-import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
-import com.ghatana.agent.runtime.mode.ModeSelectionResult;
 import com.ghatana.agent.runtime.mode.SupervisionMode;
 
 import java.time.Duration;
@@ -78,6 +78,9 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     @Mock
     private AgentReleaseRepository releaseRepository;
 
+    @Mock
+    private MasteryAwareModeSelector modeSelector;
+
     private DefaultInvariantMonitor invariantMonitor;
     private AgentContext ctx;
 
@@ -87,25 +90,30 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     }
 
     @BeforeEach
-    void setUp() { 
-        invariantMonitor = new DefaultInvariantMonitor(); 
-        ctx = AgentContext.builder() 
+    void setUp() {
+        invariantMonitor = new DefaultInvariantMonitor();
+        ctx = AgentContext.builder()
                 .turnId("turn-1")
                 .agentId("test-agent")
                 .tenantId("tenant-x")
-                .memoryStore(mock(MemoryStore.class)) 
-                .build(); 
+                .memoryStore(mock(MemoryStore.class))
+                .build();
 
         // Default stubs — lenient because not all tests use them
-        lenient().when(traceLedger.append(any())).thenReturn(Promise.of(null)); 
-        lenient().when(delegate.dispatch(anyString(), any(), any())) 
-                .thenReturn(Promise.of(AgentResult.builder() 
-                        .status(AgentResultStatus.SUCCESS) 
+        lenient().when(traceLedger.append(any())).thenReturn(Promise.of(null));
+        lenient().when(delegate.dispatch(anyString(), any(), any()))
+                .thenReturn(Promise.of(AgentResult.builder()
+                        .status(AgentResultStatus.SUCCESS)
                         .agentId("test-agent")
-                        .confidence(1.0) 
-                        .processingTime(Duration.ofMillis(10)) 
-                        .build())); 
-        lenient().when(delegate.resolve(anyString())).thenReturn(ExecutionTier.JAVA_IMPLEMENTED); 
+                        .confidence(1.0)
+                        .processingTime(Duration.ofMillis(10))
+                        .build()));
+        lenient().when(delegate.resolve(anyString())).thenReturn(ExecutionTier.JAVA_IMPLEMENTED);
+        
+        // Stub modeSelector to return a default mode
+        ModeSelectionResult defaultResult = ModeSelectionResult.autonomous(ExecutionStrategy.DETERMINISTIC_EXECUTION, "Default mode");
+        lenient().when(modeSelector.selectMode(any(), any(), any()))
+                .thenReturn(Promise.of(defaultResult));
     }
 
     // =========================================================================
@@ -120,7 +128,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("3-arg constructor dispatches without release check")
         void threeArgConstructorDispatchesWithoutReleaseCheck() { 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
@@ -132,7 +140,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("resolve delegates to inner dispatcher")
         void resolveDelegatesToInnerDispatcher() { 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
             ExecutionTier tier = dispatcher.resolve("test-agent");
 
@@ -173,7 +181,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @BeforeEach
         void setUp() { 
             dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, releaseRepository);
+                    delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
         }
 
         @Test
@@ -314,7 +322,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             runPromise(() -> repo.save(release)); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, repo);
+                    delegate, invariantMonitor, traceLedger, modeSelector, repo);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
@@ -330,7 +338,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             runPromise(() -> repo.save(release)); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, ledger, repo);
+                    delegate, invariantMonitor, ledger, modeSelector, repo);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
@@ -346,7 +354,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             runPromise(() -> repo.save(release)); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, ledger, repo);
+                    delegate, invariantMonitor, ledger, modeSelector, repo);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
@@ -376,30 +384,30 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("emits TURN_STARTED event before dispatch")
-        void emitsTurnStarted() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+        void emitsTurnStarted() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
 
-            assertThat(capturedEvents) 
-                    .extracting(TraceEvent::eventType) 
-                    .contains(TraceEventType.TURN_STARTED); 
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.TURN_STARTED);
         }
 
         @Test
         @DisplayName("TURN_STARTED event payload includes agentId")
-        void turnStartedPayloadHasAgentId() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+        void turnStartedPayloadHasAgentId() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
 
-            TraceEvent turnStarted = capturedEvents.stream() 
-                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED) 
-                    .findFirst() 
-                    .orElseThrow(); 
-            assertThat(turnStarted.payload()).containsEntry("agentId", "test-agent"); 
+            TraceEvent turnStarted = capturedEvents.stream()
+                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED)
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(turnStarted.payload()).containsEntry("agentId", "test-agent");
         }
 
         @Test
@@ -424,7 +432,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .thenReturn(Promise.of(Optional.of(rel))); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, releaseRepository);
+                    delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
@@ -443,60 +451,60 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("emits POLICY_EVALUATED (ALLOW) when invariants pass")
-        void emitsPolicyEvaluatedAllowWhenInvariantsPass() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+        void emitsPolicyEvaluatedAllowWhenInvariantsPass() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
 
-            TraceEvent policyEval = capturedEvents.stream() 
-                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) 
-                    .findFirst() 
-                    .orElseThrow(); 
-            assertThat(policyEval.payload()).containsEntry("decision", "ALLOW"); 
-            assertThat(policyEval.payload()).containsEntry("violationCount", "0"); 
+            TraceEvent policyEval = capturedEvents.stream()
+                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED)
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(policyEval.payload()).containsEntry("decision", "ALLOW");
+            assertThat(policyEval.payload()).containsEntry("violationCount", "0");
         }
 
         @Test
         @DisplayName("emits POLICY_EVALUATED (DENY) and ACTION_DENIED when invariants fail")
-        void emitsPolicyEvaluatedDenyThenActionDenied() { 
+        void emitsPolicyEvaluatedDenyThenActionDenied() {
             // Inject a breached cost cap invariant by setting metrics that violate
-            AgentContext overBudgetCtx = AgentContext.builder() 
+            AgentContext overBudgetCtx = AgentContext.builder()
                     .turnId("turn-over")
                     .agentId("test-agent")
                     .tenantId("tenant-x")
-                    .memoryStore(mock(MemoryStore.class)) 
-                    .addConfig("__accumulatedCostUsd", 999.0) 
-                    .addConfig("__costCapUsd", 1.0) 
-                    .build(); 
+                    .memoryStore(mock(MemoryStore.class))
+                    .addConfig("__accumulatedCostUsd", 999.0)
+                    .addConfig("__costCapUsd", 1.0)
+                    .build();
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
-            AgentResult<?> result = runPromise(() -> 
-                    dispatcher.dispatch("test-agent", "input", overBudgetCtx)); 
+            AgentResult<?> result = runPromise(() ->
+                    dispatcher.dispatch("test-agent", "input", overBudgetCtx));
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
 
-            List<TraceEventType> types = capturedEvents.stream() 
-                    .map(TraceEvent::eventType) 
-                    .toList(); 
-            assertThat(types).contains(TraceEventType.TURN_STARTED); 
-            assertThat(types).contains(TraceEventType.POLICY_EVALUATED); 
-            assertThat(types).contains(TraceEventType.ACTION_DENIED); 
+            List<TraceEventType> types = capturedEvents.stream()
+                    .map(TraceEvent::eventType)
+                    .toList();
+            assertThat(types).contains(TraceEventType.TURN_STARTED);
+            assertThat(types).contains(TraceEventType.POLICY_EVALUATED);
+            assertThat(types).contains(TraceEventType.ACTION_DENIED);
 
-            TraceEvent policyEval = capturedEvents.stream() 
-                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) 
-                    .findFirst() 
-                    .orElseThrow(); 
-            assertThat(policyEval.payload()).containsEntry("decision", "DENY"); 
+            TraceEvent policyEval = capturedEvents.stream()
+                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED)
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(policyEval.payload()).containsEntry("decision", "DENY");
         }
 
         @Test
         @DisplayName("TURN_STARTED is emitted before POLICY_EVALUATED in sequence")
-        void turnStartedBeforePolicyEvaluated() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger);
+        void turnStartedBeforePolicyEvaluated() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
@@ -531,7 +539,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .thenReturn(Promise.of(Optional.of(rel))); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, releaseRepository);
+                    delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
@@ -566,7 +574,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .thenReturn(Promise.of(Optional.of(rel))); 
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, releaseRepository);
+                    delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
@@ -585,8 +593,8 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             AgentRelease rel = release("test-agent", AgentReleaseState.ACTIVE); 
             runPromise(() -> repo.save(rel)); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, ledger, repo);
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, ledger, modeSelector, repo);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
@@ -624,15 +632,15 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     java.util.List.of(), java.util.List.of(), java.util.Map.of()); 
         }
 
-        private com.ghatana.agent.pluggability.AgentCapabilityManifest autonomousManifest() { 
-            return com.ghatana.agent.pluggability.AgentCapabilityManifest.standalone("test-agent", "1.0.0", "tenant-x"); 
+        private com.ghatana.agent.pluggability.AgentCapabilityManifest autonomousManifest() {
+            return com.ghatana.agent.pluggability.AgentCapabilityManifest.standalone("test-agent", "1.0.0", "tenant-x");
         }
 
         @Test
         @DisplayName("AUTONOMOUS manifest allows dispatch without supervisor context")
         void autonomousManifestAllowsDispatch() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, null, null, autonomousManifest()); 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector, null, null, autonomousManifest()); 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
@@ -640,31 +648,31 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @Test
         @DisplayName("null manifest skips manifest check")
         void nullManifestSkipsCheck() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, null, null, null);
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector, null, null, null);
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("SUPERVISED-only manifest with no supervisorAgentId in context → DENIED")
-        void supervisedOnlyManifestWithoutSupervisorIsDenied() { 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
+        void supervisedOnlyManifestWithoutSupervisorIsDenied() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector, null, null, supervisedOnlyManifest());
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
         }
 
         @Test
         @DisplayName("SUPERVISED-only manifest with supervisorAgentId in context → allowed")
-        void supervisedManifestWithSupervisorContextIsAllowed() { 
-            AgentContext supervisedCtx = ctx.toBuilder() 
-                    .addConfig("supervisorAgentId", "supervisor-001") 
-                    .build(); 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
-                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", supervisedCtx)); 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
+        void supervisedManifestWithSupervisorContextIsAllowed() {
+            AgentContext supervisedCtx = ctx.toBuilder()
+                    .addConfig("supervisorAgentId", "supervisor-001")
+                    .build();
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector, null, null, supervisedOnlyManifest());
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", supervisedCtx));
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
         }
     }
 

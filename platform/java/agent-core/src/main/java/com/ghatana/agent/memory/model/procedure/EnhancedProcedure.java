@@ -38,6 +38,7 @@ public class EnhancedProcedure implements MemoryItem {
     @Builder.Default @NotNull String tenantId = "default";
     @Nullable String sphereId;
     @Builder.Default @NotNull String classification = "INTERNAL";
+    @Nullable String skillId;
 
     // Convenience copies (also available via provenance/validity)
     @Nullable String agentId;
