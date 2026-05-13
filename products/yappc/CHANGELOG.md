@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: agent refactor 1 [`9f0647e`](https://github.com/samujjwal/ghatana/commit/9f0647e4a3a46729f372556a010f8e9e0149e106)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`38815bc`](https://github.com/samujjwal/ghatana/commit/38815bc3c2698c4806a705eb1377df91a3f4b8b8)
 - **Changed**: build + agent 1 [`ecafc6b`](https://github.com/samujjwal/ghatana/commit/ecafc6bab6c170b8bbee4a6ca6b9877cefa4d1b9)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`337f447`](https://github.com/samujjwal/ghatana/commit/337f447125293656577a9a776ee0d421e677b9f2)
