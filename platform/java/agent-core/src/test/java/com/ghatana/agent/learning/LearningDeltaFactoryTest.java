@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * Tests for LearningDeltaFactory.
@@ -35,6 +36,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -48,6 +50,7 @@ class LearningDeltaFactoryTest {
         assertThat(delta.agentId()).isEqualTo("agent-123");
         assertThat(delta.agentReleaseId()).isEqualTo("release-1.0.0");
         assertThat(delta.skillId()).isEqualTo("skill-123");
+        assertThat(delta.tenantId()).isEqualTo("test-tenant");
         assertThat(delta.proposedContent()).isEqualTo(content);
         assertThat(delta.evidenceRefs()).isEqualTo(evidenceRefs);
         assertThat(delta.proposedBy()).isEqualTo("learning-engine");
@@ -66,6 +69,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 "procedure-456",
                 content,
                 evidenceRefs,
@@ -89,6 +93,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 "semantic-fact-456",
                 content,
                 evidenceRefs,
@@ -112,6 +117,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 "negative-knowledge-456",
                 content,
                 evidenceRefs,
@@ -135,6 +141,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -156,6 +163,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -179,6 +187,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -199,6 +208,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -219,6 +229,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -230,6 +241,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -250,6 +262,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-123",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -261,6 +274,7 @@ class LearningDeltaFactoryTest {
                 "agent-123",
                 "release-1.0.0",
                 "skill-456",
+                "test-tenant",
                 content,
                 evidenceRefs,
                 "learning-engine"
@@ -268,5 +282,58 @@ class LearningDeltaFactoryTest {
 
         assertThat(proceduralDelta.type()).isEqualTo(LearningDeltaType.PROCEDURAL_SKILL);
         assertThat(semanticDelta.type()).isEqualTo(LearningDeltaType.SEMANTIC_FACT);
+    }
+
+    @Test
+    @DisplayName("proposeProceduralSkill with blank procedureId fails")
+    void proposeProceduralSkillWithBlankProcedureIdFails() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> LearningDeltaFactory.proposeProceduralSkill(
+                        "agent-1", "release-1", "skill-1", "tenant-1",
+                        "",             // blank procedureId
+                        "rollback-ref",
+                        Map.of("action", "do-something"),
+                        List.of("ev-1"),
+                        List.of(),
+                        0.5, 0.8,
+                        "engine"
+                ))
+                .withMessageContaining("procedureId");
+    }
+
+    @Test
+    @DisplayName("proposeProceduralSkill with blank rollbackRef fails")
+    void proposeProceduralSkillWithBlankRollbackRefFails() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> LearningDeltaFactory.proposeProceduralSkill(
+                        "agent-1", "release-1", "skill-1", "tenant-1",
+                        "proc-1",
+                        "",             // blank rollbackRef
+                        Map.of("action", "do-something"),
+                        List.of("ev-1"),
+                        List.of(),
+                        0.5, 0.8,
+                        "engine"
+                ))
+                .withMessageContaining("rollbackRef");
+    }
+
+    @Test
+    @DisplayName("Content digest is stable for identical content (deterministic hash)")
+    void contentDigestIsStableForSameContent() {
+        Map<String, Object> content = Map.of("action", "stabilize", "version", "1");
+        String digest1 = LearningDeltaFactory.computeDigest(content);
+        String digest2 = LearningDeltaFactory.computeDigest(content);
+        assertThat(digest1).isEqualTo(digest2);
+        assertThat(digest1).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("Different content produces different digest")
+    void differentContentProducesDifferentDigest() {
+        Map<String, Object> content1 = Map.of("action", "step-a");
+        Map<String, Object> content2 = Map.of("action", "step-b");
+        assertThat(LearningDeltaFactory.computeDigest(content1))
+                .isNotEqualTo(LearningDeltaFactory.computeDigest(content2));
     }
 }

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -96,6 +97,8 @@ public final class LearningEngine {
     private LearningDeltaRepository deltaRepository;
     @Nullable
     private String agentReleaseId;
+    @NotNull
+    private String tenantId;
 
     private LearningEngine(@NotNull Executor executor) {
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
@@ -109,6 +112,7 @@ public final class LearningEngine {
         this.batchSize = DEFAULT_BATCH_SIZE;
         this.deltaRepository = null;
         this.agentReleaseId = null;
+        this.tenantId = "system";
     }
 
     /**
@@ -187,6 +191,21 @@ public final class LearningEngine {
     @NotNull
     public LearningEngine withLearningDeltaRepository(@Nullable LearningDeltaRepository repository) {
         this.deltaRepository = repository;
+        return this;
+    }
+
+    /**
+     * Sets the tenant identifier scoping all learning deltas created by this engine.
+     *
+     * @param tenantId tenant identifier (must not be blank)
+     * @return this engine (fluent)
+     */
+    @NotNull
+    public LearningEngine withTenantId(@NotNull String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("tenantId must not be blank");
+        }
+        this.tenantId = tenantId;
         return this;
     }
 
@@ -310,17 +329,11 @@ public final class LearningEngine {
                 .filter(s -> !s.isEmpty())
                 .toList()
                 .toString();
-        int flagged = (int) candidates.stream()
-                .filter(c -> c.confidence() < humanReviewThreshold)
-                .count();
-        List<CandidatePolicy> approved = candidates.stream()
-                .filter(c -> c.confidence() >= humanReviewThreshold)
-                .toList();
 
-        if (approved.isEmpty()) {
+        if (candidates.isEmpty()) {
             Duration duration = Duration.between(start, Instant.now());
             return Promise.of(new LearningOutcome(
-                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, flagged,
+                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, 0,
                     0, 0, 0, 0));
         }
 
@@ -332,12 +345,25 @@ public final class LearningEngine {
                         "). L3+ learning requires proper governance through the learning delta system. " +
                         "Configure a deltaRepository to enable L3+ learning."));
             }
-            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+            return persistAsLearningDeltas(agentId, episodes, candidates, episodeIds, start);
         }
 
         // For L0-L2 learning, use deltaRepository if configured, otherwise fall back to direct policy persistence
         if (deltaRepository != null) {
-            return persistAsLearningDeltas(agentId, episodes, approved, episodeIds, start, flagged);
+            return persistAsLearningDeltas(agentId, episodes, candidates, episodeIds, start);
+        }
+
+        // Direct path (L0-L2 without deltaRepository): only persist approved candidates
+        List<CandidatePolicy> approved = candidates.stream()
+                .filter(c -> c.confidence() >= humanReviewThreshold)
+                .toList();
+        int flagged = candidates.size() - approved.size();
+
+        if (approved.isEmpty()) {
+            Duration duration = Duration.between(start, Instant.now());
+            return Promise.of(new LearningOutcome(
+                    agentId, start, duration, learningContract.level(), episodes.size(), 0, 0, flagged,
+                    0, 0, 0, 0));
         }
 
         // Otherwise, use the original direct policy persistence path (L0-L2 only)
@@ -366,58 +392,121 @@ public final class LearningEngine {
     }
 
     /**
-     * Persists approved candidate policies as learning deltas for promotion.
+     * Persists all candidate policies as learning deltas.
      *
-     * @param agentId     agent identifier
-     * @param episodes    source episodes used for synthesis
-     * @param candidates  approved candidate policies
-     * @param episodeIds  episode IDs as string
-     * @param start       reflect-pass start time
-     * @param flagged     number of flagged candidates
+     * <p>Approved candidates (confidence &gt;= threshold) are saved as {@code PROPOSED} deltas
+     * via {@link LearningDeltaFactory#proposeProceduralSkill}, which requires a generated
+     * {@code procedureId} and {@code rollbackRef}.
+     *
+     * <p>Flagged candidates (confidence &lt; threshold) are saved as
+     * {@code PENDING_HUMAN_REVIEW} deltas via {@link LearningDeltaFactory#pendingHumanReview}
+     * instead of being silently discarded.
+     *
+     * @param agentId       agent identifier
+     * @param episodes      source episodes used for synthesis
+     * @param allCandidates all synthesised candidate policies (approved and flagged)
+     * @param episodeIds    episode IDs as string (for content metadata)
+     * @param start         reflect-pass start time
      * @return promise of the {@link LearningOutcome}
      */
     @NotNull
     private Promise<LearningOutcome> persistAsLearningDeltas(
             @NotNull String agentId,
             @NotNull List<Episode> episodes,
-            @NotNull List<CandidatePolicy> candidates,
+            @NotNull List<CandidatePolicy> allCandidates,
             @NotNull String episodeIds,
-            @NotNull Instant start,
-            int flagged) {
-        // Chain all delta creation operations sequentially
-        Promise<Integer> deltaChain = Promise.of(0);
-        for (CandidatePolicy candidate : candidates) {
-            String skillId = "skill-" + agentId + "-" + candidate.situation().hashCode();
-            Map<String, Object> content = Map.of(
+            @NotNull Instant start) {
+        // Compute evidence refs from episode IDs; non-empty required for proposeProceduralSkill()
+        List<String> episodeIdList = episodes.stream()
+                .map(Episode::getId)
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+        final List<String> finalEvidenceRefs = episodeIdList.isEmpty()
+                ? List.of("episode-evidence-" + agentId)
+                : episodeIdList;
+        final List<String> sourceEpisodeIds = episodes.stream()
+                .map(Episode::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // Split by confidence threshold
+        final List<CandidatePolicy> approved = allCandidates.stream()
+                .filter(c -> c.confidence() >= humanReviewThreshold)
+                .toList();
+        final List<CandidatePolicy> flaggedCandidates = allCandidates.stream()
+                .filter(c -> c.confidence() < humanReviewThreshold)
+                .toList();
+
+        // Chain approved deltas sequentially (high-confidence → PROPOSED via proposeProceduralSkill)
+        Promise<Integer> approvedChain = Promise.of(0);
+        for (CandidatePolicy candidate : approved) {
+            final String skillId = "skill-" + agentId + "-" + Math.abs(candidate.situation().hashCode());
+            final String procedureId = UUID.randomUUID().toString();
+            final String rollbackRef = "rollback:" + skillId;
+            final Map<String, Object> content = Map.of(
                     "situation", candidate.situation(),
                     "action", candidate.action(),
                     "confidence", candidate.confidence(),
                     "episodeIds", episodeIds
             );
-
-            LearningDelta delta = LearningDeltaFactory.propose(
-                    LearningDeltaType.PROCEDURAL_SKILL,
-                    LearningTarget.PROCEDURAL_SKILL,
+            final LearningDelta delta = LearningDeltaFactory.proposeProceduralSkill(
                     agentId,
                     agentReleaseId != null ? agentReleaseId : "unknown",
                     skillId,
+                    tenantId,
+                    procedureId,
+                    rollbackRef,
                     content,
-                    episodes.stream().map(e -> e.getId()).toList(),
+                    finalEvidenceRefs,
+                    sourceEpisodeIds,
+                    0.0,
+                    candidate.confidence(),
                     "learning-engine"
             );
-
-            deltaChain = deltaChain.then(count ->
+            approvedChain = approvedChain.then(count ->
                     deltaRepository.save(delta).map(d -> count + 1));
         }
 
-        int episodeCount = episodes.size();
-        int totalProposed = candidates.size();
-        int totalRejectedByContract = 0; // TODO: track contract rejections
-        return deltaChain.map(created -> {
-            Duration duration = Duration.between(start, Instant.now());
-            return new LearningOutcome(
-                    agentId, start, duration, learningContract.level(), episodeCount, 0, created, flagged,
-                    totalProposed, totalRejectedByContract, flagged, created);
+        // Capture counts as effectively-final for use in the lambda chain
+        final int episodeCount = episodes.size();
+        final int totalCandidates = allCandidates.size();
+        final int totalApproved = approved.size();
+        final int totalFlagged = flaggedCandidates.size();
+
+        // After approved deltas complete, chain flagged deltas (low-confidence → PENDING_HUMAN_REVIEW)
+        return approvedChain.then(approvedCount -> {
+            Promise<Integer> pendingChain = Promise.of(0);
+            for (CandidatePolicy candidate : flaggedCandidates) {
+                final String skillId = "skill-" + agentId + "-" + Math.abs(candidate.situation().hashCode());
+                final Map<String, Object> content = Map.of(
+                        "situation", candidate.situation(),
+                        "action", candidate.action(),
+                        "confidence", candidate.confidence(),
+                        "episodeIds", episodeIds
+                );
+                final LearningDelta pendingDelta = LearningDeltaFactory.pendingHumanReview(
+                        LearningDeltaType.PROCEDURAL_SKILL,
+                        LearningTarget.PROCEDURAL_SKILL,
+                        agentId,
+                        agentReleaseId != null ? agentReleaseId : "unknown",
+                        skillId,
+                        tenantId,
+                        content,
+                        finalEvidenceRefs,
+                        candidate.confidence(),
+                        "learning-engine"
+                );
+                pendingChain = pendingChain.then(count ->
+                        deltaRepository.save(pendingDelta).map(d -> count + 1));
+            }
+
+            return pendingChain.map(pendingCreated -> {
+                Duration duration = Duration.between(start, Instant.now());
+                return new LearningOutcome(
+                        agentId, start, duration, learningContract.level(),
+                        episodeCount, 0, approvedCount, totalFlagged,
+                        totalCandidates, 0, pendingCreated, approvedCount);
+            });
         });
     }
 

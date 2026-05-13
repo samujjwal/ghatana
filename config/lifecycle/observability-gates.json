@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "1.0.0",
+  "gates": {
+    "metrics-collection": {
+      "name": "Metrics Collection",
+      "description": "Ensure metrics are being collected",
+      "enabled": true,
+      "config": {
+        "requiredMetrics": [
+          "http_requests_total",
+          "http_request_duration_seconds",
+          "error_rate",
+          "throughput"
+        ],
+        "collectionInterval": 15000
+      }
+    },
+    "logging-gate": {
+      "name": "Logging Gate",
+      "description": "Ensure structured logging is configured",
+      "enabled": true,
+      "config": {
+        "requiredFields": ["timestamp", "level", "message", "correlationId"],
+        "minLevel": "info",
+        "structured": true
+      }
+    },
+    "tracing-gate": {
+      "name": "Distributed Tracing",
+      "description": "Ensure distributed tracing is enabled",
+      "enabled": true,
+      "config": {
+        "requiredSpans": ["http", "database", "cache"],
+        "samplingRate": 0.1
+      }
+    },
+    "alerting-gate": {
+      "name": "Alerting Configuration",
+      "description": "Ensure alerting rules are configured",
+      "enabled": true,
+      "config": {
+        "requiredAlerts": [
+          "high_error_rate",
+          "high_latency",
+          "pod_crash_looping",
+          "resource_exhaustion"
+        ],
+        "notificationChannels": ["pagerduty", "slack"]
+      }
+    },
+    "slo-gate": {
+      "name": "SLO Validation",
+      "description": "Ensure SLOs are met before promotion",
+      "enabled": true,
+      "config": {
+        "slos": [
+          {
+            "name": "availability",
+            "target": 0.999,
+            "window": "30d"
+          },
+          {
+            "name": "latency",
+            "target": 0.95,
+            "threshold": "500ms",
+            "window": "7d"
+          },
+          {
+            "name": "error_rate",
+            "target": 0.01,
+            "window": "7d"
+          }
+        ]
+      }
+    }
+  }
+}

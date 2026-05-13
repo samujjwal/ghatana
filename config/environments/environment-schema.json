@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana/config/environments/environment-schema.json",
+  "title": "Environment Configuration Schema",
+  "description": "Schema for environment configuration (local, dev, staging, prod)",
+  "type": "object",
+  "required": ["schemaVersion", "id", "deploymentTarget", "secretsProvider", "configProvider", "approvalRequired", "requiredGates", "observabilityProfile", "rollbackPolicy", "promotionPolicy"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "id": {
+      "type": "string",
+      "description": "Environment identifier",
+      "enum": ["local", "dev", "staging", "prod"]
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable environment name"
+    },
+    "deploymentTarget": {
+      "type": "string",
+      "description": "Deployment target adapter ID"
+    },
+    "secretsProvider": {
+      "type": "string",
+      "description": "Secrets provider ID",
+      "enum": ["local-env", "external-secret-store", "external-secret-store-with-rotation"]
+    },
+    "configProvider": {
+      "type": "string",
+      "description": "Configuration provider ID",
+      "enum": ["local-files", "environment-config-service", "environment-config-service-versioned"]
+    },
+    "approvalRequired": {
+      "type": "boolean",
+      "description": "Whether manual approval is required for deployment"
+    },
+    "requiredGates": {
+      "type": "array",
+      "description": "Required gates for deployment",
+      "items": {
+        "type": "string"
+      }
+    },
+    "observabilityProfile": {
+      "type": "string",
+      "description": "Observability profile ID"
+    },
+    "rollbackPolicy": {
+      "type": "string",
+      "description": "Rollback policy",
+      "enum": ["immediate", "manual", "manual-with-plan", "disabled"]
+    },
+    "promotionPolicy": {
+      "type": "string",
+      "description": "Promotion policy",
+      "enum": ["none", "linear", "approval-required"]
+    }
+  }
+}

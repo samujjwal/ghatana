@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "plugins": {
+    "plugin-audit-trail": {
+      "kind": "platform-plugin",
+      "capabilities": ["audit.event.write", "audit.event.search"],
+      "requiredRuntimeServices": ["tenant-context", "correlation-id"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed"]
+    },
+    "plugin-compliance": {
+      "kind": "platform-plugin",
+      "capabilities": ["rulepack.validate", "policy.evaluate"],
+      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"]
+    },
+    "plugin-human-approval": {
+      "kind": "platform-plugin",
+      "capabilities": ["approval.request", "approval.resolve"],
+      "lifecycleHooks": ["onProductPromoted"]
+    },
+    "plugin-security-scan": {
+      "kind": "platform-plugin",
+      "capabilities": ["security.sast", "security.dependency-scan"],
+      "requiredRuntimeServices": ["tenant-context"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"]
+    },
+    "plugin-observability": {
+      "kind": "platform-plugin",
+      "capabilities": ["metrics.emit", "tracing.span"],
+      "requiredRuntimeServices": ["correlation-id", "tenant-context"],
+      "lifecycleHooks": ["onProductDeployed", "onProductVerified"]
+    }
+  }
+}

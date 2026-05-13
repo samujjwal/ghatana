@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "vocabulary": {
+    "actions": {
+      "read": {
+        "description": "Read access to resources",
+        "risk": "low"
+      },
+      "write": {
+        "description": "Write access to resources",
+        "risk": "medium"
+      },
+      "delete": {
+        "description": "Delete access to resources",
+        "risk": "high"
+      },
+      "admin": {
+        "description": "Administrative access",
+        "risk": "critical"
+      }
+    },
+    "resources": {
+      "data": {
+        "description": "Data resources",
+        "classificationRequired": true
+      },
+      "configuration": {
+        "description": "Configuration resources",
+        "classificationRequired": false
+      },
+      "secrets": {
+        "description": "Secret resources",
+        "classificationRequired": true,
+        "defaultClassification": "CRITICAL"
+      }
+    },
+    "contexts": {
+      "local": {
+        "description": "Local development environment",
+        "enforcement": "permissive"
+      },
+      "dev": {
+        "description": "Development environment",
+        "enforcement": "standard"
+      },
+      "staging": {
+        "description": "Staging environment",
+        "enforcement": "strict"
+      },
+      "prod": {
+        "description": "Production environment",
+        "enforcement": "strict"
+      }
+    }
+  },
+  "gates": {
+    "policy-validation": {
+      "enabled": true,
+      "phases": ["build", "package"],
+      "checks": [
+        {
+          "id": "policy-schema-validation",
+          "name": "Policy Schema Validation",
+          "severity": "high",
+          "failOn": "high"
+        },
+        {
+          "id": "policy-completeness",
+          "name": "Policy Completeness",
+          "severity": "medium",
+          "failOn": "high"
+        }
+      ]
+    }
+  }
+}

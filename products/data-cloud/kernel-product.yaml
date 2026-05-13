@@ -1,0 +1,38 @@
+schemaVersion: "1.0.0"
+id: "data-cloud"
+lifecycleProfile: "platform-provider-product"
+
+surfaces:
+  - type: "backend-api"
+    adapter: "gradle-java-service"
+    config:
+      gradleModule: "products:data-cloud:planes:action:orchestrator"
+  - type: "worker"
+    adapter: "gradle-java-service"
+    config:
+      gradleModule: "products:data-cloud:planes:action:worker"
+
+phases:
+  dev:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "parallel"
+  
+  validate:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "parallel"
+  
+  test:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "parallel"
+  
+  build:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "parallel"
+  
+  package:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "parallel"
+  
+  deploy:
+    defaultSurfaces: ["backend-api", "worker"]
+    mode: "sequential"

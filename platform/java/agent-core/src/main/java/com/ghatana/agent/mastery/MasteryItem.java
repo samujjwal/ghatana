@@ -39,6 +39,7 @@ public record MasteryItem(
         @NotNull List<String> evidenceRefs,
         @NotNull List<String> evaluationRefs,
         @NotNull List<String> knownFailureModeIds,
+        @NotNull List<MasteryTransition> stateHistory,
         @NotNull Instant lastVerifiedAt,
         @NotNull Instant staleAfter,
         @NotNull Map<String, String> labels
@@ -59,6 +60,7 @@ public record MasteryItem(
         Objects.requireNonNull(evidenceRefs, "evidenceRefs must not be null");
         Objects.requireNonNull(evaluationRefs, "evaluationRefs must not be null");
         Objects.requireNonNull(knownFailureModeIds, "knownFailureModeIds must not be null");
+        Objects.requireNonNull(stateHistory, "stateHistory must not be null");
         Objects.requireNonNull(lastVerifiedAt, "lastVerifiedAt must not be null");
         Objects.requireNonNull(staleAfter, "staleAfter must not be null");
         Objects.requireNonNull(labels, "labels must not be null");
@@ -68,6 +70,7 @@ public record MasteryItem(
         evidenceRefs = List.copyOf(evidenceRefs);
         evaluationRefs = List.copyOf(evaluationRefs);
         knownFailureModeIds = List.copyOf(knownFailureModeIds);
+        stateHistory = List.copyOf(stateHistory);
         labels = Map.copyOf(labels);
     }
 

@@ -77,5 +77,23 @@ public interface LearningDeltaEvaluator {
         ) {
             return new EvaluationResult(deltaId, false, confidence, reason, "Reject: " + reason);
         }
+
+        /**
+         * Creates a pending-human-review evaluation result for deltas that need manual sign-off
+         * before promotion (e.g. procedural skills with sufficient evidence but low confidence).
+         *
+         * @param deltaId    delta identifier
+         * @param confidence confidence score
+         * @param reason     evaluation reason
+         * @return pending-human-review evaluation result
+         */
+        @NotNull
+        public static EvaluationResult pendingHumanReview(
+                @NotNull String deltaId,
+                double confidence,
+                @NotNull String reason
+        ) {
+            return new EvaluationResult(deltaId, false, confidence, reason, "Pending human review: " + reason);
+        }
     }
 }

@@ -1,0 +1,6 @@
+{
+  "expectedArtifacts": {
+    "backend-api": ["jar", "container"],
+    "web": ["static-web-bundle"]
+  }
+}

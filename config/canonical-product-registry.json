@@ -55,6 +55,53 @@
         "created": "2026-03-19",
         "documentation": "products/phr/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "standard-web-api-product",
+      "lifecycleConfigPath": "products/phr/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "surface": "web"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "finance": {
@@ -154,6 +201,59 @@
         "created": "2026-03-19",
         "documentation": "products/finance/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "backend-only-java-service",
+      "lifecycleConfigPath": "products/finance/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "mode": "parallel"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "worker": "gradle-java-service",
+          "operator": "gradle-java-service"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "worker": "gradle-java-service",
+          "operator": "gradle-java-service"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "worker": {
+          "type": "jar",
+          "surface": "worker"
+        },
+        "operator": {
+          "type": "jar",
+          "surface": "operator"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "digital-marketing": {
@@ -231,6 +331,53 @@
         "created": "2026-03-19",
         "documentation": "products/digital-marketing/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "standard-web-api-product",
+      "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "surface": "web"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "flashit": {
@@ -295,6 +442,61 @@
         "created": "2026-03-19",
         "documentation": "products/flashit/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "mobile-plus-api-product",
+      "lifecycleConfigPath": "products/flashit/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "web", "mobile-ios", "mobile-android"],
+            "mode": "parallel"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react",
+          "mobile-ios": "xcode-ios",
+          "mobile-android": "gradle-android"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react",
+          "mobile-ios": "xcode-ios",
+          "mobile-android": "gradle-android"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "mobile-ios": {
+          "type": "docker-image",
+          "surface": "mobile-ios"
+        },
+        "mobile-android": {
+          "type": "docker-image",
+          "surface": "mobile-android"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "data-cloud": {
@@ -394,6 +596,53 @@
         "created": "2026-03-19",
         "documentation": "products/data-cloud/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "platform-provider-product",
+      "lifecycleConfigPath": "products/data-cloud/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "worker"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "worker"],
+            "mode": "parallel"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "worker": "gradle-java-service"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "worker": "gradle-java-service"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "worker": {
+          "type": "jar",
+          "surface": "worker"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "yappc": {
@@ -487,6 +736,53 @@
         "created": "2026-03-19",
         "documentation": "products/yappc/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "standard-web-api-product",
+      "lifecycleConfigPath": "products/yappc/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "surface": "web"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "audio-video": {
@@ -660,6 +956,53 @@
         "created": "2026-03-19",
         "documentation": "products/tutorputor/README.md",
         "status": "active"
+      },
+      "lifecycleProfile": "standard-web-api-product",
+      "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": true,
+        "phases": {
+          "dev": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "parallel"
+          },
+          "build": {
+            "defaultSurfaces": ["backend-api", "web"],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "toolchain": {
+        "profile": "standard",
+        "adapters": {
+          "backend-api": "gradle-java-service",
+          "web": "pnpm-vite-react"
+        }
+      },
+      "artifacts": {
+        "backend-api": {
+          "type": "jar",
+          "surface": "backend-api"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "surface": "web"
+        }
+      },
+      "deployment": {
+        "targets": ["compose-local"],
+        "defaultEnvironment": "local",
+        "healthChecks": ["standard-http"],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "aura": {

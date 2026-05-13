@@ -1,0 +1,9 @@
+{
+  "expectedSteps": {
+    "dev": ["start-dev-server"],
+    "validate": ["lint", "check"],
+    "test": ["test"],
+    "build": ["compile", "package"],
+    "package": ["container", "static-web"]
+  }
+}

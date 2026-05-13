@@ -35,12 +35,27 @@ import java.util.Optional;
 public interface MasteryRegistry {
 
     /**
+     * Finds the best mastery item matching the query, ranked by version applicability,
+     * mastery state, execution score, and freshness.
+     *
+     * <p>Tenant ID is required in the query. Version context participates in match/rank.
+     *
+     * @param query mastery query parameters (tenantId required)
+     * @return promise of optional best-matching mastery item
+     */
+    @NotNull
+    Promise<Optional<MasteryItem>> findBest(@NotNull MasteryQuery query);
+
+    /**
      * Finds a mastery item by skill ID and environment fingerprint.
      *
      * @param skillId skill identifier
      * @param env environment fingerprint (tenant, versions, etc.)
      * @return promise of optional mastery item
+     * @deprecated Use {@link #findBest(MasteryQuery)} instead; construct a {@link MasteryQuery}
+     *             with explicit tenantId and skillId so tenant isolation is enforced at the call site.
      */
+    @Deprecated
     @NotNull
     Promise<Optional<MasteryItem>> findBySkill(
             @NotNull String skillId,

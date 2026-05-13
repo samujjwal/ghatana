@@ -224,6 +224,7 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                 List.of(),
                 List.of(),
                 List.of(),
+                List.of(),
                 Instant.now(),
                 Instant.now().plusSeconds(86400),
                 Map.of()

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "dev",
+  "displayName": "Development",
+  "deploymentTarget": "kubernetes",
+  "secretsProvider": "external-secret-store",
+  "configProvider": "environment-config-service",
+  "approvalRequired": false,
+  "requiredGates": [
+    "registry-validation",
+    "artifact-validation",
+    "environment-validation",
+    "security-scan",
+    "health-check",
+    "observability-check"
+  ],
+  "observabilityProfile": "dev-standard",
+  "rollbackPolicy": "manual",
+  "promotionPolicy": "linear"
+}

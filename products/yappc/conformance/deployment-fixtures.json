@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "yappc",
+  "fixtures": {
+    "deploy": {
+      "expectedSteps": 2,
+      "expectedAdapters": ["compose-local"]
+    }
+  }
+}

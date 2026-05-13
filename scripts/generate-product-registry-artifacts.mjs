@@ -110,12 +110,12 @@ function validateRegistry(registry) {
 // Generate product-shape.json
 function generateProductShape(registry) {
   const products = {};
-  
+
   for (const [productId, product] of Object.entries(registry.registry)) {
     const surfaces = product.surfaces || [];
     const uiSurfaces = surfaces.filter(s => s.type === 'web' || s.type === 'mobile');
     const backendOnly = uiSurfaces.length === 0;
-    
+
     products[productId] = {
       ui: !backendOnly,
       uiMode: backendOnly ? 'backend-only' : (uiSurfaces.length > 1 ? 'multi-surface' : 'web'),
@@ -127,7 +127,16 @@ function generateProductShape(registry) {
         .filter(s => s.packagePath)
         .map(s => s.packagePath)
     };
-    
+
+    // Add lifecycle metadata if present
+    if (product.lifecycleProfile) {
+      products[productId].lifecycle = {
+        profile: product.lifecycleProfile,
+        enabled: product.lifecycle?.enabled || false,
+        configPath: product.lifecycleConfigPath || null
+      };
+    }
+
     if (backendOnly && product.metadata?.documentation) {
       products[productId].backendOnlyDeclaration = {
         file: product.metadata.documentation,
@@ -135,7 +144,7 @@ function generateProductShape(registry) {
       };
     }
   }
-  
+
   const output = { products };
   writeGeneratedFile(PRODUCT_SHAPE_PATH, JSON.stringify(output, null, 2) + '\n', 'product shape');
   console.log(`${checkMode ? 'Checked' : 'Generated'} product-shape.json with ${Object.keys(products).length} products`);
@@ -221,31 +230,41 @@ function generateCIMatrix(registry) {
     products: [],
     productsWithUI: [],
     productsWithTests: [],
-    productsWithIntegrationTests: []
+    productsWithIntegrationTests: [],
+    productsWithLifecycle: [],
+    lifecycleProfiles: []
   };
-  
+
   for (const [productId, product] of Object.entries(registry.registry)) {
     if (product.ci?.enabled && PRODUCT_CI_KINDS.has(product.kind)) {
       matrix.products.push(productId);
-      
+
       const hasUI = product.surfaces?.some(s => s.type === 'web' || s.type === 'mobile');
       if (hasUI) {
         matrix.productsWithUI.push(productId);
       }
-      
+
       const gates = product.ci?.gates || [];
       if (gates.includes('test') || gates.includes('integration-test')) {
         matrix.productsWithTests.push(productId);
       }
-      
+
       if (gates.includes('integration-test')) {
         matrix.productsWithIntegrationTests.push(productId);
       }
+
+      // Add lifecycle metadata
+      if (product.lifecycleProfile && product.lifecycle?.enabled) {
+        matrix.productsWithLifecycle.push(productId);
+        if (!matrix.lifecycleProfiles.includes(product.lifecycleProfile)) {
+          matrix.lifecycleProfiles.push(product.lifecycleProfile);
+        }
+      }
     }
   }
-  
+
   writeGeneratedFile(CI_MATRIX_OUTPUT_PATH, JSON.stringify(matrix, null, 2) + '\n', 'CI matrix');
-  console.log(`${checkMode ? 'Checked' : 'Generated'} CI matrix with ${matrix.products.length} products`);
+  console.log(`${checkMode ? 'Checked' : 'Generated'} CI matrix with ${matrix.products.length} products (${matrix.productsWithLifecycle.length} with lifecycle)`);
 }
 
 // Generate root package.json scripts
@@ -263,9 +282,11 @@ function generatePackageScripts(registry) {
   scripts['clean'] = 'pnpm -r --parallel exec rm -rf node_modules dist build .turbo';
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
   scripts['product'] = 'node ./scripts/run-product-task.mjs';
+  scripts['kernel'] = 'node ./scripts/kernel-product.mjs';
   scripts['check:affected-products'] = 'node ./scripts/resolve-affected-products.test.mjs';
   scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
   scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';
+  scripts['check:kernel-platform-lifecycle'] = 'node ./scripts/check-product-lifecycle-contracts.mjs && node ./scripts/check-toolchain-adapter-contracts.mjs && node ./scripts/check-product-artifact-contracts.mjs && node ./scripts/check-product-deployment-contracts.mjs';
   
   // Generate product-specific scripts from registry
   for (const [productId, product] of Object.entries(registry.registry)) {
@@ -273,19 +294,45 @@ function generatePackageScripts(registry) {
       continue;
     }
 
+    // Use kernel lifecycle CLI for products with lifecycle enabled
+    const useLifecycle = product.lifecycleProfile && product.lifecycle?.enabled;
+
     const surfaces = product.surfaces || [];
     
     for (const surface of surfaces) {
       const surfaceName = surface.type === 'backend-api' ? 'gateway' : surface.type;
-      scripts[`build:${productId}-${surfaceName}`] = `pnpm product ${productId} build ${surfaceName}`;
-      scripts[`test:${productId}-${surfaceName}`] = `pnpm product ${productId} test ${surfaceName}`;
-      if (surface.packagePath) {
-        scripts[`dev:${productId}-${surfaceName}`] = `pnpm product ${productId} dev ${surfaceName}`;
+      const surfaceFlag = surface.type === 'backend-api' ? 'backend-api' : surface.type;
+      
+      if (useLifecycle) {
+        scripts[`build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} build --surfaces=${surfaceFlag}`;
+        scripts[`test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} test --surfaces=${surfaceFlag}`;
+        if (surface.packagePath) {
+          scripts[`dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs plan ${productId} dev --surfaces=${surfaceFlag}`;
+        }
+      } else {
+        scripts[`build:${productId}-${surfaceName}`] = `pnpm product ${productId} build ${surfaceName}`;
+        scripts[`test:${productId}-${surfaceName}`] = `pnpm product ${productId} test ${surfaceName}`;
+        if (surface.packagePath) {
+          scripts[`dev:${productId}-${surfaceName}`] = `pnpm product ${productId} dev ${surfaceName}`;
+        }
       }
     }
     
-    scripts[`build:${productId}`] = `pnpm product ${productId} build`;
-    scripts[`test:${productId}`] = `pnpm product ${productId} test`;
+    if (useLifecycle) {
+      scripts[`build:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} build`;
+      scripts[`test:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} test`;
+      scripts[`dev:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} dev`;
+      scripts[`validate:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} validate`;
+      scripts[`package:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} package`;
+      scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} deploy`;
+      scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs plan ${productId} verify`;
+      scripts[`release:${productId}`] = `node scripts/kernel-product.mjs release ${productId}`;
+      scripts[`promote:${productId}`] = `node scripts/kernel-product.mjs promote ${productId} --from staging --to prod`;
+      scripts[`rollback:${productId}`] = `node scripts/kernel-product.mjs rollback ${productId} --env prod`;
+    } else {
+      scripts[`build:${productId}`] = `pnpm product ${productId} build`;
+      scripts[`test:${productId}`] = `pnpm product ${productId} test`;
+    }
   }
   
   writeGeneratedFile(PACKAGE_SCRIPTS_OUTPUT_PATH, JSON.stringify(scripts, null, 2) + '\n', 'package scripts');

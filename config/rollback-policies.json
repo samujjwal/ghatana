@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "manual": {
+      "policyId": "manual",
+      "name": "Manual Rollback Policy",
+      "description": "Manual rollback requiring explicit approval and execution",
+      "strategy": "manual",
+      "approvalRequired": true,
+      "approvers": ["tech-lead", "sre-lead"],
+      "timeoutHours": 24,
+      "steps": [
+        "validate-rollback-readiness",
+        "request-approval",
+        "execute-rollback",
+        "verify-rollback",
+        "update-documentation"
+      ]
+    },
+    "automatic-on-failure": {
+      "policyId": "automatic-on-failure",
+      "name": "Automatic Rollback on Failure",
+      "description": "Automatic rollback triggered by health check failures",
+      "strategy": "automatic",
+      "approvalRequired": false,
+      "triggers": {
+        "healthCheckFailures": 3,
+        "errorRateThreshold": 0.5,
+        "latencyThresholdMs": 5000
+      },
+      "steps": [
+        "detect-failure",
+        "execute-rollback",
+        "verify-rollback",
+        "notify-team",
+        "create-incident"
+      ]
+    },
+    "blue-green": {
+      "policyId": "blue-green",
+      "name": "Blue-Green Rollback Policy",
+      "description": "Rollback using blue-green deployment strategy",
+      "strategy": "blue-green",
+      "approvalRequired": true,
+      "approvers": ["tech-lead"],
+      "timeoutHours": 12,
+      "steps": [
+        "switch-traffic-to-blue",
+        "verify-blue-deployment",
+        "shut-down-green",
+        "clean-up-resources"
+      ]
+    },
+    "canary": {
+      "policyId": "canary",
+      "name": "Canary Rollback Policy",
+      "description": "Rollback from canary deployment",
+      "strategy": "canary",
+      "approvalRequired": false,
+      "steps": [
+        "stop-canary-deployment",
+        "route-traffic-to-stable",
+        "verify-stable-deployment",
+        "clean-up-canary-resources"
+      ]
+    }
+  }
+}

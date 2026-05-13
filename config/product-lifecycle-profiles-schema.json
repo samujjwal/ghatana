@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana/config/product-lifecycle-profiles-schema.json",
+  "title": "Product Lifecycle Profiles Schema",
+  "description": "Schema for product lifecycle profile definitions",
+  "type": "object",
+  "required": ["version", "profiles"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "profiles": {
+      "type": "object",
+      "description": "Lifecycle profiles keyed by profile ID",
+      "additionalProperties": {
+        "$ref": "#/definitions/LifecycleProfile"
+      }
+    }
+  },
+  "definitions": {
+    "LifecycleProfile": {
+      "type": "object",
+      "required": ["description", "defaultSurfaces", "requiredGates", "defaultAdapters"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this profile"
+        },
+        "defaultSurfaces": {
+          "type": "object",
+          "description": "Default surfaces to include for each phase",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "requiredGates": {
+          "type": "object",
+          "description": "Required gates for each phase",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "defaultAdapters": {
+          "type": "object",
+          "description": "Default adapters for surfaces and phases",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "optionalGates": {
+          "type": "object",
+          "description": "Optional gates for each phase",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

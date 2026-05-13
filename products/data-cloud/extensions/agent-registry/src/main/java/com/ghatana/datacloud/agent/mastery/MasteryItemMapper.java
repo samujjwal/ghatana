@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.mastery.*;
-import com.ghatana.agent.runtime.mode.ExecutionMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +47,7 @@ public final class MasteryItemMapper {
     private static final String FIELD_EVIDENCE_REFS = "evidenceRefs";
     private static final String FIELD_EVALUATION_REFS = "evaluationRefs";
     private static final String FIELD_KNOWN_FAILURE_MODE_IDS = "knownFailureModeIds";
+    private static final String FIELD_STATE_HISTORY = "stateHistory";
     private static final String FIELD_LAST_VERIFIED_AT = "lastVerifiedAt";
     private static final String FIELD_STALE_AFTER = "staleAfter";
     private static final String FIELD_LABELS = "labels";
@@ -99,6 +99,9 @@ public final class MasteryItemMapper {
         data.put(FIELD_EVIDENCE_REFS, item.evidenceRefs());
         data.put(FIELD_EVALUATION_REFS, item.evaluationRefs());
         data.put(FIELD_KNOWN_FAILURE_MODE_IDS, item.knownFailureModeIds());
+
+        // State history (append-only transition log)
+        data.put(FIELD_STATE_HISTORY, serializeStateHistory(item.stateHistory()));
 
         // Timestamps
         data.put(FIELD_LAST_VERIFIED_AT, item.lastVerifiedAt().toString());
@@ -164,16 +167,17 @@ public final class MasteryItemMapper {
                 score.regressionStability()
         );
 
-        // IDs
+        // IDs — all are List<String>, not Maps
         List<String> procedureIds = toStringList(data.get(FIELD_PROCEDURE_IDS));
         List<String> semanticFactIds = toStringList(data.get(FIELD_SEMANTIC_FACT_IDS));
         List<String> negativeKnowledgeIds = toStringList(data.get(FIELD_NEGATIVE_KNOWLEDGE_IDS));
-        Map<String, String> evidenceRefsMap = toStringMap(data.get(FIELD_EVIDENCE_REFS));
-        List<String> evidenceRefs = evidenceRefsMap.entrySet().stream()
-                .map(entry -> entry.getKey() + ":" + entry.getValue())
-                .toList();
+        List<String> evidenceRefs = toStringList(data.get(FIELD_EVIDENCE_REFS));
         List<String> evaluationRefs = toStringList(data.get(FIELD_EVALUATION_REFS));
         List<String> knownFailureModeIds = toStringList(data.get(FIELD_KNOWN_FAILURE_MODE_IDS));
+
+        // State history
+        List<MasteryTransition> stateHistory = deserializeStateHistory(
+                data.getOrDefault(FIELD_STATE_HISTORY, List.of()));
 
         // Labels
         @SuppressWarnings("unchecked")
@@ -197,10 +201,64 @@ public final class MasteryItemMapper {
                 evidenceRefs,
                 evaluationRefs,
                 knownFailureModeIds,
+                stateHistory,
                 parseInstant(data.get(FIELD_LAST_VERIFIED_AT)),
                 parseInstant(data.get(FIELD_STALE_AFTER)),
                 labels
         );
+    }
+
+    /**
+     * Serializes the state history (list of MasteryTransition) to a list of data maps.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> serializeStateHistory(
+            @NotNull List<MasteryTransition> history) {
+        return history.stream()
+                .map(t -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("transitionId", t.transitionId());
+                    m.put("masteryId", t.masteryId());
+                    m.put("fromState", t.fromState().name());
+                    m.put("toState", t.toState().name());
+                    m.put("reason", t.reason());
+                    m.put("initiatedBy", t.initiatedBy());
+                    m.put("transitionedAt", t.transitionedAt().toString());
+                    m.put("evidenceRefs", new HashMap<>(t.evidenceRefs()));
+                    m.put("metadata", new HashMap<>(t.metadata()));
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Deserializes the state history from a raw list of data maps.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<MasteryTransition> deserializeStateHistory(@NotNull Object raw) {
+        if (!(raw instanceof List<?> list)) {
+            return List.of();
+        }
+        List<MasteryTransition> result = new ArrayList<>();
+        for (Object entry : list) {
+            if (!(entry instanceof Map<?, ?> m)) continue;
+            try {
+                result.add(new MasteryTransition(
+                        strOrEmpty(m, "transitionId"),
+                        strOrEmpty(m, "masteryId"),
+                        MasteryState.valueOf(strOrDefault(m, "fromState", "UNKNOWN")),
+                        MasteryState.valueOf(strOrDefault(m, "toState", "UNKNOWN")),
+                        strOrEmpty(m, "reason"),
+                        strOrEmpty(m, "initiatedBy"),
+                        parseInstant(m.get("transitionedAt")),
+                        toStringMap(m.get("evidenceRefs")),
+                        toStringMap(m.get("metadata"))
+                ));
+            } catch (IllegalArgumentException ignored) {
+                // Skip malformed transition entries rather than failing the load
+            }
+        }
+        return Collections.unmodifiableList(result);
     }
 
     /**
@@ -295,5 +353,15 @@ public final class MasteryItemMapper {
             return Instant.parse(s);
         }
         return Instant.now();
+    }
+
+    /** Extracts a String from a wildcard map by key, returning {@code ""} when absent or non-String. */
+    private static String strOrEmpty(@NotNull Map<?, ?> map, @NotNull String key) {
+        return map.get(key) instanceof String s ? s : "";
+    }
+
+    /** Extracts a String from a wildcard map by key, returning {@code defaultValue} when absent or non-String. */
+    private static String strOrDefault(@NotNull Map<?, ?> map, @NotNull String key, @NotNull String defaultValue) {
+        return map.get(key) instanceof String s ? s : defaultValue;
     }
 }

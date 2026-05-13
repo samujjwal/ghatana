@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "dev-to-staging": {
+      "policyId": "dev-to-staging",
+      "name": "Dev to Staging Promotion Policy",
+      "description": "Policy for promoting from dev to staging environment",
+      "sourceEnvironment": "dev",
+      "targetEnvironment": "staging",
+      "requirements": {
+        "artifactVerification": true,
+        "securityScan": true,
+        "conformanceCheck": false,
+        "e2eTests": true,
+        "performanceTests": false,
+        "minSuccessRate": 80
+      },
+      "approval": {
+        "required": false,
+        "approvers": [],
+        "timeoutHours": 0
+      }
+    },
+    "staging-to-prod": {
+      "policyId": "staging-to-prod",
+      "name": "Staging to Production Promotion Policy",
+      "description": "Policy for promoting from staging to production environment",
+      "sourceEnvironment": "staging",
+      "targetEnvironment": "prod",
+      "requirements": {
+        "artifactVerification": true,
+        "securityScan": true,
+        "conformanceCheck": true,
+        "e2eTests": true,
+        "performanceTests": true,
+        "minSuccessRate": 95
+      },
+      "approval": {
+        "required": true,
+        "approvers": ["tech-lead", "product-manager", "sre-lead"],
+        "timeoutHours": 24
+      }
+    },
+    "prod-hotfix": {
+      "policyId": "prod-hotfix",
+      "name": "Production Hotfix Promotion Policy",
+      "description": "Expedited policy for hotfix promotions to production",
+      "sourceEnvironment": "staging",
+      "targetEnvironment": "prod",
+      "requirements": {
+        "artifactVerification": true,
+        "securityScan": true,
+        "conformanceCheck": true,
+        "e2eTests": true,
+        "performanceTests": false,
+        "minSuccessRate": 90
+      },
+      "approval": {
+        "required": true,
+        "approvers": ["tech-lead", "engineering-manager"],
+        "timeoutHours": 4
+      }
+    }
+  }
+}

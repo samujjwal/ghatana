@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "checks": {
+    "backend-api": {
+      "type": "http",
+      "path": "/health",
+      "expectedStatus": 200,
+      "timeoutMs": 5000,
+      "intervalMs": 30000
+    },
+    "worker": {
+      "type": "http",
+      "path": "/health",
+      "expectedStatus": 200,
+      "timeoutMs": 5000,
+      "intervalMs": 30000
+    },
+    "operator": {
+      "type": "http",
+      "path": "/health",
+      "expectedStatus": 200,
+      "timeoutMs": 5000,
+      "intervalMs": 30000
+    }
+  }
+}

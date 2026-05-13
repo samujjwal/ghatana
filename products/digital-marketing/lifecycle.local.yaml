@@ -1,0 +1,17 @@
+environment: local
+
+surfaces:
+  backend-api:
+    env:
+      DMOS_API_PORT: 8080
+      DATABASE_URL: jdbc:postgresql://localhost:5432/digital_marketing
+      LOG_LEVEL: debug
+  web:
+    env:
+      VITE_API_BASE_URL: http://localhost:8080
+      VITE_ENV: local
+
+deployment:
+  target: compose-local
+  composeFile: products/digital-marketing/deploy/local.compose.yaml
+  envFile: products/digital-marketing/deploy/local.env

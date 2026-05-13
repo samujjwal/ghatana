@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  digital-marketing-api:
+    image: ghatana/digital-marketing-api:local
+    build:
+      context: .
+      dockerfile: config/docker/templates/product-java-service.Dockerfile.template
+    ports:
+      - "8080:8080"
+    environment:
+      - DMOS_API_PORT=8080
+      - DATABASE_URL=jdbc:postgresql://localhost:5432/digital_marketing
+      - LOG_LEVEL=debug
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - digital-marketing-network
+
+  digital-marketing-web:
+    image: ghatana/digital-marketing-web:local
+    build:
+      context: products/digital-marketing/ui
+      dockerfile: ../../config/docker/templates/product-node-web.Dockerfile.template
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+      - VITE_ENV=local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - digital-marketing-network
+    depends_on:
+      - digital-marketing-api
+
+networks:
+  digital-marketing-network:
+    driver: bridge

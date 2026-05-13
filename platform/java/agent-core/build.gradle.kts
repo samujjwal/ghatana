@@ -49,7 +49,6 @@ dependencies {
 tasks.compileTestJava {
     exclude("**/AgentTurnPipelineMasteryTest.java")
     exclude("**/GaaMasteryLifecycleE2ETest.java")
-    exclude("**/MasteryAwareModeSelectorTest.java")
     exclude("**/ObsolescencePolicyTest.java")
     exclude("**/ConfidenceVectorTest.java")
 }

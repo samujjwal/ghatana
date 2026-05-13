@@ -226,6 +226,7 @@ class DefaultObsolescenceDetectorTest extends EventloopTestBase {
                 List.of(),
                 List.of(),
                 List.of(),
+                List.of(),
                 Instant.now(),
                 staleAfter,
                 labels

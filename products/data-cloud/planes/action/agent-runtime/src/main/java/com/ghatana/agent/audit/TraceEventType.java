@@ -74,5 +74,25 @@ public enum TraceEventType {
     LEARNING_DELTA_REJECTED,
 
     /** Skill benchmark evaluation completed. */
-    SKILL_BENCHMARK_COMPLETED
+    SKILL_BENCHMARK_COMPLETED,
+
+    // ── Governance Dispatch Events ────────────────────────────────────────
+
+    /** Version context was resolved for this dispatch. */
+    VERSION_CONTEXT_RESOLVED,
+
+    /** Mastery decision was made for the skill/agent. */
+    MASTERY_DECISION_MADE,
+
+    /** Execution mode was selected for this dispatch. */
+    MODE_SELECTED,
+
+    /** Approval gate was checked. */
+    APPROVAL_CHECKED,
+
+    /** Verification gate was checked. */
+    VERIFICATION_CHECKED,
+
+    /** Dispatch was explicitly allowed after all governance checks passed. */
+    DISPATCH_ALLOWED
 }

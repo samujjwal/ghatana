@@ -34,53 +34,7 @@ public interface ModeSelectionPolicy {
     );
 
     /**
-     * Mode selection result with the chosen execution mode and reasoning.
-     *
-     * @doc.type record
-     * @doc.purpose Mode selection result
-     * @doc.layer agent-core
-     * @doc.pattern Record
+     * Mode selection result with the chosen execution strategy, supervision mode, and reasoning.
+     * See {@link ModeSelectionResult}.
      */
-    record ModeSelectionResult(
-            @NotNull ExecutionMode mode,
-            @NotNull String reasoning,
-            boolean requiresApproval,
-            boolean requiresVerification
-    ) {
-        /**
-         * Creates a mode selection result.
-         *
-         * @param mode execution mode
-         * @param reasoning selection reasoning
-         * @return mode selection result
-         */
-        @NotNull
-        public static ModeSelectionResult of(@NotNull ExecutionMode mode, @NotNull String reasoning) {
-            return new ModeSelectionResult(mode, reasoning, false, false);
-        }
-
-        /**
-         * Creates a mode selection result requiring approval.
-         *
-         * @param mode execution mode
-         * @param reasoning selection reasoning
-         * @return mode selection result
-         */
-        @NotNull
-        public static ModeSelectionResult requiringApproval(@NotNull ExecutionMode mode, @NotNull String reasoning) {
-            return new ModeSelectionResult(mode, reasoning, true, false);
-        }
-
-        /**
-         * Creates a mode selection result requiring verification.
-         *
-         * @param mode execution mode
-         * @param reasoning selection reasoning
-         * @return mode selection result
-         */
-        @NotNull
-        public static ModeSelectionResult requiringVerification(@NotNull ExecutionMode mode, @NotNull String reasoning) {
-            return new ModeSelectionResult(mode, reasoning, false, true);
-        }
-    }
 }

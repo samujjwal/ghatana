@@ -1,0 +1,51 @@
+name: Product Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      products:
+        description: 'Comma-separated list of products to release'
+        required: false
+
+jobs:
+  resolve-affected:
+    name: Resolve Affected Products
+    runs-on: ubuntu-latest
+    outputs:
+      affected-products: ${{ steps.resolve.outputs.affected-products }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "affected-products=${{ github.event.inputs.products }}" >> $GITHUB_OUTPUT
+          else
+            echo "affected-products=$(node scripts/resolve-affected-products.mjs --json | jq -r '.affectedProducts | join(",")')" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    name: Release Product
+    needs: resolve-affected
+    if: needs.resolve-affected.outputs.affected-products != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        product: ${{ fromJson(format('["{0}"]', needs.resolve-affected.outputs.affected-products)) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - run: pnpm install
+      - name: Release Product
+        run: pnpm kernel release create ${{ matrix.product }} --version ${{ github.ref_name }}
+      - name: Create Release Manifest
+        run: pnpm kernel release manifest ${{ matrix.product }} --version ${{ github.ref_name }}

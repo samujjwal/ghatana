@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "flashit",
+  "fixtures": {
+    "deploy": {
+      "expectedSteps": 1,
+      "expectedAdapters": ["compose-local"]
+    }
+  }
+}

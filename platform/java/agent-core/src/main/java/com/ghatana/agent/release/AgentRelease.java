@@ -4,6 +4,9 @@
  */
 package com.ghatana.agent.release;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 
@@ -20,6 +23,7 @@ import java.util.Set;
  *
  * @param agentReleaseId              UUID, immutable primary key
  * @param agentId                     links back to AgentSpec.agentId
+ * @param tenantId                    tenant that owns this release (required)
  * @param specVersion                 mirrors {@code AgentSpec.agentSpecVersion} (e.g., {@code "2.0.0"})
  * @param releaseVersion              semver string (e.g., {@code "1.3.2"})
  * @param state                       current lifecycle state
@@ -29,6 +33,10 @@ import java.util.Set;
  * @param evaluationPackId            ID of the EvaluationPack that passed this release
  * @param evaluationPackDigest        SHA-256 of the EvaluationPack
  * @param memoryContractId            ID of the MemoryContract
+ * @param masteryPolicyPackId         ID of the MasteryPolicyPack (required for CANARY/ACTIVE)
+ * @param learningContractId          ID of the LearningContract or embedded digest
+ * @param versionCompatibilityPolicyId ID of the VersionCompatibilityPolicy (replaces raw runtime version list)
+ * @param freshnessPolicyId           ID of the FreshnessPolicy
  * @param compatibleRuntimeVersions   runtime version constraints (e.g., {@code ["aep-runtime:2.x"]})
  * @param signingReference            Sigstore bundle or attestation reference (nullable)
  * @param toolContractVersion         version of ToolContract at release time
@@ -51,6 +59,7 @@ import java.util.Set;
 public record AgentRelease(
         String agentReleaseId,
         String agentId,
+        String tenantId,
         String specVersion,
         String releaseVersion,
         AgentReleaseState state,
@@ -60,6 +69,10 @@ public record AgentRelease(
         String evaluationPackId,
         String evaluationPackDigest,
         String memoryContractId,
+        String masteryPolicyPackId,
+        String learningContractId,
+        String versionCompatibilityPolicyId,
+        String freshnessPolicyId,
         List<String> compatibleRuntimeVersions,
         String signingReference,
         String toolContractVersion,
@@ -80,6 +93,9 @@ public record AgentRelease(
         }
         if (agentId == null || agentId.isBlank()) {
             throw new IllegalArgumentException("agentId must not be blank");
+        }
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("tenantId must not be blank");
         }
         if (state == null) {
             throw new IllegalArgumentException("state must not be null");
@@ -105,6 +121,12 @@ public record AgentRelease(
         if (memoryContractId == null || memoryContractId.isBlank()) {
             throw new IllegalArgumentException("memoryContractId must not be blank (governance gate)");
         }
+        // masteryPolicyPackId required for response-serving states (CANARY, ACTIVE)
+        if (state != null && state.isResponseServing()
+                && (masteryPolicyPackId == null || masteryPolicyPackId.isBlank())) {
+            throw new IllegalArgumentException(
+                    "masteryPolicyPackId must not be blank for response-serving state: " + state + " (governance gate)");
+        }
         compatibleRuntimeVersions = List.copyOf(compatibleRuntimeVersions);
         dataClassesHandled        = Set.copyOf(dataClassesHandled);
         permittedPurposes         = Set.copyOf(permittedPurposes);
@@ -126,11 +148,14 @@ public record AgentRelease(
                     + ". Allowed: " + this.state.allowedTransitions());
         }
         return new AgentRelease(
-                agentReleaseId, agentId, specVersion, releaseVersion,
+                agentReleaseId, agentId, tenantId, specVersion, releaseVersion,
                 newState, specDigest,
                 policyPackId, policyPackDigest,
                 evaluationPackId, evaluationPackDigest,
-                memoryContractId, compatibleRuntimeVersions,
+                memoryContractId,
+                masteryPolicyPackId, learningContractId,
+                versionCompatibilityPolicyId, freshnessPolicyId,
+                compatibleRuntimeVersions,
                 signingReference, toolContractVersion,
                 telemetryContractVersion, explanationContractVersion,
                 redactionProfileId, threatModelId,
@@ -156,5 +181,37 @@ public record AgentRelease(
      */
     public boolean isResponseServing() {
         return state.isResponseServing();
+    }
+
+    /**
+     * Stable SHA-256 digest over governance-critical release fields.
+     * Changes when mastery policy, learning contract, spec, policy pack, or evaluation pack change.
+     *
+     * @return hex-encoded SHA-256 digest
+     */
+    public String releaseDigest() {
+        String canonical = String.join("\n",
+                "agentId=" + agentId,
+                "specVersion=" + specVersion,
+                "releaseVersion=" + releaseVersion,
+                "specDigest=" + (specDigest != null ? specDigest : ""),
+                "policyPackId=" + (policyPackId != null ? policyPackId : ""),
+                "evaluationPackId=" + (evaluationPackId != null ? evaluationPackId : ""),
+                "memoryContractId=" + (memoryContractId != null ? memoryContractId : ""),
+                "masteryPolicyPackId=" + (masteryPolicyPackId != null ? masteryPolicyPackId : ""),
+                "learningContractId=" + (learningContractId != null ? learningContractId : ""),
+                "versionCompatibilityPolicyId=" + (versionCompatibilityPolicyId != null ? versionCompatibilityPolicyId : ""),
+                "freshnessPolicyId=" + (freshnessPolicyId != null ? freshnessPolicyId : ""));
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(canonical.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(bytes.length * 2);
+            for (byte b : bytes) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 }

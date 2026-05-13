@@ -86,4 +86,13 @@ public class MemoryQuery {
 
     /** Include negative knowledge items. */
     @Builder.Default boolean includeNegativeKnowledge = true;
+
+    /** Require fresh memory items only (based on freshness policy). */
+    @Builder.Default boolean requireFreshness = false;
+
+    /** Query purpose — e.g., "learning", "execution", "audit", "evaluation". Used for observability. */
+    @Nullable String purpose;
+
+    /** Risk level filter — e.g., "high", "critical". Null means no filter. */
+    @Nullable String riskLevel;
 }

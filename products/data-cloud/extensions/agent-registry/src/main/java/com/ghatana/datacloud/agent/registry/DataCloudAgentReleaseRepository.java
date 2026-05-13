@@ -46,6 +46,7 @@ public final class DataCloudAgentReleaseRepository implements AgentReleaseReposi
     // ─── field name constants for the data map ────────────────────────────────
     private static final String F_AGENT_RELEASE_ID           = "agentReleaseId";
     private static final String F_AGENT_ID                   = "agentId";
+    private static final String F_TENANT_ID                  = "tenantId";
     private static final String F_SPEC_VERSION               = "specVersion";
     private static final String F_RELEASE_VERSION            = "releaseVersion";
     private static final String F_STATE                      = "state";
@@ -220,6 +221,7 @@ public final class DataCloudAgentReleaseRepository implements AgentReleaseReposi
         Map<String, Object> m = new HashMap<>();
         m.put(F_AGENT_RELEASE_ID,           r.agentReleaseId());
         m.put(F_AGENT_ID,                   r.agentId());
+        m.put(F_TENANT_ID,                  r.tenantId());
         m.put(F_SPEC_VERSION,               r.specVersion());
         m.put(F_RELEASE_VERSION,            r.releaseVersion());
         m.put(F_STATE,                      r.state().name());
@@ -250,6 +252,7 @@ public final class DataCloudAgentReleaseRepository implements AgentReleaseReposi
         return new AgentReleaseBuilder()
                 .agentReleaseId((String) m.get(F_AGENT_RELEASE_ID))
                 .agentId((String) m.get(F_AGENT_ID))
+                .tenantId((String) m.getOrDefault(F_TENANT_ID, "unknown"))
                 .specVersion((String) m.getOrDefault(F_SPEC_VERSION, "1.0.0"))
                 .releaseVersion((String) m.get(F_RELEASE_VERSION))
                 .state(AgentReleaseState.valueOf((String) m.get(F_STATE)))

@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "immediate": {
+      "description": "Rollback can be triggered immediately without approval",
+      "requiresApproval": false,
+      "timeoutSeconds": 60
+    },
+    "manual": {
+      "description": "Rollback requires manual trigger but no additional approval",
+      "requiresApproval": false,
+      "timeoutSeconds": 300
+    },
+    "manual-with-plan": {
+      "description": "Rollback requires manual trigger and pre-approved rollback plan",
+      "requiresApproval": true,
+      "requiresPlan": true,
+      "timeoutSeconds": 600
+    },
+    "disabled": {
+      "description": "Rollback is disabled (not recommended)",
+      "requiresApproval": false,
+      "enabled": false
+    }
+  }
+}

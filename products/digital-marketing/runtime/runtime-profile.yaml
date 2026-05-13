@@ -1,0 +1,22 @@
+profile: standard-java-service
+
+backend-api:
+  javaVersion: 21
+  jvmOptions:
+    xms: 512m
+    xmx: 2g
+    maxMetaspaceSize: 256m
+  defaultPort: 8080
+  healthCheckPath: /health
+  metricsPath: /metrics
+  env:
+    SPRING_PROFILES_ACTIVE: local
+    LOGGING_LEVEL_ROOT: INFO
+    LOGGING_LEVEL_COM_GHATANA: DEBUG
+
+web:
+  nodeVersion: 18
+  defaultPort: 5173
+  healthCheckPath: /
+  env:
+    NODE_ENV: development

@@ -431,6 +431,8 @@ const dirs = [
   join(productDir, "policy-packs"),
   join(productDir, "src", "main", "java", "com", "ghatana", packageSegment, "kernel", "policy"),
   join(productDir, "src", "test", "java", "com", "ghatana", packageSegment, "kernel"),
+  join(productDir, "runtime"),
+  join(productDir, "deploy"),
 ];
 
 if (uiEnabled) {
@@ -837,6 +839,152 @@ const docFiles = [
 for (const [filename, content] of docFiles) {
   writeFile(join(productDir, "docs", filename), content);
 }
+
+// Lifecycle configuration files
+writeFile(
+  join(productDir, "kernel-product.yaml"),
+  `lifecycleProfile: standard-web-api-product
+surfaces:
+  backend-api:
+    adapter: gradle-java-service
+    module: :products:${id}
+${uiEnabled ? `  web:
+    adapter: pnpm-vite-react
+    module: products/${id}/client/web` : ""}
+phases:
+  dev:
+    mode: parallel
+  build:
+    mode: sequential
+`
+);
+
+writeFile(
+  join(productDir, "lifecycle.local.yaml"),
+  `environment: local
+surfaces:
+  backend-api:
+    port: 8080
+    env:
+      PRODUCT_ID: ${id}
+${uiEnabled ? `  web:
+    port: 3000
+    env:
+      API_URL: http://localhost:8080` : ""}
+deployment:
+  adapter: compose-local
+  composeFile: deploy/local.compose.yaml
+`
+);
+
+writeFile(
+  join(productDir, "lifecycle.dev.yaml"),
+  `environment: dev
+surfaces:
+  backend-api:
+    port: 8080
+    env:
+      PRODUCT_ID: ${id}
+${uiEnabled ? `  web:
+    port: 3000
+    env:
+      API_URL: http://localhost:8080` : ""}
+deployment:
+  adapter: kubernetes
+  namespace: dev
+  configPath: deploy/k8s/dev
+`
+);
+
+writeFile(
+  join(productDir, "runtime", "runtime-profile.yaml"),
+  `surfaces:
+  backend-api:
+    jvmOptions:
+      -Xmx1g
+      -Xms512m
+    env:
+      LOG_LEVEL: info
+${uiEnabled ? `  web:
+    env:
+      NODE_ENV: production` : ""}
+`
+);
+
+writeFile(
+  join(productDir, "deploy", "local.compose.yaml"),
+  `# Shared runtime template reference for ${name}
+x-ghatana-template:
+  source: ../../../config/docker/templates/product-runtime.compose.yaml
+
+services:
+  ${id}-app:
+    image: ${id}:local
+    environment:
+      PRODUCT_ID: ${id}
+      PRODUCT_AI_DISABLED: "\${${productCode}_AI_DISABLED:-true}"
+    ports:
+      - "\${${productCode}_APP_PORT:-3900}:8080"
+`
+);
+
+writeFile(
+  join(productDir, "deploy", "local.env.example"),
+  `${productCode}_AI_DISABLED=true
+${productCode}_APP_PORT=3900
+`
+);
+
+writeFile(
+  join(productDir, "deploy", "health-checks.json"),
+  `{
+  "surfaces": {
+    "backend-api": {
+      "type": "http",
+      "path": "/health",
+      "port": 8080
+${uiEnabled ? `    },
+    "web": {
+      "type": "http",
+      "path": "/",
+      "port": 3000` : ""}
+    }
+  }
+}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "lifecycle-fixtures.json"),
+  `{
+  "expectedSteps": {
+    "dev": ["start-dev-server"],
+    "build": ["compile", "test", "package"]
+  }
+}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "deployment-fixtures.json"),
+  `{
+  "expectedSteps": {
+    "deploy": ["apply-deployment"]
+  }
+}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "artifact-fixtures.json"),
+  `{
+  "expectedArtifacts": {
+    "backend-api": ["jar"]${uiEnabled ? `,
+    "web": ["static-web-bundle"]` : ""}
+  }
+}
+`
+);
 
 writeFile(
   join(productDir, "docker-compose.local.yml"),

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "1.0.0",
+  "gates": {
+    "automatic-rollback": {
+      "name": "Automatic Rollback",
+      "description": "Automatically rollback if health checks fail",
+      "enabled": true,
+      "config": {
+        "healthCheckTimeout": 300000,
+        "failureThreshold": 3,
+        "strategies": {
+          "previous-artifact": {
+            "description": "Rollback to previous artifact version",
+            "enabled": true
+          },
+          "last-known-good": {
+            "description": "Rollback to last known good version",
+            "enabled": true
+          }
+        }
+      }
+    },
+    "manual-approval-rollback": {
+      "name": "Manual Approval Rollback",
+      "description": "Requires manual approval for rollback",
+      "enabled": true,
+      "config": {
+        "environments": ["prod"],
+        "approvers": ["tech-lead", "site-reliability-engineer"],
+        "reasonRequired": true
+      }
+    },
+    "rollback-verification": {
+      "name": "Rollback Verification",
+      "description": "Run verification after rollback",
+      "enabled": true,
+      "config": {
+        "tests": ["smoke", "health"],
+        "healthChecks": true,
+        "metrics": true
+      }
+    }
+  }
+}

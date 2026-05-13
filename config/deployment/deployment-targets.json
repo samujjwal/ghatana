@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "targets": {
+    "compose-local": {
+      "kind": "local",
+      "adapter": "compose-local",
+      "supportedEnvironments": ["local"],
+      "requires": ["deployment.local.composeFile", "deployment.local.envFile"],
+      "outputs": ["deployment-manifest", "health-check-report"]
+    },
+    "kubernetes": {
+      "kind": "cluster",
+      "adapter": "kubernetes",
+      "supportedEnvironments": ["dev", "staging", "prod"],
+      "requires": ["deployment.kubernetes.namespace", "deployment.kubernetes.helmChart"],
+      "outputs": ["deployment-manifest", "health-check-report"]
+    },
+    "helm": {
+      "kind": "cluster",
+      "adapter": "helm",
+      "supportedEnvironments": ["dev", "staging", "prod"],
+      "requires": ["deployment.helm.namespace", "deployment.helm.releaseName", "deployment.helm.chartPath", "deployment.helm.valuesFile"],
+      "outputs": ["deployment-manifest", "health-check-report"]
+    },
+    "terraform": {
+      "kind": "cluster",
+      "adapter": "terraform",
+      "supportedEnvironments": ["staging", "prod"],
+      "requires": ["deployment.terraform.workspace", "deployment.terraform.configPath", "deployment.terraform.variablesFile"],
+      "outputs": ["deployment-manifest", "health-check-report"]
+    }
+  }
+}

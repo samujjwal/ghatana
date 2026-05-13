@@ -279,6 +279,7 @@ class AgentDefinitionMasteryValidationTest {
                         "freshnessPolicyRef", "default-freshness",
                         "versionCompatibilityPolicyRef", "default-compat"
                 ))
+                .masteryPolicyRefs(List.of("mastery-policy-1"))
                 .evaluationRefs(List.of("eval-pack-1"))
                 .build();
 
@@ -288,5 +289,77 @@ class AgentDefinitionMasteryValidationTest {
             System.err.println("Validation errors: " + result.errors());
         }
         assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    @DisplayName("L3+ agents without masteryPolicyRefs fail validation")
+    void l3WithoutMasteryPolicyRefsFailsValidation() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L3")
+                .skillRefs(List.of("skill-1"))
+                .evaluationRefs(List.of("eval-1"))
+                .masteryBindings(Map.of(
+                        "namespace", "default",
+                        "registryRef", "default-registry",
+                        "freshnessPolicyRef", "default-freshness",
+                        "versionCompatibilityPolicyRef", "default-compat"
+                ))
+                // no masteryPolicyRefs set
+                .build();
+
+        AgentDefinitionValidator.ValidationResult result = AgentDefinitionValidator.validate(definition);
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("masteryPolicyRefs") && e.contains("L3"));
+    }
+
+    @Test
+    @DisplayName("L3+ agents without evaluationRefs fail validation")
+    void l3WithoutEvaluationRefsFailsValidation() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L3")
+                .skillRefs(List.of("skill-1"))
+                .masteryPolicyRefs(List.of("policy-1"))
+                .masteryBindings(Map.of(
+                        "namespace", "default",
+                        "registryRef", "default-registry",
+                        "freshnessPolicyRef", "default-freshness",
+                        "versionCompatibilityPolicyRef", "default-compat"
+                ))
+                // no evaluationRefs set
+                .build();
+
+        AgentDefinitionValidator.ValidationResult result = AgentDefinitionValidator.validate(definition);
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("evaluationRefs") && e.contains("L3"));
+    }
+
+    @Test
+    @DisplayName("Non-ADAPTIVE agents with masteryBindings but no skillRefs fail validation")
+    void masteryBoundNonAdaptiveAgentWithoutSkillRefsFailsValidation() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.DETERMINISTIC)
+                .masteryBindings(Map.of(
+                        "namespace", "default",
+                        "registryRef", "default-registry",
+                        "freshnessPolicyRef", "default-freshness",
+                        "versionCompatibilityPolicyRef", "default-compat"
+                ))
+                // no skillRefs set
+                .build();
+
+        AgentDefinitionValidator.ValidationResult result = AgentDefinitionValidator.validate(definition);
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.errors()).anyMatch(e -> e.contains("skillRefs") && e.contains("masteryBindings"));
     }
 }

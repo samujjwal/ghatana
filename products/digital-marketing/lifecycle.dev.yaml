@@ -1,0 +1,28 @@
+environment: dev
+
+surfaces:
+  backend-api:
+    env:
+      DMOS_API_PORT: 8080
+      DATABASE_URL: jdbc:postgresql://dev-db.example.com:5432/digital_marketing
+      LOG_LEVEL: info
+  web:
+    env:
+      VITE_API_BASE_URL: https://api-dev.example.com
+      VITE_ENV: dev
+
+deployment:
+  target: kubernetes-dev
+  namespace: dev
+  replicas: 2
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+runtimeProfile: high-performance
+
+healthCheckProfile: comprehensive

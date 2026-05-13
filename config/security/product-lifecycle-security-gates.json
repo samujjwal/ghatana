@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "gates": {
+    "security-preflight": {
+      "enabled": true,
+      "phases": ["build", "package"],
+      "checks": [
+        {
+          "id": "secret-scan",
+          "name": "Secret Scanning",
+          "tool": "trufflehog",
+          "severity": "critical",
+          "failOn": "high"
+        },
+        {
+          "id": "vulnerability-scan",
+          "name": "Vulnerability Scanning",
+          "tool": "trivy",
+          "severity": "high",
+          "failOn": "critical"
+        }
+      ]
+    },
+    "license-policy": {
+      "enabled": true,
+      "phases": ["build"],
+      "checks": [
+        {
+          "id": "license-compliance",
+          "name": "License Compliance",
+          "tool": "license-checker",
+          "allowedLicenses": ["MIT", "Apache-2.0", "BSD-3-Clause", "ISC"],
+          "severity": "medium",
+          "failOn": "high"
+        }
+      ]
+    },
+    "dependency-policy": {
+      "enabled": true,
+      "phases": ["build"],
+      "checks": [
+        {
+          "id": "dependency-audit",
+          "name": "Dependency Audit",
+          "tool": "npm-audit",
+          "severity": "high",
+          "failOn": "critical"
+        }
+      ]
+    }
+  }
+}

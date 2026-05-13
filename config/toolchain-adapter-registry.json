@@ -1,0 +1,133 @@
+{
+  "version": "1.0.0",
+  "adapters": {
+    "gradle-java-service": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["backend-api", "worker", "operator"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["gradleModule"],
+      "outputs": ["jvm-classes", "test-report", "coverage-report", "jar"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleJavaServiceAdapter.ts"
+    },
+    "gradle-java-library": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["sdk"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["gradleModule"],
+      "outputs": ["jvm-classes", "test-report", "coverage-report", "jar"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleJavaLibraryAdapter.ts"
+    },
+    "pnpm-vite-react": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["web"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["packagePath"],
+      "outputs": ["static-web-bundle", "test-report", "typecheck-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/PnpmViteReactAdapter.ts"
+    },
+    "pnpm-node-api": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["backend-api", "worker"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["packagePath"],
+      "outputs": ["node-bundle", "test-report", "typecheck-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/PnpmNodeApiAdapter.ts"
+    },
+    "vitest": {
+      "kind": "test-tool",
+      "supportedSurfaceTypes": ["web", "backend-api", "worker"],
+      "supportedPhases": ["test"],
+      "requires": ["packagePath"],
+      "outputs": ["test-report", "coverage-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/VitestAdapter.ts"
+    },
+    "playwright": {
+      "kind": "test-tool",
+      "supportedSurfaceTypes": ["web"],
+      "supportedPhases": ["test", "verify"],
+      "requires": ["packagePath"],
+      "outputs": ["e2e-test-report", "screenshots", "traces"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/PlaywrightAdapter.ts"
+    },
+    "docker-buildx": {
+      "kind": "package-tool",
+      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
+      "supportedPhases": ["package"],
+      "requires": ["dockerfile", "context"],
+      "outputs": ["container-image", "image-digest"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/DockerBuildxAdapter.ts"
+    },
+    "docker-static-web": {
+      "kind": "package-tool",
+      "supportedSurfaceTypes": ["web"],
+      "supportedPhases": ["package"],
+      "requires": ["dockerfile", "context"],
+      "outputs": ["static-web-image", "image-digest"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/DockerStaticWebAdapter.ts"
+    },
+    "compose-local": {
+      "kind": "deployment-tool",
+      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
+      "supportedPhases": ["deploy", "verify", "rollback"],
+      "requires": ["composeFile", "envFile"],
+      "outputs": ["deployment-manifest", "health-check-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/ComposeDeploymentAdapter.ts"
+    },
+    "kubernetes": {
+      "kind": "deployment-tool",
+      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
+      "supportedPhases": ["deploy", "verify", "rollback"],
+      "requires": ["namespace", "helmChart", "valuesFile"],
+      "outputs": ["deployment-manifest", "health-check-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/KubernetesDeploymentAdapter.ts"
+    },
+    "helm": {
+      "kind": "deployment-tool",
+      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
+      "supportedPhases": ["deploy", "verify", "rollback"],
+      "requires": ["namespace", "releaseName", "chartPath", "valuesFile"],
+      "outputs": ["deployment-manifest", "health-check-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/HelmDeploymentAdapter.ts"
+    },
+    "terraform": {
+      "kind": "deployment-tool",
+      "supportedSurfaceTypes": ["backend-api", "web", "worker"],
+      "supportedPhases": ["deploy", "verify", "rollback"],
+      "requires": ["workspace", "configPath", "variablesFile"],
+      "outputs": ["deployment-manifest", "health-check-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/TerraformDeploymentAdapter.ts"
+    },
+    "xcode-ios": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["mobile-ios"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["xcodeProject", "scheme"],
+      "outputs": ["ios-app", "test-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/XcodeIosAdapter.ts"
+    },
+    "gradle-android": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": ["mobile-android"],
+      "supportedPhases": ["dev", "validate", "test", "build", "package"],
+      "requires": ["gradleModule", "variant"],
+      "outputs": ["android-apk", "android-aab", "test-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/GradleAndroidAdapter.ts"
+    },
+    "maven-publish": {
+      "kind": "package-tool",
+      "supportedSurfaceTypes": ["sdk"],
+      "supportedPhases": ["package"],
+      "requires": ["gradleModule"],
+      "outputs": ["maven-artifact"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/MavenPublishAdapter.ts"
+    },
+    "domain-pack-validator": {
+      "kind": "validation-tool",
+      "supportedSurfaceTypes": ["domain-pack"],
+      "supportedPhases": ["validate", "build"],
+      "requires": ["packPath"],
+      "outputs": ["validation-report"],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/DomainPackValidatorAdapter.ts"
+    }
+  }
+}

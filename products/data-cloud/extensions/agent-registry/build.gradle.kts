@@ -55,8 +55,6 @@ tasks.compileTestJava {
     exclude("**/DataCloudAgentReleaseRepositoryTest.java")
     exclude("**/DataCloudEvaluationRunRepositoryTest.java")
     exclude("**/DataCloudObsolescenceEventRepositoryTest.java")
-    exclude("**/DataCloudLearningDeltaRepositoryTest.java")
-    exclude("**/DataCloudMasteryRegistryTest.java")
 }
 
 tasks.test {

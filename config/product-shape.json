@@ -13,7 +13,12 @@
       },
       "clientPackages": [
         "products/phr/apps/web/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "standard-web-api-product",
+        "enabled": true,
+        "configPath": "products/phr/kernel-product.yaml"
+      }
     },
     "finance": {
       "ui": false,
@@ -31,6 +36,11 @@
         "sdk": "implemented"
       },
       "clientPackages": [],
+      "lifecycle": {
+        "profile": "backend-only-java-service",
+        "enabled": true,
+        "configPath": "products/finance/kernel-product.yaml"
+      },
       "backendOnlyDeclaration": {
         "file": "products/finance/README.md",
         "mustContain": "backend-only"
@@ -49,7 +59,12 @@
       },
       "clientPackages": [
         "products/digital-marketing/ui/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "standard-web-api-product",
+        "enabled": true,
+        "configPath": "products/digital-marketing/kernel-product.yaml"
+      }
     },
     "flashit": {
       "ui": true,
@@ -67,7 +82,12 @@
       "clientPackages": [
         "products/flashit/client/web/package.json",
         "products/flashit/client/mobile/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "mobile-plus-api-product",
+        "enabled": true,
+        "configPath": "products/flashit/kernel-product.yaml"
+      }
     },
     "data-cloud": {
       "ui": true,
@@ -84,7 +104,12 @@
       },
       "clientPackages": [
         "products/data-cloud/delivery/ui/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "platform-provider-product",
+        "enabled": true,
+        "configPath": "products/data-cloud/kernel-product.yaml"
+      }
     },
     "yappc": {
       "ui": true,
@@ -99,7 +124,12 @@
       },
       "clientPackages": [
         "products/yappc/frontend/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "standard-web-api-product",
+        "enabled": true,
+        "configPath": "products/yappc/kernel-product.yaml"
+      }
     },
     "audio-video": {
       "ui": false,
@@ -144,7 +174,12 @@
       },
       "clientPackages": [
         "products/tutorputor/apps/package.json"
-      ]
+      ],
+      "lifecycle": {
+        "profile": "standard-web-api-product",
+        "enabled": true,
+        "configPath": "products/tutorputor/kernel-product.yaml"
+      }
     },
     "aura": {
       "ui": false,

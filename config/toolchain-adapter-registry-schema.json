@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana/config/toolchain-adapter-registry-schema.json",
+  "title": "Toolchain Adapter Registry Schema",
+  "description": "Schema for toolchain adapter definitions",
+  "type": "object",
+  "required": ["version", "adapters"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "adapters": {
+      "type": "object",
+      "description": "Toolchain adapters keyed by adapter ID",
+      "additionalProperties": {
+        "$ref": "#/definitions/ToolchainAdapter"
+      }
+    }
+  },
+  "definitions": {
+    "ToolchainAdapter": {
+      "type": "object",
+      "required": ["kind", "supportedSurfaceTypes", "supportedPhases", "requires", "outputs"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Adapter kind (build-tool, test-tool, deployment-tool, etc.)",
+          "enum": ["build-tool", "test-tool", "deployment-tool", "package-tool", "validation-tool"]
+        },
+        "supportedSurfaceTypes": {
+          "type": "array",
+          "description": "Surface types this adapter supports",
+          "items": {
+            "type": "string",
+            "enum": ["backend-api", "web", "worker", "operator", "mobile-ios", "mobile-android", "sdk", "domain-pack"]
+          }
+        },
+        "supportedPhases": {
+          "type": "array",
+          "description": "Lifecycle phases this adapter supports",
+          "items": {
+            "type": "string",
+            "enum": ["create", "bootstrap", "dev", "validate", "test", "build", "package", "release", "deploy", "verify", "promote", "rollback", "operate", "retire"]
+          }
+        },
+        "requires": {
+          "type": "array",
+          "description": "Required surface configuration fields",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Artifact types produced by this adapter",
+          "items": {
+            "type": "string"
+          }
+        },
+        "implementation": {
+          "type": "string",
+          "description": "Path to adapter implementation (for TypeScript adapters)"
+        }
+      }
+    }
+  }
+}

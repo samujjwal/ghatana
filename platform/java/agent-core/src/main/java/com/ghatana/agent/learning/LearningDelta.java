@@ -31,6 +31,7 @@ public record LearningDelta(
         @NotNull String agentId,
         @NotNull String agentReleaseId,
         @NotNull String skillId,
+        @NotNull String tenantId,
         @Nullable String procedureId,
         @Nullable String semanticFactId,
         @Nullable String negativeKnowledgeId,
@@ -59,6 +60,7 @@ public record LearningDelta(
         Objects.requireNonNull(agentId, "agentId must not be null");
         Objects.requireNonNull(agentReleaseId, "agentReleaseId must not be null");
         Objects.requireNonNull(skillId, "skillId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(contentDigest, "contentDigest must not be null");
         Objects.requireNonNull(proposedContent, "proposedContent must not be null");
         Objects.requireNonNull(evidenceRefs, "evidenceRefs must not be null");

@@ -8,8 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -153,6 +151,17 @@ public record MasteryQuery(
      */
     @NotNull
     public MasteryQuery withAgentId(@NotNull String agentId) {
+        return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
+    }
+
+    /**
+     * Returns a new query with the agent release ID set.
+     *
+     * @param agentReleaseId agent release identifier
+     * @return new query with agent release ID
+     */
+    @NotNull
+    public MasteryQuery withAgentReleaseId(@NotNull String agentReleaseId) {
         return new MasteryQuery(skillId, agentId, agentReleaseId, tenantId, domain, states, includeObsolete, includeRetired, includeMaintenanceOnly, requireFreshness, currentTime, limit, offset);
     }
 

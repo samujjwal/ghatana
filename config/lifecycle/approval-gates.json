@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "1.0.0",
+  "gates": {
+    "code-review": {
+      "name": "Code Review",
+      "description": "Requires code review approval before promotion",
+      "phases": ["deploy", "release", "promote"],
+      "environments": ["staging", "prod"],
+      "required": true,
+      "config": {
+        "minReviewers": 1,
+        "requireAuthorApproval": false
+      }
+    },
+    "security-review": {
+      "name": "Security Review",
+      "description": "Requires security team approval for production deployments",
+      "phases": ["deploy", "release", "promote"],
+      "environments": ["prod"],
+      "required": true,
+      "config": {
+        "approvers": ["security-team"]
+      }
+    },
+    "performance-validation": {
+      "name": "Performance Validation",
+      "description": "Requires performance benchmarks to pass",
+      "phases": ["deploy", "promote"],
+      "environments": ["staging", "prod"],
+      "required": true,
+      "config": {
+        "thresholds": {
+          "responseTimeP95": 1000,
+          "responseTimeP99": 2000,
+          "throughput": 1000,
+          "errorRate": 0.01
+        }
+      }
+    },
+    "compliance-check": {
+      "name": "Compliance Check",
+      "description": "Requires compliance validation for regulated products",
+      "phases": ["deploy", "release", "promote"],
+      "environments": ["prod"],
+      "required": false,
+      "config": {
+        "regulatedProducts": ["finance", "phr"]
+      }
+    }
+  }
+}

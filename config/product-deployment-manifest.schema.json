@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.dev/schemas/product-deployment-manifest.schema.json",
+  "title": "Product Deployment Manifest",
+  "description": "Schema for validating product deployment manifests",
+  "type": "object",
+  "required": ["schemaVersion", "productId", "deploymentId", "version", "environment", "deploymentStatus", "timestamp", "surfaces", "deploymentMetadata", "healthChecks"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "productId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deploymentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deploymentStatus": {
+      "type": "string",
+      "enum": ["pending", "in-progress", "succeeded", "failed", "rolled-back"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["surface", "surfaceType", "artifactId", "deploymentTarget", "deploymentStatus", "deploymentDurationMs"],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "surfaceType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifactId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deploymentTarget": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deploymentStatus": {
+            "type": "string",
+            "enum": ["pending", "deployed", "failed"]
+          },
+          "deploymentDurationMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deploymentLogPath": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "deploymentMetadata": {
+      "type": "object",
+      "required": ["sourceReleaseId", "sourceReleaseVersion", "deploymentStrategy", "deploymentTrigger", "triggeredBy"],
+      "properties": {
+        "sourceReleaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceReleaseVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deploymentStrategy": {
+          "type": "string",
+          "enum": ["rolling", "blue-green", "canary"]
+        },
+        "deploymentTrigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "triggeredBy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rollbackPlanId": {
+          "type": "string"
+        }
+      }
+    },
+    "healthChecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["checkId", "checkName", "status", "checkedAt"],
+        "properties": {
+          "checkId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "passed", "failed"]
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

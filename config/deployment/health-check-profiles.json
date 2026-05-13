@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "standard-http": {
+      "type": "http",
+      "path": "/health",
+      "initialDelaySeconds": 30,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "successThreshold": 3,
+      "failureThreshold": 3
+    },
+    "quick-http": {
+      "type": "http",
+      "path": "/health",
+      "initialDelaySeconds": 5,
+      "periodSeconds": 5,
+      "timeoutSeconds": 3,
+      "successThreshold": 1,
+      "failureThreshold": 3
+    },
+    "strict-http": {
+      "type": "http",
+      "path": "/health",
+      "initialDelaySeconds": 60,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "successThreshold": 5,
+      "failureThreshold": 2
+    },
+    "tcp": {
+      "type": "tcp",
+      "port": 8080,
+      "initialDelaySeconds": 10,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "successThreshold": 2,
+      "failureThreshold": 3
+    }
+  }
+}

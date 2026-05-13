@@ -1,0 +1,44 @@
+name: Product Lifecycle Validate
+
+on:
+  pull_request:
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      products:
+        description: 'Comma-separated list of products to validate'
+        required: false
+
+jobs:
+  resolve-affected:
+    name: Resolve Affected Products
+    runs-on: ubuntu-latest
+    outputs:
+      affected-products: ${{ steps.resolve.outputs.affected-products }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "affected-products=${{ github.event.inputs.products }}" >> $GITHUB_OUTPUT
+          else
+            echo "affected-products=$(node scripts/resolve-affected-products.mjs --json | jq -r '.affectedProducts | join(",")')" >> $GITHUB_OUTPUT
+          fi
+
+  validate:
+    name: Validate Lifecycle
+    needs: resolve-affected
+    if: needs.resolve-affected.outputs.affected-products != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        product: ${{ fromJson(format('["{0}"]', needs.resolve-affected.outputs.affected-products)) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: pnpm install
+      - name: Validate Product Lifecycle
+        run: pnpm kernel product validate ${{ matrix.product }}

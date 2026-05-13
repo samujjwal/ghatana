@@ -1,0 +1,32 @@
+environment: prod
+
+surfaces:
+  backend-api:
+    env:
+      DMOS_API_PORT: 8080
+      DATABASE_URL: jdbc:postgresql://prod-db.example.com:5432/digital_marketing
+      LOG_LEVEL: warn
+  web:
+    env:
+      VITE_API_BASE_URL: https://api.example.com
+      VITE_ENV: production
+
+deployment:
+  target: kubernetes-prod
+  namespace: prod
+  replicas: 5
+  resources:
+    limits:
+      cpu: "4000m"
+      memory: "4Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+
+runtimeProfile: high-performance
+
+healthCheckProfile: comprehensive
+
+promotionPolicy: staging-to-prod
+
+rollbackPolicy: automatic-on-failure

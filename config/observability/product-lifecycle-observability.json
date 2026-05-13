@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "gates": {
+    "observability-check": {
+      "enabled": true,
+      "phases": ["build", "package", "deploy"],
+      "checks": [
+        {
+          "id": "metrics-emission",
+          "name": "Metrics Emission",
+          "severity": "medium",
+          "failOn": "high",
+          "requirements": ["prometheus-metrics", "latency-metrics", "error-rate-metrics"]
+        },
+        {
+          "id": "logging-structure",
+          "name": "Logging Structure",
+          "severity": "medium",
+          "failOn": "high",
+          "requirements": ["structured-logging", "correlation-id", "tenant-context"]
+        },
+        {
+          "id": "tracing-completeness",
+          "name": "Tracing Completeness",
+          "severity": "medium",
+          "failOn": "high",
+          "requirements": ["distributed-tracing", "span-context-propagation"]
+        },
+        {
+          "id": "health-checks",
+          "name": "Health Check Endpoints",
+          "severity": "high",
+          "failOn": "high",
+          "requirements": ["readiness-check", "liveness-check", "startup-check"]
+        }
+      ]
+    }
+  },
+  "production-gates": {
+    "enabled": true,
+    "phases": ["deploy"],
+    "environment": ["prod"],
+    "checks": [
+      {
+        "id": "alerting-rules",
+        "name": "Alerting Rules",
+        "severity": "critical",
+        "failOn": "critical",
+        "requirements": ["error-rate-alert", "latency-alert", "availability-alert"]
+      },
+      {
+        "id": "dashboard-coverage",
+        "name": "Dashboard Coverage",
+        "severity": "medium",
+        "failOn": "high",
+        "requirements": ["service-dashboard", "infrastructure-dashboard"]
+      }
+    ]
+  }
+}

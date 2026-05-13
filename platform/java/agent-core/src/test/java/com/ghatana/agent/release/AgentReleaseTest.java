@@ -28,6 +28,7 @@ class AgentReleaseTest {
     private static AgentRelease minimalRelease() {
         return new AgentReleaseBuilder()
                 .agentId("agent-test-001")
+                .tenantId("tenant-test")
                 .releaseVersion("1.0.0")
                 .redactionProfileId("rp-default")
                 .threatModelId("tm-default")
@@ -61,6 +62,7 @@ class AgentReleaseTest {
         void missingReleaseVersion() {
             assertThatThrownBy(() -> new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .evaluationPackId("eval-pack-1")
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
@@ -95,6 +97,7 @@ class AgentReleaseTest {
         void builderWithAllFields() { 
             AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .releaseVersion("2.0.0")
                     .specVersion("2.0.0")
                     .state(AgentReleaseState.VALIDATED) 
@@ -172,6 +175,7 @@ class AgentReleaseTest {
         void activeCanRunAndServe() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
@@ -181,6 +185,7 @@ class AgentReleaseTest {
                     .evaluationPackId("eval-pack-1")
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build();
 
             assertThat(release.isRunnable()).isTrue();
@@ -200,6 +205,7 @@ class AgentReleaseTest {
         void blockedNotRunnable() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.BLOCKED)
                     .redactionProfileId("rp-test")
@@ -225,6 +231,7 @@ class AgentReleaseTest {
         void runtimeVersionsUnmodifiable() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
@@ -245,6 +252,7 @@ class AgentReleaseTest {
         void dataClassesUnmodifiable() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-test")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
@@ -265,12 +273,116 @@ class AgentReleaseTest {
     @DisplayName("record compact constructor rejects blank agentReleaseId")
     void rejectsBlankReleaseId() { 
         assertThatThrownBy(() -> new AgentRelease( 
-                "", "agentId", "1.0.0", "1.0.0", AgentReleaseState.DRAFT,
+                "", "agentId", "tenant-test", "1.0.0", "1.0.0", AgentReleaseState.DRAFT,
                 null, null, null, null, null, null,
+                null, null, null, null,
                 List.of(), null, null, null, null, null, null, 
                 Set.of(), Set.of(), null, 
                 Instant.now(), Instant.now(), "user")) 
                 .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("agentReleaseId");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Phase 5.2 Acceptance Tests
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("Phase 5.2 — AgentRelease Governance")
+    class Phase52GovernanceTests {
+
+        @Test
+        @DisplayName("response-serving release cannot be created without masteryPolicyPackId")
+        void responseServingReleaseRequiresMasteryPolicyPackId() {
+            // ACTIVE release without masteryPolicyPackId must be rejected
+            assertThatThrownBy(() -> new AgentReleaseBuilder()
+                    .agentId("agent-001")
+                    .tenantId("tenant-test")
+                    .releaseVersion("1.0.0")
+                    .state(AgentReleaseState.ACTIVE)
+                    .redactionProfileId("rp-001")
+                    .threatModelId("tm-001")
+                    .addPermittedPurpose("analytics")
+                    .capabilityMaturityProfile("L2")
+                    .evaluationPackId("eval-001")
+                    .evaluationPackDigest("sha256:eval")
+                    .memoryContractId("memory-001")
+                    // masteryPolicyPackId intentionally omitted
+                    .build())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("masteryPolicyPackId");
+        }
+
+        @Test
+        @DisplayName("release digest changes when mastery or learning policy changes")
+        void releaseDigestChangesWhenMasteryOrLearningPolicyChanges() {
+            AgentRelease base = new AgentReleaseBuilder()
+                    .agentId("agent-001")
+                    .tenantId("tenant-test")
+                    .releaseVersion("1.0.0")
+                    .redactionProfileId("rp-001")
+                    .threatModelId("tm-001")
+                    .addPermittedPurpose("analytics")
+                    .capabilityMaturityProfile("L2")
+                    .evaluationPackId("eval-001")
+                    .evaluationPackDigest("sha256:eval")
+                    .memoryContractId("memory-001")
+                    .build();
+
+            AgentRelease withMastery = new AgentReleaseBuilder()
+                    .agentId("agent-001")
+                    .tenantId("tenant-test")
+                    .releaseVersion("1.0.0")
+                    .redactionProfileId("rp-001")
+                    .threatModelId("tm-001")
+                    .addPermittedPurpose("analytics")
+                    .capabilityMaturityProfile("L2")
+                    .evaluationPackId("eval-001")
+                    .evaluationPackDigest("sha256:eval")
+                    .memoryContractId("memory-001")
+                    .masteryPolicyPackId("mastery-pack-v1")
+                    .learningContractId("learning-contract-1")
+                    .build();
+
+            AgentRelease withDifferentLearningContract = new AgentReleaseBuilder()
+                    .agentId("agent-001")
+                    .tenantId("tenant-test")
+                    .releaseVersion("1.0.0")
+                    .redactionProfileId("rp-001")
+                    .threatModelId("tm-001")
+                    .addPermittedPurpose("analytics")
+                    .capabilityMaturityProfile("L2")
+                    .evaluationPackId("eval-001")
+                    .evaluationPackDigest("sha256:eval")
+                    .memoryContractId("memory-001")
+                    .masteryPolicyPackId("mastery-pack-v1")
+                    .learningContractId("learning-contract-2")
+                    .build();
+
+            assertThat(base.releaseDigest()).isNotEqualTo(withMastery.releaseDigest());
+            assertThat(withMastery.releaseDigest()).isNotEqualTo(withDifferentLearningContract.releaseDigest());
+        }
+
+        @Test
+        @DisplayName("shadow release can run but cannot serve responses")
+        void shadowReleaseCanRunButNotServeResponses() {
+            AgentRelease shadowRelease = new AgentReleaseBuilder()
+                    .agentId("agent-001")
+                    .tenantId("tenant-test")
+                    .releaseVersion("1.0.0")
+                    .state(AgentReleaseState.SHADOW)
+                    .redactionProfileId("rp-001")
+                    .threatModelId("tm-001")
+                    .addPermittedPurpose("analytics")
+                    .capabilityMaturityProfile("L2")
+                    .evaluationPackId("eval-001")
+                    .evaluationPackDigest("sha256:eval")
+                    .memoryContractId("memory-001")
+                    // masteryPolicyPackId not required for SHADOW (not response-serving)
+                    .build();
+
+            assertThat(shadowRelease.isRunnable()).isTrue();
+            assertThat(shadowRelease.isResponseServing()).isFalse();
+        }
     }
 }

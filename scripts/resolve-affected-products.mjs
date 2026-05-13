@@ -46,6 +46,21 @@ const platformTypescriptPrefixes = [
   'platform/typescript/',
 ];
 
+const lifecyclePackagePrefixes = [
+  'platform/typescript/kernel-lifecycle/',
+  'platform/typescript/kernel-toolchains/',
+  'platform/typescript/kernel-artifacts/',
+  'platform/typescript/kernel-release/',
+];
+
+const lifecycleConfigPrefixes = [
+  'config/kernel-plugin-registry.json',
+  'config/kernel-plugin-registry-schema.json',
+  'config/lifecycle-profiles/',
+  'config/deployment-targets/',
+  'config/artifact-schemas/',
+];
+
 const uiPlatformPackagePrefixes = [
   'platform/typescript/design-system/',
   'platform/typescript/product-shell/',
@@ -112,6 +127,10 @@ function registryEntries(registry, options = {}) {
     .filter(([, product]) => includeDemo || product.kind !== 'demo/example')
     .filter(([, product]) => !options.businessProductsOnly || product.kind === 'business-product')
     .map(([productId, product]) => ({ productId, product }));
+}
+
+function productHasLifecycleEnabled(product) {
+  return product.lifecycle?.enabled === true;
 }
 
 function productHasPnpmSurface(product) {
@@ -196,6 +215,24 @@ export function resolveAffectedProducts(changedFiles, registry, options = {}) {
       for (const { productId, product } of entries) {
         if (productHasPnpmSurface(product)) {
           addReason(affected, productId, `platform-typescript:${changedPath}`);
+        }
+      }
+      continue;
+    }
+
+    if (hasPrefix(changedPath, lifecyclePackagePrefixes)) {
+      for (const { productId, product } of entries) {
+        if (productHasLifecycleEnabled(product)) {
+          addReason(affected, productId, `lifecycle-package:${changedPath}`);
+        }
+      }
+      continue;
+    }
+
+    if (globalImpactFiles.has(changedPath) || hasPrefix(changedPath, lifecycleConfigPrefixes)) {
+      for (const { productId, product } of entries) {
+        if (productHasLifecycleEnabled(product)) {
+          addReason(affected, productId, `lifecycle-config:${changedPath}`);
         }
       }
       continue;

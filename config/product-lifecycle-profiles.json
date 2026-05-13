@@ -1,0 +1,345 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "standard-web-api-product": {
+      "description": "A product with backend API and web UI surfaces",
+      "defaultSurfaces": {
+        "dev": ["backend-api", "web"],
+        "validate": ["backend-api", "web"],
+        "test": ["backend-api", "web"],
+        "build": ["backend-api", "web"],
+        "package": ["backend-api", "web"],
+        "deploy": ["backend-api", "web"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy", "bundle-budget"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react",
+        "package.backend-api": "docker-buildx",
+        "package.web": "docker-static-web",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "backend-only-java-service": {
+      "description": "A product with only backend Java service surfaces",
+      "defaultSurfaces": {
+        "dev": ["backend-api"],
+        "validate": ["backend-api"],
+        "test": ["backend-api"],
+        "build": ["backend-api"],
+        "package": ["backend-api"],
+        "deploy": ["backend-api"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "package.backend-api": "docker-buildx",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "frontend-only-web-product": {
+      "description": "A product with only frontend web UI surfaces",
+      "defaultSurfaces": {
+        "dev": ["web"],
+        "validate": ["web"],
+        "test": ["web"],
+        "build": ["web"],
+        "package": ["web"],
+        "deploy": ["web"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy", "bundle-budget", "accessibility"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "web": "pnpm-vite-react",
+        "package.web": "docker-static-web",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "mobile-plus-api-product": {
+      "description": "A product with mobile app and backend API surfaces",
+      "defaultSurfaces": {
+        "dev": ["backend-api", "mobile-ios", "mobile-android"],
+        "validate": ["backend-api", "mobile-ios", "mobile-android"],
+        "test": ["backend-api", "mobile-ios", "mobile-android"],
+        "build": ["backend-api", "mobile-ios", "mobile-android"],
+        "package": ["backend-api", "mobile-ios", "mobile-android"],
+        "deploy": ["backend-api"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "mobile-ios": "xcode-ios",
+        "mobile-android": "gradle-android",
+        "package.backend-api": "docker-buildx",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "sdk-product": {
+      "description": "A product that provides an SDK for external consumers",
+      "defaultSurfaces": {
+        "dev": ["sdk"],
+        "validate": ["sdk"],
+        "test": ["sdk"],
+        "build": ["sdk"],
+        "package": ["sdk"],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "api-compatibility",
+          "conformance"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy", "api-documentation"]
+      },
+      "defaultAdapters": {
+        "sdk": "gradle-java-library",
+        "package.sdk": "maven-publish"
+      }
+    },
+    "platform-provider-product": {
+      "description": "A platform provider product that offers shared capabilities",
+      "defaultSurfaces": {
+        "dev": ["backend-api", "worker"],
+        "validate": ["backend-api", "worker"],
+        "test": ["backend-api", "worker"],
+        "build": ["backend-api", "worker"],
+        "package": ["backend-api", "worker"],
+        "deploy": ["backend-api", "worker"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "platform-purity"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "platform-purity",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "worker": "gradle-java-service",
+        "package.backend-api": "docker-buildx",
+        "package.worker": "docker-buildx",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "shared-service-product": {
+      "description": "A shared service product used by multiple other products",
+      "defaultSurfaces": {
+        "dev": ["backend-api"],
+        "validate": ["backend-api"],
+        "test": ["backend-api"],
+        "build": ["backend-api"],
+        "package": ["backend-api"],
+        "deploy": ["backend-api"]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "api-contract"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "api-contract",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy"],
+        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "package.backend-api": "docker-buildx",
+        "deploy.local": "compose-local",
+        "deploy.dev": "kubernetes",
+        "deploy.staging": "kubernetes",
+        "deploy.prod": "kubernetes"
+      }
+    },
+    "domain-pack-only-product": {
+      "description": "A product that provides only domain packs without runtime services",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": ["domain-pack"],
+        "test": ["domain-pack"],
+        "build": ["domain-pack"],
+        "package": ["domain-pack"],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "domain-pack-schema"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "domain-pack-schema",
+          "domain-pack-validation"
+        ]
+      },
+      "optionalGates": {
+        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
+        "build": ["security-scan", "license-policy"]
+      },
+      "defaultAdapters": {
+        "domain-pack": "domain-pack-validator"
+      }
+    }
+  }
+}

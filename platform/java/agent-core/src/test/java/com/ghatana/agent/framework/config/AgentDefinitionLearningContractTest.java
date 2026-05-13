@@ -183,8 +183,9 @@ class AgentDefinitionLearningContractTest {
 
         List<String> errors = definition.validateLearningLevelConsistency();
 
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0)).contains("Learning level mismatch");
+        // The mismatch error must appear; additional errors may appear because L3 also
+        // requires masteryPolicyRefs and evaluationRefs which are unset in this case.
+        assertThat(errors).anyMatch(e -> e.contains("Learning level mismatch"));
     }
 
     @Test
@@ -200,8 +201,9 @@ class AgentDefinitionLearningContractTest {
 
         List<String> errors = definition.validateLearningLevelConsistency();
 
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0)).contains("Invalid adaptation target");
+        // The invalid-target error must appear; additional errors may appear because L3 also
+        // requires masteryPolicyRefs and evaluationRefs which are unset here.
+        assertThat(errors).anyMatch(e -> e.contains("Invalid adaptation target"));
     }
 
     @Test
@@ -213,6 +215,8 @@ class AgentDefinitionLearningContractTest {
                 .type(AgentType.ADAPTIVE)
                 .learningLevel("L3")
                 .metadata("adaptationTargets", List.of("PROCEDURAL_SKILL"))
+                .masteryPolicyRefs(List.of("mastery-policy-ref"))
+                .evaluationRefs(List.of("eval-ref"))
                 .build();
 
         List<String> errors = definition.validateLearningLevelConsistency();

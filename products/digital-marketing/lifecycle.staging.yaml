@@ -1,0 +1,30 @@
+environment: staging
+
+surfaces:
+  backend-api:
+    env:
+      DMOS_API_PORT: 8080
+      DATABASE_URL: jdbc:postgresql://staging-db.example.com:5432/digital_marketing
+      LOG_LEVEL: info
+  web:
+    env:
+      VITE_API_BASE_URL: https://api-staging.example.com
+      VITE_ENV: staging
+
+deployment:
+  target: kubernetes-staging
+  namespace: staging
+  replicas: 3
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+runtimeProfile: high-performance
+
+healthCheckProfile: comprehensive
+
+promotionPolicy: dev-to-staging

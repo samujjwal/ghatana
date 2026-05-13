@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "finance",
+  "fixtures": {
+    "dev": {
+      "expectedSteps": 3,
+      "expectedAdapters": ["gradle-java-service"]
+    },
+    "build": {
+      "expectedSteps": 3,
+      "expectedAdapters": ["gradle-java-service"]
+    },
+    "deploy": {
+      "expectedSteps": 3,
+      "expectedAdapters": ["compose-local"]
+    }
+  }
+}

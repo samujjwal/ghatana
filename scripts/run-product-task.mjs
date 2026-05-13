@@ -15,6 +15,17 @@ const surfaceAliases = new Map([
   ['api', 'backend-api'],
 ]);
 
+/**
+ * Map legacy task names to lifecycle phases
+ */
+const taskToPhaseMap = new Map([
+  ['dev', 'dev'],
+  ['build', 'build'],
+  ['test', 'test'],
+  ['lint', 'validate'],
+  ['typecheck', 'validate'],
+]);
+
 function usage(exitCode = 1) {
   const stream = exitCode === 0 ? process.stdout : process.stderr;
   stream.write('Usage: pnpm product <productId> <task> [surface] [--dry-run]\n');
@@ -102,6 +113,30 @@ function main() {
     throw new Error(`Unknown product ${productId}`);
   }
 
+  // Check if product has lifecycle enabled - delegate to lifecycle engine
+  if (product.lifecycleProfile && product.lifecycle?.enabled) {
+    const phase = taskToPhaseMap.get(task);
+    if (phase) {
+      console.log(`Product ${productId} has lifecycle enabled, delegating to lifecycle engine...`);
+      const lifecycleArgs = ['plan', productId, phase];
+      if (dryRun) lifecycleArgs.push('--dry-run');
+      if (requestedSurface) lifecycleArgs.push(`--surfaces=${requestedSurface}`);
+      
+      const result = spawnSync('node', [join(repoRoot, 'scripts/kernel-product.mjs'), ...lifecycleArgs], {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        shell: false,
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+      process.exit(result.status ?? 1);
+    }
+    // If task doesn't map to a phase, fall through to legacy logic
+  }
+
+  // Legacy behavior for products without lifecycle or non-lifecycle tasks
   if (requestedSurface) {
     const surfaceType = normalizeSurfaceName(requestedSurface);
     const surface = (product.surfaces ?? []).find((candidate) => candidate.type === surfaceType);

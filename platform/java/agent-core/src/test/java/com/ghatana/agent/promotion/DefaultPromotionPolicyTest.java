@@ -87,6 +87,7 @@ class DefaultPromotionPolicyTest {
                 "agent-123",
                 "release-1",
                 "skill-123",
+                "tenant-123",
                 null,
                 null,
                 null,

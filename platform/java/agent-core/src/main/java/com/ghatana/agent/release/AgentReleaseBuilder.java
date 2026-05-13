@@ -28,6 +28,7 @@ public final class AgentReleaseBuilder {
 
     private String agentReleaseId = UUID.randomUUID().toString();
     private String agentId;
+    private String tenantId;
     private String specVersion = "1.0.0";
     private String releaseVersion;
     private AgentReleaseState state = AgentReleaseState.DRAFT;
@@ -37,6 +38,10 @@ public final class AgentReleaseBuilder {
     private String evaluationPackId;
     private String evaluationPackDigest;
     private String memoryContractId;
+    private String masteryPolicyPackId;
+    private String learningContractId;
+    private String versionCompatibilityPolicyId;
+    private String freshnessPolicyId;
     private List<String> compatibleRuntimeVersions = new ArrayList<>();
     private String signingReference;
     private String toolContractVersion;
@@ -56,6 +61,7 @@ public final class AgentReleaseBuilder {
 
     public AgentReleaseBuilder agentReleaseId(String id)          { this.agentReleaseId = id; return this; }
     public AgentReleaseBuilder agentId(String agentId)            { this.agentId = agentId; return this; }
+    public AgentReleaseBuilder tenantId(String tenantId)          { this.tenantId = tenantId; return this; }
     public AgentReleaseBuilder specVersion(String v)              { this.specVersion = v; return this; }
     public AgentReleaseBuilder releaseVersion(String v)           { this.releaseVersion = v; return this; }
     public AgentReleaseBuilder state(AgentReleaseState s)         { this.state = s; return this; }
@@ -65,6 +71,10 @@ public final class AgentReleaseBuilder {
     public AgentReleaseBuilder evaluationPackId(String id)        { this.evaluationPackId = id; return this; }
     public AgentReleaseBuilder evaluationPackDigest(String d)     { this.evaluationPackDigest = d; return this; }
     public AgentReleaseBuilder memoryContractId(String id)        { this.memoryContractId = id; return this; }
+    public AgentReleaseBuilder masteryPolicyPackId(String id)     { this.masteryPolicyPackId = id; return this; }
+    public AgentReleaseBuilder learningContractId(String id)      { this.learningContractId = id; return this; }
+    public AgentReleaseBuilder versionCompatibilityPolicyId(String id) { this.versionCompatibilityPolicyId = id; return this; }
+    public AgentReleaseBuilder freshnessPolicyId(String id)       { this.freshnessPolicyId = id; return this; }
     public AgentReleaseBuilder compatibleRuntimeVersions(List<String> v) { this.compatibleRuntimeVersions = new ArrayList<>(v); return this; }
     public AgentReleaseBuilder addCompatibleRuntime(String v)     { this.compatibleRuntimeVersions.add(v); return this; }
     public AgentReleaseBuilder signingReference(String ref)       { this.signingReference = ref; return this; }
@@ -91,15 +101,21 @@ public final class AgentReleaseBuilder {
         if (agentId == null || agentId.isBlank()) {
             throw new IllegalStateException("agentId is required");
         }
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalStateException("tenantId is required");
+        }
         if (releaseVersion == null || releaseVersion.isBlank()) {
             throw new IllegalStateException("releaseVersion is required");
         }
         return new AgentRelease(
-                agentReleaseId, agentId, specVersion, releaseVersion,
+                agentReleaseId, agentId, tenantId, specVersion, releaseVersion,
                 state, specDigest,
                 policyPackId, policyPackDigest,
                 evaluationPackId, evaluationPackDigest,
-                memoryContractId, List.copyOf(compatibleRuntimeVersions),
+                memoryContractId,
+                masteryPolicyPackId, learningContractId,
+                versionCompatibilityPolicyId, freshnessPolicyId,
+                List.copyOf(compatibleRuntimeVersions),
                 signingReference, toolContractVersion,
                 telemetryContractVersion, explanationContractVersion,
                 redactionProfileId, threatModelId,

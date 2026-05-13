@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "version": "1.0.0",
+  "policies": {
+    "dev-to-staging": {
+      "name": "Dev to Staging Promotion",
+      "description": "Policy for promoting from dev to staging environment",
+      "sourceEnvironment": "dev",
+      "targetEnvironment": "staging",
+      "requirements": {
+        "tests": ["unit", "integration", "e2e"],
+        "security": ["sast", "dependency-scan"],
+        "codeQuality": ["lint", "format", "type-check"],
+        "coverage": {
+          "statements": 80,
+          "branches": 80,
+          "functions": 80,
+          "lines": 80
+        }
+      },
+      "approval": {
+        "required": false,
+        "approvers": []
+      }
+    },
+    "staging-to-prod": {
+      "name": "Staging to Production Promotion",
+      "description": "Policy for promoting from staging to production environment",
+      "sourceEnvironment": "staging",
+      "targetEnvironment": "prod",
+      "requirements": {
+        "tests": ["unit", "integration", "e2e", "performance", "security"],
+        "security": ["sast", "dependency-scan", "container-scan"],
+        "codeQuality": ["lint", "format", "type-check"],
+        "coverage": {
+          "statements": 80,
+          "branches": 80,
+          "functions": 80,
+          "lines": 80
+        },
+        "performance": {
+          "responseTimeP95": 1000,
+          "responseTimeP99": 2000,
+          "errorRate": 0.01
+        }
+      },
+      "approval": {
+        "required": true,
+        "approvers": ["tech-lead", "product-manager"]
+      }
+    }
+  }
+}

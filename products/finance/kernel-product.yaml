@@ -1,0 +1,42 @@
+schemaVersion: "1.0.0"
+id: "finance"
+lifecycleProfile: "backend-only-java-service"
+
+surfaces:
+  - type: "backend-api"
+    adapter: "gradle-java-service"
+    config:
+      gradleModule: "products:finance:delivery:gateway"
+  - type: "worker"
+    adapter: "gradle-java-service"
+    config:
+      gradleModule: "products:finance:services:worker"
+  - type: "operator"
+    adapter: "gradle-java-service"
+    config:
+      gradleModule: "products:finance:platform:operator"
+
+phases:
+  dev:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "parallel"
+  
+  validate:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "parallel"
+  
+  test:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "parallel"
+  
+  build:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "parallel"
+  
+  package:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "parallel"
+  
+  deploy:
+    defaultSurfaces: ["backend-api", "worker", "operator"]
+    mode: "sequential"

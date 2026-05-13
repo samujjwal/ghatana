@@ -111,6 +111,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
         return new AgentReleaseBuilder()
                 .agentReleaseId("release-1")
                 .agentId("agent-1")
+                .tenantId("tenant-1")
                 .releaseVersion("1.0.0")
                 .redactionProfileId("default")
                 .threatModelId("default")
@@ -149,6 +150,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 List.of(),
                 List.of(),
                 List.of(),
+                List.of(),
                 Instant.now(),
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 Map.of()
@@ -166,6 +168,7 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 VersionScope.empty(),
                 ApplicabilityScope.minimal("tenant-1", "production"),
                 new MasteryScore(0.9, 0.8, 0.7, 0.9, 0.6, 0.8, 0.9),
+                List.of(),
                 List.of(),
                 List.of(),
                 List.of(),

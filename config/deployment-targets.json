@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "targets": {
+    "compose-local": {
+      "id": "compose-local",
+      "name": "Docker Compose Local",
+      "type": "compose-local",
+      "config": {
+        "endpoint": "local"
+      },
+      "capabilities": [
+        {
+          "type": "rolling-update",
+          "supported": false
+        },
+        {
+          "type": "blue-green",
+          "supported": false
+        },
+        {
+          "type": "canary",
+          "supported": false
+        },
+        {
+          "type": "rollback",
+          "supported": true
+        },
+        {
+          "type": "health-check",
+          "supported": true
+        }
+      ]
+    },
+    "kubernetes-dev": {
+      "id": "kubernetes-dev",
+      "name": "Kubernetes Development Cluster",
+      "type": "kubernetes",
+      "config": {
+        "endpoint": "https://k8s-dev.example.com",
+        "namespace": "dev",
+        "region": "us-east-1"
+      },
+      "capabilities": [
+        {
+          "type": "rolling-update",
+          "supported": true
+        },
+        {
+          "type": "blue-green",
+          "supported": true
+        },
+        {
+          "type": "canary",
+          "supported": false
+        },
+        {
+          "type": "rollback",
+          "supported": true
+        },
+        {
+          "type": "health-check",
+          "supported": true
+        }
+      ]
+    },
+    "kubernetes-staging": {
+      "id": "kubernetes-staging",
+      "name": "Kubernetes Staging Cluster",
+      "type": "kubernetes",
+      "config": {
+        "endpoint": "https://k8s-staging.example.com",
+        "namespace": "staging",
+        "region": "us-east-1"
+      },
+      "capabilities": [
+        {
+          "type": "rolling-update",
+          "supported": true
+        },
+        {
+          "type": "blue-green",
+          "supported": true
+        },
+        {
+          "type": "canary",
+          "supported": true
+        },
+        {
+          "type": "rollback",
+          "supported": true
+        },
+        {
+          "type": "health-check",
+          "supported": true
+        }
+      ]
+    },
+    "kubernetes-prod": {
+      "id": "kubernetes-prod",
+      "name": "Kubernetes Production Cluster",
+      "type": "kubernetes",
+      "config": {
+        "endpoint": "https://k8s-prod.example.com",
+        "namespace": "prod",
+        "region": "us-east-1"
+      },
+      "capabilities": [
+        {
+          "type": "rolling-update",
+          "supported": true
+        },
+        {
+          "type": "blue-green",
+          "supported": true
+        },
+        {
+          "type": "canary",
+          "supported": true
+        },
+        {
+          "type": "rollback",
+          "supported": true
+        },
+        {
+          "type": "health-check",
+          "supported": true
+        }
+      ]
+    }
+  }
+}

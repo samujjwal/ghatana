@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.dev/schemas/product-artifact-manifest.schema.json",
+  "title": "Product Artifact Manifest",
+  "description": "Schema for validating product artifact manifests",
+  "type": "object",
+  "required": ["schemaVersion", "productId", "phase", "surface", "timestamp", "artifacts"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "productId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "phase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "surface": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "metadata", "fingerprint", "expected", "found"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metadata": {
+            "type": "object",
+            "required": ["type", "version", "buildNumber", "timestamp", "sizeBytes"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["jar", "war", "static-web-bundle", "docker-image", "npm-package", "test-report", "coverage-report", "source-map", "documentation"]
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "buildNumber": {
+                "type": "string"
+              },
+              "gitCommit": {
+                "type": "string"
+              },
+              "gitBranch": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "fingerprint": {
+            "type": "object",
+            "required": ["algorithm", "hash"],
+            "properties": {
+              "algorithm": {
+                "type": "string",
+                "enum": ["sha256", "sha512", "md5"]
+              },
+              "hash": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "expected": {
+            "type": "boolean"
+          },
+          "found": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

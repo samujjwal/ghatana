@@ -8,15 +8,22 @@ import com.ghatana.agent.evaluation.EvaluationResult;
 import com.ghatana.agent.learning.LearningDelta;
 import com.ghatana.agent.learning.LearningDeltaRepository;
 import com.ghatana.agent.learning.LearningDeltaState;
+import com.ghatana.agent.mastery.ApplicabilityScope;
 import com.ghatana.agent.mastery.MasteryItem;
+import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.MasteryTransition;
+import com.ghatana.agent.mastery.VersionScope;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Default implementation of PromotionEngine for promoting evaluated/approved learning deltas.
@@ -87,69 +94,105 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             ));
         }
 
-        // Derive mastery ID from delta
-        String masteryId = deriveMasteryId(delta);
+        // Find existing mastery item using tenant-scoped query
+        MasteryQuery query = MasteryQuery.bySkill(delta.skillId())
+                .withTenantId(delta.tenantId())
+                .withAgentId(delta.agentId())
+                .withAgentReleaseId(delta.agentReleaseId());
 
-        // Find existing mastery item
-        return masteryRegistry.findBySkill(delta.skillId(), null)
-                .then(masteryOpt -> {
-                    MasteryState previousState = masteryOpt.map(MasteryItem::state).orElse(MasteryState.UNKNOWN);
+        return masteryRegistry.query(query)
+                .then(masteryItems -> {
+                    MasteryItem existingItem = masteryItems.stream().findFirst().orElse(null);
 
-                    // Perform mastery state transition if mastery item exists
-                    if (masteryOpt.isPresent()) {
-                        MasteryItem item = masteryOpt.get();
-                        
-                        // Convert evidenceRefs (List<String>) to Map<String, String>
-                        Map<String, String> evidenceMap = Map.of();
-                        if (delta.evidenceRefs() != null && !delta.evidenceRefs().isEmpty()) {
-                            evidenceMap = new java.util.HashMap<>();
-                            for (int i = 0; i < delta.evidenceRefs().size(); i++) {
-                                evidenceMap.put("evidence_" + i, delta.evidenceRefs().get(i));
-                            }
-                        }
-                        
-                        com.ghatana.agent.mastery.MasteryTransition transition = 
-                                new com.ghatana.agent.mastery.MasteryTransition(
-                                        java.util.UUID.randomUUID().toString(),
-                                        item.masteryId(),
-                                        item.state(),
-                                        targetState,
-                                        "Promoted via learning delta: " + delta.deltaId(),
-                                        "system",
-                                        Instant.now(),
-                                        evidenceMap,
-                                        Map.of("deltaId", delta.deltaId(), "evaluatedBy", "promotion-engine")
-                                );
-                        
-                        return masteryRegistry.transition(transition).then(transitionResult -> {
-                            if (!transitionResult.success()) {
-                                return Promise.of(PromotionResult.failure(
-                                        delta.deltaId(),
-                                        item.masteryId(),
-                                        previousState,
-                                        transitionResult.errorMessage().orElse("Mastery transition failed")
-                                ));
-                            }
-                            // Update delta state to PROMOTED
-                            return updateDeltaToPromoted(delta)
-                                    .then(updatedDelta -> Promise.of(PromotionResult.success(
-                                            delta.deltaId(),
-                                            item.masteryId(),
-                                            previousState,
-                                            targetState
-                                    )));
-                        });
+                    if (existingItem == null) {
+                        // Bootstrap an initial mastery item in UNKNOWN state, then transition
+                        MasteryItem initial = buildInitialMasteryItem(delta);
+                        return masteryRegistry.save(initial)
+                                .then(saved -> applyTransition(delta, saved, targetState));
                     } else {
-                        // No existing mastery item - this is an error condition
-                        // Promotion requires an existing mastery item to transition
-                        return Promise.of(PromotionResult.failure(
-                                delta.deltaId(),
-                                masteryId,
-                                MasteryState.UNKNOWN,
-                                "No mastery item found for skill: " + delta.skillId() + ". Promotion requires existing mastery item."
-                        ));
+                        return applyTransition(delta, existingItem, targetState);
                     }
                 });
+    }
+
+    /**
+     * Applies a mastery state transition and, on success, marks the delta as PROMOTED.
+     */
+    @NotNull
+    private Promise<PromotionResult> applyTransition(
+            @NotNull LearningDelta delta,
+            @NotNull MasteryItem item,
+            @NotNull MasteryState targetState
+    ) {
+        MasteryState previousState = item.state();
+
+        Map<String, String> evidenceMap = new HashMap<>();
+        List<String> refs = delta.evidenceRefs();
+        for (int i = 0; i < refs.size(); i++) {
+            evidenceMap.put("evidence_" + i, refs.get(i));
+        }
+
+        MasteryTransition transition = new MasteryTransition(
+                UUID.randomUUID().toString(),
+                item.masteryId(),
+                previousState,
+                targetState,
+                "Promoted via learning delta: " + delta.deltaId(),
+                "promotion-engine",
+                Instant.now(),
+                Map.copyOf(evidenceMap),
+                Map.of("deltaId", delta.deltaId())
+        );
+
+        return masteryRegistry.transition(transition).then(transitionResult -> {
+            if (!transitionResult.success()) {
+                return Promise.of(PromotionResult.failure(
+                        delta.deltaId(),
+                        item.masteryId(),
+                        previousState,
+                        transitionResult.errorMessage().orElse("Mastery transition failed")
+                ));
+            }
+            return updateDeltaToPromoted(delta)
+                    .map(ignored -> PromotionResult.success(
+                            delta.deltaId(),
+                            item.masteryId(),
+                            previousState,
+                            targetState
+                    ));
+        });
+    }
+
+    /**
+     * Bootstraps a new {@link MasteryItem} in {@link MasteryState#UNKNOWN} state from a delta.
+     *
+     * <p>Uses {@code skillId} as the domain default and derives the applicability scope
+     * from the delta's tenant and agent identifiers. All knowledge lists start empty.
+     */
+    @NotNull
+    private MasteryItem buildInitialMasteryItem(@NotNull LearningDelta delta) {
+        Instant now = Instant.now();
+        return new MasteryItem(
+                UUID.randomUUID().toString(),
+                delta.skillId(),
+                delta.skillId(),               // domain defaults to skillId until richer metadata arrives
+                delta.agentId(),
+                delta.agentReleaseId(),
+                MasteryState.UNKNOWN,
+                VersionScope.empty(),
+                ApplicabilityScope.minimal(delta.tenantId(), "production"),
+                MasteryScore.zero(),
+                List.of(),                     // procedureIds
+                List.of(),                     // semanticFactIds
+                List.of(),                     // negativeKnowledgeIds
+                delta.evidenceRefs(),
+                List.of(),                     // evaluationRefs
+                List.of(),                     // knownFailureModeIds
+                List.of(),                     // stateHistory
+                now,
+                now.plus(java.time.Duration.ofDays(30)),
+                Map.of()
+        );
     }
 
     /**

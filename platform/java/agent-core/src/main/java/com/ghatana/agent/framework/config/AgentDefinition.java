@@ -462,13 +462,8 @@ public final class AgentDefinition {
                 boolean allowMinorVersionDriftVal = allowMinorVersionDrift != null ? allowMinorVersionDrift : true;
                 boolean allowPatchVersionDriftVal = allowPatchVersionDrift != null ? allowPatchVersionDrift : true;
 
-                // Create a default version scope for now - in a real implementation,
-                // this would be extracted from the policy configuration
-                com.ghatana.agent.mastery.VersionScope versionScope = new com.ghatana.agent.mastery.VersionScope(
-                        java.util.List.of(),
-                        java.util.List.of(),
-                        java.util.List.of()
-                );
+                // Extract version scope constraints from policy configuration
+                com.ghatana.agent.mastery.VersionScope versionScope = extractVersionScope(policyConfig);
 
                 return new com.ghatana.agent.mastery.VersionCompatibilityPolicy(
                         policyId,
@@ -528,7 +523,66 @@ public final class AgentDefinition {
             }
         }
 
+        // Validate skillRefs are non-empty when mastery bindings exist
+        if (!masteryBindings.isEmpty() && skillRefs.isEmpty()) {
+            errors.add("[mastery] skillRefs must not be empty when masteryBindings are configured");
+        }
+
+        // Validate masteryPolicyRefs and evaluationRefs exist when learning level is L3+
+        String effectiveLevelStr = levelStr;
+        if (effectiveLevelStr != null) {
+            try {
+                LearningLevel effectiveLevel = LearningLevel.valueOf(effectiveLevelStr);
+                if (effectiveLevel.ordinal() >= LearningLevel.L3.ordinal()) {
+                    if (masteryPolicyRefs.isEmpty()) {
+                        errors.add("[mastery] masteryPolicyRefs must not be empty for learningLevel=" + effectiveLevelStr + " (L3+)");
+                    }
+                    if (evaluationRefs.isEmpty()) {
+                        errors.add("[mastery] evaluationRefs must not be empty for learningLevel=" + effectiveLevelStr + " (L3+)");
+                    }
+                }
+            } catch (IllegalArgumentException ignored) {
+                // already reported above
+            }
+        }
+
         return errors;
+    }
+
+    /**
+     * Extracts a {@link com.ghatana.agent.mastery.VersionScope} from a policy-config map.
+     * Reads optional {@code active}, {@code maintenance}, and {@code obsolete} constraint lists.
+     */
+    @NotNull
+    private static com.ghatana.agent.mastery.VersionScope extractVersionScope(Map<?, ?> policyConfig) {
+        return new com.ghatana.agent.mastery.VersionScope(
+                extractConstraintList(policyConfig.get("active")),
+                extractConstraintList(policyConfig.get("maintenance")),
+                extractConstraintList(policyConfig.get("obsolete"))
+        );
+    }
+
+    /** Converts a raw list of constraint maps to typed {@link com.ghatana.agent.mastery.VersionConstraint} objects. */
+    @NotNull
+    private static List<com.ghatana.agent.mastery.VersionConstraint> extractConstraintList(Object raw) {
+        if (!(raw instanceof List<?> list)) {
+            return List.of();
+        }
+        List<com.ghatana.agent.mastery.VersionConstraint> result = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> m) {
+                Object kind = m.get("kind");
+                Object name = m.get("name");
+                Object range = m.get("range");
+                Object ecosystem = m.get("ecosystem");
+                if (kind instanceof String k && name instanceof String n
+                        && range instanceof String r && ecosystem instanceof String e
+                        && !k.isBlank() && !n.isBlank() && !r.isBlank() && !e.isBlank()) {
+                    result.add(new com.ghatana.agent.mastery.VersionConstraint(k, n, r, e));
+                }
+            }
+        }
+        return List.copyOf(result);
     }
 
     /**

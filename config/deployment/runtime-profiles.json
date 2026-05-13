@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "standard-java-service": {
+      "description": "Standard runtime profile for Java services",
+      "javaVersion": "21",
+      "jvmOptions": {
+        "xms": "512m",
+        "xmx": "2g",
+        "maxMetaspaceSize": "256m"
+      },
+      "defaultPort": 8080,
+      "healthCheckPath": "/health",
+      "metricsPath": "/metrics"
+    },
+    "standard-web-app": {
+      "description": "Standard runtime profile for web applications",
+      "nodeVersion": "18",
+      "defaultPort": 3000,
+      "healthCheckPath": "/",
+      "staticServing": true
+    }
+  }
+}

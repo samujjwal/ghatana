@@ -1,0 +1,29 @@
+schemaVersion: "1.0.0"
+profiles:
+  backend-api:
+    dev:
+      jvmOptions: "-Xmx512m -Xms256m"
+      env:
+        SPRING_PROFILES_ACTIVE: "dev"
+        LOG_LEVEL: "debug"
+    build:
+      jvmOptions: "-Xmx1024m -Xms512m"
+    deploy:
+      jvmOptions: "-Xmx1024m -Xms512m"
+      env:
+        SPRING_PROFILES_ACTIVE: "prod"
+        LOG_LEVEL: "info"
+  
+  worker:
+    dev:
+      jvmOptions: "-Xmx512m -Xms256m"
+      env:
+        SPRING_PROFILES_ACTIVE: "dev"
+        LOG_LEVEL: "debug"
+    build:
+      jvmOptions: "-Xmx1024m -Xms512m"
+    deploy:
+      jvmOptions: "-Xmx1024m -Xms512m"
+      env:
+        SPRING_PROFILES_ACTIVE: "prod"
+        LOG_LEVEL: "info"

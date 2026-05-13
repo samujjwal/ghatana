@@ -90,6 +90,24 @@ try {
   const observabilityFixture = JSON.parse(
     readFileSync(path.join(generatedProductRoot, 'conformance', 'observability-flow.json'), 'utf8'),
   );
+  const lifecycleFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'lifecycle-fixtures.json'), 'utf8'),
+  );
+  const deploymentFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'deployment-fixtures.json'), 'utf8'),
+  );
+  const artifactFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'artifact-fixtures.json'), 'utf8'),
+  );
+  const kernelProductConfig = readFileSync(path.join(generatedProductRoot, 'kernel-product.yaml'), 'utf8');
+  const lifecycleLocalConfig = readFileSync(path.join(generatedProductRoot, 'lifecycle.local.yaml'), 'utf8');
+  const lifecycleDevConfig = readFileSync(path.join(generatedProductRoot, 'lifecycle.dev.yaml'), 'utf8');
+  const runtimeProfile = readFileSync(path.join(generatedProductRoot, 'runtime', 'runtime-profile.yaml'), 'utf8');
+  const localCompose = readFileSync(path.join(generatedProductRoot, 'deploy', 'local.compose.yaml'), 'utf8');
+  const localEnvExample = readFileSync(path.join(generatedProductRoot, 'deploy', 'local.env.example'), 'utf8');
+  const healthChecks = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'deploy', 'health-checks.json'), 'utf8'),
+  );
   const generatedConformanceResult = spawnSync(
     process.execPath,
     [path.join(generatedProductRoot, 'scripts', 'check-sample-kernel-product-conformance.mjs')],
@@ -105,8 +123,18 @@ try {
     'conformance/route-entitlements.json',
     'conformance/idempotency-observations.json',
     'conformance/observability-flow.json',
+    'conformance/lifecycle-fixtures.json',
+    'conformance/deployment-fixtures.json',
+    'conformance/artifact-fixtures.json',
     'domain-pack-manifest.yaml',
     'docker-compose.local.yml',
+    'kernel-product.yaml',
+    'lifecycle.local.yaml',
+    'lifecycle.dev.yaml',
+    'runtime/runtime-profile.yaml',
+    'deploy/local.compose.yaml',
+    'deploy/local.env.example',
+    'deploy/health-checks.json',
     'README.md',
     'docs/00-VISION.md',
     'docs/06-IMPLEMENTATION_PLAN.md',
@@ -329,6 +357,39 @@ try {
   }
   if (observabilityFixture?.flows?.[0]?.product !== 'sample-kernel-product') {
     errors.push('observability conformance fixture missing scaffolded product flow');
+  }
+  if (lifecycleFixture?.expectedSteps?.dev?.[0] !== 'start-dev-server') {
+    errors.push('lifecycle conformance fixture missing expected dev steps');
+  }
+  if (deploymentFixture?.expectedSteps?.deploy?.[0] !== 'apply-deployment') {
+    errors.push('deployment conformance fixture missing expected deploy steps');
+  }
+  if (artifactFixture?.expectedArtifacts?.['backend-api']?.[0] !== 'jar') {
+    errors.push('artifact conformance fixture missing expected jar artifact');
+  }
+  if (!kernelProductConfig.includes('lifecycleProfile: standard-web-api-product')) {
+    errors.push('kernel-product.yaml missing lifecycle profile');
+  }
+  if (!kernelProductConfig.includes('adapter: gradle-java-service')) {
+    errors.push('kernel-product.yaml missing gradle-java-service adapter');
+  }
+  if (!lifecycleLocalConfig.includes('environment: local')) {
+    errors.push('lifecycle.local.yaml missing environment local');
+  }
+  if (!lifecycleDevConfig.includes('environment: dev')) {
+    errors.push('lifecycle.dev.yaml missing environment dev');
+  }
+  if (!runtimeProfile.includes('jvmOptions')) {
+    errors.push('runtime-profile.yaml missing jvmOptions');
+  }
+  if (!localCompose.includes('services')) {
+    errors.push('deploy/local.compose.yaml missing services');
+  }
+  if (!localEnvExample.includes('APP_PORT')) {
+    errors.push('deploy/local.env.example missing APP_PORT');
+  }
+  if (!healthChecks?.surfaces?.['backend-api']) {
+    errors.push('deploy/health-checks.json missing backend-api surface');
   }
   if (generatedConformanceResult.status !== 0) {
     errors.push(

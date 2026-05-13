@@ -64,6 +64,7 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     private AgentRelease minimalRelease() { 
         return new AgentReleaseBuilder() 
                 .agentId("agent-001")
+                .tenantId(TENANT_ID)
                 .releaseVersion("1.0.0")
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
@@ -77,6 +78,7 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
         Map<String, Object> m = new HashMap<>(); 
         m.put("agentReleaseId", r.agentReleaseId()); 
         m.put("agentId", r.agentId()); 
+        m.put("tenantId", r.tenantId());
         m.put("specVersion", r.specVersion()); 
         m.put("releaseVersion", r.releaseVersion()); 
         m.put("state", r.state().name()); 
@@ -168,6 +170,7 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     void findByStateQueriesCollection() { 
         AgentRelease active = new AgentReleaseBuilder() 
                 .agentId("agent-001")
+                .tenantId(TENANT_ID)
                 .releaseVersion("1.0.0")
                 .state(AgentReleaseState.ACTIVE) 
                 .redactionProfileId("rp-test")

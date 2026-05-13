@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "prod",
+  "displayName": "Production",
+  "deploymentTarget": "kubernetes",
+  "secretsProvider": "external-secret-store-with-rotation",
+  "configProvider": "environment-config-service-versioned",
+  "approvalRequired": true,
+  "requiredGates": [
+    "registry-validation",
+    "artifact-validation",
+    "security",
+    "privacy",
+    "license-policy",
+    "conformance",
+    "e2e",
+    "performance",
+    "rollback-plan",
+    "approval",
+    "change-management"
+  ],
+  "observabilityProfile": "prod-standard",
+  "rollbackPolicy": "manual-with-plan",
+  "promotionPolicy": "approval-required"
+}

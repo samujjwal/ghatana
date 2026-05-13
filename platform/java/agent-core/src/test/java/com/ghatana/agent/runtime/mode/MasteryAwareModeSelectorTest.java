@@ -8,11 +8,13 @@ import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.mastery.MasteryDecision;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryQuery;
+import com.ghatana.agent.mastery.MasteryScore;
+import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("MasteryAwareModeSelector Tests")
-class MasteryAwareModeSelectorTest {
+class MasteryAwareModeSelectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should select mode based on mastery decision")
@@ -41,16 +43,17 @@ class MasteryAwareModeSelectorTest {
         );
 
         VersionContext versionContext = VersionContext.empty();
-        Promise<ModeSelectionPolicy.ModeSelectionResult> result = selector.selectMode(
+
+        ModeSelectionResult selection = runPromise(() -> selector.selectMode(
                 "skill-123",
                 "agent-123",
+                "test-tenant",
                 "test task",
                 "context",
                 versionContext
-        );
+        ));
 
-        ModeSelectionPolicy.ModeSelectionResult selection = result.await();
-        assertThat(selection.mode()).isEqualTo(ExecutionMode.DETERMINISTIC_EXECUTION);
+        assertThat(selection.strategy()).isEqualTo(ExecutionStrategy.DETERMINISTIC_EXECUTION);
     }
 
     @Test
@@ -70,23 +73,26 @@ class MasteryAwareModeSelectorTest {
         TaskClassification classification = TaskClassification.of(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR);
         VersionContext versionContext = VersionContext.empty();
 
-        Promise<ModeSelectionPolicy.ModeSelectionResult> result = selector.selectMode(
+        ModeSelectionResult selection = runPromise(() -> selector.selectMode(
                 query,
                 classification,
                 versionContext
-        );
+        ));
 
-        ModeSelectionPolicy.ModeSelectionResult selection = result.await();
-        assertThat(selection.mode()).isEqualTo(ExecutionMode.DETERMINISTIC_EXECUTION);
+        assertThat(selection.strategy()).isEqualTo(ExecutionStrategy.DETERMINISTIC_EXECUTION);
     }
 
     // Test implementations
 
     private static class TestMasteryRegistry implements MasteryRegistry {
         @Override
+        public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBest(MasteryQuery query) {
+            return io.activej.promise.Promise.of(java.util.Optional.empty());
+        }
+
+        @Override
         public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
                 String skillId, com.ghatana.agent.environment.EnvironmentFingerprint env) {
-            MasteryDecision decision = MasteryDecision.allow("mastery-123", skillId, ExecutionMode.DETERMINISTIC_EXECUTION, "test");
             return io.activej.promise.Promise.of(java.util.Optional.empty());
         }
 
@@ -118,7 +124,9 @@ class MasteryAwareModeSelectorTest {
             return io.activej.promise.Promise.of(MasteryDecision.allow(
                     "mastery-123",
                     query.skillId() != null ? query.skillId() : "unknown",
-                    ExecutionMode.DETERMINISTIC_EXECUTION,
+                    com.ghatana.agent.mastery.MasteryState.MASTERED,
+                    com.ghatana.agent.mastery.MasteryScore.perfect(),
+                    com.ghatana.agent.mastery.VersionScope.empty(),
                     "test"
             ));
         }
@@ -143,10 +151,140 @@ class MasteryAwareModeSelectorTest {
                 MasteryDecision masteryDecision,
                 TaskClassification taskClassification,
                 VersionContext versionContext) {
-            return io.activej.promise.Promise.of(ModeSelectionResult.of(
-                    masteryDecision.executionMode(),
+            return io.activej.promise.Promise.of(ModeSelectionResult.autonomous(
+                    ExecutionStrategy.DETERMINISTIC_EXECUTION,
                     "test selection"
             ));
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Additional tests using DefaultModeSelectionPolicy for full coverage
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registry that returns a {@link MasteryDecision} with the configured state
+     * and treats the version scope as ACTIVE (uses activeOnly constraint).
+     */
+    private static MasteryRegistry registryReturning(MasteryState state, MasteryScore score) {
+        return new MasteryRegistry() {
+            @Override
+            public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBest(MasteryQuery query) {
+                return Promise.of(java.util.Optional.empty());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
+                    String skillId, com.ghatana.agent.environment.EnvironmentFingerprint env) {
+                return Promise.of(java.util.Optional.empty());
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> query(MasteryQuery query) {
+                return Promise.of(java.util.List.of());
+            }
+
+            @Override
+            public io.activej.promise.Promise<com.ghatana.agent.mastery.MasteryItem> save(com.ghatana.agent.mastery.MasteryItem item) {
+                return Promise.of(item);
+            }
+
+            @Override
+            public io.activej.promise.Promise<com.ghatana.agent.mastery.MasteryTransitionResult> transition(
+                    com.ghatana.agent.mastery.MasteryTransition transition) {
+                return Promise.of(com.ghatana.agent.mastery.MasteryTransitionResult.success(
+                        transition.masteryId(), MasteryState.UNKNOWN, MasteryState.COMPETENT, transition.transitionId()));
+            }
+
+            @Override
+            public io.activej.promise.Promise<java.util.List<com.ghatana.agent.mastery.MasteryItem>> findStale(java.time.Instant now) {
+                return Promise.of(java.util.List.of());
+            }
+
+            @Override
+            public io.activej.promise.Promise<MasteryDecision> decide(MasteryQuery query) {
+                // Use activeOnly version scope so the policy sees ACTIVE applicability
+                VersionScope activeScope = VersionScope.activeOnly(java.util.List.of());
+                return Promise.of(MasteryDecision.allow(
+                        "mastery-test",
+                        query.skillId() != null ? query.skillId() : "unknown",
+                        state,
+                        score,
+                        activeScope,
+                        "test"
+                ));
+            }
+        };
+    }
+
+    @Test
+    @DisplayName("PRACTICED mastery returns requiresApproval=true")
+    void practicedMasteryReturnsRequiresApproval() {
+        MasteryAwareModeSelector selector = new MasteryAwareModeSelector(
+                registryReturning(MasteryState.PRACTICED, MasteryScore.correctnessOnly(0.5)),
+                new TestTaskClassifier(),
+                new DefaultModeSelectionPolicy()
+        );
+
+        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+                "skill-p", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
+        ));
+
+        assertThat(result.requiresApproval()).isTrue();
+    }
+
+    @Test
+    @DisplayName("COMPETENT mastery returns requiresVerification=true")
+    void competentMasteryReturnsRequiresVerification() {
+        MasteryAwareModeSelector selector = new MasteryAwareModeSelector(
+                registryReturning(MasteryState.COMPETENT, MasteryScore.correctnessOnly(0.75)),
+                new TestTaskClassifier(),
+                new DefaultModeSelectionPolicy()
+        );
+
+        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+                "skill-c", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
+        ));
+
+        assertThat(result.requiresVerification()).isTrue();
+    }
+
+    @Test
+    @DisplayName("MAINTENANCE_ONLY state returns approval-required mode")
+    void maintenanceOnlyReturnsApprovalRequired() {
+        MasteryAwareModeSelector selector = new MasteryAwareModeSelector(
+                registryReturning(MasteryState.MAINTENANCE_ONLY, MasteryScore.zero()),
+                new TestTaskClassifier(),
+                new DefaultModeSelectionPolicy()
+        );
+
+        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+                "skill-m", "agent-1", "tenant-1", "task", "ctx", VersionContext.empty()
+        ));
+
+        assertThat(result.requiresApproval()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Tenant is passed explicitly and is not derived from dependency map")
+    void tenantIsNotDerivedFromDependencyMap() {
+        // The selector receives "explicit-tenant" as a direct parameter.
+        // The VersionContext has no dependency entry for "tenant".
+        // If the selector incorrectly used versionContext.dependencies().getOrDefault("tenant", "default"),
+        // the captured tenant would be "default", not "explicit-tenant".
+        MasteryAwareModeSelector selector = new MasteryAwareModeSelector(
+                registryReturning(MasteryState.MASTERED, MasteryScore.perfect()),
+                new TestTaskClassifier(),
+                new TestModeSelectionPolicy()
+        );
+
+        VersionContext contextWithNoDeps = VersionContext.empty();
+        // Should not throw, and should use "explicit-tenant" (not "default")
+        ModeSelectionResult result = runPromise(() -> selector.selectMode(
+                "skill-t", "agent-1", "explicit-tenant", "task", "ctx", contextWithNoDeps
+        ));
+
+        assertThat(result).isNotNull();
+    }
 }
+

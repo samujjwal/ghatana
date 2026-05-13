@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.dev/schemas/product-release-manifest.schema.json",
+  "title": "Product Release Manifest",
+  "description": "Schema for validating product release manifests",
+  "type": "object",
+  "required": ["schemaVersion", "productId", "releaseId", "version", "releaseStatus", "timestamp", "surfaces", "releaseMetadata", "approvalGates"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "productId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseStatus": {
+      "type": "string",
+      "enum": ["draft", "pending", "approved", "rejected", "released", "rolled-back"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["surface", "surfaceType", "artifactManifestPath", "deploymentManifestPath", "releaseStatus"],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "surfaceType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifactManifestPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deploymentManifestPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "releaseStatus": {
+            "type": "string",
+            "enum": ["pending", "released", "failed"]
+          },
+          "releaseNotes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "releaseMetadata": {
+      "type": "object",
+      "required": ["sourceBuildId", "sourceBuildNumber", "gitCommit", "gitBranch", "releaseType", "changelog", "releaseManager", "approvalRequired"],
+      "properties": {
+        "sourceBuildId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceBuildNumber": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gitCommit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gitBranch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseType": {
+          "type": "string",
+          "enum": ["major", "minor", "patch", "hotfix"]
+        },
+        "changelog": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseManager": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approvalRequired": {
+          "type": "boolean"
+        },
+        "approvers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "approvalGates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gateId", "gateName", "status", "checkedAt", "checkedBy"],
+        "properties": {
+          "gateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gateName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "passed", "failed"]
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkedBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

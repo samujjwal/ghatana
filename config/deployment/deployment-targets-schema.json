@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana/config/deployment/deployment-targets-schema.json",
+  "title": "Deployment Targets Schema",
+  "description": "Schema for deployment target definitions",
+  "type": "object",
+  "required": ["version", "targets"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "targets": {
+      "type": "object",
+      "description": "Deployment targets keyed by target ID",
+      "additionalProperties": {
+        "$ref": "#/definitions/DeploymentTarget"
+      }
+    }
+  },
+  "definitions": {
+    "DeploymentTarget": {
+      "type": "object",
+      "required": ["kind", "adapter", "supportedEnvironments", "requires", "outputs"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Deployment target kind",
+          "enum": ["local", "cluster"]
+        },
+        "adapter": {
+          "type": "string",
+          "description": "Adapter ID from toolchain-adapter-registry"
+        },
+        "supportedEnvironments": {
+          "type": "array",
+          "description": "Environments this target supports",
+          "items": {
+            "type": "string",
+            "enum": ["local", "dev", "staging", "prod"]
+          }
+        },
+        "requires": {
+          "type": "array",
+          "description": "Required configuration fields",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Artifact types produced",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

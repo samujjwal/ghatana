@@ -121,6 +121,34 @@
               "description": "Product status"
             }
           }
+        },
+        "lifecycleProfile": {
+          "type": "string",
+          "description": "Lifecycle profile ID from product-lifecycle-profiles.json (e.g., standard-web-api-product)"
+        },
+        "lifecycleConfigPath": {
+          "type": "string",
+          "description": "Path to kernel-product.yaml lifecycle configuration file"
+        },
+        "lifecycle": {
+          "$ref": "#/definitions/ProductLifecycleConfiguration",
+          "description": "Product lifecycle configuration"
+        },
+        "toolchain": {
+          "$ref": "#/definitions/ProductToolchainConfiguration",
+          "description": "Product toolchain configuration"
+        },
+        "artifacts": {
+          "$ref": "#/definitions/ProductArtifactsConfiguration",
+          "description": "Product artifacts configuration"
+        },
+        "deployment": {
+          "$ref": "#/definitions/ProductDeploymentConfiguration",
+          "description": "Product deployment configuration"
+        },
+        "environments": {
+          "$ref": "#/definitions/ProductEnvironmentConfiguration",
+          "description": "Product environment configuration"
         }
       },
       "allOf": [
@@ -262,6 +290,151 @@
         "runtimeModule": {
           "type": "boolean",
           "description": "Require agent runtime module to be included in product"
+        }
+      }
+    },
+    "ProductLifecycleConfiguration": {
+      "type": "object",
+      "description": "Product lifecycle configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether lifecycle orchestration is enabled for this product"
+        },
+        "phases": {
+          "type": "object",
+          "description": "Phase-specific configuration",
+          "additionalProperties": {
+            "$ref": "#/definitions/LifecyclePhaseConfiguration"
+          }
+        }
+      }
+    },
+    "LifecyclePhaseConfiguration": {
+      "type": "object",
+      "description": "Configuration for a specific lifecycle phase",
+      "properties": {
+        "defaultSurfaces": {
+          "type": "array",
+          "description": "Default surfaces to include in this phase",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["parallel", "sequential"],
+          "description": "Execution mode for this phase"
+        }
+      }
+    },
+    "ProductToolchainConfiguration": {
+      "type": "object",
+      "description": "Product toolchain configuration",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "description": "Toolchain profile ID"
+        },
+        "adapters": {
+          "type": "object",
+          "description": "Adapter mappings for surfaces and phases",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ProductArtifactsConfiguration": {
+      "type": "object",
+      "description": "Product artifacts configuration",
+      "properties": {
+        "backend-api": {
+          "$ref": "#/definitions/ProductArtifactDeclaration"
+        },
+        "web": {
+          "$ref": "#/definitions/ProductArtifactDeclaration"
+        },
+        "worker": {
+          "$ref": "#/definitions/ProductArtifactDeclaration"
+        }
+      }
+    },
+    "ProductArtifactDeclaration": {
+      "type": "object",
+      "description": "Artifact declaration for a surface",
+      "required": ["type", "packaging"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["jvm-service", "static-web-bundle", "node-bundle", "container-image", "mobile-bundle", "sdk-package"],
+          "description": "Artifact type"
+        },
+        "packaging": {
+          "type": "string",
+          "enum": ["jar", "container", "static-web-container", "apk", "aab", "npm", "maven"],
+          "description": "Packaging format"
+        }
+      }
+    },
+    "ProductDeploymentConfiguration": {
+      "type": "object",
+      "description": "Product deployment configuration",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "description": "Deployment targets (e.g., local-compose, kubernetes)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "defaultEnvironment": {
+          "type": "string",
+          "description": "Default deployment environment"
+        },
+        "healthChecks": {
+          "type": "array",
+          "description": "Health check profiles",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rollback": {
+          "$ref": "#/definitions/ProductRollbackConfiguration",
+          "description": "Rollback configuration"
+        }
+      }
+    },
+    "ProductRollbackConfiguration": {
+      "type": "object",
+      "description": "Product rollback configuration",
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["previous-artifact", "blue-green", "canary"],
+          "description": "Rollback strategy"
+        }
+      }
+    },
+    "ProductEnvironmentConfiguration": {
+      "type": "object",
+      "description": "Product environment configuration",
+      "properties": {
+        "supported": {
+          "type": "array",
+          "description": "Supported environments",
+          "items": {
+            "type": "string",
+            "enum": ["local", "dev", "staging", "prod"]
+          }
+        },
+        "defaults": {
+          "type": "object",
+          "description": "Default configuration per environment",
+          "additionalProperties": {
+            "type": "object"
+          }
         }
       }
     }

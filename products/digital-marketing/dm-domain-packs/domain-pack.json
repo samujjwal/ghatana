@@ -57,11 +57,14 @@
     "productName": "Digital Marketing Operating System",
     "mvpScope": "non-regulated local service and small B2B businesses",
     "pluginBindings": {
-      "compliance": "enabled",
-      "consent": "enabled",
-      "approval": "enabled",
-      "risk": "enabled",
-      "audit": "enabled"
+      "plugin-audit-trail": {
+        "requiredHooks": ["onProductBuildCompleted", "onProductDeployed"],
+        "runtimeRequired": true
+      },
+      "plugin-compliance": {
+        "requiredHooks": ["onProductValidated", "onProductDeployStarted"],
+        "runtimeRequired": true
+      }
     },
     "referenceConsumerPolicy": {
       "phrFinanceStatus": "reference-only",

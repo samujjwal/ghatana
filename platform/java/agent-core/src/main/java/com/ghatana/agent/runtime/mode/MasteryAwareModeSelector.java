@@ -5,7 +5,6 @@
 package com.ghatana.agent.runtime.mode;
 
 import com.ghatana.agent.context.version.VersionContext;
-import com.ghatana.agent.mastery.MasteryDecision;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryQuery;
 import io.activej.promise.Promise;
@@ -45,10 +44,11 @@ public final class MasteryAwareModeSelector {
     /**
      * Selects the execution mode for a task based on mastery and task classification.
      *
-     * @param skillId skill identifier
-     * @param agentId agent identifier
+     * @param skillId        skill identifier
+     * @param agentId        agent identifier
+     * @param tenantId       tenant identifier (must not be null or blank)
      * @param taskDescription task description
-     * @param context additional context
+     * @param context        additional context
      * @param versionContext version context
      * @return promise of mode selection result
      */
@@ -56,33 +56,35 @@ public final class MasteryAwareModeSelector {
     public Promise<ModeSelectionResult> selectMode(
             @NotNull String skillId,
             @NotNull String agentId,
+            @NotNull String tenantId,
             @NotNull String taskDescription,
             @NotNull String context,
             @NotNull VersionContext versionContext
     ) {
-        // Query mastery registry
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("tenantId must not be blank");
+        }
+        // Query mastery registry with explicit tenant from caller, not from dependency map
         MasteryQuery query = MasteryQuery.bySkill(skillId)
                 .withAgentId(agentId)
-                .withTenantId(versionContext.dependencies().getOrDefault("tenant", "default"));
+                .withTenantId(tenantId);
 
         return masteryRegistry.decide(query)
                 .then(masteryDecision -> {
                     // Classify task
                     return taskClassifier.classify(taskDescription, context)
-                            .then(taskClassification -> {
-                                // Apply selection policy
-                                return selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
-                                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning()));
-                            });
+                            .then(taskClassification ->
+                                    // Apply selection policy; result is already a ModeSelectionResult
+                                    selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext));
                 });
     }
 
     /**
      * Selects the execution mode with custom query parameters.
      *
-     * @param query mastery query
+     * @param query              mastery query (must include tenantId)
      * @param taskClassification task classification
-     * @param versionContext version context
+     * @param versionContext     version context
      * @return promise of mode selection result
      */
     @NotNull
@@ -92,7 +94,8 @@ public final class MasteryAwareModeSelector {
             @NotNull VersionContext versionContext
     ) {
         return masteryRegistry.decide(query)
-                .then(masteryDecision -> selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
-                        .map(policyResult -> new ModeSelectionResult(policyResult.mode(), policyResult.reasoning())));
+                .then(masteryDecision ->
+                        // Apply selection policy; result is already a ModeSelectionResult
+                        selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext));
     }
 }

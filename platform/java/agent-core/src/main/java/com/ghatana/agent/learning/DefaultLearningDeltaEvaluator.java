@@ -8,9 +8,6 @@ import com.ghatana.agent.mastery.MasteryState;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Objects;
-
 /**
  * Default implementation of LearningDeltaEvaluator with target-specific validation checks.
  *
@@ -165,10 +162,11 @@ public final class DefaultLearningDeltaEvaluator implements LearningDeltaEvaluat
         if (delta.proposedContent() == null || delta.proposedContent().isEmpty()) {
             return EvaluationResult.rejected(delta.deltaId(), 0.0, "Procedural skill delta has no proposed content.");
         }
-        // Procedural skills require higher confidence
+        // Procedural skills with confidence below 0.8 require human review when evidence exists.
+        // Evidence presence is already guaranteed by the outer evaluate() guard.
         if (delta.confidenceAfter() < 0.8) {
-            return EvaluationResult.rejected(delta.deltaId(), delta.confidenceAfter(),
-                    "Procedural skill requires confidence >= 0.8 for safety.");
+            return EvaluationResult.pendingHumanReview(delta.deltaId(), delta.confidenceAfter(),
+                    "Procedural skill confidence " + delta.confidenceAfter() + " < 0.8; human review required before promotion.");
         }
         return EvaluationResult.approved(delta.deltaId(), delta.confidenceAfter(), "Procedural skill validation passed.");
     }

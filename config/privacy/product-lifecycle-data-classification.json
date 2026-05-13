@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "classifications": {
+    "LOW": {
+      "description": "Non-sensitive data that can be freely shared",
+      "examples": ["Public documentation", "Marketing content"],
+      "requirements": []
+    },
+    "MEDIUM": {
+      "description": "Internal data that should not be publicly shared",
+      "examples": ["Internal metrics", "Non-PII user data"],
+      "requirements": ["access-control", "audit-logging"]
+    },
+    "HIGH": {
+      "description": "Sensitive data requiring strict access controls",
+      "examples": ["Personal data", "Financial information"],
+      "requirements": ["encryption-at-rest", "encryption-in-transit", "access-control", "audit-logging", "data-retention-policy"]
+    },
+    "CRITICAL": {
+      "description": "Highly sensitive data requiring maximum protection",
+      "examples": ["Secrets", "Authentication credentials"],
+      "requirements": ["encryption-at-rest", "encryption-in-transit", "access-control", "audit-logging", "data-retention-policy", "secret-management"]
+    }
+  },
+  "defaultClassification": "LOW",
+  "gates": {
+    "data-classification-check": {
+      "enabled": true,
+      "phases": ["build", "package"],
+      "checks": [
+        {
+          "id": "classification-labeling",
+          "name": "Data Classification Labeling",
+          "severity": "high",
+          "failOn": "high"
+        },
+        {
+          "id": "pii-detection",
+          "name": "PII Detection",
+          "tool": "pii-scanner",
+          "severity": "high",
+          "failOn": "high"
+        }
+      ]
+    }
+  }
+}

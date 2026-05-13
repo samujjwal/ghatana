@@ -21,6 +21,57 @@ export type {
   RouteLifecycle,
 } from './types';
 
+// Lifecycle contracts
+export type {
+  ProductLifecyclePhase,
+  LifecyclePhaseStatus,
+  LifecyclePhaseResult,
+  LifecycleStep,
+  ProductLifecyclePlan,
+  ProductLifecycleRun,
+  ProductLifecycleStatus,
+} from './contracts/product-lifecycle';
+
+// Artifact contracts
+export type {
+  ArtifactType,
+  ProductArtifact,
+  ProductArtifactManifest,
+  ArtifactValidationResult,
+  ArtifactValidationError,
+} from './contracts/product-artifact';
+
+// Deployment contracts
+export type {
+  DeploymentEnvironment,
+  DeploymentStatus,
+  DeploymentTargetType,
+  ProductDeployment,
+  DeploymentSurface,
+  DeploymentResources,
+  RollbackPlan,
+  ProductPromotion,
+} from './contracts/product-deployment';
+
+// Environment contracts
+export type {
+  EnvironmentType,
+  ProductEnvironment,
+  EnvironmentConfig,
+  EnvironmentVariable,
+  EnvironmentSurface,
+  HealthCheckConfig as EnvironmentHealthCheckConfig,
+} from './contracts/product-environment';
+
+// Health contracts
+export type {
+  HealthStatus,
+  HealthCheckResult,
+  HealthCheckDetails,
+  ProductHealthSummary,
+  HealthCheckConfig,
+} from './contracts/product-health';
+
 // Root shell
 export {
   ProductShell,

@@ -9,9 +9,10 @@ import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.learning.LearningDelta;
 import com.ghatana.agent.learning.LearningDeltaFactory;
 import com.ghatana.agent.learning.LearningDeltaState;
-import com.ghatana.agent.runtime.mode.ExecutionMode;
+import com.ghatana.agent.runtime.mode.ExecutionStrategy;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
 import com.ghatana.agent.runtime.mode.ModeSelectionPolicy;
+import com.ghatana.agent.runtime.mode.ModeSelectionResult;
 import com.ghatana.agent.runtime.mode.TaskClassification;
 import com.ghatana.agent.runtime.mode.TaskClassifier;
 import io.activej.eventloop.Eventloop;
@@ -98,15 +99,16 @@ class GaaMasteryLifecycleE2ETest extends EventloopTestBase {
         );
 
         VersionContext versionContext = VersionContext.empty();
-        ModeSelectionPolicy.ModeSelectionResult result = runPromise(() -> modeSelector.selectMode(
+        ModeSelectionResult result = runPromise(() -> modeSelector.selectMode(
                 "skill-123",
                 "agent-123",
+                "tenant-123",
                 "test task",
                 "context",
                 versionContext
         ));
 
-        assertThat(result.mode()).isEqualTo(ExecutionMode.DETERMINISTIC_EXECUTION);
+        assertThat(result.strategy()).isEqualTo(ExecutionStrategy.DETERMINISTIC_EXECUTION);
     }
 
     @Test
@@ -198,7 +200,9 @@ class GaaMasteryLifecycleE2ETest extends EventloopTestBase {
             return io.activej.promise.Promise.of(MasteryDecision.allow(
                     item.masteryId(),
                     query.skillId() != null ? query.skillId() : "unknown",
-                    ExecutionMode.DETERMINISTIC_EXECUTION,
+                    com.ghatana.agent.mastery.MasteryState.MASTERED,
+                    com.ghatana.agent.mastery.MasteryScore.perfect(),
+                    com.ghatana.agent.mastery.VersionScope.empty(),
                     "test"
             ));
         }
@@ -227,8 +231,8 @@ class GaaMasteryLifecycleE2ETest extends EventloopTestBase {
                 MasteryDecision masteryDecision,
                 TaskClassification taskClassification,
                 VersionContext versionContext) {
-            return io.activej.promise.Promise.of(ModeSelectionResult.of(
-                    masteryDecision.executionMode(),
+            return io.activej.promise.Promise.of(ModeSelectionResult.autonomous(
+                    ExecutionStrategy.DETERMINISTIC_EXECUTION,
                     "test selection"));
         }
     }

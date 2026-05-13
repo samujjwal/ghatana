@@ -514,3 +514,5 @@ pwd
 - [docs/BUILD.md](./BUILD.md) — composite build commands
 - [docs/adr/ADR-025-plugin-api-ownership.md](./adr/ADR-025-plugin-api-ownership.md) — plugin API decision
 - [docs/GOVERNANCE.md](./GOVERNANCE.md) — CI-enforced standards
+- [PRODUCT_LIFECYCLE_CONTRACT.md](PRODUCT_LIFECYCLE_CONTRACT.md) — lifecycle phase contracts and gates
+- [PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md](PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md) — toolchain adapter specification

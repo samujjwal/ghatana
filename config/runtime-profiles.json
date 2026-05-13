@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "default": {
+      "id": "default",
+      "name": "Default Runtime Profile",
+      "description": "Default runtime configuration for all environments",
+      "resourceLimits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      },
+      "resourceRequests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "environmentVariables": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      }
+    },
+    "high-performance": {
+      "id": "high-performance",
+      "name": "High Performance Profile",
+      "description": "High performance runtime configuration for production workloads",
+      "resourceLimits": {
+        "cpu": "4000m",
+        "memory": "4Gi"
+      },
+      "resourceRequests": {
+        "cpu": "1000m",
+        "memory": "1Gi"
+      },
+      "environmentVariables": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      }
+    },
+    "low-resource": {
+      "id": "low-resource",
+      "name": "Low Resource Profile",
+      "description": "Low resource runtime configuration for development and testing",
+      "resourceLimits": {
+        "cpu": "500m",
+        "memory": "256Mi"
+      },
+      "resourceRequests": {
+        "cpu": "50m",
+        "memory": "64Mi"
+      },
+      "environmentVariables": {
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}

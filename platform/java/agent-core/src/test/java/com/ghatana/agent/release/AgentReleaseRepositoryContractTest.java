@@ -47,6 +47,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     private AgentRelease minimalRelease(String agentId, String version) {
         return new AgentReleaseBuilder()
                 .agentId(agentId)
+                .tenantId("tenant-1")
                 .releaseVersion(version)
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
@@ -142,6 +143,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         void returnsActiveRelease() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
+                    .tenantId("tenant-1")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
@@ -151,6 +153,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                     .evaluationPackId("eval-pack-1")
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build();
             runPromise(() -> repo.save(release));
 
@@ -226,6 +229,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         AgentRelease draft2 = minimalRelease("agent-002", "1.0.0");
         AgentRelease active = new AgentReleaseBuilder()
                 .agentId("agent-003")
+                .tenantId("tenant-1")
                 .releaseVersion("1.0.0")
                 .state(AgentReleaseState.ACTIVE)
                 .redactionProfileId("rp-test")
@@ -235,6 +239,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                 .evaluationPackId("eval-pack-1")
                 .evaluationPackDigest("digest-1")
                 .memoryContractId("memory-contract-1")
+                .masteryPolicyPackId("mastery-pack-1")
                 .build();
         runPromise(() -> repo.save(draft1));
         runPromise(() -> repo.save(draft2));
@@ -258,6 +263,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         void returnsActiveRelease() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-gov")
+                    .tenantId("tenant-1")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-test")
@@ -267,6 +273,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                     .evaluationPackId("eval-pack-1")
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build(); 
             runPromise(() -> repo.save(release)); 
 
@@ -282,6 +289,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         void returnsBlockedRelease() {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-gov")
+                    .tenantId("tenant-1")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.BLOCKED)
                     .redactionProfileId("rp-test")

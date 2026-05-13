@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "finance",
+  "expectedArtifacts": {
+    "backend-api": {
+      "type": "jar",
+      "surface": "backend-api"
+    },
+    "worker": {
+      "type": "jar",
+      "surface": "worker"
+    },
+    "operator": {
+      "type": "jar",
+      "surface": "operator"
+    }
+  }
+}

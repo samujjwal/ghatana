@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "staging",
+  "displayName": "Staging",
+  "deploymentTarget": "kubernetes",
+  "secretsProvider": "external-secret-store",
+  "configProvider": "environment-config-service",
+  "approvalRequired": true,
+  "requiredGates": [
+    "registry-validation",
+    "artifact-validation",
+    "environment-validation",
+    "security",
+    "privacy",
+    "license-policy",
+    "conformance",
+    "e2e",
+    "performance",
+    "rollback-plan",
+    "approval"
+  ],
+  "observabilityProfile": "staging-standard",
+  "rollbackPolicy": "manual-with-plan",
+  "promotionPolicy": "approval-required"
+}

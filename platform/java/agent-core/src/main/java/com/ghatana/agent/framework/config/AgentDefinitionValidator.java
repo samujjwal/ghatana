@@ -466,6 +466,30 @@ public final class AgentDefinitionValidator {
         if (isHighRisk && def.getEvaluationRefs().isEmpty()) {
             errors.add("[mastery] high-risk agents must include evaluationRefs");
         }
+
+        // Any agent with masteryBindings must declare skillRefs (not just ADAPTIVE)
+        if (!def.getMasteryBindings().isEmpty() && def.getSkillRefs().isEmpty()) {
+            errors.add("[mastery] agents with masteryBindings must declare skillRefs");
+        }
+
+        // L3+ agents must declare masteryPolicyRefs and evaluationRefs
+        com.ghatana.agent.learning.LearningLevel learningLevel = null;
+        try {
+            String levelStr = def.getLearningLevel();
+            if (levelStr != null) {
+                learningLevel = com.ghatana.agent.learning.LearningLevel.valueOf(levelStr);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // already reported in validateLearning()
+        }
+        if (learningLevel != null && learningLevel.ordinal() >= com.ghatana.agent.learning.LearningLevel.L3.ordinal()) {
+            if (def.getMasteryPolicyRefs().isEmpty()) {
+                errors.add("[mastery] L3+ agents must declare masteryPolicyRefs");
+            }
+            if (def.getEvaluationRefs().isEmpty()) {
+                errors.add("[mastery] L3+ agents must declare evaluationRefs");
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

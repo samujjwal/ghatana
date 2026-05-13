@@ -376,4 +376,116 @@ class AgentDefinitionTest {
                     .hasMessageContaining("validation failed");
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Phase 5.1 Acceptance Tests
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("Phase 5.1 — AgentDefinition Governance")
+    class Phase51GovernanceTests {
+
+        @Test
+        @DisplayName("learning level mismatch between field and metadata throws")
+        void learningLevelMismatchThrows() {
+            AgentDefinition def = AgentDefinition.builder()
+                    .id("mismatch-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("You adapt.")
+                    .learningLevel("L2")
+                    .metadata("learningLevel", "L3")  // mismatch
+                    .build();
+
+            assertThatThrownBy(def::toLearningContract)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Learning level mismatch")
+                    .hasMessageContaining("L2")
+                    .hasMessageContaining("L3");
+        }
+
+        @Test
+        @DisplayName("invalid adaptation target reports validation error")
+        void invalidAdaptationTargetReportsValidationError() {
+            AgentDefinition def = AgentDefinition.builder()
+                    .id("bad-target-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("You adapt.")
+                    .learningLevel("L2")
+                    .metadata("adaptationTargets", java.util.List.of("VALID_TARGET", "NOT_A_REAL_TARGET"))
+                    .build();
+
+            java.util.List<String> errors = def.validateLearningLevelConsistency();
+
+            assertThat(errors).anyMatch(e -> e.contains("Invalid adaptation target") && e.contains("NOT_A_REAL_TARGET"));
+        }
+
+        @Test
+        @DisplayName("L3 agent without evaluation refs fails validation")
+        void l3AgentWithoutEvaluationRefsFailsValidation() {
+            AgentDefinition def = AgentDefinition.builder()
+                    .id("l3-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("You adapt.")
+                    .learningLevel("L3")
+                    // no evaluationRefs set
+                    .masteryPolicyRefs(java.util.List.of("policy-ref-1"))
+                    .build();
+
+            java.util.List<String> errors = def.validateLearningLevelConsistency();
+
+            assertThat(errors).anyMatch(e -> e.contains("evaluationRefs") && e.contains("L3"));
+        }
+
+        @Test
+        @DisplayName("mastery-bound agent without skill refs fails validation")
+        void masteryBoundAgentWithoutSkillRefsFailsValidation() {
+            AgentDefinition def = AgentDefinition.builder()
+                    .id("mastery-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("You master skills.")
+                    .masteryBindings(Map.of("namespace", "learning", "registryRef", "main"))
+                    // no skillRefs set
+                    .build();
+
+            java.util.List<String> errors = def.validateLearningLevelConsistency();
+
+            assertThat(errors).anyMatch(e -> e.contains("skillRefs") && e.contains("masteryBindings"));
+        }
+
+        @Test
+        @DisplayName("canonical digest changes when mastery bindings or skill refs change")
+        void canonicalDigestChangesWhenMasteryOrSkillRefsChange() {
+            AgentDefinition base = AgentDefinition.builder()
+                    .id("digest-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("Base agent.")
+                    .build();
+
+            AgentDefinition withMastery = AgentDefinition.builder()
+                    .id("digest-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("Base agent.")
+                    .masteryBindings(Map.of("namespace", "learning", "registryRef", "main"))
+                    .skillRefs(java.util.List.of("skill-a"))
+                    .build();
+
+            AgentDefinition withDifferentSkillRefs = AgentDefinition.builder()
+                    .id("digest-agent")
+                    .version("1.0.0")
+                    .type(AgentType.ADAPTIVE)
+                    .systemPrompt("Base agent.")
+                    .masteryBindings(Map.of("namespace", "learning", "registryRef", "main"))
+                    .skillRefs(java.util.List.of("skill-b"))
+                    .build();
+
+            assertThat(base.canonicalDigest()).isNotEqualTo(withMastery.canonicalDigest());
+            assertThat(withMastery.canonicalDigest()).isNotEqualTo(withDifferentSkillRefs.canonicalDigest());
+        }
+    }
 }

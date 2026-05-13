@@ -1,0 +1,30 @@
+schemaVersion: "1.0.0"
+environment: "local"
+
+surfaces:
+  backend-api:
+    dev:
+      enabled: true
+      port: 8080
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 8080
+      replicas: 1
+  
+  web:
+    dev:
+      enabled: true
+      port: 5173
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 3000
+      replicas: 1
+
+deployment:
+  adapter: "compose-local"
+  composeFile: "deploy/local.compose.yaml"
+  envFile: "deploy/local.env.example"

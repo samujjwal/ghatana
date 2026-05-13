@@ -1,0 +1,39 @@
+schemaVersion: "1.0.0"
+profiles:
+  backend-api:
+    dev:
+      jvmOptions: "-Xmx512m -Xms256m"
+      env:
+        SPRING_PROFILES_ACTIVE: "dev"
+        LOG_LEVEL: "debug"
+    build:
+      jvmOptions: "-Xmx1024m -Xms512m"
+    deploy:
+      jvmOptions: "-Xmx1024m -Xms512m"
+      env:
+        SPRING_PROFILES_ACTIVE: "prod"
+        LOG_LEVEL: "info"
+  
+  web:
+    dev:
+      env:
+        VITE_API_BASE_URL: "http://localhost:8080"
+    build:
+      env:
+        VITE_API_BASE_URL: "/api"
+  
+  mobile-ios:
+    dev:
+      env:
+        API_BASE_URL: "http://localhost:8080"
+    build:
+      env:
+        API_BASE_URL: "https://api.flashit.example.com"
+  
+  mobile-android:
+    dev:
+      env:
+        API_BASE_URL: "http://10.0.2.2:8080"
+    build:
+      env:
+        API_BASE_URL: "https://api.flashit.example.com"

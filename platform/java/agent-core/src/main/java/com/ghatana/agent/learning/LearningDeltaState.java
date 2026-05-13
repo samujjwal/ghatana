@@ -24,6 +24,11 @@ public enum LearningDeltaState {
     PENDING_EVALUATION,
 
     /**
+     * Delta is pending human review — confidence below auto-approval threshold.
+     */
+    PENDING_HUMAN_REVIEW,
+
+    /**
      * Delta has been evaluated and is awaiting promotion decision.
      */
     EVALUATED,

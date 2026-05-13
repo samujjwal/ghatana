@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Kernel Plugin Registry Schema",
+  "description": "Schema for kernel plugin registry configuration",
+  "type": "object",
+  "required": ["version", "plugins"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Registry schema version"
+    },
+    "plugins": {
+      "type": "object",
+      "description": "Plugin definitions",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["kind", "capabilities", "lifecycleHooks"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["platform-plugin", "product-plugin"],
+            "description": "Plugin kind"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Plugin capabilities"
+          },
+          "requiredRuntimeServices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Required runtime services"
+          },
+          "lifecycleHooks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "onProductRegistered",
+                "onProductBootstrapped",
+                "onProductDevStarted",
+                "onProductValidated",
+                "onProductTested",
+                "onProductBuildStarted",
+                "onProductBuildCompleted",
+                "onProductPackaged",
+                "onProductDeployStarted",
+                "onProductDeployed",
+                "onProductVerified",
+                "onProductPromoted",
+                "onProductRolledBack",
+                "onProductRetired"
+              ]
+            },
+            "description": "Lifecycle hooks the plugin subscribes to"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "basic": {
+      "id": "basic",
+      "name": "Basic Health Check Profile",
+      "description": "Basic HTTP health checks for all services",
+      "checks": [
+        {
+          "checkId": "http-readiness",
+          "checkName": "HTTP Readiness Check",
+          "checkType": "http",
+          "config": {
+            "http": {
+              "url": "/health/readiness",
+              "method": "GET",
+              "expectedStatus": 200
+            }
+          },
+          "timeoutMs": 5000,
+          "retries": 3
+        },
+        {
+          "checkId": "http-liveness",
+          "checkName": "HTTP Liveness Check",
+          "checkType": "http",
+          "config": {
+            "http": {
+              "url": "/health/liveness",
+              "method": "GET",
+              "expectedStatus": 200
+            }
+          },
+          "timeoutMs": 3000,
+          "retries": 3
+        }
+      ]
+    },
+    "comprehensive": {
+      "id": "comprehensive",
+      "name": "Comprehensive Health Check Profile",
+      "description": "Comprehensive health checks including readiness, liveness, and custom metrics",
+      "checks": [
+        {
+          "checkId": "http-readiness",
+          "checkName": "HTTP Readiness Check",
+          "checkType": "http",
+          "config": {
+            "http": {
+              "url": "/health/readiness",
+              "method": "GET",
+              "expectedStatus": 200,
+              "expectedBody": "{\"status\":\"ready\"}"
+            }
+          },
+          "timeoutMs": 5000,
+          "retries": 5
+        },
+        {
+          "checkId": "http-liveness",
+          "checkName": "HTTP Liveness Check",
+          "checkType": "http",
+          "config": {
+            "http": {
+              "url": "/health/liveness",
+              "method": "GET",
+              "expectedStatus": 200
+            }
+          },
+          "timeoutMs": 3000,
+          "retries": 5
+        },
+        {
+          "checkId": "tcp-service",
+          "checkName": "TCP Service Port Check",
+          "checkType": "tcp",
+          "config": {
+            "tcp": {
+              "host": "localhost",
+              "port": 8080,
+              "timeoutMs": 2000
+            }
+          },
+          "timeoutMs": 2000,
+          "retries": 3
+        }
+      ]
+    }
+  }
+}

@@ -35,6 +35,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ghatana.agent.audit.TraceEvent;
 import com.ghatana.agent.audit.TraceEventType;
+import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextResolver;
+import com.ghatana.agent.mastery.MasteryDecision;
+import com.ghatana.agent.mastery.MasteryQuery;
+import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryScore;
+import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.runtime.mode.ExecutionStrategy;
+import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
+import com.ghatana.agent.runtime.mode.ModeSelectionResult;
+import com.ghatana.agent.runtime.mode.SupervisionMode;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -135,8 +147,9 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
     /** Creates a minimal valid release with TX-2/TX-5 required fields. */
     private static AgentRelease release(String agentId, AgentReleaseState state) {
-        return new AgentReleaseBuilder()
+        AgentReleaseBuilder builder = new AgentReleaseBuilder()
                 .agentId(agentId)
+                .tenantId("tenant-x")
                 .releaseVersion("1.0.0")
                 .state(state)
                 .redactionProfileId("rp-test")
@@ -144,8 +157,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                 .evaluationPackId("ep-test")
                 .memoryContractId("mc-test")
                 .addPermittedPurpose("agent.inference")
-                .capabilityMaturityProfile("L1")
-                .build();
+                .capabilityMaturityProfile("L1");
+        if (state == AgentReleaseState.ACTIVE || state == AgentReleaseState.CANARY) {
+            builder.masteryPolicyPackId("mastery-pack-1");
+        }
+        return builder.build();
     }
 
     @Nested
@@ -391,6 +407,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         void turnStartedIncludesReleaseMetadata() {
             AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
+                    .tenantId("tenant-x")
                     .releaseVersion("2.0.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-prod")
@@ -400,6 +417,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L2")
                     .policyPackId("pp-123")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -496,6 +514,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         void policyEvaluatedAllowIncludesPolicyPackId() {
             AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
+                    .tenantId("tenant-x")
                     .releaseVersion("1.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-t")
@@ -505,6 +524,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-456")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -529,6 +549,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         void actionExecutedIncludesPolicyPackId() {
             AgentRelease rel = new AgentReleaseBuilder()
                     .agentId("test-agent")
+                    .tenantId("tenant-x")
                     .releaseVersion("1.0")
                     .state(AgentReleaseState.ACTIVE)
                     .redactionProfileId("rp-t")
@@ -538,6 +559,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-789")
+                    .masteryPolicyPackId("mastery-pack-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -643,6 +665,293 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", supervisedCtx)); 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
+        }
+    }
+
+    // =========================================================================
+    // Phase 6 — Runtime dispatcher enforcement
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Phase 6 governance enforcement")
+    class Phase6GovernanceTests {
+
+        private final List<TraceEvent> capturedEvents = new ArrayList<>();
+
+        @BeforeEach
+        void captureAppends() {
+            capturedEvents.clear();
+            lenient().when(traceLedger.append(any())).thenAnswer(invocation -> {
+                capturedEvents.add(invocation.getArgument(0));
+                return Promise.of(null);
+            });
+        }
+
+        @Test
+        @DisplayName("shadow release cannot serve normal response")
+        void shadowReleaseCannotServeNormalResponse() {
+            AgentRelease shadowRelease = release("test-agent", AgentReleaseState.SHADOW);
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
+                    .thenReturn(Promise.of(Optional.of(shadowRelease)));
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, releaseRepository);
+
+            // No shadowMode in context — normal response path
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("SHADOW");
+        }
+
+        @Test
+        @DisplayName("shadow release can run in shadow evaluation mode")
+        void shadowReleaseCanRunInShadowMode() {
+            AgentRelease shadowRelease = release("test-agent", AgentReleaseState.SHADOW);
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
+                    .thenReturn(Promise.of(Optional.of(shadowRelease)));
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, releaseRepository);
+
+            AgentContext shadowCtx = ctx.toBuilder()
+                    .addConfig("shadowMode", "true")
+                    .build();
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", shadowCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
+        }
+
+        @Test
+        @DisplayName("blocked release denies dispatch")
+        void blockedReleaseDenies() {
+            AgentRelease blockedRelease = release("test-agent", AgentReleaseState.BLOCKED);
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
+                    .thenReturn(Promise.of(Optional.of(blockedRelease)));
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, releaseRepository);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+        }
+
+        @Test
+        @DisplayName("missing skillId denies when mastery registry is configured")
+        void missingSkillIdDeniesWhenMasteryBound() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            // ctx has no skillId
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("skillId");
+        }
+
+        @Test
+        @DisplayName("quarantined mastery denies dispatch")
+        void quarantinedMasteryDenies() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision quarantinedDecision = new MasteryDecision(
+                    "item-1", "skill-1", MasteryState.QUARANTINED,
+                    MasteryScore.zero(), VersionScope.empty(),
+                    false, false, false, "Quarantined due to unsafe behavior", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(quarantinedDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-1")
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("QUARANTINED");
+        }
+
+        @Test
+        @DisplayName("obsolete mastery denies dispatch")
+        void obsoleteMasteryDenies() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision obsoleteDecision = new MasteryDecision(
+                    "item-2", "skill-2", MasteryState.OBSOLETE,
+                    MasteryScore.zero(), VersionScope.empty(),
+                    false, false, false, "Skill is obsolete", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(obsoleteDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-2")
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("OBSOLETE");
+        }
+
+        @Test
+        @DisplayName("practiced mastery requires approval when requiresHumanApproval=true")
+        void practicedMasteryRequiresApproval() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision practicedDecision = new MasteryDecision(
+                    "item-3", "skill-3", MasteryState.PRACTICED,
+                    MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
+                    true, true, false, "Practiced mastery requires approval", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(practicedDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-3")
+                    // no hasApproval
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("approval");
+        }
+
+        @Test
+        @DisplayName("practiced mastery dispatches when approval is present")
+        void practicedMasteryDispatchesWithApproval() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision practicedDecision = new MasteryDecision(
+                    "item-4", "skill-4", MasteryState.PRACTICED,
+                    MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
+                    true, true, false, "Practiced mastery requires approval", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(practicedDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-4")
+                    .addConfig("hasApproval", Boolean.TRUE)
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
+        }
+
+        @Test
+        @DisplayName("competent mastery requires verification proof")
+        void competentMasteryRequiresVerification() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision competentDecision = new MasteryDecision(
+                    "item-5", "skill-5", MasteryState.COMPETENT,
+                    MasteryScore.correctnessOnly(0.7), VersionScope.empty(),
+                    true, false, true, "Competent mastery requires verification", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(competentDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-5")
+                    // no hasVerification
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).containsIgnoringCase("verification");
+        }
+
+        @Test
+        @DisplayName("trace ledger receives MASTERY_DECISION_MADE event when mastery configured")
+        void traceLedgerReceivesMasteryDecisionEvent() {
+            MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            MasteryDecision allowDecision = new MasteryDecision(
+                    "item-6", "skill-6", MasteryState.MASTERED,
+                    MasteryScore.perfect(), VersionScope.empty(),
+                    true, false, false, "Mastered", List.of());
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(allowDecision));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-6")
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    masteryRegistry, null, null, null);
+
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.MASTERY_DECISION_MADE);
+        }
+
+        @Test
+        @DisplayName("trace ledger receives VERSION_CONTEXT_RESOLVED event when resolver configured")
+        void traceLedgerReceivesVersionContextResolvedEvent() {
+            VersionContextResolver resolver = mock(VersionContextResolver.class);
+            when(resolver.resolve(any())).thenReturn(Promise.of(VersionContext.empty()));
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    null, resolver, null, null);
+
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.VERSION_CONTEXT_RESOLVED);
+        }
+
+        @Test
+        @DisplayName("trace ledger receives DISPATCH_ALLOWED event on successful governance")
+        void traceLedgerReceivesDispatchAllowedEvent() {
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger);
+
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.DISPATCH_ALLOWED);
+        }
+
+        @Test
+        @DisplayName("mode selector: DISPATCH_ALLOWED and MODE_SELECTED events emitted")
+        void modeSelectorEmitsModeSelectedEvent() {
+            MasteryAwareModeSelector modeSelector = mock(MasteryAwareModeSelector.class);
+            ModeSelectionResult autoResult = ModeSelectionResult.autonomous(
+                    ExecutionStrategy.DETERMINISTIC_EXECUTION, "direct execution");
+            when(modeSelector.selectMode(anyString(), anyString(), anyString(), anyString(), anyString(), any()))
+                    .thenReturn(Promise.of(autoResult));
+
+            AgentContext skillCtx = ctx.toBuilder()
+                    .addConfig("skillId", "skill-mode")
+                    .build();
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, null, null, null,
+                    null, null, null, modeSelector);
+
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
+
+            assertThat(capturedEvents)
+                    .extracting(TraceEvent::eventType)
+                    .contains(TraceEventType.MODE_SELECTED);
         }
     }
 }

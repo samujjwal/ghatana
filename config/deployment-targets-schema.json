@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.dev/schemas/deployment-targets-schema.json",
+  "title": "Deployment Targets Configuration",
+  "description": "Schema for validating deployment targets configuration",
+  "type": "object",
+  "required": ["version", "targets"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "name", "type", "config", "capabilities"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["compose-local", "kubernetes", "helm", "terraform"]
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "endpoint": {
+                "type": "string"
+              },
+              "namespace": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              },
+              "cluster": {
+                "type": "string"
+              },
+              "credentials": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "secretRef": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "supported"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["rolling-update", "blue-green", "canary", "rollback", "health-check"]
+                },
+                "supported": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "yappc",
+  "fixtures": {
+    "dev": {
+      "expectedSteps": 2,
+      "expectedAdapters": ["gradle-java-service", "pnpm-vite-react"]
+    },
+    "build": {
+      "expectedSteps": 2,
+      "expectedAdapters": ["gradle-java-service", "pnpm-vite-react"]
+    },
+    "deploy": {
+      "expectedSteps": 2,
+      "expectedAdapters": ["compose-local"]
+    }
+  }
+}

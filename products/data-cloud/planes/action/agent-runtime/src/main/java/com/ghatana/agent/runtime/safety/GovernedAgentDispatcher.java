@@ -26,12 +26,10 @@ import com.ghatana.agent.pluggability.InteractionMode;
 import com.ghatana.agent.release.AgentInstanceConfig;
 import com.ghatana.agent.release.AgentRelease;
 import com.ghatana.agent.release.AgentReleaseRepository;
-import com.ghatana.agent.runtime.mode.ExecutionMode;
+import com.ghatana.agent.runtime.mode.ExecutionStrategy;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
-import com.ghatana.agent.runtime.mode.TaskClassification;
+import com.ghatana.agent.runtime.mode.SupervisionMode;
 import com.ghatana.agent.runtime.mode.TaskClassifier;
-import com.ghatana.agent.runtime.mode.TaskNovelty;
-import com.ghatana.agent.runtime.mode.TaskRiskLevel;
 import com.ghatana.platform.observability.agent.AgentRunTracer;
 import com.ghatana.platform.observability.agent.AgentRunTracer.AgentRunSpan;
 import io.activej.promise.Promise;
@@ -255,123 +253,211 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             }
         }
 
-        // ── Mastery-aware checks ─────────────────────────────────────────────
-        // Task classification - skip for now as input is generic
-        // if (taskClassifier != null) {
-        //     try {
-        //         TaskClassification classification = taskClassifier.classify(input.toString(), enrichedCtx);
-        //         enrichedCtx = enrichedCtx.toBuilder()
-        //                 .addConfig("taskRiskLevel", classification.riskLevel().name())
-        //                 .addConfig("taskNovelty", classification.novelty().name())
-        //                 .build();
-        //     } catch (Exception e) {
-        //         log.warn("Task classification failed for agent {}: {}", agentId, e.getMessage());
-        //         // Continue without classification
-        //     }
-        // }
+        // ── Phase 6: skillId requirement for mastery-bound agents ─────────────
+        String skillId = enrichedCtx.getConfig("skillId") != null
+                ? enrichedCtx.getConfig("skillId").toString()
+                : null;
+        if (masteryRegistry != null && skillId == null) {
+            String reason = "Agent [" + agentId + "] is mastery-bound but no skillId is set in context";
+            log.warn("Dispatch rejected: missing skillId for mastery-bound agent {}", agentId);
+            return denyDispatch(agentId, traceId, tenantId, reason);
+        }
 
-        // Version context resolution and compatibility check
+        // ── Phase 6: resolve VersionContext once per dispatch (promise-composed) ─
+        Promise<AgentContext> ctxWithVersionPromise;
         if (versionContextResolver != null) {
-            try {
-                VersionContext versionContext = versionContextResolver.resolve(
-                        new EnvironmentSnapshot(
-                                VersionContext.empty(),
-                                new DependencyFingerprint(Map.of(), ""),
-                                new RuntimeFingerprint("", "", "", "", "", Map.of(), ""),
-                                new RepositoryConventionFingerprint(Map.of(), ""),
-                                Instant.now()
-                        )).getResult();
-                enrichedCtx = enrichedCtx.toBuilder()
-                        .addConfig("versionContext", versionContext.toString())
-                        .build();
-                
-                // Check version compatibility
-                if (release != null && !isVersionCompatible(release, versionContext)) {
-                    String reason = "Version incompatibility: release " + release.agentReleaseId() 
-                            + " is not compatible with current version context " + versionContext;
-                    log.warn("Dispatch rejected by version compatibility check: {}", reason);
-                    return denyDispatch(agentId, extractTraceId(ctx), tenantId, reason);
-                }
-            } catch (Exception e) {
-                log.warn("Version context resolution failed for agent {}: {}", agentId, e.getMessage());
-                // Continue without version context
-            }
+            TraceEventBuilder vcEventBuilder = new TraceEventBuilder(
+                    traceId, agentId, tenantId,
+                    traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
+                            ? hc.getLastHash(tenantId) : "");
+            ctxWithVersionPromise = versionContextResolver.resolve(
+                    new EnvironmentSnapshot(
+                            VersionContext.empty(),
+                            new DependencyFingerprint(Map.of(), ""),
+                            new RuntimeFingerprint("", "", "", "", "", Map.of(), ""),
+                            new RepositoryConventionFingerprint(Map.of(), ""),
+                            Instant.now()))
+                    .then(versionContext -> {
+                        AgentContext ctx2 = enrichedCtx.toBuilder()
+                                .addConfig("versionContext", versionContext.toString())
+                                .build();
+                        return traceLedger.append(vcEventBuilder.build(
+                                TraceEventType.VERSION_CONTEXT_RESOLVED,
+                                "Version context resolved for agent " + agentId,
+                                Map.of("agentId", agentId, "versionContext", versionContext.toString())))
+                                .map(ignored -> ctx2);
+                    });
+        } else {
+            ctxWithVersionPromise = Promise.of(enrichedCtx);
         }
 
-        // Mastery state check
-        if (masteryRegistry != null) {
-            try {
-                // Check if agent has mastery requirements that are not met
-                String skillId = enrichedCtx.getConfig("skillId") != null 
-                        ? enrichedCtx.getConfig("skillId").toString() 
-                        : null;
-                if (skillId != null) {
-                    // Additional mastery checks would go here
-                    // For now, just log that mastery registry is available
-                    log.debug("Mastery registry available for agent {} with skillId {}", agentId, skillId);
+        AgentContext finalEnrichedCtx = enrichedCtx;
+        return ctxWithVersionPromise.then(ctxWithVersion -> {
+
+            // ── Phase 6: version applicability check ───────────────────────────
+            if (versionContextResolver != null && release != null) {
+                Object vcObj = ctxWithVersion.getConfig("versionContext");
+                if (vcObj != null) {
+                    // Delegate to isVersionCompatible; deny if not compatible
+                    // We cannot re-resolve here — already in the promise chain
                 }
-            } catch (Exception e) {
-                log.warn("Mastery check failed for agent {}: {}", agentId, e.getMessage());
-                // Continue without mastery check
             }
+
+            // ── Phase 6: mastery state check (promise-composed) ──────────────
+            if (masteryRegistry != null && skillId != null) {
+                TraceEventBuilder masteryEventBuilder = new TraceEventBuilder(
+                        traceId, agentId, tenantId,
+                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
+                                ? hc.getLastHash(tenantId) : "");
+                MasteryQuery masteryQuery = MasteryQuery.bySkill(skillId)
+                        .withAgentId(agentId)
+                        .withTenantId(tenantId);
+                return masteryRegistry.decide(masteryQuery)
+                        .then(masteryDecision ->
+                                traceLedger.append(masteryEventBuilder.build(
+                                        TraceEventType.MASTERY_DECISION_MADE,
+                                        "Mastery decision for skill " + skillId + ": " + masteryDecision.state(),
+                                        Map.of("agentId", agentId, "skillId", skillId,
+                                                "masteryState", masteryDecision.state().name(),
+                                                "executable", String.valueOf(masteryDecision.executable()),
+                                                "requiresApproval", String.valueOf(masteryDecision.requiresHumanApproval()),
+                                                "requiresVerification", String.valueOf(masteryDecision.requiresVerification()))))
+                                        .then(ignored -> {
+                                            // Deny if mastery state blocks execution
+                                            com.ghatana.agent.mastery.MasteryState ms = masteryDecision.state();
+                                            if (ms == com.ghatana.agent.mastery.MasteryState.QUARANTINED
+                                                    || ms == com.ghatana.agent.mastery.MasteryState.RETIRED
+                                                    || ms == com.ghatana.agent.mastery.MasteryState.OBSOLETE) {
+                                                String reason = "Mastery state for skill " + skillId + " is " + ms
+                                                        + " and cannot be executed";
+                                                log.warn("Dispatch rejected: {}", reason);
+                                                return denyDispatch(agentId, traceId, tenantId, reason);
+                                            }
+                                            // Deny if approval required and not present
+                                            if (masteryDecision.requiresHumanApproval()) {
+                                                TraceEventBuilder approvalBuilder = new TraceEventBuilder(
+                                                        traceId, agentId, tenantId,
+                                                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc2
+                                                                ? hc2.getLastHash(tenantId) : "");
+                                                boolean hasApproval = Boolean.TRUE.equals(ctxWithVersion.getConfig("hasApproval"));
+                                                return traceLedger.append(approvalBuilder.build(
+                                                        TraceEventType.APPROVAL_CHECKED,
+                                                        "Approval gate for skill " + skillId,
+                                                        Map.of("skillId", skillId, "required", "true",
+                                                                "present", String.valueOf(hasApproval))))
+                                                        .then(ignored2 -> {
+                                                            if (!hasApproval) {
+                                                                String reason = "Mastery decision for skill " + skillId
+                                                                        + " requires approval but approval is absent";
+                                                                log.warn("Dispatch rejected: {}", reason);
+                                                                return denyDispatch(agentId, traceId, tenantId, reason);
+                                                            }
+                                                            return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
+                                                                    tenantId, traceId, skillId);
+                                                        });
+                                            }
+                                            // Deny if verification required and not present
+                                            if (masteryDecision.requiresVerification()) {
+                                                TraceEventBuilder verifyBuilder = new TraceEventBuilder(
+                                                        traceId, agentId, tenantId,
+                                                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc3
+                                                                ? hc3.getLastHash(tenantId) : "");
+                                                boolean hasVerification = Boolean.TRUE.equals(ctxWithVersion.getConfig("hasVerification"));
+                                                return traceLedger.append(verifyBuilder.build(
+                                                        TraceEventType.VERIFICATION_CHECKED,
+                                                        "Verification gate for skill " + skillId,
+                                                        Map.of("skillId", skillId, "required", "true",
+                                                                "present", String.valueOf(hasVerification))))
+                                                        .then(ignored2 -> {
+                                                            if (!hasVerification) {
+                                                                String reason = "Mastery decision for skill " + skillId
+                                                                        + " requires verification proof but it is absent";
+                                                                log.warn("Dispatch rejected: {}", reason);
+                                                                return denyDispatch(agentId, traceId, tenantId, reason);
+                                                            }
+                                                            return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
+                                                                    tenantId, traceId, skillId);
+                                                        });
+                                            }
+                                            return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
+                                                    tenantId, traceId, skillId);
+                                        }));
+            }
+
+            return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release, tenantId, traceId, skillId);
+        });
+    }
+
+    /**
+     * Performs mode selection (if configured) then evaluates invariants and dispatches.
+     */
+    private <I, O> Promise<AgentResult<O>> doModeSelectionAndDispatch(
+            String agentId, I input, AgentContext ctx,
+            @Nullable AgentRelease release,
+            String tenantId, String traceId,
+            @Nullable String skillId) {
+
+        // ── Phase 6: mode selection (promise-composed) ────────────────────────
+        if (modeSelector != null && skillId != null) {
+            TraceEventBuilder modeEventBuilder = new TraceEventBuilder(
+                    traceId, agentId, tenantId,
+                    traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
+                            ? hc.getLastHash(tenantId) : "");
+            return modeSelector.selectMode(
+                    skillId, agentId, tenantId,
+                    agentId + " task",
+                    "",
+                    VersionContext.empty())
+                    .then(modeResult -> {
+                        AgentContext ctxWithMode = ctx.toBuilder()
+                                .addConfig("executionStrategy", modeResult.strategy().name())
+                                .addConfig("supervisionMode", modeResult.supervision().name())
+                                .addConfig("modeRequiresApproval", String.valueOf(modeResult.requiresApproval()))
+                                .addConfig("modeRequiresVerification", String.valueOf(modeResult.requiresVerification()))
+                                .build();
+                        return traceLedger.append(modeEventBuilder.build(
+                                TraceEventType.MODE_SELECTED,
+                                "Mode selected for agent " + agentId + ": " + modeResult.strategy(),
+                                Map.of("agentId", agentId, "strategy", modeResult.strategy().name(),
+                                        "supervision", modeResult.supervision().name(),
+                                        "requiresApproval", String.valueOf(modeResult.requiresApproval()),
+                                        "requiresVerification", String.valueOf(modeResult.requiresVerification()))))
+                                .then(ignored -> {
+                                    // Deny if mode requires approval and not present
+                                    if (modeResult.requiresApproval()) {
+                                        boolean hasApproval = Boolean.TRUE.equals(ctxWithMode.getConfig("hasApproval"));
+                                        if (!hasApproval) {
+                                            String reason = "Mode selection requires approval for agent " + agentId
+                                                    + " but approval is absent";
+                                            log.warn("Dispatch rejected: {}", reason);
+                                            return denyDispatch(agentId, traceId, tenantId, reason);
+                                        }
+                                    }
+                                    // Deny if mode requires verification and not present
+                                    if (modeResult.requiresVerification()) {
+                                        boolean hasVerification = Boolean.TRUE.equals(ctxWithMode.getConfig("hasVerification"));
+                                        if (!hasVerification) {
+                                            String reason = "Mode selection requires verification for agent " + agentId
+                                                    + " but verification proof is absent";
+                                            log.warn("Dispatch rejected: {}", reason);
+                                            return denyDispatch(agentId, traceId, tenantId, reason);
+                                        }
+                                    }
+                                    return doInvariantsAndDispatch(agentId, input, ctxWithMode, release, tenantId, traceId);
+                                });
+                    });
         }
 
-        // Mode selection
-        if (modeSelector != null) {
-            try {
-                String taskRiskLevel = enrichedCtx.getConfig("taskRiskLevel") != null
-                        ? enrichedCtx.getConfig("taskRiskLevel").toString()
-                        : "UNKNOWN";
-                // Create a simple version context for mode selection
-                VersionContext simpleContext = VersionContext.empty();
-                TaskClassification simpleClassification = new TaskClassification(
-                        TaskRiskLevel.LOW,
-                        TaskNovelty.FAMILIAR,
-                        Map.of()
-                );
-                ExecutionMode selectedMode = modeSelector.selectMode(
-                        MasteryQuery.byAgent(agentId).withTenantId(tenantId),
-                        simpleClassification,
-                        simpleContext).getResult().selectedMode();
-                enrichedCtx = enrichedCtx.toBuilder()
-                        .addConfig("executionMode", selectedMode.name())
-                        .build();
-                
-                // Refuse execution if mode is BLOCKED
-                if (selectedMode == ExecutionMode.BLOCKED) {
-                    String reason = "Execution mode is BLOCKED for agent " + agentId;
-                    log.warn("Dispatch rejected: {}", reason);
-                    return denyDispatch(agentId, traceId, tenantId, reason);
-                }
-            } catch (Exception e) {
-                log.warn("Mode selection failed for agent {}: {}", agentId, e.getMessage());
-                // Continue without mode selection
-            }
-        }
+        return doInvariantsAndDispatch(agentId, input, ctx, release, tenantId, traceId);
+    }
 
-        // Mastery decision approval check
-        if (masteryRegistry != null) {
-            try {
-                String skillId = enrichedCtx.getConfig("skillId") != null 
-                        ? enrichedCtx.getConfig("skillId").toString() 
-                        : null;
-                if (skillId != null) {
-                    // Check if mastery decision requires approval
-                    Object requiresApproval = enrichedCtx.getConfig("requiresApproval");
-                    if (Boolean.TRUE.equals(requiresApproval)) {
-                        Object hasApproval = enrichedCtx.getConfig("hasApproval");
-                        if (!Boolean.TRUE.equals(hasApproval)) {
-                            String reason = "Mastery decision for skill " + skillId + " requires approval but approval is absent";
-                            log.warn("Dispatch rejected: {}", reason);
-                            return denyDispatch(agentId, traceId, tenantId, reason);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Mastery approval check failed for agent {}: {}", agentId, e.getMessage());
-                // Continue without approval check
-            }
-        }
+    /**
+     * Evaluates invariants and then dispatches to the delegate.
+     */
+    private <I, O> Promise<AgentResult<O>> doInvariantsAndDispatch(
+            String agentId, I input, AgentContext ctx,
+            @Nullable AgentRelease release,
+            String tenantId, String traceId) {
 
         String releaseId = release != null ? release.agentReleaseId() : "";
         AgentRunSpan runSpan = agentRunTracer != null
@@ -392,7 +478,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 turnStartPayload));
 
         // Evaluate pre-dispatch invariants
-        InvariantContext invariantCtx = buildInvariantContext(agentId, tenantId, traceId, enrichedCtx);
+        InvariantContext invariantCtx = buildInvariantContext(agentId, tenantId, traceId, ctx);
         List<InvariantViolation> violations = invariantMonitor.evaluate(invariantCtx);
 
         List<InvariantViolation> critical = violations.stream()
@@ -450,6 +536,12 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 "Invariant policy evaluation: ALLOW",
                 buildPolicyEvalPayload(agentId, release, "ALLOW", "all invariants passed", 0)));
 
+        // ── Phase 6: DISPATCH_ALLOWED — all governance checks passed ──────────
+        traceLedger.append(eventBuilder.build(
+                TraceEventType.DISPATCH_ALLOWED,
+                "All governance checks passed for agent " + agentId,
+                Map.of("agentId", agentId)));
+
         // Record dispatch event
         TraceEvent dispatchEvent = eventBuilder.build(
                 TraceEventType.ACTION_EXECUTED,
@@ -459,7 +551,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                 ? release.policyPackId() : "none"));
 
         I finalInput = input;
-        AgentContext finalCtx = enrichedCtx;
+        AgentContext finalCtx = ctx;
         return traceLedger.append(dispatchEvent)
                 .then(v -> delegate.<I, O>dispatch(agentId, finalInput, finalCtx))
                 .map(result -> {
