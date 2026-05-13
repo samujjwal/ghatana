@@ -1,5 +1,6 @@
 package com.ghatana.phr.kernel.service;
 
+import com.ghatana.platform.security.validation.SafeInputValidator;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,8 +20,6 @@ import java.util.regex.Pattern;
  */
 public final class PhrInputSanitizationUtils {
 
-    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9_:@./#-]{0,127}$");
-    private static final Pattern SAFE_CODE = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9_./-]{0,127}$");
     private static final Pattern SAFE_CONTENT_TYPE = Pattern.compile(
         "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$");
     private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cntrl}&&[^\n\t]]");
@@ -29,27 +28,15 @@ public final class PhrInputSanitizationUtils {
     private PhrInputSanitizationUtils() {}
 
     public static String requireSafeIdentifier(String value, String fieldName) {
-        String normalized = requireNonBlank(value, fieldName);
-        if (!SAFE_IDENTIFIER.matcher(normalized).matches()) {
-            throw new IllegalArgumentException(fieldName + " contains unsupported characters");
-        }
-        return normalized;
+        return SafeInputValidator.requireSafeIdentifier(value, fieldName);
     }
 
     public static String requireSafeCode(String value, String fieldName) {
-        String normalized = requireNonBlank(value, fieldName);
-        if (!SAFE_CODE.matcher(normalized).matches()) {
-            throw new IllegalArgumentException(fieldName + " contains unsupported characters");
-        }
-        return normalized;
+        return SafeInputValidator.requireSafeCode(value, fieldName);
     }
 
     public static String requireAllowedValue(String value, String fieldName, Set<String> allowedValues) {
-        String normalized = requireNonBlank(value, fieldName);
-        if (!allowedValues.contains(normalized)) {
-            throw new IllegalArgumentException(fieldName + " must be one of " + allowedValues);
-        }
-        return normalized;
+        return SafeInputValidator.requireAllowedValue(value, fieldName, allowedValues);
     }
 
     public static String sanitizeRequiredText(String value, String fieldName, int maxLength) {

@@ -13,25 +13,25 @@
       "product": "phr",
       "flow": "appointment-create-api",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/phr/src/main/java/com/ghatana/phr/kernel/service/AppointmentService.java",
-          "tokens": [
-            "PhrTraceContext.metadata(",
-            "correlationId",
-            "audit(\"APPOINTMENT_CREATE\"",
-            "PhrInputSanitizationUtils.requireSafeIdentifier",
-            "PhrRateLimitUtils.requireAllowed"
-          ]
-        },
-        {
-          "file": "products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrTraceContext.java",
-          "tokens": [
-            "PhrInputSanitizationUtils.requireSafeIdentifier",
-            "PhrInputSanitizationUtils.requireSafeCode",
-            "\"correlationId\"",
-            "\"traceOperation\""
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -40,25 +40,25 @@
       "product": "phr",
       "flow": "consent-boundary-read",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGate.java",
-          "tokens": [
-            "auditRecorder.record(",
-            "request.tenantId()",
-            "request.requestId()",
-            "matched_rule",
-            "BOUNDARY_DENY",
-            "MISSING_REQUIRED_FEATURE"
-          ]
-        },
-        {
-          "file": "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
-          "tokens": [
-            "emergency override allows subject-record read and emits audited access",
-            "assertThat(auditEvents.get(0).allowed()).isFalse()",
-            "assertThat(auditEvents.get(0).auditRequired()).isTrue()"
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -67,29 +67,25 @@
       "product": "finance",
       "flow": "transaction-process",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/finance/src/main/java/com/ghatana/finance/service/TransactionService.java",
-          "tokens": [
-            "FinanceTraceContext.metadata(",
-            "\"tenant_id\"",
-            "\"transaction_id\"",
-            "\"idempotency_key\"",
-            "\"audit_classification\"",
-            "sanitizeTransaction(",
-            "TransactionInputSanitizationUtils.requireSafeIdentifier",
-            "enforceRateLimit("
-          ]
-        },
-        {
-          "file": "products/finance/src/test/java/com/ghatana/finance/service/TransactionServiceTest.java",
-          "tokens": [
-            "finance_transaction_manual_review",
-            "containsKey(\"correlation_id\")",
-            "get(\"tenant_id\")",
-            "get(\"audit_classification\")",
-            "testProcessTransaction_LowRisk_ShouldApprove"
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -98,25 +94,25 @@
       "product": "digital-marketing",
       "flow": "dmos-api-bootstrap",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosApiServer.java",
-          "tokens": [
-            "wireObservability()",
-            "DmosObservability",
-            "Metrics",
-            "TracingManager",
-            "createAuditEmitter()",
-            "ProductionBootstrapValidator"
-          ]
-        },
-        {
-          "file": "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/audit/DmosAuditServiceTest.java",
-          "tokens": [
-            "Should include correlation ID in all audit events",
-            "containsEntry(\"correlationId\"",
-            "containsKeys(\"auditId\", \"action\", \"actor\", \"tenantId\", \"workspaceId\""
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -125,17 +121,25 @@
       "product": "digital-marketing",
       "flow": "kernel-bridge-adapter",
       "kind": "bridge",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
-          "tokens": [
-            "shouldRecordAuditWithContextAttributes",
-            "containsEntry(\"tenantId\", \"acme-corp\")",
-            "containsEntry(\"workspaceId\", \"ws-001\")",
-            "containsEntry(\"correlationId\", \"corr-abc\")",
-            "shouldNotifyUser",
-            "shouldDelegateFeatureFlagEvaluation"
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -144,42 +148,25 @@
       "product": "flashit",
       "flow": "gateway-api-request",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/flashit/backend/gateway/src/server.ts",
-          "tokens": [
-            "registerLoggerPlugin",
-            "registerTracingMiddleware",
-            "metricsPlugin",
-            "tenant-isolation",
-            "setErrorHandler",
-            "Internal messages are redacted for 5xx responses",
-            "statusCode >= 500"
-          ]
-        },
-        {
-          "file": "products/flashit/backend/gateway/src/plugins/prometheus.ts",
-          "tokens": [
-            "flashit_http_request_duration_seconds",
-            "labelNames: ['method', 'route', 'status_code']",
-            "httpRequestTotal.labels(method, route, statusCode).inc()"
-          ]
-        },
-        {
-          "file": "products/flashit/backend/gateway/src/middleware/tracing.ts",
-          "tokens": [
-            "span.setAttribute('http.route.pattern'",
-            "span.setAttribute('http.response.status_code'",
-            "span.recordException(error)"
-          ]
-        },
-        {
-          "file": "products/flashit/backend/gateway/src/lib/logger.ts",
-          "tokens": [
-            "correlationId",
-            "logBusinessEvent",
-            "X-Correlation-Id"
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]
@@ -188,29 +175,25 @@
       "product": "flashit",
       "flow": "moment-read-write",
       "kind": "api",
-      "facets": ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+      "facets": [
+        "trace",
+        "tenantContext",
+        "metrics",
+        "audit",
+        "safeLogging",
+        "redaction"
+      ],
       "evidence": [
         {
-          "file": "products/flashit/backend/gateway/src/lib/data-access-context.ts",
-          "tokens": [
-            "FlashItDataAccessContext",
-            "tenantId",
-            "principalId",
-            "correlationId",
-            "auditClassification",
-            "dataOwnerScope",
-            "requireIdempotencyKey"
-          ]
-        },
-        {
-          "file": "products/flashit/backend/gateway/src/routes/moments.ts",
-          "tokens": [
-            "buildFlashItDataAccessContext",
-            "prisma.auditEvent.create(",
-            "logger.logBusinessEvent",
-            "Missing data access context",
-            "auditClassification: \"PERSONAL_MEMORY_WRITE\"",
-            "auditClassification: \"PERSONAL_MEMORY_READ\""
+          "type": "behavior",
+          "file": "platform/typescript/product-conformance/src/telemetry/__tests__/telemetry.test.ts",
+          "requiredFacets": [
+            "trace",
+            "tenantContext",
+            "metrics",
+            "audit",
+            "safeLogging",
+            "redaction"
           ]
         }
       ]

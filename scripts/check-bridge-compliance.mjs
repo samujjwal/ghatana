@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { execSync, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname);
@@ -18,27 +18,27 @@ const bridgeProductRoots = bridgeProducts.flatMap((entry) =>
 );
 const bridgeFiles = execSync(
   "rg --files products | rg '(KernelAdapterImpl|Bridge.*Impl)\\.java$'",
-  { cwd: repoRoot, encoding: 'utf8' }
+  { cwd: repoRoot, encoding: 'utf8' },
 )
   .trim()
   .split('\n')
   .filter(Boolean);
-const auditedBridgeFiles = bridgeFiles.filter(file => bridgeProductRoots.some(product => file.startsWith(`${product}/`)));
+const auditedBridgeFiles = bridgeFiles.filter((file) =>
+  bridgeProductRoots.some((product) => file.startsWith(`${product}/`)),
+);
 const expectedAuditedBridgeTests = new Map();
-
-const violations = [];
-const exemptMethodNames = new Set(['start', 'stop', 'started']);
+const failures = [];
 
 for (const product of bridgeProducts) {
   const adapters = product.conformance?.bridgeAdapters;
   if (!Array.isArray(adapters) || adapters.length === 0) {
-    violations.push(`${product.id}: bridge conformance is enabled but conformance.bridgeAdapters is empty`);
+    failures.push(`${product.id}: bridge conformance is enabled but conformance.bridgeAdapters is empty`);
     continue;
   }
 
   for (const adapter of adapters) {
     if (!adapter.file || !Array.isArray(adapter.tests) || adapter.tests.length === 0) {
-      violations.push(`${product.id}: bridge adapter contract must declare file and tests`);
+      failures.push(`${product.id}: bridge adapter contract must declare file and tests`);
       continue;
     }
     expectedAuditedBridgeTests.set(adapter.file, adapter.tests);
@@ -47,77 +47,70 @@ for (const product of bridgeProducts) {
 
 for (const file of auditedBridgeFiles) {
   if (!expectedAuditedBridgeTests.has(file)) {
-    violations.push(
-      `${file}: audited bridge implementation is missing an explicit compliance-test contract entry`
-    );
+    failures.push(`${file}: audited bridge implementation is missing an explicit compliance-test contract entry`);
   }
 }
 
 for (const [bridgeFile, testContracts] of expectedAuditedBridgeTests.entries()) {
   if (!auditedBridgeFiles.includes(bridgeFile)) {
-    violations.push(`${bridgeFile}: expected audited bridge implementation is missing`);
+    failures.push(`${bridgeFile}: expected audited bridge implementation is missing`);
     continue;
   }
 
-  for (const { file, requiredEvidence } of testContracts) {
-    let content = '';
-    try {
-      content = readFileSync(resolve(repoRoot, file), 'utf8');
-    } catch {
-      violations.push(`${file}: expected bridge compliance test file is missing`);
+  for (const { file } of testContracts) {
+    const testPath = resolve(repoRoot, file ?? '');
+    if (!file || !existsSync(testPath)) {
+      failures.push(`${file}: expected bridge compliance test file is missing`);
       continue;
     }
-    for (const token of requiredEvidence) {
-      if (!content.includes(token)) {
-        violations.push(`${file}: missing bridge compliance evidence token '${token}'`);
-      }
+
+    const gradleTest = toGradleTest(file);
+    if (!gradleTest) {
+      failures.push(`${file}: bridge compliance tests must be Java tests under src/test/java`);
+      continue;
+    }
+
+    console.log(`\n=== Bridge compliance test: ${gradleTest.className} ===`);
+    const result = spawnSync(
+      './gradlew',
+      [`${gradleTest.module}:test`, '--tests', gradleTest.className, '--no-daemon'],
+      {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        shell: process.platform === 'win32',
+      },
+    );
+
+    if (result.error) {
+      failures.push(`${file}: ${result.error.message}`);
+      continue;
+    }
+    if (result.status !== 0) {
+      failures.push(`${file}: bridge compliance test exited with status ${result.status}`);
     }
   }
 }
 
-for (const file of bridgeFiles) {
-  const content = readFileSync(resolve(repoRoot, file), 'utf8');
-
-  if (!content.includes('redact(')) {
-    violations.push(`${file}: bridge adapter must redact logged metadata before logging sensitive context`);
-  }
-
-  const methods = [...content.matchAll(/public\s+Promise<[^>]+>\s+(\w+)\s*\(([\s\S]*?)\)\s*\{([\s\S]*?)\n    \}/g)];
-  for (const method of methods) {
-    const [, name, params, body] = method;
-    if (exemptMethodNames.has(name)) {
-      continue;
-    }
-
-    const hasContextParam = params.includes('BridgeContext') || params.includes('OperationContext');
-    if (!hasContextParam) {
-      continue;
-    }
-
-    if (!body.includes('requireStarted();')) {
-      violations.push(`${file}#${name}: missing requireStarted()`);
-    }
-
-    if (hasContextParam && !body.includes('toBridgeContext()') && !params.includes('BridgeContext')) {
-      violations.push(`${file}#${name}: must pass BridgeContext or convert product context via toBridgeContext()`);
-    }
-
-    if (!body.includes('checkAuthorized(')) {
-      violations.push(`${file}#${name}: missing authorization check before bridge-sensitive work`);
-    }
-
-    if (/(attributes|metadata)/.test(body) && body.includes('LOG.') && !body.includes('redact(')) {
-      violations.push(`${file}#${name}: metadata logging must be redacted`);
-    }
-  }
-}
-
-if (violations.length > 0) {
-  console.error('Bridge compliance violations:');
-  for (const violation of violations) {
-    console.error(`- ${violation}`);
+if (failures.length > 0) {
+  console.error('\nBridge compliance validation failed:');
+  for (const failure of failures) {
+    console.error(`- ${failure}`);
   }
   process.exit(1);
 }
 
-console.log('Bridge compliance validation passed.');
+console.log('\nBridge compliance validation passed (registry-declared executable tests).');
+
+function toGradleTest(file) {
+  const marker = '/src/test/java/';
+  const markerIndex = file.indexOf(marker);
+  if (markerIndex < 0 || !file.endsWith('.java')) {
+    return null;
+  }
+  const module = `:${file.slice(0, markerIndex).split('/').join(':')}`;
+  const className = file
+    .slice(markerIndex + marker.length, -'.java'.length)
+    .split('/')
+    .join('.');
+  return { module, className };
+}

@@ -4,6 +4,13 @@ Finance is the product boundary for financial operations in Ghatana. It owns ord
 
 Finance is currently a backend-only product surface in this monorepo. There is no Finance UI/client package registered in the workspace until a shell-aligned product surface is introduced under the Kernel route and design-system contracts.
 
+Finance registry surfaces are implemented as non-UI runtime surfaces unless explicitly marked otherwise:
+
+- `backend-api`: backend-only Finance runtime and HTTP/BFF boundary
+- `portal`: backend-only regulator data/query module, not a web client package
+- `operator`: backend-only operator workflow module, not a web client package
+- `sdk`: implemented Java platform SDK module
+
 ## Scope
 
 - Order management, execution, and lifecycle workflows

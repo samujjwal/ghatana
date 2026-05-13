@@ -9,29 +9,13 @@ import { z } from 'zod';
  * Product manifest schema for conformance validation.
  */
 export const ProductManifestSchema = z.object({
-  id: z.string().min(1),
-  productName: z.string().min(1),
-  productCode: z.string().min(1),
-  version: z.string().regex(/^\d+\.\d+\.\d+$/),
-  mvpScope: z.string().min(1),
-  boundaryPolicyStoreClass: z.string().optional(),
-  pluginBindingsClass: z.string().optional(),
-  complianceRulePackClass: z.string().optional(),
-  kernelCapabilitiesConsumed: z.array(z.string().min(1)).min(1),
-  policyActions: z.array(z.string().min(1)).min(1),
-  policyResources: z.array(z.string().min(1)).min(1),
-  pluginsConsumed: z.array(z.string().min(1)),
-  bridgesConsumed: z.array(z.string().min(1)),
-  domainPacksProvided: z.array(z.string().min(1)),
-  uiSurfaces: z.array(z.enum(['web', 'mobile', 'cli'])).min(1),
-  runtimeServices: z.array(z.string().min(1)).min(1),
-  dataSensitivity: z.string().min(1),
-  complianceRuleSets: z.array(z.string().min(1)),
-  pluginBindings: z.record(z.string(), z.enum(['enabled', 'disabled'])),
-  referenceConsumerPolicy: z.object({
-    phrFinanceStatus: z.enum(['reference-only', 'full-access', 'no-access']),
-    forbiddenRulePrefixes: z.array(z.string().min(1)),
-  }).optional(),
+  schemaVersion: z.string().min(1),
+  product: z.string().min(1),
+  kind: z.string().min(1),
+  capabilities: z.unknown(),
+  policies: z.unknown(),
+  surfaces: z.unknown(),
+  runtimeServices: z.unknown(),
 });
 
 export type ProductManifest = z.infer<typeof ProductManifestSchema>;
@@ -40,15 +24,17 @@ export type ProductManifest = z.infer<typeof ProductManifestSchema>;
  * Observability flow manifest schema for conformance validation.
  */
 export const ObservabilityFlowSchema = z.object({
+  schemaVersion: z.string().min(1).optional(),
   requiredFacets: z.array(z.string().min(1)).min(1),
   flows: z.array(z.object({
     product: z.string().min(1),
     flow: z.string().min(1),
-    kind: z.enum(['api', 'bridge', 'worker', 'scheduler']),
+    kind: z.enum(['api', 'bridge', 'background', 'frontend', 'job']),
     facets: z.array(z.string().min(1)).min(1),
     evidence: z.array(z.object({
+      type: z.literal('behavior'),
       file: z.string().min(1),
-      tokens: z.array(z.string().min(1)).min(1),
+      requiredFacets: z.array(z.string().min(1)).min(1),
     })).min(1),
   })).min(1),
 });

@@ -83,19 +83,25 @@ tasks.register("validateDmosDomainPackBindings") {
         }
 
         val root = JsonSlurper().parse(manifestFile) as Map<*, *>
-        fun requiredString(key: String): String {
+        val productExtensions = root["productExtensions"] as? Map<*, *> ?: emptyMap<Any, Any>()
+        fun requiredRootString(key: String): String {
             val value = (root[key] as? String)?.trim().orEmpty()
             check(value.isNotEmpty()) { "domain-pack.json: '$key' is required and must be non-empty" }
             return value
         }
+        fun requiredExtensionString(key: String): String {
+            val value = (productExtensions[key] as? String)?.trim().orEmpty()
+            check(value.isNotEmpty()) { "domain-pack.json: productExtensions.$key is required and must be non-empty" }
+            return value
+        }
 
-        val productCode = requiredString("productCode")
-        val rulePrefix = requiredString("rulePrefix")
-        val boundaryPolicyStoreClass = requiredString("boundaryPolicyStoreClass")
-        val pluginBindingsClass = requiredString("pluginBindingsClass")
+        val productCode = requiredExtensionString("productCode")
+        val rulePrefix = requiredRootString("rulePrefix")
+        val boundaryPolicyStoreClass = requiredExtensionString("boundaryPolicyStoreClass")
+        val pluginBindingsClass = requiredExtensionString("pluginBindingsClass")
         val kernelCapabilitiesConsumed = (root["kernelCapabilitiesConsumed"] as? List<*>)?.filterIsInstance<String>().orEmpty()
         val pluginsConsumed = (root["pluginsConsumed"] as? List<*>)?.filterIsInstance<String>().orEmpty()
-        val complianceRuleSets = (root["complianceRuleSets"] as? List<*>)
+        val complianceRuleSets = (productExtensions["complianceRuleSets"] as? List<*>)
             ?.mapNotNull { (it as? String)?.trim() }
             .orEmpty()
 

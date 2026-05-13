@@ -149,12 +149,17 @@
     },
     "Surface": {
       "type": "object",
-      "required": ["type", "path"],
+      "required": ["type", "path", "implementationStatus"],
       "properties": {
         "type": {
           "type": "string",
           "enum": ["backend-api", "worker", "portal", "sdk", "web", "mobile", "cli", "operator"],
           "description": "Surface type"
+        },
+        "implementationStatus": {
+          "type": "string",
+          "enum": ["implemented", "planned", "backend-only"],
+          "description": "Current implementation maturity for this surface. Use backend-only for non-UI runtime surfaces that are implemented without a web/mobile client."
         },
         "path": {
           "type": "string",
@@ -227,20 +232,12 @@
                 "minItems": 1,
                 "items": {
                   "type": "object",
-                  "required": ["file", "requiredEvidence"],
+                  "required": ["file"],
                   "properties": {
                     "file": {
                       "type": "string",
                       "minLength": 1,
                       "description": "Bridge compliance test file path relative to the repository root"
-                    },
-                    "requiredEvidence": {
-                      "type": "array",
-                      "minItems": 1,
-                      "items": {
-                        "type": "string",
-                        "minLength": 1
-                      }
                     }
                   },
                   "additionalProperties": false

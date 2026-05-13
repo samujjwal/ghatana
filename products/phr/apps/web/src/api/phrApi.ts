@@ -12,7 +12,7 @@ import type {
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
-const API_BASE_URL: string = import.meta.env.VITE_PHR_API_URL ?? 'http://localhost:8080';
+export const API_BASE_URL: string = import.meta.env.VITE_PHR_API_URL ?? 'http://localhost:8080';
 const USE_MOCK: boolean = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 // ─── Error type ────────────────────────────────────────────────────────────

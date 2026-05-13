@@ -17,12 +17,14 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/phr"
+          "path": "products/phr",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/phr/apps/web",
-          "packagePath": "products/phr/apps/web/package.json"
+          "packagePath": "products/phr/apps/web/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -99,18 +101,22 @@
       "surfaces": [
         {
           "type": "backend-api",
+          "implementationStatus": "backend-only",
           "path": "products/finance"
         },
         {
           "type": "portal",
+          "implementationStatus": "backend-only",
           "path": "products/finance/regulator-portal"
         },
         {
           "type": "operator",
+          "implementationStatus": "backend-only",
           "path": "products/finance/operator-workflows"
         },
         {
           "type": "sdk",
+          "implementationStatus": "implemented",
           "path": "products/finance/platform-sdk"
         }
       ],
@@ -174,12 +180,14 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/digital-marketing/dm-api"
+          "path": "products/digital-marketing/dm-api",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/digital-marketing/ui",
-          "packagePath": "products/digital-marketing/ui/package.json"
+          "packagePath": "products/digital-marketing/ui/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -205,27 +213,10 @@
             "file": "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java",
             "tests": [
               {
-                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
-                "requiredEvidence": [
-                  "shouldRejectAuthorizationBeforeStart",
-                  "shouldDelegateAuthorization",
-                  "shouldDenyConsentVerificationWhenUnauthorized",
-                  "shouldRejectUnauthorizedApprovalRequests",
-                  "shouldRecordAuditWithContextAttributes",
-                  "shouldRejectUnauthorizedAuditRecording",
-                  "shouldRejectUnauthorizedRiskEvaluation",
-                  "shouldDelegateFeatureFlagEvaluation",
-                  "shouldFailClosedForUnauthorizedFeatureFlagChecks",
-                  "shouldNotifyUser"
-                ]
+                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java"
               },
               {
-                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
-                "requiredEvidence": [
-                  "transientFailuresTriggerRetryWithBackoff",
-                  "retryAttemptsPreserveOriginalContext",
-                  "retryCountRespectsMaximum"
-                ]
+                "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java"
               }
             ]
           }
@@ -257,17 +248,20 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/flashit/backend/gateway"
+          "path": "products/flashit/backend/gateway",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/flashit/client/web",
-          "packagePath": "products/flashit/client/web/package.json"
+          "packagePath": "products/flashit/client/web/package.json",
+          "implementationStatus": "implemented"
         },
         {
           "type": "mobile",
           "path": "products/flashit/client/mobile",
-          "packagePath": "products/flashit/client/mobile/package.json"
+          "packagePath": "products/flashit/client/mobile/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -352,16 +346,19 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/data-cloud/delivery/api"
+          "path": "products/data-cloud/delivery/api",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/data-cloud/delivery/ui",
-          "packagePath": "products/data-cloud/delivery/ui/package.json"
+          "packagePath": "products/data-cloud/delivery/ui/package.json",
+          "implementationStatus": "implemented"
         },
         {
           "type": "sdk",
-          "path": "products/data-cloud/delivery/sdk"
+          "path": "products/data-cloud/delivery/sdk",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -382,14 +379,14 @@
       },
       "conformance": {
         "manifest": false,
-        "observability": true,
-        "security": true,
-        "dataAccess": true,
-        "bridge": true,
-        "agentDefinitions": true,
-        "masteryBindings": true,
-        "evaluationPacks": true,
-        "runtimeModule": true,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false,
         "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
@@ -444,12 +441,14 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/yappc/core/yappc-api"
+          "path": "products/yappc/core/yappc-api",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/yappc/frontend",
-          "packagePath": "products/yappc/frontend/package.json"
+          "packagePath": "products/yappc/frontend/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -473,14 +472,14 @@
       },
       "conformance": {
         "manifest": false,
-        "observability": true,
-        "security": true,
-        "dataAccess": true,
-        "bridge": true,
-        "agentDefinitions": true,
-        "masteryBindings": true,
-        "evaluationPacks": true,
-        "runtimeModule": true,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false,
         "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
       },
       "metadata": {
@@ -515,7 +514,8 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/audio-video"
+          "path": "products/audio-video",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -526,7 +526,7 @@
         "products/audio-video/modules/intelligence/ai-voice/libs/*"
       ],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -564,12 +564,14 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/dcmaar"
+          "path": "products/dcmaar",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/dcmaar/apps",
-          "packagePath": "products/dcmaar/apps/package.json"
+          "packagePath": "products/dcmaar/apps/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -578,7 +580,7 @@
         "products/dcmaar/libs/guardian-dashboard-core"
       ],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -615,12 +617,14 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/tutorputor"
+          "path": "products/tutorputor",
+          "implementationStatus": "implemented"
         },
         {
           "type": "web",
           "path": "products/tutorputor/apps",
-          "packagePath": "products/tutorputor/apps/package.json"
+          "packagePath": "products/tutorputor/apps/package.json",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [
@@ -631,7 +635,7 @@
         "products/tutorputor/tools/*"
       ],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -684,12 +688,13 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/aura/platform/api"
+          "path": "products/aura/platform/api",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -735,12 +740,13 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/software-org"
+          "path": "products/software-org",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -785,12 +791,13 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/virtual-org"
+          "path": "products/virtual-org",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [],
       "ci": {
-        "enabled": true,
+        "enabled": false,
         "gates": [
           "build",
           "test",
@@ -828,7 +835,8 @@
       "surfaces": [
         {
           "type": "backend-api",
-          "path": "products/security-gateway"
+          "path": "products/security-gateway",
+          "implementationStatus": "implemented"
         }
       ],
       "pnpmPackages": [],

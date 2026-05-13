@@ -1,18 +1,7 @@
-import React from 'react';
 import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
 import type { PhrRole } from './auth/PhrAccessContext';
-import { AppointmentsPage } from './pages/AppointmentsPage';
-import { ConsentPage } from './pages/ConsentPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
-import { LabsPage } from './pages/LabsPage';
-import { MedicationsPage } from './pages/MedicationsPage';
-import { RecordDetailPage } from './pages/RecordDetailPage';
-import { RecordsPage } from './pages/RecordsPage';
-import { SettingsPage } from './pages/SettingsPage';
 
-export interface PhrRouteManifestEntry extends ProductRouteCapability {
-  readonly element: React.ReactElement;
+export interface PhrRouteContract extends ProductRouteCapability {
   readonly personas?: readonly string[];
   readonly tiers?: readonly string[];
   readonly emergencyAction?: boolean;
@@ -27,11 +16,11 @@ export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = {
 
 export const phrRouteAccess = createRouteAccessEvaluator(PHR_ROLE_ORDER);
 
-export function isRouteAllowedForRole(route: Pick<PhrRouteManifestEntry, 'minimumRole'>, role: PhrRole): boolean {
+export function isRouteAllowedForRole(route: Pick<PhrRouteContract, 'minimumRole'>, role: PhrRole): boolean {
   return phrRouteAccess.isRouteAllowed(route, role);
 }
 
-export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
+export const phrRouteContracts = [
   {
     path: '/dashboard',
     label: 'Dashboard',
@@ -42,7 +31,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['view-patient-summary'],
     cards: ['patient-summary', 'care-plan', 'emergency-readiness'],
-    element: <DashboardPage />,
   },
   {
     path: '/records',
@@ -54,7 +42,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: ['record-highlights', 'interop-status'],
-    element: <RecordsPage />,
   },
   {
     path: '/consents',
@@ -66,7 +53,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['manage-consent'],
     cards: ['active-consent-grants', 'expiring-consents'],
-    element: <ConsentPage />,
   },
   {
     path: '/appointments',
@@ -78,7 +64,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['schedule-visit'],
     cards: ['upcoming-appointments'],
-    element: <AppointmentsPage />,
   },
   {
     path: '/labs',
@@ -90,7 +75,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['clinical'],
     actions: ['review-lab-results'],
     cards: ['recent-lab-results'],
-    element: <LabsPage />,
   },
   {
     path: '/medications',
@@ -102,7 +86,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['clinical'],
     actions: ['review-medications'],
     cards: ['medication-adherence'],
-    element: <MedicationsPage />,
   },
   {
     path: '/emergency',
@@ -115,7 +98,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     emergencyAction: true,
     actions: ['break-glass-review'],
     cards: ['override-audit-timeline'],
-    element: <EmergencyAccessPage />,
   },
   {
     path: '/settings',
@@ -127,7 +109,6 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['manage-profile-settings'],
     cards: ['profile-controls', 'integration-status'],
-    element: <SettingsPage />,
   },
   {
     path: '/records/:recordId',
@@ -139,6 +120,7 @@ export const phrRouteManifest: readonly PhrRouteManifestEntry[] = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: [],
-    element: <RecordDetailPage />,
   },
-];
+] as const satisfies readonly PhrRouteContract[];
+
+export type PhrRoutePath = (typeof phrRouteContracts)[number]['path'];

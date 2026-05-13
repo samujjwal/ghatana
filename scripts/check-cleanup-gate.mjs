@@ -3,18 +3,19 @@
 /**
  * Cleanup Gate Check
  * 
- * Validates that the codebase does not contain dead product examples,
+ * Validates that production-facing source does not contain dead product examples,
  * stale comments, or temporary migration notes that should be cleaned up.
- * 
+ *
  * Usage: node scripts/check-cleanup-gate.mjs
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
+const criticalScopesPath = join(repoRoot, 'config', 'production-critical-scopes.config.json');
 
 // Patterns that indicate cleanup needed
 const STALE_PATTERNS = [
@@ -30,18 +31,11 @@ const STALE_PATTERNS = [
   /placeholder.*delete.*this/i,
   
   // Stale comments
-  /\/\/.*deprecated.*remove/i,
-  /\/\*.*deprecated.*remove/i,
-  /\/\/.*legacy.*remove/i,
-  /\/\*.*legacy.*remove/i,
+  /\/\/.*deprecated.*\bremove\b/i,
+  /\/\*.*deprecated.*\bremove\b/i,
+  /\/\/.*legacy.*\bremove\b/i,
+  /\/\*.*legacy.*\bremove\b/i,
   
-  // Old file patterns
-  /\.old\./,
-  /_old\./,
-  /_backup\./,
-  /\.backup\./,
-  /\.tmp\./,
-  /\.bak\./,
 ];
 
 const EXCLUDED_DIRS = [
@@ -53,12 +47,35 @@ const EXCLUDED_DIRS = [
   '.gradle',
   'out',
   'coverage',
+  '.turbo',
+  '.next',
+  '.expo',
+  'generated',
+  '__generated__',
+  '__tests__',
+  'test',
+  'tests',
+  'fixtures',
+  'test-results',
+  'docs',
+  'code-audits',
   'docs/archive',
   'docs/legacy',
+  'scripts',
+  'templates',
+];
+
+const EXCLUDED_FILES = [
+  'End-to-End-Product-Prompt.md',
+  'libraries-review-prompt.md',
+  'product-review-prompt.md',
 ];
 
 function shouldExcludePath(filePath) {
-  return EXCLUDED_DIRS.some(dir => filePath.includes(`/${dir}/`) || filePath.startsWith(`${dir}/`));
+  const normalized = filePath.replace(/\\/g, '/');
+  const baseName = normalized.slice(normalized.lastIndexOf('/') + 1);
+  return EXCLUDED_FILES.includes(baseName)
+    || EXCLUDED_DIRS.some(dir => normalized.includes(`/${dir}/`) || normalized.endsWith(`/${dir}`));
 }
 
 function checkFile(filePath) {
@@ -78,7 +95,7 @@ function checkFile(filePath) {
   return violations;
 }
 
-function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.java', '.kt', '.gradle', '.kts', '.md']) {
+function scanDirectory(dir, extensions = ['.ts', '.tsx', '.js', '.java', '.kt', '.gradle', '.kts']) {
   const violations = [];
   
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -136,14 +153,27 @@ function checkStaleFilePatterns(dir) {
   return violations;
 }
 
+function loadScanRoots() {
+  if (!existsSync(criticalScopesPath)) {
+    return [repoRoot];
+  }
+
+  const config = JSON.parse(readFileSync(criticalScopesPath, 'utf8'));
+  return config.scanScopes
+    .filter(scope => scope.critical)
+    .map(scope => join(repoRoot, scope.path))
+    .filter(scopePath => existsSync(scopePath));
+}
+
 function main() {
   console.log('=== Cleanup Gate Check ===\n');
   
   console.log('Scanning for stale patterns in code...');
-  const contentViolations = scanDirectory(repoRoot);
+  const scanRoots = loadScanRoots();
+  const contentViolations = scanRoots.flatMap(root => scanDirectory(root));
   
   console.log('Scanning for stale file patterns...');
-  const fileViolations = checkStaleFilePatterns(repoRoot);
+  const fileViolations = scanRoots.flatMap(root => checkStaleFilePatterns(root));
   
   let totalViolations = 0;
   

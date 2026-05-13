@@ -96,32 +96,32 @@
     "@ghatana/domain-components": "workspace:*",
     "@ghatana/platform-events": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.8.0",
-    "tailwind-merge": "^3.5.0",
-    "zod": "^4.3.6"
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "tailwind-merge": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-router": "^7.0.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.99.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "jsdom": "^29.0.2",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.8",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "typedoc": "^0.28.18",
-    "vitest": "^4.1.4"
+    "vitest": "catalog:"
   },
   "keywords": [
     "ghatana",

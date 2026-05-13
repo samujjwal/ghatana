@@ -1,0 +1,44 @@
+name: Affected Products
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  resolve:
+    name: Resolve affected product graph
+    runs-on: ubuntu-latest
+    outputs:
+      affected-products: ${{ steps.resolve.outputs.affected-products }}
+      docs-only: ${{ steps.resolve.outputs.docs-only }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve affected products
+        id: resolve
+        shell: bash
+        run: |
+          BASE_REF="${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
+          HEAD_REF="${{ github.event.pull_request.head.sha || github.sha }}"
+          node scripts/resolve-affected-products.mjs --json --base "$BASE_REF" --head "$HEAD_REF" > affected-products.json
+          AFFECTED_PRODUCTS="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('affected-products.json','utf8')); process.stdout.write(JSON.stringify(r.affectedProducts));")"
+          DOCS_ONLY="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('affected-products.json','utf8')); process.stdout.write(String(r.docsOnly));")"
+          echo "affected-products=${AFFECTED_PRODUCTS}" >> "$GITHUB_OUTPUT"
+          echo "docs-only=${DOCS_ONLY}" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Affected Products"
+            echo ""
+            echo "\`\`\`json"
+            cat affected-products.json
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload affected product report
+        uses: actions/upload-artifact@v4
+        with:
+          name: affected-products
+          path: affected-products.json

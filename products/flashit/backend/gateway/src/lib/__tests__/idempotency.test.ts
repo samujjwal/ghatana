@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Prisma before importing the module under test
-vi.mock('../../prisma.js', () => ({
+vi.mock('../prisma.js', () => ({
   prisma: {
     auditEvent: {
       findFirst: vi.fn(),

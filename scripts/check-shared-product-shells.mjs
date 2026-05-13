@@ -71,6 +71,29 @@ function hasCall(file, callName) {
   return found;
 }
 
+function hasFunctionDeclaration(file, functionName) {
+  const ast = sourceFile(file);
+  let found = false;
+  function visit(node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === functionName) {
+      found = true;
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(ast);
+  return found;
+}
+
+function assertNoProductLocalEmptyState(file, allowedAdapter = false) {
+  if (!hasFunctionDeclaration(file, 'EmptyState')) {
+    return;
+  }
+  if (allowedAdapter && importedNames(file, '@ghatana/design-system').has('DesignEmptyState')) {
+    return;
+  }
+  add(file, 'must use @ghatana/design-system EmptyState instead of product-local EmptyState JSX');
+}
+
 function assertImports(file, moduleName, names) {
   const imported = importedNames(file, moduleName);
   for (const name of names) {
@@ -82,14 +105,37 @@ function assertImports(file, moduleName, names) {
 
 function assertProductShellWrapper(file) {
   assertImports(file, '@ghatana/product-shell', [
+    'ProductHeaderUserMenu',
     'ProductShell',
-    'useStableProductShellConfig',
+    'ProductShellFooter',
+    'createProductRoleSelectorConfig',
+    'useProductEntitlements',
+    'useProductShellConfig',
   ]);
   if (!hasJsxElement(file, 'ProductShell')) {
     add(file, 'must render <ProductShell>');
   }
-  if (!hasCall(file, 'useStableProductShellConfig')) {
-    add(file, 'must build shell config through useStableProductShellConfig');
+  if (!hasJsxElement(file, 'ProductHeaderUserMenu')) {
+    add(file, 'must render <ProductHeaderUserMenu>');
+  }
+  if (!hasJsxElement(file, 'ProductShellFooter')) {
+    add(file, 'must render <ProductShellFooter>');
+  }
+  if (!hasCall(file, 'createProductRoleSelectorConfig')) {
+    add(file, 'must build role selector props through createProductRoleSelectorConfig');
+  }
+  if (!hasCall(file, 'useProductShellConfig')) {
+    add(file, 'must build shell config through useProductShellConfig');
+  }
+  if (!hasCall(file, 'useProductEntitlements')) {
+    add(file, 'must hydrate shell routes through backend route entitlements');
+  }
+}
+
+function assertRouteAccessEvaluator(file) {
+  assertImports(file, '@ghatana/product-shell', ['createRouteAccessEvaluator']);
+  if (!hasCall(file, 'createRouteAccessEvaluator')) {
+    add(file, 'must build route access through createRouteAccessEvaluator');
   }
 }
 
@@ -112,6 +158,30 @@ function assertNoProductSpecificSharedComments() {
   }
 }
 
+function assertProductShellStateSplit() {
+  const file = 'platform/typescript/product-shell/src/components/ProductShell.tsx';
+  const indexFile = 'platform/typescript/product-shell/src/index.ts';
+  const source = readText(file);
+  const indexSource = readText(indexFile);
+
+  for (const exportName of ['useProductShellState', 'ProductShellLayout', 'ProductShell']) {
+    if (!source.includes(`function ${exportName}`)) {
+      add(file, `must keep ${exportName} as an explicit shell primitive`);
+    }
+    if (!indexSource.includes(exportName)) {
+      add(indexFile, `must export ${exportName} from the public product-shell API`);
+    }
+  }
+
+  const productShellBody = source.slice(source.indexOf('export function ProductShell('));
+  if (!productShellBody.includes('useProductShellState()')) {
+    add(file, 'ProductShell wrapper must delegate state ownership to useProductShellState');
+  }
+  if (!productShellBody.includes('<ProductShellLayout')) {
+    add(file, 'ProductShell wrapper must delegate rendering to ProductShellLayout');
+  }
+}
+
 if (!existsSync(path.join(repoRoot, 'products/phr/apps/web/src/layout/AppShell.tsx'))) {
   add('products/phr/apps/web/src/layout/AppShell.tsx', 'PHR app shell alias is missing');
 } else {
@@ -124,9 +194,15 @@ if (!existsSync(path.join(repoRoot, 'products/phr/apps/web/src/layout/AppShell.t
 assertProductShellWrapper('products/phr/apps/web/src/layout/PhrProductShell.tsx');
 assertProductShellWrapper('products/digital-marketing/ui/src/layout/DmosProductShell.tsx');
 assertProductShellWrapper('products/flashit/client/web/src/components/FlashitProductShell.tsx');
+assertRouteAccessEvaluator('products/phr/apps/web/src/phrRouteContracts.ts');
+assertRouteAccessEvaluator('products/digital-marketing/ui/src/routeManifest.tsx');
+assertRouteAccessEvaluator('products/flashit/client/web/src/routeAccess.ts');
 assertAdoptsShell('products/digital-marketing/ui/src/App.tsx', 'DmosProductShell');
 assertAdoptsShell('products/flashit/client/web/src/App.tsx', 'FlashitProductShell');
 assertAdoptsShell('products/flashit/client/web/src/components/Layout.tsx', 'FlashitProductShell');
+assertNoProductLocalEmptyState('products/flashit/client/web/src/pages/AnalyticsPage.tsx', true);
+assertNoProductLocalEmptyState('products/flashit/client/web/src/pages/CollaborationPage.tsx');
+assertProductShellStateSplit();
 assertNoProductSpecificSharedComments();
 
 if (violations.length > 0) {

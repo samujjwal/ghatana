@@ -1,13 +1,12 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.phr.kernel.service.PhrTraceContext;
+import com.ghatana.platform.database.MutationMetadataEnricher;
 import com.ghatana.platform.database.ProductDataServiceBase;
 import io.activej.promise.Promise;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
@@ -25,12 +24,17 @@ import java.util.concurrent.Executor;
  */
 public abstract class PhrServiceBase extends ProductDataServiceBase {
 
+    private static final MutationMetadataEnricher METADATA_ENRICHER = MutationMetadataEnricher.builder("phr")
+        .correlationIdFactory(PhrTraceContext::newCorrelationId)
+        .traceMetadataProvider(PhrTraceContext::metadata)
+        .build();
+
     protected PhrServiceBase(KernelContext context) {
-        super(context, java.util.concurrent.ForkJoinPool.commonPool(), new PhrMetadataEnrichmentStrategy(), new PhrOwnerScopeStrategy());
+        super(context, java.util.concurrent.ForkJoinPool.commonPool(), METADATA_ENRICHER, ownerScopeStrategy());
     }
 
     protected PhrServiceBase(KernelContext context, Executor executor) {
-        super(context, executor, new PhrMetadataEnrichmentStrategy(), new PhrOwnerScopeStrategy());
+        super(context, executor, METADATA_ENRICHER, ownerScopeStrategy());
     }
 
     /**
@@ -67,56 +71,7 @@ public abstract class PhrServiceBase extends ProductDataServiceBase {
         return super.updateRecord(datasetId, recordId, record, enrichedMetadata, entityType, version);
     }
 
-    /**
-     * PHR-specific metadata enrichment strategy.
-     * Adds PHR-specific trace context metadata.
-     */
-    private static class PhrMetadataEnrichmentStrategy implements MetadataEnrichmentStrategy {
-        @Override
-        public void enrich(Map<String, String> metadata, String action, String recordId, String entityType) {
-            // Add PHR-specific trace context
-            String normalizedEntityType = normalizeToken(entityType, "record");
-            String normalizedAction = normalizeToken(action, "write");
-            String operation = "phr_" + normalizedEntityType + "_" + normalizedAction;
-            
-            String correlationId = metadata.getOrDefault("correlationId", PhrTraceContext.newCorrelationId(operation));
-            Map<String, String> traceMetadata = PhrTraceContext.metadata(correlationId, operation, metadata);
-            
-            metadata.putAll(traceMetadata);
-        }
-
-        private String normalizeToken(String value, String fallback) {
-            if (value == null || value.isBlank()) {
-                return fallback;
-            }
-            return value
-                .replaceAll("([a-z0-9])([A-Z])", "$1-$2")
-                .replaceAll("[^A-Za-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "")
-                .toLowerCase(java.util.Locale.ROOT);
-        }
-    }
-
-    /**
-     * PHR-specific owner scope strategy.
-     * Prioritizes healthcare-specific owner fields.
-     */
-    private static class PhrOwnerScopeStrategy implements OwnerScopeStrategy {
-        @Override
-        public String inferOwnerScope(Map<String, String> metadata, String entityType, String recordId) {
-            return firstPresent(metadata, "patientId", "subjectId", "encounterId", "providerId")
-                .map(value -> entityType + ":" + value)
-                .orElse(entityType + ":" + recordId);
-        }
-
-        private Optional<String> firstPresent(Map<String, String> metadata, String... keys) {
-            for (String key : keys) {
-                String value = metadata.get(key);
-                if (value != null && !value.isBlank()) {
-                    return Optional.of(value);
-                }
-            }
-            return Optional.empty();
-        }
+    private static OwnerScopeStrategy ownerScopeStrategy() {
+        return MutationMetadataEnricher.ownerScopeStrategy("patientId", "subjectId", "encounterId", "providerId");
     }
 }

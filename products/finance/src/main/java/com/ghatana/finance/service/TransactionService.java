@@ -8,6 +8,7 @@ package com.ghatana.finance.service;
 import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.kernel.ai.*;
 import com.ghatana.platform.core.exception.RateLimitExceededException;
+import com.ghatana.platform.database.idempotency.IdempotencyFingerprint;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
@@ -245,20 +246,19 @@ public class TransactionService {
     }
 
     private static String fingerprintFor(Transaction transaction) {
-        return String.join(
-            "|",
-            transaction.getId(),
-            transaction.getTenantId(),
-            Double.toString(transaction.getAmount()),
-            transaction.getCurrency(),
-            transaction.getLocation(),
-            transaction.getMerchantCategory(),
-            transaction.getCounterpartyCountry(),
-            transaction.getPaymentMethod(),
-            Double.toString(transaction.getVelocity()),
-            transaction.getTimestamp().toString(),
-            transaction.getStatus()
-        );
+        return IdempotencyFingerprint.sha256(Map.ofEntries(
+            Map.entry("amount", transaction.getAmount()),
+            Map.entry("counterpartyCountry", transaction.getCounterpartyCountry()),
+            Map.entry("currency", transaction.getCurrency()),
+            Map.entry("id", transaction.getId()),
+            Map.entry("location", transaction.getLocation()),
+            Map.entry("merchantCategory", transaction.getMerchantCategory()),
+            Map.entry("paymentMethod", transaction.getPaymentMethod()),
+            Map.entry("status", transaction.getStatus()),
+            Map.entry("tenantId", transaction.getTenantId()),
+            Map.entry("timestamp", transaction.getTimestamp().toString()),
+            Map.entry("velocity", transaction.getVelocity())
+        ));
     }
 
     private static RateLimiter createDefaultRateLimiter() {

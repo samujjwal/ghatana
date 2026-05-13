@@ -33,6 +33,7 @@ const DOC_ROOTS = [
   join(REPO_ROOT, 'products', 'data-cloud', 'docs'),
   join(REPO_ROOT, 'products', 'aep', 'docs'),
 ];
+const DOC_SCOPE_FILE = join(REPO_ROOT, 'config', 'documentation-truth-scope.json');
 
 /**
  * Audit-tracker-specific files that must have evidence references on every
@@ -65,6 +66,15 @@ const CLAIM_PATTERNS = [
 
 const EVIDENCE_PATTERN =
   /\b(test|tests|e2e|integration|contract|coverage|vitest|jest|playwright|ci|build|check|lint|typecheck|jacoco|report|evidence)\b/i;
+function loadDocumentationScope() {
+  if (!existsSync(DOC_SCOPE_FILE)) {
+    return null;
+  }
+  const scope = JSON.parse(readFileSync(DOC_SCOPE_FILE, 'utf8'));
+  const includeFiles = new Set((scope.includeFiles ?? []).map((file) => file.replace(/\\/g, '/')));
+  const archivedPathSegments = scope.archivedPathSegments ?? [];
+  return { includeFiles, archivedPathSegments };
+}
 
 /***********************
  * Utility helpers
@@ -171,11 +181,17 @@ for (const trackerFile of AUDIT_TRACKER_FILES) {
 }
 
 const changedFiles = getChangedFiles();
-const markdownFiles = DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
+const documentationScope = loadDocumentationScope();
+const markdownFiles = documentationScope
+  ? [...documentationScope.includeFiles].map((file) => join(REPO_ROOT, file)).filter((file) => existsSync(file))
+  : DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
 const failures = [];
 
 for (const markdownFile of markdownFiles) {
   const relPath = relative(REPO_ROOT, markdownFile).replace(/\\/g, '/');
+  if (documentationScope?.archivedPathSegments.some((segment) => relPath.startsWith(segment))) {
+    continue;
+  }
   if (CHANGED_ONLY && changedFiles && !changedFiles.has(relPath)) {
     continue;
   }

@@ -255,6 +255,7 @@ public final class DmosRouteManifestGenerator {
         // Type definitions
         sb.append("export interface DmosRouteManifestEntry extends ProductRouteCapability {\n");
         sb.append("  readonly element: React.ReactElement;\n");
+        sb.append("  readonly uiPath: string;\n");
         sb.append("  readonly capabilityKey?: string;\n");
         sb.append("}\n\n");
 
@@ -276,6 +277,7 @@ public final class DmosRouteManifestGenerator {
             String pageName = getPageNameFromPath(route.path);
             sb.append("  {\n");
             sb.append("    path: '").append(route.path).append("',\n");
+            sb.append("    uiPath: '").append(getUiPathFromPath(route.path)).append("',\n");
             sb.append("    label: '").append(getLabelFromPath(route.path)).append("',\n");
             sb.append("    description: '").append(getDescriptionFromPath(route.path)).append("',\n");
             sb.append("    group: '").append(getGroupFromPath(route.path)).append("',\n");
@@ -300,6 +302,28 @@ public final class DmosRouteManifestGenerator {
         Files.createDirectories(outputPath.getParent());
         Files.writeString(outputPath, sb.toString());
         LOG.info("Generated routeManifest.generated.ts");
+    }
+
+    private static String getUiPathFromPath(String path) {
+        if (path.contains("/approvals/:requestId")) {
+            return "/workspaces/:workspaceId/approvals/:requestId";
+        }
+        if (path.contains("/ai-actions/:actionId")) {
+            return "/workspaces/:workspaceId/ai-actions/:actionId";
+        }
+        if (path.contains("/ai-actions")) {
+            return "/workspaces/:workspaceId/ai-actions";
+        }
+        if (path.contains("/campaigns")) {
+            return "/workspaces/:workspaceId/campaigns";
+        }
+        if (path.contains("/strategy")) {
+            return "/workspaces/:workspaceId/strategy";
+        }
+        if (path.contains("/budget")) {
+            return "/workspaces/:workspaceId/budget";
+        }
+        return path.replaceFirst("^/v1", "");
     }
 
     private static String getPageNameFromPath(String path) {

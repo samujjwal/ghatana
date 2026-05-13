@@ -28,6 +28,11 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            '@ghatana/data-access-context': path.resolve(
+                __dirname,
+                '../../../../platform/typescript/data-access-context/src/index.ts',
+            ),
+            '@flashit/shared': path.resolve(__dirname, '../../libs/ts/shared/src/index.ts'),
         },
     },
 });

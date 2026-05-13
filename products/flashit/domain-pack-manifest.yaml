@@ -2,6 +2,7 @@ schemaVersion: "1.0.0"
 id: flashit
 version: 1.0.0
 product: flashit
+kind: domain-pack
 domain: personal-reflection
 rulePrefix: FLASHIT-BP-
 kernelCapabilitiesConsumed:
@@ -17,6 +18,15 @@ policyActions:
 policyResources:
   - flashit:moments
   - flashit:moment-children
+policies:
+  actions:
+    - read
+    - write
+    - delete
+    - export
+  resources:
+    - flashit:moments
+    - flashit:moment-children
 pluginsConsumed:
   - plugin-audit-trail
   - plugin-compliance
@@ -31,7 +41,19 @@ uiSurfaces:
 runtimeServices:
   - backend-agent
   - web-api
+surfaces:
+  ui:
+    - web
+    - mobile
+  runtime:
+    - backend-agent
+    - web-api
 dataSensitivity: personal-journal
+capabilities:
+  - id: flashit.moment-capture
+    name: "Moment Capture"
+    type: BUSINESS_LOGIC
+    description: "Personal reflection capture and moment organization"
 productExtensions:
   boundaryPolicyStoreClass: com.ghatana.flashit.kernel.policy.FlashItBoundaryPolicyStore
   pluginBindingsClass: com.ghatana.flashit.kernel.policy.FlashItPluginBindings

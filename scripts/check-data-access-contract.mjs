@@ -1,166 +1,78 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, '..');
 
-const contracts = [
+const checks = [
   {
-    name: "DMOS operation context",
-    file: "products/digital-marketing/dm-core-contracts/src/main/java/com/ghatana/digitalmarketing/contracts/DmOperationContext.java",
-    required: [
-      "tenantId",
-      "principalId",
-      "correlationId",
-      "idempotencyKey",
-      "toBridgeContext()",
-      "toDataAccessMetadata(",
-      "\"auditClassification\"",
-      "\"dataOwnerScope\"",
+    name: 'TypeScript Kernel data-access contract tests',
+    command: 'pnpm',
+    args: [
+      '--dir',
+      'platform/typescript/data-access-context',
+      'exec',
+      'vitest',
+      'run',
+      'src/__tests__/data-access-context.test.ts',
     ],
   },
   {
-    name: "PHR shared mutation metadata contract",
-    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java",
-    required: [
-      "enrichMutationMetadata(",
-      "\"tenantId\"",
-      "\"principalId\"",
-      "\"correlationId\"",
-      "\"idempotencyKey\"",
-      "\"auditClassification\"",
-      "\"dataOwnerScope\"",
-      "PhrTraceContext.metadata(",
+    name: 'TypeScript product data-access conformance tests',
+    command: 'pnpm',
+    args: [
+      '--dir',
+      'platform/typescript/product-conformance',
+      'exec',
+      'vitest',
+      'run',
+      'src/data-access/__tests__/data-access.test.ts',
+      'src/suite/__tests__/active-products.test.ts',
     ],
   },
   {
-    name: "Finance shared mutation metadata contract",
-    file: "products/finance/src/main/java/com/ghatana/finance/kernel/service/FinanceServiceBase.java",
-    required: [
-      "enrichMutationMetadata(",
-      "\"tenant_id\"",
-      "\"principal_id\"",
-      "\"correlation_id\"",
-      "\"idempotency_key\"",
-      "\"audit_classification\"",
-      "\"data_owner_scope\"",
-      "FinanceTraceContext.metadata(",
-    ],
-  },
-  {
-    name: "PHR appointment write flow",
-    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/AppointmentService.java",
-    required: [
-      "DataWriteRequest",
-      "PhrTraceContext.metadata(",
-      "audit(\"APPOINTMENT_CREATE\"",
-      "\"patientId\"",
-      "\"providerId\"",
-    ],
-  },
-  {
-    name: "PHR patient record flow uses shared base writes",
-    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/PatientRecordService.java",
-    required: [
-      "createRecord(",
-      "updateRecord(",
-    ],
-  },
-  {
-    name: "Finance transaction mutation flow",
-    file: "products/finance/src/main/java/com/ghatana/finance/service/TransactionService.java",
-    required: [
-      "processedTransactions",
-      "\"tenant_id\"",
-      "FinanceTraceContext.metadata(",
-      "TransactionRateLimitExceededException",
-    ],
-  },
-  {
-    name: "Finance trace context contract",
-    file: "products/finance/src/main/java/com/ghatana/finance/service/FinanceTraceContext.java",
-    required: [
-      "\"correlation_id\"",
-      "\"trace_operation\"",
-    ],
-  },
-  {
-    name: "Finance order management flow uses shared base writes",
-    file: "products/finance/src/main/java/com/ghatana/finance/kernel/service/OrderManagementService.java",
-    required: [
-      "createRecord(",
-      "updateRecord(",
-    ],
-  },
-  {
-    name: "FlashIt shared data-access context",
-    file: "products/flashit/backend/gateway/src/lib/data-access-context.ts",
-    required: [
-      "FlashItDataAccessContext",
-      "tenantId",
-      "principalId",
-      "correlationId",
-      "idempotencyKey",
-      "auditClassification",
-      "dataOwnerScope",
-      "requireIdempotencyKey",
-      "FlashItDataAccessContextError",
-      "x-tenant-id",
-      "x-correlation-id",
-      "x-idempotency-key",
-      "FlashItTenantResolver",
-      "resolvePersonalTenant",
-    ],
-  },
-  {
-    name: "FlashIt moment write route",
-    file: "products/flashit/backend/gateway/src/routes/moments.ts",
-    required: [
-      "buildFlashItDataAccessContext",
-      "getUserIdFromRequest",
-      "sphereAccess.findFirst",
-      "auditClassification: \"PERSONAL_MEMORY_WRITE\"",
-      "auditClassification: \"PERSONAL_MEMORY_READ\"",
-      "auditClassification: \"SEARCH_ACTIVITY_READ\"",
-      "dataOwnerScope:",
-      "requireIdempotencyKey: true",
-      "dataAccessContext",
-      "FlashItDataAccessContextError",
-      "Missing data access context",
-      "prisma.auditEvent.create(",
-      "onRequest: [app.authenticate]",
-      "logger.logBusinessEvent(",
+    name: 'Java Kernel data-access context tests',
+    command: './gradlew',
+    args: [
+      ':platform:java:database:test',
+      '--tests',
+      'com.ghatana.platform.database.DataAccessContextTest',
+      '--tests',
+      'com.ghatana.platform.database.MutationMetadataEnricherTest',
+      '--no-daemon',
     ],
   },
 ];
 
-const violations = [];
+const failures = [];
 
-for (const contract of contracts) {
-  const filePath = path.join(repoRoot, contract.file);
-  if (!existsSync(filePath)) {
-    violations.push(`${contract.name}: missing file ${contract.file}`);
+for (const check of checks) {
+  console.log(`\n=== ${check.name} ===`);
+  const result = spawnSync(check.command, check.args, {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  if (result.error) {
+    failures.push(`${check.name}: ${result.error.message}`);
     continue;
   }
 
-  const content = readFileSync(filePath, "utf8");
-  const missing = contract.required.filter((token) => !content.includes(token));
-  if (missing.length > 0) {
-    violations.push(
-      `${contract.name}: missing required contract evidence ${missing.join(", ")} in ${contract.file}`,
-    );
+  if (result.status !== 0) {
+    failures.push(`${check.name}: exited with status ${result.status}`);
   }
 }
 
-if (violations.length > 0) {
-  console.error(`❌ Data-access contract check failed with ${violations.length} violation(s):\n`);
-  for (const violation of violations) {
-    console.error(`- ${violation}`);
+if (failures.length > 0) {
+  console.error('\nData-access contract check failed:');
+  for (const failure of failures) {
+    console.error(`- ${failure}`);
   }
   process.exit(1);
 }
 
-console.log("✅ Data-access contract check passed.");
+console.log('\nData-access contract check passed (typed TS conformance + Java contract tests).');

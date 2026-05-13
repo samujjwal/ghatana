@@ -11,6 +11,10 @@ This is the canonical index for all Kernel platform contracts, governance docume
 - [Kernel Module Extension Plugin Decision Guide](KERNEL_MODULE_EXTENSION_PLUGIN_DECISION_GUIDE.md) - Guidance for extending Kernel modules
 
 ### Product-Kernel Interface
+- [Kernel Product Boundary](KERNEL_PRODUCT_BOUNDARY.md) - Canonical ownership and dependency boundary between Kernel and products
+- [Kernel Consumption Guide](KERNEL_CONSUMPTION_GUIDE.md) - How products consume Kernel capabilities and generated registry artifacts
+- [Product Manifest Spec](PRODUCT_MANIFEST_SPEC.md) - Canonical product manifest envelope and vocabulary rules
+- [Product Conformance Spec](PRODUCT_CONFORMANCE_SPEC.md) - Product conformance gates, evidence, and failure policy
 - [Product Development Guide](PRODUCT_DEVELOPMENT_GUIDE.md) - How to develop products against Kernel
 - [Product Kernel Responsibility Matrix](KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md) - Clear separation of responsibilities
 - [Product Kernel Audit Progress](PRODUCT_KERNEL_AUDIT_PROGRESS.md) - Audit progress tracking

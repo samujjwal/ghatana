@@ -23,6 +23,7 @@ try {
   ensureDir('products');
 
   cpSync(path.join(repoRoot, 'scripts', 'scaffold-product.mjs'), path.join(tempRoot, 'scripts', 'scaffold-product.mjs'));
+  cpSync(path.join(repoRoot, 'config', 'canonical-product-registry.json'), path.join(tempRoot, 'config', 'canonical-product-registry.json'));
   cpSync(path.join(repoRoot, 'config', 'product-shape.json'), path.join(tempRoot, 'config', 'product-shape.json'));
   cpSync(path.join(repoRoot, 'pnpm-workspace.yaml'), path.join(tempRoot, 'pnpm-workspace.yaml'));
   cpSync(path.join(repoRoot, 'settings.gradle.kts'), path.join(tempRoot, 'settings.gradle.kts'));
@@ -42,6 +43,7 @@ try {
       '--product-code', 'SKP',
       '--domain', 'sample-domain',
       '--ui', 'web',
+      '--register-canonical-registry',
       '--register-product-shape',
       '--register-workspace',
       '--register-gradle-settings',
@@ -58,6 +60,7 @@ try {
   }
 
   const generatedProductRoot = path.join(tempRoot, 'products', 'sample-kernel-product');
+  const canonicalRegistry = JSON.parse(readFileSync(path.join(tempRoot, 'config', 'canonical-product-registry.json'), 'utf8'));
   const productShape = JSON.parse(readFileSync(path.join(tempRoot, 'config', 'product-shape.json'), 'utf8'));
   const workspaceSource = readFileSync(path.join(tempRoot, 'pnpm-workspace.yaml'), 'utf8');
   const settingsSource = readFileSync(path.join(tempRoot, 'settings.gradle.kts'), 'utf8');
@@ -71,9 +74,37 @@ try {
   const webTsconfig = readFileSync(path.join(generatedProductRoot, 'client', 'web', 'tsconfig.json'), 'utf8');
   const webViteConfig = readFileSync(path.join(generatedProductRoot, 'client', 'web', 'vite.config.ts'), 'utf8');
   const webVitestConfig = readFileSync(path.join(generatedProductRoot, 'client', 'web', 'vitest.config.ts'), 'utf8');
+  const conformanceScript = readFileSync(
+    path.join(generatedProductRoot, 'scripts', 'check-sample-kernel-product-conformance.mjs'),
+    'utf8',
+  );
+  const dataAccessFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'data-access-context.json'), 'utf8'),
+  );
+  const routeEntitlementFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'route-entitlements.json'), 'utf8'),
+  );
+  const idempotencyFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'idempotency-observations.json'), 'utf8'),
+  );
+  const observabilityFixture = JSON.parse(
+    readFileSync(path.join(generatedProductRoot, 'conformance', 'observability-flow.json'), 'utf8'),
+  );
+  const generatedConformanceResult = spawnSync(
+    process.execPath,
+    [path.join(generatedProductRoot, 'scripts', 'check-sample-kernel-product-conformance.mjs')],
+    {
+      cwd: generatedProductRoot,
+      encoding: 'utf8',
+    },
+  );
 
   const requiredFiles = [
     'build.gradle.kts',
+    'conformance/data-access-context.json',
+    'conformance/route-entitlements.json',
+    'conformance/idempotency-observations.json',
+    'conformance/observability-flow.json',
     'domain-pack-manifest.yaml',
     'docker-compose.local.yml',
     'README.md',
@@ -107,6 +138,30 @@ try {
   }
 
   const shapeEntry = productShape.products['sample-kernel-product'];
+  const registryEntry = canonicalRegistry.registry['sample-kernel-product'];
+  if (!registryEntry) {
+    errors.push('config/canonical-product-registry.json missing sample-kernel-product entry');
+  } else {
+    if (registryEntry.kind !== 'business-product') {
+      errors.push(`canonical registry kind expected "business-product" but found ${JSON.stringify(registryEntry.kind)}`);
+    }
+    if (registryEntry.manifestPath !== 'products/sample-kernel-product/domain-pack-manifest.yaml') {
+      errors.push('canonical registry missing scaffolded manifestPath');
+    }
+    if (registryEntry.buildFile !== 'products/sample-kernel-product/build.gradle.kts') {
+      errors.push('canonical registry missing scaffolded buildFile');
+    }
+    if (!registryEntry.pnpmPackages?.includes('products/sample-kernel-product/client/*')) {
+      errors.push('canonical registry missing scaffolded pnpm package registration');
+    }
+    if (!registryEntry.surfaces?.some((surface) => surface.type === 'web' && surface.packagePath === 'products/sample-kernel-product/client/web/package.json')) {
+      errors.push('canonical registry missing scaffolded web surface package path');
+    }
+    if (registryEntry.conformance?.manifest !== true || registryEntry.conformance?.observability !== true) {
+      errors.push('canonical registry missing scaffolded conformance obligations');
+    }
+  }
+
   if (!shapeEntry) {
     errors.push('config/product-shape.json missing sample-kernel-product entry');
   } else {
@@ -248,6 +303,37 @@ try {
   }
   if (!webVitestConfig.includes('"@ghatana/product-shell"')) {
     errors.push('client/web/vitest.config.ts missing product-shell alias');
+  }
+
+  if (!conformanceScript.includes('checkDataAccessFixtures()')) {
+    errors.push('product conformance script missing data-access fixture validation');
+  }
+  if (!conformanceScript.includes('checkRouteEntitlementFixtures()')) {
+    errors.push('product conformance script missing route entitlement fixture validation');
+  }
+  if (!conformanceScript.includes('checkIdempotencyFixtures()')) {
+    errors.push('product conformance script missing idempotency fixture validation');
+  }
+  if (!conformanceScript.includes('checkObservabilityFlowFixture()')) {
+    errors.push('product conformance script missing observability flow fixture validation');
+  }
+
+  if (dataAccessFixture?.[0]?.tenantId !== 'sample-kernel-product-tenant') {
+    errors.push('data-access conformance fixture missing scaffolded tenant');
+  }
+  if (routeEntitlementFixture?.[0]?.product !== 'sample-kernel-product') {
+    errors.push('route entitlement conformance fixture missing scaffolded product id');
+  }
+  if (idempotencyFixture?.[1]?.status !== 'completed' || idempotencyFixture?.[1]?.replayed !== true) {
+    errors.push('idempotency conformance fixture missing replay observation');
+  }
+  if (observabilityFixture?.flows?.[0]?.product !== 'sample-kernel-product') {
+    errors.push('observability conformance fixture missing scaffolded product flow');
+  }
+  if (generatedConformanceResult.status !== 0) {
+    errors.push(
+      `generated product conformance script failed:\n${generatedConformanceResult.stderr || generatedConformanceResult.stdout}`,
+    );
   }
 
   if (errors.length > 0) {

@@ -28,11 +28,21 @@ const DOC_ROOTS = [
   join(REPO_ROOT, 'products', 'aep', 'docs'),
   join(REPO_ROOT, 'products', 'data-cloud', 'docs'),
 ];
+const DOC_SCOPE_FILE = join(REPO_ROOT, 'config', 'documentation-truth-scope.json');
 
 const ABSOLUTE_PATH_PATTERN = /([A-Za-z]:\\[^\s]+|\/Users\/[^\s]+|\/home\/[^\s]+)/;
 const VERIFIED_PATTERN = /\bverified\b/i;
 const TEST_EVIDENCE_PATTERN = /\b(test|tests|e2e|integration|contract|coverage|vitest|jest|playwright)\b/i;
 const AUDIT_META_PATTERN = /Commit audited:\s*`?[0-9a-f]{7,40}`?/i;
+function loadDocumentationScope() {
+  if (!existsSync(DOC_SCOPE_FILE)) {
+    return null;
+  }
+  const scope = JSON.parse(readFileSync(DOC_SCOPE_FILE, 'utf8'));
+  const includeFiles = new Set((scope.includeFiles ?? []).map((file) => file.replace(/\\/g, '/')));
+  const archivedPathSegments = scope.archivedPathSegments ?? [];
+  return { includeFiles, archivedPathSegments };
+}
 
 /** @param {string} dir */
 function walkMarkdownFiles(dir) {
@@ -73,12 +83,18 @@ function getChangedFiles() {
 }
 
 const changedFiles = getChangedFiles();
+const documentationScope = loadDocumentationScope();
 
-const markdownFiles = DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
+const markdownFiles = documentationScope
+  ? [...documentationScope.includeFiles].map((file) => join(REPO_ROOT, file)).filter((file) => existsSync(file))
+  : DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
 const failures = [];
 
 for (const file of markdownFiles) {
   const rel = relative(REPO_ROOT, file).replace(/\\/g, '/');
+  if (documentationScope?.archivedPathSegments.some((segment) => rel.startsWith(segment))) {
+    continue;
+  }
   if (CHANGED_ONLY && changedFiles && !changedFiles.has(rel)) {
     continue;
   }

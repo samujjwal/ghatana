@@ -3,7 +3,8 @@
  * Displays meaning metrics, language evolution, and cross-time referencing
  */
 
-import { useState } from 'react';
+import { EmptyState as DesignEmptyState } from '@ghatana/design-system';
+import { useState, type ReactNode } from 'react';
 import {
   useMeaningMetrics,
   useLanguageEvolution,
@@ -253,7 +254,7 @@ export default function AnalyticsPage() {
   );
 }
 
-function MetricCard({ title, value, icon }: { title: string; value: string | number; icon: React.ReactNode }) {
+function MetricCard({ title, value, icon }: { title: string; value: string | number; icon: ReactNode }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-2">
@@ -267,9 +268,10 @@ function MetricCard({ title, value, icon }: { title: string; value: string | num
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="text-center py-8">
-      <BarChart3 className="h-10 w-10 text-gray-300 mx-auto" />
-      <p className="mt-3 text-sm text-gray-500">{message}</p>
-    </div>
+    <DesignEmptyState
+      icon={<BarChart3 className="h-10 w-10 text-gray-300" />}
+      title={message}
+      size="sm"
+    />
   );
 }

@@ -33,6 +33,7 @@ const AiOptimizationPage = lazyNamedPage(() => import('@/pages/AiOptimizationPag
 
 export interface DmosRouteManifestEntry extends ProductRouteCapability {
   readonly element: React.ReactElement;
+  readonly uiPath: string;
   readonly capabilityKey?: string;
 }
 
@@ -47,6 +48,7 @@ export const DMOS_ROLE_ORDER: Readonly<Record<ValidRole, number>> = {
 export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   {
     path: '/v1/workspaces/:workspaceId/dashboard',
+    uiPath: '/workspaces/:workspaceId/dashboard',
     label: 'Dashboard',
     description: 'Workspace status, approvals, and launch readiness.',
     group: 'Overview',
@@ -58,6 +60,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals',
+    uiPath: '/workspaces/:workspaceId/approvals',
     label: 'Approvals',
     description: 'Pending approvals and decision workflow queue.',
     group: 'Governance',
@@ -69,6 +72,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals/:requestId',
+    uiPath: '/workspaces/:workspaceId/approvals/:requestId',
     label: 'Approval Detail',
     description: 'Request detail, snapshot review, and decision flow.',
     group: 'Governance',
@@ -81,6 +85,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/approvals/:requestId/decide',
+    uiPath: '/workspaces/:workspaceId/approvals/:requestId',
     label: 'Approval Detail',
     description: 'Request detail, snapshot review, and decision flow.',
     group: 'Governance',
@@ -93,6 +98,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-actions',
+    uiPath: '/workspaces/:workspaceId/ai-actions',
     label: 'AI Action Log',
     description: 'Traceable AI decision and recommendation history.',
     group: 'Governance',
@@ -104,6 +110,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-actions/:actionId',
+    uiPath: '/workspaces/:workspaceId/ai-actions/:actionId',
     label: 'AI Action Detail',
     description: 'Traceable AI decision and recommendation history.',
     group: 'Governance',
@@ -115,6 +122,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -127,6 +135,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -139,6 +148,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -152,6 +162,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/launch',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -165,6 +176,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/pause',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -178,6 +190,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/complete',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -191,6 +204,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/archive',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -204,6 +218,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/rollback',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -217,6 +232,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/campaigns/:id/duplicate',
+    uiPath: '/workspaces/:workspaceId/campaigns',
     label: 'Campaigns',
     description: 'Campaign planning and orchestration.',
     group: 'Execution',
@@ -230,6 +246,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy',
+    uiPath: '/workspaces/:workspaceId/strategy',
     label: 'Strategy',
     description: 'Strategy generation, review, and approvals.',
     group: 'Execution',
@@ -242,6 +259,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy',
+    uiPath: '/workspaces/:workspaceId/strategy',
     label: 'Strategy',
     description: 'Strategy generation, review, and approvals.',
     group: 'Execution',
@@ -254,6 +272,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy/:strategyId/submit',
+    uiPath: '/workspaces/:workspaceId/strategy',
     label: 'Strategy',
     description: 'Strategy generation, review, and approvals.',
     group: 'Execution',
@@ -266,6 +285,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/strategy/:strategyId/approve',
+    uiPath: '/workspaces/:workspaceId/strategy',
     label: 'Strategy',
     description: 'Strategy generation, review, and approvals.',
     group: 'Execution',
@@ -278,6 +298,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/budget',
+    uiPath: '/workspaces/:workspaceId/budget',
     label: 'Budget',
     description: 'Budget recommendations and approval decisions.',
     group: 'Execution',
@@ -290,6 +311,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation',
+    uiPath: '/workspaces/:workspaceId/budget',
     label: 'Budget',
     description: 'Budget recommendations and approval decisions.',
     group: 'Execution',
@@ -302,6 +324,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation/:recId/submit',
+    uiPath: '/workspaces/:workspaceId/budget',
     label: 'Budget',
     description: 'Budget recommendations and approval decisions.',
     group: 'Execution',
@@ -314,6 +337,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/budget-recommendation/:recId/approve',
+    uiPath: '/workspaces/:workspaceId/budget',
     label: 'Budget',
     description: 'Budget recommendations and approval decisions.',
     group: 'Execution',
@@ -326,6 +350,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/funnel-analytics',
+    uiPath: '/workspaces/:workspaceId/funnel-analytics',
     label: 'Funnel Analytics',
     description: 'Full-funnel conversion analytics and stage drop-off reporting.',
     group: 'Reporting',
@@ -338,6 +363,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/attribution',
+    uiPath: '/workspaces/:workspaceId/attribution',
     label: 'Attribution',
     description: 'Multi-touch attribution models and channel credit distribution.',
     group: 'Reporting',
@@ -350,6 +376,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/roi-roas',
+    uiPath: '/workspaces/:workspaceId/roi-roas',
     label: 'ROI & ROAS',
     description: 'Return on investment and return on ad spend dashboards.',
     group: 'Reporting',
@@ -362,6 +389,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-optimization',
+    uiPath: '/workspaces/:workspaceId/ai-optimization',
     label: 'AI Optimization',
     description: 'AI-driven next-best-action recommendations, anomaly detection, and budget optimization.',
     group: 'Intelligence',
@@ -374,6 +402,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/ai-optimization',
+    uiPath: '/workspaces/:workspaceId/ai-optimization',
     label: 'AI Optimization',
     description: 'AI-driven next-best-action recommendations, anomaly detection, and budget optimization.',
     group: 'Intelligence',
@@ -386,6 +415,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/self-marketing-funnel',
+    uiPath: '/workspaces/:workspaceId/self-marketing-funnel',
     label: 'Self-Marketing Funnel',
     description: 'Product-led growth funnel management and trial onboarding flows.',
     group: 'Growth',
@@ -398,6 +428,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/market-research',
+    uiPath: '/workspaces/:workspaceId/market-research',
     label: 'Market Research',
     description: 'Trend analysis, buyer persona generation, and competitive intelligence.',
     group: 'Intelligence',
@@ -410,6 +441,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/advanced-channels',
+    uiPath: '/workspaces/:workspaceId/advanced-channels',
     label: 'Advanced Channels',
     description: 'Programmatic advertising, Connected TV, and influencer management.',
     group: 'Execution',
@@ -422,6 +454,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/localization',
+    uiPath: '/workspaces/:workspaceId/localization',
     label: 'Localization',
     description: 'Multi-language campaign support and region-specific compliance controls.',
     group: 'Execution',
@@ -434,6 +467,7 @@ export const dmosRouteManifest: readonly DmosRouteManifestEntry[] = [
   },
   {
     path: '/v1/workspaces/:workspaceId/agency',
+    uiPath: '/workspaces/:workspaceId/agency',
     label: 'Agency Operations',
     description: 'Client onboarding, white-label reports, and multi-client workspace management.',
     group: 'Agency',

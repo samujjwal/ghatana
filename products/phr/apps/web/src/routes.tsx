@@ -2,7 +2,8 @@ import React from 'react';
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { usePhrAccess } from './auth/PhrAccessContext';
-import { isRouteAllowedForRole, phrRouteManifest, type PhrRouteManifestEntry } from './routeManifest';
+import { isRouteAllowedForRole, phrRouteContracts } from './routeManifest';
+import { attachPhrRouteElement, type PhrRouteManifestEntry } from './phrRouteElements';
 import { LoginPage } from './pages/LoginPage';
 
 export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
@@ -30,6 +31,8 @@ function protectedRoute(route: PhrRouteManifestEntry): { path: string; element: 
     element: <ProtectedPhrRoute route={route} />,
   };
 }
+
+const phrRouteManifest = phrRouteContracts.map(attachPhrRouteElement);
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },

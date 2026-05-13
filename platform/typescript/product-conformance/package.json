@@ -21,6 +21,30 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js"
+    },
+    "./telemetry": {
+      "types": "./dist/telemetry/index.d.ts",
+      "import": "./dist/telemetry/index.js"
+    },
+    "./suite": {
+      "types": "./dist/suite/index.d.ts",
+      "import": "./dist/suite/index.js"
+    },
+    "./route-entitlements": {
+      "types": "./dist/route-entitlements/index.d.ts",
+      "import": "./dist/route-entitlements/index.js"
+    },
+    "./data-access": {
+      "types": "./dist/data-access/index.d.ts",
+      "import": "./dist/data-access/index.js"
+    },
+    "./idempotency": {
+      "types": "./dist/idempotency/index.d.ts",
+      "import": "./dist/idempotency/index.js"
+    },
+    "./observability-flows": {
+      "types": "./dist/observability-flows/index.d.ts",
+      "import": "./dist/observability-flows/index.js"
     }
   },
   "scripts": {
@@ -31,14 +55,14 @@
     "format": "prettier --write src"
   },
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.0.0",
-    "eslint": "^8.55.0",
-    "prettier": "^3.1.0"
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"

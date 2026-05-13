@@ -17,6 +17,7 @@ const repoRoot = resolve(__dirname, '..');
 
 const PACKAGE_JSON_PATH = join(repoRoot, 'package.json');
 const GENERATED_SCRIPTS_PATH = join(repoRoot, 'config/generated/package-scripts.json');
+const checkMode = process.argv.includes('--check');
 
 // Generic platform scripts that should NOT be replaced by generated scripts
 const GENERIC_SCRIPTS = new Set([
@@ -58,6 +59,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:security-workflow-coverage',
   'check:digital-marketing-root-docs',
   'check:bridge-compliance',
+  'check:cleanup-gate',
   'check:data-access-contract',
   'check:observability-conformance',
   'check:finance-transaction-workflow-proof',
@@ -138,11 +140,17 @@ function main() {
       newScripts[key] = value;
     }
     
-    // Update package.json
     packageJson.scripts = newScripts;
-    
-    // Write back
-    writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2) + '\n');
+    const nextPackageJson = JSON.stringify(packageJson, null, 2) + '\n';
+    const currentPackageJson = readFileSync(PACKAGE_JSON_PATH, 'utf8');
+
+    if (checkMode) {
+      if (currentPackageJson !== nextPackageJson) {
+        throw new Error('package.json product scripts are stale. Run: node scripts/generate-product-registry-artifacts.mjs');
+      }
+    } else {
+      writeFileSync(PACKAGE_JSON_PATH, nextPackageJson);
+    }
     
     console.log(`\n✓ Merged ${addedCount} new scripts and replaced ${replacedCount} existing scripts`);
     console.log(`✓ Total scripts in package.json: ${Object.keys(newScripts).length}`);

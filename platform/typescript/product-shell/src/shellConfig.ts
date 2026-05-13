@@ -31,10 +31,3 @@ export function useProductShellConfig(config: ProductShellConfig): ProductShellC
     ],
   );
 }
-
-export function useStableProductShellConfig(
-  factory: () => ProductShellConfig,
-  dependencies: readonly unknown[],
-): ProductShellConfig {
-  return useMemo(factory, dependencies);
-}

@@ -147,8 +147,11 @@ class PhrHttpServerTest extends EventloopTestBase {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
                 Map.of("X-Role", "patient"));
 
-            JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
+            JsonNode body = JSON.readTree(bodyString(response));
+            JsonNode routes = body.path("routes");
+            JsonNode actions = body.path("actions");
             assertThat(routePaths(routes)).doesNotContain("/emergency");
+            assertThat(actionIds(actions)).doesNotContain("break-glass-review");
         }
 
         @Test
@@ -157,8 +160,11 @@ class PhrHttpServerTest extends EventloopTestBase {
             HttpResponse response = dispatch(HttpMethod.GET, "/route-entitlements", null,
                 Map.of("X-Role", "clinician"));
 
-            JsonNode routes = JSON.readTree(bodyString(response)).path("routes");
+            JsonNode body = JSON.readTree(bodyString(response));
+            JsonNode routes = body.path("routes");
+            JsonNode actions = body.path("actions");
             assertThat(routePaths(routes)).contains("/emergency");
+            assertThat(actionIds(actions)).contains("break-glass-review");
         }
 
         @Test
@@ -324,6 +330,12 @@ class PhrHttpServerTest extends EventloopTestBase {
         java.util.List<String> paths = new java.util.ArrayList<>();
         routes.forEach(route -> paths.add(route.path("path").asText()));
         return paths;
+    }
+
+    private static java.util.List<String> actionIds(JsonNode actions) {
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        actions.forEach(action -> ids.add(action.path("id").asText()));
+        return ids;
     }
 
     private String bodyString(HttpResponse response) throws Exception {

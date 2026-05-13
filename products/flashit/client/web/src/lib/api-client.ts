@@ -5,7 +5,7 @@
 
 import { FlashitApiClient } from '@flashit/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:2900';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:2900';
 
 /**
  * Extended API client for web app with additional endpoints
@@ -314,4 +314,3 @@ class WebApiClient extends FlashitApiClient {
 }
 
 export const apiClient = new WebApiClient();
-

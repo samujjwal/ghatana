@@ -1,136 +1,158 @@
 package com.ghatana.platform.observability.contract;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Kernel observability flow contract.
- * <p>
- * Defines the required observability flows, facets, and evidence for all products.
- * This contract is validated by executable contract tests instead of token-scanning.
- * </p>
  *
  * @doc.type class
- * @doc.purpose Kernel observability flow contract
+ * @doc.purpose Typed Java representation of the product observability flow manifest
  * @doc.layer platform
  * @doc.pattern Contract
  */
 public final class ObservabilityFlowContract {
 
+    public static final String SUPPORTED_SCHEMA_VERSION = "1.0.0";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private final String schemaVersion;
     private final List<String> requiredFacets;
     private final List<Flow> flows;
 
-    public ObservabilityFlowContract() {
-        this.requiredFacets = List.of(
-            "logging",
-            "tracing",
-            "metrics",
-            "audit-trail"
-        );
-        this.flows = loadFlows();
+    @JsonCreator
+    public ObservabilityFlowContract(
+            @JsonProperty(value = "schemaVersion", required = true) String schemaVersion,
+            @JsonProperty(value = "requiredFacets", required = true) List<String> requiredFacets,
+            @JsonProperty(value = "flows", required = true) List<Flow> flows
+    ) {
+        this.schemaVersion = requireSupportedSchemaVersion(schemaVersion);
+        this.requiredFacets = requireNonEmptyList(requiredFacets, "requiredFacets");
+        this.flows = requireNonEmptyList(flows, "flows");
     }
 
-    public List<String> getRequiredFacets() {
+    public static ObservabilityFlowContract fromManifest(Path manifestPath) throws IOException {
+        Objects.requireNonNull(manifestPath, "manifestPath must not be null");
+        return OBJECT_MAPPER.readValue(manifestPath.toFile(), ObservabilityFlowContract.class);
+    }
+
+    public String schemaVersion() {
+        return schemaVersion;
+    }
+
+    public List<String> requiredFacets() {
         return requiredFacets;
     }
 
-    public List<Flow> getFlows() {
+    public List<Flow> flows() {
         return flows;
     }
 
-    private List<Flow> loadFlows() {
-        List<Flow> flows = new ArrayList<>();
-        
-        // PHR flows
-        flows.add(new Flow(
-            "phr",
-            "fhir-api",
-            "api",
-            List.of("logging", "tracing", "metrics"),
-            List.of(
-                new Evidence("products/phr/src/main/java/com/ghatana/phr/api/PhrHttpServer.java", 
-                    List.of("PhrHttpServer", "entitlementContext", "roleEvaluator"))
-            )
-        ));
-        
-        // Digital Marketing flows
-        flows.add(new Flow(
-            "digital-marketing",
-            "dm-api",
-            "api",
-            List.of("logging", "tracing", "metrics"),
-            List.of(
-                new Evidence("products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosApiServer.java",
-                    List.of("DmosApiServer", "DmosObservability", "wireObservability"))
-            )
-        ));
-        
-        // Finance flows
-        flows.add(new Flow(
-            "finance",
-            "transaction-processing",
-            "worker",
-            List.of("logging", "tracing", "metrics", "audit-trail"),
-            List.of(
-                new Evidence("products/finance/src/main/java/com/ghatana/finance/service/TransactionService.java",
-                    List.of("outcomeMetadata", "tenant_id", "transaction_id", "audit_classification"))
-            )
-        ));
-        
-        // FlashIt flows
-        flows.add(new Flow(
-            "flashit",
-            "gateway-api",
-            "api",
-            List.of("logging", "tracing", "metrics"),
-            List.of(
-                new Evidence("products/flashit/backend/gateway/src/server.ts",
-                    List.of("registerLoggerPlugin", "registerTracingMiddleware", "metricsPlugin"))
-            )
-        ));
-        
-        // Bridge flow (Kernel bridge for Digital Marketing)
-        flows.add(new Flow(
-            "digital-marketing",
-            "kernel-bridge",
-            "bridge",
-            List.of("logging", "tracing", "metrics", "audit-trail"),
-            List.of(
-                new Evidence("products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
-                    List.of("shouldRecordAuditWithContextAttributes", "workspaceId", "correlationId", "tenantId"))
-            )
-        ));
-        
-        return flows;
+    public List<String> getRequiredFacets() {
+        return requiredFacets();
+    }
+
+    public List<Flow> getFlows() {
+        return flows();
+    }
+
+    private static String requireSupportedSchemaVersion(String schemaVersion) {
+        if (!SUPPORTED_SCHEMA_VERSION.equals(schemaVersion)) {
+            throw new IllegalArgumentException(
+                    "schemaVersion must be " + SUPPORTED_SCHEMA_VERSION + ", found " + schemaVersion);
+        }
+        return schemaVersion;
+    }
+
+    private static <T> List<T> requireNonEmptyList(List<T> values, String field) {
+        Objects.requireNonNull(values, field + " must not be null");
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException(field + " must not be empty");
+        }
+        return List.copyOf(values);
     }
 
     public record Flow(
-        String product,
-        String flow,
-        String kind,
-        List<String> facets,
-        List<Evidence> evidence
+            String product,
+            String flow,
+            FlowKind kind,
+            List<String> facets,
+            List<Evidence> evidence
     ) {
-        public Flow {
-            Objects.requireNonNull(product, "product must not be null");
-            Objects.requireNonNull(flow, "flow must not be null");
-            Objects.requireNonNull(kind, "kind must not be null");
-            Objects.requireNonNull(facets, "facets must not be null");
-            Objects.requireNonNull(evidence, "evidence must not be null");
+        @JsonCreator
+        public Flow(
+                @JsonProperty(value = "product", required = true) String product,
+                @JsonProperty(value = "flow", required = true) String flow,
+                @JsonProperty(value = "kind", required = true) FlowKind kind,
+                @JsonProperty(value = "facets", required = true) List<String> facets,
+                @JsonProperty(value = "evidence", required = true) List<Evidence> evidence
+        ) {
+            this.product = requireNonBlank(product, "product");
+            this.flow = requireNonBlank(flow, "flow");
+            this.kind = Objects.requireNonNull(kind, "kind must not be null");
+            this.facets = requireNonEmptyList(facets, "facets");
+            this.evidence = requireNonEmptyList(evidence, "evidence");
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = false)
     public record Evidence(
-        String file,
-        List<String> tokens
+            EvidenceType type,
+            String file,
+            List<String> tokens,
+            List<String> requiredFacets
     ) {
-        public Evidence {
-            Objects.requireNonNull(file, "file must not be null");
-            Objects.requireNonNull(tokens, "tokens must not be null");
+        @JsonCreator
+        public Evidence(
+                @JsonProperty("type") EvidenceType type,
+                @JsonProperty(value = "file", required = true) String file,
+                @JsonProperty("tokens") List<String> tokens,
+                @JsonProperty("requiredFacets") List<String> requiredFacets
+        ) {
+            this.type = type == null ? EvidenceType.SOURCE : type;
+            this.file = requireNonBlank(file, "file");
+            if (this.type == EvidenceType.BEHAVIOR) {
+                this.requiredFacets = requireNonEmptyList(requiredFacets, "requiredFacets");
+                this.tokens = List.of();
+            } else {
+                this.tokens = requireNonEmptyList(tokens, "tokens");
+                this.requiredFacets = List.of();
+            }
         }
+    }
+
+    public enum FlowKind {
+        @JsonProperty("api")
+        API,
+        @JsonProperty("bridge")
+        BRIDGE,
+        @JsonProperty("background")
+        BACKGROUND,
+        @JsonProperty("frontend")
+        FRONTEND,
+        @JsonProperty("job")
+        JOB
+    }
+
+    public enum EvidenceType {
+        @JsonProperty("source")
+        SOURCE,
+        @JsonProperty("behavior")
+        BEHAVIOR
+    }
+
+    private static String requireNonBlank(String value, String field) {
+        Objects.requireNonNull(value, field + " must not be null");
+        if (value.isBlank()) {
+            throw new IllegalArgumentException(field + " must not be blank");
+        }
+        return value;
     }
 }

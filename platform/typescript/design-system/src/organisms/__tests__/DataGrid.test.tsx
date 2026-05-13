@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { vi } from 'vitest';
 import { DataGrid, type DataGridProps } from '../DataGrid';
 
 interface TestItem {
@@ -229,7 +230,7 @@ describe('DataGrid', () => {
     });
 
     it('calls onFilter when filter values change', () => {
-      const onFilter = jest.fn((items) => items);
+      const onFilter = vi.fn((items) => items);
 
       render(
         <DataGrid
@@ -310,7 +311,7 @@ describe('DataGrid', () => {
 
   describe('CRUD Operations', () => {
     it('renders create button', () => {
-      const onCreate = jest.fn();
+      const onCreate = vi.fn();
 
       render(
         <DataGrid
@@ -329,7 +330,7 @@ describe('DataGrid', () => {
     });
 
     it('calls onCreate when create button clicked', () => {
-      const onCreate = jest.fn();
+      const onCreate = vi.fn();
 
       render(
         <DataGrid
@@ -350,7 +351,7 @@ describe('DataGrid', () => {
     });
 
     it('renders edit buttons per item', () => {
-      const onEdit = jest.fn();
+      const onEdit = vi.fn();
 
       render(
         <DataGrid
@@ -370,7 +371,7 @@ describe('DataGrid', () => {
     });
 
     it('calls onEdit with item when edit button clicked', () => {
-      const onEdit = jest.fn();
+      const onEdit = vi.fn();
 
       render(
         <DataGrid
@@ -392,7 +393,7 @@ describe('DataGrid', () => {
     });
 
     it('renders delete buttons per item', () => {
-      const onDelete = jest.fn();
+      const onDelete = vi.fn();
 
       render(
         <DataGrid
@@ -412,7 +413,7 @@ describe('DataGrid', () => {
     });
 
     it('calls onDelete with item when delete button clicked', () => {
-      const onDelete = jest.fn();
+      const onDelete = vi.fn();
 
       render(
         <DataGrid
@@ -441,8 +442,8 @@ describe('DataGrid', () => {
             { header: 'Name', render: (item: TestItem) => item.name },
           ]}
           crudConfig={{
-            onEdit: jest.fn(),
-            onDelete: jest.fn(),
+            onEdit: vi.fn(),
+            onDelete: vi.fn(),
             showEditButton: true,
             showDeleteButton: true,
             editButtonLabel: 'Modify',

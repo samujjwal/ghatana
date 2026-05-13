@@ -6,12 +6,6 @@
     "flashit",
     "data-cloud",
     "yappc",
-    "audio-video",
-    "dcmaar",
-    "tutorputor",
-    "aura",
-    "software-org",
-    "virtual-org",
     "security-gateway"
   ],
   "productsWithUI": [
@@ -19,9 +13,7 @@
     "digital-marketing",
     "flashit",
     "data-cloud",
-    "yappc",
-    "dcmaar",
-    "tutorputor"
+    "yappc"
   ],
   "productsWithTests": [
     "phr",
@@ -30,12 +22,6 @@
     "flashit",
     "data-cloud",
     "yappc",
-    "audio-video",
-    "dcmaar",
-    "tutorputor",
-    "aura",
-    "software-org",
-    "virtual-org",
     "security-gateway"
   ],
   "productsWithIntegrationTests": [

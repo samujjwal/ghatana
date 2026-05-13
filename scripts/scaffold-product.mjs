@@ -85,6 +85,71 @@ function registerProductShape({
   writeText(productShapePath, `${JSON.stringify(productShape, null, 2)}\n`);
 }
 
+function registerCanonicalRegistry({
+  root,
+  id,
+  name,
+  domain,
+  uiEnabled,
+}) {
+  const registryPath = join(root, "config", "canonical-product-registry.json");
+  const registry = JSON.parse(readText(registryPath));
+
+  if (registry.registry[id]) {
+    throw new Error(`config/canonical-product-registry.json already contains an entry for ${id}`);
+  }
+
+  const surfaces = [
+    {
+      type: "backend-api",
+      implementationStatus: "implemented",
+      path: `products/${id}`,
+    },
+  ];
+
+  if (uiEnabled) {
+    surfaces.push({
+      type: "web",
+      implementationStatus: "implemented",
+      path: `products/${id}/client/web`,
+      packagePath: `products/${id}/client/web/package.json`,
+    });
+  }
+
+  registry.registry[id] = {
+    id,
+    name,
+    description: `${name} ${domain} product scaffolded from the Kernel product template`,
+    type: "product",
+    kind: "business-product",
+    manifestPath: `products/${id}/domain-pack-manifest.yaml`,
+    manifestFormat: "yaml",
+    buildFile: `products/${id}/build.gradle.kts`,
+    gradleModules: [`:products:${id}`],
+    surfaces,
+    pnpmPackages: uiEnabled ? [`products/${id}/client/*`] : [],
+    ci: {
+      enabled: true,
+      gates: ["build", "test", "manifest-validation", "security-scan"],
+    },
+    conformance: {
+      manifest: true,
+      observability: true,
+      security: true,
+      dataAccess: true,
+      bridge: false,
+      runtimeModule: false,
+    },
+    metadata: {
+      owner: `${name} Team`,
+      documentation: `products/${id}/README.md`,
+      status: "active",
+    },
+  };
+
+  writeText(registryPath, `${JSON.stringify(registry, null, 2)}\n`);
+}
+
 function registerWorkspace({
   root,
   id,
@@ -323,14 +388,15 @@ if (args.has("help")) {
     --domain sample-domain \\
     --ui web \\
     [--register-product-shape] \\
+    [--register-canonical-registry] \\
     [--register-workspace] \\
     [--register-gradle-settings] \\
     [--register-ci-matrices]
 
 Notes:
 - Generates a Kernel-aligned product skeleton under products/<id>.
-- Can auto-register the product in config/product-shape.json, pnpm-workspace.yaml,
-  settings.gradle.kts, and the audited cross-product CI workflows.
+- Can auto-register the product in the canonical registry, config/product-shape.json,
+  pnpm-workspace.yaml, settings.gradle.kts, and audited cross-product CI workflows.
 - Does not yet mutate every product-specific launcher/runtime specialization automatically.`);
   process.exit(0);
 }
@@ -349,6 +415,7 @@ const productScope = `${id}.*`;
 const rulePrefix = `${productCode}-BP-`;
 const uiEnabled = uiMode !== "none";
 const shouldRegisterProductShape = args.has("register-product-shape");
+const shouldRegisterCanonicalRegistry = args.has("register-canonical-registry");
 const shouldRegisterWorkspace = args.has("register-workspace");
 const shouldRegisterGradleSettings = args.has("register-gradle-settings");
 const shouldRegisterCiMatrices = args.has("register-ci-matrices");
@@ -359,6 +426,7 @@ if (existsSync(productDir)) {
 
 const dirs = [
   productDir,
+  join(productDir, "conformance"),
   join(productDir, "docs"),
   join(productDir, "policy-packs"),
   join(productDir, "src", "main", "java", "com", "ghatana", packageSegment, "kernel", "policy"),
@@ -420,6 +488,7 @@ writeFile(
 id: ${id}
 version: 0.1.0
 product: ${id}
+kind: domain-pack
 domain: ${domain}
 rulePrefix: ${rulePrefix}
 kernelCapabilitiesConsumed:
@@ -432,6 +501,13 @@ policyActions:
   - delete
 policyResources:
   - ${id}:core
+policies:
+  actions:
+    - read
+    - write
+    - delete
+  resources:
+    - ${id}:core
 pluginsConsumed:
   - plugin-audit-trail
   - plugin-compliance
@@ -440,14 +516,132 @@ domainPacksProvided:
   - ${id}-boundary-policy
   - ${id}-compliance-rule-pack
 uiSurfaces:
-${uiEnabled ? "  - web" : "  []"}
+${uiEnabled ? "  - web" : "[]"}
 runtimeServices:
   - launcher
+surfaces:
+${uiEnabled ? "  ui:\n    - web" : "  ui: []"}
+  runtime:
+    - launcher
 dataSensitivity: LOW
+capabilities:
+  - id: ${id}.core
+    name: "${name} Core"
+    type: BUSINESS_LOGIC
+    description: "${name} product-owned core capability"
 productExtensions:
   boundaryPolicyStoreClass: com.ghatana.${packageSegment}.kernel.policy.${classPrefix}BoundaryPolicyStore
   pluginBindingsClass: com.ghatana.${packageSegment}.kernel.policy.${classPrefix}PluginBindings
   defaultDenyRuleId: ${rulePrefix}999
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "data-access-context.json"),
+  `${JSON.stringify([
+    {
+      tenantId: `${id}-tenant`,
+      principalId: `${id}-principal`,
+      correlationId: `${id}-corr-bootstrap`,
+      auditClassification: `${id.toUpperCase().replaceAll("-", "_")}_MUTATION`,
+      dataOwnerScope: `${id}:core`,
+      idempotencyKey: `${id}-bootstrap-idempotency`,
+      metadata: {
+        product: id,
+        source: "scaffolder"
+      }
+    }
+  ], null, 2)}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "route-entitlements.json"),
+  `${JSON.stringify([
+    {
+      product: id,
+      tenantId: `${id}-tenant`,
+      principalId: `${id}-principal`,
+      role: "admin",
+      routes: [
+        {
+          path: "/",
+          label: name
+        }
+      ],
+      actions: [
+        {
+          id: `${id}:read`,
+          label: "Read",
+          routePath: "/"
+        }
+      ],
+      cards: [
+        {
+          id: `${id}-overview`,
+          title: `${name} Overview`,
+          routePath: "/",
+          surface: "dashboard"
+        }
+      ]
+    }
+  ], null, 2)}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "idempotency-observations.json"),
+  `${JSON.stringify([
+    {
+      operation: `${id}:bootstrap-write`,
+      key: `${id}-bootstrap-idempotency`,
+      fingerprint: `${id}-bootstrap-fingerprint`,
+      status: "miss",
+      replayed: false,
+      expired: false,
+      principalId: `${id}-principal`,
+      tenantId: `${id}-tenant`,
+      correlationId: `${id}-corr-bootstrap`
+    },
+    {
+      operation: `${id}:bootstrap-write`,
+      key: `${id}-bootstrap-idempotency`,
+      fingerprint: `${id}-bootstrap-fingerprint`,
+      status: "completed",
+      replayed: true,
+      expired: false,
+      principalId: `${id}-principal`,
+      tenantId: `${id}-tenant`,
+      correlationId: `${id}-corr-bootstrap`
+    }
+  ], null, 2)}
+`
+);
+
+writeFile(
+  join(productDir, "conformance", "observability-flow.json"),
+  `${JSON.stringify({
+    schemaVersion: "1.0.0",
+    requiredFacets: ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+    flows: [
+      {
+        product: id,
+        flow: "bootstrap-write",
+        kind: "api",
+        facets: ["trace", "tenantContext", "metrics", "audit", "safeLogging", "redaction"],
+        evidence: [
+          {
+            type: "source",
+            file: `products/${id}/src/test/java/com/ghatana/${packageSegment}/kernel/${classPrefix}PackContractTest.java`,
+            tokens: [
+              `${classPrefix}PackContractTest`,
+              `${rulePrefix}001`
+            ]
+          }
+        ]
+      }
+    ]
+  }, null, 2)}
 `
 );
 
@@ -975,7 +1169,7 @@ This product was scaffolded with \`scripts/scaffold-product.mjs\`.
 - boundary policy store, compliance rule pack, plugin bindings, and pack contract test
 - canonical product docs taxonomy
 - local runtime compose override
-- product-specific conformance check script
+- product-specific conformance fixtures and check script
 ${uiEnabled ? "- web UI shell using @ghatana/product-shell and route manifest\n" : ""}\
 
 ## Still required
@@ -1018,6 +1212,106 @@ function checkFileExists(relativePath, description) {
   return true;
 }
 
+function loadJson(relativePath, description) {
+  const fullPath = path.join(productRoot, relativePath);
+  try {
+    return JSON.parse(readFileSync(fullPath, 'utf8'));
+  } catch (error) {
+    console.error(\`✗ Invalid \${description}: \${relativePath} (\${error.message})\`);
+    return null;
+  }
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function checkDataAccessFixtures() {
+  const fixtures = loadJson('conformance/data-access-context.json', 'data-access context fixtures');
+  if (!Array.isArray(fixtures) || fixtures.length === 0) {
+    console.error('✗ data-access context fixtures must be a non-empty array');
+    return false;
+  }
+  const required = ['tenantId', 'principalId', 'correlationId', 'auditClassification', 'dataOwnerScope', 'idempotencyKey'];
+  const valid = fixtures.every((fixture, index) => {
+    const missing = required.filter((field) => !isNonEmptyString(fixture?.[field]));
+    if (missing.length > 0) {
+      console.error(\`✗ data-access fixture[\${index}] missing \${missing.join(', ')}\`);
+      return false;
+    }
+    return true;
+  });
+  if (valid) {
+    console.log('✓ data-access context fixtures are valid');
+  }
+  return valid;
+}
+
+function checkRouteEntitlementFixtures() {
+  const fixtures = loadJson('conformance/route-entitlements.json', 'route entitlement fixtures');
+  if (!Array.isArray(fixtures) || fixtures.length === 0) {
+    console.error('✗ route entitlement fixtures must be a non-empty array');
+    return false;
+  }
+  const valid = fixtures.every((fixture, index) => {
+    const hasIdentity = fixture?.product === '${id}' &&
+      isNonEmptyString(fixture?.tenantId) &&
+      isNonEmptyString(fixture?.principalId) &&
+      isNonEmptyString(fixture?.role);
+    const hasRoutes = Array.isArray(fixture?.routes) && fixture.routes.length > 0;
+    if (!hasIdentity || !hasRoutes) {
+      console.error(\`✗ route entitlement fixture[\${index}] must declare product identity and at least one route\`);
+      return false;
+    }
+    return true;
+  });
+  if (valid) {
+    console.log('✓ route entitlement fixtures are valid');
+  }
+  return valid;
+}
+
+function checkIdempotencyFixtures() {
+  const fixtures = loadJson('conformance/idempotency-observations.json', 'idempotency observation fixtures');
+  if (!Array.isArray(fixtures) || fixtures.length === 0) {
+    console.error('✗ idempotency observation fixtures must be a non-empty array');
+    return false;
+  }
+  const statuses = new Set(['miss', 'completed', 'expired', 'conflict']);
+  const valid = fixtures.every((fixture, index) => {
+    const required = ['operation', 'key', 'fingerprint', 'principalId', 'tenantId'];
+    const missing = required.filter((field) => !isNonEmptyString(fixture?.[field]));
+    if (missing.length > 0 || !statuses.has(fixture?.status)) {
+      console.error(\`✗ idempotency observation[\${index}] has invalid shape\`);
+      return false;
+    }
+    if (fixture.status === 'completed' && fixture.replayed !== true) {
+      console.error(\`✗ idempotency observation[\${index}] completed replay must set replayed=true\`);
+      return false;
+    }
+    return true;
+  });
+  if (valid) {
+    console.log('✓ idempotency observation fixtures are valid');
+  }
+  return valid;
+}
+
+function checkObservabilityFlowFixture() {
+  const manifest = loadJson('conformance/observability-flow.json', 'observability flow fixture');
+  if (!manifest || manifest.schemaVersion !== '1.0.0' || !Array.isArray(manifest.flows)) {
+    console.error('✗ observability flow fixture must declare schemaVersion and flows');
+    return false;
+  }
+  const productFlow = manifest.flows.find((flow) => flow?.product === '${id}');
+  if (!productFlow || !Array.isArray(productFlow.facets) || !Array.isArray(productFlow.evidence)) {
+    console.error('✗ observability flow fixture must include a ${id} flow with facets and evidence');
+    return false;
+  }
+  console.log('✓ observability flow fixture is valid');
+  return true;
+}
+
 function main() {
   console.log(\`=== ${name} Product Conformance Check ===\\n\`);
   
@@ -1028,6 +1322,10 @@ function main() {
   allPassed &= checkFileExists('domain-pack-manifest.yaml', 'Domain pack manifest');
   allPassed &= checkFileExists('policy-packs/${id}-boundary-policy.yaml', 'Boundary policy pack');
   allPassed &= checkFileExists('policy-packs/${id}-compliance-rule-pack.yaml', 'Compliance rule pack');
+  allPassed &= checkFileExists('conformance/data-access-context.json', 'Data-access conformance fixture');
+  allPassed &= checkFileExists('conformance/route-entitlements.json', 'Route entitlement conformance fixture');
+  allPassed &= checkFileExists('conformance/idempotency-observations.json', 'Idempotency conformance fixture');
+  allPassed &= checkFileExists('conformance/observability-flow.json', 'Observability flow conformance fixture');
   allPassed &= checkFileExists('src/main/java/com/ghatana/${packageSegment}/kernel/policy/${classPrefix}BoundaryPolicyStore.java', 'Boundary policy store');
   allPassed &= checkFileExists('src/main/java/com/ghatana/${packageSegment}/kernel/policy/${classPrefix}ComplianceRulePack.java', 'Compliance rule pack');
   allPassed &= checkFileExists('src/main/java/com/ghatana/${packageSegment}/kernel/policy/${classPrefix}PluginBindings.java', 'Plugin bindings');
@@ -1043,6 +1341,11 @@ function main() {
   allPassed &= checkFileExists('client/web/src/routeManifest.tsx', 'Route manifest');
   allPassed &= checkFileExists('client/web/src/App.tsx', 'App component');
   ` : ''}
+
+  allPassed &= checkDataAccessFixtures();
+  allPassed &= checkRouteEntitlementFixtures();
+  allPassed &= checkIdempotencyFixtures();
+  allPassed &= checkObservabilityFlowFixture();
   
   console.log();
   if (allPassed) {
@@ -1060,6 +1363,10 @@ main();
 
 if (shouldRegisterProductShape) {
   registerProductShape({ root, id, uiEnabled, uiMode });
+}
+
+if (shouldRegisterCanonicalRegistry) {
+  registerCanonicalRegistry({ root, id, name, domain, uiEnabled });
 }
 
 if (shouldRegisterWorkspace) {
@@ -1080,6 +1387,9 @@ console.log("Next steps:");
 console.log(`- Review ${join("products", id, "domain-pack-manifest.yaml")}`);
 if (!shouldRegisterProductShape) {
   console.log(`- Register product shape metadata in config/product-shape.json if needed`);
+}
+if (!shouldRegisterCanonicalRegistry) {
+  console.log(`- Register canonical product metadata in config/canonical-product-registry.json if needed`);
 }
 if (uiEnabled && !shouldRegisterWorkspace) {
   console.log(`- Register UI packages in pnpm-workspace.yaml if needed`);

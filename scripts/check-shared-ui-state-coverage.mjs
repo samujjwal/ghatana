@@ -7,6 +7,9 @@ const repoRoot = process.cwd();
 const productShape = JSON.parse(
   readFileSync(path.join(repoRoot, 'config/product-shape.json'), 'utf8'),
 );
+const canonicalRegistry = JSON.parse(
+  readFileSync(path.join(repoRoot, 'config/canonical-product-registry.json'), 'utf8'),
+).registry;
 
 const visualSpecCandidates = [
   'e2e/visual-regression.spec.ts',
@@ -65,6 +68,14 @@ function hasTokenInFiles(files, matcher) {
 
 for (const [productName, productConfig] of Object.entries(productShape.products)) {
   if (!productConfig.ui) {
+    continue;
+  }
+  const registryEntry = canonicalRegistry[productName];
+  if (
+    registryEntry?.kind !== 'business-product' ||
+    registryEntry?.metadata?.status !== 'active' ||
+    registryEntry?.conformance?.manifest !== true
+  ) {
     continue;
   }
 

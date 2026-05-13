@@ -4,11 +4,7 @@
   "version": "1.0.0",
   "product": "digital-marketing",
   "domain": "digital-marketing",
-  "productCode": "DM",
   "rulePrefix": "DM-",
-  "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
-  "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
-  "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
   "kernelCapabilitiesConsumed": [
     "boundary-policy-evaluation",
     "audit-trail",
@@ -20,22 +16,22 @@
     "write",
     "delete",
     "export",
-    "digital-marketing:sync",
-    "digital-marketing:launch",
-    "digital-marketing:pause",
-    "digital-marketing:resume",
-    "digital-marketing:increase",
-    "digital-marketing:publish",
-    "digital-marketing:execute"
+    "sync",
+    "launch",
+    "pause",
+    "resume",
+    "increase",
+    "publish",
+    "execute"
   ],
   "policyResources": [
-    "digital-marketing:workspaces",
-    "digital-marketing:contacts",
-    "digital-marketing:audiences",
-    "digital-marketing:campaigns",
-    "digital-marketing:budgets",
-    "digital-marketing:content",
-    "digital-marketing:connectors"
+    "workspaces",
+    "contacts",
+    "audiences",
+    "campaigns",
+    "budgets",
+    "content",
+    "connectors"
   ],
   "pluginsConsumed": [
     "plugin-audit-trail",
@@ -57,15 +53,6 @@
     "dm-application"
   ],
   "dataSensitivity": "marketing-consent",
-  "complianceRuleSets": [
-    "DM_MARKETING_INTEGRITY",
-    "DM_CONSENT_LIFECYCLE",
-    "DM_AUDIT_TRACEABILITY",
-    "DM_CAMPAIGN_PREFLIGHT",
-    "DM_CLAIMS_DISCLOSURES",
-    "DM_EMAIL_COMPLIANCE",
-    "DM_CONNECTOR_EXECUTION_SAFETY"
-  ],
   "productExtensions": {
     "productName": "Digital Marketing Operating System",
     "mvpScope": "non-regulated local service and small B2B businesses",
@@ -82,6 +69,61 @@
         "PHR-",
         "FIN-"
       ]
+    },
+    "productCode": "DM",
+    "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
+    "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
+    "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
+    "complianceRuleSets": [
+      "DM_MARKETING_INTEGRITY",
+      "DM_CONSENT_LIFECYCLE",
+      "DM_AUDIT_TRACEABILITY",
+      "DM_CAMPAIGN_PREFLIGHT",
+      "DM_CLAIMS_DISCLOSURES",
+      "DM_EMAIL_COMPLIANCE",
+      "DM_CONNECTOR_EXECUTION_SAFETY"
+    ]
+  },
+  "kind": "domain-pack",
+  "policies": {
+    "actions": [
+      "read",
+      "write",
+      "delete",
+      "export",
+      "sync",
+      "launch",
+      "pause",
+      "resume",
+      "increase",
+      "publish",
+      "execute"
+    ],
+    "resources": [
+      "workspaces",
+      "contacts",
+      "audiences",
+      "campaigns",
+      "budgets",
+      "content",
+      "connectors"
+    ]
+  },
+  "surfaces": {
+    "ui": [
+      "web"
+    ],
+    "runtime": [
+      "dm-api",
+      "dm-application"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "digital-marketing.campaign-operations",
+      "name": "Campaign Operations",
+      "type": "BUSINESS_LOGIC",
+      "description": "Campaign strategy, launch, and optimization workflows"
     }
-  }
+  ]
 }

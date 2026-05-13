@@ -11,6 +11,12 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.1",
-    "zod": "^4.3.6"
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
+  },
+  "scripts": {
+    "test": "vitest run"
   }
 }

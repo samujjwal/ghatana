@@ -8,6 +8,13 @@
  */
 
 import { randomUUID } from "crypto";
+import {
+  DataAccessContextError,
+  createDataAccessContext,
+  resolveTenantForPrincipal,
+  type DataAccessContext,
+  type TenantResolver,
+} from "@ghatana/data-access-context";
 import type { FastifyRequest } from "fastify";
 
 export type FlashItAuditClassification =
@@ -17,13 +24,10 @@ export type FlashItAuditClassification =
   | "SPHERE_ACCESS_WRITE"
   | "SEARCH_ACTIVITY_READ";
 
-export interface FlashItDataAccessContext {
-  readonly tenantId: string;
-  readonly principalId: string;
+export interface FlashItDataAccessContext extends DataAccessContext {
   readonly correlationId: string;
   readonly auditClassification: FlashItAuditClassification;
   readonly dataOwnerScope: string;
-  readonly idempotencyKey?: string;
 }
 
 export interface FlashItDataAccessOptions {
@@ -34,7 +38,7 @@ export interface FlashItDataAccessOptions {
   readonly tenantResolver?: FlashItTenantResolver;
 }
 
-export class FlashItDataAccessContextError extends Error {
+export class FlashItDataAccessContextError extends DataAccessContextError {
   constructor(message: string) {
     super(message);
     this.name = "FlashItDataAccessContextError";
@@ -51,21 +55,19 @@ type AuthenticatedFastifyRequest = FastifyRequest & {
   };
 };
 
-export interface FlashItTenantResolutionInput {
-  readonly principalId: string;
-  readonly requestedTenantId?: string;
-}
-
-export type FlashItTenantResolver = (input: FlashItTenantResolutionInput) => string;
+export type FlashItTenantResolver = TenantResolver;
 
 const resolvePersonalTenant: FlashItTenantResolver = ({ principalId, requestedTenantId }) => {
-  if (!requestedTenantId || requestedTenantId === principalId) {
-    return principalId;
+  try {
+    return resolveTenantForPrincipal({ principalId, requestedTenantId });
+  } catch (error) {
+    if (error instanceof DataAccessContextError) {
+      throw new FlashItDataAccessContextError(
+        "x-tenant-id is not authorized for the authenticated FlashIt principal",
+      );
+    }
+    throw error;
   }
-
-  throw new FlashItDataAccessContextError(
-    "x-tenant-id is not authorized for the authenticated FlashIt principal",
-  );
 };
 
 const firstHeaderValue = (value: HeaderValue): string | undefined => {
@@ -86,27 +88,38 @@ export const buildFlashItDataAccessContext = (
   request: FastifyRequest,
   options: FlashItDataAccessOptions,
 ): FlashItDataAccessContext => {
-  const authenticatedRequest = request as AuthenticatedFastifyRequest;
-  const principalId = requireNonEmpty(authenticatedRequest.user.userId, "principalId");
-  const requestedTenantId = firstHeaderValue(request.headers["x-tenant-id"]);
-  const tenantId = (options.tenantResolver ?? resolvePersonalTenant)({
-    principalId,
-    requestedTenantId,
-  });
-  const correlationId = firstHeaderValue(request.headers["x-correlation-id"]) ?? randomUUID();
-  const idempotencyKey =
-    options.idempotencyKey ?? firstHeaderValue(request.headers["x-idempotency-key"]);
+  try {
+    const authenticatedRequest = request as AuthenticatedFastifyRequest;
+    const principalId = requireNonEmpty(authenticatedRequest.user.userId, "principalId");
+    const requestedTenantId = firstHeaderValue(request.headers["x-tenant-id"]);
+    const tenantId = (options.tenantResolver ?? resolvePersonalTenant)({
+      principalId,
+      requestedTenantId,
+    });
+    const correlationId = firstHeaderValue(request.headers["x-correlation-id"]) ?? randomUUID();
+    const idempotencyKey =
+      options.idempotencyKey ?? firstHeaderValue(request.headers["x-idempotency-key"]);
 
-  if (options.requireIdempotencyKey) {
-    requireNonEmpty(idempotencyKey, "idempotencyKey");
+    return createDataAccessContext(tenantId, principalId, {
+      correlationId,
+      auditClassification: options.auditClassification,
+      dataOwnerScope: options.dataOwnerScope,
+      idempotencyKey,
+      requireCorrelationId: true,
+      requireAuditClassification: true,
+      requireDataOwnerScope: true,
+      requireIdempotencyKey: options.requireIdempotencyKey,
+      metadata: {
+        product: "flashit",
+      },
+    }) as FlashItDataAccessContext;
+  } catch (error) {
+    if (error instanceof FlashItDataAccessContextError) {
+      throw error;
+    }
+    if (error instanceof DataAccessContextError) {
+      throw new FlashItDataAccessContextError(error.message);
+    }
+    throw error;
   }
-
-  return {
-    tenantId,
-    principalId,
-    correlationId,
-    auditClassification: options.auditClassification,
-    dataOwnerScope: options.dataOwnerScope,
-    ...(idempotencyKey ? { idempotencyKey } : {}),
-  };
 };

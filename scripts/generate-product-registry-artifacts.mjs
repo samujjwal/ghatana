@@ -30,6 +30,24 @@ const PNPM_OUTPUT_PATH = path.join(repoRoot, 'config/generated/pnpm-workspace-en
 const CI_MATRIX_OUTPUT_PATH = path.join(repoRoot, 'config/generated/ci-matrix.json');
 const PACKAGE_SCRIPTS_OUTPUT_PATH = path.join(repoRoot, 'config/generated/package-scripts.json');
 const PNPM_WORKSPACE_PATH = path.join(repoRoot, 'pnpm-workspace.yaml');
+const WORKSPACE_DEPENDENCY_POLICY_PATH = path.join(repoRoot, 'config/workspace-dependency-policy.json');
+const PRODUCT_GRADLE_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
+const PRODUCT_CI_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
+const PRODUCT_SCRIPT_KINDS = new Set(['business-product', 'platform-provider', 'shared-service']);
+const checkMode = process.argv.includes('--check');
+const staleArtifacts = [];
+
+function writeGeneratedFile(filePath, content, label) {
+  if (checkMode) {
+    const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : null;
+    if (existing !== content) {
+      staleArtifacts.push(`${label}: ${path.relative(repoRoot, filePath)}`);
+    }
+    return;
+  }
+
+  writeFileSync(filePath, content);
+}
 
 // Load canonical registry
 function loadRegistry() {
@@ -37,6 +55,14 @@ function loadRegistry() {
     throw new Error(`Canonical product registry not found: ${REGISTRY_PATH}`);
   }
   const content = readFileSync(REGISTRY_PATH, 'utf8');
+  return JSON.parse(content);
+}
+
+function loadWorkspaceDependencyPolicy() {
+  if (!existsSync(WORKSPACE_DEPENDENCY_POLICY_PATH)) {
+    throw new Error(`Workspace dependency policy not found: ${WORKSPACE_DEPENDENCY_POLICY_PATH}`);
+  }
+  const content = readFileSync(WORKSPACE_DEPENDENCY_POLICY_PATH, 'utf8');
   return JSON.parse(content);
 }
 
@@ -66,6 +92,15 @@ function validateRegistry(registry) {
         throw new Error(`Registry entry ${productId} enables manifest conformance but has no explicit buildFile`);
       }
     }
+
+    for (const surface of product.surfaces || []) {
+      if (!surface.implementationStatus) {
+        throw new Error(`Registry entry ${productId} surface ${surface.type} must declare implementationStatus`);
+      }
+      if (!['implemented', 'planned', 'backend-only'].includes(surface.implementationStatus)) {
+        throw new Error(`Registry entry ${productId} surface ${surface.type} has invalid implementationStatus: ${surface.implementationStatus}`);
+      }
+    }
   }
 
   console.log(`Validated registry with ${productIds.length} entries`);
@@ -85,6 +120,9 @@ function generateProductShape(registry) {
       ui: !backendOnly,
       uiMode: backendOnly ? 'backend-only' : (uiSurfaces.length > 1 ? 'multi-surface' : 'web'),
       surfaces: surfaces.map(s => s.type),
+      surfaceStatuses: Object.fromEntries(
+        surfaces.map(s => [s.type, s.implementationStatus])
+      ),
       clientPackages: uiSurfaces
         .filter(s => s.packagePath)
         .map(s => s.packagePath)
@@ -99,8 +137,8 @@ function generateProductShape(registry) {
   }
   
   const output = { products };
-  writeFileSync(PRODUCT_SHAPE_PATH, JSON.stringify(output, null, 2) + '\n');
-  console.log(`Generated product-shape.json with ${Object.keys(products).length} products`);
+  writeGeneratedFile(PRODUCT_SHAPE_PATH, JSON.stringify(output, null, 2) + '\n', 'product shape');
+  console.log(`${checkMode ? 'Checked' : 'Generated'} product-shape.json with ${Object.keys(products).length} products`);
 }
 
 // Generate Gradle include blocks
@@ -110,7 +148,6 @@ function generateGradleIncludes(registry) {
   lines.push('// DO NOT EDIT MANUALLY - run: node scripts/generate-product-registry-artifacts.mjs');
   lines.push('');
   
-  // Group by type
   const products = Object.values(registry.registry);
   
   lines.push('// =============================================================================');
@@ -118,8 +155,8 @@ function generateGradleIncludes(registry) {
   lines.push('// =============================================================================');
   
   for (const product of products) {
-    if (product.type === 'product') {
-      lines.push(`// Product: ${product.name} (${product.id})`);
+    if (PRODUCT_GRADLE_KINDS.has(product.kind)) {
+      lines.push(`// ${product.kind}: ${product.name} (${product.id})`);
       for (const module of product.gradleModules || []) {
         lines.push(`include("${module}")`);
       }
@@ -127,12 +164,12 @@ function generateGradleIncludes(registry) {
     }
   }
   
-  writeFileSync(SETTINGS_OUTPUT_PATH, lines.join('\n'));
-  console.log(`Generated Gradle includes at ${SETTINGS_OUTPUT_PATH}`);
+  writeGeneratedFile(SETTINGS_OUTPUT_PATH, lines.join('\n'), 'Gradle includes');
+  console.log(`${checkMode ? 'Checked' : 'Generated'} Gradle includes at ${SETTINGS_OUTPUT_PATH}`);
 }
 
 // Generate pnpm workspace entries
-function generatePnpmEntries(registry) {
+function generatePnpmEntries(registry, dependencyPolicy) {
   const lines = [];
   lines.push('# Auto-generated from canonical-product-registry.json');
   lines.push('# DO NOT EDIT MANUALLY - run: node scripts/generate-product-registry-artifacts.mjs');
@@ -161,12 +198,21 @@ function generatePnpmEntries(registry) {
   // Add shared services
   lines.push('  # Shared services');
   lines.push('  - "shared-services/*/ui"');
+
+  const catalogEntries = Object.entries(dependencyPolicy.catalog ?? {}).sort(([left], [right]) => left.localeCompare(right));
+  if (catalogEntries.length > 0) {
+    lines.push('');
+    lines.push('catalog:');
+    for (const [dependencyName, version] of catalogEntries) {
+      lines.push(`  ${JSON.stringify(dependencyName)}: ${JSON.stringify(version)}`);
+    }
+  }
   
   const output = lines.join('\n') + '\n';
-  writeFileSync(PNPM_OUTPUT_PATH, output);
-  writeFileSync(PNPM_WORKSPACE_PATH, output);
-  console.log(`Generated pnpm workspace entries at ${PNPM_OUTPUT_PATH}`);
-  console.log(`Updated root pnpm workspace at ${PNPM_WORKSPACE_PATH}`);
+  writeGeneratedFile(PNPM_OUTPUT_PATH, output, 'pnpm workspace entries');
+  writeGeneratedFile(PNPM_WORKSPACE_PATH, output, 'root pnpm workspace');
+  console.log(`${checkMode ? 'Checked' : 'Generated'} pnpm workspace entries at ${PNPM_OUTPUT_PATH}`);
+  console.log(`${checkMode ? 'Checked' : 'Updated'} root pnpm workspace at ${PNPM_WORKSPACE_PATH}`);
 }
 
 // Generate CI matrix configuration
@@ -179,7 +225,7 @@ function generateCIMatrix(registry) {
   };
   
   for (const [productId, product] of Object.entries(registry.registry)) {
-    if (product.ci?.enabled) {
+    if (product.ci?.enabled && PRODUCT_CI_KINDS.has(product.kind)) {
       matrix.products.push(productId);
       
       const hasUI = product.surfaces?.some(s => s.type === 'web' || s.type === 'mobile');
@@ -198,8 +244,8 @@ function generateCIMatrix(registry) {
     }
   }
   
-  writeFileSync(CI_MATRIX_OUTPUT_PATH, JSON.stringify(matrix, null, 2) + '\n');
-  console.log(`Generated CI matrix with ${matrix.products.length} products`);
+  writeGeneratedFile(CI_MATRIX_OUTPUT_PATH, JSON.stringify(matrix, null, 2) + '\n', 'CI matrix');
+  console.log(`${checkMode ? 'Checked' : 'Generated'} CI matrix with ${matrix.products.length} products`);
 }
 
 // Generate root package.json scripts
@@ -217,9 +263,16 @@ function generatePackageScripts(registry) {
   scripts['clean'] = 'pnpm -r --parallel exec rm -rf node_modules dist build .turbo';
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
   scripts['product'] = 'node ./scripts/run-product-task.mjs';
+  scripts['check:affected-products'] = 'node ./scripts/resolve-affected-products.test.mjs';
+  scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
+  scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';
   
   // Generate product-specific scripts from registry
   for (const [productId, product] of Object.entries(registry.registry)) {
+    if (!PRODUCT_SCRIPT_KINDS.has(product.kind)) {
+      continue;
+    }
+
     const surfaces = product.surfaces || [];
     
     for (const surface of surfaces) {
@@ -235,16 +288,17 @@ function generatePackageScripts(registry) {
     scripts[`test:${productId}`] = `pnpm product ${productId} test`;
   }
   
-  writeFileSync(PACKAGE_SCRIPTS_OUTPUT_PATH, JSON.stringify(scripts, null, 2) + '\n');
-  console.log(`Generated package scripts with ${Object.keys(scripts).length} entries`);
+  writeGeneratedFile(PACKAGE_SCRIPTS_OUTPUT_PATH, JSON.stringify(scripts, null, 2) + '\n', 'package scripts');
+  console.log(`${checkMode ? 'Checked' : 'Generated'} package scripts with ${Object.keys(scripts).length} entries`);
 }
 
 // Main execution
 function main() {
-  console.log('=== Product Registry Artifact Generator ===\n');
+  console.log(`=== Product Registry Artifact ${checkMode ? 'Checker' : 'Generator'} ===\n`);
   
   try {
     const registry = loadRegistry();
+    const dependencyPolicy = loadWorkspaceDependencyPolicy();
     const productIds = validateRegistry(registry);
     
     console.log(`Processing ${productIds.length} products...\n`);
@@ -252,16 +306,29 @@ function main() {
     // Generate all artifacts
     generateProductShape(registry);
     generateGradleIncludes(registry);
-    generatePnpmEntries(registry);
+    generatePnpmEntries(registry, dependencyPolicy);
     generateCIMatrix(registry);
     generatePackageScripts(registry);
     
     // Merge generated package scripts into package.json
-    console.log('\nMerging generated package scripts into package.json...');
-    execFileSync(process.execPath, ['scripts/merge-generated-package-scripts.mjs'], { cwd: repoRoot, stdio: 'inherit' });
+    console.log(`\n${checkMode ? 'Checking' : 'Merging'} generated package scripts ${checkMode ? 'against' : 'into'} package.json...`);
+    execFileSync(
+      process.execPath,
+      ['scripts/merge-generated-package-scripts.mjs', ...(checkMode ? ['--check'] : [])],
+      { cwd: repoRoot, stdio: 'inherit' },
+    );
+
+    if (checkMode && staleArtifacts.length > 0) {
+      console.error('\n=== Generated product registry artifacts are stale ===');
+      for (const artifact of staleArtifacts) {
+        console.error(`- ${artifact}`);
+      }
+      console.error('\nRun: node scripts/generate-product-registry-artifacts.mjs');
+      process.exit(1);
+    }
     
-    console.log('\n=== All artifacts generated successfully ===');
-    console.log('\nGenerated files:');
+    console.log(`\n=== All artifacts ${checkMode ? 'are current' : 'generated successfully'} ===`);
+    console.log(`\n${checkMode ? 'Checked' : 'Generated'} files:`);
     console.log(`  - ${PRODUCT_SHAPE_PATH}`);
     console.log(`  - ${SETTINGS_OUTPUT_PATH}`);
     console.log(`  - ${PNPM_OUTPUT_PATH}`);

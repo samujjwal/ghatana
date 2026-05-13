@@ -56,6 +56,16 @@ export { NotificationCenter } from './components/NotificationCenter';
 export { ActiveOperationsBar } from './components/ActiveOperationsBar';
 export { UnsupportedSurfaceBoundary } from './components/UnsupportedSurfaceBoundary';
 export {
+  ProductHeaderUserMenu,
+  ProductShellFooter,
+  createProductRoleSelectorConfig,
+} from './components/ProductShellChrome';
+export type {
+  ProductHeaderUserMenuProps,
+  ProductRoleSelectorConfig,
+  ProductShellFooterProps,
+} from './components/ProductShellChrome';
+export {
   createRoleHierarchy,
   createRouteAccessEvaluator,
   filterDiscoverableRoutes,
@@ -71,7 +81,6 @@ export type {
 export {
   createProductShellConfig,
   useProductShellConfig,
-  useStableProductShellConfig,
 } from './shellConfig';
 export {
   useProductEntitlements,

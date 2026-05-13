@@ -1,14 +1,18 @@
 import React from 'react';
-import { Button } from '@ghatana/design-system';
 import {
+  ProductHeaderUserMenu,
   ProductShell,
+  ProductShellFooter,
+  createProductRoleSelectorConfig,
+  useProductEntitlements,
   useProductShellConfig,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
-import { currentUserAtom } from '../store/atoms';
+import { authTokenAtom, currentUserAtom } from '../store/atoms';
 import { useLogout } from '../hooks/use-api';
+import { API_BASE_URL } from '../lib/api-client';
 import { flashitRouteManifest } from '../routeManifest';
 import { FLASHIT_ROLE_ORDER, resolveFlashitRole } from '../routeAccess';
 
@@ -31,34 +35,57 @@ const roleDescriptions: ProductShellConfig['roleDescriptions'] = {
 };
 
 const sidebarFooter = (
-  <div className="rounded-lg bg-slate-900/80 p-4 text-sm text-slate-100">
-    <p className="eyebrow">Kernel shell</p>
-    <p className="m-0">Route visibility, search entry, and layout behavior come from shared product-shell contracts.</p>
-  </div>
+  <ProductShellFooter description="Route visibility, search entry, and layout behavior come from shared product-shell contracts." />
 );
+
+const roleSelectorConfig = createProductRoleSelectorConfig({
+  roleOrder: FLASHIT_ROLE_ORDER,
+  roleLabels,
+  roleDescriptions,
+});
 
 export function FlashitProductShell({ children }: FlashitProductShellProps): React.ReactElement {
   const currentUser = useAtomValue(currentUserAtom);
+  const authToken = useAtomValue(authTokenAtom);
   const logout = useLogout();
   const navigate = useNavigate();
   const currentRole = resolveFlashitRole(currentUser);
+  const entitlementEndpoint = React.useMemo(() => {
+    const params = new URLSearchParams({
+      role: currentRole,
+      principalId: currentUser?.id ?? 'anonymous',
+    });
+    return `${API_BASE_URL}/api/entitlements/route-entitlements?${params.toString()}`;
+  }, [currentRole, currentUser?.id]);
+  const entitlementRequestInit = React.useMemo<RequestInit>(
+    () => ({
+      headers: {
+        Accept: 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      credentials: 'include',
+    }),
+    [authToken],
+  );
+  const entitlements = useProductEntitlements({
+    endpoint: entitlementEndpoint,
+    fallbackRoutes: flashitRouteManifest,
+    requestInit: entitlementRequestInit,
+  });
 
   const config = useProductShellConfig({
     productName: 'FlashIt',
     logo: <span className="text-lg font-semibold tracking-tight text-sky-700">FI</span>,
     currentRole,
-    roleOrder: FLASHIT_ROLE_ORDER,
-    roleLabels,
-    roleDescriptions,
-    routes: flashitRouteManifest,
+    ...roleSelectorConfig,
+    routes: entitlements.routes,
     onSearch: () => navigate('/search'),
     headerActions: (
-      <div className="flex items-center gap-3">
-        <span className="hidden text-sm text-slate-600 sm:inline">
-          {currentUser?.displayName || currentUser?.email || 'Signed in'}
-        </span>
-        <Button onClick={() => logout()}>Logout</Button>
-      </div>
+      <ProductHeaderUserMenu
+        displayName={currentUser?.displayName}
+        email={currentUser?.email}
+        onLogout={() => logout()}
+      />
     ),
     sidebarFooter,
   });

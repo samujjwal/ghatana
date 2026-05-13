@@ -2,14 +2,11 @@ package com.ghatana.finance.kernel.service;
 
 import com.ghatana.finance.service.FinanceTraceContext;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.platform.database.MutationMetadataEnricher;
 import com.ghatana.platform.database.ProductDataServiceBase;
-import io.activej.promise.Promise;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
@@ -27,75 +24,39 @@ import java.util.concurrent.Executor;
  */
 public abstract class FinanceServiceBase extends ProductDataServiceBase {
 
+    private static final MutationMetadataEnricher METADATA_ENRICHER = MutationMetadataEnricher.builder("finance")
+        .keyStyle(MutationMetadataEnricher.MetadataKeyStyle.SNAKE_CASE)
+        .correlationIdFactory(operation -> FinanceTraceContext.newCorrelationId())
+        .traceMetadataProvider(FinanceServiceBase::traceMetadata)
+        .build();
+
     protected FinanceServiceBase(KernelContext context) {
-        super(context);
+        super(context, java.util.concurrent.ForkJoinPool.commonPool(), METADATA_ENRICHER, ownerScopeStrategy());
     }
 
     protected FinanceServiceBase(KernelContext context, Executor executor) {
-        super(context, executor, new FinanceMetadataEnrichmentStrategy(), new FinanceOwnerScopeStrategy());
+        super(context, executor, METADATA_ENRICHER, ownerScopeStrategy());
     }
 
-    /**
-     * Finance-specific metadata enrichment strategy.
-     * Adds Finance-specific trace context metadata with underscore naming convention.
-     */
-    private static class FinanceMetadataEnrichmentStrategy implements MetadataEnrichmentStrategy {
-        @Override
-        public void enrich(Map<String, String> metadata, String action, String recordId, String entityType) {
-            // Add Finance-specific trace context with underscore naming
-            String normalizedEntityType = normalizeToken(entityType, "record");
-            String normalizedAction = normalizeToken(action, "write");
-            String operation = "finance_" + normalizedEntityType + "_" + normalizedAction;
-            
-            String correlationId = Objects.toString(
-                metadata.getOrDefault("correlationId", FinanceTraceContext.newCorrelationId()),
-                FinanceTraceContext.newCorrelationId()
-            );
-            
-            Map<String, String> traceMetadata = new java.util.HashMap<>();
-            Map<String, Object> rawMetadata = FinanceTraceContext.metadata(correlationId, operation, 
-                metadata.entrySet().stream()
-                    .collect(java.util.stream.Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> Objects.toString(entry.getValue(), "")
-                    )));
-            rawMetadata.forEach((key, value) -> traceMetadata.put(key, Objects.toString(value, "")));
-            
-            metadata.putAll(traceMetadata);
-        }
-
-        private String normalizeToken(String value, String fallback) {
-            if (value == null || value.isBlank()) {
-                return fallback;
-            }
-            return value
-                .replaceAll("([a-z0-9])([A-Z])", "$1-$2")
-                .replaceAll("[^A-Za-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "")
-                .toLowerCase(Locale.ROOT);
-        }
+    private static Map<String, ?> traceMetadata(
+            String correlationId,
+            String operation,
+            Map<String, String> metadata) {
+        return FinanceTraceContext.metadata(correlationId, operation,
+            metadata.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> Objects.toString(entry.getValue(), "")
+                )));
     }
 
-    /**
-     * Finance-specific owner scope strategy.
-     * Prioritizes finance-specific owner fields with underscore naming.
-     */
-    private static class FinanceOwnerScopeStrategy implements OwnerScopeStrategy {
-        @Override
-        public String inferOwnerScope(Map<String, String> metadata, String entityType, String recordId) {
-            return firstPresent(metadata, "accountId", "traderId", "clientId", "debitAccount", "creditAccount")
-                .map(value -> entityType + ":" + value)
-                .orElse(entityType + ":" + recordId);
-        }
-
-        private Optional<String> firstPresent(Map<String, String> metadata, String... keys) {
-            for (String key : keys) {
-                String value = metadata.get(key);
-                if (value != null && !value.isBlank()) {
-                    return Optional.of(value);
-                }
-            }
-            return Optional.empty();
-        }
+    private static OwnerScopeStrategy ownerScopeStrategy() {
+        return MutationMetadataEnricher.ownerScopeStrategy(
+            "accountId",
+            "traderId",
+            "clientId",
+            "debitAccount",
+            "creditAccount"
+        );
     }
 }

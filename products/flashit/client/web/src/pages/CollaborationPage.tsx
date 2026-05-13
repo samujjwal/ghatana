@@ -3,6 +3,7 @@
  * Shared spheres, invitations, activity feed, and team interaction
  */
 
+import { EmptyState } from '@ghatana/design-system';
 import { useState, useEffect } from 'react';
 import { useSpheres } from '../hooks/use-api';
 import Layout from '../components/Layout';
@@ -258,16 +259,6 @@ export default function CollaborationPage() {
         )}
       </div>
     </Layout>
-  );
-}
-
-function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="text-center py-16">
-      <div className="flex justify-center">{icon}</div>
-      <h3 className="mt-4 text-lg font-medium text-gray-900">{title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{description}</p>
-    </div>
   );
 }
 

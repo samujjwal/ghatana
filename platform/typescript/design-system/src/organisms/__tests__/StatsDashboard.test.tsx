@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import { StatsDashboard, type DashboardStatCardConfig, type BarChartConfig, type InsightItem } from '../StatsDashboard';
 
 interface TestItem {
@@ -146,7 +147,7 @@ describe('StatsDashboard', () => {
     it('renders time range selector', () => {
       const timeRangeConfig = {
         value: '7d',
-        onChange: jest.fn(),
+        onChange: vi.fn(),
         options: [
           { label: 'Last 7 Days', value: '7d' },
           { label: 'Last 30 Days', value: '30d' },
@@ -163,13 +164,13 @@ describe('StatsDashboard', () => {
       const exportConfig = {
         buttonLabel: 'Export',
         options: [
-          { label: 'Export CSV', onClick: jest.fn() },
-          { label: 'Export PDF', onClick: jest.fn() },
+          { label: 'Export CSV', onClick: vi.fn() },
+          { label: 'Export PDF', onClick: vi.fn() },
         ],
       };
 
       render(<StatsDashboard items={mockItems} exportConfig={exportConfig} />);
-      expect(screen.getByText(/Export/)).toBeInTheDocument();
+      expect(screen.getByTestId('export-button')).toHaveTextContent('Export');
     });
   });
 

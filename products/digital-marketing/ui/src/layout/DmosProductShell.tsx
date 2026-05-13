@@ -1,12 +1,17 @@
 import React, { useMemo } from 'react';
 import {
+  ProductHeaderUserMenu,
   ProductShell,
+  ProductShellFooter,
+  createProductRoleSelectorConfig,
   resolveHighestRole,
+  useProductEntitlements,
   useProductShellConfig,
   type ProductShellConfig,
 } from '@ghatana/product-shell';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { API_BASE_URL } from '@/lib/http-client';
 import {
   DMOS_ROLE_ORDER,
   dmosRouteManifest,
@@ -34,48 +39,72 @@ const roleDescriptions: ProductShellConfig['roleDescriptions'] = {
 };
 
 const sidebarFooter = (
-  <div className="rounded-lg bg-slate-900/80 p-4 text-sm text-slate-100">
-    <p className="eyebrow">Kernel shell</p>
-    <p className="m-0">Workspace navigation, role visibility, and route disclosure come from the shared product-shell contract.</p>
-  </div>
+  <ProductShellFooter description="Workspace navigation, role visibility, and route disclosure come from the shared product-shell contract." />
 );
+
+const roleSelectorConfig = createProductRoleSelectorConfig({
+  roleOrder: DMOS_ROLE_ORDER,
+  roleLabels,
+  roleDescriptions,
+});
 
 export function DmosProductShell({ children }: DmosProductShellProps): React.ReactElement {
   const navigate = useNavigate();
   const { workspaceId: routeWorkspaceId } = useParams<{ workspaceId: string }>();
-  const { roles, workspaceId: authWorkspaceId, logout } = useAuth();
+  const { roles, token, workspaceId: authWorkspaceId, tenantId, principalId, sessionId, logout } = useAuth();
 
   const workspaceId = routeWorkspaceId ?? authWorkspaceId ?? 'workspace';
   const currentRole = resolveHighestRole(roles, DMOS_ROLE_ORDER, 'viewer');
+  const entitlementEndpoint = useMemo(() => {
+    const params = new URLSearchParams({
+      role: currentRole,
+      workspaceId,
+      tenantId: tenantId ?? 'anonymous',
+      principalId: principalId ?? 'anonymous',
+    });
+    return `${API_BASE_URL}/v1/route-entitlements?${params.toString()}`;
+  }, [currentRole, principalId, tenantId, workspaceId]);
+  const entitlementRequestInit = useMemo<RequestInit>(
+    () => ({
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Role': currentRole,
+        'X-Roles': roles.join(','),
+        'X-Tenant-ID': tenantId ?? '',
+        'X-Principal-ID': principalId ?? '',
+        'X-Session-ID': sessionId ?? '',
+      },
+      credentials: 'include',
+    }),
+    [currentRole, principalId, roles, sessionId, tenantId, token],
+  );
+  const entitlements = useProductEntitlements({
+    endpoint: entitlementEndpoint,
+    fallbackRoutes: dmosRouteManifest,
+    requestInit: entitlementRequestInit,
+  });
   const shellRoutes = useMemo(
     () =>
-      dmosRouteManifest.map((route) => ({
+      entitlements.routes.map((route) => ({
         ...route,
         path: resolveDmosRoutePath(route.path, workspaceId),
       })),
-    [workspaceId],
+    [entitlements.routes, workspaceId],
   );
 
   const config = useProductShellConfig({
     productName: 'DMOS',
     logo: <span className="text-lg font-semibold tracking-tight text-sky-700">DM</span>,
     currentRole,
-    roleOrder: DMOS_ROLE_ORDER,
-    roleLabels,
-    roleDescriptions,
+    ...roleSelectorConfig,
     routes: shellRoutes,
     headerActions: (
       <div className="flex items-center gap-3">
         <span className="hidden text-sm text-slate-600 sm:inline">
           Workspace {workspaceId}
         </span>
-        <button
-          type="button"
-          onClick={logout}
-          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-        >
-          Logout
-        </button>
+        <ProductHeaderUserMenu fallbackLabel="Signed in" onLogout={logout} />
       </div>
     ),
     sidebarFooter,

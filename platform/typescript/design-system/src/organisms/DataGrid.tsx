@@ -411,8 +411,10 @@ export function DataGrid<T>({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredItems.map((item, index) => (
-              <tr key={keyExtractor(item, index)} className="hover:bg-gray-50">
+            {filteredItems.map((item, index) => {
+              const rowKey = keyExtractor(item, index);
+              return (
+              <tr key={rowKey} data-key={String(rowKey)} className="hover:bg-gray-50">
                 {normalizedColumns.map((column, colIndex) => (
                   <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
                     {column.render(item)}
@@ -441,7 +443,8 @@ export function DataGrid<T>({
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -547,15 +550,17 @@ export function DataGrid<T>({
           <div className="space-y-4 mb-6">
             <div className={`grid grid-cols-1 md:grid-cols-${Math.min(filters.length, 3)} gap-4`}>
               {filters.map((filter) => {
+                const controlId = `filter-${filter.name}`;
                 if (filter.type === 'select' && filter.options) {
                   return (
                     <div key={filter.name}>
                       {filter.label && (
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor={controlId} className="block text-sm font-medium text-gray-700 mb-1">
                           {filter.label}
                         </label>
                       )}
                       <select
+                        id={controlId}
                         data-testid={`filter-${filter.name}`}
                         value={filterValues[filter.name] || ''}
                         onChange={(e) => handleFilterChange(filter.name, e.target.value)}
@@ -572,14 +577,15 @@ export function DataGrid<T>({
                   );
                 }
 
-                return (
+                  return (
                   <div key={filter.name}>
                     {filter.label && (
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor={controlId} className="block text-sm font-medium text-gray-700 mb-1">
                         {filter.label}
                       </label>
                     )}
                     <input
+                      id={controlId}
                       type="text"
                       data-testid={`filter-${filter.name}`}
                       value={filterValues[filter.name] || ''}

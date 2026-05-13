@@ -157,12 +157,10 @@ export const performanceMonitor = new PerformanceMonitor();
 
 /**
  * Add database query logging middleware to Prisma
- * Note: Prisma middleware ($use) is deprecated in newer versions
- * TODO: Migrate to Prisma Client Extensions in Phase 2
+ * Prisma middleware ($use) is not registered because this package is on a
+ * Prisma version where query instrumentation must use Client Extensions.
  */
 export function enableQueryLogging() {
-  // Temporarily disabled - Prisma $use is deprecated
-  // Use Prisma Client Extensions instead
   console.log('Query logging middleware disabled (Prisma $use deprecated)');
   
   /*

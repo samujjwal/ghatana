@@ -299,6 +299,18 @@ function assertNoSwallowedFailures(file, source) {
   }
 }
 
+function assertAffectedResolverWorkflow(file, source) {
+  if (source.includes('dorny/paths-filter')) {
+    violations.push(`${file}: must use scripts/resolve-affected-products.mjs instead of duplicated workflow path filters`);
+  }
+  if (!source.includes('scripts/resolve-affected-products.mjs --json')) {
+    violations.push(`${file}: must resolve affected products through scripts/resolve-affected-products.mjs`);
+  }
+  if (!source.includes('affected-products.json')) {
+    violations.push(`${file}: must persist affected-products.json for CI summary/evidence`);
+  }
+}
+
 function assertMinNodeVersion(file, source, minVersion) {
   const versions = extractNodeVersions(source);
   for (const v of versions) {
@@ -408,6 +420,15 @@ assertPathFilters(apiConformanceFile, 'API contract conformance', apiConformance
 assertMinNodeVersion(apiConformanceFile, apiConformanceSource, 22);
 assertPnpmVersion(apiConformanceFile, apiConformanceSource, '10.33.0');
 assertNoSwallowedFailures(apiConformanceFile, apiConformanceSource);
+
+// ---------------------------------------------------------------------------
+// Check 3: product-isolated-ci.yml affected-product resolver adoption
+// ---------------------------------------------------------------------------
+
+const productIsolatedFile = '.github/workflows/product-isolated-ci.yml';
+const productIsolatedSource = readFileSync(path.join(repoRoot, productIsolatedFile), 'utf8');
+assertAffectedResolverWorkflow(productIsolatedFile, productIsolatedSource);
+assertNoSwallowedFailures(productIsolatedFile, productIsolatedSource);
 
 // ---------------------------------------------------------------------------
 // Report

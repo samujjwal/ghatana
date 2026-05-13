@@ -1,6 +1,7 @@
 package com.ghatana.platform.database;
 
 import java.util.Optional;
+import java.util.Map;
 
 /**
  * Kernel-owned data access context for database operations.
@@ -61,6 +62,42 @@ public interface DataAccessContext {
     Optional<String> getUserAgent();
 
     /**
+     * Gets the audit classification for the operation.
+     *
+     * @return audit classification if available, otherwise empty
+     */
+    Optional<String> getAuditClassification();
+
+    /**
+     * Gets the product-scoped data owner or resource scope.
+     *
+     * @return data owner scope if available, otherwise empty
+     */
+    Optional<String> getDataOwnerScope();
+
+    /**
+     * Gets the idempotency key for mutating operations.
+     *
+     * @return idempotency key if supplied, otherwise empty
+     */
+    Optional<String> getIdempotencyKey();
+
+    /**
+     * Returns the idempotency key or fails closed for mutating operations that require it.
+     *
+     * @return non-blank idempotency key
+     * @throws IllegalStateException if the idempotency key is not initialized
+     */
+    String requireIdempotencyKey();
+
+    /**
+     * Gets safe scalar product metadata for audit, policy, and observability.
+     *
+     * @return immutable metadata map
+     */
+    Map<String, String> getMetadata();
+
+    /**
      * Checks if the context is initialized with valid values.
      *
      * @return true if tenantId and principalId are present
@@ -77,6 +114,10 @@ public interface DataAccessContext {
         private final String requestId;
         private final String clientIp;
         private final String userAgent;
+        private final String auditClassification;
+        private final String dataOwnerScope;
+        private final String idempotencyKey;
+        private final Map<String, String> metadata;
 
         public Default(
                 String tenantId,
@@ -85,12 +126,30 @@ public interface DataAccessContext {
                 String requestId,
                 String clientIp,
                 String userAgent) {
+            this(tenantId, principalId, correlationId, requestId, clientIp, userAgent, null, null, null, Map.of());
+        }
+
+        public Default(
+                String tenantId,
+                String principalId,
+                String correlationId,
+                String requestId,
+                String clientIp,
+                String userAgent,
+                String auditClassification,
+                String dataOwnerScope,
+                String idempotencyKey,
+                Map<String, String> metadata) {
             this.tenantId = tenantId;
             this.principalId = principalId;
             this.correlationId = correlationId;
             this.requestId = requestId;
             this.clientIp = clientIp;
             this.userAgent = userAgent;
+            this.auditClassification = auditClassification;
+            this.dataOwnerScope = dataOwnerScope;
+            this.idempotencyKey = idempotencyKey;
+            this.metadata = Map.copyOf(metadata == null ? Map.of() : metadata);
         }
 
         @Override
@@ -127,6 +186,32 @@ public interface DataAccessContext {
         @Override
         public Optional<String> getUserAgent() {
             return Optional.ofNullable(userAgent).filter(s -> !s.isBlank());
+        }
+
+        @Override
+        public Optional<String> getAuditClassification() {
+            return Optional.ofNullable(auditClassification).filter(s -> !s.isBlank());
+        }
+
+        @Override
+        public Optional<String> getDataOwnerScope() {
+            return Optional.ofNullable(dataOwnerScope).filter(s -> !s.isBlank());
+        }
+
+        @Override
+        public Optional<String> getIdempotencyKey() {
+            return Optional.ofNullable(idempotencyKey).filter(s -> !s.isBlank());
+        }
+
+        @Override
+        public String requireIdempotencyKey() {
+            return getIdempotencyKey()
+                .orElseThrow(() -> new IllegalStateException("DataAccessContext not initialized: idempotencyKey is null or blank"));
+        }
+
+        @Override
+        public Map<String, String> getMetadata() {
+            return metadata;
         }
 
         @Override

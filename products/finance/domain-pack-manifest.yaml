@@ -5,6 +5,7 @@ schemaVersion: "1.0.0"
 id: finance
 version: "1.0.0"
 product: finance
+kind: domain-pack
 domain: capital-markets
 kernelCapabilitiesConsumed:
   - boundary-policy-evaluation
@@ -17,13 +18,27 @@ policyActions:
   - delete
   - export
   - download
-  - finance:settle
-  - finance:cancel
+  - settle
+  - cancel
 policyResources:
   - finance:transactions
   - finance:positions
   - finance:market-data
   - finance:risk-data
+policies:
+  actions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+    - settle
+    - cancel
+  resources:
+    - finance:transactions
+    - finance:positions
+    - finance:market-data
+    - finance:risk-data
 pluginsConsumed:
   - plugin-audit-trail
   - plugin-compliance
@@ -39,6 +54,11 @@ uiSurfaces: []
 runtimeServices:
   - launcher
   - integration-testing
+surfaces:
+  ui: []
+  runtime:
+    - launcher
+    - integration-testing
 dataSensitivity: regulated-finance
 capabilities:
   - id: finance.trade-processing
@@ -177,6 +197,11 @@ metadata:
   author: "Ghatana Finance Team"
   documentation: "docs/README.md"
   conformanceMode: "backend-only"
+  surfaceImplementation:
+    - backend-api=backend-only
+    - portal=backend-only
+    - operator=backend-only
+    - sdk=implemented
   productName: "Finance Domain Pack"
   description: "Capital markets domain pack with trading, risk, compliance, and settlement capabilities"
   type: domain-pack

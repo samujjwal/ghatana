@@ -27,6 +27,11 @@ import { ProductViewModeSelector } from '../components/ProductViewModeSelector';
 import { ActiveOperationsBar } from '../components/ActiveOperationsBar';
 import { ProductShell } from '../components/ProductShell';
 import {
+  ProductHeaderUserMenu,
+  ProductShellFooter,
+  createProductRoleSelectorConfig,
+} from '../components/ProductShellChrome';
+import {
   createRouteAccessEvaluator,
   filterDiscoverableRoutes,
   hasMinimumRole,
@@ -318,6 +323,54 @@ describe('ProductViewModeSelector', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Product shell chrome
+// ---------------------------------------------------------------------------
+
+describe('ProductShellChrome', () => {
+  it('renders the shared shell footer with default eyebrow copy', () => {
+    render(<ProductShellFooter description="Shared route disclosure." />);
+
+    expect(screen.getByText('Kernel shell')).toBeInTheDocument();
+    expect(screen.getByText('Shared route disclosure.')).toBeInTheDocument();
+  });
+
+  it('renders a user display label and logout action', () => {
+    const onLogout = vi.fn();
+    render(<ProductHeaderUserMenu displayName="Ada Lovelace" onLogout={onLogout} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
+
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    expect(onLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to email and signed-in labels for user display', () => {
+    const { rerender } = render(<ProductHeaderUserMenu email="user@example.com" />);
+
+    expect(screen.getByText('user@example.com')).toBeInTheDocument();
+
+    rerender(<ProductHeaderUserMenu />);
+    expect(screen.getByText('Signed in')).toBeInTheDocument();
+  });
+
+  it('returns role selector config without forcing product wrappers to build it manually', () => {
+    const config = createProductRoleSelectorConfig({
+      roleOrder: ROLE_ORDER,
+      roleLabels: selectorConfig.roleLabels,
+      roleDescriptions: selectorConfig.roleDescriptions,
+      availableRoles: selectorConfig.availableRoles,
+      roleSelectorTitle: selectorConfig.roleSelectorTitle,
+      roleSelectorLabel: selectorConfig.roleSelectorLabel,
+      roleSelectorDisclosureNote: selectorConfig.roleSelectorDisclosureNote,
+      onRoleChange: selectorConfig.onRoleChange,
+    });
+
+    expect(config.roleLabels?.admin).toBe('Admin view');
+    expect(config.availableRoles).toEqual(['primary-user', 'operator', 'admin']);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ActiveOperationsBar
 // ---------------------------------------------------------------------------
 
@@ -362,6 +415,117 @@ describe('ProductShell', () => {
 
     expect(screen.getByText('router-free-content')).toBeInTheDocument();
   });
+
+  it('keeps product content stable when sidebar state changes', () => {
+    const onRender = vi.fn();
+    const child = <RenderProbe label="stable-content" onRender={onRender} />;
+    const config = createShellPerformanceConfig();
+
+    render(
+      <MemoryRouter>
+        <ProductShell config={config}>{child}</ProductShell>
+      </MemoryRouter>,
+    );
+
+    expect(onRender).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
+    expect(onRender).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps product content stable while route, role, and notification shell inputs update', () => {
+    const onRender = vi.fn();
+    const child = <RenderProbe label="stable-content" onRender={onRender} />;
+    const operatorConfig = createShellPerformanceConfig();
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <ProductShell config={operatorConfig}>{child}</ProductShell>
+      </MemoryRouter>,
+    );
+
+    expect(onRender).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+
+    const adminConfig = createShellPerformanceConfig({ currentRole: 'admin' });
+    rerender(
+      <MemoryRouter>
+        <ProductShell config={adminConfig}>{child}</ProductShell>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+    expect(onRender).toHaveBeenCalledTimes(1);
+
+    const notifiedConfig = createShellPerformanceConfig({
+      currentRole: 'admin',
+      notifications: [
+        {
+          id: 'job-complete',
+          title: 'Import complete',
+          level: 'success',
+          timestamp: 'now',
+          read: false,
+        },
+      ],
+    });
+    rerender(
+      <MemoryRouter>
+        <ProductShell config={notifiedConfig}>{child}</ProductShell>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText('Notifications, 1 unread')).toBeInTheDocument();
+    expect(onRender).toHaveBeenCalledTimes(1);
+
+    const routeUpdatedConfig = createShellPerformanceConfig({
+      currentRole: 'admin',
+      routes: [
+        ...shellPerformanceRoutes,
+        { path: '/reports', label: 'Reports', lifecycle: 'stable', discoverable: true },
+      ],
+    });
+    rerender(
+      <MemoryRouter>
+        <ProductShell config={routeUpdatedConfig}>{child}</ProductShell>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Reports')).toBeInTheDocument();
+    expect(onRender).toHaveBeenCalledTimes(1);
+  });
+});
+
+const shellPerformanceRoutes: ProductRouteCapability[] = [
+  { path: '/', label: 'Home', lifecycle: 'stable', discoverable: true },
+  { path: '/admin', label: 'Admin', minimumRole: 'admin', lifecycle: 'stable', discoverable: true },
+];
+
+function createShellPerformanceConfig(
+  overrides: Partial<ProductShellConfig> = {},
+): ProductShellConfig {
+  return {
+    productName: 'Performance Shell',
+    currentRole: 'operator',
+    roleOrder: ROLE_ORDER,
+    routes: shellPerformanceRoutes,
+    ...overrides,
+  };
+}
+
+interface RenderProbeProps {
+  readonly label: string;
+  readonly onRender: () => void;
+}
+
+const RenderProbe = React.memo(function RenderProbe({
+  label,
+  onRender,
+}: RenderProbeProps): React.ReactElement {
+  onRender();
+  return <span>{label}</span>;
 });
 
 describe('shared route access helpers', () => {

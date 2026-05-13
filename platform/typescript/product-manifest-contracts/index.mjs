@@ -53,13 +53,26 @@ const moduleSchema = z.object({
   description: z.string().min(1),
 });
 
+const manifestPolicySchema = z.object({
+  actions: stringArraySchema,
+  resources: stringArraySchema,
+}).strict();
+
+const manifestSurfaceSchema = z.object({
+  ui: z.array(z.enum(['web', 'mobile'])),
+  runtime: stringArraySchema,
+}).strict();
+
 export const productManifestSchema = z.object({
   schemaVersion: z.string().regex(schemaVersionPattern),
   id: z.string().regex(slugPattern),
   version: z.string().regex(semverPattern),
   product: z.string().regex(slugPattern).optional(),
+  kind: z.enum(['domain-pack', 'business-product']),
   domain: z.string().min(1).optional(),
   rulePrefix: z.string().min(1).optional(),
+  policies: manifestPolicySchema,
+  surfaces: manifestSurfaceSchema,
   kernelCapabilitiesConsumed: stringArraySchema,
   policyActions: stringArraySchema,
   policyResources: stringArraySchema,
@@ -94,10 +107,6 @@ export function loadProductManifest(filePath, format) {
   const parsed = format === 'json' ? JSON.parse(content) : yaml.load(content);
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('manifest must parse to an object');
-  }
-
-  if (!parsed.schemaVersion && parsed.pack && typeof parsed.pack === 'object') {
-    return parsed.pack;
   }
 
   return parsed;

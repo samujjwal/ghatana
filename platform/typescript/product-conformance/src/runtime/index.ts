@@ -10,19 +10,19 @@ import { join } from 'path';
  * Runtime conformance check result.
  */
 export interface RuntimeCheckResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+  readonly warnings: readonly string[];
 }
 
 /**
  * Conformance check configuration.
  */
 export interface ConformanceConfig {
-  repoRoot: string;
-  productManifestPath: string;
-  observabilityFlowPath: string;
-  requiredProducts: string[];
+  readonly repoRoot: string;
+  readonly productManifestPath: string;
+  readonly observabilityFlowPath: string;
+  readonly requiredProducts: readonly string[];
 }
 
 /**
@@ -58,15 +58,15 @@ export function validateProductConformance(config: Partial<ConformanceConfig> = 
   // Validate required products are covered if manifests exist
   if (existsSync(manifestPath) && existsSync(flowPath)) {
     try {
-      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-      const flow = JSON.parse(readFileSync(flowPath, 'utf8'));
+      const manifest = toRecord(JSON.parse(readFileSync(manifestPath, 'utf8')));
+      const flow = toRecord(JSON.parse(readFileSync(flowPath, 'utf8')));
 
-      const manifestId = manifest.id || manifest.productName?.toLowerCase();
-      if (!manifestId) {
-        errors.push('Product manifest missing id or productName field');
+      const manifestProduct = typeof manifest?.product === 'string' ? manifest.product : null;
+      if (!manifestProduct) {
+        errors.push('Product manifest missing canonical product field');
       }
 
-      const coveredProducts = new Set(flow.flows?.map((f: any) => f.product) || []);
+      const coveredProducts = new Set(readFlowProducts(flow));
       for (const product of mergedConfig.requiredProducts) {
         if (!coveredProducts.has(product)) {
           warnings.push(`Observability flow missing coverage for product: ${product}`);
@@ -74,20 +74,18 @@ export function validateProductConformance(config: Partial<ConformanceConfig> = 
       }
 
       // Validate policy actions are namespaced
-      if (manifest.policyActions && Array.isArray(manifest.policyActions)) {
-        const unprefixedActions = manifest.policyActions.filter((action: string) => 
-          !action.includes(':')
-        );
+      const policyActions = readStringArray(manifest?.policyActions);
+      if (policyActions) {
+        const unprefixedActions = policyActions.filter((action) => !action.includes(':'));
         if (unprefixedActions.length > 0) {
           warnings.push(`Policy actions should be namespaced (e.g., "product:action"): ${unprefixedActions.join(', ')}`);
         }
       }
 
       // Validate policy resources are namespaced
-      if (manifest.policyResources && Array.isArray(manifest.policyResources)) {
-        const unprefixedResources = manifest.policyResources.filter((resource: string) => 
-          !resource.includes(':')
-        );
+      const policyResources = readStringArray(manifest?.policyResources);
+      if (policyResources) {
+        const unprefixedResources = policyResources.filter((resource) => !resource.includes(':'));
         if (unprefixedResources.length > 0) {
           warnings.push(`Policy resources should be namespaced (e.g., "product:resource"): ${unprefixedResources.join(', ')}`);
         }
@@ -115,4 +113,29 @@ export function assertProductConformance(config?: Partial<ConformanceConfig>): v
   if (result.warnings.length > 0) {
     console.warn(`Product conformance warnings:\n${result.warnings.join('\n')}`);
   }
+}
+
+function toRecord(value: unknown): Readonly<Record<string, unknown>> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Readonly<Record<string, unknown>>;
+}
+
+function readStringArray(value: unknown): readonly string[] | null {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    return null;
+  }
+  return value;
+}
+
+function readFlowProducts(flow: Readonly<Record<string, unknown>> | null): readonly string[] {
+  const flows = flow?.flows;
+  if (!Array.isArray(flows)) {
+    return [];
+  }
+  return flows.flatMap((entry: unknown) => {
+    const record = toRecord(entry);
+    return typeof record?.product === 'string' ? [record.product] : [];
+  });
 }

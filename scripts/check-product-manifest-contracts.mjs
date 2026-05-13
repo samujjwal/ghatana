@@ -145,6 +145,20 @@ function validateClientPackageFiles(entry, shape) {
     return;
   }
 
+  const surfaceStatuses = shape.surfaceStatuses && typeof shape.surfaceStatuses === 'object'
+    ? shape.surfaceStatuses
+    : {};
+
+  for (const surface of shape.surfaces ?? []) {
+    const status = surfaceStatuses[surface];
+    if (!status) {
+      addViolation(entry.file, `product-shape.json must declare implementation status for surface '${surface}'`);
+    }
+    if (!['implemented', 'planned', 'backend-only'].includes(status)) {
+      addViolation(entry.file, `product-shape.json surface '${surface}' has invalid implementation status '${status}'`);
+    }
+  }
+
   if (shape.ui) {
     if (shape.clientPackages.length === 0) {
       addViolation(entry.file, 'UI-enabled product must declare at least one client package');
@@ -160,6 +174,14 @@ function validateClientPackageFiles(entry, shape) {
 
   if (shape.clientPackages.length > 0) {
     addViolation(entry.file, 'backend-only product must not declare client packages in product-shape.json');
+  }
+
+  const uiSurfaceStatuses = ['web', 'mobile'].filter((surface) => surfaceStatuses[surface]);
+  if (uiSurfaceStatuses.length > 0) {
+    addViolation(
+      entry.file,
+      `backend-only product must not declare UI surface statuses: ${uiSurfaceStatuses.join(', ')}`,
+    );
   }
 
   const declaration = shape.backendOnlyDeclaration;
@@ -286,6 +308,15 @@ function runNegativeFixtureAssertions() {
     schemaVersion: '1.0.0',
     id: 'fixture',
     version: '1.0.0',
+    kind: 'domain-pack',
+    policies: {
+      actions: ['read'],
+      resources: ['records'],
+    },
+    surfaces: {
+      ui: ['web'],
+      runtime: ['api'],
+    },
     kernelCapabilitiesConsumed: ['audit-trail'],
     policyActions: ['read'],
     policyResources: ['records'],
@@ -376,8 +407,17 @@ function runNegativeFixtureAssertions() {
     id: 'test-scaffold',
     version: '0.1.0',
     product: 'test-scaffold',
+    kind: 'domain-pack',
     domain: 'test-domain',
     rulePrefix: 'TEST-BP-',
+    policies: {
+      actions: ['read', 'write', 'delete'],
+      resources: ['test-scaffold:core'],
+    },
+    surfaces: {
+      ui: ['web'],
+      runtime: ['launcher'],
+    },
     kernelCapabilitiesConsumed: ['boundary-policy-evaluation', 'audit-trail', 'tenant-context'],
     policyActions: ['read', 'write', 'delete'],
     policyResources: ['test-scaffold:core'],

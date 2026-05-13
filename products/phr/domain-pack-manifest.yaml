@@ -5,6 +5,7 @@ schemaVersion: "1.0.0"
 id: phr
 version: "1.0.0"
 product: phr
+kind: domain-pack
 domain: healthcare
 kernelCapabilitiesConsumed:
   - boundary-policy-evaluation
@@ -21,6 +22,17 @@ policyResources:
   - phr:subject-records
   - phr:interop
   - phr:clinical-documents
+policies:
+  actions:
+    - read
+    - write
+    - delete
+    - export
+    - download
+  resources:
+    - phr:subject-records
+    - phr:interop
+    - phr:clinical-documents
 pluginsConsumed:
   - plugin-audit-trail
   - plugin-compliance
@@ -37,6 +49,12 @@ uiSurfaces:
 runtimeServices:
   - launcher
   - fhir-server
+surfaces:
+  ui:
+    - web
+  runtime:
+    - launcher
+    - fhir-server
 dataSensitivity: regulated-health
 capabilities:
   - id: phr.patient-records

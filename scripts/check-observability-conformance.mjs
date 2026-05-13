@@ -11,6 +11,7 @@
  */
 
 import { existsSync, readFileSync } from "fs";
+import { execFileSync } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -134,10 +135,14 @@ function validateFlowManifestSchema(manifest, schema) {
           violations.push(`${flowManifestFile}: ${evidenceOwner} has unrecognized key ${key}`);
         }
       }
+      const evidenceType = evidence.type;
+      if (evidenceType !== "behavior") {
+        violations.push(`${flowManifestFile}: ${evidenceOwner}.type must be behavior`);
+      }
       if (!isNonEmptyString(evidence.file)) {
         violations.push(`${flowManifestFile}: ${evidenceOwner}.file must be a non-empty path`);
       }
-      validateStringArray({ owner: evidenceOwner, field: "tokens", value: evidence.tokens });
+      validateStringArray({ owner: evidenceOwner, field: "requiredFacets", value: evidence.requiredFacets });
     }
   }
 }
@@ -163,6 +168,7 @@ function validateFlowManifest() {
   const flows = manifest.flows ?? [];
   const requiredProducts = activeObservabilityProducts();
   const coveredProducts = new Set();
+  const behaviorCoveredProducts = new Set();
   let bridgeFlowCount = 0;
 
   if (!Array.isArray(requiredFacets) || requiredFacets.length === 0) {
@@ -205,11 +211,16 @@ function validateFlowManifest() {
         continue;
       }
 
-      const content = readFileSync(evidencePath, "utf8");
-      const missingTokens = (evidence.tokens ?? []).filter((token) => !content.includes(token));
-      if (missingTokens.length > 0) {
+      if (evidence.type !== "behavior") {
+        violations.push(`${flowManifestFile}: ${flowName} must use executable behavior evidence`);
+        continue;
+      }
+
+      behaviorCoveredProducts.add(flow.product);
+      const missingFacets = (evidence.requiredFacets ?? []).filter((facet) => !flow.facets.includes(facet));
+      if (missingFacets.length > 0) {
         violations.push(
-          `${flowManifestFile}: ${flowName} evidence ${evidenceFile} missing tokens ${missingTokens.join(", ")}`,
+          `${flowManifestFile}: ${flowName} behavior evidence ${evidenceFile} declares facets not present on flow ${missingFacets.join(", ")}`,
         );
       }
     }
@@ -219,10 +230,37 @@ function validateFlowManifest() {
     if (!coveredProducts.has(product)) {
       violations.push(`${flowManifestFile}: missing observability flow coverage for ${product}`);
     }
+    if (!behaviorCoveredProducts.has(product)) {
+      violations.push(`${flowManifestFile}: missing executable behavior telemetry evidence for ${product}`);
+    }
   }
 
   if (bridgeFlowCount === 0) {
     violations.push(`${flowManifestFile}: at least one bridge flow must be covered`);
+  }
+}
+
+function validateExecutableTelemetryHarness() {
+  try {
+    execFileSync(
+      "pnpm",
+      [
+        "--dir",
+        "platform/typescript/product-conformance",
+        "exec",
+        "vitest",
+        "run",
+        "src/observability-flows/__tests__/observability-flows.test.ts",
+        "src/telemetry/__tests__/telemetry.test.ts",
+      ],
+      {
+        cwd: repoRoot,
+        stdio: "inherit",
+      },
+    );
+  } catch (error) {
+    const status = typeof error.status === "number" ? ` exited with status ${error.status}` : "";
+    violations.push(`Executable telemetry conformance tests failed${status}`);
   }
 }
 
@@ -235,6 +273,9 @@ for (const file of forbiddenProductStackFiles) {
 }
 
 validateFlowManifest();
+if (violations.length === 0) {
+  validateExecutableTelemetryHarness();
+}
 
 if (violations.length > 0) {
   console.error(`❌ Observability conformance check failed with ${violations.length} violation(s):\n`);

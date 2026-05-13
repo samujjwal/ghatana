@@ -42,6 +42,7 @@ dependencies {
     implementation("org.aspectj:aspectjrt:1.9.20")
 
     // Metrics - Micrometer
+    implementation(libs.jackson.databind)
     api(libs.micrometer.core)
     api(libs.micrometer.registry.prometheus)
 

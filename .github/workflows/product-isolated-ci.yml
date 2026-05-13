@@ -41,52 +41,59 @@ jobs:
     name: Detect Changed Products
     runs-on: ubuntu-latest
     outputs:
-      yappc:       ${{ steps.filter.outputs.yappc }}
-      aep:         ${{ steps.filter.outputs.aep }}
-      data-cloud:  ${{ steps.filter.outputs.data_cloud }}
-      audio-video: ${{ steps.filter.outputs.audio_video }}
-      dcmaar:      ${{ steps.filter.outputs.dcmaar }}
-      platform:    ${{ steps.filter.outputs.platform }}
+      yappc:       ${{ steps.resolve.outputs.yappc }}
+      aep:         ${{ steps.resolve.outputs.aep }}
+      data-cloud:  ${{ steps.resolve.outputs.data-cloud }}
+      audio-video: ${{ steps.resolve.outputs.audio-video }}
+      dcmaar:      ${{ steps.resolve.outputs.dcmaar }}
+      platform:    ${{ steps.resolve.outputs.platform }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect file changes
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            yappc:
-              - 'products/yappc/**'
-            aep:
-              - 'products/data-cloud/planes/action/**'
-            data_cloud:
-              - 'products/data-cloud/**'
-            audio_video:
-              - 'products/audio-video/**'
-            dcmaar:
-              - 'products/dcmaar/**'
-            platform:
-              - 'platform/**'
-              - 'shared-services/**'
-              - 'gradle/**'
-              - 'build.gradle.kts'
-              - 'settings.gradle.kts'
-              - 'gradle.properties'
+      - name: Resolve affected products
+        id: resolve
+        shell: bash
+        run: |
+          BASE_REF="${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}"
+          HEAD_REF="${{ github.event.pull_request.head.sha || github.sha }}"
+          node scripts/resolve-affected-products.mjs --json --base "$BASE_REF" --head "$HEAD_REF" > affected-products.json
+          git diff --name-only "$BASE_REF...$HEAD_REF" > changed-files.txt
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('affected-products.json', 'utf8'));
+          const changedFiles = fs.readFileSync('changed-files.txt', 'utf8').split(/\r?\n/).filter(Boolean);
+          const affected = new Set(report.affectedProducts);
+          const hasReason = (prefix) => report.products.some((product) =>
+            product.reasons.some((reason) => reason.startsWith(prefix)));
+          const outputs = {
+            yappc: affected.has('yappc'),
+            aep: changedFiles.some((file) => file.startsWith('products/data-cloud/planes/action/')),
+            'data-cloud': affected.has('data-cloud'),
+            'audio-video': affected.has('audio-video'),
+            dcmaar: affected.has('dcmaar'),
+            platform: hasReason('platform-java:') || hasReason('platform-ui:') || hasReason('platform-typescript:') || hasReason('global:'),
+          };
+          const outputFile = process.env.GITHUB_OUTPUT;
+          fs.appendFileSync(
+            outputFile,
+            Object.entries(outputs).map(([key, value]) => `${key}=${value ? 'true' : 'false'}`).join('\n') + '\n',
+          );
+          NODE
 
       - name: Log change summary
         run: |
           echo "### Changed Products" >> $GITHUB_STEP_SUMMARY
           echo "| Product | Changed |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| YAPPC       | ${{ steps.filter.outputs.yappc }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Action Plane (Data Cloud) | ${{ steps.filter.outputs.aep }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Data Cloud  | ${{ steps.filter.outputs.data_cloud }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Audio-Video | ${{ steps.filter.outputs.audio_video }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| DCMAAR      | ${{ steps.filter.outputs.dcmaar }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform    | ${{ steps.filter.outputs.platform }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| YAPPC       | ${{ steps.resolve.outputs.yappc }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action Plane (Data Cloud) | ${{ steps.resolve.outputs.aep }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Data Cloud  | ${{ steps.resolve.outputs.data-cloud }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Audio-Video | ${{ steps.resolve.outputs.audio-video }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DCMAAR      | ${{ steps.resolve.outputs.dcmaar }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform    | ${{ steps.resolve.outputs.platform }} |" >> $GITHUB_STEP_SUMMARY
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 2: Build platform libraries (only when platform itself changes)

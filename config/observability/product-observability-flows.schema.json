@@ -63,13 +63,16 @@
     },
     "evidence": {
       "type": "object",
-      "required": ["file", "tokens"],
+      "required": ["type", "file", "requiredFacets"],
       "properties": {
+        "type": {
+          "const": "behavior"
+        },
         "file": {
           "type": "string",
           "minLength": 1
         },
-        "tokens": {
+        "requiredFacets": {
           "type": "array",
           "minItems": 1,
           "items": {

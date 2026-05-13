@@ -7,6 +7,10 @@
         "backend-api",
         "web"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented"
+      },
       "clientPackages": [
         "products/phr/apps/web/package.json"
       ]
@@ -20,6 +24,12 @@
         "operator",
         "sdk"
       ],
+      "surfaceStatuses": {
+        "backend-api": "backend-only",
+        "portal": "backend-only",
+        "operator": "backend-only",
+        "sdk": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/finance/README.md",
@@ -33,6 +43,10 @@
         "backend-api",
         "web"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented"
+      },
       "clientPackages": [
         "products/digital-marketing/ui/package.json"
       ]
@@ -45,6 +59,11 @@
         "web",
         "mobile"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented",
+        "mobile": "implemented"
+      },
       "clientPackages": [
         "products/flashit/client/web/package.json",
         "products/flashit/client/mobile/package.json"
@@ -58,6 +77,11 @@
         "web",
         "sdk"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented",
+        "sdk": "implemented"
+      },
       "clientPackages": [
         "products/data-cloud/delivery/ui/package.json"
       ]
@@ -69,6 +93,10 @@
         "backend-api",
         "web"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented"
+      },
       "clientPackages": [
         "products/yappc/frontend/package.json"
       ]
@@ -79,6 +107,9 @@
       "surfaces": [
         "backend-api"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/audio-video/README.md",
@@ -92,6 +123,10 @@
         "backend-api",
         "web"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented"
+      },
       "clientPackages": [
         "products/dcmaar/apps/package.json"
       ]
@@ -103,6 +138,10 @@
         "backend-api",
         "web"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented"
+      },
       "clientPackages": [
         "products/tutorputor/apps/package.json"
       ]
@@ -113,6 +152,9 @@
       "surfaces": [
         "backend-api"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/aura/README.md",
@@ -125,6 +167,9 @@
       "surfaces": [
         "backend-api"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/software-org/README.md",
@@ -137,6 +182,9 @@
       "surfaces": [
         "backend-api"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/virtual-org/README.md",
@@ -149,6 +197,9 @@
       "surfaces": [
         "backend-api"
       ],
+      "surfaceStatuses": {
+        "backend-api": "implemented"
+      },
       "clientPackages": [],
       "backendOnlyDeclaration": {
         "file": "products/security-gateway/README.md",

@@ -95,16 +95,12 @@ public final class PhrEntitlementRoutes {
             return jsonResponse(200, cached.get());
         }
 
-        // Compute entitlements
-        List<ProductRouteEntitlement.ActionEntitlement> actions = List.of(
-            new ProductRouteEntitlement.ActionEntitlement("view-patient-summary", "View patient summary", "/dashboard"),
-            new ProductRouteEntitlement.ActionEntitlement("view-records", "View records", "/records"),
-            new ProductRouteEntitlement.ActionEntitlement("manage-consent", "Manage consent", "/consents")
-        );
-        List<ProductRouteEntitlement.CardEntitlement> cards = List.of(
-            new ProductRouteEntitlement.CardEntitlement("patient-summary", "Patient summary", "/dashboard", "dashboard"),
-            new ProductRouteEntitlement.CardEntitlement("active-consent-grants", "Active consent grants", "/consents", "dashboard")
-        );
+        Map<String, Integer> roleOrder = phrRoleOrder();
+        List<ProductRouteEntitlement.RouteEntitlement> routes = phrRoutesFor(role, roleOrder);
+        List<ProductRouteEntitlement.ActionEntitlement> actions =
+            routeEntitlementEvaluator.filterActionsByRole(routes, role, roleOrder);
+        List<ProductRouteEntitlement.CardEntitlement> cards =
+            routeEntitlementEvaluator.filterCardsByRole(routes, role, roleOrder);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "phr",
@@ -114,7 +110,7 @@ public final class PhrEntitlementRoutes {
             persona,
             tier,
             null,  // correlationId can be null
-            phrRoutesFor(role),
+            routes,
             actions,
             cards
         );
@@ -139,14 +135,16 @@ public final class PhrEntitlementRoutes {
         return jsonResponse(200, entitlementMap);
     }
 
-    private List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(String role) {
-        Map<String, Integer> roleOrder = Map.of(
+    private static Map<String, Integer> phrRoleOrder() {
+        return Map.of(
             "patient", 0,
             "caregiver", 1,
             "clinician", 2,
             "admin", 3
         );
+    }
 
+    private List<ProductRouteEntitlement.RouteEntitlement> phrRoutesFor(String role, Map<String, Integer> roleOrder) {
         List<ProductRouteEntitlement.RouteEntitlement> allRoutes = List.of(
             route("/dashboard", "Dashboard", "patient", List.of("view-patient-summary"), List.of("patient-summary")),
             route("/records", "Records", "patient", List.of("view-records"), List.of("record-highlights")),

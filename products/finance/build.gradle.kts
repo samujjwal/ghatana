@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:security"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
