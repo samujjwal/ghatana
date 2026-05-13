@@ -1,83 +1,69 @@
-# Kernel Product Lifecycle Platform Stabilization & Enhancement Plan
+# Kernel Product Lifecycle Platform Stabilization Plan
 
 **Repository:** `samujjwal/ghatana`  
-**Target commit/head:** `30e856fd0104a1c39b43eecc2736acdf42932676`  
-**Purpose:** provide an implementation-ready, file-by-file plan to stabilize and enhance the Kernel product lifecycle platform based on the current codebase and the repo rules in `.github/copilot-instructions.md`.
+**Target commit reviewed:** `ef9d6ecbe65b967fa551b0fe6c4a94a23180ff8c`  
+**Scope:** Kernel product lifecycle platform, platform plugins, product lifecycle declarations, shared TypeScript libraries, scaffolding, conformance, and Digital Marketing pilot.  
+**Explicit non-goal:** Do **not** bring `yappc` or `data-cloud` into this lifecycle framework in this implementation stream.
 
 ---
 
-## 0. Executive summary
+## 1. Implementation North Star
 
-At this commit, Kernel lifecycle support is already partially introduced. The codebase now contains lifecycle fields in the canonical registry/schema, lifecycle profiles, toolchain adapter registry, early CLI scripts, and early TypeScript packages for lifecycle, toolchains, artifacts, deployment, and release. Digital Marketing also already has a `kernel-product.yaml` and `lifecycle.local.yaml`.
+Kernel should become the product developer’s end-to-end product platform.
 
-So the work should **not** restart from concept. The work should **stabilize, normalize, harden, test, and make executable** what already exists.
-
-The core target remains:
-
-```text
-Kernel owns product lifecycle and contracts.
-Toolchain adapters own concrete tool execution.
-Products own business behavior and product-specific configuration.
-```
-
-A normal product developer should eventually use:
+A product developer should use:
 
 ```bash
-kernel product plan digital-marketing build
-kernel product dev digital-marketing
-kernel product validate digital-marketing
-kernel product test digital-marketing
-kernel product build digital-marketing
-kernel product package digital-marketing
-kernel product deploy digital-marketing --env local
-kernel product verify digital-marketing --env local
+pnpm kernel product plan digital-marketing build
+pnpm kernel product dev digital-marketing
+pnpm kernel product validate digital-marketing
+pnpm kernel product test digital-marketing
+pnpm kernel product build digital-marketing
+pnpm kernel product package digital-marketing
+pnpm kernel product deploy digital-marketing --env local
+pnpm kernel product verify digital-marketing --env local
 ```
 
-They should not need to care whether Gradle, pnpm, Vite, Docker, Compose, Kubernetes, Helm, Terraform, Vitest, or Playwright is used internally.
+The developer should not need to know whether the underlying executor is Gradle, pnpm, Vite, Vitest, Playwright, Docker, Compose, Helm, Terraform, or something else.
+
+Power users can override toolchains, but only through Kernel-governed adapters that still satisfy Kernel contracts.
 
 ---
 
-## 1. Repo rules that govern this work
+## 2. Repo Instruction Constraints That Must Drive Implementation
 
-The implementation must strictly follow `.github/copilot-instructions.md`.
+The `.github/copilot-instructions.md` file is the governing repo-specific implementation rulebook. This plan applies the following constraints directly:
 
-The most relevant rules are:
+1. Reuse before creating.
+2. Do not deviate from existing Ghatana repo shape.
+3. Keep boundaries explicit.
+4. No silent failures.
+5. No unsafe defaults or hardcoded secrets.
+6. Zero-warning mindset.
+7. Type safety during implementation, not later.
+8. Tests are part of every meaningful change.
+9. Public Java APIs require `@doc.*` documentation tags.
+10. Prefer existing dependencies; do not introduce overlapping stacks.
+11. Make observability part of the feature.
+12. Keep product-specific logic in product-owned areas.
+13. Shared platform modules must stay generic and product-agnostic.
+14. Do not turn shared packages into dumping grounds.
+15. Favor explicit contracts and maintainability over novelty.
+
+Immediate consequence for this work:
 
 ```text
-- Reuse before creating.
-- Do not deviate from the existing Ghatana repo shape.
-- Keep boundaries explicit.
-- No silent failures.
-- No hardcoded secrets or unsafe defaults.
-- Zero-warning mindset.
-- Type safety is implementation-time, not later.
-- Tests are part of the change.
-- Public Java APIs require @doc.* documentation tags.
-- Prefer existing dependencies.
-- Make observability part of the feature.
-```
-
-For this initiative that means:
-
-```text
-- Extend existing kernel-lifecycle, kernel-toolchains, kernel-artifacts, kernel-deployment, and kernel-release packages.
-- Do not create parallel lifecycle packages.
-- Keep product-specific lifecycle config under products/<productId>/.
-- Keep shared Kernel packages product-neutral.
-- Use strict TypeScript and typed schemas.
-- Use Zod or JSON schema at config boundaries.
-- Never use shell-string execution for tool commands.
-- Do not leave TODO validators in production paths.
-- Add unit tests and contract tests for every behavior change.
+Do not create a parallel lifecycle architecture.
+Stabilize and widen the lifecycle scaffolding that already exists at this commit.
 ```
 
 ---
 
-## 2. Current-state findings at commit `30e856fd0104a1c39b43eecc2736acdf42932676`
+## 3. Current-State Findings at the Target Commit
 
-### 2.1 Strong existing foundations
+The commit already contains first-pass lifecycle implementation pieces.
 
-The following should be preserved and hardened:
+### 3.1 Already present
 
 ```text
 config/canonical-product-registry.json
@@ -85,363 +71,312 @@ config/canonical-product-registry-schema.json
 config/product-lifecycle-profiles.json
 config/toolchain-adapter-registry.json
 scripts/kernel-product.mjs
+scripts/run-product-lifecycle.mjs
 scripts/run-product-task.mjs
+scripts/check-kernel-platform-lifecycle.mjs
 scripts/check-product-lifecycle-contracts.mjs
 platform/typescript/kernel-lifecycle
 platform/typescript/kernel-toolchains
-platform/typescript/kernel-artifacts
-platform/typescript/kernel-deployment
-platform/typescript/kernel-release
 products/digital-marketing/kernel-product.yaml
-products/digital-marketing/lifecycle.local.yaml
+products/phr/kernel-product.yaml
+products/finance/kernel-product.yaml
+products/flashit/kernel-product.yaml
 ```
 
-### 2.2 Critical gaps to fix first
+### 3.2 Important current problems
 
-#### Gap 1 — Build/test/dev scripts are plan-only
+#### Problem 1 — Lifecycle exists, but the implementation is split and duplicated
 
-Root `package.json` contains generated scripts such as:
+`kernel-product.mjs` contains its own YAML parser, registry loading, planning, execution, and command mapping. Separately, `platform/typescript/kernel-lifecycle` contains `ProductLifecyclePlanner`. Separately again, `scripts/run-product-lifecycle.mjs` imports `ProductLifecyclePlanner`.
 
-```json
-"build:digital-marketing": "node scripts/kernel-product.mjs plan digital-marketing build"
-```
+This violates reuse and creates drift.
 
-That prints a plan instead of executing a build. Imperative script names must execute. Planning scripts must be explicitly named `plan:*`.
-
-#### Gap 2 — `run-product-task.mjs` delegates build/test/dev to `plan`
-
-`pnpm product digital-marketing build` currently delegates lifecycle-enabled tasks to:
+Required direction:
 
 ```text
-node scripts/kernel-product.mjs plan digital-marketing build
+scripts/kernel-product.mjs must be a thin CLI wrapper.
+platform/typescript/kernel-lifecycle must own lifecycle planning/execution.
+platform/typescript/kernel-toolchains must own tool-specific execution.
 ```
 
-This must become execution:
+#### Problem 2 — `scripts/run-product-lifecycle.mjs` is inconsistent with the current planner
+
+`run-product-lifecycle.mjs` calls:
+
+```ts
+new ProductLifecyclePlanner()
+```
+
+but the current `ProductLifecyclePlanner` constructor requires `repoRoot: string`.
+
+Also, the script says execution is not implemented.
+
+Required direction:
 
 ```text
-node scripts/kernel-product.mjs product build digital-marketing
+Keep only one canonical CLI path.
+Either remove run-product-lifecycle.mjs or turn it into a thin alias to kernel-product.mjs.
 ```
 
-#### Gap 3 — CLI imports are fragile
+#### Problem 3 — Type definitions are duplicated
 
-`scripts/kernel-product.mjs` imports:
+`kernel-toolchains/src/ToolchainAdapter.ts` duplicates `ProductLifecyclePhase`, `ProductSurfaceType`, and `ProductSurface`, with TODO comments saying they should be unified.
+
+Required direction:
 
 ```text
-platform/typescript/kernel-lifecycle/src/... .js
-platform/typescript/kernel-release/dist/index.js
+Create a shared lifecycle contract package or move common contracts to one existing package.
+Do not keep duplicated lifecycle types.
 ```
 
-This mixes source and dist imports and can fail in a clean checkout.
+#### Problem 4 — Toolchain adapters still have correctness issues
 
-#### Gap 4 — hardcoded local absolute paths
+Known issues:
 
-`ProductLifecyclePlanner.ts` defaults to:
+1. `PnpmViteReactAdapter` references `context.surface.id`, but `ProductSurface` has no `id`.
+2. `GradleJavaServiceAdapter` and `PnpmViteReactAdapter` generate artifact manifests internally.
+3. Artifact manifest generation failures are logged as warnings and treated as non-blocking.
+4. Some phase-to-task mappings return build/test tasks for unsupported lifecycle phases.
+5. Output validation is too generic and does not honor product-specific expected artifacts from `kernel-product.yaml`.
+
+Required direction:
 
 ```text
-/Users/samujjwal/Development/ghatana/config
+Adapters return structured outputs.
+Lifecycle/artifact layer writes manifests.
+Required artifact failure is fatal.
+Unsupported phase must fail closed.
 ```
 
-This breaks CI, other developers, and any non-local execution.
+#### Problem 5 — Dependency/version drift exists in new TypeScript packages
 
-#### Gap 5 — unsafe shell-string execution
+`platform/typescript/kernel-lifecycle/package.json` currently declares local versions such as TypeScript 5.x, ESLint 8.x, Zod 3.x, and `@types/node` 20.x, while the root workspace uses newer standardized overrides/catalog patterns.
 
-Adapters use `exec` with joined command strings. Commands must be executed with `spawn`/`execFile` and explicit args arrays.
-
-#### Gap 6 — ESM/CommonJS mixing
-
-Adapters are ESM TypeScript but use `require('node:child_process')`. Replace with ESM imports.
-
-#### Gap 7 — wrong pnpm package path handling
-
-`PnpmViteReactAdapter` uses `packagePath` as the `pnpm --dir` value. For Digital Marketing, packagePath points to `package.json`; `pnpm --dir` must receive the package directory.
-
-#### Gap 8 — wrong Gradle cwd logic
-
-`GradleJavaServiceAdapter.resolveModulePath()` converts `:products:digital-marketing:dm-api` into `/products/digital-marketing/dm-api`, which is not the correct working directory. Gradle should run from repo root with module task args.
-
-#### Gap 9 — validators are placeholders
-
-`validateOutputs()` returns valid unconditionally in adapters. This violates no-silent-failures.
-
-#### Gap 10 — artifact manifests are untrustworthy
-
-Artifact manifest generation uses empty hashes and size `0`. Hashes and sizes must be computed from real files/directories.
-
-#### Gap 11 — registry/schema drift
-
-The schema requires artifact declarations with `type` and `packaging`, where type is semantic, but registry entries use shapes like:
-
-```json
-"backend-api": {
-  "type": "jar",
-  "surface": "backend-api"
-}
-```
-
-This conflicts with the schema.
-
-#### Gap 12 — duplicate lifecycle types
-
-Lifecycle phase and surface types are duplicated between `kernel-lifecycle` and `kernel-toolchains`. There must be one source of truth.
-
-#### Gap 13 — checks are shallow
-
-`check-product-lifecycle-contracts.mjs` checks only basic existence. It must validate config, adapters, phases, surfaces, artifacts, deployment targets, and health checks.
-
----
-
-## 3. Stabilization strategy
-
-Do the work in this order:
+Required direction:
 
 ```text
-P0 — Correct command semantics, registry/schema drift, and hardcoded paths.
-P1 — Make lifecycle planning schema-backed and portable.
-P2 — Make adapters safe and execution-correct.
-P3 — Make artifact validation real.
-P4 — Make Digital Marketing build/test/dev work through Kernel.
-P5 — Add package/local-deploy dry-run.
-P6 — Expand lifecycle conformance.
-P7 — Migrate PHR and FlashIt after Digital Marketing is clean.
+Use workspace catalog / root-approved versions.
+Do not introduce version drift.
 ```
 
-Do not add more planned adapters before stabilizing the current path.
+#### Problem 6 — YAPPC and Data Cloud are currently partially lifecycle-annotated
 
----
+The registry includes lifecycle fields for `yappc` and `data-cloud`, but the requested implementation direction says we do not bring those products into this framework.
 
-# 4. File-by-file implementation plan
-
----
-
-## 4.1 `.github/copilot-instructions.md`
-
-### Action
-
-Do not modify unless a repo-wide governance update is explicitly needed.
-
-### Implementation requirement
-
-Use this file as binding guidance for every code change.
-
-### Validation
-
-Each PR should state that the change follows:
+Required direction:
 
 ```text
-- reuse-first
-- explicit boundaries
-- no silent failures
-- strict TypeScript
-- test coverage
-- observability
-- no unsafe command execution
+Explicitly exclude yappc and data-cloud from lifecycle adoption.
+Remove/disable their lifecycle-specific registry fields and enforce exclusion in checks.
+Keep their existing build/test scripts unchanged.
+```
+
+#### Problem 7 — Some non-Digital-Marketing `kernel-product.yaml` files are not accurate
+
+Examples:
+
+- `products/phr/kernel-product.yaml` refers to `products:phr:delivery:gateway`, which does not align with the registry’s current `:products:phr` and `:products:phr:launcher` modules.
+- `products/finance/kernel-product.yaml` refers to delivery/worker/operator paths that do not align with the currently registered Finance modules.
+- `products/flashit/kernel-product.yaml` introduces `mobile-ios` and `mobile-android` surface types, while the registry surface enum uses `mobile`.
+
+Required direction:
+
+```text
+Digital Marketing remains enabled pilot.
+PHR, Finance, and FlashIt remain planned/partial until their configs are corrected.
+Lifecycle checks must distinguish enabled products from planned/partial products.
+```
+
+#### Problem 8 — Package scripts expose lifecycle partially and inconsistently
+
+`package.json` contains lifecycle scripts for Digital Marketing, but:
+
+- `promote:digital-marketing` passes `--from` and `--to`, while `kernel-product.mjs` does not parse those options.
+- Legacy `pnpm product` still delegates only some lifecycle tasks.
+- Non-lifecycle products remain on old routing, which is acceptable, but checks must make the distinction explicit.
+
+Required direction:
+
+```text
+Make Digital Marketing lifecycle scripts correct.
+Keep old product task routing for non-lifecycle products.
+Do not lifecycle-migrate yappc/data-cloud.
+```
+
+#### Problem 9 — Product lifecycle docs are too thin
+
+`docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md` exists but does not fully define phase contracts, inputs, outputs, failure policy, artifact expectations, environment expectations, gate semantics, or adapter responsibilities.
+
+Required direction:
+
+```text
+Expand docs to be contract-grade and enforceable by schema/checks.
 ```
 
 ---
 
-## 4.2 `config/canonical-product-registry-schema.json`
+## 4. Product Scope Decisions
+
+### 4.1 Lifecycle enabled now
+
+Only:
+
+```text
+digital-marketing
+```
+
+### 4.2 Lifecycle planned, not enabled until corrected
+
+```text
+phr
+finance
+flashit
+security-gateway
+audio-video
+dcmaar
+tutorputor
+```
+
+These can remain in future migration scope, but they must not be treated as production-ready lifecycle products until config and adapters are correct.
+
+### 4.3 Lifecycle explicitly excluded
+
+```text
+yappc
+data-cloud
+```
+
+Do not create lifecycle config, lifecycle execution, lifecycle CI, or lifecycle migration tasks for these two in this stream.
+
+They can continue to use existing product task scripts, Gradle, pnpm, and product-specific flows.
+
+---
+
+# 5. File-by-File Implementation Plan
+
+---
+
+## 5.1 `config/canonical-product-registry.json`
 
 ### Current issue
 
-Lifecycle fields exist, but artifact and lifecycle migration semantics are not strong enough.
+The registry contains lifecycle fields for many products, including `yappc` and `data-cloud`. This conflicts with the requested scope.
 
 ### Required changes
 
-Add lifecycle status:
+#### Digital Marketing
 
-```json
-"lifecycleStatus": {
-  "type": "string",
-  "enum": ["disabled", "planned", "partial", "enabled"]
-}
-```
+Keep and refine lifecycle entry.
 
-Add lifecycle migration details:
-
-```json
-"lifecycleMigration": {
-  "type": "object",
-  "properties": {
-    "status": {
-      "type": "string",
-      "enum": ["not-started", "partial", "ready", "blocked"]
-    },
-    "notes": { "type": "string" },
-    "blockingFiles": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
-  }
-}
-```
-
-Replace hardcoded artifact keys with dynamic surface keys:
-
-```json
-"ProductArtifactsConfiguration": {
-  "type": "object",
-  "additionalProperties": {
-    "$ref": "#/definitions/ProductArtifactDeclaration"
-  }
-}
-```
-
-Normalize artifact declaration:
-
-```json
-"ProductArtifactDeclaration": {
-  "type": "object",
-  "required": ["type", "packaging"],
-  "additionalProperties": false,
-  "properties": {
-    "type": {
-      "type": "string",
-      "enum": [
-        "jvm-service",
-        "jvm-library",
-        "node-service",
-        "static-web-bundle",
-        "container-image",
-        "mobile-bundle",
-        "sdk-package",
-        "domain-pack",
-        "test-report",
-        "coverage-report"
-      ]
-    },
-    "packaging": {
-      "type": "string",
-      "enum": [
-        "jar",
-        "distribution",
-        "static-files",
-        "container",
-        "npm",
-        "maven",
-        "apk",
-        "aab",
-        "ipa",
-        "json",
-        "xml"
-      ]
-    },
-    "required": { "type": "boolean", "default": true }
-  }
-}
-```
-
-### Acceptance criteria
-
-```text
-- Digital Marketing registry entry validates.
-- Products not fully migrated can be marked partial/planned.
-- Artifact declarations no longer conflict with schema.
-```
-
----
-
-## 4.3 `config/canonical-product-registry.json`
-
-### Current issue
-
-Several products contain lifecycle fields, but the implementation is only safe for Digital Marketing pilot right now. Artifact declarations also drift from schema.
-
-### Required changes
-
-For `digital-marketing`, set:
+Ensure:
 
 ```json
 "lifecycleStatus": "enabled",
-"lifecycleProfile": "standard-web-api-product",
 "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
-"artifacts": {
-  "backend-api": {
-    "type": "jvm-service",
-    "packaging": "jar",
-    "required": true
-  },
-  "web": {
-    "type": "static-web-bundle",
-    "packaging": "static-files",
-    "required": true
+"lifecycle": {
+  "enabled": true
+}
+```
+
+Ensure Digital Marketing lifecycle toolchain only declares adapters currently implemented and safe:
+
+```json
+"toolchain": {
+  "profile": "standard-web-api-product",
+  "adapters": {
+    "backend-api": "gradle-java-service",
+    "web": "pnpm-vite-react"
   }
 }
 ```
 
-For all other products with lifecycle fields, set either:
+Keep deployment as local only for now:
 
 ```json
-"lifecycleStatus": "partial"
+"deployment": {
+  "targets": ["compose-local"],
+  "defaultEnvironment": "local",
+  "healthChecks": ["standard-http"],
+  "rollback": {
+    "strategy": "previous-artifact"
+  }
+}
 ```
 
-or:
+#### PHR, Finance, FlashIt
+
+Set:
 
 ```json
 "lifecycleStatus": "planned"
 ```
 
-until product-specific `kernel-product.yaml`, adapters, artifacts, and health checks are validated.
-
-Add migration notes for partial products:
+or:
 
 ```json
-"lifecycleMigration": {
-  "status": "partial",
-  "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+"lifecycleStatus": "partial"
+```
+
+but ensure:
+
+```json
+"lifecycle": {
+  "enabled": false
 }
 ```
 
-### Acceptance criteria
+Do not require their lifecycle execution to pass yet.
+
+For PHR/Finance/FlashIt, either:
+
+1. Keep `lifecycleConfigPath` only if the file is accurate enough for static validation, or
+2. Remove `lifecycleConfigPath` until the product is actively migrated.
+
+Preferred immediate fix:
 
 ```text
-- Only Digital Marketing is marked lifecycle enabled initially.
-- Partial products do not fail execution checks unless explicitly selected.
-- Artifact declarations match schema.
+Remove lifecycleConfigPath from PHR/Finance/FlashIt until their configs are corrected,
+or update checks so planned/partial entries may carry config paths that are warnings-only.
 ```
 
----
+#### YAPPC and Data Cloud
 
-## 4.4 `config/product-lifecycle-profiles.json`
-
-### Current issue
-
-Profiles include future default adapters such as Kubernetes, Helm, Terraform, Xcode, Gradle Android, etc. Some are declared before implementation is stable.
-
-### Required changes
-
-Add profile status:
-
-```json
-"status": "stable" | "experimental"
-```
-
-For `standard-web-api-product`, keep stable defaults only:
-
-```json
-"defaultAdapters": {
-  "backend-api": "gradle-java-service",
-  "web": "pnpm-vite-react",
-  "deploy.local": "compose-local"
-}
-```
-
-Move future deployment adapters to a separate future profile:
+Remove the following fields entirely from `yappc` and `data-cloud`:
 
 ```text
-standard-web-api-product-kubernetes
+lifecycleProfile
+lifecycleStatus
+lifecycleMigration
+lifecycleConfigPath
+lifecycle
+toolchain
+artifacts
+deployment
+environments
 ```
 
-Add expected artifact requirements:
+Add no replacement lifecycle fields.
+
+Reason:
+
+```text
+They are explicitly out of scope for this framework.
+```
+
+If a traceable exclusion is needed, add a separate top-level config file instead of polluting the product registry with disabled lifecycle metadata:
+
+```text
+config/kernel-lifecycle-exclusions.json
+```
+
+with:
 
 ```json
-"expectedArtifacts": {
-  "build": {
-    "backend-api": ["jvm-service"],
-    "web": ["static-web-bundle"]
-  },
-  "package": {
-    "backend-api": ["container-image"],
-    "web": ["container-image"]
+{
+  "version": "1.0.0",
+  "excludedProducts": {
+    "yappc": "Out of scope for Kernel lifecycle framework in this implementation stream.",
+    "data-cloud": "Out of scope for Kernel lifecycle framework in this implementation stream."
   }
 }
 ```
@@ -449,297 +384,631 @@ Add expected artifact requirements:
 ### Acceptance criteria
 
 ```text
-- Stable profiles reference only adapters safe for default use.
-- Experimental/planned adapters are not used by default.
-- Required gates and expected artifacts are phase-specific.
+- digital-marketing is the only lifecycleStatus=enabled product.
+- yappc has no lifecycle fields.
+- data-cloud has no lifecycle fields.
+- planned/partial products do not break lifecycle checks.
+- existing non-lifecycle product scripts still work.
 ```
 
 ---
 
-## 4.5 `config/toolchain-adapter-registry.json`
+## 5.2 `config/canonical-product-registry-schema.json`
 
 ### Current issue
 
-Many adapters are declared, but not all implementations are present or stable.
+The schema supports lifecycle fields, but does not fully enforce lifecycle correctness by lifecycle status.
 
 ### Required changes
 
-Add to every adapter:
+Add conditional validation:
+
+#### Rule 1 — Enabled lifecycle products
+
+If:
 
 ```json
-"status": "implemented" | "partial" | "planned",
-"safeForDefault": true | false,
-"tests": ["path/to/test.ts"]
+"lifecycleStatus": "enabled"
 ```
 
-Near-term statuses:
+then require:
 
 ```text
-gradle-java-service -> partial, safeForDefault true only after Sprint 2
-pnpm-vite-react -> partial, safeForDefault true only after Sprint 2
-docker-buildx -> partial/planned, safeForDefault false until package works
-compose-local -> partial/planned, safeForDefault false until deploy dry-run works
-kubernetes/helm/terraform -> planned, safeForDefault false
-xcode-ios/gradle-android -> planned, safeForDefault false
+lifecycleProfile
+lifecycleConfigPath
+lifecycle.enabled = true
+toolchain
+artifacts
+deployment
+environments
+```
+
+#### Rule 2 — Planned/partial lifecycle products
+
+If:
+
+```json
+"lifecycleStatus": "planned" | "partial"
+```
+
+then allow:
+
+```text
+lifecycleProfile
+lifecycleMigration
+```
+
+but do not require:
+
+```text
+lifecycleConfigPath
+artifacts
+deployment
+```
+
+unless `lifecycle.enabled` is true.
+
+#### Rule 3 — Excluded products
+
+Do not hardcode `yappc` or `data-cloud` in schema. Enforce exclusions in a check script instead.
+
+#### Rule 4 — Surface/adapters compatibility
+
+Schema should not validate compatibility deeply; keep that in conformance scripts where registry/config files can be cross-read.
+
+### Add definitions
+
+```json
+"LifecycleStatus": {
+  "type": "string",
+  "enum": ["disabled", "planned", "partial", "enabled"]
+}
+```
+
+Add stricter `additionalProperties: false` for new lifecycle definitions where practical.
+
+### Acceptance criteria
+
+```text
+- Schema allows partial migration without false failures.
+- Schema requires complete declarations for lifecycleStatus=enabled.
+- Schema does not special-case products.
+```
+
+---
+
+## 5.3 `config/kernel-lifecycle-exclusions.json` — new
+
+### Purpose
+
+Explicitly declare products that must not be lifecycle-enabled in this implementation stream.
+
+### Add file
+
+```json
+{
+  "version": "1.0.0",
+  "excludedProducts": {
+    "yappc": {
+      "reason": "YAPPC is out of scope for Kernel product lifecycle adoption in this stream.",
+      "allowedLegacyExecution": true
+    },
+    "data-cloud": {
+      "reason": "Data Cloud is out of scope for Kernel product lifecycle adoption in this stream.",
+      "allowedLegacyExecution": true
+    }
+  }
+}
 ```
 
 ### Acceptance criteria
 
 ```text
-- Default lifecycle profiles never use planned adapters.
-- Checker fails if safeForDefault references missing implementation/tests.
+- Lifecycle checks fail if excluded products declare lifecycle.enabled=true.
+- Lifecycle checks fail if excluded products declare lifecycleStatus=enabled.
+- Legacy scripts for excluded products remain allowed.
 ```
 
 ---
 
-## 4.6 `config/product-lifecycle-profiles-schema.json`
+## 5.4 `config/product-lifecycle-profiles.json`
 
-### Action
+### Current issue
 
-Add or complete this schema.
+Profiles exist, but some are too broad or reference surface types/adapters that are not ready or not schema-aligned.
 
-### Must validate
+### Required changes
+
+#### Keep stable profiles
+
+```text
+standard-web-api-product
+backend-only-java-service
+frontend-only-web-product
+```
+
+#### Downgrade experimental profiles
+
+Keep these but mark clearly as not safe for default:
+
+```text
+mobile-plus-api-product
+sdk-product
+platform-provider-product
+shared-service-product
+domain-pack-only-product
+```
+
+Add:
+
+```json
+"safeForDefault": false
+```
+
+to experimental profiles.
+
+For stable profiles add:
+
+```json
+"safeForDefault": true
+```
+
+#### Add explicit phase output contracts
+
+For each stable profile, add:
+
+```json
+"phaseOutputs": {
+  "plan": ["lifecycle-plan"],
+  "validate": ["lifecycle-result", "gate-results"],
+  "test": ["lifecycle-result", "test-summary"],
+  "build": ["lifecycle-result", "artifact-manifest"],
+  "package": ["lifecycle-result", "artifact-manifest"],
+  "deploy": ["lifecycle-result", "deployment-manifest"],
+  "verify": ["lifecycle-result", "health-check-report"]
+}
+```
+
+#### Fix mobile surface mismatch
+
+Do not use `mobile-ios` or `mobile-android` as product registry surface types until the registry schema is updated. Keep those as future platform extension variants only.
+
+Preferred now:
+
+```text
+mobile-plus-api-product remains experimental and not used by enabled products.
+```
+
+### Acceptance criteria
+
+```text
+- Stable profiles are safe for Digital Marketing.
+- Experimental profiles cannot be used by lifecycleStatus=enabled products unless explicitly allowed.
+- No enabled product uses mobile-ios/mobile-android surface types.
+```
+
+---
+
+## 5.5 `config/product-lifecycle-profiles-schema.json`
+
+### Add or update
+
+If already present, extend it. If absent, add it.
+
+### Validate
 
 ```text
 version
 profiles
 profile.status
-profile.defaultSurfaces
-profile.requiredGates
-profile.optionalGates
-profile.defaultAdapters
-profile.expectedArtifacts
+profile.safeForDefault
+defaultSurfaces
+requiredGates
+optionalGates
+defaultAdapters
+expectedArtifacts
+phaseOutputs
 ```
 
 ### Acceptance criteria
 
-```bash
-node scripts/check-product-lifecycle-profiles.mjs
-```
-
-validates the profile registry and fails on unknown/default planned adapters.
-
----
-
-## 4.7 `config/toolchain-adapter-registry-schema.json`
-
-### Action
-
-Add or complete this schema.
-
-### Must validate
-
 ```text
-adapter id format
-kind enum
-supportedSurfaceTypes
-supportedPhases
-requires
-outputs
-implementation
-status
-safeForDefault
-tests
+- check-product-lifecycle-profiles-schema.mjs validates this schema.
+- Unknown lifecycle phases fail.
+- Unknown structure fails.
 ```
 
 ---
 
-# 5. Script and CLI plan
-
-## 5.1 `scripts/kernel-product.mjs`
-
-### Current issues
-
-```text
-- Supports plan/release/promote/rollback but not direct dev/build/test/package/deploy/verify execution.
-- Imports source and dist paths inconsistently.
-- Release/promote/rollback build fake manifests instead of requiring real manifests.
-```
-
-### Required changes
-
-Support canonical grammar:
-
-```bash
-node scripts/kernel-product.mjs product plan <productId> <phase> [options]
-node scripts/kernel-product.mjs product dev <productId> [options]
-node scripts/kernel-product.mjs product validate <productId> [options]
-node scripts/kernel-product.mjs product test <productId> [options]
-node scripts/kernel-product.mjs product build <productId> [options]
-node scripts/kernel-product.mjs product package <productId> [options]
-node scripts/kernel-product.mjs product deploy <productId> --env local [options]
-node scripts/kernel-product.mjs product verify <productId> --env local [options]
-node scripts/kernel-product.mjs product release <productId> [options]
-node scripts/kernel-product.mjs product promote <productId> --from staging --to prod
-node scripts/kernel-product.mjs product rollback <productId> --env prod
-```
-
-Keep compatibility:
-
-```bash
-node scripts/kernel-product.mjs plan digital-marketing build
-node scripts/kernel-product.mjs build digital-marketing
-```
-
-Options:
-
-```text
---surface <surface>
---surfaces <surface1,surface2>
---env <environment>
---dry-run
---json
---output-dir <path>
---source-ref <git ref>
---artifact <manifest path>
-```
-
-Import packages consistently. Prefer built package exports:
-
-```js
-import { ProductLifecyclePlanner, ProductLifecycleExecutor } from '@ghatana/kernel-lifecycle';
-```
-
-If package is not built, fail with an actionable message:
-
-```text
-Kernel lifecycle package is not built. Run: pnpm build:kernel-lifecycle-platform
-```
-
-Do not import `src/*.js` as if TypeScript source has already been emitted.
-
-### Acceptance criteria
-
-```bash
-node scripts/kernel-product.mjs product plan digital-marketing build --json
-node scripts/kernel-product.mjs product build digital-marketing --dry-run
-node scripts/kernel-product.mjs product build digital-marketing --surface web --dry-run
-```
-
-all work with correct semantics.
-
----
-
-## 5.2 `scripts/run-product-task.mjs`
+## 5.6 `config/toolchain-adapter-registry.json`
 
 ### Current issue
 
-Lifecycle-enabled build/test/dev delegate to `plan`.
+Registry includes implemented, partial, and planned adapters. Some partial/planned adapters are too easy to accidentally use.
+
+### Required changes
+
+For every adapter add:
+
+```json
+"safeForDefault": true | false,
+"executionImplemented": true | false,
+"planningImplemented": true | false,
+"outputValidationImplemented": true | false
+```
+
+For current safe adapters:
+
+```json
+"gradle-java-service": {
+  "status": "implemented",
+  "safeForDefault": true,
+  "executionImplemented": true,
+  "planningImplemented": true,
+  "outputValidationImplemented": true
+}
+```
+
+```json
+"pnpm-vite-react": {
+  "status": "implemented",
+  "safeForDefault": true,
+  "executionImplemented": true,
+  "planningImplemented": true,
+  "outputValidationImplemented": true
+}
+```
+
+For partial/planned adapters:
+
+```json
+"safeForDefault": false
+```
+
+#### Do not allow enabled products to use partial/planned adapters
+
+`check-toolchain-adapter-contracts.mjs` must fail when a lifecycle-enabled product uses an adapter where:
+
+```json
+"safeForDefault": false
+```
+
+unless product lifecycle config explicitly says:
+
+```yaml
+allowExperimentalAdapters: true
+```
+
+Do not add that exception to Digital Marketing.
+
+### Acceptance criteria
+
+```text
+- Digital Marketing uses only safe adapters.
+- Planned adapters cannot be used by enabled products accidentally.
+- Adapter registry describes implementation status precisely.
+```
+
+---
+
+## 5.7 `config/toolchain-adapter-registry-schema.json`
+
+### Required changes
+
+Validate new fields:
+
+```text
+safeForDefault
+executionImplemented
+planningImplemented
+outputValidationImplemented
+tests
+implementation
+supportedPhases
+supportedSurfaceTypes
+requires
+outputs
+```
+
+### Acceptance criteria
+
+```text
+- Toolchain registry fails on missing implementation metadata.
+- Toolchain registry fails on unknown phase/surface type.
+```
+
+---
+
+## 5.8 `products/digital-marketing/kernel-product.yaml`
+
+### Current issue
+
+Digital Marketing is the correct pilot, and its config is close. It needs stricter schema-backed structure and outputs.
+
+### Required changes
+
+Add explicit schema fields:
+
+```yaml
+schemaVersion: 1.0.0
+productId: digital-marketing
+lifecycleProfile: standard-web-api-product
+allowExperimentalAdapters: false
+```
+
+Ensure backend surface includes explicit expected outputs:
+
+```yaml
+surfaces:
+  backend-api:
+    source: products/digital-marketing/dm-api
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:digital-marketing:dm-api
+    devTask: runDmosApiServer
+    validateTask: check
+    testTask: test
+    buildTask: build
+    packageTask: assemble
+    expectedOutputs:
+      build:
+        - products/digital-marketing/dm-api/build/libs/*.jar
+      test:
+        - products/digital-marketing/dm-api/build/test-results/test
+        - products/digital-marketing/dm-api/build/reports/tests
+```
+
+Ensure web surface includes explicit expected outputs:
+
+```yaml
+  web:
+    source: products/digital-marketing/ui
+    runtime: static-web
+    adapter: pnpm-vite-react
+    packagePath: products/digital-marketing/ui/package.json
+    devScript: dev
+    validateScript: type-check
+    testScript: test
+    buildScript: build
+    packageScript: build
+    expectedOutputs:
+      build:
+        - products/digital-marketing/ui/dist
+        - products/digital-marketing/ui/dist/index.html
+```
+
+Add local deployment section:
+
+```yaml
+deployment:
+  local:
+    target: compose-local
+    composeFile: products/digital-marketing/deploy/local.compose.yaml
+    envFile: products/digital-marketing/deploy/local.env
+    envExampleFile: products/digital-marketing/deploy/local.env.example
+    healthChecks:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+```
+
+### Acceptance criteria
+
+```text
+- Digital Marketing config validates against schema.
+- Build plan includes backend-api and web.
+- Build execution validates exact expected outputs.
+- Deploy plan knows local compose and health check URLs.
+```
+
+---
+
+## 5.9 `products/phr/kernel-product.yaml`
+
+### Current issue
+
+Current config appears inconsistent with actual registry/module paths.
+
+### Required changes
+
+Do not try to fully migrate PHR now.
+
+Either:
+
+1. Remove this file until PHR migration starts, or
+2. Mark it as draft and ensure lifecycle checks do not treat it as executable.
+
+Preferred:
+
+```yaml
+schemaVersion: 1.0.0
+productId: phr
+lifecycleProfile: standard-web-api-product
+status: draft
+executionEnabled: false
+migration:
+  status: planned
+  reason: "PHR lifecycle config requires path/module correction before execution."
+```
+
+Do not include inaccurate Gradle modules.
+
+### Acceptance criteria
+
+```text
+- PHR lifecycle does not run.
+- PHR lifecycle draft does not break checks.
+- Checks fail if someone enables PHR without correcting modules.
+```
+
+---
+
+## 5.10 `products/finance/kernel-product.yaml`
+
+### Current issue
+
+Current config references modules not aligned to the registry.
+
+### Required changes
+
+Same approach as PHR.
+
+Mark as draft or remove until migration starts.
+
+Suggested draft:
+
+```yaml
+schemaVersion: 1.0.0
+productId: finance
+lifecycleProfile: backend-only-java-service
+status: draft
+executionEnabled: false
+migration:
+  status: planned
+  reason: "Finance lifecycle must map real registered modules and surfaces before execution."
+```
+
+### Acceptance criteria
+
+```text
+- Finance lifecycle does not run.
+- Finance draft config cannot be mistaken for executable lifecycle config.
+```
+
+---
+
+## 5.11 `products/flashit/kernel-product.yaml`
+
+### Current issue
+
+Current config uses `mobile-ios` and `mobile-android`, but the registry uses a generic `mobile` surface. Also some adapters are partial.
+
+### Required changes
+
+Do not enable FlashIt lifecycle in this stabilization stream.
+
+Mark draft:
+
+```yaml
+schemaVersion: 1.0.0
+productId: flashit
+lifecycleProfile: mobile-plus-api-product
+status: draft
+executionEnabled: false
+migration:
+  status: planned
+  reason: "FlashIt requires mobile surface/adapter normalization before lifecycle execution."
+```
+
+### Future migration note
+
+When FlashIt is migrated, decide whether the canonical surface model is:
+
+```text
+mobile
+```
+
+with platform variants:
+
+```text
+ios
+android
+```
+
+or whether registry schema should explicitly support:
+
+```text
+mobile-ios
+mobile-android
+```
+
+Do not mix both.
+
+### Acceptance criteria
+
+```text
+- FlashIt lifecycle does not run.
+- Partial mobile adapters are not used by enabled lifecycle products.
+```
+
+---
+
+## 5.12 `products/yappc/kernel-product.yaml`
 
 ### Required change
 
-Replace delegation with execution:
+If this file exists, delete it or move it to an archive path not consumed by lifecycle checks:
 
-```js
-const lifecycleArgs = ['product', phase, productId];
+```text
+products/yappc/docs/archive/kernel-product.lifecycle-excluded.yaml
 ```
 
-Surface option:
+Do not keep executable lifecycle config under:
 
-```js
-if (requestedSurface) lifecycleArgs.push('--surface', normalizeSurfaceName(requestedSurface));
-```
-
-Keep a plan pathway:
-
-```bash
-pnpm product digital-marketing plan build
-pnpm product digital-marketing build --plan
+```text
+products/yappc/kernel-product.yaml
 ```
 
 ### Acceptance criteria
 
-```bash
-pnpm product digital-marketing build --dry-run
+```text
+- YAPPC cannot be lifecycle-planned.
+- YAPPC continues to use existing product-specific build/test/dev flows.
 ```
-
-runs lifecycle dry-run execution, not old plan-only output.
 
 ---
 
-## 5.3 `scripts/generate-product-registry-artifacts.mjs`
+## 5.13 `products/data-cloud/kernel-product.yaml`
 
-### Current issue
+### Required change
 
-Generated lifecycle scripts call `plan` for build/test/dev/package/deploy.
+If this file exists, delete it or move it to an archive path not consumed by lifecycle checks:
 
-### Required changes
-
-Generate imperative execution scripts:
-
-```json
-"build:digital-marketing": "node scripts/kernel-product.mjs product build digital-marketing",
-"test:digital-marketing": "node scripts/kernel-product.mjs product test digital-marketing",
-"dev:digital-marketing": "node scripts/kernel-product.mjs product dev digital-marketing",
-"validate:digital-marketing": "node scripts/kernel-product.mjs product validate digital-marketing",
-"package:digital-marketing": "node scripts/kernel-product.mjs product package digital-marketing",
-"deploy:local:digital-marketing": "node scripts/kernel-product.mjs product deploy digital-marketing --env local",
-"verify:local:digital-marketing": "node scripts/kernel-product.mjs product verify digital-marketing --env local",
-"plan:build:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing build"
+```text
+products/data-cloud/docs/archive/kernel-product.lifecycle-excluded.yaml
 ```
 
-Surface scripts:
+Do not keep executable lifecycle config under:
 
-```json
-"build:digital-marketing-web": "node scripts/kernel-product.mjs product build digital-marketing --surface web",
-"build:digital-marketing-gateway": "node scripts/kernel-product.mjs product build digital-marketing --surface backend-api"
+```text
+products/data-cloud/kernel-product.yaml
 ```
 
 ### Acceptance criteria
 
-```bash
-pnpm check:product-registry-artifacts
+```text
+- Data Cloud cannot be lifecycle-planned.
+- Data Cloud continues to use existing product-specific build/test/dev flows.
 ```
-
-fails when generated package scripts drift.
 
 ---
 
-## 5.4 `package.json`
+## 5.14 `platform/typescript/kernel-lifecycle/package.json`
 
 ### Current issue
 
-Generated product lifecycle scripts are plan-only. Kernel package build ordering is also unclear.
+Version drift and overlapping local dependencies.
 
 ### Required changes
 
-Add:
+Align with workspace conventions.
+
+Change:
 
 ```json
-"build:kernel-lifecycle-platform": "pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build"
+"typescript": "^5.3.3"
+"zod": "^3.22.4"
+"eslint": "^8.56.0"
+"vitest": "^1.0.4"
+"@types/node": "^20.10.0"
 ```
 
-Update:
+to catalog/workspace-approved versions.
 
-```json
-"check:kernel-platform-lifecycle": "pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs"
-```
-
-Regenerate product scripts from `generate-product-registry-artifacts.mjs`.
-
-### Acceptance criteria
-
-```bash
-pnpm build:kernel-lifecycle-platform
-pnpm check:kernel-platform-lifecycle
-pnpm build:digital-marketing --dry-run
-```
-
-or equivalent commands work.
-
----
-
-# 6. `platform/typescript/kernel-lifecycle` plan
-
-## 6.1 `platform/typescript/kernel-lifecycle/package.json`
-
-### Current issue
-
-Package uses direct versions that may drift from root catalog/overrides.
-
-### Required changes
-
-Use repo catalog where possible:
+Preferred:
 
 ```json
 "dependencies": {
@@ -749,91 +1018,248 @@ Use repo catalog where possible:
 "devDependencies": {
   "@types/node": "catalog:",
   "typescript": "catalog:",
-  "vitest": "catalog:",
-  "eslint": "catalog:"
+  "vitest": "catalog:"
 }
 ```
 
-If TypeScript ESLint catalog entries are missing, add them via repo dependency governance rather than hardcoding isolated versions.
+Do not add `ajv` unless it is already used consistently or needed. If schema validation is performed via existing scripts without runtime `ajv`, remove it.
+
+### Acceptance criteria
+
+```text
+- No local TypeScript/Zod/ESLint/Vitest version drift.
+- Package builds through root workspace.
+- Package uses repo TypeScript standards.
+```
 
 ---
 
-## 6.2 `platform/typescript/kernel-lifecycle/src/domain/ProductLifecyclePhase.ts`
+## 5.15 `platform/typescript/kernel-lifecycle/src/domain/ProductLifecyclePhase.ts`
 
 ### Current issue
 
-This file contains too many unrelated models and overlaps with `kernel-toolchains` types.
+This file contains too many unrelated types and duplicates concepts that should be shared.
 
 ### Required changes
 
 Split into focused files:
 
 ```text
-src/domain/ProductLifecyclePhase.ts
-src/domain/ProductSurfaceType.ts
-src/domain/ProductSurface.ts
-src/domain/ProductLifecyclePlan.ts
-src/domain/ProductLifecycleResult.ts
-src/domain/ProductLifecycleStep.ts
-src/domain/ProductLifecycleEvent.ts
-src/domain/ProductGate.ts
-src/domain/ProductEnvironment.ts
-src/domain/ProductArtifact.ts
-src/domain/ProductFailurePolicy.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductLifecyclePhase.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductSurfaceType.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductSurface.ts
+platform/typescript/kernel-lifecycle/src/domain/LifecyclePhaseConfiguration.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductLifecyclePlan.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductLifecycleResult.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductLifecycleStep.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductLifecycleEvent.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductArtifact.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductEnvironment.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductGate.ts
+platform/typescript/kernel-lifecycle/src/domain/ProductFailurePolicy.ts
 ```
 
-Add schema-backed models:
+Export them from:
 
 ```text
-src/schemas/ProductLifecyclePlanSchema.ts
-src/schemas/ProductLifecycleResultSchema.ts
-src/schemas/KernelProductConfigurationSchema.ts
-src/schemas/LifecycleProfileSchema.ts
+platform/typescript/kernel-lifecycle/src/domain/index.ts
+platform/typescript/kernel-lifecycle/src/index.ts
+```
+
+### Required typing improvements
+
+Use discriminated unions where possible:
+
+```ts
+export type ProductLifecyclePhase =
+  | 'create'
+  | 'bootstrap'
+  | 'dev'
+  | 'validate'
+  | 'test'
+  | 'build'
+  | 'package'
+  | 'release'
+  | 'deploy'
+  | 'verify'
+  | 'promote'
+  | 'rollback'
+  | 'operate'
+  | 'retire';
+```
+
+Define:
+
+```ts
+export interface ProductLifecyclePlan {
+  readonly schemaVersion: '1.0.0';
+  readonly productId: string;
+  readonly phase: ProductLifecyclePhase;
+  readonly lifecycleProfile: string;
+  readonly environment?: string;
+  readonly sourceRef?: string;
+  readonly surfaces: readonly ProductSurfaceSelection[];
+  readonly gates: readonly ProductGatePlan[];
+  readonly steps: readonly ProductLifecycleStep[];
+  readonly expectedArtifacts: readonly ProductExpectedArtifact[];
+  readonly outputDirectory: string;
+  readonly estimatedDurationMs: number;
+}
+```
+
+Use `readonly` where appropriate.
+
+### Acceptance criteria
+
+```text
+- No giant multi-responsibility domain file.
+- Toolchain package imports shared types instead of duplicating them.
+- No `any` types.
+```
+
+---
+
+## 5.16 `platform/typescript/kernel-toolchains/src/ToolchainAdapter.ts`
+
+### Current issue
+
+It duplicates lifecycle types.
+
+### Required changes
+
+Remove local definitions of:
+
+```text
+ProductLifecyclePhase
+ProductSurfaceType
+ProductSurface
+```
+
+Import them from a shared lifecycle contracts package.
+
+Preferred long-term package:
+
+```text
+platform/typescript/kernel-product-contracts
+```
+
+with:
+
+```text
+ProductLifecyclePhase
+ProductSurfaceType
+ProductSurface
+ProductArtifact
+ProductEnvironment
+ProductGate
+```
+
+Then both `kernel-lifecycle` and `kernel-toolchains` depend on `kernel-product-contracts`.
+
+### Acceptance criteria
+
+```text
+- No duplicate lifecycle type definitions.
+- No TODO comments about type unification.
+- Packages remain acyclic.
+```
+
+---
+
+## 5.17 `platform/typescript/kernel-product-contracts` — new package
+
+### Purpose
+
+Shared pure TypeScript contracts for lifecycle, toolchains, artifacts, deployment, and product metadata.
+
+### Add files
+
+```text
+platform/typescript/kernel-product-contracts/package.json
+platform/typescript/kernel-product-contracts/tsconfig.json
+platform/typescript/kernel-product-contracts/src/index.ts
+platform/typescript/kernel-product-contracts/src/lifecycle/ProductLifecyclePhase.ts
+platform/typescript/kernel-product-contracts/src/lifecycle/ProductLifecyclePlan.ts
+platform/typescript/kernel-product-contracts/src/lifecycle/ProductLifecycleResult.ts
+platform/typescript/kernel-product-contracts/src/surface/ProductSurface.ts
+platform/typescript/kernel-product-contracts/src/artifact/ProductArtifact.ts
+platform/typescript/kernel-product-contracts/src/environment/ProductEnvironment.ts
+platform/typescript/kernel-product-contracts/src/gate/ProductGate.ts
+platform/typescript/kernel-product-contracts/src/deployment/ProductDeployment.ts
+```
+
+### Package naming
+
+Use canonical package name:
+
+```json
+"name": "@ghatana/kernel-product-contracts"
+```
+
+### Update governance
+
+Update:
+
+```text
+platform/typescript/LIBRARY_GOVERNANCE.md
+pnpm-workspace.yaml generated entries if needed
+config/workspace-dependency-policy.json if package policy requires it
 ```
 
 ### Acceptance criteria
 
-```bash
-pnpm --dir platform/typescript/kernel-lifecycle typecheck
-pnpm --dir platform/typescript/kernel-lifecycle test
+```text
+- Pure contract package has no Node runtime dependency.
+- Both kernel-lifecycle and kernel-toolchains import from it.
+- No product-specific vocabulary exists in this package.
 ```
-
-pass with no `any` and no implicit types.
 
 ---
 
-## 6.3 `platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts`
+## 5.18 `platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts`
 
 ### Current issue
 
-Hardcoded local paths, direct unvalidated file reads, minimal plan output, no adapter/gate/artifact validation.
+Planner is too shallow and does not validate adapter compatibility, lifecycle status, excluded products, gates, artifacts, environments, or output directories.
 
 ### Required changes
 
-Constructor:
-
-```ts
-export interface ProductLifecyclePlannerOptions {
-  readonly repoRoot: string;
-  readonly registryPath?: string;
-  readonly lifecycleProfilesPath?: string;
-  readonly toolchainRegistryPath?: string;
-  readonly environmentDirectory?: string;
-}
-```
-
-Add loaders:
+Refactor into focused collaborators:
 
 ```text
-src/io/RepoRootResolver.ts
-src/io/CanonicalProductRegistryLoader.ts
-src/io/KernelProductConfigurationLoader.ts
-src/io/LifecycleProfileLoader.ts
-src/io/ToolchainAdapterRegistryLoader.ts
-src/io/EnvironmentLoader.ts
+src/planning/ProductLifecyclePlanner.ts
+src/planning/ProductLifecycleGraphBuilder.ts
+src/planning/LifecycleProfileResolver.ts
+src/planning/ProductLifecycleConfigLoader.ts
+src/planning/SurfaceSelector.ts
+src/planning/ToolchainResolver.ts
+src/planning/GateResolver.ts
+src/planning/ArtifactExpectationResolver.ts
+src/planning/EnvironmentResolver.ts
+src/planning/ProductLifecycleExclusionPolicy.ts
 ```
 
-Plan output must include:
+### Planner must validate
+
+```text
+- product exists
+- product is not lifecycle-excluded
+- lifecycleStatus=enabled for execution plan
+- lifecycle.enabled=true for execution plan
+- lifecycle profile exists
+- lifecycle config file exists
+- productId in config matches registry productId
+- selected surfaces exist in registry and config
+- adapters exist
+- adapters support requested phase
+- adapters support surface type
+- adapter is safeForDefault for enabled products
+- required adapter config fields exist
+- expected artifacts are known artifact types
+- environment exists for deploy/verify/promote/rollback
+```
+
+### Plan must include
 
 ```text
 schemaVersion
@@ -850,970 +1276,1285 @@ outputDirectory
 estimatedDurationMs
 ```
 
-Planner must fail on:
-
-```text
-unknown product
-lifecycle disabled
-missing lifecycleConfigPath
-productId mismatch
-unknown phase
-unknown surface
-unknown adapter
-adapter unsupported phase
-adapter unsupported surface type
-missing adapter required config
-missing artifact expectations
-```
-
 ### Acceptance criteria
 
-```bash
-node scripts/kernel-product.mjs product plan digital-marketing build --json
+```text
+- Planner performs all static validation before execution.
+- Planner can be tested without running tools.
+- Planner rejects YAPPC/Data Cloud lifecycle planning.
+- Planner allows Digital Marketing.
 ```
-
-returns a full schema-backed plan.
 
 ---
 
-## 6.4 Add `ProductLifecycleExecutor`
+## 5.19 `platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleExecutor.ts` — add/complete
 
-### Add
+### Current issue
+
+Execution currently happens in `scripts/kernel-product.mjs` and not through lifecycle package.
+
+### Required changes
+
+Add executor package files:
 
 ```text
 platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleExecutor.ts
 platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleStepRunner.ts
-platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleRunContext.ts
-platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleOutputWriter.ts
+platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleResultCollector.ts
+platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleFailureHandler.ts
+platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleLogger.ts
 ```
 
-### Responsibilities
+### Executor responsibilities
 
 ```text
-- Execute validated plans.
-- Use ToolchainAdapterRegistry to select adapters.
-- Respect sequential/parallel dependencies.
-- Fail closed on required failures.
-- Write lifecycle-result.json.
-- Write artifact manifest when phase requires it.
+1. Accept ProductLifecyclePlan.
+2. Resolve adapters through ToolchainAdapterRegistry.
+3. Execute sequential/parallel steps as planned.
+4. Run pre-gates.
+5. Run adapter execution.
+6. Validate adapter outputs.
+7. Collect artifacts.
+8. Run post-gates.
+9. Emit lifecycle-result.json.
+10. Delegate artifact manifest generation to kernel-artifacts.
+11. Fail closed on required artifact/check failures.
 ```
+
+### Important rule
+
+Do not generate artifact manifests inside adapters.
 
 ### Acceptance criteria
 
-```bash
-node scripts/kernel-product.mjs product build digital-marketing --dry-run
+```text
+- CLI script no longer owns execution logic.
+- Executor unit tests use fake adapters.
+- Real execution remains behind integration tests.
 ```
-
-prints executable dry-run steps.
 
 ---
 
-## 6.5 Lifecycle tests
-
-### Add
-
-```text
-platform/typescript/kernel-lifecycle/src/planning/__tests__/ProductLifecyclePlanner.test.ts
-platform/typescript/kernel-lifecycle/src/planning/__tests__/SurfaceSelector.test.ts
-platform/typescript/kernel-lifecycle/src/planning/__tests__/LifecycleProfileResolver.test.ts
-platform/typescript/kernel-lifecycle/src/planning/__tests__/ToolchainResolver.test.ts
-platform/typescript/kernel-lifecycle/src/execution/__tests__/ProductLifecycleExecutor.test.ts
-platform/typescript/kernel-lifecycle/src/schemas/__tests__/KernelProductConfigurationSchema.test.ts
-```
-
-### Test fixtures
-
-```text
-platform/typescript/kernel-lifecycle/src/__fixtures__/sample-repo/config/canonical-product-registry.json
-platform/typescript/kernel-lifecycle/src/__fixtures__/sample-repo/config/product-lifecycle-profiles.json
-platform/typescript/kernel-lifecycle/src/__fixtures__/sample-repo/config/toolchain-adapter-registry.json
-platform/typescript/kernel-lifecycle/src/__fixtures__/sample-repo/products/sample/kernel-product.yaml
-```
-
-### Acceptance criteria
-
-Tests do not call real Gradle or pnpm.
-
----
-
-# 7. `platform/typescript/kernel-toolchains` plan
-
-## 7.1 `src/ToolchainAdapter.ts`
+## 5.20 `scripts/kernel-product.mjs`
 
 ### Current issue
 
-Lifecycle types duplicated.
-
-### Required changes
-
-Import shared lifecycle types from `@ghatana/kernel-lifecycle` or introduce `@ghatana/kernel-contracts` only if circular dependencies require it.
-
-### Acceptance criteria
-
-There is exactly one source of truth for lifecycle phase and surface type unions.
-
----
-
-## 7.2 Add shared command execution
-
-### Add
+This script is doing too much:
 
 ```text
-platform/typescript/kernel-toolchains/src/execution/CommandRunner.ts
-platform/typescript/kernel-toolchains/src/execution/SpawnCommandRunner.ts
-platform/typescript/kernel-toolchains/src/execution/FakeCommandRunner.ts
-platform/typescript/kernel-toolchains/src/execution/CommandResult.ts
-```
-
-### Interface
-
-```ts
-export interface CommandRunner {
-  run(command: string, args: readonly string[], options: CommandRunOptions): Promise<CommandResult>;
-}
-```
-
-### Rules
-
-```text
-- no shell by default
-- command and args are separate
-- cwd is explicit
-- timeout is supported
-- stdout/stderr truncation is explicit
-- tests use FakeCommandRunner
-```
-
----
-
-## 7.3 `src/adapters/GradleJavaServiceAdapter.ts`
-
-### Current issues
-
-```text
-- uses require in ESM
-- uses exec shell string
-- wrong cwd
-- wrong module path resolution
-- placeholder output validation
-- placeholder artifact extraction
-- empty artifact hash
+custom YAML parsing
+registry loading
+planning
+adapter validation
+execution
+result writing
 ```
 
 ### Required changes
 
-Constructor:
+Turn it into a thin CLI wrapper.
 
-```ts
-export interface GradleJavaServiceAdapterOptions {
-  readonly repoRoot: string;
-  readonly commandRunner: CommandRunner;
-  readonly artifactResolver: ProductArtifactResolver;
-}
-```
-
-Plan command:
+### New behavior
 
 ```text
-command: ./gradlew
-args: [":products:digital-marketing:dm-api:build", "--no-daemon"]
-cwd: repoRoot
+1. Parse CLI args.
+2. Call compiled lifecycle package.
+3. Print JSON or human output.
+4. Exit with correct status.
 ```
 
-For dev:
+### Remove
 
 ```text
-args: [":products:digital-marketing:dm-api:runDmosApiServer", "--no-daemon"]
+custom YAML parser
+inline registry loading
+inline buildPlan
+inline executePlan
+inline command mapping
 ```
 
-Validation:
+### Keep
 
 ```text
-- build/libs/*.jar exists for build/package phases
-- reports/tests exists after test/check
-- coverage report exists when configured
+CLI compatibility
+--json
+--dry-run
+--surface
+--surfaces
+--env
+--output-dir
+--source-ref
+--artifact
 ```
 
-Do not parse stdout for artifacts. Resolve expected artifacts from lifecycle config.
-
----
-
-## 7.4 `src/adapters/PnpmViteReactAdapter.ts`
-
-### Current issues
+### Add missing options
 
 ```text
-- uses require in ESM
-- uses exec shell string
-- uses packagePath as directory
-- placeholder output validation
-- placeholder artifact extraction
+--from
+--to
+--approval-id
+--release-id
 ```
 
-### Required changes
-
-If `packagePath` is `products/digital-marketing/ui/package.json`, use:
-
-```text
-packageDirectory = products/digital-marketing/ui
-command = pnpm
-args = ["--dir", "products/digital-marketing/ui", "run", "build"]
-cwd = repoRoot
-```
-
-Validation:
-
-```text
-- package.json exists
-- requested script exists
-- dist exists after build
-- dist/index.html exists after Vite build
-```
-
-Artifact:
-
-```text
-type: static-web-bundle
-packaging: static-files
-path: products/digital-marketing/ui/dist
-```
-
----
-
-## 7.5 Adapter tests
-
-### Add
-
-```text
-platform/typescript/kernel-toolchains/src/adapters/__tests__/GradleJavaServiceAdapter.test.ts
-platform/typescript/kernel-toolchains/src/adapters/__tests__/PnpmViteReactAdapter.test.ts
-platform/typescript/kernel-toolchains/src/execution/__tests__/SpawnCommandRunner.test.ts
-platform/typescript/kernel-toolchains/src/__tests__/ToolchainAdapterRegistry.test.ts
-```
-
-### Required cases
-
-```text
-- Gradle adapter builds correct args.
-- Gradle adapter uses repo root cwd.
-- Gradle adapter rejects missing gradleModule.
-- Pnpm adapter uses package directory, not package.json path.
-- Pnpm adapter rejects missing packagePath/script.
-- Output validation fails on missing artifacts.
-```
-
----
-
-# 8. `platform/typescript/kernel-artifacts` plan
-
-## 8.1 `src/domain/ArtifactManifest.ts`
-
-### Current issues
-
-```text
-- artifact type model conflicts with registry schema
-- md5 allowed
-- hash can be empty
-- size can be fake
-- found defaults to false but is not resolved from filesystem
-```
-
-### Required changes
-
-Use semantic artifact type and packaging:
-
-```ts
-export type ArtifactType =
-  | 'jvm-service'
-  | 'jvm-library'
-  | 'node-service'
-  | 'static-web-bundle'
-  | 'container-image'
-  | 'mobile-bundle'
-  | 'sdk-package'
-  | 'domain-pack'
-  | 'test-report'
-  | 'coverage-report'
-  | 'source-map'
-  | 'documentation';
-
-export type ArtifactPackaging =
-  | 'jar'
-  | 'distribution'
-  | 'static-files'
-  | 'container'
-  | 'npm'
-  | 'maven'
-  | 'apk'
-  | 'aab'
-  | 'ipa'
-  | 'json'
-  | 'xml';
-```
-
-Remove md5:
-
-```ts
-algorithm: 'sha256' | 'sha512'
-```
-
-### Add
-
-```text
-platform/typescript/kernel-artifacts/src/fingerprint/ArtifactFingerprintCalculator.ts
-```
-
-Responsibilities:
-
-```text
-- calculate SHA-256 for files
-- calculate deterministic SHA-256 for directories using sorted relative file paths
-- calculate real sizeBytes
-- fail for missing required artifacts
-```
+for promote/release flows.
 
 ### Acceptance criteria
 
 ```text
-- no empty hashes
-- no fake sizeBytes
-- required missing artifacts fail validation
+- Script is under ~150 lines.
+- No lifecycle business logic in script.
+- All lifecycle behavior is in platform/typescript/kernel-lifecycle.
+- promote:digital-marketing script no longer fails argument parsing.
 ```
 
 ---
 
-## 8.2 Artifact schemas
-
-### Add/update
-
-```text
-config/schemas/product-artifact-manifest.schema.json
-config/schemas/product-build-manifest.schema.json
-config/schemas/product-release-manifest.schema.json
-config/schemas/product-deployment-manifest.schema.json
-```
-
-### Acceptance criteria
-
-Manifests written by Kernel packages validate against schemas.
-
----
-
-# 9. `platform/typescript/kernel-deployment` plan
-
-## 9.1 Deployment MVP scope
-
-Do not implement production Kubernetes first. Start with local deploy dry-run.
-
-### Add
-
-```text
-platform/typescript/kernel-deployment/src/adapters/ComposeDeploymentAdapter.ts
-platform/typescript/kernel-deployment/src/adapters/__tests__/ComposeDeploymentAdapter.test.ts
-platform/typescript/kernel-deployment/src/planning/DeploymentPlanResolver.ts
-platform/typescript/kernel-deployment/src/planning/__tests__/DeploymentPlanResolver.test.ts
-```
-
-### Behavior
-
-```text
-- deploy consumes package artifact manifest
-- deploy validates environment
-- deploy validates compose file path
-- deploy validates env example path
-- deploy validates health check definitions
-- deploy emits deployment-manifest.json in dry-run and real mode
-```
-
-### Acceptance criteria
-
-```bash
-node scripts/kernel-product.mjs product deploy digital-marketing --env local --dry-run
-```
-
-prints a valid deployment plan.
-
----
-
-# 10. `platform/typescript/kernel-release` plan
-
-## 10.1 Current issue
-
-`scripts/kernel-product.mjs` creates synthetic release/promote/rollback data.
-
-### Required changes
-
-Release manager must consume real manifests:
-
-```text
-artifact-manifest.json
-deployment-manifest.json
-release-manifest.json
-```
-
-### Update/add
-
-```text
-platform/typescript/kernel-release/src/ProductReleaseManager.ts
-platform/typescript/kernel-release/src/ProductPromotionPlanManager.ts
-platform/typescript/kernel-release/src/ProductRollbackPlanManager.ts
-platform/typescript/kernel-release/src/ProductApprovalGateManager.ts
-```
-
-### Acceptance criteria
-
-Release/promote/rollback fail when required manifests do not exist or do not validate.
-
----
-
-# 11. Digital Marketing pilot plan
-
-## 11.1 `products/digital-marketing/kernel-product.yaml`
+## 5.21 `scripts/run-product-lifecycle.mjs`
 
 ### Current issue
 
-Good start, but artifacts, gates, package, and deploy are incomplete.
+The script is inconsistent and says execution is not implemented.
 
 ### Required changes
 
-Add artifacts:
+Pick one:
 
-```yaml
-artifacts:
-  build:
-    backend-api:
-      type: jvm-service
-      packaging: jar
-      required: true
-      paths:
-        - products/digital-marketing/dm-api/build/libs/*.jar
-    web:
-      type: static-web-bundle
-      packaging: static-files
-      required: true
-      paths:
-        - products/digital-marketing/ui/dist
-  package:
-    backend-api:
-      type: container-image
-      packaging: container
-      required: true
-    web:
-      type: container-image
-      packaging: container
-      required: true
-```
+#### Preferred option
 
-Add gates:
-
-```yaml
-gates:
-  validate:
-    - registry-validation
-    - manifest-validation
-    - lifecycle-contract-validation
-    - bridge-compliance
-    - dmos-boundary-workflow-coverage
-  build:
-    - backend-check
-    - web-route-contract
-    - web-typecheck
-    - web-bundle-budget
-```
-
-Add deploy:
-
-```yaml
-deployment:
-  local:
-    target: compose-local
-    composeFile: products/digital-marketing/deploy/local.compose.yaml
-    envFile: products/digital-marketing/deploy/local.env
-    envExampleFile: products/digital-marketing/deploy/local.env.example
-    healthChecks:
-      - backend-api
-      - web
-```
-
-### Acceptance criteria
-
-Digital Marketing lifecycle config fully describes dev/test/build/package/deploy local without implicit heuristics.
-
----
-
-## 11.2 `products/digital-marketing/lifecycle.local.yaml`
-
-### Current issue
-
-References local env file but does not distinguish example vs real local file.
-
-### Required changes
-
-Add:
-
-```yaml
-deployment:
-  target: compose-local
-  composeFile: products/digital-marketing/deploy/local.compose.yaml
-  envFile: products/digital-marketing/deploy/local.env
-  envExampleFile: products/digital-marketing/deploy/local.env.example
-```
-
-Do not commit real `local.env`.
-
----
-
-## 11.3 Add Digital Marketing deploy files
-
-### Add
-
-```text
-products/digital-marketing/deploy/local.compose.yaml
-products/digital-marketing/deploy/local.env.example
-products/digital-marketing/deploy/health-checks.json
-```
-
-### `local.env.example`
-
-```env
-DMOS_API_PORT=8080
-DMOS_WEB_PORT=5173
-DATABASE_URL=jdbc:postgresql://localhost:5432/digital_marketing
-LOG_LEVEL=debug
-VITE_API_BASE_URL=http://localhost:8080
-VITE_ENV=local
-```
-
-No secrets.
-
----
-
-## 11.4 `products/digital-marketing/dm-api/build.gradle.kts`
-
-### Current state
-
-Already has useful tasks and quality gates.
-
-### Required change
-
-Prefer no changes initially. Use existing:
-
-```text
-check
-test
-build
-runDmosApiServer
-```
-
-Only add a lifecycle-specific Gradle task if needed after adapter testing.
-
----
-
-## 11.5 `products/digital-marketing/ui/package.json`
-
-### Current state
-
-Already has strong scripts:
-
-```text
-dev
-build
-test
-test:route-contract
-type-check
-```
-
-### Required change
-
-Prefer no change initially. Adapter should use existing scripts.
-
-Optional later:
-
-```json
-"kernel:validate": "pnpm run lint && pnpm run type-check && pnpm run test:route-contract"
-```
-
-Only add if it reduces adapter special cases without duplication.
-
----
-
-# 12. Conformance scripts plan
-
-## 12.1 `scripts/check-product-lifecycle-contracts.mjs`
-
-### Current issue
-
-Shallow validation.
-
-### Required validation
-
-```text
-- lifecycleStatus is valid
-- enabled products have lifecycleProfile/lifecycleConfigPath/lifecycle/toolchain/artifacts
-- lifecycleConfigPath exists
-- YAML parses
-- YAML productId matches registry key
-- profile exists
-- phase references are valid
-- surface references exist
-- adapter exists
-- adapter supports requested phase
-- adapter supports requested surface type
-- adapter required fields exist
-- artifact declarations match schema
-- deployment targets exist for deployable products
-- health checks exist for deployable surfaces
-```
-
-### Acceptance criteria
-
-Script catches current registry/schema drift and missing product lifecycle files.
-
----
-
-## 12.2 `scripts/check-toolchain-adapter-contracts.mjs`
-
-### Required validation
-
-```text
-- every implemented/partial adapter has implementation path
-- implementation file exists
-- test file exists for implemented adapters
-- planned adapters are safeForDefault=false
-- stable lifecycle profiles do not reference planned adapters
-```
-
----
-
-## 12.3 `scripts/check-product-artifact-contracts.mjs`
-
-### Required validation
-
-```text
-- artifact type values match schema
-- enabled products declare build artifacts
-- deployable products declare package/deployment artifacts
-- generated manifests cannot contain empty hashes
-```
-
----
-
-## 12.4 `scripts/check-product-deployment-contracts.mjs`
-
-### Required validation
-
-```text
-- deployable products have deployment target
-- local target has compose file or planned marker
-- health checks exist
-- prod target requires rollback policy and approval policy
-```
-
----
-
-## 12.5 Add `scripts/check-kernel-platform-lifecycle.mjs`
-
-One orchestrator check script that runs all lifecycle platform checks and prints grouped actionable failures.
-
-### Acceptance criteria
-
-`pnpm check:kernel-platform-lifecycle` uses this script.
-
----
-
-# 13. Product shell and UI plan
-
-Do not start with UI. Add lifecycle UI after core outputs are stable.
-
-Later update:
-
-```text
-platform/typescript/product-shell/src/contracts/product-lifecycle.ts
-platform/typescript/product-shell/src/contracts/product-artifact.ts
-platform/typescript/product-shell/src/contracts/product-deployment.ts
-platform/typescript/product-shell/src/contracts/product-environment.ts
-```
-
-Add components later:
-
-```text
-ProductLifecycleStatusPanel
-ProductLifecyclePlanView
-ProductArtifactList
-ProductDeploymentStatusCard
-ProductEnvironmentBadge
-ProductHealthCheckPanel
-ProductConformanceSummaryCard
-```
-
-Acceptance criteria later:
-
-```text
-Products do not create custom lifecycle/deployment status UI.
-```
-
----
-
-# 14. Documentation plan
-
-## 14.1 Add/update docs
-
-```text
-docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md
-docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md
-docs/kernel/PRODUCT_ARTIFACT_CONTRACT.md
-docs/kernel/PRODUCT_DEPLOYMENT_CONTRACT.md
-docs/kernel/PRODUCT_LIFECYCLE_MIGRATION_GUIDE.md
-```
-
-## 14.2 Update existing docs
-
-```text
-docs/kernel/KERNEL_CONSUMPTION_GUIDE.md
-docs/kernel/KERNEL_PRODUCT_BOUNDARY.md
-docs/kernel/PRODUCT_CONFORMANCE_SPEC.md
-docs/kernel/CI_GATE_MATRIX.md
-```
-
-## 14.3 Documentation rules
-
-Docs must clearly distinguish:
-
-```text
-plan -> no execution
-dry-run -> execution path without running tools
-build/test/dev/package/deploy -> execution
-```
-
-Docs must not claim Kubernetes/prod deployment support until it is real.
-
----
-
-# 15. Sprint plan
-
-## Sprint 1 — Stabilize lifecycle command semantics and config validation
-
-### Files
+Delete it and update references to use:
 
 ```text
 scripts/kernel-product.mjs
-scripts/run-product-task.mjs
-scripts/generate-product-registry-artifacts.mjs
-package.json
-config/canonical-product-registry-schema.json
-config/canonical-product-registry.json
-config/product-lifecycle-profiles.json
-config/toolchain-adapter-registry.json
-platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts
-platform/typescript/kernel-lifecycle/src/domain/*
 ```
 
-### Deliverables
+#### Compatibility option
+
+Keep it as a thin alias:
+
+```js
+import { spawnSync } from 'node:child_process';
+spawnSync('node', ['scripts/kernel-product.mjs', 'product', phase, productId, ...args])
+```
+
+### Acceptance criteria
 
 ```text
-- no hardcoded absolute paths
-- build/test/dev scripts execute lifecycle, not plan
-- plan remains available explicitly
-- registry/schema artifact mismatch fixed
-- Digital Marketing plan works
+- No direct import from TypeScript src/*.js.
+- No duplicate lifecycle planning.
+- No constructor mismatch.
+- No “execution not implemented” path remains.
 ```
 
-### Validation
+---
+
+## 5.22 `scripts/run-product-task.mjs`
+
+### Current issue
+
+Legacy routing remains necessary, but delegation behavior must be clearer and safer.
+
+### Required changes
+
+1. Keep legacy behavior for non-lifecycle products.
+2. Delegate to Kernel lifecycle only when:
+
+```text
+product.lifecycleStatus === "enabled"
+product.lifecycle.enabled === true
+```
+
+3. Do not delegate YAPPC/Data Cloud.
+4. Add explicit aliases:
+
+```text
+gateway -> backend-api
+backend -> backend-api
+api -> backend-api
+```
+
+5. For lifecycle products, translate old commands:
+
+```text
+dev -> dev
+build -> build
+test -> test
+lint -> validate
+typecheck -> validate
+```
+
+6. If task is unsupported, fail with actionable error unless `--legacy` is passed.
+
+### Acceptance criteria
+
+```text
+- `pnpm product digital-marketing build` delegates to lifecycle.
+- `pnpm product yappc build` remains legacy.
+- `pnpm product data-cloud build` remains legacy.
+- `pnpm product flashit build` remains legacy until enabled.
+```
+
+---
+
+## 5.23 `platform/typescript/kernel-toolchains/src/adapters/GradleJavaServiceAdapter.ts`
+
+### Current issue
+
+Adapter is useful but mixes execution, output validation, and artifact manifest writing.
+
+### Required changes
+
+1. Remove artifact manifest generation from adapter.
+2. Return artifact paths in `ToolchainExecutionResult`.
+3. Treat required output validation failure as fatal.
+4. Make output validation use expected outputs from context.
+5. Validate that `gradleModule` begins with `:`.
+6. Validate that configured Gradle task is phase-safe.
+7. Do not map unsupported phases to `build`.
+
+### New phase mapping
+
+```ts
+const supportedTaskByPhase = {
+  dev: 'devTask',
+  validate: 'validateTask',
+  test: 'testTask',
+  build: 'buildTask',
+  package: 'packageTask'
+} as const;
+```
+
+If phase is not in map, throw.
+
+### Add tests
+
+```text
+platform/typescript/kernel-toolchains/src/adapters/__tests__/GradleJavaServiceAdapter.test.ts
+```
+
+Test cases:
+
+```text
+- plans Gradle command with args array
+- rejects missing gradleModule
+- rejects gradleModule without leading colon
+- maps validate to validateTask
+- maps dev to devTask
+- fails unsupported phase
+- validates expected jar output
+- fails when expected artifact missing
+- dry-run does not invoke command runner
+```
+
+### Acceptance criteria
+
+```text
+- No manifest writing in adapter.
+- No non-blocking artifact failure.
+- No unsupported phase fallback.
+```
+
+---
+
+## 5.24 `platform/typescript/kernel-toolchains/src/adapters/PnpmViteReactAdapter.ts`
+
+### Current issue
+
+Adapter references `context.surface.id`, maps unsupported phases, and writes manifests internally.
+
+### Required changes
+
+1. Remove `context.surface.id` usage.
+2. Remove artifact manifest writing from adapter.
+3. Return artifact paths only.
+4. Treat missing required outputs as fatal.
+5. Use explicit phase-to-script map.
+6. Reject unsupported phases.
+7. Validate `packagePath` exists and points to `package.json`.
+8. Validate script exists in package.json before execution.
+9. For `validate`, prefer configured `validateScript`; if absent use `type-check`, not `lint`, because Digital Marketing UI has `type-check`.
+10. For `test`, validate test command is present.
+
+### Add tests
+
+```text
+platform/typescript/kernel-toolchains/src/adapters/__tests__/PnpmViteReactAdapter.test.ts
+```
+
+Test cases:
+
+```text
+- plans pnpm command with --dir
+- rejects missing packagePath
+- rejects missing package.json
+- rejects missing script
+- maps validate to validateScript
+- maps build to buildScript
+- fails unsupported phase
+- validates dist/index.html for build
+- dry-run does not invoke command runner
+```
+
+### Acceptance criteria
+
+```text
+- No TypeScript error from context.surface.id.
+- No manifest side effects.
+- No unsupported phase fallback.
+```
+
+---
+
+## 5.25 `platform/typescript/kernel-toolchains/src/execution/CommandRunner.ts`
+
+### Required changes
+
+Ensure command runner interface is typed and observable:
+
+```ts
+export interface CommandRunner {
+  run(
+    command: string,
+    args: readonly string[],
+    options: CommandRunnerOptions,
+  ): Promise<CommandRunnerResult>;
+}
+```
+
+`CommandRunnerOptions`:
+
+```ts
+export interface CommandRunnerOptions {
+  readonly cwd: string;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly timeoutMs?: number;
+}
+```
+
+`CommandRunnerResult`:
+
+```ts
+export interface CommandRunnerResult {
+  readonly exitCode: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly durationMs: number;
+}
+```
+
+### Acceptance criteria
+
+```text
+- No shell string execution.
+- Args array used everywhere.
+- Timeout supported.
+- stdout/stderr truncation happens at lifecycle result collection, not command runner.
+```
+
+---
+
+## 5.26 `platform/typescript/kernel-artifacts`
+
+### Current issue
+
+Artifact manifest generation appears referenced from adapters, but lifecycle should own it centrally.
+
+### Required changes
+
+Ensure package owns:
+
+```text
+ArtifactManifestGenerator
+ArtifactFingerprint
+ArtifactManifestWriter
+ArtifactExpectationValidator
+ArtifactSchemaValidator
+```
+
+### Required files
+
+```text
+platform/typescript/kernel-artifacts/src/ArtifactManifestGenerator.ts
+platform/typescript/kernel-artifacts/src/ArtifactFingerprint.ts
+platform/typescript/kernel-artifacts/src/ArtifactManifestWriter.ts
+platform/typescript/kernel-artifacts/src/ArtifactExpectationValidator.ts
+platform/typescript/kernel-artifacts/src/ArtifactSchemaValidator.ts
+```
+
+### Required behavior
+
+```text
+- Accept ProductLifecyclePlan and ToolchainExecutionResult[].
+- Validate required artifacts.
+- Compute fingerprints.
+- Write artifact-manifest.json under .kernel/out/products/<product>/<phase>/<runId>/.
+- Fail if required artifacts missing.
+```
+
+### Acceptance criteria
+
+```text
+- Adapters no longer write manifests.
+- Build phase emits artifact manifest centrally.
+- Package/deploy phases consume artifact manifest.
+```
+
+---
+
+## 5.27 `platform/typescript/kernel-deployment`
+
+### Current issue
+
+Deployment package exists in root build script but local deploy behavior must be made real and safe.
+
+### Required files
+
+```text
+platform/typescript/kernel-deployment/src/DeploymentPlan.ts
+platform/typescript/kernel-deployment/src/DeploymentResult.ts
+platform/typescript/kernel-deployment/src/DeploymentEnvironment.ts
+platform/typescript/kernel-deployment/src/DeploymentHealthCheck.ts
+platform/typescript/kernel-deployment/src/adapters/ComposeLocalDeploymentAdapter.ts
+platform/typescript/kernel-deployment/src/validation/DeploymentContractValidator.ts
+```
+
+### First target
+
+Only implement:
+
+```text
+compose-local
+```
+
+Do not implement Kubernetes/Helm/Terraform in this stabilization slice beyond schemas and placeholders marked planned.
+
+### ComposeLocal adapter must
+
+```text
+- validate compose file exists
+- validate env example exists
+- require env file or generate from example only in local mode
+- run docker compose config before docker compose up
+- run health checks
+- write deployment-manifest.json
+```
+
+### Acceptance criteria
+
+```text
+- `pnpm kernel product deploy digital-marketing --env local --dry-run` works.
+- Real deploy is either fully implemented or explicitly disabled with actionable error.
+- No partial deploy pretends success.
+```
+
+---
+
+## 5.28 `products/digital-marketing/deploy/local.compose.yaml`
+
+### Current status
+
+The Digital Marketing lifecycle config references this file.
+
+### Required changes
+
+Ensure file exists and is Kernel-compatible.
+
+Minimum content:
+
+```yaml
+services:
+  digital-marketing-api:
+    build:
+      context: ../../..
+      dockerfile: products/digital-marketing/dm-api/Dockerfile
+    environment:
+      DMOS_API_PORT: ${DMOS_API_PORT:-8080}
+    ports:
+      - "${DMOS_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  digital-marketing-web:
+    build:
+      context: ./ui
+    environment:
+      DMOS_WEB_PORT: ${DMOS_WEB_PORT:-5173}
+    ports:
+      - "${DMOS_WEB_PORT:-5173}:5173"
+```
+
+Adjust exact paths based on existing Dockerfiles. If Dockerfiles are not present, do not claim local deploy is implemented. Instead make deploy dry-run only and add Dockerfile tasks.
+
+### Acceptance criteria
+
+```text
+- compose config validates.
+- health checks exist.
+- no hardcoded secrets.
+```
+
+---
+
+## 5.29 `products/digital-marketing/deploy/local.env.example`
+
+### Add or update
+
+Required values:
+
+```dotenv
+DMOS_API_PORT=8080
+DMOS_WEB_PORT=5173
+DMOS_ENV=local
+```
+
+Do not include secrets.
+
+### Acceptance criteria
+
+```text
+- No real secrets.
+- Local deploy can copy this to local.env.
+```
+
+---
+
+## 5.30 `scripts/check-product-lifecycle-contracts.mjs`
+
+### Current issue
+
+The script validates products with lifecycleProfile, but does not enforce exclusion or properly distinguish enabled vs planned/partial.
+
+### Required changes
+
+1. Load:
+
+```text
+config/kernel-lifecycle-exclusions.json
+```
+
+2. Fail when excluded product has:
+
+```text
+lifecycleStatus=enabled
+lifecycle.enabled=true
+```
+
+3. For excluded products, also fail if package scripts use `kernel product` lifecycle commands.
+
+4. For planned/partial products:
+   - require valid lifecycleProfile if present
+   - do not run plan generation
+   - warn on inaccurate/missing config instead of failing unless config claims `executionEnabled: true`
+
+5. For enabled products:
+   - require config
+   - require plan generation for `validate`, `test`, `build`
+   - require adapters safeForDefault
+   - require artifact declarations
+   - require deployment target for deployable phases
+
+### Acceptance criteria
+
+```text
+- Digital Marketing passes.
+- YAPPC/Data Cloud are excluded.
+- PHR/Finance/FlashIt do not fail unless marked enabled.
+- Errors are actionable.
+```
+
+---
+
+## 5.31 `scripts/check-toolchain-adapter-contracts.mjs`
+
+### Required changes
+
+Validate:
+
+```text
+- every adapter has implementation path
+- implementation path exists if status=implemented
+- tests exist if status=implemented
+- safeForDefault=true only allowed when status=implemented
+- every supported phase is known
+- every supported surface type is known
+- every enabled product uses only safeForDefault adapters
+```
+
+### Acceptance criteria
+
+```text
+- Partial adapters cannot be used by enabled products.
+- Unknown adapter references fail.
+```
+
+---
+
+## 5.32 `scripts/check-product-artifact-contracts.mjs`
+
+### Required changes
+
+Validate:
+
+```text
+- enabled lifecycle products declare artifacts
+- declared artifact types are known
+- declared artifact paths are present in kernel-product.yaml where build/package expects them
+- artifact schema files exist
+```
+
+### Acceptance criteria
+
+```text
+- Digital Marketing artifact declarations pass.
+- Missing expected artifact patterns fail before deploy.
+```
+
+---
+
+## 5.33 `scripts/check-product-deployment-contracts.mjs`
+
+### Required changes
+
+Validate only lifecycle-enabled deployable products.
+
+For Digital Marketing:
+
+```text
+- deployment local target exists
+- compose file path exists
+- env example path exists
+- health checks declared for backend-api and web
+- rollback strategy declared
+```
+
+For non-enabled products:
+
+```text
+- warn only
+```
+
+For excluded products:
+
+```text
+- fail if deploy lifecycle is declared
+```
+
+### Acceptance criteria
+
+```text
+- No deployable product lacks health checks.
+- Local deploy target is schema-backed.
+```
+
+---
+
+## 5.34 `scripts/check-kernel-platform-lifecycle.mjs`
+
+### Current issue
+
+It invokes several checks but should become the canonical lifecycle gate.
+
+### Required changes
+
+Run checks in this order:
+
+```text
+check-product-lifecycle-profiles-schema.mjs
+check-toolchain-adapter-registry-schema.mjs
+check-product-lifecycle-contracts.mjs
+check-toolchain-adapter-contracts.mjs
+check-product-artifact-contracts.mjs
+check-product-deployment-contracts.mjs
+check-kernel-lifecycle-exclusions.mjs
+```
+
+Add:
+
+```text
+scripts/check-kernel-lifecycle-exclusions.mjs
+```
+
+### Acceptance criteria
+
+```text
+- Single lifecycle gate catches all current drift.
+- Errors are explicit.
+```
+
+---
+
+## 5.35 `scripts/check-kernel-lifecycle-exclusions.mjs` — new
+
+### Purpose
+
+Ensure excluded products are not accidentally pulled into lifecycle.
+
+### Behavior
+
+Load:
+
+```text
+config/kernel-lifecycle-exclusions.json
+config/canonical-product-registry.json
+package.json
+```
+
+Fail if excluded product has:
+
+```text
+lifecycleStatus=enabled
+lifecycle.enabled=true
+lifecycleConfigPath
+package scripts using "kernel-product.mjs product" for that product
+```
+
+Warn if excluded product has old legacy `pnpm product` scripts. Those are allowed.
+
+### Acceptance criteria
+
+```text
+- YAPPC/Data Cloud lifecycle adoption is blocked.
+- Legacy scripts remain allowed.
+```
+
+---
+
+## 5.36 `scripts/generate-product-registry-artifacts.mjs`
+
+### Current issue
+
+Generator creates package scripts and generated artifacts. It must become lifecycle-aware without accidentally migrating excluded products.
+
+### Required changes
+
+1. Generate lifecycle scripts only for products where:
+
+```text
+lifecycleStatus === "enabled"
+lifecycle.enabled === true
+```
+
+2. Do not generate lifecycle scripts for:
+
+```text
+yappc
+data-cloud
+```
+
+3. Keep legacy scripts for all non-lifecycle products.
+
+4. Add generated lifecycle matrix fields:
+
+```json
+"productsWithLifecycle": ["digital-marketing"],
+"excludedFromLifecycle": ["yappc", "data-cloud"],
+"lifecycleProfiles": {
+  "digital-marketing": "standard-web-api-product"
+}
+```
+
+5. Ensure generated scripts for Digital Marketing use correct CLI syntax:
+
+```json
+"build:digital-marketing": "node scripts/kernel-product.mjs product build digital-marketing",
+"plan:build:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing build"
+```
+
+6. Do not generate invalid promote script until promote is implemented.
+
+Either remove:
+
+```json
+"promote:digital-marketing"
+```
+
+or make CLI parse it correctly.
+
+Preferred now:
+
+```text
+Do not generate release/promote/rollback scripts until those phases are implemented beyond plan/dry-run.
+```
+
+### Acceptance criteria
+
+```text
+- Generated package scripts are deterministic.
+- Digital Marketing gets lifecycle scripts.
+- YAPPC/Data Cloud do not get lifecycle scripts.
+- No generated script invokes unsupported CLI options.
+```
+
+---
+
+## 5.37 `package.json`
+
+### Current issue
+
+Contains lifecycle scripts, but some are premature or invalid.
+
+### Required changes
+
+Keep:
+
+```json
+"kernel": "node ./scripts/kernel-product.mjs",
+"build:kernel-lifecycle-platform": "pnpm --dir platform/typescript/kernel-product-contracts build && pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build",
+"check:kernel-platform-lifecycle": "pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs"
+```
+
+Digital Marketing scripts:
+
+```json
+"build:digital-marketing": "node scripts/kernel-product.mjs product build digital-marketing",
+"test:digital-marketing": "node scripts/kernel-product.mjs product test digital-marketing",
+"dev:digital-marketing": "node scripts/kernel-product.mjs product dev digital-marketing",
+"validate:digital-marketing": "node scripts/kernel-product.mjs product validate digital-marketing",
+"package:digital-marketing": "node scripts/kernel-product.mjs product package digital-marketing",
+"deploy:local:digital-marketing": "node scripts/kernel-product.mjs product deploy digital-marketing --env local",
+"verify:local:digital-marketing": "node scripts/kernel-product.mjs product verify digital-marketing --env local",
+"plan:build:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing build"
+```
+
+Remove until implemented:
+
+```text
+release:digital-marketing
+promote:digital-marketing
+rollback:digital-marketing
+```
+
+or mark as plan-only:
+
+```json
+"plan:promote:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing promote --from staging --to prod"
+```
+
+### Acceptance criteria
+
+```text
+- No package script is known-invalid.
+- YAPPC/Data Cloud scripts remain legacy only.
+- Digital Marketing scripts use Kernel lifecycle.
+```
+
+---
+
+## 5.38 `pnpm-workspace.yaml`
+
+### Required changes
+
+Ensure new package is included:
+
+```yaml
+- "platform/typescript/kernel-product-contracts"
+- "platform/typescript/kernel-lifecycle"
+- "platform/typescript/kernel-toolchains"
+- "platform/typescript/kernel-artifacts"
+- "platform/typescript/kernel-deployment"
+```
+
+If generated, update generator instead of manual edit.
+
+### Acceptance criteria
+
+```text
+- All lifecycle packages are installable and buildable by pnpm.
+```
+
+---
+
+## 5.39 `platform/typescript/LIBRARY_GOVERNANCE.md`
+
+### Required changes
+
+Add canonical entries:
+
+```text
+@ghatana/kernel-product-contracts
+@ghatana/kernel-lifecycle
+@ghatana/kernel-toolchains
+@ghatana/kernel-artifacts
+@ghatana/kernel-deployment
+```
+
+Each entry must include:
+
+```text
+owner
+purpose
+status
+allowed dependencies
+public API stability
+```
+
+### Acceptance criteria
+
+```text
+- New lifecycle packages are governed.
+- No deprecated or unregistered package names.
+```
+
+---
+
+## 5.40 `docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md`
+
+### Current issue
+
+Too thin for implementation.
+
+### Required changes
+
+Expand sections:
+
+```text
+1. Purpose
+2. Non-goals
+3. Product developer contract
+4. Power-user override contract
+5. Lifecycle phases
+6. Phase input/output contract
+7. Plan contract
+8. Result contract
+9. Gate contract
+10. Artifact contract
+11. Environment contract
+12. Deployment contract
+13. Failure policy
+14. Observability requirements
+15. Security/privacy requirements
+16. Product adoption status model
+17. Excluded product policy
+```
+
+### Must document
+
+```text
+lifecycleStatus=enabled
+lifecycleStatus=planned
+lifecycleStatus=partial
+lifecycleStatus=disabled
+```
+
+### Acceptance criteria
+
+```text
+- Docs explain why Digital Marketing is enabled.
+- Docs explain why YAPPC/Data Cloud are excluded.
+- Docs match schema and checks.
+```
+
+---
+
+## 5.41 `docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md`
+
+### Required changes
+
+Document:
+
+```text
+adapter interface
+adapter status model
+safeForDefault
+planningImplemented
+executionImplemented
+outputValidationImplemented
+required fields
+supported phases
+supported surfaces
+no shell strings
+structured command execution
+output validation
+observability
+testing requirements
+```
+
+### Acceptance criteria
+
+```text
+- Adapter authors know what to implement.
+- Power users can add adapters without bypassing Kernel.
+```
+
+---
+
+## 5.42 `docs/kernel/PRODUCT_ARTIFACT_CONTRACT.md`
+
+### Required changes
+
+Document:
+
+```text
+artifact-manifest.json
+build-manifest.json
+deployment-manifest.json
+fingerprints
+required vs optional artifacts
+artifact producer
+artifact consumer
+fail-closed behavior
+```
+
+### Acceptance criteria
+
+```text
+- Artifact contract matches kernel-artifacts package.
+```
+
+---
+
+## 5.43 `docs/kernel/PRODUCT_DEPLOYMENT_CONTRACT.md`
+
+### Required changes
+
+Document:
+
+```text
+deploy phase
+verify phase
+environment resolution
+local compose target
+health checks
+rollback policy
+promotion policy
+non-local gate requirements
+```
+
+### Explicitly state
+
+```text
+Only local compose deployment is in scope for this stabilization plan.
+Kubernetes/Helm/Terraform remain planned adapters until implemented and tested.
+```
+
+### Acceptance criteria
+
+```text
+- No one assumes production deploy is complete.
+- Local deploy is the only initial executable target.
+```
+
+---
+
+# 6. Testing Plan
+
+## 6.1 Unit tests
+
+Add or update:
+
+```text
+platform/typescript/kernel-lifecycle/src/planning/__tests__/ProductLifecyclePlanner.test.ts
+platform/typescript/kernel-lifecycle/src/execution/__tests__/ProductLifecycleExecutor.test.ts
+platform/typescript/kernel-toolchains/src/adapters/__tests__/GradleJavaServiceAdapter.test.ts
+platform/typescript/kernel-toolchains/src/adapters/__tests__/PnpmViteReactAdapter.test.ts
+platform/typescript/kernel-artifacts/src/__tests__/ArtifactManifestGenerator.test.ts
+platform/typescript/kernel-deployment/src/__tests__/ComposeLocalDeploymentAdapter.test.ts
+```
+
+## 6.2 Script tests
+
+Add:
+
+```text
+scripts/check-kernel-lifecycle-exclusions.test.mjs
+scripts/check-product-lifecycle-contracts.test.mjs
+scripts/kernel-product.test.mjs
+scripts/run-product-task.lifecycle.test.mjs
+```
+
+## 6.3 Product pilot tests
+
+Digital Marketing:
+
+```text
+products/digital-marketing/conformance/lifecycle-plan.test.json
+products/digital-marketing/conformance/artifact-fixtures.json
+products/digital-marketing/conformance/deployment-fixtures.json
+```
+
+## 6.4 Validation commands
+
+Run focused checks first:
+
+```bash
+pnpm --dir platform/typescript/kernel-product-contracts build
+pnpm --dir platform/typescript/kernel-lifecycle build
+pnpm --dir platform/typescript/kernel-toolchains build
+pnpm --dir platform/typescript/kernel-artifacts build
+pnpm --dir platform/typescript/kernel-deployment build
+node scripts/check-kernel-platform-lifecycle.mjs
+node scripts/kernel-product.mjs product plan digital-marketing build --json
+node scripts/kernel-product.mjs product build digital-marketing --dry-run --json
+```
+
+Then run broader:
+
+```bash
+pnpm check:product-registry-artifacts
+pnpm check:kernel-platform-lifecycle
+pnpm check:kernel-boundaries
+pnpm check:product-manifest-contracts
+pnpm check:runtime-template-conformance
+```
+
+---
+
+# 7. Sprint-by-Sprint Implementation Order
+
+## Sprint 1 — Stabilize scope and contracts
+
+1. Add `config/kernel-lifecycle-exclusions.json`.
+2. Remove lifecycle fields from `yappc` and `data-cloud`.
+3. Mark PHR/Finance/FlashIt lifecycle configs as draft or planned-only.
+4. Expand lifecycle docs.
+5. Fix package scripts that are invalid.
+6. Update lifecycle conformance scripts to distinguish enabled/planned/excluded.
+
+Success:
+
+```bash
+pnpm check:kernel-platform-lifecycle
+node scripts/kernel-product.mjs product plan digital-marketing build --json
+```
+
+## Sprint 2 — Type and package cleanup
+
+1. Add `@ghatana/kernel-product-contracts`.
+2. Split lifecycle domain types.
+3. Remove duplicated types from toolchains.
+4. Align lifecycle/toolchain package dependencies to workspace catalog.
+5. Add/repair tests.
+
+Success:
 
 ```bash
 pnpm build:kernel-lifecycle-platform
-node scripts/kernel-product.mjs product plan digital-marketing build --json
-node scripts/kernel-product.mjs product build digital-marketing --dry-run
+```
+
+## Sprint 3 — Planner/executor consolidation
+
+1. Move planning from `kernel-product.mjs` into `ProductLifecyclePlanner`.
+2. Add `ProductLifecycleExecutor`.
+3. Make `kernel-product.mjs` thin.
+4. Remove or alias `run-product-lifecycle.mjs`.
+5. Make `run-product-task.mjs` delegate only enabled products.
+
+Success:
+
+```bash
+pnpm kernel product plan digital-marketing build --json
+pnpm kernel product build digital-marketing --dry-run --json
 pnpm product digital-marketing build --dry-run
-pnpm check:product-lifecycle-contracts
 ```
 
----
+## Sprint 4 — Adapter correctness
 
-## Sprint 2 — Stabilize adapters and execution
+1. Fix Gradle adapter.
+2. Fix pnpm adapter.
+3. Add adapter output validation.
+4. Remove manifest side effects from adapters.
+5. Move artifact manifest writing into `kernel-artifacts`.
 
-### Files
-
-```text
-platform/typescript/kernel-toolchains/src/ToolchainAdapter.ts
-platform/typescript/kernel-toolchains/src/execution/CommandRunner.ts
-platform/typescript/kernel-toolchains/src/execution/SpawnCommandRunner.ts
-platform/typescript/kernel-toolchains/src/execution/FakeCommandRunner.ts
-platform/typescript/kernel-toolchains/src/adapters/GradleJavaServiceAdapter.ts
-platform/typescript/kernel-toolchains/src/adapters/PnpmViteReactAdapter.ts
-platform/typescript/kernel-toolchains/src/ToolchainAdapterRegistry.ts
-platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleExecutor.ts
-```
-
-### Validation
+Success:
 
 ```bash
-node scripts/kernel-product.mjs product build digital-marketing --surface web --dry-run
-node scripts/kernel-product.mjs product build digital-marketing --surface backend-api --dry-run
-node scripts/kernel-product.mjs product build digital-marketing --surface web
-node scripts/kernel-product.mjs product build digital-marketing --surface backend-api
+pnpm kernel product build digital-marketing --surface backend-api --dry-run
+pnpm kernel product build digital-marketing --surface web --dry-run
 ```
 
----
+## Sprint 5 — Artifact and local deploy
 
-## Sprint 3 — Artifact correctness
+1. Implement central artifact manifests.
+2. Implement local compose deployment dry-run.
+3. Add Digital Marketing local deploy files.
+4. Add health checks.
+5. Add deployment manifests.
 
-### Files
-
-```text
-platform/typescript/kernel-artifacts/src/domain/ArtifactManifest.ts
-platform/typescript/kernel-artifacts/src/fingerprint/ArtifactFingerprintCalculator.ts
-platform/typescript/kernel-artifacts/src/validator/ProductArtifactValidator.ts
-config/schemas/product-artifact-manifest.schema.json
-products/digital-marketing/kernel-product.yaml
-```
-
-### Validation
+Success:
 
 ```bash
-node scripts/kernel-product.mjs product build digital-marketing --surface web
-test -f .kernel/out/products/digital-marketing/build/*/artifact-manifest.json
+pnpm kernel product package digital-marketing --dry-run
+pnpm kernel product deploy digital-marketing --env local --dry-run
 ```
 
----
+## Sprint 6 — CI/generation hardening
 
-## Sprint 4 — Package and local deploy dry-run
+1. Update generated registry artifacts.
+2. Update CI matrix generation.
+3. Add lifecycle CI workflows or extend existing workflows.
+4. Ensure no lifecycle scripts generated for YAPPC/Data Cloud.
 
-### Files
-
-```text
-platform/typescript/kernel-deployment/*
-platform/typescript/kernel-toolchains/src/adapters/DockerBuildxAdapter.ts
-platform/typescript/kernel-toolchains/src/adapters/ComposeDeploymentAdapter.ts
-products/digital-marketing/deploy/local.compose.yaml
-products/digital-marketing/deploy/local.env.example
-products/digital-marketing/deploy/health-checks.json
-```
-
-### Validation
+Success:
 
 ```bash
-node scripts/kernel-product.mjs product package digital-marketing --dry-run
-node scripts/kernel-product.mjs product deploy digital-marketing --env local --dry-run
-```
-
----
-
-## Sprint 5 — Lifecycle conformance hardening
-
-### Files
-
-```text
-scripts/check-product-lifecycle-contracts.mjs
-scripts/check-toolchain-adapter-contracts.mjs
-scripts/check-product-artifact-contracts.mjs
-scripts/check-product-deployment-contracts.mjs
-scripts/check-kernel-platform-lifecycle.mjs
-package.json
-```
-
-### Validation
-
-```bash
+pnpm check:product-registry-artifacts
 pnpm check:kernel-platform-lifecycle
 ```
 
 ---
 
-## Sprint 6 — Migrate PHR after Digital Marketing is clean
+# 8. Final Acceptance Criteria
 
-Do not migrate PHR before Digital Marketing lifecycle execution is clean.
-
-### Files
+The stabilization is complete when:
 
 ```text
-products/phr/kernel-product.yaml
-products/phr/lifecycle.local.yaml
-products/phr/deploy/local.compose.yaml
-products/phr/deploy/local.env.example
-config/canonical-product-registry.json
+[ ] Digital Marketing is the only enabled lifecycle product.
+[ ] YAPPC and Data Cloud are explicitly excluded from lifecycle adoption.
+[ ] PHR/Finance/FlashIt are planned/partial only and cannot accidentally execute lifecycle.
+[ ] Kernel CLI is thin and delegates to lifecycle package.
+[ ] Lifecycle package owns planning and execution.
+[ ] Toolchain package owns tool-specific adapters only.
+[ ] Shared contracts are not duplicated.
+[ ] Artifact manifests are generated centrally.
+[ ] Required artifact failures are fatal.
+[ ] Local deploy is either fully implemented or explicitly dry-run only.
+[ ] Package scripts contain no invalid lifecycle commands.
+[ ] All new TypeScript packages use workspace-approved dependency versions.
+[ ] Lifecycle checks are schema-backed and actionable.
+[ ] Digital Marketing build plan includes backend-api and web.
+[ ] `pnpm product digital-marketing build` delegates to lifecycle.
+[ ] `pnpm product yappc build` remains legacy.
+[ ] `pnpm product data-cloud build` remains legacy.
+[ ] Tests exist for planner, executor, adapters, conformance scripts, and CLI behavior.
 ```
 
 ---
 
-# 16. Immediate checklist
+# 9. Do Not Do
+
+Do not:
 
 ```text
-[ ] Fix registry artifact declarations to match schema.
-[ ] Add lifecycleStatus and lifecycleMigration to registry schema.
-[ ] Mark Digital Marketing enabled; mark other lifecycle entries partial/planned.
-[ ] Remove hardcoded absolute paths from ProductLifecyclePlanner.
-[ ] Add RepoRootResolver.
-[ ] Split lifecycle domain types into focused files.
-[ ] Make kernel-product CLI support product build/test/dev execution.
-[ ] Change run-product-task to delegate execution, not plan.
-[ ] Regenerate package scripts so build/test/dev execute.
-[ ] Add CommandRunner abstraction.
-[ ] Replace exec shell strings in adapters.
-[ ] Fix Gradle adapter cwd and args.
-[ ] Fix pnpm adapter package directory handling.
-[ ] Implement real output validation for Gradle and pnpm adapters.
-[ ] Implement SHA-256 artifact fingerprinting.
-[ ] Add Digital Marketing artifact declarations.
-[ ] Add Digital Marketing local deploy files.
-[ ] Expand lifecycle conformance checks.
-[ ] Add focused unit tests for planner, adapters, artifacts, and checkers.
+- migrate YAPPC into lifecycle
+- migrate Data Cloud into lifecycle
+- hide incomplete deployment behind a successful command
+- keep duplicate lifecycle type definitions
+- let adapters write manifests as side effects
+- introduce more local dependency/version drift
+- add broad abstractions without Digital Marketing proving them
+- add shell-string command execution
+- allow partial/planned adapters in enabled product lifecycle
+- treat warnings as success for required outputs
 ```
 
 ---
 
-# 17. Definition of done for stabilized Kernel lifecycle platform
+# 10. Summary
+
+The target commit already made a useful first move toward Kernel product lifecycle orchestration. The next implementation should not restart. It should stabilize and harden what exists.
+
+The correct next direction is:
 
 ```text
-[ ] `pnpm product digital-marketing build` executes lifecycle build.
-[ ] `pnpm build:digital-marketing` executes lifecycle build.
-[ ] `plan` commands only plan.
-[ ] `--dry-run` produces executable plan without running tools.
-[ ] No code has hardcoded developer-local absolute paths.
-[ ] No adapter uses shell-string execution.
-[ ] No validator returns unconditional valid.
-[ ] Artifact manifests have real hashes and sizes.
-[ ] Registry artifact declarations validate against schema.
-[ ] Digital Marketing can build web and backend through Kernel.
-[ ] Digital Marketing emits artifact manifests.
-[ ] Local deploy can be planned with health checks.
-[ ] Lifecycle conformance catches config drift.
-[ ] Tests cover planner, adapters, artifact validation, and check scripts.
-[ ] Kernel platform code remains product-neutral.
+1. Scope lifecycle to Digital Marketing only for now.
+2. Explicitly exclude YAPPC and Data Cloud.
+3. Make lifecycle planning/execution package-owned, not script-owned.
+4. Unify duplicated contracts.
+5. Make adapters safe, typed, and output-validating.
+6. Make artifacts and deployment first-class but fail-closed.
+7. Keep legacy product build/dev/test behavior for non-lifecycle products.
 ```
 
----
-
-# 18. Long-term expansion after stabilization
-
-After Digital Marketing passes end-to-end:
-
-```text
-1. Migrate PHR.
-2. Migrate FlashIt.
-3. Migrate Finance backend-heavy lifecycle.
-4. Migrate Data Cloud platform-provider lifecycle.
-5. Migrate YAPPC after lifecycle platform is stable enough for product generation.
-6. Add Kernel Studio lifecycle UI.
-7. Add Kubernetes/Helm/Terraform production deployment.
-8. Add release/promotion/rollback approval gates.
-9. Add plugin lifecycle hooks.
-```
-
-Do not expand to all products before Digital Marketing proves the lifecycle path.
-
----
-
-# 19. Final implementation principle
-
-Do not build another wrapper around Gradle and pnpm.
-
-Build a Kernel-owned lifecycle platform where:
-
-```text
-Kernel owns lifecycle, contracts, gates, artifacts, and deployment orchestration.
-Toolchain adapters own concrete tool execution.
-Products own business behavior and product-specific configuration.
-```
-
-This is the stable path to a real Kernel product lifecycle platform without making Kernel a god product.
+This gives Kernel a real product-lifecycle foundation without turning Kernel into a god product and without forcing every product into the framework before the platform is stable.

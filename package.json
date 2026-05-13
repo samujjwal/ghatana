@@ -83,7 +83,7 @@
     "prepare": "husky",
     "product": "node ./scripts/run-product-task.mjs",
     "kernel": "node ./scripts/kernel-product.mjs",
-    "build:kernel-lifecycle-platform": "pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build",
+    "build:kernel-lifecycle-platform": "pnpm --dir platform/typescript/kernel-product-contracts build && pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build",
     "check:affected-products": "node ./scripts/resolve-affected-products.test.mjs",
     "check:product-registry-artifacts": "node ./scripts/generate-product-registry-artifacts.mjs --check",
     "check:product-kind-classification": "node ./scripts/check-product-kind-classification.mjs",
@@ -129,9 +129,6 @@
     "plan:package:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing package",
     "plan:deploy:local:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing deploy --env local",
     "plan:verify:local:digital-marketing": "node scripts/kernel-product.mjs product plan digital-marketing verify --env local",
-    "release:digital-marketing": "node scripts/kernel-product.mjs release digital-marketing",
-    "promote:digital-marketing": "node scripts/kernel-product.mjs promote digital-marketing --from staging --to prod",
-    "rollback:digital-marketing": "node scripts/kernel-product.mjs rollback digital-marketing --env prod",
     "build:flashit-gateway": "pnpm product flashit build gateway",
     "test:flashit-gateway": "pnpm product flashit test gateway",
     "build:flashit-web": "pnpm product flashit build web",
@@ -224,5 +221,8 @@
       "msw",
       "prisma"
     ]
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
   }
 }

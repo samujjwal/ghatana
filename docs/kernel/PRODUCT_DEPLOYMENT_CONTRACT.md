@@ -1,93 +1,52 @@
 # Product Deployment Contract
 
-This document defines the contract for product deployments.
+This document defines deployment contract enforcement for lifecycle-enabled products.
 
-## Deployment Targets
+## Source Of Truth
 
-Deployment targets are configured in the deployment target registry:
+For enabled products, deployment contract is driven by `kernel-product.yaml` `deployment.local`.
 
-```json
-{
-  "targets": {
-    "compose-local": {
-      "adapter": "docker-compose",
-      "configPath": "deploy/local.compose.yaml"
-    },
-    "kubernetes-dev": {
-      "adapter": "kubernetes",
-      "namespace": "dev",
-      "configPath": "deploy/k8s/dev"
-    },
-    "kubernetes-prod": {
-      "adapter": "kubernetes",
-      "namespace": "prod",
-      "configPath": "deploy/k8s/prod"
-    }
-  }
-}
+Required fields:
+
+- `target`
+- `composeFile`
+- `envExampleFile`
+- `healthChecks`
+
+Optional but validated when present:
+
+- `envFile` (warning if missing locally)
+
+## Registry Alignment
+
+`node scripts/check-product-deployment-contracts.mjs` enforces that:
+
+- Enabled products declare deployment targets in `config/canonical-product-registry.json`.
+- `deployment.local.target` exists in registry target list and in `config/deployment-targets.json`.
+- Enabled products support `local` environment in registry metadata.
+
+## Health Check Coverage
+
+`deployment.local.healthChecks` must include all declared surfaces from `kernel-product.yaml`.
+
+Example:
+
+```yaml
+deployment:
+  local:
+    target: compose-local
+    composeFile: products/digital-marketing/deploy/local.compose.yaml
+    envFile: products/digital-marketing/deploy/local.env
+    envExampleFile: products/digital-marketing/deploy/local.env.example
+    healthChecks:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
 ```
 
-## Deployment Manifest
+## Exclusion Policy
 
-Each deployment emits a deployment manifest:
-
-```json
-{
-  "schemaVersion": "1.0.0",
-  "productId": "product-id",
-  "version": "1.0.0",
-  "environment": "prod",
-  "deploymentId": "deployment-uuid",
-  "surfaces": [
-    {
-      "surface": "backend-api",
-      "status": "deployed",
-      "artifactId": "artifact-id",
-      "deploymentTarget": "kubernetes-prod",
-      "deployedAt": "2024-01-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-## Deployment Gates
-
-Deployments must pass gates before execution:
-
-```json
-{
-  "gates": {
-    "security-preflight": "required",
-    "health-checks": "required",
-    "approval": "required-for-prod",
-    "rollback-plan": "required-for-prod"
-  }
-}
-```
-
-## Rollback Plans
-
-Production deployments require rollback plans:
-
-```json
-{
-  "rollbackPlan": {
-    "strategy": "previous-version",
-    "targetVersion": "0.9.0",
-    "reason": "Deployment failure",
-    "steps": [
-      "load-previous-artifact",
-      "apply-deployment",
-      "verify-health"
-    ]
-  }
-}
-```
-
-## Deployment Verification
-
-After deployment, verification steps run:
-1. Health check endpoint validation
-2. Expected surface availability
-3. Smoke test execution
-4. Monitoring integration verification
+Excluded products (`yappc`, `data-cloud`) are outside lifecycle deployment enforcement and must not be treated as lifecycle-enabled products.

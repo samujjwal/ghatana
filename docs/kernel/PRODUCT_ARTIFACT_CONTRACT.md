@@ -1,74 +1,38 @@
 # Product Artifact Contract
 
-This document defines the contract for product artifacts.
+This document defines the enforced artifact contract for lifecycle-enabled products.
+
+## Source Of Truth
+
+For enabled products, artifact expectations are read from `kernel-product.yaml`:
+
+- `surfaces.<surface>.expectedOutputs.<phase>`
+- `artifacts.<phase>.<surface>`
+
+Registry-only artifact declarations are not authoritative for enabled lifecycle execution.
+
+## Validation Rules
+
+`node scripts/check-product-artifact-contracts.mjs` enforces:
+
+- Enabled product has a valid `lifecycleConfigPath`.
+- `kernel-product.yaml` declares `artifacts`.
+- Every `artifacts.<phase>.<surface>` entry maps to a declared surface.
+- `type` and `packaging` are valid.
+- `required` is boolean when present.
+- Required non-container artifacts must define `paths`.
+- Surfaces should define `expectedOutputs` (warning when missing).
+
+## Adapter Output Enforcement
+
+Adapter execution validates outputs against `expectedOutputs` for the current phase.
+
+- `gradle-java-service` validates configured outputs, including wildcard paths.
+- `pnpm-vite-react` validates configured output paths directly.
+- Missing required outputs result in execution failure.
 
 ## Artifact Types
 
-Kernel defines standard artifact types:
+Supported artifact types are controlled by script validation and include:
 
-```json
-{
-  "artifactTypes": {
-    "jar": "Java JAR file",
-    "container": "Docker container image",
-    "static-web-bundle": "Static web application bundle",
-    "mobile-ios-app": "iOS application package",
-    "mobile-android-app": "Android application package"
-  }
-}
-```
-
-## Artifact Manifest
-
-Each build phase emits an artifact manifest:
-
-```json
-{
-  "schemaVersion": "1.0.0",
-  "productId": "product-id",
-  "version": "1.0.0",
-  "buildId": "build-uuid",
-  "artifacts": [
-    {
-      "id": "artifact-id",
-      "type": "jar",
-      "surface": "backend-api",
-      "path": "build/libs/product.jar",
-      "checksumAlgorithm": "sha256",
-      "checksum": "abc123...",
-      "sizeBytes": 1024000,
-      "metadata": {
-        "buildTime": "2024-01-01T00:00:00Z"
-      }
-    }
-  ]
-}
-```
-
-## Artifact Validation
-
-Artifacts are validated against declared types in `kernel-product.yaml`:
-
-```yaml
-surfaces:
-  backend-api:
-    artifacts:
-      - type: jar
-        required: true
-      - type: container
-        required: true
-```
-
-## Artifact Lifecycle
-
-1. **Build phase**: Emits build artifacts (JAR, bundles)
-2. **Package phase**: Consumes build artifacts, emits deployable artifacts (containers)
-3. **Deploy phase**: Consumes deployable artifacts
-4. **Release phase**: Creates release artifacts with version tags
-
-## Artifact Storage
-
-Artifacts are stored in configured artifact repositories:
-- Local filesystem for development
-- Container registry for container artifacts
-- Package repository for JAR artifacts
+- `jvm-service`, `jvm-library`, `node-service`, `static-web-bundle`, `container-image`, `mobile-bundle`, `sdk-package`, `domain-pack`, `test-report`, `coverage-report`.

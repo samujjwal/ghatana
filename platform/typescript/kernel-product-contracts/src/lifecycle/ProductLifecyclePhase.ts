@@ -1,0 +1,15 @@
+export type ProductLifecyclePhase =
+  | 'create'
+  | 'bootstrap'
+  | 'dev'
+  | 'validate'
+  | 'test'
+  | 'build'
+  | 'package'
+  | 'release'
+  | 'deploy'
+  | 'verify'
+  | 'promote'
+  | 'rollback'
+  | 'operate'
+  | 'retire';

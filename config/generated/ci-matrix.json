@@ -32,6 +32,10 @@
   "productsWithLifecycle": [
     "digital-marketing"
   ],
+  "excludedFromLifecycle": [
+    "data-cloud",
+    "yappc"
+  ],
   "lifecycleProfiles": [
     "standard-web-api-product"
   ]

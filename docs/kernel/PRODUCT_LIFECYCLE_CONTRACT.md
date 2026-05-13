@@ -1,73 +1,49 @@
 # Product Lifecycle Contract
 
-This document defines the contract between Kernel and products for lifecycle operations.
+This document defines the authoritative lifecycle contract between Kernel and products.
 
-## Lifecycle Phases
+## Scope
 
-Products define lifecycle phases in their `kernel-product.yaml`:
+- Lifecycle execution is enabled only for products with `lifecycleStatus: enabled` and `lifecycle.enabled: true` in `config/canonical-product-registry.json`.
+- Lifecycle execution currently applies to `digital-marketing`.
+- `yappc` and `data-cloud` are explicitly excluded by `config/kernel-lifecycle-exclusions.json` and must not declare executable lifecycle configuration.
+- Planned products (for example `phr`, `finance`, `flashit`) may keep draft metadata but are not executable.
 
-```yaml
-phases:
-  dev:
-    defaultSurfaces: [backend-api, web]
-    mode: parallel
-  validate:
-    defaultSurfaces: [backend-api, web]
-    mode: parallel
-  test:
-    defaultSurfaces: [backend-api, web]
-    mode: parallel
-  build:
-    defaultSurfaces: [backend-api, web]
-    mode: sequential
-  package:
-    defaultSurfaces: [backend-api, web]
-    mode: sequential
-    defaultTargets: [container, static-web]
-  deploy:
-    defaultEnvironment: local
-```
+## Source Of Truth
 
-## Phase Modes
+For enabled products, lifecycle behavior is driven by `products/<product>/kernel-product.yaml`:
 
-- **parallel**: Execute on all surfaces concurrently
-- **sequential**: Execute on surfaces in dependency order
+- `surfaces`: adapter binding and adapter-required configuration
+- `phases`: default surfaces and execution mode (`parallel` or `sequential`)
+- `artifacts`: required artifact contracts by phase and surface
+- `deployment`: deployment target and health checks
+- `gates`: required lifecycle gates
 
-## Surface Configuration
+Registry entries must point to this file via `lifecycleConfigPath`.
 
-Each surface declares its adapter and task mappings:
+## Planning And Execution Ownership
 
-```yaml
-surfaces:
-  backend-api:
-    adapter: gradle-java-service
-    gradleModule: :products:product-name:module
-    devTask: runServer
-    buildTask: build
-    testTask: test
-    validateTask: check
-```
+- `scripts/kernel-product.mjs` is a thin CLI wrapper only.
+- Planning is owned by `@ghatana/kernel-lifecycle` (`ProductLifecyclePlanner`).
+- Execution is owned by `@ghatana/kernel-lifecycle` (`ProductLifecycleExecutor`).
+- The planner emits explicit executable step metadata per surface/phase.
 
-## Contract Requirements
+## Safety Rules
 
-- Products must declare all lifecycle phases they support
-- Surface adapters must be registered in the toolchain adapter registry
-- Task names must match the adapter's expected task identifiers
-- Health check configuration is required for all deployable surfaces
+- Enabled products must use lifecycle profiles with `safeForDefault: true`.
+- Stable lifecycle profiles must set `safeForDefault: true`.
+- Experimental lifecycle profiles must set `safeForDefault: false`.
+- Adapters selected by safe default profiles must come from adapter registry entries with `safeForDefault: true`.
 
-## Lifecycle Commands
+## CLI
 
-Kernel provides CLI commands for lifecycle operations:
+Supported CLI forms:
 
 ```bash
-pnpm kernel product plan <product> <phase>
-pnpm kernel product validate <product>
-pnpm kernel product test <product>
-pnpm kernel product build <product> [--surface <surface>]
-pnpm kernel product package <product>
-pnpm kernel product deploy <product> --env <env>
+node scripts/kernel-product.mjs product plan <productId> <phase> --json
+node scripts/kernel-product.mjs product <phase> <productId> --dry-run --json
+node scripts/kernel-product.mjs plan <productId> <phase> --json
+node scripts/kernel-product.mjs <phase> <productId> --json
 ```
 
-## Dry Run
-
-All lifecycle commands support `--dry-run` to print execution plans without running tools.
+Supported options include `--surface`, `--surfaces`, `--env`, `--output-dir`, `--source-ref`, `--dry-run`, `--json`, `--from`, `--to`, `--approval-id`, `--release-id`.

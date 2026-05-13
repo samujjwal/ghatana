@@ -1,38 +1,8 @@
-schemaVersion: "1.0.0"
-id: "phr"
-lifecycleProfile: "standard-web-api-product"
-
-surfaces:
-  - type: "backend-api"
-    adapter: "gradle-java-service"
-    config:
-      gradleModule: "products:phr:delivery:gateway"
-  - type: "web"
-    adapter: "pnpm-vite-react"
-    config:
-      packagePath: "products/phr/delivery/ui"
-
-phases:
-  dev:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "parallel"
-  
-  validate:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "parallel"
-  
-  test:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "parallel"
-  
-  build:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "sequential"
-  
-  package:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "parallel"
-  
-  deploy:
-    defaultSurfaces: ["backend-api", "web"]
-    mode: "sequential"
+schemaVersion: 1.0.0
+productId: phr
+lifecycleProfile: standard-web-api-product
+status: draft
+executionEnabled: false
+migration:
+  status: planned
+  reason: "PHR lifecycle config requires path/module correction before execution."

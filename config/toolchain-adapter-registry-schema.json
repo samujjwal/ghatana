@@ -22,7 +22,7 @@
   "definitions": {
     "ToolchainAdapter": {
       "type": "object",
-      "required": ["kind", "supportedSurfaceTypes", "supportedPhases", "requires", "outputs", "implementation", "status", "safeForDefault", "tests"],
+      "required": ["kind", "supportedSurfaceTypes", "supportedPhases", "requires", "outputs", "implementation", "status", "safeForDefault", "planningImplemented", "executionImplemented", "outputValidationImplemented", "tests"],
       "properties": {
         "kind": {
           "type": "string",
@@ -71,6 +71,18 @@
         "safeForDefault": {
           "type": "boolean",
           "description": "Whether stable lifecycle profiles may reference this adapter by default"
+        },
+        "planningImplemented": {
+          "type": "boolean",
+          "description": "Whether the adapter has production planning implementation"
+        },
+        "executionImplemented": {
+          "type": "boolean",
+          "description": "Whether the adapter has production execution implementation"
+        },
+        "outputValidationImplemented": {
+          "type": "boolean",
+          "description": "Whether the adapter has production output validation implementation"
         },
         "tests": {
           "type": "array",

@@ -9,7 +9,6 @@ import type {
   ProductLifecyclePhase,
   ProductSurfaceType,
 } from '../ToolchainAdapter.js';
-import { ArtifactManifestGenerator } from '../artifacts/ArtifactManifestGenerator.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
 
@@ -30,190 +29,153 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
-    const { phase, surfaceConfig } = context;
-    const gradleModule = surfaceConfig.gradleModule as string;
-
-    if (!gradleModule) {
+    const gradleModule = context.surfaceConfig.gradleModule;
+    if (typeof gradleModule !== 'string' || gradleModule.length === 0) {
       throw new Error('gradleModule is required for GradleJavaServiceAdapter');
     }
 
-    const task = this.mapPhaseToTask(phase, surfaceConfig);
-    const command = [process.platform === 'win32' ? '.\\gradlew.bat' : './gradlew', `${gradleModule}:${task}`, '--no-daemon'];
-
+    const task = this.mapPhaseToTask(context.phase, context.surfaceConfig);
     return [
       {
-        id: `gradle-${phase}`,
+        id: `gradle-${context.phase}`,
         description: `Run Gradle ${task} for ${gradleModule}`,
-        command,
+        command: [process.platform === 'win32' ? '.\\gradlew.bat' : './gradlew', `${gradleModule}:${task}`, '--no-daemon'],
         workingDirectory: this.repoRoot,
       },
     ];
   }
 
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {
-    const startTime = Date.now();
-    const plan = await this.plan(context);
-    const step = plan[0];
+    const startedAt = Date.now();
+    const [step] = await this.plan(context);
 
     if (context.dryRun) {
       context.logger.info(`[DRY-RUN] Would execute: ${step.command.join(' ')}`);
       return {
         status: 'skipped',
-        steps: [
-          {
-            stepId: step.id,
-            status: 'skipped',
-            durationMs: 0,
-          },
-        ],
+        steps: [{ stepId: step.id, status: 'skipped', durationMs: 0 }],
         artifacts: [],
         durationMs: 0,
       };
     }
 
-    context.logger.info(`Executing Gradle: ${step.command.join(' ')}`);
+    const commandResult = await this.commandRunner.run(step.command[0], step.command.slice(1), {
+      cwd: step.workingDirectory,
+      env: { ...process.env, ...step.env },
+    });
 
-    try {
-      const commandResult = await this.commandRunner.run(step.command[0], step.command.slice(1), {
-        cwd: step.workingDirectory,
-        env: { ...process.env, ...step.env },
-      });
+    const durationMs = commandResult.durationMs || Date.now() - startedAt;
+    const validation = await this.validateOutputs(context);
+    const artifacts = await this.extractArtifacts(context);
 
-      const durationMs = commandResult.durationMs || Date.now() - startTime;
-      const validation = await this.validateOutputs(context);
-      const artifactPaths = await this.extractArtifacts(context);
-
-      if (commandResult.exitCode !== 0 || validation.status === 'invalid') {
-        return {
-          status: 'failed',
-          steps: [
-            {
-              stepId: step.id,
-              status: 'failed',
-              exitCode: commandResult.exitCode,
-              stdout: commandResult.stdout.slice(0, 10000),
-              stderr: commandResult.stderr.slice(0, 10000),
-              durationMs,
-            },
-          ],
-          artifacts: artifactPaths,
-          durationMs,
-          failure: {
-            stepId: step.id,
-            message: validation.errors.map((error) => error.message).join('; ') || 'Gradle execution failed',
-            cause: commandResult.stderr,
-          },
-        };
-      }
-
-      context.logger.info(`Gradle execution completed in ${durationMs}ms`);
-
-      // Generate artifact manifest for build phase
-      if (context.phase === 'build' && artifactPaths.length > 0) {
-        await this.generateArtifactManifest(context, artifactPaths);
-      }
-
+    const failed = commandResult.exitCode !== 0 || validation.status === 'invalid';
+    if (failed) {
       return {
-        status: 'succeeded',
+        status: 'failed',
         steps: [
           {
             stepId: step.id,
-            status: 'succeeded',
+            status: 'failed',
             exitCode: commandResult.exitCode,
             stdout: commandResult.stdout.slice(0, 10000),
             stderr: commandResult.stderr.slice(0, 10000),
             durationMs,
           },
         ],
-        artifacts: artifactPaths,
+        artifacts,
         durationMs,
-      };
-    } catch (error) {
-      const durationMs = Date.now() - startTime;
-      const execError = error as { message?: string; code?: number; stdout?: string; stderr?: string };
-      context.logger.error(`Gradle execution failed: ${execError.message}`);
-
-      const failedResult: ToolchainExecutionResult = {
-        status: 'failed',
-        steps: [
-          {
-            stepId: step.id,
-            status: 'failed',
-            exitCode: execError.code || 1,
-            stdout: execError.stdout?.slice(0, 10000) || '',
-            stderr: execError.stderr?.slice(0, 10000) || '',
-            durationMs,
-          },
-        ],
-        artifacts: [],
-        durationMs,
-      };
-
-      if (execError.stderr) {
-        failedResult.failure = {
+        failure: {
           stepId: step.id,
-          message: execError.message || 'Unknown error',
-          cause: execError.stderr,
-        };
-      }
-
-      return failedResult;
+          message: validation.errors.map((error) => error.message).join('; ') || 'Gradle execution failed',
+          ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
+        },
+      };
     }
+
+    return {
+      status: 'succeeded',
+      steps: [
+        {
+          stepId: step.id,
+          status: 'succeeded',
+          exitCode: commandResult.exitCode,
+          stdout: commandResult.stdout.slice(0, 10000),
+          stderr: commandResult.stderr.slice(0, 10000),
+          durationMs,
+        },
+      ],
+      artifacts,
+      durationMs,
+    };
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
+    const expectedOutputs = this.getExpectedOutputsForPhase(context);
+    const fallbackExpectedOutputs = this.getFallbackExpectedOutputs(context);
+    const outputPatterns = expectedOutputs.length > 0 ? expectedOutputs : fallbackExpectedOutputs;
+
     const missingArtifacts: string[] = [];
-    const errors: { path: string; message: string }[] = [];
-    const surfacePath = this.resolveSurfacePath(context);
-
-    if (context.phase === 'build' || context.phase === 'package') {
-      const jarFiles = await this.findFiles(path.join(surfacePath, 'build', 'libs'), (entryName) => entryName.endsWith('.jar'));
-      if (jarFiles.length === 0) {
-        missingArtifacts.push('build/libs/*.jar');
+    for (const pattern of outputPatterns) {
+      if (!(await this.patternExists(pattern))) {
+        missingArtifacts.push(pattern);
       }
-    }
-
-    if (context.phase === 'test' || context.phase === 'validate') {
-      const reportsDir = path.join(surfacePath, 'build', 'reports', 'tests');
-      const testResultsDir = path.join(surfacePath, 'build', 'test-results', 'test');
-      if (!(await this.exists(reportsDir)) && !(await this.exists(testResultsDir))) {
-        missingArtifacts.push('build/reports/tests or build/test-results/test');
-      }
-    }
-
-    if (missingArtifacts.length > 0) {
-      errors.push({
-        path: 'outputs',
-        message: `Missing expected outputs: ${missingArtifacts.join(', ')}`,
-      });
     }
 
     return {
       status: missingArtifacts.length === 0 ? 'valid' : 'invalid',
-      errors,
+      errors: missingArtifacts.map((pattern) => ({
+        path: 'outputs',
+        message: `Missing expected output: ${pattern}`,
+      })),
       missingArtifacts,
       unexpectedArtifacts: [],
     };
   }
 
   private mapPhaseToTask(phase: ProductLifecyclePhase, surfaceConfig: Record<string, unknown>): string {
-    const taskMap: Record<ProductLifecyclePhase, string> = {
-      dev: (surfaceConfig.devTask as string) || 'bootRun',
-      validate: (surfaceConfig.validateTask as string) || 'check',
-      test: (surfaceConfig.testTask as string) || 'test',
-      build: (surfaceConfig.buildTask as string) || 'build',
-      package: (surfaceConfig.packageTask as string) || 'assemble',
-      release: 'build',
-      deploy: 'build',
-      verify: 'test',
-      promote: 'build',
-      rollback: 'build',
-      operate: 'test',
-      retire: 'build',
-      create: 'build',
-      bootstrap: 'build',
-    };
-    return taskMap[phase];
+    switch (phase) {
+      case 'dev':
+        return String(surfaceConfig.devTask ?? 'bootRun');
+      case 'validate':
+        return String(surfaceConfig.validateTask ?? 'check');
+      case 'test':
+        return String(surfaceConfig.testTask ?? 'test');
+      case 'build':
+        return String(surfaceConfig.buildTask ?? 'build');
+      case 'package':
+        return String(surfaceConfig.packageTask ?? 'assemble');
+      default:
+        throw new Error(`GradleJavaServiceAdapter does not support phase ${phase}`);
+    }
+  }
+
+  private getExpectedOutputsForPhase(context: ToolchainAdapterContext): string[] {
+    const configured = context.surfaceConfig.expectedOutputs;
+    if (!configured || typeof configured !== 'object') {
+      return [];
+    }
+
+    const byPhase = configured as Record<string, unknown>;
+    const forPhase = byPhase[context.phase];
+    if (!Array.isArray(forPhase)) {
+      return [];
+    }
+
+    return forPhase.filter((value): value is string => typeof value === 'string' && value.length > 0);
+  }
+
+  private getFallbackExpectedOutputs(context: ToolchainAdapterContext): string[] {
+    const surfacePath = this.resolveSurfacePath(context);
+    if (context.phase === 'build' || context.phase === 'package') {
+      return [path.join(surfacePath, 'build', 'libs', '*.jar').replace(/\\/g, '/')];
+    }
+    if (context.phase === 'test' || context.phase === 'validate') {
+      return [
+        path.join(surfacePath, 'build', 'reports', 'tests').replace(/\\/g, '/'),
+        path.join(surfacePath, 'build', 'test-results', 'test').replace(/\\/g, '/'),
+      ];
+    }
+    return [];
   }
 
   private async extractArtifacts(context: ToolchainAdapterContext): Promise<string[]> {
@@ -221,37 +183,49 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       return [];
     }
 
-    const jarFiles = await this.findFiles(
-      path.join(this.resolveSurfacePath(context), 'build', 'libs'),
-      (entryName) => entryName.endsWith('.jar'),
-    );
+    const outputPatterns = this.getExpectedOutputsForPhase(context);
+    const artifactCandidates = outputPatterns.length > 0 ? outputPatterns : [
+      path.join(this.resolveSurfacePath(context), 'build', 'libs', '*.jar').replace(/\\/g, '/'),
+    ];
 
-    return jarFiles.map((filePath) => path.relative(this.repoRoot, filePath).replace(/\\/g, '/'));
+    const artifacts = new Set<string>();
+    for (const pattern of artifactCandidates) {
+      const matches = await this.resolveMatches(pattern);
+      for (const match of matches) {
+        artifacts.add(path.relative(this.repoRoot, match).replace(/\\/g, '/'));
+      }
+    }
+
+    return [...artifacts];
   }
 
-  private async generateArtifactManifest(context: ToolchainAdapterContext, artifactPaths: string[]): Promise<void> {
-    try {
-      context.logger.debug(`Generating artifact manifest for ${context.phase} phase`);
+  private async patternExists(pattern: string): Promise<boolean> {
+    const matches = await this.resolveMatches(pattern);
+    return matches.length > 0;
+  }
 
-      // Convert artifact paths to manifest entries
-      const artifactEntries = artifactPaths.map((artifactPath) => ({
-        path: artifactPath,
-        type: 'jar' as const,
-        id: `${path.basename(artifactPath)}-${context.phase}`,
-      }));
+  private async resolveMatches(pattern: string): Promise<string[]> {
+    const absolutePattern = path.isAbsolute(pattern) ? pattern : path.join(this.repoRoot, pattern);
 
-      const manifest = await ArtifactManifestGenerator.generateManifest(context, artifactEntries);
-
-      // Write manifest to build directory
-      const surfacePath = this.resolveSurfacePath(context);
-      const manifestPath = path.join(surfacePath, 'build', 'artifact-manifest.json');
-
-      await ArtifactManifestGenerator.writeManifest(manifest, manifestPath);
-      context.logger.info(`Artifact manifest written to ${manifestPath}`);
-    } catch (error) {
-      context.logger.warn(`Failed to generate artifact manifest: ${error instanceof Error ? error.message : String(error)}`);
-      // Non-blocking error - continue execution
+    if (!absolutePattern.includes('*')) {
+      return (await this.exists(absolutePattern)) ? [absolutePattern] : [];
     }
+
+    const normalizedPattern = absolutePattern.replace(/\\/g, '/');
+    const firstWildcardIndex = normalizedPattern.indexOf('*');
+    const prefix = normalizedPattern.slice(0, firstWildcardIndex);
+    const searchRoot = path.dirname(prefix);
+
+    if (!(await this.exists(searchRoot))) {
+      return [];
+    }
+
+    const regex = new RegExp(`^${normalizedPattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '[^/]*')}$`);
+
+    const discovered = await this.walkFiles(searchRoot);
+    return discovered.filter((candidate) => regex.test(candidate.replace(/\\/g, '/')));
   }
 
   private resolveSurfacePath(context: ToolchainAdapterContext): string {
@@ -262,6 +236,18 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     return path.join(this.repoRoot, relativePath);
   }
 
+  private async walkFiles(directoryPath: string): Promise<string[]> {
+    const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+    const nested = await Promise.all(entries.map(async (entry) => {
+      const fullPath = path.join(directoryPath, entry.name);
+      if (entry.isDirectory()) {
+        return this.walkFiles(fullPath);
+      }
+      return [fullPath];
+    }));
+    return nested.flat();
+  }
+
   private async exists(targetPath: string): Promise<boolean> {
     try {
       await fs.access(targetPath);
@@ -269,16 +255,5 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     } catch {
       return false;
     }
-  }
-
-  private async findFiles(directoryPath: string, matcher: (entryName: string) => boolean): Promise<string[]> {
-    if (!(await this.exists(directoryPath))) {
-      return [];
-    }
-
-    const entries = await fs.readdir(directoryPath, { withFileTypes: true });
-    return entries
-      .filter((entry) => entry.isFile() && matcher(entry.name))
-      .map((entry) => path.join(directoryPath, entry.name));
   }
 }

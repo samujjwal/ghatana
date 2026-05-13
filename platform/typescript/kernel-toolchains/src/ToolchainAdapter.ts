@@ -1,49 +1,14 @@
-/**
- * Lifecycle phases (synchronized with kernel-lifecycle ProductLifecyclePhase)
- * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
- */
-export type ProductLifecyclePhase =
-  | 'create'
-  | 'bootstrap'
-  | 'dev'
-  | 'validate'
-  | 'test'
-  | 'build'
-  | 'package'
-  | 'release'
-  | 'deploy'
-  | 'verify'
-  | 'promote'
-  | 'rollback'
-  | 'operate'
-  | 'retire';
+import type {
+  ProductLifecyclePhase,
+  ProductSurface,
+  ProductSurfaceType,
+} from '@ghatana/kernel-product-contracts';
 
-/**
- * Surface types (synchronized with kernel-lifecycle ProductSurfaceType)
- * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
- */
-export type ProductSurfaceType =
-  | 'backend-api'
-  | 'web'
-  | 'worker'
-  | 'operator'
-  | 'mobile-ios'
-  | 'mobile-android'
-  | 'sdk'
-  | 'domain-pack';
-
-/**
- * Product surface (synchronized with kernel-lifecycle ProductSurface)
- * TODO: Unify with kernel-lifecycle types via shared kernel-contracts package
- */
-export interface ProductSurface {
-  type: ProductSurfaceType;
-  adapter: string;
-  path: string;
-  implementationStatus?: 'implemented' | 'planned' | 'backend-only';
-  packagePath?: string;
-  [key: string]: unknown;
-}
+export type {
+  ProductLifecyclePhase,
+  ProductSurface,
+  ProductSurfaceType,
+};
 
 /**
  * A toolchain adapter abstracts a specific tool (Gradle, pnpm, Docker, etc.)

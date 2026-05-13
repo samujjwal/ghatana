@@ -10,6 +10,7 @@ const repoRoot = resolve(__dirname, '..');
 const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
 const lifecycleProfilesPath = join(repoRoot, 'config/product-lifecycle-profiles.json');
 const toolchainRegistryPath = join(repoRoot, 'config/toolchain-adapter-registry.json');
+const lifecycleExclusionsPath = join(repoRoot, 'config/kernel-lifecycle-exclusions.json');
 
 function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
@@ -23,11 +24,29 @@ function loadToolchainRegistry() {
   return JSON.parse(readFileSync(toolchainRegistryPath, 'utf8')).adapters ?? {};
 }
 
-function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains) {
+function loadLifecycleExclusions() {
+  return JSON.parse(readFileSync(lifecycleExclusionsPath, 'utf8')).excludedProducts ?? {};
+}
+
+function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts) {
   const errors = [];
   const warnings = [];
 
   for (const [productId, product] of Object.entries(registry)) {
+    const isExcluded = Boolean(excludedProducts[productId]);
+    if (isExcluded) {
+      if (product.lifecycleStatus === 'enabled') {
+        errors.push(`Excluded product ${productId}: lifecycleStatus must not be enabled`);
+      }
+      if (product.lifecycle?.enabled === true) {
+        errors.push(`Excluded product ${productId}: lifecycle.enabled must not be true`);
+      }
+      if (product.lifecycleConfigPath) {
+        errors.push(`Excluded product ${productId}: lifecycleConfigPath must not be declared`);
+      }
+      continue;
+    }
+
     if (!product.lifecycleProfile) {
       continue;
     }
@@ -41,20 +60,25 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains)
       errors.push(`Product ${productId}: lifecycleStatus "${lifecycleStatus}" is invalid`);
     }
 
-    if (!product.lifecycleConfigPath) {
-      errors.push(`Product ${productId}: lifecycleConfigPath is required when lifecycleProfile is set`);
-      continue;
-    }
-
-    const configPath = join(repoRoot, product.lifecycleConfigPath);
-    if (!existsSync(configPath)) {
-      errors.push(`Product ${productId}: lifecycle config file not found at ${product.lifecycleConfigPath}`);
-      continue;
-    }
-
     if (lifecycleStatus === 'enabled') {
+      if (!product.lifecycleConfigPath) {
+        errors.push(`Product ${productId}: enabled lifecycle product must declare lifecycleConfigPath`);
+        continue;
+      }
+
+      const configPath = join(repoRoot, product.lifecycleConfigPath);
+      if (!existsSync(configPath)) {
+        errors.push(`Product ${productId}: lifecycle config file not found at ${product.lifecycleConfigPath}`);
+        continue;
+      }
+
       if (!product.lifecycle?.enabled) {
         errors.push(`Product ${productId}: lifecycleStatus is enabled but lifecycle.enabled is not true`);
+      }
+
+      const lifecycleProfile = lifecycleProfiles[product.lifecycleProfile];
+      if (lifecycleProfile && lifecycleProfile.safeForDefault !== true) {
+        errors.push(`Product ${productId}: enabled lifecycle product must use a safeForDefault lifecycle profile`);
       }
 
       if (!product.artifacts || Object.keys(product.artifacts).length === 0) {
@@ -65,23 +89,44 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains)
         errors.push(`Product ${productId}: enabled lifecycle product is missing deployment targets`);
       }
 
-      for (const adapterId of new Set(Object.values(product.lifecycle?.toolchain ?? {}))) {
+      const enabledAdapters = new Set([
+        ...Object.values(product.lifecycle?.toolchain ?? {}),
+        ...Object.values(product.toolchain?.adapters ?? {}),
+      ]);
+
+      for (const adapterId of enabledAdapters) {
         if (!toolchains[adapterId]) {
           errors.push(`Product ${productId}: lifecycle references unknown adapter ${adapterId}`);
+          continue;
+        }
+        if (toolchains[adapterId].safeForDefault !== true) {
+          errors.push(`Product ${productId}: enabled lifecycle product cannot use unsafe adapter ${adapterId}`);
         }
       }
 
-      try {
-        execFileSync(
-          process.execPath,
-          [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, 'build', '--json'],
-          { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
-        );
-      } catch (error) {
-        errors.push(`Product ${productId}: build plan generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      for (const planPhase of ['validate', 'test', 'build']) {
+        try {
+          execFileSync(
+            process.execPath,
+            [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json'],
+            { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
+          );
+        } catch (error) {
+          errors.push(`Product ${productId}: ${planPhase} plan generation failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
-    } else if (product.lifecycle?.enabled) {
-      warnings.push(`Product ${productId}: lifecycle is enabled in config but lifecycleStatus is ${lifecycleStatus}`);
+    } else {
+      if (product.lifecycle?.enabled) {
+        warnings.push(`Product ${productId}: lifecycle.enabled is true while lifecycleStatus is ${lifecycleStatus}`);
+      }
+      if (product.lifecycleConfigPath) {
+        const configPath = join(repoRoot, product.lifecycleConfigPath);
+        if (!existsSync(configPath)) {
+          warnings.push(`Product ${productId}: lifecycle config file missing at ${product.lifecycleConfigPath}`);
+        }
+      } else {
+        warnings.push(`Product ${productId}: no lifecycleConfigPath declared while status is ${lifecycleStatus}`);
+      }
     }
   }
 
@@ -92,7 +137,8 @@ function main() {
   const registry = loadRegistry();
   const lifecycleProfiles = loadLifecycleProfiles();
   const toolchains = loadToolchainRegistry();
-  const { errors, warnings } = checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains);
+  const excludedProducts = loadLifecycleExclusions();
+  const { errors, warnings } = checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts);
 
   if (warnings.length > 0) {
     console.warn('Warnings:');

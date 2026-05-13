@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
+const lifecycleExclusionsPath = join(repoRoot, 'config/kernel-lifecycle-exclusions.json');
 
 const surfaceAliases = new Map([
   ['gateway', 'backend-api'],
@@ -28,12 +29,16 @@ const taskToPhaseMap = new Map([
 
 function usage(exitCode = 1) {
   const stream = exitCode === 0 ? process.stdout : process.stderr;
-  stream.write('Usage: pnpm product <productId> <task> [surface] [--dry-run] [--plan]\n');
+  stream.write('Usage: pnpm product <productId> <task> [surface] [--dry-run] [--plan] [--legacy]\n');
   process.exit(exitCode);
 }
 
 function loadRegistry() {
   return JSON.parse(readFileSync(registryPath, 'utf8')).registry;
+}
+
+function loadLifecycleExclusions() {
+  return JSON.parse(readFileSync(lifecycleExclusionsPath, 'utf8')).excludedProducts ?? {};
 }
 
 function run(command, args, options = {}) {
@@ -105,17 +110,22 @@ function main() {
 
   const dryRun = args.includes('--dry-run');
   const planOnly = args.includes('--plan');
-  const positional = args.filter((arg) => arg !== '--dry-run' && arg !== '--plan');
+  const forceLegacy = args.includes('--legacy');
+  const positional = args.filter((arg) => arg !== '--dry-run' && arg !== '--plan' && arg !== '--legacy');
   const [productId, task, requestedSurface] = positional;
   const registry = loadRegistry();
+  const lifecycleExclusions = loadLifecycleExclusions();
   const product = registry[productId];
 
   if (!product) {
     throw new Error(`Unknown product ${productId}`);
   }
 
-  // Check if product has lifecycle enabled - delegate to lifecycle engine
-  if (product.lifecycleProfile && product.lifecycle?.enabled) {
+  const lifecycleEnabled = product.lifecycleStatus === 'enabled' && product.lifecycle?.enabled === true;
+  const isExcludedFromLifecycle = Boolean(lifecycleExclusions[productId]);
+
+  // Delegate only for lifecycle-enabled products that are not excluded.
+  if (!forceLegacy && lifecycleEnabled && !isExcludedFromLifecycle) {
     const phase = taskToPhaseMap.get(task);
     if (phase) {
       console.log(`Product ${productId} has lifecycle enabled, delegating to lifecycle engine...`);
@@ -134,7 +144,10 @@ function main() {
       }
       process.exit(result.status ?? 1);
     }
-    // If task doesn't map to a phase, fall through to legacy logic
+
+    throw new Error(
+      `Task ${task} is not supported by lifecycle routing for ${productId}. Use --legacy to force legacy task execution.`,
+    );
   }
 
   // Legacy behavior for products without lifecycle or non-lifecycle tasks

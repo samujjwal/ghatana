@@ -57,7 +57,7 @@
         "status": "active"
       },
       "lifecycleProfile": "standard-web-api-product",
-      "lifecycleStatus": "partial",
+      "lifecycleStatus": "planned",
       "lifecycleMigration": {
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
@@ -67,11 +67,17 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -100,15 +106,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       }
     },
     "finance": {
@@ -210,7 +225,7 @@
         "status": "active"
       },
       "lifecycleProfile": "backend-only-java-service",
-      "lifecycleStatus": "partial",
+      "lifecycleStatus": "planned",
       "lifecycleMigration": {
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
@@ -220,11 +235,19 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "defaultSurfaces": [
+              "backend-api",
+              "worker",
+              "operator"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "defaultSurfaces": [
+              "backend-api",
+              "worker",
+              "operator"
+            ],
             "mode": "parallel"
           }
         },
@@ -260,15 +283,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       }
     },
     "digital-marketing": {
@@ -358,11 +390,17 @@
         "enabled": true,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -391,15 +429,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       }
     },
     "flashit": {
@@ -466,7 +513,7 @@
         "status": "active"
       },
       "lifecycleProfile": "mobile-plus-api-product",
-      "lifecycleStatus": "partial",
+      "lifecycleStatus": "planned",
       "lifecycleMigration": {
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
@@ -476,11 +523,19 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web", "mobile-ios", "mobile-android"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web",
+              "mobile-ios",
+              "mobile-android"
+            ],
             "mode": "parallel"
           }
         },
@@ -518,15 +573,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       }
     },
     "data-cloud": {
@@ -626,60 +690,6 @@
         "created": "2026-03-19",
         "documentation": "products/data-cloud/README.md",
         "status": "active"
-      },
-      "lifecycleProfile": "platform-provider-product",
-      "lifecycleStatus": "partial",
-      "lifecycleMigration": {
-        "status": "partial",
-        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
-      },
-      "lifecycleConfigPath": "products/data-cloud/kernel-product.yaml",
-      "lifecycle": {
-        "enabled": false,
-        "phases": {
-          "dev": {
-            "defaultSurfaces": ["backend-api", "worker"],
-            "mode": "parallel"
-          },
-          "build": {
-            "defaultSurfaces": ["backend-api", "worker"],
-            "mode": "parallel"
-          }
-        },
-        "toolchain": {
-          "backend-api": "gradle-java-service",
-          "worker": "gradle-java-service"
-        }
-      },
-      "toolchain": {
-        "profile": "standard",
-        "adapters": {
-          "backend-api": "gradle-java-service",
-          "worker": "gradle-java-service"
-        }
-      },
-      "artifacts": {
-        "backend-api": {
-          "type": "jvm-service",
-          "packaging": "jar",
-          "required": true
-        },
-        "worker": {
-          "type": "jvm-service",
-          "packaging": "jar",
-          "required": true
-        }
-      },
-      "deployment": {
-        "targets": ["compose-local"],
-        "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
-        "rollback": {
-          "strategy": "previous-artifact"
-        }
-      },
-      "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "yappc": {
@@ -773,60 +783,6 @@
         "created": "2026-03-19",
         "documentation": "products/yappc/README.md",
         "status": "active"
-      },
-      "lifecycleProfile": "standard-web-api-product",
-      "lifecycleStatus": "partial",
-      "lifecycleMigration": {
-        "status": "partial",
-        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
-      },
-      "lifecycleConfigPath": "products/yappc/kernel-product.yaml",
-      "lifecycle": {
-        "enabled": false,
-        "phases": {
-          "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
-            "mode": "parallel"
-          },
-          "build": {
-            "defaultSurfaces": ["backend-api", "web"],
-            "mode": "sequential"
-          }
-        },
-        "toolchain": {
-          "backend-api": "gradle-java-service",
-          "web": "pnpm-vite-react"
-        }
-      },
-      "toolchain": {
-        "profile": "standard",
-        "adapters": {
-          "backend-api": "gradle-java-service",
-          "web": "pnpm-vite-react"
-        }
-      },
-      "artifacts": {
-        "backend-api": {
-          "type": "jvm-service",
-          "packaging": "jar",
-          "required": true
-        },
-        "web": {
-          "type": "static-web-bundle",
-          "packaging": "static-files",
-          "required": true
-        }
-      },
-      "deployment": {
-        "targets": ["compose-local"],
-        "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
-        "rollback": {
-          "strategy": "previous-artifact"
-        }
-      },
-      "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
       }
     },
     "audio-video": {
@@ -1012,11 +968,17 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -1045,15 +1007,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       }
     },
     "aura": {

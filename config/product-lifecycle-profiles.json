@@ -5,12 +5,30 @@
       "status": "stable",
       "description": "A product with backend API and web UI surfaces",
       "defaultSurfaces": {
-        "dev": ["backend-api", "web"],
-        "validate": ["backend-api", "web"],
-        "test": ["backend-api", "web"],
-        "build": ["backend-api", "web"],
-        "package": ["backend-api", "web"],
-        "deploy": ["backend-api", "web"]
+        "dev": [
+          "backend-api",
+          "web"
+        ],
+        "validate": [
+          "backend-api",
+          "web"
+        ],
+        "test": [
+          "backend-api",
+          "web"
+        ],
+        "build": [
+          "backend-api",
+          "web"
+        ],
+        "package": [
+          "backend-api",
+          "web"
+        ],
+        "deploy": [
+          "backend-api",
+          "web"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -33,9 +51,26 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy", "bundle-budget"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy",
+          "bundle-budget"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
@@ -43,12 +78,39 @@
       },
       "expectedArtifacts": {
         "build": {
-          "backend-api": ["jvm-service"],
-          "web": ["static-web-bundle"]
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
         },
         "package": {
-          "backend-api": ["container-image"],
-          "web": ["container-image"]
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
         }
       }
     },
@@ -56,12 +118,24 @@
       "status": "stable",
       "description": "A product with only backend Java service surfaces",
       "defaultSurfaces": {
-        "dev": ["backend-api"],
-        "validate": ["backend-api"],
-        "test": ["backend-api"],
-        "build": ["backend-api"],
-        "package": ["backend-api"],
-        "deploy": ["backend-api"]
+        "dev": [
+          "backend-api"
+        ],
+        "validate": [
+          "backend-api"
+        ],
+        "test": [
+          "backend-api"
+        ],
+        "build": [
+          "backend-api"
+        ],
+        "package": [
+          "backend-api"
+        ],
+        "deploy": [
+          "backend-api"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -84,19 +158,52 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service"
       },
       "expectedArtifacts": {
         "build": {
-          "backend-api": ["jvm-service"]
+          "backend-api": [
+            "jvm-service"
+          ]
         },
         "package": {
-          "backend-api": ["container-image"]
+          "backend-api": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ]
         }
       }
     },
@@ -104,12 +211,24 @@
       "status": "stable",
       "description": "A product with only frontend web UI surfaces",
       "defaultSurfaces": {
-        "dev": ["web"],
-        "validate": ["web"],
-        "test": ["web"],
-        "build": ["web"],
-        "package": ["web"],
-        "deploy": ["web"]
+        "dev": [
+          "web"
+        ],
+        "validate": [
+          "web"
+        ],
+        "test": [
+          "web"
+        ],
+        "build": [
+          "web"
+        ],
+        "package": [
+          "web"
+        ],
+        "deploy": [
+          "web"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -132,19 +251,54 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy", "bundle-budget", "accessibility"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy",
+          "bundle-budget",
+          "accessibility"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "web": "pnpm-vite-react"
       },
       "expectedArtifacts": {
         "build": {
-          "web": ["static-web-bundle"]
+          "web": [
+            "static-web-bundle"
+          ]
         },
         "package": {
-          "web": ["container-image"]
+          "web": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "web": [
+            "container-image"
+          ]
         }
       }
     },
@@ -152,12 +306,34 @@
       "status": "experimental",
       "description": "A product with mobile app and backend API surfaces",
       "defaultSurfaces": {
-        "dev": ["backend-api", "mobile-ios", "mobile-android"],
-        "validate": ["backend-api", "mobile-ios", "mobile-android"],
-        "test": ["backend-api", "mobile-ios", "mobile-android"],
-        "build": ["backend-api", "mobile-ios", "mobile-android"],
-        "package": ["backend-api", "mobile-ios", "mobile-android"],
-        "deploy": ["backend-api"]
+        "dev": [
+          "backend-api",
+          "mobile-ios",
+          "mobile-android"
+        ],
+        "validate": [
+          "backend-api",
+          "mobile-ios",
+          "mobile-android"
+        ],
+        "test": [
+          "backend-api",
+          "mobile-ios",
+          "mobile-android"
+        ],
+        "build": [
+          "backend-api",
+          "mobile-ios",
+          "mobile-android"
+        ],
+        "package": [
+          "backend-api",
+          "mobile-ios",
+          "mobile-android"
+        ],
+        "deploy": [
+          "backend-api"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -180,9 +356,25 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
@@ -192,9 +384,29 @@
       },
       "expectedArtifacts": {
         "build": {
-          "backend-api": ["jvm-service"],
-          "mobile-ios": ["mobile-bundle"],
-          "mobile-android": ["mobile-bundle"]
+          "backend-api": [
+            "jvm-service"
+          ],
+          "mobile-ios": [
+            "mobile-bundle"
+          ],
+          "mobile-android": [
+            "mobile-bundle"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "mobile-ios": [
+            "mobile-bundle"
+          ],
+          "mobile-android": [
+            "mobile-bundle"
+          ]
         }
       }
     },
@@ -202,11 +414,21 @@
       "status": "experimental",
       "description": "A product that provides an SDK for external consumers",
       "defaultSurfaces": {
-        "dev": ["sdk"],
-        "validate": ["sdk"],
-        "test": ["sdk"],
-        "build": ["sdk"],
-        "package": ["sdk"],
+        "dev": [
+          "sdk"
+        ],
+        "validate": [
+          "sdk"
+        ],
+        "test": [
+          "sdk"
+        ],
+        "build": [
+          "sdk"
+        ],
+        "package": [
+          "sdk"
+        ],
         "deploy": []
       },
       "requiredGates": {
@@ -225,8 +447,16 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy", "api-documentation"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy",
+          "api-documentation"
+        ]
       },
       "defaultAdapters": {
         "sdk": "gradle-java-library",
@@ -234,10 +464,27 @@
       },
       "expectedArtifacts": {
         "build": {
-          "sdk": ["jvm-library"]
+          "sdk": [
+            "jvm-library"
+          ]
         },
         "package": {
-          "sdk": ["sdk-package"]
+          "sdk": [
+            "sdk-package"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "sdk": [
+            "jvm-library"
+          ]
+        },
+        "package": {
+          "sdk": [
+            "sdk-package"
+          ]
         }
       }
     },
@@ -245,12 +492,30 @@
       "status": "experimental",
       "description": "A platform provider product that offers shared capabilities",
       "defaultSurfaces": {
-        "dev": ["backend-api", "worker"],
-        "validate": ["backend-api", "worker"],
-        "test": ["backend-api", "worker"],
-        "build": ["backend-api", "worker"],
-        "package": ["backend-api", "worker"],
-        "deploy": ["backend-api", "worker"]
+        "dev": [
+          "backend-api",
+          "worker"
+        ],
+        "validate": [
+          "backend-api",
+          "worker"
+        ],
+        "test": [
+          "backend-api",
+          "worker"
+        ],
+        "build": [
+          "backend-api",
+          "worker"
+        ],
+        "package": [
+          "backend-api",
+          "worker"
+        ],
+        "deploy": [
+          "backend-api",
+          "worker"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -275,9 +540,25 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
@@ -286,12 +567,39 @@
       },
       "expectedArtifacts": {
         "build": {
-          "backend-api": ["jvm-service"],
-          "worker": ["jvm-service"]
+          "backend-api": [
+            "jvm-service"
+          ],
+          "worker": [
+            "jvm-service"
+          ]
         },
         "package": {
-          "backend-api": ["container-image"],
-          "worker": ["container-image"]
+          "backend-api": [
+            "container-image"
+          ],
+          "worker": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "worker": [
+            "jvm-service"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "worker": [
+            "container-image"
+          ]
         }
       }
     },
@@ -299,12 +607,24 @@
       "status": "experimental",
       "description": "A shared service product used by multiple other products",
       "defaultSurfaces": {
-        "dev": ["backend-api"],
-        "validate": ["backend-api"],
-        "test": ["backend-api"],
-        "build": ["backend-api"],
-        "package": ["backend-api"],
-        "deploy": ["backend-api"]
+        "dev": [
+          "backend-api"
+        ],
+        "validate": [
+          "backend-api"
+        ],
+        "test": [
+          "backend-api"
+        ],
+        "build": [
+          "backend-api"
+        ],
+        "package": [
+          "backend-api"
+        ],
+        "deploy": [
+          "backend-api"
+        ]
       },
       "requiredGates": {
         "validate": [
@@ -329,9 +649,25 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy"],
-        "deploy": ["security-scan", "privacy-check", "license-policy", "conformance", "e2e", "performance", "rollback-plan", "approval"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
@@ -339,10 +675,27 @@
       },
       "expectedArtifacts": {
         "build": {
-          "backend-api": ["jvm-service"]
+          "backend-api": [
+            "jvm-service"
+          ]
         },
         "package": {
-          "backend-api": ["container-image"]
+          "backend-api": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ]
         }
       }
     },
@@ -351,10 +704,18 @@
       "description": "A product that provides only domain packs without runtime services",
       "defaultSurfaces": {
         "dev": [],
-        "validate": ["domain-pack"],
-        "test": ["domain-pack"],
-        "build": ["domain-pack"],
-        "package": ["domain-pack"],
+        "validate": [
+          "domain-pack"
+        ],
+        "test": [
+          "domain-pack"
+        ],
+        "build": [
+          "domain-pack"
+        ],
+        "package": [
+          "domain-pack"
+        ],
         "deploy": []
       },
       "requiredGates": {
@@ -372,15 +733,32 @@
         ]
       },
       "optionalGates": {
-        "validate": ["security-preflight", "policy-action-resource-check", "plugin-binding-check"],
-        "build": ["security-scan", "license-policy"]
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ]
       },
       "defaultAdapters": {
         "domain-pack": "domain-pack-validator"
       },
       "expectedArtifacts": {
         "build": {
-          "domain-pack": ["domain-pack"]
+          "domain-pack": [
+            "domain-pack"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "domain-pack": [
+            "domain-pack"
+          ]
         }
       }
     }

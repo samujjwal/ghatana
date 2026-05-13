@@ -47,6 +47,37 @@ describe('GradleJavaServiceAdapter', () => {
     expect(commandRunner.invocations).toHaveLength(1);
     expect(commandRunner.invocations[0].options.cwd).toBe(repoRoot);
   });
+
+  it('fails closed when required configured output is missing', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const context = createContext(repoRoot);
+    context.surfaceConfig.expectedOutputs = {
+      build: ['products/digital-marketing/backend/build/libs/missing.jar'],
+    };
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('failed');
+    expect(result.failure?.message).toContain('Missing expected output');
+  });
+
+  it('rejects unsupported phases instead of falling back', async () => {
+    const adapter = new GradleJavaServiceAdapter({ repoRoot });
+    const context = createContext(repoRoot);
+    context.phase = 'deploy';
+
+    await expect(adapter.plan(context)).rejects.toThrow('does not support phase deploy');
+  });
 });
 
 function createContext(repoRoot: string): ToolchainAdapterContext {
