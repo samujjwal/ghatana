@@ -55,4 +55,12 @@ public final class InMemoryLearnedArtifactRepository implements LearnedArtifactR
                 .sorted(Comparator.comparing(LearnedArtifact::createdAt).reversed())
                 .toList());
     }
+
+    @Override
+    public @NotNull Promise<List<LearnedArtifact>> findByCandidateId(@NotNull String candidateId) {
+        // Note: LearnedArtifact doesn't have a candidateId field directly
+        // This method returns empty list since artifacts are not linked to candidates in the current schema
+        // For proper idempotency, the artifact schema should include candidateId or promotionEvidenceId should be used
+        return Promise.of(List.of());
+    }
 }

@@ -411,35 +411,115 @@ public class AgentTurnPipeline<TInput, TOutput> {
          *
          * @param masteryRegistry Mastery registry for decision lookup
          * @param environmentFingerprintProvider Provider for environment fingerprinting
-         * @param modeSelector Mode selector for execution mode decision
+         * @param modeSelector Mastery-aware mode selector for execution mode decision
+         * @param taskClassifier Task classifier for risk/novelty assessment
          * @return this builder
          */
         public Builder<I, O> withGovernancePreAdmit(
                 @NotNull com.ghatana.agent.mastery.MasteryRegistry masteryRegistry,
                 @NotNull com.ghatana.agent.environment.EnvironmentFingerprintProvider environmentFingerprintProvider,
-                @NotNull com.ghatana.agent.mode.AgentModeSelector modeSelector) {
+                @NotNull com.ghatana.agent.runtime.mode.MasteryAwareModeSelector modeSelector,
+                @NotNull com.ghatana.agent.runtime.mode.TaskClassifier taskClassifier) {
             this.preAdmitEnrichment = (input, context) -> {
                 // Get environment fingerprint
                 return environmentFingerprintProvider.fingerprint(context, input)
                         .then(fingerprint -> {
                             // Store fingerprint in context metadata
                             context.setMetadata("environmentFingerprint", fingerprint);
+                            context.addTraceTag("env.projectType", fingerprint.projectType());
                             
-                            // Get mastery decision
+                            // Build version context from fingerprint
+                            com.ghatana.agent.context.version.VersionContext versionContext =
+                                    new com.ghatana.agent.context.version.VersionContext(
+                                            fingerprint.dependencies(),
+                                            fingerprint.runtimes(),
+                                            fingerprint.tools(),
+                                            java.util.Map.of(),
+                                            "env-fingerprint",
+                                            fingerprint.observedAt());
+                            
+                            // Get mastery decision using tenant-scoped query
                             String skillId = context.getConfig("skillId") != null ? context.getConfig("skillId").toString() : "default";
-                            return masteryRegistry.findBySkill(skillId, fingerprint)
-                                    .then(masteryOpt -> {
+                            String tenantId = context.getTenantId();
+                            String resolvedAgentId = context.getConfig("agentId") != null ? context.getConfig("agentId").toString() : agentId;
+                            String taskDescription = input.toString();
+                            
+                            com.ghatana.agent.mastery.MasteryQuery query = new com.ghatana.agent.mastery.MasteryQuery(
+                                    skillId, resolvedAgentId, null, tenantId,
+                                    null, null, null, null, null, null,
+                                    java.time.Instant.now(), null, null);
+                            
+                            return masteryRegistry.decide(query)
+                                    .then(masteryDecision -> {
                                         // Store mastery decision in context metadata
-                                        context.setMetadata("masteryItem", masteryOpt.orElse(null));
+                                        context.setMetadata("masteryDecision", masteryDecision);
+                                        context.addTraceTag("mastery.state", masteryDecision.state().name());
+                                        context.addTraceTag("mastery.executable", String.valueOf(masteryDecision.executable()));
+                                        context.addTraceTag("mastery.requiresApproval", String.valueOf(masteryDecision.requiresHumanApproval()));
+                                        context.addTraceTag("mastery.requiresVerification", String.valueOf(masteryDecision.requiresVerification()));
                                         
-                                        // Get mode decision (simplified - full implementation would use AgentModeSelector)
-                                        // For now, store a default mode decision
-                                        context.setMetadata("executionMode", ExecutionMode.DETERMINISTIC_EXECUTION);
-                                        return Promise.complete();
+                                        // Enforce mastery decision: block if not executable
+                                        if (!masteryDecision.executable()) {
+                                            context.getLogger().warn("Mastery decision blocks execution for skill {}: {}", 
+                                                    skillId, masteryDecision.reason());
+                                            throw new IllegalStateException(
+                                                    "Skill execution blocked by mastery governance: " + masteryDecision.reason());
+                                        }
+                                        
+                                        // Get mode decision using mastery-aware mode selector with task classification
+                                        return taskClassifier.classify(taskDescription, context.toString())
+                                                .then(taskClassification -> {
+                                                    // Store task classification in context metadata
+                                                    context.setMetadata("taskClassification", taskClassification);
+                                                    context.addTraceTag("task.riskLevel", taskClassification.riskLevel().name());
+                                                    context.addTraceTag("task.novelty", taskClassification.novelty().name());
+                                                    
+                                                    // Use mastery-aware mode selector with the query, classification, and version context
+                                                    return modeSelector.selectMode(query, taskClassification, versionContext)
+                                                            .then(modeSelectionResult -> {
+                                                                // Store mode selection result in context metadata
+                                                                context.setMetadata("modeSelectionResult", modeSelectionResult);
+                                                                context.addTraceTag("mode.strategy", modeSelectionResult.strategy().name());
+                                                                context.addTraceTag("mode.supervision", modeSelectionResult.supervision().name());
+                                                                context.addTraceTag("mode.reasoning", modeSelectionResult.reasoning());
+                                                                
+                                                                // Map ExecutionStrategy + SupervisionMode to deprecated ExecutionMode for compatibility
+                                                                ExecutionMode legacyMode = mapToLegacyMode(
+                                                                        modeSelectionResult.strategy(), 
+                                                                        modeSelectionResult.supervision());
+                                                                context.setMetadata("executionMode", legacyMode);
+                                                                context.addTraceTag("executionMode", legacyMode.name());
+                                                                
+                                                                return Promise.complete();
+                                                            });
+                                                });
                                     });
                         });
             };
             return this;
+        }
+        
+        /**
+         * Maps ExecutionStrategy and SupervisionMode to the deprecated ExecutionMode enum.
+         * This is a compatibility shim for code still using ExecutionMode.
+         */
+        private ExecutionMode mapToLegacyMode(
+                com.ghatana.agent.runtime.mode.ExecutionStrategy strategy,
+                com.ghatana.agent.runtime.mode.SupervisionMode supervision) {
+            if (supervision == com.ghatana.agent.runtime.mode.SupervisionMode.BLOCKED) {
+                return ExecutionMode.BLOCKED;
+            }
+            if (supervision == com.ghatana.agent.runtime.mode.SupervisionMode.HUMAN_GATED) {
+                return ExecutionMode.HUMAN_GATED;
+            }
+            // Map strategy to mode
+            return switch (strategy) {
+                case DETERMINISTIC_EXECUTION -> ExecutionMode.DETERMINISTIC_EXECUTION;
+                case BOUNDED_PROBABILISTIC_REASONING -> ExecutionMode.BOUNDED_PROBABILISTIC_REASONING;
+                case EXPLORATORY_FAST_LEARNING -> ExecutionMode.EXPLORATORY_FAST_LEARNING;
+                case MAINTENANCE_ONLY -> ExecutionMode.MAINTENANCE_ONLY;
+                case VERIFICATION_FIRST -> ExecutionMode.VERIFICATION_FIRST;
+            };
         }
 
         @NotNull

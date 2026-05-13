@@ -30,4 +30,12 @@ public interface LearnedArtifactRepository {
     @NotNull Promise<List<LearnedArtifact>> findActiveByAgentAndTarget(
             @NotNull String agentId,
             @NotNull LearningTarget target);
+
+    /**
+     * Finds artifacts by their candidate ID.
+     *
+     * @param candidateId learning candidate identifier
+     * @return promise of list of artifacts for the candidate
+     */
+    @NotNull Promise<List<LearnedArtifact>> findByCandidateId(@NotNull String candidateId);
 }

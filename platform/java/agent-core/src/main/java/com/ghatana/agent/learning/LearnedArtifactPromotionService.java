@@ -54,6 +54,22 @@ public final class LearnedArtifactPromotionService {
                         return Promise.ofException(new IllegalArgumentException("promotion evidence candidate mismatch"));
                     }
                     LearningCandidate candidate = found.get();
+                    
+                    // Idempotency check: if already PROMOTED, return existing artifact
+                    if (candidate.state() == LearningCandidateState.PROMOTED) {
+                        // Find existing artifact for this candidate
+                        return artifacts.findByCandidateId(candidateId)
+                                .then(existingArtifacts -> {
+                                    if (existingArtifacts.isEmpty()) {
+                                        // Candidate is PROMOTED but no artifact found (inconsistent state)
+                                        return Promise.ofException(new IllegalStateException(
+                                                "Candidate is PROMOTED but no artifact found for candidate: " + candidateId));
+                                    }
+                                    // Return the first existing artifact (idempotent response)
+                                    return Promise.of(existingArtifacts.get(0));
+                                });
+                    }
+                    
                     LearningCandidate promotedCandidate = new LearningCandidate(
                             candidate.candidateId(),
                             candidate.agentId(),

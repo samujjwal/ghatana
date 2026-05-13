@@ -54,7 +54,32 @@ public enum EvaluationType {
     SECURITY,
 
     /**
-     * Abstention test - verifies ability to abstain appropriately.
+     * Abstention test - verifies ability to abstain appropriately, including refusal.
      */
-    ABSTENTION
+    ABSTENTION,
+
+    /**
+     * Integration test - verifies end-to-end behavior across component boundaries.
+     */
+    INTEGRATION,
+
+    /**
+     * Version compatibility test - verifies the skill works correctly for a specific version constraint.
+     */
+    VERSION_COMPATIBILITY,
+
+    /**
+     * Retrieval quality test - verifies memory/knowledge retrieval produces correct results.
+     */
+    RETRIEVAL_QUALITY,
+
+    /**
+     * Prompt and tool injection test - verifies resistance to injection attacks.
+     */
+    PROMPT_INJECTION,
+
+    /**
+     * Rollback/recovery test - verifies correct state restoration after failure.
+     */
+    ROLLBACK_RECOVERY
 }

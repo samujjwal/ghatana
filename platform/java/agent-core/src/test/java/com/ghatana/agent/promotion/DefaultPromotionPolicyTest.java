@@ -78,6 +78,95 @@ class DefaultPromotionPolicyTest {
         assertThat(policy.canPromote(delta, result)).isFalse();
     }
 
+    // ── Acceptance tests (README §10.2) ────────────────────────────────────
+
+    @Test
+    @DisplayName("Cannot promote to MASTERED without eval refs on the delta")
+    void cannotPromoteToMasteredWithoutEvalRefs() {
+        LearningDelta deltaNoRefs = createDeltaWithoutEvalRefs();
+        EvaluationResult allPassed = createResultAllPassed();
+
+        // canPromote may return true, but targetState must NOT return MASTERED
+        MasteryState target = policy.targetState(deltaNoRefs, allPassed);
+        assertThat(target).isNotEqualTo(MasteryState.MASTERED);
+        // downgraded to COMPETENT when eval refs are absent
+        assertThat(target).isEqualTo(MasteryState.COMPETENT);
+    }
+
+    @Test
+    @DisplayName("Cannot quarantine without safety evidence (no safety test cases)")
+    void cannotQuarantineWithoutSafetyEvidence() {
+        LearningDelta delta = createDelta();
+        // All tests fail but none are safety tests — no basis for quarantine
+        EvaluationResult noSafetyTests = new EvaluationResult(
+                "result-1", "pack-1", "artifact-123", "delta-1",
+                Instant.now(), Instant.now(),
+                2, 0, 2, 0, 0.0,
+                List.of(
+                        new EvaluationResult.TestCaseResult("case-1", "regression test", false, "", "fail", 100),
+                        new EvaluationResult.TestCaseResult("case-2", "performance test", false, "", "fail", 100)
+                ),
+                Map.of());
+
+        MasteryState target = policy.targetState(delta, noSafetyTests);
+        assertThat(target).isNotEqualTo(MasteryState.QUARANTINED);
+    }
+
+    @Test
+    @DisplayName("Safety test failure with safety case → QUARANTINED (evidence present)")
+    void quarantineRequiresSafetyTestCaseToBePresent() {
+        LearningDelta delta = createDelta();
+        EvaluationResult withSafetyFailure = createResultWithFailedSafety();
+
+        assertThat(policy.targetState(delta, withSafetyFailure)).isEqualTo(MasteryState.QUARANTINED);
+    }
+
+    @Test
+    @DisplayName("Cannot retire directly from MASTERED — default policy blocks it")
+    void cannotRetireDirectlyFromMastered() {
+        assertThat(policy.canRetireFromMastered(MasteryState.MASTERED)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Retirement is allowed from MAINTENANCE_ONLY or OBSOLETE states")
+    void retirementAllowedFromDegradedStates() {
+        assertThat(policy.canRetireFromMastered(MasteryState.MAINTENANCE_ONLY)).isTrue();
+        assertThat(policy.canRetireFromMastered(MasteryState.OBSOLETE)).isTrue();
+        assertThat(policy.canRetireFromMastered(MasteryState.QUARANTINED)).isTrue();
+    }
+
+    private LearningDelta createDeltaWithoutEvalRefs() {
+        return new LearningDelta(
+                "delta-no-refs",
+                LearningDeltaType.PROCEDURAL_SKILL,
+                LearningTarget.PROCEDURAL_SKILL,
+                LearningDeltaState.PROPOSED,
+                "agent-123",
+                "release-1",
+                "skill-123",
+                "tenant-123",
+                null,
+                null,
+                null,
+                "digest-123",
+                Map.of("content", "test"),
+                List.of("evidence-1", "evidence-2", "evidence-3"),
+                List.of(),    // no eval refs
+                List.of("episode-1", "episode-2"),
+                "rollback-1",
+                0.5,
+                0.8,
+                false,
+                "system",
+                Instant.now(),
+                Instant.now(),
+                null,
+                null,
+                Map.of("label", "test"),
+                null
+        );
+    }
+
     private LearningDelta createDelta() {
         return new LearningDelta(
                 "delta-1",

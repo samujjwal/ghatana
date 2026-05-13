@@ -66,8 +66,12 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
     @Override
     @NotNull
     public MasteryState targetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
-        // Safety test failure → QUARANTINE
+        // Safety test failure → QUARANTINE only when safety evidence actually exists
         if (hasFailedSafetyTest(result)) {
+            if (!hasSafetyTestCase(result)) {
+                // Cannot quarantine without safety evidence — insufficient basis
+                return MasteryState.PRACTICED;
+            }
             return MasteryState.QUARANTINED;
         }
 
@@ -76,8 +80,12 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
             return null;
         }
 
-        // All tests passed → MASTERED
+        // All tests passed → MASTERED only when the delta carries eval refs
         if (result.allPassed()) {
+            if (delta.evaluationRefs() == null || delta.evaluationRefs().isEmpty()) {
+                // Cannot promote to MASTERED without evaluation refs
+                return MasteryState.COMPETENT;
+            }
             return MasteryState.MASTERED;
         }
 
@@ -167,6 +175,11 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
     private boolean passesPlannerPolicyChecks(@NotNull LearningDelta delta) {
         // Check for human approval
         return delta.requiresHumanReview();
+    }
+
+    private boolean hasSafetyTestCase(@NotNull EvaluationResult result) {
+        return result.caseResults().stream()
+                .anyMatch(cr -> cr.name().toLowerCase().contains("safety"));
     }
 
     private boolean hasFailedSafetyTest(@NotNull EvaluationResult result) {

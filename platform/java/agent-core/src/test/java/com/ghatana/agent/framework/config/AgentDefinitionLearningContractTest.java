@@ -223,4 +223,61 @@ class AgentDefinitionLearningContractTest {
 
         assertThat(errors).isEmpty();
     }
+
+    @Test
+    @DisplayName("Should reject MASTERY_STATE in adaptationTargets")
+    void shouldRejectMasteryStateInAdaptationTargets() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L5")
+                .metadata("adaptationTargets", List.of("MASTERY_STATE"))
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        // MASTERY_STATE should not be permitted even if in adaptationTargets
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("L5 permits all targets except MASTERY_STATE")
+    void l5PermitsAllExceptMasteryState() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("test-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L5")
+                .metadata("adaptationTargets", List.of(
+                        "EPISODIC_MEMORY",
+                        "SEMANTIC_FACT",
+                        "PROCEDURAL_SKILL",
+                        "NEGATIVE_KNOWLEDGE",
+                        "RETRIEVAL_POLICY",
+                        "CONFIDENCE_THRESHOLD",
+                        "ROUTING_POLICY",
+                        "PROMPT_TEMPLATE",
+                        "PLANNER_POLICY",
+                        "MODEL_ADAPTER"
+                ))
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        // All normal targets should be permitted
+        assertThat(contract.permits(LearningTarget.EPISODIC_MEMORY)).isTrue();
+        assertThat(contract.permits(LearningTarget.SEMANTIC_FACT)).isTrue();
+        assertThat(contract.permits(LearningTarget.PROCEDURAL_SKILL)).isTrue();
+        assertThat(contract.permits(LearningTarget.NEGATIVE_KNOWLEDGE)).isTrue();
+        assertThat(contract.permits(LearningTarget.RETRIEVAL_POLICY)).isTrue();
+        assertThat(contract.permits(LearningTarget.CONFIDENCE_THRESHOLD)).isTrue();
+        assertThat(contract.permits(LearningTarget.ROUTING_POLICY)).isTrue();
+        assertThat(contract.permits(LearningTarget.PROMPT_TEMPLATE)).isTrue();
+        assertThat(contract.permits(LearningTarget.PLANNER_POLICY)).isTrue();
+        assertThat(contract.permits(LearningTarget.MODEL_ADAPTER)).isTrue();
+
+        // MASTERY_STATE should never be permitted
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
+    }
 }

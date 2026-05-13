@@ -21,7 +21,22 @@ public enum LearningLevel {
     L4,
     L5;
 
+    /**
+     * Returns true if this learning level permits the given target.
+     * 
+     * <p>IMPORTANT: MASTERY_STATE is never permitted for normal agents.
+     * Only PromotionEngine, ObsolescenceDetector, or approved governance workflows
+     * should emit mastery transitions. This is a hard governance boundary.
+     * 
+     * @param target the learning target to check
+     * @return true if permitted, false otherwise
+     */
     public boolean allows(LearningTarget target) {
+        // Hard governance boundary: no agent level can directly learn MASTERY_STATE
+        if (target == LearningTarget.MASTERY_STATE) {
+            return false;
+        }
+        
         return switch (this) {
             case L0 -> false;
             case L1 -> target == LearningTarget.EPISODIC_MEMORY;

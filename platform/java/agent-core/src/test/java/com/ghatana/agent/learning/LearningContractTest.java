@@ -247,4 +247,45 @@ class LearningContractTest {
             assertThat(contract.permits(target)).isFalse();
         }
     }
+
+    @Test
+    @DisplayName("MASTERY_STATE is never permitted for normal agents")
+    void masteryStateIsNeverPermitted() {
+        // Even L5 with MASTERY_STATE in allowedTargets should not permit it
+        LearningContract contract = new LearningContract(
+                LearningLevel.L5,
+                Set.of(LearningTarget.MASTERY_STATE),
+                true,
+                true
+        );
+
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("MASTERY_STATE is not permitted by any learning level")
+    void masteryStateNotPermittedByAnyLevel() {
+        for (LearningLevel level : LearningLevel.values()) {
+            assertThat(level.allows(LearningTarget.MASTERY_STATE))
+                    .as("Level " + level + " should not permit MASTERY_STATE")
+                    .isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("MASTERY_STATE governance is enforced even when in allowedTargets")
+    void masteryStateGovernanceEnforcedEvenInAllowedTargets() {
+        for (LearningLevel level : LearningLevel.values()) {
+            LearningContract contract = new LearningContract(
+                    level,
+                    Set.of(LearningTarget.MASTERY_STATE),
+                    level.requiresProvenance(),
+                    level.requiresPromotion()
+            );
+
+            assertThat(contract.permits(LearningTarget.MASTERY_STATE))
+                    .as("Level " + level + " contract should not permit MASTERY_STATE")
+                    .isFalse();
+        }
+    }
 }

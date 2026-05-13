@@ -39,4 +39,22 @@ public interface PromotionPolicy {
             @NotNull LearningDelta delta,
             @NotNull EvaluationResult result
     );
+
+    /**
+     * Returns whether a mastery item in the given state may be directly retired.
+     *
+     * <p>By default, retirement from an active {@code MASTERED} state is prohibited
+     * unless the specific policy implementation explicitly allows it.
+     *
+     * @param currentState the current mastery state of the item
+     * @return true if direct retirement is allowed from that state
+     */
+    default boolean canRetireFromMastered(
+            @NotNull com.ghatana.agent.mastery.MasteryState currentState
+    ) {
+        // Safe default: only allow retirement from non-active terminal-ish states
+        return currentState == com.ghatana.agent.mastery.MasteryState.MAINTENANCE_ONLY
+                || currentState == com.ghatana.agent.mastery.MasteryState.OBSOLETE
+                || currentState == com.ghatana.agent.mastery.MasteryState.QUARANTINED;
+    }
 }

@@ -36,7 +36,22 @@ public record LearningContract(
         }
     }
 
+    /**
+     * Returns true if the given target is permitted by this contract.
+     * 
+     * <p>Both the learning level and the allowed targets set must permit the target.
+     * Additionally, MASTERY_STATE is never permitted for normal agents as a hard
+     * governance boundary.
+     * 
+     * @param target the learning target to check
+     * @return true if permitted, false otherwise
+     */
     public boolean permits(LearningTarget target) {
+        // Hard governance boundary: MASTERY_STATE is never permitted for normal agents
+        if (target == LearningTarget.MASTERY_STATE) {
+            return false;
+        }
+        
         return allowedTargets.contains(target) && level.allows(target);
     }
 

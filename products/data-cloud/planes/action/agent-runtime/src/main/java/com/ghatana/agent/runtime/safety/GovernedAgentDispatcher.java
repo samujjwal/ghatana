@@ -317,7 +317,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                             Instant.now()))
                     .then(versionContext -> {
                         AgentContext ctx2 = enrichedCtx.toBuilder()
-                                .addConfig("versionContext", versionContext.toString())
+                                .addConfig("versionContext", versionContext)
                                 .build();
                         return traceLedger.append(vcEventBuilder.build(
                                 TraceEventType.VERSION_CONTEXT_RESOLVED,
@@ -335,9 +335,13 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             // ── Phase 6: version applicability check ───────────────────────────
             if (versionContextResolver != null && release != null) {
                 Object vcObj = ctxWithVersion.getConfig("versionContext");
-                if (vcObj != null) {
-                    // Delegate to isVersionCompatible; deny if not compatible
-                    // We cannot re-resolve here — already in the promise chain
+                if (vcObj instanceof VersionContext versionCtx) {
+                    if (!isVersionCompatible(release, versionCtx)) {
+                        String reason = "Agent release " + release.agentReleaseId()
+                                + " is incompatible with the current runtime version context";
+                        log.warn("Dispatch rejected: version incompatibility for agent {}", agentId);
+                        return denyDispatch(agentId, traceId, tenantId, reason);
+                    }
                 }
             }
 
@@ -624,15 +628,52 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
 
     /**
      * Checks if an agent release is compatible with the current version context.
+     *
+     * <p>Each entry in {@link AgentRelease#compatibleRuntimeVersions()} is formatted as
+     * {@code name:pattern}, where {@code pattern} ends with {@code .x} for prefix matching
+     * or is an exact version string. If no constraints are declared the release is considered
+     * universally compatible.
      */
     private boolean isVersionCompatible(@NotNull AgentRelease release, @NotNull VersionContext versionContext) {
-        // Version compatibility logic would go here
-        // For now, return true as a placeholder
-        // In a real implementation, this would check:
-        // - Dependency versions match
-        // - Runtime versions match
-        // - API contract versions are compatible
+        java.util.List<String> constraints = release.compatibleRuntimeVersions();
+        if (constraints.isEmpty()) {
+            return true;
+        }
+        for (String constraint : constraints) {
+            int colon = constraint.indexOf(':');
+            if (colon < 0) {
+                log.warn("Malformed compatibleRuntimeVersion constraint (missing ':'): {}", constraint);
+                continue;
+            }
+            String runtimeName = constraint.substring(0, colon);
+            String pattern = constraint.substring(colon + 1);
+            String actualVersion = versionContext.runtimes().get(runtimeName);
+            if (actualVersion == null) {
+                log.warn("Required runtime '{}' not present in version context for release {}",
+                        runtimeName, release.agentReleaseId());
+                return false;
+            }
+            if (!runtimeVersionMatches(actualVersion, pattern)) {
+                log.warn("Runtime '{}' version '{}' does not satisfy constraint '{}' for release {}",
+                        runtimeName, actualVersion, pattern, release.agentReleaseId());
+                return false;
+            }
+        }
         return true;
+    }
+
+    /**
+     * Returns {@code true} if {@code actual} satisfies {@code pattern}.
+     *
+     * <p>Patterns ending with {@code .x} are treated as prefix patterns (major or minor);
+     * all other patterns require an exact match.
+     */
+    private static boolean runtimeVersionMatches(@NotNull String actual, @NotNull String pattern) {
+        if (pattern.endsWith(".x")) {
+            String prefix = pattern.substring(0, pattern.length() - 1); // e.g. "2." or "2.1."
+            return actual.startsWith(prefix);
+        }
+        return actual.equals(pattern);
     }
 
     /** Builds the TURN_STARTED payload capturing perceived context and release metadata. */
