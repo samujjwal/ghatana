@@ -79,4 +79,25 @@ public interface GenerationRunRepository {
      * @return a promise that completes when the association is saved
      */
     Promise<Void> associatePreviewSession(@NotNull String id, @NotNull String previewSessionId);
+
+    /**
+     * Retrieves all generation runs for a tenant. Used for tenant isolation validation.
+     *
+     * @param tenantId the tenant ID
+     * @return a promise that completes with the list of generation runs for the tenant
+     */
+    Promise<java.util.List<GenerationRun>> findByTenantId(@NotNull String tenantId);
+
+    /**
+     * Retrieves generation runs by tenant and content digest for idempotency checks.
+     *
+     * <p>The pair {@code tenantId + contentDigest} must be unique to prevent duplicate
+     * generation runs when the same intent content is submitted more than once.
+     *
+     * @param tenantId      the tenant ID
+     * @param contentDigest SHA-256 digest of the generation intent
+     * @return a promise that completes with the list of runs matching the idempotency pair
+     */
+    Promise<java.util.List<GenerationRun>> findByTenantAndContentDigest(
+            @NotNull String tenantId, @NotNull String contentDigest);
 }

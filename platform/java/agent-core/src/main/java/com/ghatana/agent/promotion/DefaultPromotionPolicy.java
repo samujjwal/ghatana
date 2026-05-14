@@ -68,37 +68,60 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
     public MasteryState targetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
         LearningTarget target = delta.target();
 
-        // NEGATIVE_KNOWLEDGE: Always promote to MASTERED if safety passes (avoid failure modes)
-        if (target == LearningTarget.NEGATIVE_KNOWLEDGE) {
-            if (hasFailedSafetyTest(result)) {
-                return MasteryState.QUARANTINED;
-            }
-            // Negative knowledge should be immediately available to avoid failures
+        // Delegate to target-specific decision methods for explicit logic
+        return switch (target) {
+            case NEGATIVE_KNOWLEDGE -> determineNegativeKnowledgeTargetState(delta, result);
+            case SEMANTIC_FACT -> determineSemanticFactTargetState(delta, result);
+            case PROCEDURAL_SKILL -> determineProceduralSkillTargetState(delta, result);
+            case EPISODIC_MEMORY -> determineDefaultTargetState(delta, result);
+            case MODEL_ADAPTER -> determineDefaultTargetState(delta, result);
+            case MASTERY_STATE -> determineDefaultTargetState(delta, result);
+            case RETRIEVAL_POLICY, CONFIDENCE_THRESHOLD, ROUTING_POLICY, PROMPT_TEMPLATE, PLANNER_POLICY ->
+                determinePolicyTargetState(delta, result);
+        };
+    }
+
+    /**
+     * Determines target state for NEGATIVE_KNOWLEDGE.
+     * Preconditions: delta has negativeKnowledgeId and failureMode documentation
+     * Postconditions: Returns MASTERED if safety passes, QUARANTINED otherwise
+     */
+    @NotNull
+    private MasteryState determineNegativeKnowledgeTargetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
+        // Negative knowledge should be immediately available to avoid failures
+        // Safety test failure → QUARANTINED (unsafe to use negative knowledge that fails safety)
+        if (hasFailedSafetyTest(result)) {
+            return MasteryState.QUARANTINED;
+        }
+        return MasteryState.MASTERED;
+    }
+
+    /**
+     * Determines target state for SEMANTIC_FACT.
+     * Preconditions: delta has semanticFactId and source validation
+     * Postconditions: Returns MASTERED if all tests pass, COMPETENT otherwise
+     */
+    @NotNull
+    private MasteryState determineSemanticFactTargetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
+        // Safety test failure → QUARANTINED (unsafe to use facts that fail safety)
+        if (hasFailedSafetyTest(result)) {
+            return MasteryState.QUARANTINED;
+        }
+        // All tests passed → MASTERED (facts are stable once validated)
+        if (result.allPassed()) {
             return MasteryState.MASTERED;
         }
+        return MasteryState.COMPETENT;
+    }
 
-        // SEMANTIC_FACT: Promote to MASTERED if consistency passes
-        if (target == LearningTarget.SEMANTIC_FACT) {
-            if (hasFailedSafetyTest(result)) {
-                return MasteryState.QUARANTINED;
-            }
-            if (result.allPassed()) {
-                return MasteryState.MASTERED;
-            }
-            return MasteryState.COMPETENT;
-        }
-
-        // PROCEDURAL_SKILL: Requires evidence-based progression
-        if (target == LearningTarget.PROCEDURAL_SKILL) {
-            return determineProceduralSkillTargetState(delta, result);
-        }
-
-        // Policy targets: Require human approval for higher states
-        if (target.isPolicyTarget()) {
-            return determinePolicyTargetState(delta, result);
-        }
-
-        // Safety test failure → QUARANTINE only when safety evidence actually exists
+    /**
+     * Determines target state for default targets (EPISODIC_MEMORY, MODEL_ADAPTER, MASTERY_STATE).
+     * Preconditions: None
+     * Postconditions: Returns appropriate state based on test results and evidence
+     */
+    @NotNull
+    private MasteryState determineDefaultTargetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
+        // Safety test failure → QUARANTINED only when safety evidence actually exists
         if (hasFailedSafetyTest(result)) {
             if (!hasSafetyTestCase(result)) {
                 // Cannot quarantine without safety evidence — insufficient basis
@@ -133,6 +156,9 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
     /**
      * Determines the target state for PROCEDURAL_SKILL based on evaluation results.
      * Evidence-based progression: OBSERVED → PRACTICED → COMPETENT → MASTERED
+     * 
+     * MASTERED requires: regression, safety, recovery, compatibility tests all pass
+     * COMPETENT requires: regression and safety tests pass
      */
     @NotNull
     private MasteryState determineProceduralSkillTargetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
@@ -146,8 +172,13 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
             return null;
         }
 
-        // All tests passed with eval refs → MASTERED
+        // All tests passed with eval refs → MASTERED (requires recovery and compatibility)
         if (result.allPassed()) {
+            // Explicitly check for recovery and compatibility tests for MASTERED
+            if (!hasRecoveryTest(result) || !hasCompatibilityTest(result)) {
+                // Cannot promote to MASTERED without recovery and compatibility tests
+                return MasteryState.COMPETENT;
+            }
             if (delta.evaluationRefs() == null || delta.evaluationRefs().isEmpty()) {
                 return MasteryState.COMPETENT;
             }
@@ -447,5 +478,15 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
                 .allMatch(cr -> cr.passed());
 
         return regressionPassed && safetyPassed;
+    }
+
+    private boolean hasRecoveryTest(@NotNull EvaluationResult result) {
+        return result.caseResults().stream()
+                .anyMatch(cr -> cr.name().toLowerCase().contains("recovery"));
+    }
+
+    private boolean hasCompatibilityTest(@NotNull EvaluationResult result) {
+        return result.caseResults().stream()
+                .anyMatch(cr -> cr.name().toLowerCase().contains("compatibility"));
     }
 }

@@ -154,6 +154,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build();
             runPromise(() -> repo.save(release));
 
@@ -240,6 +241,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                 .evaluationPackDigest("digest-1")
                 .memoryContractId("memory-contract-1")
                 .masteryPolicyPackId("mastery-pack-1")
+                .learningContractId("learning-contract-1")
                 .build();
         runPromise(() -> repo.save(draft1));
         runPromise(() -> repo.save(draft2));
@@ -274,6 +276,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build(); 
             runPromise(() -> repo.save(release)); 
 

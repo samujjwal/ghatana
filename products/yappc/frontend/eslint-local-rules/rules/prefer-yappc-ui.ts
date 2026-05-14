@@ -9,7 +9,7 @@ import type { Rule } from 'eslint';
 import type { Node } from 'estree';
 
 /**
- * Forbidden (deprecated / removed) package names.
+ * Forbidden (deprecated / removed) platform package names.
  * Any import from these must be migrated to the canonical package listed in
  * the repo copilot-instructions.md Section 32.
  */
@@ -24,8 +24,27 @@ const DEPRECATED_PACKAGES: ReadonlySet<string> = new Set([
   '@ghatana/canvas-chrome',
 ]);
 
+/**
+ * Forbidden YAPPC-product-scope package names (invalid double-scoped names or
+ * deleted compat packages). Use the canonical @yappc/ui instead.
+ */
+const YAPPC_FORBIDDEN_PACKAGES: ReadonlyMap<string, string> = new Map([
+  ['@yappc/yappc-ui', '@yappc/ui'],
+  ['@yappc/initialization-ui', '@yappc/ui (PresetCard / ResourcesList)'],
+  ['@yappc/base-ui', '@yappc/ui'],
+]);
+
 /** Canonical package replacing most deprecated UI packages. */
 const CANONICAL_UI_PACKAGE = '@ghatana/design-system';
+
+/**
+ * Patterns identifying app-layer route files. Direct @ghatana/design-system
+ * imports are not permitted in these files; use components/ui instead.
+ */
+const APP_ROUTE_PATTERNS: ReadonlyArray<RegExp> = [
+  /\/web\/src\/routes\//,
+  /\/apps\/web\/src\/routes\//,
+];
 
 /**
  * Component names that should be imported from @ghatana/design-system
@@ -104,6 +123,8 @@ const rule: Rule.RuleModule = {
       preferYappcUI: 'Custom "{{componentName}}" component detected. Use @ghatana/design-system instead: import { {{componentName}} } from \'@ghatana/design-system\';',
       missingImport: 'Component "{{componentName}}" is not imported from @ghatana/design-system. Add: import { {{componentName}} } from \'@ghatana/design-system\';',
       deprecatedPackage: 'Import from deprecated package "{{packageName}}" is forbidden. Migrate to "{{canonical}}" (fix-forward — no backward compatibility shims).',
+      yappcForbiddenPackage: 'Import from "{{packageName}}" is forbidden. Use "{{canonical}}" instead.',
+      appRouteDirectImport: 'App routes must import UI from \'@/components/ui\' — not directly from "{{packageName}}". Layer rule: web/src/routes → components/ui → @yappc/ui → @ghatana/design-system.',
     },
     schema: [],
   },
@@ -126,7 +147,7 @@ const rule: Rule.RuleModule = {
           ? node.source.value
           : '';
 
-        // Block deprecated packages — no compatibility shims (fix-forward policy)
+        // Block deprecated @ghatana/* packages (fix-forward policy)
         if (DEPRECATED_PACKAGES.has(source)) {
           context.report({
             node,
@@ -135,6 +156,33 @@ const rule: Rule.RuleModule = {
               packageName: source,
               canonical: CANONICAL_UI_PACKAGE,
             },
+          });
+          return;
+        }
+
+        // Block forbidden @yappc/* double-scoped / deleted compat packages
+        const yappcCanonical = YAPPC_FORBIDDEN_PACKAGES.get(source);
+        if (yappcCanonical !== undefined) {
+          context.report({
+            node,
+            messageId: 'yappcForbiddenPackage',
+            data: {
+              packageName: source,
+              canonical: yappcCanonical,
+            },
+          });
+          return;
+        }
+
+        // In app route files, disallow direct @ghatana/design-system imports.
+        // App routes must consume UI through components/ui (the canonical app boundary).
+        const filename: string = context.getFilename();
+        const isAppRoute = APP_ROUTE_PATTERNS.some((pattern) => pattern.test(filename));
+        if (isAppRoute && (source === CANONICAL_UI_PACKAGE || source.startsWith('@ghatana/design-system/'))) {
+          context.report({
+            node,
+            messageId: 'appRouteDirectImport',
+            data: { packageName: source },
           });
           return;
         }

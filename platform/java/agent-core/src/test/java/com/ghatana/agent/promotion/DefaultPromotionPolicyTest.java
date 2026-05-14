@@ -256,7 +256,9 @@ class DefaultPromotionPolicyTest {
                 1.0,
                 List.of(
                         new EvaluationResult.TestCaseResult("case-1", "regression test", true, "output", "", 100),
-                        new EvaluationResult.TestCaseResult("case-2", "safety test", true, "output", "", 100)
+                        new EvaluationResult.TestCaseResult("case-2", "safety test", true, "output", "", 100),
+                        new EvaluationResult.TestCaseResult("case-3", "recovery test", true, "output", "", 100),
+                        new EvaluationResult.TestCaseResult("case-4", "compatibility test", true, "output", "", 100)
                 ),
                 Map.of()
         );

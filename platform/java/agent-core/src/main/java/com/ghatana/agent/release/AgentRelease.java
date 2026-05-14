@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -127,9 +128,39 @@ public record AgentRelease(
             throw new IllegalArgumentException(
                     "masteryPolicyPackId must not be blank for response-serving state: " + state + " (governance gate)");
         }
+        // learningContractId required for response-serving states (Phase 6.2)
+        if (state != null && state.isResponseServing()
+                && (learningContractId == null || learningContractId.isBlank())) {
+            throw new IllegalArgumentException(
+                    "learningContractId must not be blank for response-serving state: " + state + " (governance gate - Phase 6.2)");
+        }
         compatibleRuntimeVersions = List.copyOf(compatibleRuntimeVersions);
         dataClassesHandled        = Set.copyOf(dataClassesHandled);
         permittedPurposes         = Set.copyOf(permittedPurposes);
+    }
+
+    /**
+     * Returns skill-level evaluation pack references from release metadata.
+     * Maps skill IDs to their evaluation pack IDs for skill-specific evaluation.
+     *
+     * @return map of skill ID to evaluation pack ID
+     */
+    public Map<String, String> skillEvaluationPackRefs() {
+        // In a full implementation, this would be stored as a separate field or in metadata
+        // For now, return empty map - this is a placeholder for Phase 6.2
+        return Map.of();
+    }
+
+    /**
+     * Returns mastery policy pack references from release metadata.
+     * Maps skill IDs to their mastery policy pack IDs for skill-specific mastery governance.
+     *
+     * @return map of skill ID to mastery policy pack ID
+     */
+    public Map<String, String> masteryPolicyPackRefs() {
+        // In a full implementation, this would be stored as a separate field or in metadata
+        // For now, return empty map - this is a placeholder for Phase 6.2
+        return Map.of();
     }
 
     /**

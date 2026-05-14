@@ -202,14 +202,25 @@ export function canonicalizeLearningBlock(
     }
   }
 
-  // skillRefs — must be array if present, and each ref should be non-blank.
+  // skillRefs — must be array if present. Each entry is either:
+  //   - a non-blank string (legacy simple ref), or
+  //   - an object with a non-blank `skillId` string (structured ref from catalog-schema.yaml).
   if (learning.skillRefs !== undefined) {
     if (!Array.isArray(learning.skillRefs)) {
       errors.push(`${location}.learning.skillRefs: must be an array`);
     } else {
       for (const ref of learning.skillRefs as unknown[]) {
-        if (typeof ref !== 'string' || ref.trim() === '') {
-          errors.push(`${location}.learning.skillRefs: skillRefs must contain non-blank strings`);
+        if (typeof ref === 'string') {
+          if (ref.trim() === '') {
+            errors.push(`${location}.learning.skillRefs: skillRefs must contain non-blank strings`);
+          }
+        } else if (typeof ref === 'object' && ref !== null) {
+          const skillRef = ref as Record<string, unknown>;
+          if (typeof skillRef['skillId'] !== 'string' || (skillRef['skillId'] as string).trim() === '') {
+            errors.push(`${location}.learning.skillRefs: structured skillRef must include a non-blank 'skillId'`);
+          }
+        } else {
+          errors.push(`${location}.learning.skillRefs: skillRefs must contain non-blank strings or structured {skillId} objects`);
         }
       }
     }

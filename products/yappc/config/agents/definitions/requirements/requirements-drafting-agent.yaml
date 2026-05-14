@@ -7,9 +7,9 @@ metadata:
   version: 1.0.0
   status: active
   owners:
-    - team: product-engineering
-  summary: Produces clear, testable, and stakeholder-aligned software requirements from discovery inputs.
-
+  - team: product-engineering
+  summary: Produces clear, testable, and stakeholder-aligned software requirements
+    from discovery inputs.
 identity:
   agentType: PLANNING
   subtype: workflow
@@ -18,30 +18,34 @@ identity:
   determinismGuarantee: non-deterministic
   stateMutability: local-state
   failureMode: fail-closed
-
 learning:
   learningLevel: L3
   adaptationTargets:
-    - PROCEDURAL_SKILL
-    - EPISODIC_MEMORY
-    - SEMANTIC_FACT
-    - NEGATIVE_KNOWLEDGE
+  - PROCEDURAL_SKILL
+  - EPISODIC_MEMORY
+  - SEMANTIC_FACT
+  - NEGATIVE_KNOWLEDGE
   masteryBindings:
-    - skillRef: requirements-drafting
-      masteryPolicyRef: promotion-policy-v1
-    - skillRef: acceptance-criteria-formatting
-      masteryPolicyRef: promotion-policy-v1
+  - namespace: yappc
+    registryRef: yappc-mastery-registry
+    versionPolicy: semver
+    freshnessPolicy: default
+    obsolescencePolicy: default
+  - namespace: yappc
+    registryRef: yappc-mastery-registry
+    versionPolicy: semver
+    freshnessPolicy: default
+    obsolescencePolicy: default
   skillRefs:
-    - requirements-drafting
-    - acceptance-criteria-formatting
+  - requirements-drafting
+  - acceptance-criteria-formatting
   masteryPolicyRefs:
-    - promotion-policy-v1
+  - promotion-policy-v1
   evaluationRefs:
-    - eval-pack-requirements-quality-v1
-    - eval-pack-ac-formatting-v1
+  - eval-pack-requirements-quality-v1
+  - eval-pack-ac-formatting-v1
   provenanceRequired: true
   promotionRequired: true
-
 memoryBindings:
   episodic:
     enabled: true
@@ -53,26 +57,22 @@ memoryBindings:
   procedural:
     enabled: true
     tier: LONG_TERM
-
 securityContract:
   inputValidation: strict
   outputSanitization: true
   tenantIsolation: required
   trustedMemoryOnly: true
   allowUntrustedToolOutput: false
-
 observabilityContract:
   metricsRequired: true
   tracingRequired: true
   logLevel: info
   correlationIdPropagation: required
   masteryDecisionLogged: true
-
 capabilities:
-  - requirements-drafting
-  - acceptance-criteria-formatting
-  - stakeholder-alignment
-
+- requirements-drafting
+- acceptance-criteria-formatting
+- stakeholder-alignment
 governance:
   requiresApproval: true
   requiresVerification: true

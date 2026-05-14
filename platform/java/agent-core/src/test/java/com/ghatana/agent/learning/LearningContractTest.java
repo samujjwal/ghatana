@@ -374,4 +374,117 @@ class LearningContractTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("requires promotionRequired=true");
     }
+
+    // -------------------------------------------------------------------------
+    // Factory method tests — explicit governance boundary (Section 13.2 / 13.3)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("forNormalAgent creates contract without governance workflow flag")
+    void forNormalAgentCreatesNonGovernanceContract() {
+        LearningContract contract = LearningContract.forNormalAgent(
+                LearningLevel.L3,
+                Set.of(LearningTarget.PROCEDURAL_SKILL),
+                /* provenanceRequired= */ true,
+                /* promotionRequired= */ true);
+
+        assertThat(contract.governanceWorkflow()).isFalse();
+        assertThat(contract.level()).isEqualTo(LearningLevel.L3);
+        assertThat(contract.promotionRequired()).isTrue();
+        assertThat(contract.provenanceRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("forNormalAgent blocks MASTERY_STATE even if placed in allowedTargets")
+    void forNormalAgentBlocksMasteryStateUnconditionally() {
+        LearningContract contract = LearningContract.forNormalAgent(
+                LearningLevel.L5,
+                Set.of(LearningTarget.MASTERY_STATE, LearningTarget.MODEL_ADAPTER),
+                /* provenanceRequired= */ true,
+                /* promotionRequired= */ true);
+
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE))
+                .as("Normal agents must never be permitted MASTERY_STATE")
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("forGovernanceWorkflow creates an L5 governance contract")
+    void forGovernanceWorkflowCreatesL5GovernanceContract() {
+        LearningContract contract = LearningContract.forGovernanceWorkflow(
+                Set.of(LearningTarget.MASTERY_STATE, LearningTarget.MODEL_ADAPTER));
+
+        assertThat(contract.governanceWorkflow()).isTrue();
+        assertThat(contract.level()).isEqualTo(LearningLevel.L5);
+        assertThat(contract.promotionRequired()).isTrue();
+        assertThat(contract.provenanceRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("forGovernanceWorkflow permits MASTERY_STATE")
+    void forGovernanceWorkflowPermitsMasteryState() {
+        LearningContract contract = LearningContract.forGovernanceWorkflow(
+                Set.of(LearningTarget.MASTERY_STATE));
+
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("forGovernanceWorkflow is always offline-only")
+    void forGovernanceWorkflowIsAlwaysOfflineOnly() {
+        LearningContract contract = LearningContract.forGovernanceWorkflow(Set.of());
+
+        assertThat(contract.level().isOfflineOnly()).isTrue();
+        assertThat(contract.level().canServeResponses()).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // LearningLevel.allowsAtLevelOnly tests — non-hierarchical declaration query
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("allowsAtLevelOnly returns targets exclusively introduced at each level")
+    void allowsAtLevelOnlyReturnsTargetsExclusiveToEachLevel() {
+        // L1 exclusively introduces EPISODIC_MEMORY
+        assertThat(LearningLevel.L1.allowsAtLevelOnly(LearningTarget.EPISODIC_MEMORY)).isTrue();
+
+        // L2 exclusively introduces semantic/retrieval/confidence/routing
+        assertThat(LearningLevel.L2.allowsAtLevelOnly(LearningTarget.SEMANTIC_FACT)).isTrue();
+        assertThat(LearningLevel.L2.allowsAtLevelOnly(LearningTarget.RETRIEVAL_POLICY)).isTrue();
+        assertThat(LearningLevel.L2.allowsAtLevelOnly(LearningTarget.CONFIDENCE_THRESHOLD)).isTrue();
+        assertThat(LearningLevel.L2.allowsAtLevelOnly(LearningTarget.ROUTING_POLICY)).isTrue();
+        // L2 does NOT re-introduce EPISODIC_MEMORY (that was L1's exclusive)
+        assertThat(LearningLevel.L2.allowsAtLevelOnly(LearningTarget.EPISODIC_MEMORY)).isFalse();
+
+        // L3 exclusively introduces PROCEDURAL_SKILL and NEGATIVE_KNOWLEDGE
+        assertThat(LearningLevel.L3.allowsAtLevelOnly(LearningTarget.PROCEDURAL_SKILL)).isTrue();
+        assertThat(LearningLevel.L3.allowsAtLevelOnly(LearningTarget.NEGATIVE_KNOWLEDGE)).isTrue();
+
+        // L4 exclusively introduces PROMPT_TEMPLATE and PLANNER_POLICY
+        assertThat(LearningLevel.L4.allowsAtLevelOnly(LearningTarget.PROMPT_TEMPLATE)).isTrue();
+        assertThat(LearningLevel.L4.allowsAtLevelOnly(LearningTarget.PLANNER_POLICY)).isTrue();
+
+        // L5 exclusively introduces MODEL_ADAPTER and MASTERY_STATE
+        assertThat(LearningLevel.L5.allowsAtLevelOnly(LearningTarget.MODEL_ADAPTER)).isTrue();
+        assertThat(LearningLevel.L5.allowsAtLevelOnly(LearningTarget.MASTERY_STATE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("allowsAtLevelOnly on L0 always returns false")
+    void allowsAtLevelOnlyOnL0AlwaysReturnsFalse() {
+        for (LearningTarget target : LearningTarget.values()) {
+            assertThat(LearningLevel.L0.allowsAtLevelOnly(target))
+                    .as("L0 exclusively introduces no targets")
+                    .isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("allowsAtLevelOnly is non-hierarchical: L3 does not re-expose L1 targets")
+    void allowsAtLevelOnlyIsNonHierarchical() {
+        // L3 cumulatively allows EPISODIC_MEMORY (via allows()) but does NOT
+        // exclusively introduce it (that's L1's exclusive domain)
+        assertThat(LearningLevel.L3.allows(LearningTarget.EPISODIC_MEMORY)).isTrue();
+        assertThat(LearningLevel.L3.allowsAtLevelOnly(LearningTarget.EPISODIC_MEMORY)).isFalse();
+    }
 }

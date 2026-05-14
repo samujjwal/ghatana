@@ -186,6 +186,7 @@ class AgentReleaseTest {
                     .evaluationPackDigest("digest-1")
                     .memoryContractId("memory-contract-1")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build();
 
             assertThat(release.isRunnable()).isTrue();

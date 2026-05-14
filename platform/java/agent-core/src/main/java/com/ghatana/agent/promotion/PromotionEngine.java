@@ -20,6 +20,15 @@ import org.jetbrains.annotations.NotNull;
 public interface PromotionEngine {
 
     /**
+     * Evaluates a learning delta to determine if it is ready for promotion.
+     *
+     * @param delta learning delta to evaluate
+     * @return promise of evaluation result
+     */
+    @NotNull
+    Promise<EvaluationResult> evaluate(@NotNull LearningDelta delta);
+
+    /**
      * Promotes a learning delta to mastery after successful evaluation.
      *
      * @param delta learning delta to promote

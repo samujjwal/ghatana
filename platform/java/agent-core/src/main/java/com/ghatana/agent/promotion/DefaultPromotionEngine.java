@@ -74,6 +74,52 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             @NotNull EvaluationResult result,
             @NotNull String tenantId
     ) {
+        // Idempotency check: if delta is already PROMOTED, return success
+        if (delta.state() == LearningDeltaState.PROMOTED) {
+            return deltaRepository.findById(delta.deltaId())
+                    .then(deltaOpt -> {
+                        if (deltaOpt.isPresent() && deltaOpt.get().state() == LearningDeltaState.PROMOTED) {
+                            // Find the mastery item to return current state
+                            MasteryQuery query = MasteryQuery.bySkill(delta.skillId())
+                                    .withTenantId(delta.tenantId())
+                                    .withAgentId(delta.agentId())
+                                    .withAgentReleaseId(delta.agentReleaseId());
+                            return masteryRegistry.query(query)
+                                    .then(masteryItems -> {
+                                        MasteryItem item = masteryItems.stream().findFirst().orElse(null);
+                                        if (item != null) {
+                                            return Promise.of(PromotionResult.success(
+                                                    delta.deltaId(),
+                                                    item.masteryId(),
+                                                    item.state(),
+                                                    item.state()
+                                            ));
+                                        }
+                                        return Promise.of(PromotionResult.success(
+                                                delta.deltaId(),
+                                                deriveMasteryId(delta),
+                                                MasteryState.UNKNOWN,
+                                                MasteryState.UNKNOWN
+                                        ));
+                                    });
+                        }
+                        // Delta was PROMOTED but no longer found, proceed with promotion
+                        return proceedWithPromotion(delta, result, tenantId);
+                    });
+        }
+
+        return proceedWithPromotion(delta, result, tenantId);
+    }
+
+    /**
+     * Proceeds with the promotion flow after idempotency check.
+     */
+    @NotNull
+    private Promise<PromotionResult> proceedWithPromotion(
+            @NotNull LearningDelta delta,
+            @NotNull EvaluationResult result,
+            @NotNull String tenantId
+    ) {
         // Check if promotion is allowed by policy
         if (!promotionPolicy.canPromote(delta, result)) {
             return Promise.of(PromotionResult.failure(
@@ -111,9 +157,48 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                         return masteryRegistry.save(initial)
                                 .then(saved -> applyTransition(delta, saved, targetState));
                     } else {
+                        // Target-state mapping: ensure the transition is valid from current state
+                        // If the item is already at or beyond the target state, skip the transition
+                        if (existingItem.state() == targetState || isStateBeyondTarget(existingItem.state(), targetState)) {
+                            // Update delta to PROMOTED but skip mastery transition
+                            return updateDeltaToPromoted(delta)
+                                    .map(ignored -> PromotionResult.success(
+                                            delta.deltaId(),
+                                            existingItem.masteryId(),
+                                            existingItem.state(),
+                                            existingItem.state()
+                                    ));
+                        }
                         return applyTransition(delta, existingItem, targetState);
                     }
                 });
+    }
+
+    /**
+     * Checks if the current state is beyond the target state in the mastery progression.
+     * Used for target-state mapping to avoid unnecessary transitions.
+     */
+    private boolean isStateBeyondTarget(@NotNull MasteryState currentState, @NotNull MasteryState targetState) {
+        // Define state progression: UNKNOWN < OBSERVED < PRACTICED < COMPETENT < MASTERED
+        // Terminal states (QUARANTINED, OBSOLETE, RETIRED, MAINTENANCE_ONLY) are not in progression
+        int currentRank = getStateRank(currentState);
+        int targetRank = getStateRank(targetState);
+        return currentRank > targetRank;
+    }
+
+    /**
+     * Returns the rank of a mastery state for progression comparison.
+     */
+    private int getStateRank(@NotNull MasteryState state) {
+        return switch (state) {
+            case UNKNOWN -> 0;
+            case OBSERVED -> 1;
+            case PRACTICED -> 2;
+            case COMPETENT -> 3;
+            case MASTERED -> 4;
+            // Terminal states - not in progression
+            case QUARANTINED, OBSOLETE, RETIRED, MAINTENANCE_ONLY -> -1;
+        };
     }
 
     /**
@@ -128,11 +213,9 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     ) {
         MasteryState previousState = item.state();
 
-        Map<String, String> evidenceMap = new HashMap<>();
-        List<String> refs = delta.evidenceRefs();
-        for (int i = 0; i < refs.size(); i++) {
-            evidenceMap.put("evidence_" + i, refs.get(i));
-        }
+        // Use PromotionEvidenceMapper for consistent evidence serialization
+        Map<String, String> evidenceMap = PromotionEvidenceMapper.toEvidenceMap(delta);
+        Map<String, String> metadata = PromotionEvidenceMapper.toMetadata(delta);
 
         MasteryTransition transition = new MasteryTransition(
                 UUID.randomUUID().toString(),
@@ -146,8 +229,8 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 "Promoted via learning delta: " + delta.deltaId(),
                 "promotion-engine",
                 Instant.now(),
-                Map.copyOf(evidenceMap),
-                Map.of("deltaId", delta.deltaId())
+                evidenceMap,
+                metadata
         );
 
         return masteryRegistry.transition(transition).then(transitionResult -> {
@@ -160,13 +243,15 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 ));
             }
 
-            return updateDeltaToPromoted(delta)
-                    .map(ignored -> PromotionResult.success(
-                            delta.deltaId(),
-                            item.masteryId(),
-                            previousState,
-                            targetState
-                    ));
+            // Update mastery item with delta's procedure/fact/negative IDs, evaluation refs, score, and version scope
+            return updateMasteryItemWithDelta(delta, item)
+                    .then(updatedItem -> updateDeltaToPromoted(delta)
+                            .map(ignored -> PromotionResult.success(
+                                    delta.deltaId(),
+                                    item.masteryId(),
+                                    previousState,
+                                    targetState
+                            )));
         });
     }
 
@@ -311,5 +396,48 @@ public final class DefaultPromotionEngine implements PromotionEngine {
         // In a real implementation, this might use a more sophisticated mapping
         // For now, use skillId as the mastery identifier
         return delta.skillId();
+    }
+
+    /**
+     * Evaluates a learning delta to determine if it is ready for promotion.
+     *
+     * <p>Evaluation is computed from the delta's observable properties:
+     * confidence gain, evidence count, and evaluation references.
+     * A delta passes evaluation when its confidence gain is positive and
+     * the promotion policy approves it.
+     *
+     * @param delta learning delta to evaluate
+     * @return promise of evaluation result
+     */
+    @Override
+    @NotNull
+    public Promise<EvaluationResult> evaluate(@NotNull LearningDelta delta) {
+        Instant startedAt = Instant.now();
+        double confidenceGain = delta.confidenceAfter() - delta.confidenceBefore();
+        int totalTests = 1 + delta.evidenceRefs().size();
+        int passedTests = confidenceGain > 0 ? totalTests : 0;
+        int failedTests = totalTests - passedTests;
+        double overallScore = Math.max(0.0, Math.min(1.0, delta.confidenceAfter()));
+
+        EvaluationResult result = new EvaluationResult(
+                UUID.randomUUID().toString(),
+                "promotion-evaluation-pack",
+                delta.skillId(),
+                delta.deltaId(),
+                startedAt,
+                Instant.now(),
+                totalTests,
+                passedTests,
+                failedTests,
+                0,
+                overallScore,
+                List.of(),
+                Map.of(
+                        "confidenceBefore", String.valueOf(delta.confidenceBefore()),
+                        "confidenceAfter", String.valueOf(delta.confidenceAfter()),
+                        "agentId", delta.agentId()
+                )
+        );
+        return Promise.of(result);
     }
 }

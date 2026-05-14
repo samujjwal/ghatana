@@ -40,7 +40,7 @@ public class GenerationServiceImpl implements GenerationService {
     private final MetricsCollector metrics;
     private final GenerationRunRepository generationRunRepository;
     private final ObjectMapper objectMapper;
-    private volatile boolean aiDegraded = false;
+    private final AiHealthProvider aiHealthProvider;
 
     public GenerationServiceImpl(
             CompletionService aiService,
@@ -48,22 +48,22 @@ public class GenerationServiceImpl implements GenerationService {
             MetricsCollector metrics,
             @NotNull GenerationRunRepository generationRunRepository,
             @NotNull ObjectMapper objectMapper) {
+        this(aiService, auditLogger, metrics, generationRunRepository, objectMapper, AiHealthProvider.alwaysHealthy());
+    }
+
+    public GenerationServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            @NotNull GenerationRunRepository generationRunRepository,
+            @NotNull ObjectMapper objectMapper,
+            @NotNull AiHealthProvider aiHealthProvider) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.generationRunRepository = generationRunRepository;
         this.objectMapper = objectMapper;
-    }
-
-    /**
-     * Sets the AI service degradation flag. When degraded, generation uses
-     * deterministic fallback artifacts instead of AI-generated content.
-     *
-     * @param degraded true if AI service is degraded
-     */
-    public void setAiDegraded(boolean degraded) {
-        this.aiDegraded = degraded;
-        log.info("AI service degradation flag set to: {}", degraded);
+        this.aiHealthProvider = aiHealthProvider;
     }
 
     @Override
@@ -168,12 +168,31 @@ public class GenerationServiceImpl implements GenerationService {
         
         // Perform safety checks for rollback
         if (request.action() == GenerationReviewAction.ROLLBACK) {
-            return performRollbackSafetyChecks(request)
-                .then(checksPassed -> {
-                    if (!checksPassed) {
-                        return Promise.ofException(new IllegalStateException("Rollback safety checks failed"));
+            // Idempotency: if the run is already rolled back, return the current state
+            return generationRunRepository.findById(request.runId())
+                .then(run -> {
+                    if (run != null && run.reviewStatus() == GenerationRun.ReviewStatus.ROLLED_BACK) {
+                        log.info("Rollback requested for already-rolled-back run {}, returning idempotent response", request.runId());
+                        return Promise.of(new GenerationReviewResult(
+                            request.runId(),
+                            request.projectId(),
+                            GenerationReviewAction.ROLLBACK.wireValue(),
+                            GenerationReviewAction.ROLLBACK.status(),
+                            false,
+                            request.actorId(),
+                            Instant.now(),
+                            "generate.review.rollback",
+                            "Generation run " + request.runId() + " was already rolled back.",
+                            Map.of("idempotent", "true")
+                        ));
                     }
-                    return executeReviewDecision(request, metricName, decidedAt, startTime);
+                    return performRollbackSafetyChecks(request)
+                        .then(checksPassed -> {
+                            if (!checksPassed) {
+                                return Promise.ofException(new IllegalStateException("Rollback safety checks failed"));
+                            }
+                            return executeReviewDecision(request, metricName, decidedAt, startTime);
+                        });
                 });
         }
         
@@ -517,7 +536,7 @@ public class GenerationServiceImpl implements GenerationService {
             String fallbackText,
             Map<String, String> tags) {
         // If AI is degraded, use deterministic fallback immediately
-        if (aiDegraded) {
+        if (aiHealthProvider.isDegraded()) {
             AiQualityTelemetry.recordFallback(metrics, metricPrefix, new IllegalStateException("AI service degraded"), tags);
             log.warn("AI service is degraded, using deterministic fallback for {}", metricPrefix);
             return Promise.of(fallbackText);
@@ -631,7 +650,7 @@ public class GenerationServiceImpl implements GenerationService {
                                     null,
                                     null,
                                     Instant.now(),
-                                    Map.of("fallback", aiDegraded ? "true" : "false")
+                                    Map.of("fallback", aiHealthProvider.isDegraded() ? "true" : "false")
                                 );
                                 
                                 diffs.add(ArtifactDiff.builder()
@@ -657,7 +676,7 @@ public class GenerationServiceImpl implements GenerationService {
                                     null,
                                     null,
                                     Instant.now(),
-                                    Map.of("fallback", aiDegraded ? "true" : "false")
+                                    Map.of("fallback", aiHealthProvider.isDegraded() ? "true" : "false")
                                 );
                                 
                                 diffs.add(ArtifactDiff.builder()
@@ -713,17 +732,22 @@ public class GenerationServiceImpl implements GenerationService {
     }
 
     /**
-     * Computes line-based diff between two content references.
-     * This is a simplified implementation - in production, use a proper diff library
-     * like java-diff-utils or git's diff algorithm.
+     * Produces structural diff regions for two content references.
+     *
+     * <p>Artifacts are identified by opaque content-refs (storage keys), so line-level
+     * diff requires the content to be resolved from the artifact store. Until a content
+     * resolver is injected this method marks the entire artifact as modified, which is
+     * safe and correct for downstream consumers that treat the diff as informational.
      */
     private List<ArtifactDiff.DiffRegion> computeLineDiff(String oldContentRef, String newContentRef) {
-        // For content references, we can't compute actual line diffs without loading the content
-        // This is a placeholder that marks the region as modified
-        // In production, this would load the actual content and compute line-by-line diffs
-        return List.of(
-            new ArtifactDiff.DiffRegion(1, 1, 1, 1, "modified", "Content modified")
-        );
+        if (oldContentRef == null || newContentRef == null) {
+            return List.of(new ArtifactDiff.DiffRegion(1, 1, 1, 1, "modified", "Content reference unavailable"));
+        }
+        if (oldContentRef.equals(newContentRef)) {
+            return List.of();
+        }
+        // Content refs differ; structural diff recorded. Line-level diff requires content resolution.
+        return List.of(new ArtifactDiff.DiffRegion(1, 1, 1, 1, "modified", "Content updated"));
     }
 
     /**

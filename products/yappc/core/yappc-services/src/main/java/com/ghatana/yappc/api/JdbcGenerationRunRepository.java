@@ -42,8 +42,8 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
             INSERT INTO generation_runs
               (id, plan_id, project_id, tenant_id, workspace_id, intent, status,
                artifact_ids, review_status, preview_session_id, created_at, completed_at,
-               provenance, metadata)
-            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb, ?::jsonb)
+               provenance, metadata, content_digest)
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
             ON CONFLICT (id) DO UPDATE SET
               status = EXCLUDED.status,
               artifact_ids = EXCLUDED.artifact_ids,
@@ -51,21 +51,41 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
               preview_session_id = EXCLUDED.preview_session_id,
               completed_at = EXCLUDED.completed_at,
               provenance = EXCLUDED.provenance,
-              metadata = EXCLUDED.metadata
+              metadata = EXCLUDED.metadata,
+              content_digest = EXCLUDED.content_digest
             """;
 
     private static final String SELECT_BY_ID_SQL = """
             SELECT id, plan_id, project_id, tenant_id, workspace_id, intent, status,
                    artifact_ids, review_status, preview_session_id, created_at, completed_at,
-                   provenance, metadata
+                   provenance, metadata, content_digest
             FROM generation_runs
             WHERE id = ?
+            """;
+
+    private static final String SELECT_BY_TENANT_SQL = """
+            SELECT id, plan_id, project_id, tenant_id, workspace_id, intent, status,
+                   artifact_ids, review_status, preview_session_id, created_at, completed_at,
+                   provenance, metadata, content_digest
+            FROM generation_runs
+            WHERE tenant_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """;
+
+    private static final String SELECT_BY_TENANT_CONTENT_DIGEST_SQL = """
+            SELECT id, plan_id, project_id, tenant_id, workspace_id, intent, status,
+                   artifact_ids, review_status, preview_session_id, created_at, completed_at,
+                   provenance, metadata, content_digest
+            FROM generation_runs
+            WHERE tenant_id = ? AND content_digest = ?
+            ORDER BY created_at DESC
             """;
 
     private static final String SELECT_BY_PROJECT_SQL = """
             SELECT id, plan_id, project_id, tenant_id, workspace_id, intent, status,
                    artifact_ids, review_status, preview_session_id, created_at, completed_at,
-                   provenance, metadata
+                   provenance, metadata, content_digest
             FROM generation_runs
             WHERE project_id = ?
             ORDER BY created_at DESC
@@ -75,7 +95,7 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
     private static final String SELECT_BY_PLAN_SQL = """
             SELECT id, plan_id, project_id, tenant_id, workspace_id, intent, status,
                    artifact_ids, review_status, preview_session_id, created_at, completed_at,
-                   provenance, metadata
+                   provenance, metadata, content_digest
             FROM generation_runs
             WHERE plan_id = ?
             ORDER BY created_at DESC
@@ -128,6 +148,7 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
                 ps.setTimestamp(12, run.completedAt() != null ? Timestamp.from(run.completedAt()) : null);
                 ps.setString(13, toJson(run.provenance()));
                 ps.setString(14, toJson(run.metadata()));
+                ps.setString(15, run.contentDigest());
 
                 ps.executeUpdate();
                 log.debug("Persisted generation run: id={}, projectId={}, tenantId={}",
@@ -258,6 +279,51 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
         });
     }
 
+    @Override
+    public Promise<List<GenerationRun>> findByTenantId(@NotNull String tenantId) {
+        return Promise.ofBlocking(EXECUTOR, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(SELECT_BY_TENANT_SQL)) {
+
+                ps.setString(1, tenantId);
+                ps.setInt(2, 1000);
+
+                ResultSet rs = ps.executeQuery();
+                List<GenerationRun> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapRowToGenerationRun(rs));
+                }
+                return results;
+            } catch (SQLException e) {
+                log.error("Failed to find generation runs by tenant: tenantId={}", tenantId, e);
+                throw new RuntimeException("Failed to find generation runs by tenant", e);
+            }
+        });
+    }
+
+    @Override
+    public Promise<List<GenerationRun>> findByTenantAndContentDigest(
+            @NotNull String tenantId, @NotNull String contentDigest) {
+        return Promise.ofBlocking(EXECUTOR, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(SELECT_BY_TENANT_CONTENT_DIGEST_SQL)) {
+
+                ps.setString(1, tenantId);
+                ps.setString(2, contentDigest);
+
+                ResultSet rs = ps.executeQuery();
+                List<GenerationRun> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapRowToGenerationRun(rs));
+                }
+                return results;
+            } catch (SQLException e) {
+                log.error("Failed to find generation runs by tenant+contentDigest: tenantId={}", tenantId, e);
+                throw new RuntimeException("Failed to find generation runs by content digest", e);
+            }
+        });
+    }
+
     private GenerationRun mapRowToGenerationRun(ResultSet rs) throws SQLException {
         try {
             return GenerationRun.builder()
@@ -275,6 +341,7 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
                 .completedAt(rs.getTimestamp("completed_at") != null ? rs.getTimestamp("completed_at").toInstant() : null)
                 .provenance(fromJson(rs.getString("provenance"), Map.class))
                 .metadata(fromJson(rs.getString("metadata"), Map.class))
+                .contentDigest(rs.getString("content_digest"))
                 .build();
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize generation run from database", e);

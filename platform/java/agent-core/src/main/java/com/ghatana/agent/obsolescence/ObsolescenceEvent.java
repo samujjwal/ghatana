@@ -15,8 +15,12 @@ import java.util.Objects;
 /**
  * Event indicating that a mastery item has been detected as obsolete.
  *
+ * <p>Includes structured evidence fields for dependency changes, API changes,
+ * security advisories, and documentation sources to provide rich context for
+ * obsolescence detection and routing decisions.
+ *
  * @doc.type record
- * @doc.purpose Event for obsolescence detection
+ * @doc.purpose Event for obsolescence detection with structured evidence
  * @doc.layer agent-core
  * @doc.pattern Record
  */
@@ -30,7 +34,11 @@ public record ObsolescenceEvent(
         @NotNull List<ObsolescenceEvidenceRef> evidenceRefs,
         @NotNull Map<String, String> metadata,
         @NotNull Severity severity,
-        @NotNull MasteryState recommendedTransition
+        @NotNull MasteryState recommendedTransition,
+        @NotNull List<DependencyChange> dependencyChanges,
+        @NotNull List<ApiChange> apiChanges,
+        @NotNull List<SecurityAdvisory> securityAdvisories,
+        @NotNull List<DocumentationSource> documentationSources
 ) {
     public ObsolescenceEvent {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -43,8 +51,16 @@ public record ObsolescenceEvent(
         Objects.requireNonNull(metadata, "metadata must not be null");
         Objects.requireNonNull(severity, "severity must not be null");
         Objects.requireNonNull(recommendedTransition, "recommendedTransition must not be null");
+        Objects.requireNonNull(dependencyChanges, "dependencyChanges must not be null");
+        Objects.requireNonNull(apiChanges, "apiChanges must not be null");
+        Objects.requireNonNull(securityAdvisories, "securityAdvisories must not be null");
+        Objects.requireNonNull(documentationSources, "documentationSources must not be null");
         evidenceRefs = List.copyOf(evidenceRefs);
         metadata = Map.copyOf(metadata);
+        dependencyChanges = List.copyOf(dependencyChanges);
+        apiChanges = List.copyOf(apiChanges);
+        securityAdvisories = List.copyOf(securityAdvisories);
+        documentationSources = List.copyOf(documentationSources);
     }
 
     /**
@@ -83,7 +99,11 @@ public record ObsolescenceEvent(
                 List.of(),
                 Map.of(),
                 Severity.MEDIUM,
-                MasteryState.MAINTENANCE_ONLY
+                MasteryState.MAINTENANCE_ONLY,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of()
         );
     }
 
@@ -115,7 +135,11 @@ public record ObsolescenceEvent(
                 evidenceRefs,
                 Map.of(),
                 Severity.MEDIUM,
-                MasteryState.MAINTENANCE_ONLY
+                MasteryState.MAINTENANCE_ONLY,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of()
         );
     }
 
@@ -153,7 +177,61 @@ public record ObsolescenceEvent(
                 evidenceRefs,
                 metadata,
                 severity,
-                recommendedTransition
+                recommendedTransition,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of()
+        );
+    }
+
+    /**
+     * Creates an obsolescence event with structured evidence.
+     *
+     * @param masteryId mastery item identifier
+     * @param tenantId tenant identifier
+     * @param reason obsolescence reason
+     * @param description description of the obsolescence
+     * @param evidenceRefs evidence references supporting the detection
+     * @param metadata additional metadata
+     * @param severity severity level
+     * @param recommendedTransition recommended mastery state transition
+     * @param dependencyChanges dependency changes
+     * @param apiChanges API changes
+     * @param securityAdvisories security advisories
+     * @param documentationSources documentation sources
+     * @return obsolescence event with structured evidence
+     */
+    @NotNull
+    public static ObsolescenceEvent of(
+            @NotNull String masteryId,
+            @NotNull String tenantId,
+            @NotNull ObsolescenceReason reason,
+            @NotNull String description,
+            @NotNull List<ObsolescenceEvidenceRef> evidenceRefs,
+            @NotNull Map<String, String> metadata,
+            @NotNull Severity severity,
+            @NotNull MasteryState recommendedTransition,
+            @NotNull List<DependencyChange> dependencyChanges,
+            @NotNull List<ApiChange> apiChanges,
+            @NotNull List<SecurityAdvisory> securityAdvisories,
+            @NotNull List<DocumentationSource> documentationSources
+    ) {
+        return new ObsolescenceEvent(
+                java.util.UUID.randomUUID().toString(),
+                masteryId,
+                tenantId,
+                reason,
+                description,
+                Instant.now(),
+                evidenceRefs,
+                metadata,
+                severity,
+                recommendedTransition,
+                dependencyChanges,
+                apiChanges,
+                securityAdvisories,
+                documentationSources
         );
     }
 }

@@ -41,6 +41,8 @@ public final class GenerationRun {
     private final Instant completedAt;
     private final Map<String, Object> provenance;
     private final Map<String, Object> metadata;
+    /** SHA-256 digest of the generation intent/input. Used as idempotency key with tenantId. */
+    private final String contentDigest;
 
     private GenerationRun(Builder builder) {
         this.id = builder.id;
@@ -57,6 +59,7 @@ public final class GenerationRun {
         this.completedAt = builder.completedAt;
         this.provenance = Map.copyOf(builder.provenance);
         this.metadata = Map.copyOf(builder.metadata);
+        this.contentDigest = builder.contentDigest;
     }
 
     public String id() {
@@ -115,6 +118,10 @@ public final class GenerationRun {
         return metadata;
     }
 
+    public String contentDigest() {
+        return contentDigest;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -134,6 +141,7 @@ public final class GenerationRun {
         private Instant completedAt;
         private final Map<String, Object> provenance = new java.util.HashMap<>();
         private final Map<String, Object> metadata = new java.util.HashMap<>();
+        private String contentDigest;
 
         public Builder id(String id) {
             this.id = id;
@@ -220,6 +228,11 @@ public final class GenerationRun {
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata.clear();
             this.metadata.putAll(metadata);
+            return this;
+        }
+
+        public Builder contentDigest(String contentDigest) {
+            this.contentDigest = contentDigest;
             return this;
         }
 

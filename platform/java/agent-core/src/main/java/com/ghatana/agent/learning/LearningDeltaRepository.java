@@ -143,4 +143,36 @@ public interface LearningDeltaRepository {
      */
     @NotNull
     Promise<LearningDelta> transition(@NotNull String deltaId, @NotNull LearningDeltaState state);
+
+    /**
+     * Appends an evaluation result to a learning delta.
+     *
+     * @param deltaId delta identifier
+     * @param evaluationRunId evaluation run identifier
+     * @param outcome evaluation outcome (PASSED/FAILED)
+     * @param metrics evaluation metrics
+     * @return promise of updated delta
+     */
+    @NotNull
+    Promise<LearningDelta> appendEvaluationResult(
+            @NotNull String deltaId,
+            @NotNull String evaluationRunId,
+            @NotNull String outcome,
+            @NotNull java.util.Map<String, Object> metrics);
+
+    /**
+     * Appends a promotion result to a learning delta.
+     *
+     * @param deltaId delta identifier
+     * @param promotionId promotion identifier
+     * @param outcome promotion outcome (PROMOTED/FAILED)
+     * @param reason promotion reason or failure explanation
+     * @return promise of updated delta
+     */
+    @NotNull
+    Promise<LearningDelta> appendPromotionResult(
+            @NotNull String deltaId,
+            @NotNull String promotionId,
+            @NotNull String outcome,
+            @Nullable String reason);
 }

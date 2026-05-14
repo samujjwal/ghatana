@@ -7,9 +7,9 @@ metadata:
   version: 1.0.0
   status: active
   owners:
-    - team: platform-engineering
-  summary: Generates well-structured, idiomatic Java code aligned with Ghatana platform conventions.
-
+  - team: platform-engineering
+  summary: Generates well-structured, idiomatic Java code aligned with Ghatana platform
+    conventions.
 identity:
   agentType: HYBRID
   subtype: llm
@@ -18,26 +18,27 @@ identity:
   determinismGuarantee: non-deterministic
   stateMutability: local-state
   failureMode: fail-closed
-
 learning:
   learningLevel: L3
   adaptationTargets:
-    - PROCEDURAL_SKILL
-    - EPISODIC_MEMORY
-    - SEMANTIC_FACT
-    - NEGATIVE_KNOWLEDGE
+  - PROCEDURAL_SKILL
+  - EPISODIC_MEMORY
+  - SEMANTIC_FACT
+  - NEGATIVE_KNOWLEDGE
   masteryBindings:
-    - skillRef: java-class-writing
-      masteryPolicyRef: promotion-policy-v1
+  - namespace: yappc
+    registryRef: yappc-mastery-registry
+    versionPolicy: semver
+    freshnessPolicy: default
+    obsolescencePolicy: default
   skillRefs:
-    - java-class-writing
+  - java-class-writing
   masteryPolicyRefs:
-    - promotion-policy-v1
+  - promotion-policy-v1
   evaluationRefs:
-    - eval-pack-java-code-quality-v1
+  - eval-pack-java-code-quality-v1
   provenanceRequired: true
   promotionRequired: true
-
 memoryBindings:
   episodic:
     enabled: true
@@ -49,26 +50,22 @@ memoryBindings:
   procedural:
     enabled: true
     tier: LONG_TERM
-
 securityContract:
   inputValidation: strict
   outputSanitization: true
   tenantIsolation: required
   trustedMemoryOnly: true
   allowUntrustedToolOutput: false
-
 observabilityContract:
   metricsRequired: true
   tracingRequired: true
   logLevel: info
   correlationIdPropagation: required
   masteryDecisionLogged: true
-
 capabilities:
-  - java-code-generation
-  - code-review
-  - refactoring
-
+- java-code-generation
+- code-review
+- refactoring
 governance:
   requiresApproval: false
   requiresVerification: true

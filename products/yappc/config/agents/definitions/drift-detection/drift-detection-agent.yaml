@@ -7,9 +7,9 @@ metadata:
   version: 1.0.0
   status: active
   owners:
-    - team: platform-engineering
-  summary: Detects semantic, structural, and version drift across code, schemas, and agent definitions.
-
+  - team: platform-engineering
+  summary: Detects semantic, structural, and version drift across code, schemas, and
+    agent definitions.
 identity:
   agentType: DETERMINISTIC
   subtype: pattern
@@ -18,25 +18,26 @@ identity:
   determinismGuarantee: fully-deterministic
   stateMutability: stateless
   failureMode: fail-closed
-
 learning:
   learningLevel: L2
   adaptationTargets:
-    - EPISODIC_MEMORY
-    - SEMANTIC_FACT
-    - RETRIEVAL_POLICY
-    - CONFIDENCE_THRESHOLD
+  - EPISODIC_MEMORY
+  - SEMANTIC_FACT
+  - RETRIEVAL_POLICY
+  - CONFIDENCE_THRESHOLD
   masteryBindings:
-    - skillRef: drift-detection
-      masteryPolicyRef: promotion-policy-v1
+  - namespace: yappc
+    registryRef: yappc-mastery-registry
+    versionPolicy: semver
+    freshnessPolicy: default
+    obsolescencePolicy: default
   skillRefs:
-    - drift-detection
+  - drift-detection
   masteryPolicyRefs:
-    - promotion-policy-v1
+  - promotion-policy-v1
   evaluationRefs: []
   provenanceRequired: true
   promotionRequired: false
-
 memoryBindings:
   episodic:
     enabled: true
@@ -47,26 +48,22 @@ memoryBindings:
     tier: LONG_TERM
   procedural:
     enabled: false
-
 securityContract:
   inputValidation: strict
   outputSanitization: true
   tenantIsolation: required
   trustedMemoryOnly: true
   allowUntrustedToolOutput: false
-
 observabilityContract:
   metricsRequired: true
   tracingRequired: true
   logLevel: warn
   correlationIdPropagation: required
   masteryDecisionLogged: true
-
 capabilities:
-  - drift-detection
-  - schema-comparison
-  - version-compatibility-check
-
+- drift-detection
+- schema-comparison
+- version-compatibility-check
 governance:
   requiresApproval: false
   requiresVerification: false

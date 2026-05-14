@@ -90,7 +90,12 @@ public final class LearnedArtifactPromotionService {
                             candidate.provenanceRefs(),
                             promotionEvidence.evidenceId(),
                             null,
-                            Instant.now());
+                            Instant.now(),
+                            candidate.candidateId(),
+                            null,
+                            null,
+                            null,
+                            null);
                     return evidence.save(promotionEvidence)
                             .then(saved -> candidates.save(promotedCandidate))
                             .then(saved -> artifacts.save(artifact));
@@ -109,6 +114,10 @@ public final class LearnedArtifactPromotionService {
                         return Promise.ofException(new IllegalStateException("LearnedArtifact not found: " + artifactId));
                     }
                     LearnedArtifact existing = found.get();
+                    if (existing.state() == PromotionState.ROLLED_BACK) {
+                        return Promise.ofException(new IllegalStateException(
+                                "Rollback cannot be applied twice: artifact " + artifactId + " is already ROLLED_BACK"));
+                    }
                     LearnedArtifact rolledBack = new LearnedArtifact(
                             existing.artifactId(),
                             existing.agentId(),
@@ -119,7 +128,12 @@ public final class LearnedArtifactPromotionService {
                             existing.provenanceRefs(),
                             existing.promotionEvidenceId(),
                             rollbackRef,
-                            existing.createdAt());
+                            existing.createdAt(),
+                            existing.candidateId(),
+                            existing.skillId(),
+                            existing.tenantId(),
+                            existing.sourceEpisodeIds(),
+                            existing.contentDigest());
                     return artifacts.save(rolledBack);
                 });
     }

@@ -38,6 +38,15 @@ public enum TraceEventType {
     /** Memory item created or mutated. */
     MEMORY_MUTATION,
 
+    /** Memory retrieval started. */
+    MEMORY_RETRIEVAL_STARTED,
+
+    /** Memory retrieval completed. */
+    MEMORY_RETRIEVAL_COMPLETED,
+
+    /** Memory item rejected during retrieval (e.g., obsolete, maintenance mismatch). */
+    MEMORY_ITEM_REJECTED,
+
     /** Delegation from one agent to another. */
     DELEGATION,
 
@@ -64,8 +73,17 @@ public enum TraceEventType {
     /** Mastery state transition occurred for a skill. */
     MASTERY_STATE_CHANGED,
 
+    /** Mastery transition proposed for review. */
+    MASTERY_TRANSITION_PROPOSED,
+
+    /** Mastery transition applied to mastery item. */
+    MASTERY_TRANSITION_APPLIED,
+
     /** Learning delta proposed for review and promotion. */
     LEARNING_DELTA_PROPOSED,
+
+    /** Learning delta evaluated by promotion engine. */
+    LEARNING_DELTA_EVALUATED,
 
     /** Learning delta promoted to active knowledge. */
     LEARNING_DELTA_PROMOTED,
@@ -75,6 +93,18 @@ public enum TraceEventType {
 
     /** Skill benchmark evaluation completed. */
     SKILL_BENCHMARK_COMPLETED,
+
+    /** Evaluation pack execution started. */
+    EVALUATION_PACK_STARTED,
+
+    /** Evaluation pack execution completed. */
+    EVALUATION_PACK_COMPLETED,
+
+    /** Obsolescence detected for a mastery item. */
+    OBSOLESCENCE_DETECTED,
+
+    /** Obsolescence event routed to transition. */
+    OBSOLESCENCE_ROUTED,
 
     // ── Governance Dispatch Events ────────────────────────────────────────
 

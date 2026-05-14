@@ -321,7 +321,7 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         // Build a query with requireFreshness=true
         MasteryQuery freshQuery = new MasteryQuery(
                 "skill-fresh", null, null, TENANT, null, null,
-                false, false, false, true, Instant.now(), null, null
+                false, false, false, true, Instant.now(), null, null, null, null, null, null
         );
         List<MasteryItem> results = runPromise(() -> registry.query(freshQuery));
 
@@ -372,7 +372,7 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         // Item state must still be PRACTICED — no silent corruption
         MasteryQuery query = new MasteryQuery(
                 "skill-atomic", null, null, TENANT, null, null,
-                false, false, true, null, null, null, null
+                false, false, true, null, null, null, null, null, null, null, null
         );
         List<MasteryItem> results = runPromise(() -> registry.query(query));
         assertThat(results).hasSize(1);

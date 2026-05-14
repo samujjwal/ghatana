@@ -11,10 +11,15 @@ import com.ghatana.agent.mastery.MasteryEvidenceType;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.runtime.mode.TaskClassification;
+import com.ghatana.agent.runtime.mode.TaskNovelty;
+import com.ghatana.agent.runtime.mode.TaskRiskLevel;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -25,12 +30,14 @@ import java.util.regex.Pattern;
  * and mastery registry to determine task classification based on actual evidence of mastery,
  * evaluation results, and risk factors.
  *
+ * <p>Returns TaskClassification with TaskRiskLevel, TaskNovelty, and evidence metadata.
+ *
  * @doc.type class
- * @doc.purpose Evidence-driven task classifier
+ * @doc.purpose Evidence-driven task classifier with rich classification output
  * @doc.layer agent-core
  * @doc.pattern Classifier
  */
-public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
+public final class EvidenceDrivenTaskClassifier implements com.ghatana.agent.runtime.mode.TaskClassifier {
 
     private final MasteryRegistry masteryRegistry;
     private final MasteryEvidenceRepository evidenceRepository;
@@ -97,7 +104,107 @@ public final class EvidenceDrivenTaskClassifier implements TaskClassifier {
 
     @Override
     @NotNull
-    public TaskClass classify(
+    public Promise<TaskClassification> classify(@NotNull String taskDescription, @NotNull String context) {
+        return classify(taskDescription, context, Map.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<TaskClassification> classify(
+            @NotNull String taskDescription,
+            @NotNull String context,
+            @NotNull Map<String, String> metadata
+    ) {
+        // Determine risk level from task description
+        TaskRiskLevel riskLevel = determineRiskLevel(taskDescription);
+        
+        // Determine novelty from context and metadata
+        TaskNovelty novelty = determineNovelty(taskDescription, context, metadata);
+        
+        // Build evidence map
+        Map<String, String> evidence = new HashMap<>(metadata);
+        evidence.put("riskLevel", riskLevel.name());
+        evidence.put("novelty", novelty.name());
+        evidence.put("taskDescription", taskDescription);
+        evidence.put("context", context);
+        
+        // Add risk pattern evidence
+        if (isCriticalRisk(taskDescription)) {
+            evidence.put("criticalRiskPattern", "matched");
+        }
+        if (isHighRisk(taskDescription)) {
+            evidence.put("highRiskPattern", "matched");
+        }
+        
+        return Promise.of(new TaskClassification(riskLevel, novelty, Map.copyOf(evidence)));
+    }
+
+    /**
+     * Determines the risk level for a task.
+     */
+    @NotNull
+    private TaskRiskLevel determineRiskLevel(String taskDescription) {
+        // Check for critical risk patterns first (highest severity)
+        if (isCriticalRisk(taskDescription)) {
+            return TaskRiskLevel.CRITICAL;
+        }
+
+        // Check for high-risk patterns
+        if (isHighRisk(taskDescription)) {
+            return TaskRiskLevel.HIGH;
+        }
+
+        // Check for maintenance patterns (medium risk)
+        if (isMaintenance(taskDescription)) {
+            return TaskRiskLevel.MEDIUM;
+        }
+
+        // Default to low risk
+        return TaskRiskLevel.LOW;
+    }
+
+    /**
+     * Determines the novelty of a task based on context and metadata.
+     */
+    @NotNull
+    private TaskNovelty determineNovelty(String taskDescription, String context, Map<String, String> metadata) {
+        // Check for exploration patterns (novel)
+        if (isExploration(taskDescription)) {
+            return TaskNovelty.NOVEL;
+        }
+
+        // Check for migration patterns (similar)
+        if (isMigration(taskDescription)) {
+            return TaskNovelty.SIMILAR;
+        }
+
+        // Check for new work patterns
+        if (isNewWork(taskDescription)) {
+            return TaskNovelty.NOVEL;
+        }
+
+        // Check metadata for mastery state
+        String masteryState = metadata.get("masteryState");
+        if (masteryState != null) {
+            if (masteryState.equals("MASTERED") || masteryState.equals("COMPETENT")) {
+                return TaskNovelty.FAMILIAR;
+            }
+            if (masteryState.equals("PRACTICED")) {
+                return TaskNovelty.SIMILAR;
+            }
+        }
+
+        // Default to familiar if not novel
+        return TaskNovelty.FAMILIAR;
+    }
+
+    /**
+     * Legacy classify method for backward compatibility with TaskClass interface.
+     * This method is deprecated in favor of the classify methods that return TaskClassification.
+     */
+    @Deprecated
+    @NotNull
+    public TaskClass classifyLegacy(
             @NotNull String taskDescription,
             @NotNull Optional<MasteryItem> mastery,
             @NotNull EnvironmentFingerprint env

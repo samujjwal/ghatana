@@ -42,6 +42,13 @@ import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
+import com.ghatana.agent.runtime.safety.InvariantMonitor;
+import com.ghatana.agent.runtime.safety.DefaultInvariantMonitor;
+import com.ghatana.agent.audit.AgentTraceLedger;
+import com.ghatana.agent.audit.HashChainedTraceAppender;
+import com.ghatana.agent.runtime.mode.DefaultModeSelectionPolicy;
+import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
+import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
@@ -387,8 +394,9 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides a no-op mastery registry for the orchestrator.
-     * The orchestrator does not require mastery tracking, so this returns empty results.
+     * Provides a fail-closed mastery registry for the orchestrator.
+     * When no real mastery registry is configured, this blocks execution by default
+     * to prevent unsafe autonomous execution without mastery tracking.
      */
     @Provides
     MasteryRegistry masteryRegistry() {
@@ -416,14 +424,15 @@ public class AepOrchestrationModule extends AbstractModule {
             @Override
             @NotNull
             public Promise<MasteryDecision> decide(@NotNull MasteryQuery query) {
-                // Return a default decision that allows execution with no mastery tracking
-                return Promise.of(MasteryDecision.allow(
+                // Return a fail-closed decision that blocks execution when no mastery registry is configured
+                // This prevents unsafe autonomous execution without mastery tracking
+                return Promise.of(MasteryDecision.block(
                         "no-mastery",
                         query.skillId(),
                         com.ghatana.agent.mastery.MasteryState.UNKNOWN,
                         com.ghatana.agent.mastery.MasteryScore.zero(),
                         com.ghatana.agent.mastery.VersionScope.empty(),
-                        "No mastery registry configured - allowing execution by default"
+                        "No mastery registry configured - blocking execution by default. Configure a real MasteryRegistry or provide explicit approval for this skill."
                 ));
             }
 
@@ -472,7 +481,9 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides a no-op task classifier for the orchestrator.
+     * Provides a cautious task classifier for the orchestrator.
+     * When no real task classifier is configured, this treats all tasks as
+     * UNKNOWN novelty and MEDIUM risk to prevent unsafe assumptions.
      */
     @Provides
     TaskClassifier taskClassifier() {
@@ -480,7 +491,9 @@ public class AepOrchestrationModule extends AbstractModule {
             @Override
             @NotNull
             public Promise<TaskClassification> classify(@NotNull String taskDescription, @NotNull String context) {
-                return Promise.of(new TaskClassification(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR, Map.of()));
+                return Promise.of(new TaskClassification(TaskRiskLevel.MEDIUM, TaskNovelty.UNKNOWN, Map.of(
+                        "reason", "No task classifier configured - using cautious defaults"
+                )));
             }
 
             @Override
@@ -489,30 +502,21 @@ public class AepOrchestrationModule extends AbstractModule {
                     @NotNull String taskDescription,
                     @NotNull String context,
                     @NotNull java.util.Map<String, String> metadata) {
-                return Promise.of(new TaskClassification(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR, metadata));
+                java.util.Map<String, String> enrichedMetadata = new java.util.LinkedHashMap<>(metadata);
+                enrichedMetadata.put("reason", "No task classifier configured - using cautious defaults");
+                return Promise.of(new TaskClassification(TaskRiskLevel.MEDIUM, TaskNovelty.UNKNOWN, enrichedMetadata));
             }
         };
     }
 
     /**
-     * Provides a no-op mode selection policy for the orchestrator.
+     * Provides the default mode selection policy for the orchestrator.
+     * This policy maps mastery state and version applicability to safe execution strategies,
+     * defaulting to human-gated for unknown states to prevent unsafe autonomous execution.
      */
     @Provides
     ModeSelectionPolicy modeSelectionPolicy() {
-        return new ModeSelectionPolicy() {
-            @Override
-            @NotNull
-            public Promise<com.ghatana.agent.runtime.mode.ModeSelectionResult> selectMode(
-                    @NotNull MasteryDecision decision,
-                    @NotNull TaskClassification classification,
-                    @NotNull com.ghatana.agent.context.version.VersionContext versionContext) {
-                // Return a default autonomous mode selection
-                return Promise.of(com.ghatana.agent.runtime.mode.ModeSelectionResult.autonomous(
-                        com.ghatana.agent.runtime.mode.ExecutionStrategy.DETERMINISTIC_EXECUTION,
-                        "No policy configured - using autonomous mode by default"
-                ));
-            }
-        };
+        return new DefaultModeSelectionPolicy();
     }
 
     /**
@@ -527,23 +531,50 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
+     * Provides the invariant monitor singleton.
+     *
+     * @return the invariant monitor instance
+     */
+    @Provides
+    InvariantMonitor invariantMonitor() {
+        return new DefaultInvariantMonitor();
+    }
+
+    /**
+     * Provides the agent trace ledger implementation.
+     *
+     * <p>Uses {@link HashChainedTraceAppender} for in-memory hash-chained trace storage.
+     * Production deployments should back this with a persistent ledger service.
+     *
+     * @return hash-chained trace ledger
+     */
+    @Provides
+    AgentTraceLedger agentTraceLedger() {
+        return new HashChainedTraceAppender();
+    }
+
+    /**
      * Provides a governed agent dispatcher wrapping the catalog dispatcher.
      *
-     * <p>This uses no-op implementations for governance components since the orchestrator
-     * does not require full mastery tracking and mode selection.
+     * <p>This uses real implementations for governance components to ensure
+     * safe dispatch with proper invariant monitoring and trace recording.
      *
      * @param catalogAgentDispatcher the base catalog dispatcher to wrap
+     * @param invariantMonitor the invariant monitor for pre-dispatch checks
+     * @param traceLedger the trace ledger for evidence recording
      * @param masteryAwareModeSelector the mode selector
      * @return governed agent dispatcher
      */
     @Provides
     GovernedAgentDispatcher governedAgentDispatcher(
             CatalogAgentDispatcher catalogAgentDispatcher,
+            InvariantMonitor invariantMonitor,
+            AgentTraceLedger traceLedger,
             MasteryAwareModeSelector masteryAwareModeSelector) {
         return new GovernedAgentDispatcher(
                 catalogAgentDispatcher,
-                null, // invariantMonitor - optional
-                null, // traceLedger - optional
+                invariantMonitor,
+                traceLedger,
                 masteryAwareModeSelector
         );
     }
@@ -569,6 +600,18 @@ public class AepOrchestrationModule extends AbstractModule {
                 return Promise.of(List.of());
             }
         };
+    }
+
+    /**
+     * Provides a durable learning delta repository for the orchestrator.
+     * Uses DataCloudLearningDeltaRepository backed by EntityRepository for persistent storage.
+     *
+     * @param entityRepository Data Cloud entity repository for durable persistence
+     * @return durable learning delta repository
+     */
+    @Provides
+    LearningDeltaRepository learningDeltaRepository(EntityRepository entityRepository) {
+        return new DataCloudLearningDeltaRepository(entityRepository);
     }
 
     /**

@@ -164,6 +164,11 @@ class DataCloudLearningRepositoriesTest extends EventloopTestBase {
                 List.of("episode-1"),
                 "evidence-1",
                 null,
-                NOW);
+                NOW,
+                "candidate-1",
+                null,
+                "tenant-1",
+                List.of("episode-1"),
+                null);
     }
 }

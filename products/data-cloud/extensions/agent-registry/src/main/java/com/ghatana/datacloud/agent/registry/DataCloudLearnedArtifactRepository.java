@@ -43,6 +43,11 @@ public final class DataCloudLearnedArtifactRepository implements LearnedArtifact
     private static final String F_PROMOTION_EVIDENCE_ID = "promotionEvidenceId";
     private static final String F_ROLLBACK_REF = "rollbackRef";
     private static final String F_CREATED_AT = "createdAt";
+    private static final String F_CANDIDATE_ID = "candidateId";
+    private static final String F_SKILL_ID = "skillId";
+    private static final String F_TENANT_ID = "tenantId";
+    private static final String F_SOURCE_EPISODE_IDS = "sourceEpisodeIds";
+    private static final String F_CONTENT_DIGEST = "contentDigest";
 
     private final DataCloudClient dataCloud;
     private final String tenantId;
@@ -85,10 +90,25 @@ public final class DataCloudLearnedArtifactRepository implements LearnedArtifact
 
     @Override
     public @NotNull Promise<List<LearnedArtifact>> findByCandidateId(@NotNull String candidateId) {
-        // Note: LearnedArtifact doesn't have a candidateId field directly
-        // This method returns empty list since artifacts are not linked to candidates in the current schema
-        // For proper idempotency, the artifact schema should include candidateId or promotionEvidenceId should be used
-        return Promise.of(List.of());
+        return dataCloud.queryEntities(tenantId, COLLECTION, fieldEq(F_CANDIDATE_ID, candidateId))
+                .map(entities -> entities.stream().map(e -> fromDataMap(e.getData())).toList());
+    }
+
+    @Override
+    public @NotNull Promise<List<LearnedArtifact>> findByTenantAndCandidateId(
+            @NotNull String queryTenantId, @NotNull String candidateId) {
+        return dataCloud.queryEntities(queryTenantId, COLLECTION,
+                        filterSpec(F_CANDIDATE_ID + " = '" + candidateId + "'"))
+                .map(entities -> entities.stream().map(e -> fromDataMap(e.getData())).toList());
+    }
+
+    @Override
+    public @NotNull Promise<List<LearnedArtifact>> findByTenantContentDigestAndTarget(
+            @NotNull String queryTenantId, @NotNull String contentDigest, @NotNull LearningTarget target) {
+        return dataCloud.queryEntities(queryTenantId, COLLECTION,
+                        filterSpec(F_CONTENT_DIGEST + " = '" + contentDigest + "' AND "
+                                + F_TARGET + " = '" + target.name() + "'"))
+                .map(entities -> entities.stream().map(e -> fromDataMap(e.getData())).toList());
     }
 
     private static Map<String, Object> toDataMap(LearnedArtifact artifact) {
@@ -103,6 +123,11 @@ public final class DataCloudLearnedArtifactRepository implements LearnedArtifact
         data.put(F_PROMOTION_EVIDENCE_ID, artifact.promotionEvidenceId());
         data.put(F_ROLLBACK_REF, artifact.rollbackRef());
         data.put(F_CREATED_AT, artifact.createdAt().toString());
+        data.put(F_CANDIDATE_ID, artifact.candidateId());
+        data.put(F_SKILL_ID, artifact.skillId());
+        data.put(F_TENANT_ID, artifact.tenantId());
+        data.put(F_SOURCE_EPISODE_IDS, artifact.sourceEpisodeIds());
+        data.put(F_CONTENT_DIGEST, artifact.contentDigest());
         return data;
     }
 
@@ -118,7 +143,12 @@ public final class DataCloudLearnedArtifactRepository implements LearnedArtifact
                 (List<String>) data.getOrDefault(F_PROVENANCE_REFS, List.of()),
                 str(data, F_PROMOTION_EVIDENCE_ID),
                 str(data, F_ROLLBACK_REF),
-                Instant.parse(str(data, F_CREATED_AT)));
+                Instant.parse(str(data, F_CREATED_AT)),
+                str(data, F_CANDIDATE_ID),
+                str(data, F_SKILL_ID),
+                str(data, F_TENANT_ID),
+                (List<String>) data.getOrDefault(F_SOURCE_EPISODE_IDS, List.of()),
+                str(data, F_CONTENT_DIGEST));
     }
 
     private static QuerySpecInterface fieldEq(String field, String value) {

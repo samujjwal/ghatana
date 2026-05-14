@@ -38,4 +38,31 @@ public interface LearnedArtifactRepository {
      * @return promise of list of artifacts for the candidate
      */
     @NotNull Promise<List<LearnedArtifact>> findByCandidateId(@NotNull String candidateId);
+
+    /**
+     * Finds artifacts by tenant and candidate ID for idempotency checks.
+     *
+     * <p>The pair {@code tenantId + candidateId} must be unique to prevent duplicate
+     * artifact creation when the same candidate is promoted more than once.
+     *
+     * @param tenantId    tenant identifier
+     * @param candidateId learning candidate identifier
+     * @return promise of list of artifacts matching the tenant + candidate pair
+     */
+    @NotNull Promise<List<LearnedArtifact>> findByTenantAndCandidateId(
+            @NotNull String tenantId, @NotNull String candidateId);
+
+    /**
+     * Finds artifacts by tenant, content digest, and learning target for idempotency checks.
+     *
+     * <p>The triple {@code tenantId + contentDigest + target} must be unique to prevent
+     * duplicate artifacts when the same content is promoted for the same target.
+     *
+     * @param tenantId      tenant identifier
+     * @param contentDigest SHA-256 digest of the artifact payload
+     * @param target        learning target
+     * @return promise of list of artifacts matching the idempotency triple
+     */
+    @NotNull Promise<List<LearnedArtifact>> findByTenantContentDigestAndTarget(
+            @NotNull String tenantId, @NotNull String contentDigest, @NotNull LearningTarget target);
 }

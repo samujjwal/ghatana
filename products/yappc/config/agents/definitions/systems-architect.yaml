@@ -60,7 +60,7 @@ learning:
   adaptationTargets:
     - PROCEDURAL_SKILL
     - SEMANTIC_FACT
-    - EPISODIC_CAPTURE
+    - EPISODIC_MEMORY
   skillRefs:
     - skillId: system-architecture
       requiredLevel: L3

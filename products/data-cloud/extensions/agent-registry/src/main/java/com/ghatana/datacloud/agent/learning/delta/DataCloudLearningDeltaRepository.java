@@ -227,6 +227,94 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
         return doUpdateState(deltaId, state, null);
     }
 
+    @Override
+    @NotNull
+    public Promise<LearningDelta> appendEvaluationResult(
+            @NotNull String deltaId,
+            @NotNull String evaluationRunId,
+            @NotNull String outcome,
+            @NotNull java.util.Map<String, Object> metrics) {
+        String tenantId = deltaToTenantId.get(deltaId);
+        UUID entityId = deltaToEntityId.get(deltaId);
+        if (tenantId == null || entityId == null) {
+            return Promise.of(null);
+        }
+        return entityRepository.findById(tenantId, COLLECTION, entityId)
+                .then(opt -> {
+                    if (opt.isEmpty()) {
+                        return Promise.of(null);
+                    }
+                    Entity existing = opt.get();
+                    LearningDelta current = LearningDeltaMapper.fromDataMap(existing.getData());
+                    
+                    // Append evaluation result to evaluation refs
+                    java.util.List<String> updatedEvalRefs = new java.util.ArrayList<>(current.evaluationRefs());
+                    updatedEvalRefs.add(evaluationRunId);
+                    
+                    Map<String, Object> updatedData = new HashMap<>(existing.getData());
+                    updatedData.put("evaluationRefs", updatedEvalRefs);
+                    
+                    // Store evaluation outcome and metrics in metadata
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> metadata = (java.util.Map<String, Object>) updatedData.getOrDefault("metadata", new HashMap<>());
+                    java.util.Map<String, Object> newMetadata = new HashMap<>(metadata);
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> evalResults = (java.util.Map<String, Object>) newMetadata.getOrDefault("evaluationResults", new HashMap<>());
+                    java.util.Map<String, Object> newEvalResults = new HashMap<>(evalResults);
+                    newEvalResults.put(evaluationRunId, Map.of(
+                            "outcome", outcome,
+                            "metrics", metrics,
+                            "timestamp", Instant.now().toEpochMilli()
+                    ));
+                    newMetadata.put("evaluationResults", newEvalResults);
+                    updatedData.put("metadata", newMetadata);
+                    
+                    Entity updated = existing.toBuilder().data(updatedData).build();
+                    return entityRepository.save(tenantId, updated)
+                            .map(saved -> LearningDeltaMapper.fromDataMap(saved.getData()));
+                });
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> appendPromotionResult(
+            @NotNull String deltaId,
+            @NotNull String promotionId,
+            @NotNull String outcome,
+            @Nullable String reason) {
+        String tenantId = deltaToTenantId.get(deltaId);
+        UUID entityId = deltaToEntityId.get(deltaId);
+        if (tenantId == null || entityId == null) {
+            return Promise.of(null);
+        }
+        return entityRepository.findById(tenantId, COLLECTION, entityId)
+                .then(opt -> {
+                    if (opt.isEmpty()) {
+                        return Promise.of(null);
+                    }
+                    Entity existing = opt.get();
+                    LearningDelta current = LearningDeltaMapper.fromDataMap(existing.getData());
+                    
+                    Map<String, Object> updatedData = new HashMap<>(existing.getData());
+                    
+                    // Store promotion result in metadata
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> metadata = (java.util.Map<String, Object>) updatedData.getOrDefault("metadata", new HashMap<>());
+                    java.util.Map<String, Object> newMetadata = new HashMap<>(metadata);
+                    newMetadata.put("promotionResult", Map.of(
+                            "promotionId", promotionId,
+                            "outcome", outcome,
+                            "reason", reason != null ? reason : "",
+                            "timestamp", Instant.now().toEpochMilli()
+                    ));
+                    updatedData.put("metadata", newMetadata);
+                    
+                    Entity updated = existing.toBuilder().data(updatedData).build();
+                    return entityRepository.save(tenantId, updated)
+                            .map(saved -> LearningDeltaMapper.fromDataMap(saved.getData()));
+                });
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

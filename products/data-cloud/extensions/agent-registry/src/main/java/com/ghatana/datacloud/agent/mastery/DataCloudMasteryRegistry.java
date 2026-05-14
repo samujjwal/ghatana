@@ -47,12 +47,6 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
     private final MasteryEvidenceRepository evidenceRepository;
     private final com.ghatana.agent.mastery.transition.MasteryTransitionPolicy transitionPolicy;
 
-    /** Reverse index: masteryId → tenantId, populated on every save(). */
-    private final ConcurrentHashMap<String, String> masteryIdToTenantId = new ConcurrentHashMap<>();
-
-    /** All tenant IDs seen via save(), used for cross-tenant findStale(). */
-    private final Set<String> knownTenantIds = ConcurrentHashMap.newKeySet();
-
     /**
      * Creates a new DataCloudMasteryRegistry.
      *
@@ -303,21 +297,38 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
             }
         }
 
-        Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
+        // Phase 7.1: Idempotent save/update by tenantId + masteryId
+        // First check if item already exists
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS,
+                Map.of("masteryId", item.masteryId()), null, 0, 1)
+                .then(entities -> {
+                    Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
+                    
+                    // Add optimistic locking version field
+                    long version = 1L;
+                    UUID entityId = UUID.randomUUID();
+                    
+                    if (!entities.isEmpty()) {
+                        // Item exists - use optimistic locking
+                        Entity existing = entities.get(0);
+                        Object existingVersion = existing.getData().get("version");
+                        version = existingVersion != null ? ((Number) existingVersion).longValue() + 1 : 1;
+                        entityId = existing.getId(); // Use existing entity ID
+                    }
+                    
+                    dataMap.put("version", version);
 
-        // Maintain reverse indexes so transition() and findStale() can look up the tenant.
-        masteryIdToTenantId.put(item.masteryId(), tenantId);
-        knownTenantIds.add(tenantId);
+                    Entity entity = Entity.builder()
+                            .id(entityId)
+                            .tenantId(tenantId)
+                            .collectionName(COLLECTION_MASTERY_ITEMS)
+                            .data(dataMap)
+                            .createdBy(item.agentId())
+                            .build();
 
-        Entity entity = Entity.builder()
-                .tenantId(tenantId)
-                .collectionName(COLLECTION_MASTERY_ITEMS)
-                .data(dataMap)
-                .createdBy(item.agentId())
-                .build();
-
-        return entityRepository.save(tenantId, entity)
-                .map(savedEntity -> MasteryItemMapper.fromDataMap(savedEntity.getData()));
+                    return entityRepository.save(tenantId, entity)
+                            .map(savedEntity -> MasteryItemMapper.fromDataMap(savedEntity.getData()));
+                });
     }
 
     @Override
@@ -421,18 +432,41 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
             return Promise.ofException(new IllegalArgumentException("tenantId is required for stale detection"));
         }
 
-        return entityRepository.count(tenantId, COLLECTION_MASTERY_ITEMS)
-                .then(count -> {
-                    int limit = count > 1000 ? 1000 : (int) count.longValue();
-                    return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS,
-                            Map.of(), null, 0, limit);
-                })
+        // Phase 7.1: Paginated stale scan instead of cap at 1000
+        int pageSize = 100;
+        int offset = 0;
+        
+        return findStalePaginated(tenantId, now, offset, pageSize, new ArrayList<>());
+    }
+    
+    /**
+     * Recursively scans for stale items with pagination.
+     * Phase 7.1: Supports large tenants by paginating instead of capping at 1000.
+     */
+    @NotNull
+    private Promise<List<MasteryItem>> findStalePaginated(
+            @NotNull String tenantId,
+            @NotNull Instant now,
+            int offset,
+            int pageSize,
+            List<MasteryItem> accumulated) {
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS,
+                Map.of(), null, offset, pageSize)
                 .then(entities -> {
-                    List<MasteryItem> staleItems = entities.stream()
+                    List<MasteryItem> pageStaleItems = entities.stream()
                             .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
                             .filter(item -> !item.isFresh(now))
                             .collect(Collectors.toList());
-                    return Promise.of(staleItems);
+                    
+                    accumulated.addAll(pageStaleItems);
+                    
+                    // If we got a full page, there might be more items
+                    if (entities.size() == pageSize) {
+                        return findStalePaginated(tenantId, now, offset + pageSize, pageSize, accumulated);
+                    }
+                    
+                    // No more items, return accumulated results
+                    return Promise.of(accumulated);
                 });
     }
 
@@ -472,25 +506,11 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                     "tenantId is required for mastery decisions"
             ));
         }
-        Map<String, Object> filter = new HashMap<>();
 
-        if (query.skillId() != null) {
-            filter.put("skillId", query.skillId());
-        }
-        if (query.agentId() != null) {
-            filter.put("agentId", query.agentId());
-        }
-
-        // Find matching mastery items (including MAINTENANCE_ONLY for proper mode selection)
-        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, null, 0, 50)
-                .then(entities -> {
-                    List<MasteryItem> matches = entities.stream()
-                            .map(e -> MasteryItemMapper.fromDataMap(e.getData()))
-                            .filter(item -> query.states() == null || query.states().contains(item.state()))
-                            .filter(item -> item.isFresh(Instant.now()))
-                            .toList();
-
-                    if (matches.isEmpty()) {
+        // Reuse findBest() for version-aware ranking (active > maintenance > unknown)
+        return findBest(query)
+                .then(bestOpt -> {
+                    if (bestOpt.isEmpty()) {
                         // No matching mastery - block with unknown state and zero confidence
                         String skillId = query.skillId() != null ? query.skillId() : "unknown";
                         return Promise.of(MasteryDecision.block(
@@ -503,10 +523,72 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                         ));
                     }
 
-                    // Get the best matching item (highest execution score)
-                    MasteryItem best = matches.stream()
-                            .max(Comparator.comparingDouble(item -> item.score().executionScore()))
-                            .orElse(matches.get(0));
+                    MasteryItem best = bestOpt.get();
+                    VersionApplicability applicability = VersionApplicability.UNKNOWN;
+                    
+                    // Compute version applicability if version context is available
+                    String versionContextStr = query.versionContext();
+                    if (versionContextStr != null && !versionContextStr.isEmpty() && best.versionScope() != null) {
+                        // Parse version context string into dependencies map
+                        Map<String, String> dependencies = new HashMap<>();
+                        String[] pairs = versionContextStr.split(",");
+                        for (String pair : pairs) {
+                            String[] kv = pair.split("=", 2);
+                            if (kv.length == 2) {
+                                dependencies.put(kv[0].trim(), kv[1].trim());
+                            }
+                        }
+                        VersionContext versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
+                        applicability = best.versionScope().classify(versionContext);
+                    }
+
+                    // Block if version is obsolete
+                    if (applicability == VersionApplicability.OBSOLETE) {
+                        return Promise.of(MasteryDecision.block(
+                                best.masteryId(),
+                                best.skillId(),
+                                best.state(),
+                                best.score(),
+                                best.versionScope(),
+                                "Version is obsolete for current runtime context"
+                        ));
+                    }
+
+                    // Block if version is maintenance but no legacy context matches
+                    if (applicability == VersionApplicability.MAINTENANCE && !best.state().requiresLegacyContext()) {
+                        return Promise.of(MasteryDecision.block(
+                                best.masteryId(),
+                                best.skillId(),
+                                best.state(),
+                                best.score(),
+                                best.versionScope(),
+                                "Maintenance version requires legacy context for state " + best.state()
+                        ));
+                    }
+
+                    // Block if terminal state
+                    if (best.state().isTerminal()) {
+                        return Promise.of(MasteryDecision.block(
+                                best.masteryId(),
+                                best.skillId(),
+                                best.state(),
+                                best.score(),
+                                best.versionScope(),
+                                "Mastery state is terminal: " + best.state()
+                        ));
+                    }
+
+                    // Block if stale
+                    if (!best.isFresh(Instant.now())) {
+                        return Promise.of(MasteryDecision.block(
+                                best.masteryId(),
+                                best.skillId(),
+                                best.state(),
+                                best.score(),
+                                best.versionScope(),
+                                "Mastery item is stale and requires refresh"
+                        ));
+                    }
 
                     // Determine if human approval or verification is required based on mastery state
                     boolean requiresHumanApproval = best.state() == MasteryState.PRACTICED;
@@ -519,7 +601,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                                 best.state(),
                                 best.score(),
                                 best.versionScope(),
-                                "Mastery state is PRACTICED - requires human approval"
+                                "Mastery state is PRACTICED - requires human approval (version applicability: " + applicability + ")"
                         ));
                     }
 
@@ -530,7 +612,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                                 best.state(),
                                 best.score(),
                                 best.versionScope(),
-                                "Mastery state is COMPETENT - requires verification",
+                                "Mastery state is COMPETENT - requires verification (version applicability: " + applicability + ")",
                                 best.evidenceRefs()
                         ));
                     }
@@ -541,7 +623,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                             best.state(),
                             best.score(),
                             best.versionScope(),
-                            "Mastery state is " + best.state() + " - execution allowed"
+                            "Mastery state is " + best.state() + " - execution allowed (version applicability: " + applicability + ")"
                     ));
                 });
     }

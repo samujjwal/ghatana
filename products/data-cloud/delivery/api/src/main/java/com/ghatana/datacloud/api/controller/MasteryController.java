@@ -5,6 +5,9 @@
 package com.ghatana.datacloud.api.controller;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
+import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.promotion.PromotionEngine;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryTransition;
@@ -37,15 +40,21 @@ public class MasteryController extends JsonServlet {
     private final com.ghatana.agent.mastery.MasteryRegistry masteryRegistry;
     private final ApprovalService approvalService;
     private final ObsolescenceDetector obsolescenceDetector;
+    private final LearningDeltaRepository learningDeltaRepository;
+    private final PromotionEngine promotionEngine;
 
     public MasteryController(
             @NotNull com.ghatana.agent.mastery.MasteryRegistry masteryRegistry,
             @NotNull ApprovalService approvalService,
-            @NotNull ObsolescenceDetector obsolescenceDetector
+            @NotNull ObsolescenceDetector obsolescenceDetector,
+            @NotNull LearningDeltaRepository learningDeltaRepository,
+            @NotNull PromotionEngine promotionEngine
     ) {
         this.masteryRegistry = masteryRegistry;
         this.approvalService = approvalService != null ? approvalService : ApprovalService.getInstance();
         this.obsolescenceDetector = obsolescenceDetector;
+        this.learningDeltaRepository = learningDeltaRepository;
+        this.promotionEngine = promotionEngine;
     }
 
     /**
@@ -580,6 +589,142 @@ public class MasteryController extends JsonServlet {
                                 explanation.put("versionScope", decision.versionScope());
                                 
                                 return ok(explanation);
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * List learning deltas with governance check.
+     * Phase 7.2: GET /tenants/{tenantId}/learning-deltas
+     */
+    public Promise<HttpResponse> listLearningDeltas(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        // Governance check: tenant must have access to learning data
+        return approvalService.checkAccess(tenantId, "learning:read")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to learning data"));
+                    }
+
+                    String skillId = request.getQueryParameter("skillId");
+                    String agentId = request.getQueryParameter("agentId");
+                    String limitStr = request.getQueryParameter("limit");
+                    String offsetStr = request.getQueryParameter("offset");
+
+                    int limit = limitStr != null ? Integer.parseInt(limitStr) : 100;
+                    int offset = offsetStr != null ? Integer.parseInt(offsetStr) : 0;
+
+                    // Query learning deltas from repository
+                    return learningDeltaRepository.findByTenant(tenantId, agentId, limit, offset)
+                            .map(deltas -> ok(deltas))
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Evaluate a learning delta with governance check.
+     * Phase 7.2: POST /tenants/{tenantId}/learning-deltas/{deltaId}/evaluate
+     */
+    public Promise<HttpResponse> evaluateLearningDelta(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String deltaId = request.getPathParameter("deltaId");
+        if (deltaId == null || deltaId.isBlank()) {
+            return Promise.of(badRequest("deltaId is required"));
+        }
+
+        // Governance check: tenant must have approval to evaluate learning
+        return approvalService.checkAccess(tenantId, "learning:evaluate")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to evaluate learning"));
+                    }
+
+                    return learningDeltaRepository.findById(deltaId)
+                            .then(deltaOpt -> {
+                                if (deltaOpt.isEmpty()) {
+                                    return Promise.of(notFound("Learning delta not found"));
+                                }
+                                LearningDelta delta = deltaOpt.get();
+
+                                // Validate tenant ownership
+                                if (!delta.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot evaluate learning delta from another tenant"));
+                                }
+
+                                // Use promotion engine to evaluate
+                                return promotionEngine.evaluate(delta)
+                                        .map(result -> ok(java.util.Map.of(
+                                                "deltaId", deltaId,
+                                                "evaluationResult", result
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Promote a learning delta with governance check.
+     * Phase 7.2: POST /tenants/{tenantId}/learning-deltas/{deltaId}/promote
+     */
+    public Promise<HttpResponse> promoteLearningDelta(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String deltaId = request.getPathParameter("deltaId");
+        if (deltaId == null || deltaId.isBlank()) {
+            return Promise.of(badRequest("deltaId is required"));
+        }
+
+        // Governance check: tenant must have approval to promote learning (dangerous operation)
+        return approvalService.checkAccess(tenantId, "learning:promote")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to promote learning - requires governance role"));
+                    }
+
+                    return learningDeltaRepository.findById(deltaId)
+                            .then(deltaOpt -> {
+                                if (deltaOpt.isEmpty()) {
+                                    return Promise.of(notFound("Learning delta not found"));
+                                }
+                                LearningDelta delta = deltaOpt.get();
+
+                                // Validate tenant ownership
+                                if (!delta.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot promote learning delta from another tenant"));
+                                }
+
+                                // Evaluate first, then promote with the result
+                                return promotionEngine.evaluate(delta)
+                                        .then(evaluationResult -> promotionEngine.promote(delta, evaluationResult, tenantId))
+                                        .map(result -> {
+                                            if (result.success()) {
+                                                return ok(java.util.Map.of(
+                                                        "deltaId", deltaId,
+                                                        "promotionResult", result,
+                                                        "message", "Learning delta promoted successfully"
+                                                ));
+                                            } else {
+                                                return ok(java.util.Map.of(
+                                                        "deltaId", deltaId,
+                                                        "promotionResult", result,
+                                                        "message", "Learning delta promotion failed: " + result.errorMessage().orElse("Unknown error")
+                                                ));
+                                            }
+                                        })
+                                        .whenException(e -> Promise.of(internalError(e)));
                             })
                             .whenException(e -> Promise.of(internalError(e)));
                 });

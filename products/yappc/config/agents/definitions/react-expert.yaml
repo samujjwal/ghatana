@@ -48,7 +48,7 @@ learning:
   adaptationTargets:
     - PROCEDURAL_SKILL
     - SEMANTIC_FACT
-    - EPISODIC_CAPTURE
+    - EPISODIC_MEMORY
   skillRefs:
     - skillId: react-component
       requiredLevel: L3

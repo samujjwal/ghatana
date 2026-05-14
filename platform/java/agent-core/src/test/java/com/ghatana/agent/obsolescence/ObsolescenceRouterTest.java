@@ -11,6 +11,7 @@ import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.MasteryTransitionResult;
 import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -40,10 +41,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     @DisplayName("Should route version mismatch to OBSOLETE state")
     void shouldRouteVersionMismatchToObsoleteState() {
         MasteryRegistry registry = mock(MasteryRegistry.class);
-        ObsolescenceRouter router = new ObsolescenceRouter(registry);
+        MasteryTransitionPolicy policy = (from, to, evidence) -> MasteryTransitionPolicy.TransitionValidation.success();
+        ObsolescenceRouter router = new ObsolescenceRouter(registry, policy);
 
         MasteryItem item = createMasteryItem();
-        when(registry.findBySkill(item.masteryId(), null))
+        when(registry.getById("tenant-123", item.masteryId()))
                 .thenReturn(Promise.of(java.util.Optional.of(item)));
         when(registry.transition(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
@@ -53,13 +55,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                         "Transition successful"
                 )));
 
-        ObsolescenceEvent event = new ObsolescenceEvent(
-                "event-1",
+        ObsolescenceEvent event = ObsolescenceEvent.of(
                 item.masteryId(),
                 "tenant-123",
                 ObsolescenceReason.VERSION_MISMATCH,
                 "Version mismatch detected",
-                Instant.now(),
                 List.of(),
                 Map.of(),
                 ObsolescenceEvent.Severity.MEDIUM,
@@ -76,10 +76,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     @DisplayName("Should route security vulnerability to RETIRED state")
     void shouldRouteSecurityVulnerabilityToRetiredState() {
         MasteryRegistry registry = mock(MasteryRegistry.class);
-        ObsolescenceRouter router = new ObsolescenceRouter(registry);
+        MasteryTransitionPolicy policy = (from, to, evidence) -> MasteryTransitionPolicy.TransitionValidation.success();
+        ObsolescenceRouter router = new ObsolescenceRouter(registry, policy);
 
         MasteryItem item = createMasteryItem();
-        when(registry.findBySkill(item.masteryId(), null))
+        when(registry.getById("tenant-123", item.masteryId()))
                 .thenReturn(Promise.of(java.util.Optional.of(item)));
         when(registry.transition(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
@@ -89,13 +90,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                         "Transition successful"
                 )));
 
-        ObsolescenceEvent event = new ObsolescenceEvent(
-                "event-1",
+        ObsolescenceEvent event = ObsolescenceEvent.of(
                 item.masteryId(),
                 "tenant-123",
                 ObsolescenceReason.SECURITY_VULNERABILITY,
                 "Security vulnerability detected",
-                Instant.now(),
                 List.of(),
                 Map.of(),
                 ObsolescenceEvent.Severity.HIGH,
@@ -112,10 +111,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     @DisplayName("Should route repeated failures to QUARANTINED state")
     void shouldRouteRepeatedFailuresToQuarantinedState() {
         MasteryRegistry registry = mock(MasteryRegistry.class);
-        ObsolescenceRouter router = new ObsolescenceRouter(registry);
+        MasteryTransitionPolicy policy = (from, to, evidence) -> MasteryTransitionPolicy.TransitionValidation.success();
+        ObsolescenceRouter router = new ObsolescenceRouter(registry, policy);
 
         MasteryItem item = createMasteryItem();
-        when(registry.findBySkill(item.masteryId(), null))
+        when(registry.getById("tenant-123", item.masteryId()))
                 .thenReturn(Promise.of(java.util.Optional.of(item)));
         when(registry.transition(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
@@ -125,13 +125,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                         "Transition successful"
                 )));
 
-        ObsolescenceEvent event = new ObsolescenceEvent(
-                "event-1",
+        ObsolescenceEvent event = ObsolescenceEvent.of(
                 item.masteryId(),
                 "tenant-123",
                 ObsolescenceReason.REPEATED_FAILURES,
                 "Repeated failures detected",
-                Instant.now(),
                 List.of(),
                 Map.of(),
                 ObsolescenceEvent.Severity.HIGH,
@@ -148,10 +146,11 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     @DisplayName("Should route multiple events")
     void shouldRouteMultipleEvents() {
         MasteryRegistry registry = mock(MasteryRegistry.class);
-        ObsolescenceRouter router = new ObsolescenceRouter(registry);
+        MasteryTransitionPolicy policy = (from, to, evidence) -> MasteryTransitionPolicy.TransitionValidation.success();
+        ObsolescenceRouter router = new ObsolescenceRouter(registry, policy);
 
         MasteryItem item = createMasteryItem();
-        when(registry.findBySkill(item.masteryId(), null))
+        when(registry.getById("tenant-123", item.masteryId()))
                 .thenReturn(Promise.of(java.util.Optional.of(item)));
         when(registry.transition(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
@@ -162,25 +161,21 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                 )));
 
         List<ObsolescenceEvent> events = List.of(
-                new ObsolescenceEvent(
-                        "event-1",
+                ObsolescenceEvent.of(
                         item.masteryId(),
                         "tenant-123",
                         ObsolescenceReason.VERSION_MISMATCH,
                         "Version mismatch detected",
-                        Instant.now(),
                         List.of(),
                         Map.of(),
                         ObsolescenceEvent.Severity.MEDIUM,
                         MasteryState.OBSOLETE
                 ),
-                new ObsolescenceEvent(
-                        "event-2",
+                ObsolescenceEvent.of(
                         item.masteryId(),
                         "tenant-123",
                         ObsolescenceReason.API_CHANGE,
                         "API changed",
-                        Instant.now(),
                         List.of(),
                         Map.of(),
                         ObsolescenceEvent.Severity.MEDIUM,
@@ -198,18 +193,17 @@ class ObsolescenceRouterTest extends EventloopTestBase {
     @DisplayName("Should fail when mastery item not found")
     void shouldFailWhenMasteryItemNotFound() {
         MasteryRegistry registry = mock(MasteryRegistry.class);
-        ObsolescenceRouter router = new ObsolescenceRouter(registry);
+        MasteryTransitionPolicy policy = (from, to, evidence) -> MasteryTransitionPolicy.TransitionValidation.success();
+        ObsolescenceRouter router = new ObsolescenceRouter(registry, policy);
 
-        when(registry.findBySkill("unknown-mastery", null))
+        when(registry.getById("tenant-123", "unknown-mastery"))
                 .thenReturn(Promise.of(java.util.Optional.empty()));
 
-        ObsolescenceEvent event = new ObsolescenceEvent(
-                "event-1",
+        ObsolescenceEvent event = ObsolescenceEvent.of(
                 "unknown-mastery",
                 "tenant-123",
                 ObsolescenceReason.VERSION_MISMATCH,
                 "Version mismatch detected",
-                Instant.now(),
                 List.of(),
                 Map.of(),
                 ObsolescenceEvent.Severity.MEDIUM,

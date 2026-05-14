@@ -140,7 +140,7 @@ public final class MasteryAwareMemoryRetriever {
                     MasteryItem masteryItem = skillMasteryItems.getOrDefault(item.getSkillId(), null);
                     if (masteryItem == null) {
                         // No mastery item found, use UNKNOWN state
-                        return isAllowedForRetrieval(MasteryState.UNKNOWN, versionContext, now);
+                        return isAllowedForRetrieval(MasteryState.UNKNOWN, versionContext, now, null);
                     }
                     // Check version applicability
                     VersionApplicability applicability = masteryItem.versionScope().classify(versionContext);
@@ -148,7 +148,7 @@ public final class MasteryAwareMemoryRetriever {
                         // Obsolete versions are always excluded
                         return false;
                     }
-                    return isAllowedForRetrieval(masteryItem.state(), versionContext, now);
+                    return isAllowedForRetrieval(masteryItem.state(), versionContext, now, applicability);
                 })
                 .toList();
 
@@ -161,25 +161,33 @@ public final class MasteryAwareMemoryRetriever {
     /**
      * Checks if a mastery state is allowed for retrieval.
      * Hard exclusion: obsolete, retired, and quarantined items are always excluded.
+     * MAINTENANCE_ONLY items are only allowed if version context classifies as MAINTENANCE.
      *
      * @param state mastery state
      * @param versionContext version context
      * @param now current time
+     * @param applicability version applicability (null if unknown)
      * @return true if allowed for retrieval
      */
     private boolean isAllowedForRetrieval(
             @NotNull MasteryState state,
             @NotNull VersionContext versionContext,
-            @NotNull Instant now) {
+            @NotNull Instant now,
+            @Nullable VersionApplicability applicability) {
         // Hard exclusion: these states are never allowed for retrieval
         return switch (state) {
             case OBSOLETE, RETIRED, QUARANTINED -> false;
             case MAINTENANCE_ONLY -> {
                 // Maintenance-only items are only allowed if version context matches legacy scope
-                // For now, allow but with lower priority
-                yield true;
+                // Strict enforcement: only allow when applicability is MAINTENANCE
+                yield applicability == VersionApplicability.MAINTENANCE;
             }
-            case UNKNOWN, OBSERVED, PRACTICED, COMPETENT, MASTERED -> true;
+            case UNKNOWN -> {
+                // UNKNOWN memory is only allowed in exploration mode (explicit opt-in)
+                // Default to blocking unless explicitly requested for fast-learning
+                yield false;
+            }
+            case OBSERVED, PRACTICED, COMPETENT, MASTERED -> true;
         };
     }
 
@@ -296,7 +304,7 @@ public final class MasteryAwareMemoryRetriever {
                                 if (applicability == VersionApplicability.OBSOLETE) {
                                     return false;
                                 }
-                                return isAllowedForRetrieval(item.state(), versionContext, Instant.now());
+                                return isAllowedForRetrieval(item.state(), versionContext, Instant.now(), applicability);
                             }));
                 });
     }

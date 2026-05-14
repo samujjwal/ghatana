@@ -352,6 +352,11 @@ export default tseslint.config(
                 '@ghatana/yappc-development-ui is deprecated (F-Y036). Migrate: BurndownChart / StoryCard / VelocityChart → @ghatana/design-system or yappc-ui. Do not add new imports.',
             },
             {
+              group: ['@yappc/yappc-ui', '@yappc/yappc-ui/*'],
+              message:
+                '@yappc/yappc-ui is an invalid double-scoped name. Use @yappc/ui (libs/yappc-ui) directly.',
+            },
+            {
               group: ['@yappc/initialization-ui', '@yappc/initialization-ui/*'],
               message:
                 '@yappc/initialization-ui has been deleted. Use PresetCard / ResourcesList from @yappc/ui.',

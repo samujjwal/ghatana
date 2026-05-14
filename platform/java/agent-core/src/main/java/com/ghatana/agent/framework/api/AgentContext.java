@@ -381,6 +381,66 @@ public interface AgentContext {
     }
 
     /**
+     * Gets the approval proof from metadata.
+     * Used for governance and approval validation.
+     *
+     * @return Approval proof, or null if not set
+     * @since 2.3.0
+     */
+    @Nullable
+    default com.ghatana.agent.approval.ApprovalProof getApprovalProof() {
+        Object value = getMetadata().get("approvalProof");
+        return value instanceof com.ghatana.agent.approval.ApprovalProof
+                ? (com.ghatana.agent.approval.ApprovalProof) value
+                : null;
+    }
+
+    /**
+     * Gets the verification proof from metadata.
+     * Used for governance and verification validation.
+     *
+     * @return Verification proof, or null if not set
+     * @since 2.3.0
+     */
+    @Nullable
+    default com.ghatana.agent.approval.VerificationProof getVerificationProof() {
+        Object value = getMetadata().get("verificationProof");
+        return value instanceof com.ghatana.agent.approval.VerificationProof
+                ? (com.ghatana.agent.approval.VerificationProof) value
+                : null;
+    }
+
+    /**
+     * Gets the evaluation run proof from metadata.
+     * Used for governance and evaluation validation.
+     *
+     * @return Evaluation run proof, or null if not set
+     * @since 2.3.0
+     */
+    @Nullable
+    default com.ghatana.agent.approval.EvaluationRunProof getEvaluationRunProof() {
+        Object value = getMetadata().get("evaluationRunProof");
+        return value instanceof com.ghatana.agent.approval.EvaluationRunProof
+                ? (com.ghatana.agent.approval.EvaluationRunProof) value
+                : null;
+    }
+
+    /**
+     * Gets the policy decision proof from metadata.
+     * Used for governance and policy validation.
+     *
+     * @return Policy decision proof, or null if not set
+     * @since 2.3.0
+     */
+    @Nullable
+    default com.ghatana.agent.approval.PolicyDecisionProof getPolicyDecisionProof() {
+        Object value = getMetadata().get("policyDecisionProof");
+        return value instanceof com.ghatana.agent.approval.PolicyDecisionProof
+                ? (com.ghatana.agent.approval.PolicyDecisionProof) value
+                : null;
+    }
+
+    /**
      * Creates a new AgentContext builder.
      * @return New builder
      */

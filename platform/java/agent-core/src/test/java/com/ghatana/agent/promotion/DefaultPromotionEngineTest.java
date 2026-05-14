@@ -27,6 +27,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.Mockito.times;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -170,14 +172,16 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         when(masteryRegistry.transition(any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
                         "existing-mastery-1", MasteryState.OBSERVED, MasteryState.COMPETENT, "txn-2")));
+        when(masteryRegistry.save(any()))
+                .thenReturn(Promise.of(existingItem));
         when(deltaRepository.updateState(any(), eq(LearningDeltaState.PROMOTED)))
                 .thenReturn(Promise.of(delta));
 
         PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isTrue();
-        // save() must NOT be called when item already exists
-        verify(masteryRegistry, never()).save(any());
+        // save() is called to update the existing item with delta data
+        verify(masteryRegistry).save(any());
     }
 
     @Test
@@ -188,6 +192,8 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
 
         when(masteryRegistry.query(any(MasteryQuery.class)))
                 .thenReturn(Promise.of(List.of()));
+        when(masteryRegistry.save(any()))
+                .thenReturn(Promise.of(buildMasteryItem("new-mastery-id")));
         when(masteryRegistry.transition(any()))
                 .thenReturn(Promise.of(MasteryTransitionResult.success(
                         "new-mastery-id", MasteryState.UNKNOWN, MasteryState.COMPETENT, "txn-3")));
@@ -197,8 +203,8 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
         PromotionResult result = runPromise(() -> promotionEngine.promote(delta, evaluation, delta.tenantId()));
 
         assertThat(result.success()).isTrue();
-        // save() must be called to bootstrap the initial item
-        verify(masteryRegistry).save(any());
+        // save() is called twice: once to bootstrap, once to update with delta data
+        verify(masteryRegistry, times(2)).save(any());
     }
 
     @Test

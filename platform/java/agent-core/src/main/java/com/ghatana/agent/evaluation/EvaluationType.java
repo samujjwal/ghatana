@@ -79,6 +79,16 @@ public enum EvaluationType {
     PROMPT_INJECTION,
 
     /**
+     * Output contract test - verifies output matches expected schema and constraints.
+     */
+    OUTPUT_CONTRACT,
+
+    /**
+     * Trace grade test - verifies trace quality and completeness.
+     */
+    TRACE_GRADE,
+
+    /**
      * Rollback/recovery test - verifies correct state restoration after failure.
      */
     ROLLBACK_RECOVERY

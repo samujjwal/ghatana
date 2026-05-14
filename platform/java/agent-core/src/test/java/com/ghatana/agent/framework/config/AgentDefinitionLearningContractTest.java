@@ -280,4 +280,95 @@ class AgentDefinitionLearningContractTest {
         // MASTERY_STATE should never be permitted
         assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
     }
+
+    // ---------------------------------------------------------------------------
+    // Section 13.3: Governance boundary tests
+    // ---------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("L5 agent definition materializes an offline-only learning contract")
+    void l5AgentDefinitionIsOfflineOnly() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("l5-agent")
+                .version("1.0.0")
+                .type(AgentType.PLANNING)
+                .learningLevel("L5")
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        // L5 is an offline-only governance tier — no online serving allowed
+        assertThat(contract.level().isOfflineOnly()).isTrue();
+        assertThat(contract.level()).isEqualTo(LearningLevel.L5);
+    }
+
+    @Test
+    @DisplayName("Governance L5 contract permits MASTERY_STATE via governanceWorkflow flag in metadata")
+    void governanceL5ContractPermitsMasteryStateThroughGovernanceWorkflow() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("governance-agent")
+                .version("1.0.0")
+                .type(AgentType.PLANNING)
+                .learningLevel("L5")
+                .label("agentType", "governance")
+                .metadata("governanceWorkflow", true)
+                .metadata("adaptationTargets", List.of("MASTERY_STATE"))
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        assertThat(contract.governanceWorkflow()).isTrue();
+        // Only the governance flag unlocks MASTERY_STATE — this is the sole authority path
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Non-governance L5 contract cannot permit MASTERY_STATE even with target in metadata")
+    void nonGovernanceL5ContractBlocksMasteryState() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("normal-l5-agent")
+                .version("1.0.0")
+                .type(AgentType.ADAPTIVE)
+                .learningLevel("L5")
+                // governanceWorkflow NOT set — normal agent path
+                .metadata("adaptationTargets", List.of("MASTERY_STATE"))
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        assertThat(contract.governanceWorkflow()).isFalse();
+        // Without governance workflow, MASTERY_STATE is always blocked
+        assertThat(contract.permits(LearningTarget.MASTERY_STATE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Governance contract requires promotion for MASTERY_STATE proposals")
+    void governanceContractRequiresPromotionForMasteryState() {
+        AgentDefinition definition = AgentDefinition.builder()
+                .id("governance-agent")
+                .version("1.0.0")
+                .type(AgentType.PLANNING)
+                .learningLevel("L5")
+                .label("agentType", "governance")
+                .metadata("governanceWorkflow", true)
+                .metadata("adaptationTargets", List.of("MASTERY_STATE"))
+                .build();
+
+        LearningContract contract = definition.toLearningContract();
+
+        // L5 governance contract must require promotion before MASTERY_STATE can be applied
+        assertThat(contract.requiresPromotionFor(LearningTarget.MASTERY_STATE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Sub-L5 agents that are online are not offline-only")
+    void subL5AgentsAreNotOfflineOnly() {
+        for (LearningLevel level : new LearningLevel[]{
+                LearningLevel.L0, LearningLevel.L1, LearningLevel.L2,
+                LearningLevel.L3, LearningLevel.L4}) {
+            assertThat(level.isOfflineOnly())
+                    .as("Level " + level + " should not be offline-only (may serve online responses)")
+                    .isFalse();
+        }
+    }
 }

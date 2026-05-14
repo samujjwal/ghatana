@@ -44,7 +44,7 @@ interoperability:
 learning:
   learningLevel: L1
   adaptationTargets:
-    - EPISODIC_CAPTURE
+    - EPISODIC_MEMORY
   skillRefs:
     - skillId: java-class-generation
       requiredLevel: L1

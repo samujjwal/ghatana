@@ -4,8 +4,10 @@
  */
 package com.ghatana.datacloud.agent.mastery;
 
+import com.ghatana.agent.mastery.ApplicabilityScope;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
+import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.mastery.MasteryTransitionResult;
@@ -58,7 +60,7 @@ class MasteryGovernanceIntegrationTest {
                 SKILL_ID,
                 MasteryState.MASTERED,
                 0.9,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When querying for mastery decision
@@ -69,7 +71,7 @@ class MasteryGovernanceIntegrationTest {
         // Then decision should allow execution
         // This would be implemented with real registry
         assertThat(masteredItem.state()).isEqualTo(MasteryState.MASTERED);
-        assertThat(masteredItem.score()).isGreaterThanOrEqualTo(0.8);
+        assertThat(masteredItem.score().correctness()).isGreaterThanOrEqualTo(0.8);
     }
 
     @Test
@@ -92,7 +94,7 @@ class MasteryGovernanceIntegrationTest {
                 SKILL_ID,
                 MasteryState.MAINTENANCE_ONLY,
                 0.7,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When attempting new work (non-legacy task)
@@ -110,7 +112,7 @@ class MasteryGovernanceIntegrationTest {
                 SKILL_ID,
                 MasteryState.OBSOLETE,
                 0.5,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When attempting execution
@@ -144,16 +146,16 @@ class MasteryGovernanceIntegrationTest {
         // Given a learning agent with sufficient evidence
         MasteryItem learningItem = createMasteryItem(
                 SKILL_ID,
-                MasteryState.LEARNING,
+                MasteryState.PRACTICED,
                 0.6,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When evidence is accumulated and promotion evaluated
         // Then state should advance to next level
         // Implementation would use PromotionEngine
 
-        assertThat(learningItem.state()).isEqualTo(MasteryState.LEARNING);
+        assertThat(learningItem.state()).isEqualTo(MasteryState.PRACTICED);
     }
 
     @Test
@@ -164,7 +166,7 @@ class MasteryGovernanceIntegrationTest {
                 SKILL_ID,
                 MasteryState.MASTERED,
                 0.9,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When environment changes making version obsolete
@@ -194,7 +196,7 @@ class MasteryGovernanceIntegrationTest {
                 SKILL_ID,
                 MasteryState.MASTERED,
                 0.9,
-                VersionScope.exact("1.0.0")
+                VersionScope.empty()
         );
 
         // When tenant B queries for same skill
@@ -213,7 +215,7 @@ class MasteryGovernanceIntegrationTest {
         // Then compatibility should be validated
         // Implementation would use VersionContextResolver
 
-        VersionScope versionScope = VersionScope.exact("1.0.0");
+        VersionScope versionScope = VersionScope.empty();
         assertThat(versionScope).isNotNull();
     }
 
@@ -224,16 +226,28 @@ class MasteryGovernanceIntegrationTest {
             MasteryState state,
             double score,
             VersionScope versionScope) {
-        return MasteryItem.builder()
-                .masteryId("mastery-" + skillId)
-                .skillId(skillId)
-                .agentId(AGENT_ID)
-                .tenantId(TENANT_A)
-                .state(state)
-                .score(score)
-                .versionScope(versionScope)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+        return new MasteryItem(
+                "mastery-" + skillId,
+                TENANT_A,
+                skillId,
+                "test-domain",
+                AGENT_ID,
+                "release-1.0.0",
+                state,
+                versionScope,
+                ApplicabilityScope.minimal(TENANT_A, "production"),
+                new MasteryScore(score, score, score, score, score, score, score),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Instant.now(),
+                Instant.now().plusSeconds(86400),
+                Map.of(),
+                score
+        );
     }
 }

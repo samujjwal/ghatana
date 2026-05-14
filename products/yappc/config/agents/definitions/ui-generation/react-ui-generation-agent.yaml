@@ -7,9 +7,9 @@ metadata:
   version: 1.0.0
   status: active
   owners:
-    - team: platform-engineering
-  summary: Generates accessible, design-system-aligned React components for YAPPC products.
-
+  - team: platform-engineering
+  summary: Generates accessible, design-system-aligned React components for YAPPC
+    products.
 identity:
   agentType: HYBRID
   subtype: llm
@@ -18,26 +18,27 @@ identity:
   determinismGuarantee: non-deterministic
   stateMutability: local-state
   failureMode: fail-closed
-
 learning:
   learningLevel: L3
   adaptationTargets:
-    - PROCEDURAL_SKILL
-    - EPISODIC_MEMORY
-    - SEMANTIC_FACT
-    - NEGATIVE_KNOWLEDGE
+  - PROCEDURAL_SKILL
+  - EPISODIC_MEMORY
+  - SEMANTIC_FACT
+  - NEGATIVE_KNOWLEDGE
   masteryBindings:
-    - skillRef: react-ui-generation
-      masteryPolicyRef: promotion-policy-v1
+  - namespace: yappc
+    registryRef: yappc-mastery-registry
+    versionPolicy: semver
+    freshnessPolicy: default
+    obsolescencePolicy: default
   skillRefs:
-    - react-ui-generation
+  - react-ui-generation
   masteryPolicyRefs:
-    - promotion-policy-v1
+  - promotion-policy-v1
   evaluationRefs:
-    - eval-pack-react-ui-quality-v1
+  - eval-pack-react-ui-quality-v1
   provenanceRequired: true
   promotionRequired: true
-
 memoryBindings:
   episodic:
     enabled: true
@@ -49,26 +50,22 @@ memoryBindings:
   procedural:
     enabled: true
     tier: LONG_TERM
-
 securityContract:
   inputValidation: strict
   outputSanitization: true
   tenantIsolation: required
   trustedMemoryOnly: true
   allowUntrustedToolOutput: false
-
 observabilityContract:
   metricsRequired: true
   tracingRequired: true
   logLevel: info
   correlationIdPropagation: required
   masteryDecisionLogged: true
-
 capabilities:
-  - react-component-generation
-  - accessibility-review
-  - design-system-alignment
-
+- react-component-generation
+- accessibility-review
+- design-system-alignment
 governance:
   requiresApproval: false
   requiresVerification: true

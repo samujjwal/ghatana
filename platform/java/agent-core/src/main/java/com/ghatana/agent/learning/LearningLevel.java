@@ -146,4 +146,47 @@ public enum LearningLevel {
             default -> false;
         };
     }
+
+    /**
+     * Returns true if this learning level — and <em>only</em> this level — permits
+     * the target, with no hierarchical inheritance from lower levels.
+     *
+     * <p>Use this method when you need to know whether a target is exclusively
+     * introduced at a specific level (for audit, UI presentation, or documentation
+     * purposes), rather than whether it is cumulatively allowed.
+     *
+     * <p>This is distinct from {@link #allows(LearningTarget)}, which is the
+     * declaration-time check for whether a configured learning level permits a
+     * target at all. {@code allowsAtLevelOnly} does <em>not</em> grant runtime
+     * permission — use {@code LearningContract#permits} (backed by
+     * {@code PromotionEngine}) for runtime enforcement.
+     *
+     * <p><strong>Runtime permission is NOT derived from this method alone.</strong>
+     * Even if {@code L5.allowsAtLevelOnly(MASTERY_STATE)} returns {@code true},
+     * normal agents are still blocked by {@code LearningContract}. Only the
+     * {@code PromotionEngine} and approved governance workflows may act on
+     * {@code MASTERY_STATE}.
+     *
+     * @param target the learning target to check
+     * @return true if this level exclusively introduces permission for the target
+     */
+    public boolean allowsAtLevelOnly(@org.jetbrains.annotations.NotNull LearningTarget target) {
+        return switch (this) {
+            case L0 -> false;
+            case L1 -> target == LearningTarget.EPISODIC_MEMORY;
+            case L2 -> target == LearningTarget.SEMANTIC_FACT
+                    || target == LearningTarget.RETRIEVAL_POLICY
+                    || target == LearningTarget.CONFIDENCE_THRESHOLD
+                    || target == LearningTarget.ROUTING_POLICY;
+            case L3 -> target == LearningTarget.PROCEDURAL_SKILL
+                    || target == LearningTarget.NEGATIVE_KNOWLEDGE;
+            case L4 -> target == LearningTarget.PROMPT_TEMPLATE
+                    || target == LearningTarget.PLANNER_POLICY;
+            // L5 exclusively introduces offline governance targets.
+            // MASTERY_STATE is gated here by design — allowsAtLevelOnly is for
+            // declaration/documentation purposes only, not runtime permission.
+            case L5 -> target == LearningTarget.MODEL_ADAPTER
+                    || target == LearningTarget.MASTERY_STATE;
+        };
+    }
 }

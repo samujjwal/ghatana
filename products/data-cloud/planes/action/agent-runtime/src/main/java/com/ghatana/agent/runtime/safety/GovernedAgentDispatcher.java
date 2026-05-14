@@ -300,9 +300,20 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         String skillId = enrichedCtx.getConfig("skillId") != null
                 ? enrichedCtx.getConfig("skillId").toString()
                 : null;
-        if (masteryRegistry != null && skillId == null) {
-            String reason = "Agent [" + agentId + "] is mastery-bound but no skillId is set in context";
-            log.warn("Dispatch rejected: missing skillId for mastery-bound agent {}", agentId);
+        
+        // Only require skillId if mastery registry is configured AND the release is mastery-bound
+        // A release is considered mastery-bound if it has a masteryPolicyPackId
+        boolean isMasteryBound = masteryRegistry != null && release != null 
+                && release.masteryPolicyPackId() != null && !release.masteryPolicyPackId().isBlank();
+        
+        if (isMasteryBound && skillId == null) {
+            String releaseId = release != null ? release.agentReleaseId() : "unknown";
+            String releaseVersion = release != null ? release.releaseVersion() : "unknown";
+            String reason = String.format(
+                    "Agent [%s] with release [%s, version %s] is mastery-bound (has masteryPolicyPackId: %s) but no skillId is set in context. " +
+                    "Recovery: provide skillId in context or disable mastery binding by removing masteryPolicyPackId from the release.",
+                    agentId, releaseId, releaseVersion, release.masteryPolicyPackId());
+            log.warn("Dispatch rejected: {} (agentId={}, releaseId={}, tenantId={})", reason, agentId, releaseId, tenantId);
             return denyDispatch(agentId, traceId, tenantId, reason);
         }
 
@@ -356,9 +367,18 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                         traceId, agentId, tenantId,
                         traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
                                 ? hc.getLastHash(tenantId) : "");
+                
+                // Extract resolved version context and include it in mastery query for version-aware decisions
+                String versionContextStr = "";
+                Object vcObj = ctxWithVersion.getConfig("versionContext");
+                if (vcObj instanceof VersionContext vc) {
+                    versionContextStr = vc.toString();
+                }
+                
                 MasteryQuery masteryQuery = MasteryQuery.bySkill(skillId)
                         .withAgentId(agentId)
-                        .withTenantId(tenantId);
+                        .withTenantId(tenantId)
+                        .withVersionContext(versionContextStr);
                 return masteryRegistry.decide(masteryQuery)
                         .then(masteryDecision ->
                                 traceLedger.append(masteryEventBuilder.build(
@@ -380,22 +400,35 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                                 log.warn("Dispatch rejected: {}", reason);
                                                 return denyDispatch(agentId, traceId, tenantId, reason);
                                             }
-                                            // Deny if approval required and not present
+                                            // Deny if approval required and proof not valid
                                             if (masteryDecision.requiresHumanApproval()) {
                                                 TraceEventBuilder approvalBuilder = new TraceEventBuilder(
                                                         traceId, agentId, tenantId,
                                                         traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc2
                                                                 ? hc2.getLastHash(tenantId) : "");
-                                                boolean hasApproval = Boolean.TRUE.equals(ctxWithVersion.getConfig("hasApproval"));
+                                                com.ghatana.agent.approval.ApprovalProof approvalProof = ctxWithVersion.getApprovalProof();
+                                                boolean approvalValid = approvalProof != null && approvalProof.isValidFor(
+                                                        tenantId, agentId, 
+                                                        release != null ? release.agentReleaseId() : null,
+                                                        skillId, null);
+                                                java.util.Map<String, String> approvalMetadata = new java.util.HashMap<>();
+                                                approvalMetadata.put("skillId", skillId);
+                                                approvalMetadata.put("required", "true");
+                                                approvalMetadata.put("present", String.valueOf(approvalProof != null));
+                                                if (approvalProof != null) {
+                                                    approvalMetadata.put("proofId", approvalProof.proofId());
+                                                    approvalMetadata.put("outcome", approvalProof.outcome().name());
+                                                    approvalMetadata.put("valid", String.valueOf(approvalValid));
+                                                }
                                                 return traceLedger.append(approvalBuilder.build(
                                                         TraceEventType.APPROVAL_CHECKED,
                                                         "Approval gate for skill " + skillId,
-                                                        Map.of("skillId", skillId, "required", "true",
-                                                                "present", String.valueOf(hasApproval))))
+                                                        approvalMetadata))
                                                         .then(ignored2 -> {
-                                                            if (!hasApproval) {
-                                                                String reason = "Mastery decision for skill " + skillId
-                                                                        + " requires approval but approval is absent";
+                                                            if (!approvalValid) {
+                                                                String reason = approvalProof == null
+                                                                        ? "Mastery decision for skill " + skillId + " requires approval but approval proof is absent"
+                                                                        : "Mastery decision for skill " + skillId + " requires approval but proof " + approvalProof.proofId() + " is invalid (outcome: " + approvalProof.outcome() + ", expired: " + approvalProof.isExpired() + ")";
                                                                 log.warn("Dispatch rejected: {}", reason);
                                                                 return denyDispatch(agentId, traceId, tenantId, reason);
                                                             }
@@ -403,22 +436,36 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                                                     tenantId, traceId, skillId);
                                                         });
                                             }
-                                            // Deny if verification required and not present
+                                            // Deny if verification required and proof not valid
                                             if (masteryDecision.requiresVerification()) {
                                                 TraceEventBuilder verifyBuilder = new TraceEventBuilder(
                                                         traceId, agentId, tenantId,
                                                         traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc3
                                                                 ? hc3.getLastHash(tenantId) : "");
-                                                boolean hasVerification = Boolean.TRUE.equals(ctxWithVersion.getConfig("hasVerification"));
+                                                com.ghatana.agent.approval.VerificationProof verificationProof = ctxWithVersion.getVerificationProof();
+                                                boolean verificationValid = verificationProof != null && verificationProof.isValidFor(
+                                                        tenantId, agentId,
+                                                        release != null ? release.agentReleaseId() : null,
+                                                        skillId, null);
+                                                java.util.Map<String, String> verificationMetadata = new java.util.HashMap<>();
+                                                verificationMetadata.put("skillId", skillId);
+                                                verificationMetadata.put("required", "true");
+                                                verificationMetadata.put("present", String.valueOf(verificationProof != null));
+                                                if (verificationProof != null) {
+                                                    verificationMetadata.put("proofId", verificationProof.proofId());
+                                                    verificationMetadata.put("outcome", verificationProof.outcome().name());
+                                                    verificationMetadata.put("type", verificationProof.verificationType().name());
+                                                    verificationMetadata.put("valid", String.valueOf(verificationValid));
+                                                }
                                                 return traceLedger.append(verifyBuilder.build(
                                                         TraceEventType.VERIFICATION_CHECKED,
                                                         "Verification gate for skill " + skillId,
-                                                        Map.of("skillId", skillId, "required", "true",
-                                                                "present", String.valueOf(hasVerification))))
+                                                        verificationMetadata))
                                                         .then(ignored2 -> {
-                                                            if (!hasVerification) {
-                                                                String reason = "Mastery decision for skill " + skillId
-                                                                        + " requires verification proof but it is absent";
+                                                            if (!verificationValid) {
+                                                                String reason = verificationProof == null
+                                                                        ? "Mastery decision for skill " + skillId + " requires verification but verification proof is absent"
+                                                                        : "Mastery decision for skill " + skillId + " requires verification but proof " + verificationProof.proofId() + " is invalid (outcome: " + verificationProof.outcome() + ", expired: " + verificationProof.isExpired() + ")";
                                                                 log.warn("Dispatch rejected: {}", reason);
                                                                 return denyDispatch(agentId, traceId, tenantId, reason);
                                                             }
@@ -450,11 +497,19 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                     traceId, agentId, tenantId,
                     traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
                             ? hc.getLastHash(tenantId) : "");
+            
+            // Extract resolved version context from context if available
+            VersionContext versionCtx = VersionContext.empty();
+            Object vcObj = ctx.getConfig("versionContext");
+            if (vcObj instanceof VersionContext) {
+                versionCtx = (VersionContext) vcObj;
+            }
+            
             return modeSelector.selectMode(
                     skillId, agentId, tenantId,
                     agentId + " task",
                     "",
-                    VersionContext.empty())
+                    versionCtx)
                     .then(modeResult -> {
                         AgentContext ctxWithMode = ctx.toBuilder()
                                 .addConfig("executionStrategy", modeResult.strategy().name())
@@ -470,22 +525,32 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                         "requiresApproval", String.valueOf(modeResult.requiresApproval()),
                                         "requiresVerification", String.valueOf(modeResult.requiresVerification()))))
                                 .then(ignored -> {
-                                    // Deny if mode requires approval and not present
+                                    // Deny if mode requires approval and proof not valid
                                     if (modeResult.requiresApproval()) {
-                                        boolean hasApproval = Boolean.TRUE.equals(ctxWithMode.getConfig("hasApproval"));
-                                        if (!hasApproval) {
-                                            String reason = "Mode selection requires approval for agent " + agentId
-                                                    + " but approval is absent";
+                                        com.ghatana.agent.approval.ApprovalProof approvalProof = ctxWithMode.getApprovalProof();
+                                        boolean approvalValid = approvalProof != null && approvalProof.isValidFor(
+                                                tenantId, agentId,
+                                                release != null ? release.agentReleaseId() : null,
+                                                skillId, null);
+                                        if (!approvalValid) {
+                                            String reason = approvalProof == null
+                                                    ? "Mode selection requires approval for agent " + agentId + " but approval proof is absent"
+                                                    : "Mode selection requires approval for agent " + agentId + " but proof " + approvalProof.proofId() + " is invalid (outcome: " + approvalProof.outcome() + ", expired: " + approvalProof.isExpired() + ")";
                                             log.warn("Dispatch rejected: {}", reason);
                                             return denyDispatch(agentId, traceId, tenantId, reason);
                                         }
                                     }
-                                    // Deny if mode requires verification and not present
+                                    // Deny if mode requires verification and proof not valid
                                     if (modeResult.requiresVerification()) {
-                                        boolean hasVerification = Boolean.TRUE.equals(ctxWithMode.getConfig("hasVerification"));
-                                        if (!hasVerification) {
-                                            String reason = "Mode selection requires verification for agent " + agentId
-                                                    + " but verification proof is absent";
+                                        com.ghatana.agent.approval.VerificationProof verificationProof = ctxWithMode.getVerificationProof();
+                                        boolean verificationValid = verificationProof != null && verificationProof.isValidFor(
+                                                tenantId, agentId,
+                                                release != null ? release.agentReleaseId() : null,
+                                                skillId, null);
+                                        if (!verificationValid) {
+                                            String reason = verificationProof == null
+                                                    ? "Mode selection requires verification for agent " + agentId + " but verification proof is absent"
+                                                    : "Mode selection requires verification for agent " + agentId + " but proof " + verificationProof.proofId() + " is invalid (outcome: " + verificationProof.outcome() + ", expired: " + verificationProof.isExpired() + ")";
                                             log.warn("Dispatch rejected: {}", reason);
                                             return denyDispatch(agentId, traceId, tenantId, reason);
                                         }
