@@ -275,22 +275,32 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             String tenantId
     ) {
         try {
-            // Query project metadata from DataCloud
+            // Query project metadata from DataCloud; handle async failures explicitly
             return dataCloudClient.findById(tenantId, "projects", projectId)
-                .map(entityOpt -> {
+                .then((entityOpt, e) -> {
+                    if (e != null) {
+                        log.error("DataCloud query failed for project: projectId={}, tenantId={}", projectId, tenantId, e);
+                        return Promise.of(Map.of(
+                            "projectId", projectId,
+                            "workspaceId", workspaceId,
+                            "tenantId", tenantId,
+                            "degraded", true,
+                            "degradedReason", "PROJECT_STATE_QUERY_FAILED"
+                        ));
+                    }
                     Map<String, Object> data = entityOpt.isPresent() ? entityOpt.get().data() : Map.of();
                     if (data.isEmpty()) {
                         log.warn("Project state not found: projectId={}, tenantId={}", projectId, tenantId);
-                        return Map.of(
+                        return Promise.of(Map.of(
                             "projectId", projectId,
                             "workspaceId", workspaceId,
                             "tenantId", tenantId,
                             "degraded", true,
                             "degradedReason", "PROJECT_STATE_NOT_FOUND"
-                        );
+                        ));
                     }
                     // Parse JSON response (simplified - in production use ObjectMapper)
-                    return Map.of(
+                    return Promise.of(Map.of(
                         "projectId", projectId,
                         "workspaceId", workspaceId,
                         "tenantId", tenantId,
@@ -298,7 +308,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         "tier", data.getOrDefault("tier", "PRO"),
                         "status", data.getOrDefault("status", "active"),
                         "createdAt", data.getOrDefault("createdAt", Instant.now().toString())
-                    );
+                    ));
                 });
         } catch (Exception e) {
             log.error("Unexpected error in queryProjectState", e);

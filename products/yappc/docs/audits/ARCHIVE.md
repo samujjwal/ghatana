@@ -4,10 +4,12 @@ This document consolidates completed audit findings and implementation plans for
 
 ## Archive Summary
 
-- **yappc-todos.md**: Completed P0-1 through P1-12 tasks
+- **yappc-todos.md**: Completed P0-1 through P1-12 tasks, and sections 14–17 (2026-05-12)
 - **API_CLIENT_REFACTORING_PLAN.md**: Completed Phase 1-4 refactoring
 - **REPOSITORY_CLEANUP_PLAN.md**: Created cleanup plan
 - **I18N_A11Y_IMPLEMENTATION_PLAN.md**: Created i18n/a11y implementation plan
+- **DUPLICATE_RUNTIME_SYSTEMS_REPORT.md**: Archived 2026-05-12 (one-off audit from 2026-03-27, consolidation complete)
+- **DIAGNOSTICS_BURN_DOWN_PLAN.md**: Archived 2026-05-12 (burn-down plan from active diagnostics sweep, no longer active)
 
 ## Completed Audits
 

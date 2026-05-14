@@ -240,6 +240,151 @@ public final class BusinessMetrics {
         return totalPhaseTransitions.get();
     }
 
+    // ── Critical-flow canonical metrics ──────────────────────────────────────
+
+    /**
+     * Canonical metric names for the ten critical YAPPC flows.
+     *
+     * <p>All of these emit tags: {@code tenantId}, {@code workspaceId},
+     * {@code projectId}, {@code phase}, {@code operation}, {@code outcome},
+     * {@code degraded}, {@code errorClass}, {@code correlationId}.
+     */
+    public static final String METRIC_PHASE_PACKET_BUILD    = "yappc.flow.phase_packet_build.total";
+    public static final String METRIC_DASHBOARD_ACTION      = "yappc.flow.dashboard_action.total";
+    public static final String METRIC_GENERATION_RUN        = "yappc.flow.generation_run.total";
+    public static final String METRIC_GENERATION_REVIEW     = "yappc.flow.generation_review.total";
+    public static final String METRIC_PREVIEW_SESSION       = "yappc.flow.preview_session.total";
+    public static final String METRIC_SOURCE_IMPORT         = "yappc.flow.source_import.total";
+    public static final String METRIC_RESIDUAL_REVIEW       = "yappc.flow.residual_review.total";
+    public static final String METRIC_EVIDENCE_SEARCH       = "yappc.flow.evidence_search.total";
+    public static final String METRIC_POLICY_EVALUATION     = "yappc.flow.policy_evaluation.total";
+    public static final String METRIC_LEARNING_PROMOTION    = "yappc.flow.learning_promotion.total";
+
+    /**
+     * Records a single increment for any critical YAPPC flow using the canonical nine-tag set.
+     *
+     * <p>Prefer the flow-specific helper methods below for self-documenting call sites.
+     *
+     * @param metric        metric name — use one of the {@code METRIC_*} constants
+     * @param tenantId      owning tenant
+     * @param workspaceId   workspace within the tenant
+     * @param projectId     project within the workspace
+     * @param phase         lifecycle phase
+     * @param operation     specific sub-operation
+     * @param outcome       {@code "SUCCESS"}, {@code "BLOCKED"}, {@code "ERROR"}, etc.
+     * @param degraded      {@code true} when served in degraded mode
+     * @param errorClass    exception class name, or {@code null}
+     * @param correlationId request correlation / trace id
+     */
+    public void recordCriticalFlow(
+            String metric,
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String phase,
+            String operation,
+            String outcome,
+            boolean degraded,
+            String errorClass,
+            String correlationId) {
+        Tags tags = Tags.of(
+                Tag.of("tenantId",      safe(tenantId)),
+                Tag.of("workspaceId",   safe(workspaceId)),
+                Tag.of("projectId",     safe(projectId)),
+                Tag.of("phase",         safe(phase)),
+                Tag.of("operation",     safe(operation)),
+                Tag.of("outcome",       safe(outcome)),
+                Tag.of("degraded",      String.valueOf(degraded)),
+                Tag.of("errorClass",    errorClass  != null ? errorClass  : "none"),
+                Tag.of("correlationId", correlationId != null ? correlationId : "none")
+        );
+        Counter.builder(metric)
+                .description("YAPPC critical flow metric: " + metric)
+                .tags(tags)
+                .register(registry)
+                .increment();
+    }
+
+    /** Records a phase packet build event. */
+    public void recordPhasePacketBuild(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_PHASE_PACKET_BUILD,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a dashboard action execution event. */
+    public void recordDashboardAction(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_DASHBOARD_ACTION,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a generation run event (code generation attempt). */
+    public void recordGenerationRun(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_GENERATION_RUN,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a generation review event (apply / reject / rollback). */
+    public void recordGenerationReview(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_GENERATION_REVIEW,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a preview session event (create / validate). */
+    public void recordPreviewSession(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_PREVIEW_SESSION,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a source import event. */
+    public void recordSourceImport(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_SOURCE_IMPORT,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a residual island review event. */
+    public void recordResidualIslandReview(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_RESIDUAL_REVIEW,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a platform evidence search event. */
+    public void recordPlatformEvidenceSearch(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_EVIDENCE_SEARCH,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a policy evaluation event. */
+    public void recordPolicyEvaluation(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_POLICY_EVALUATION,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
+    /** Records a learning promotion proposal event. */
+    public void recordLearningPromotionProposal(String tenantId, String workspaceId, String projectId,
+            String phase, String operation, String outcome, boolean degraded,
+            String errorClass, String correlationId) {
+        recordCriticalFlow(METRIC_LEARNING_PROMOTION,
+                tenantId, workspaceId, projectId, phase, operation, outcome, degraded, errorClass, correlationId);
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     private static String safe(String value) {

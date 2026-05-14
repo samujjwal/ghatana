@@ -235,6 +235,120 @@ class BusinessMetricsTest {
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
+    // ── Critical-flow canonical metrics ──────────────────────────────────────
+
+    @Nested
+    @DisplayName("recordCriticalFlow")
+    class RecordCriticalFlow {
+
+        @Test
+        @DisplayName("emits counter with all nine canonical tags")
+        void emitsAllNineCanonicalTags() {
+            metrics.recordCriticalFlow(
+                    BusinessMetrics.METRIC_GENERATION_RUN,
+                    "tenant-1", "ws-1", "proj-1",
+                    "BUILD", "generate", "SUCCESS",
+                    false, null, "corr-abc");
+
+            double count = registry.find(BusinessMetrics.METRIC_GENERATION_RUN)
+                    .tag("tenantId",      "tenant-1")
+                    .tag("workspaceId",   "ws-1")
+                    .tag("projectId",     "proj-1")
+                    .tag("phase",         "BUILD")
+                    .tag("operation",     "generate")
+                    .tag("outcome",       "SUCCESS")
+                    .tag("degraded",      "false")
+                    .tag("errorClass",    "none")
+                    .tag("correlationId", "corr-abc")
+                    .counter()
+                    .count();
+            assertThat(count).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("normalises null values to sentinel strings")
+        void normalisesNullsToSentinels() {
+            metrics.recordCriticalFlow(
+                    BusinessMetrics.METRIC_DASHBOARD_ACTION,
+                    null, null, null, null, null, null, true, null, null);
+
+            double count = registry.find(BusinessMetrics.METRIC_DASHBOARD_ACTION)
+                    .tag("tenantId",      "unknown")
+                    .tag("workspaceId",   "unknown")
+                    .tag("errorClass",    "none")
+                    .tag("correlationId", "none")
+                    .tag("degraded",      "true")
+                    .counter()
+                    .count();
+            assertThat(count).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("phase packet build delegates to canonical counter")
+        void phasePacketBuildDelegatesToCanonical() {
+            metrics.recordPhasePacketBuild("t1", "ws1", "proj1",
+                    "DESIGN", "build", "SUCCESS", false, null, "c1");
+            assertThat(registry.find(BusinessMetrics.METRIC_PHASE_PACKET_BUILD)
+                    .tag("outcome", "SUCCESS").counter().count()).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("generation review with operation=rollback is recorded")
+        void generationReviewRollbackIsRecorded() {
+            metrics.recordGenerationReview("t1", "ws1", "proj1",
+                    "BUILD", "rollback", "SUCCESS", false, null, null);
+            assertThat(registry.find(BusinessMetrics.METRIC_GENERATION_REVIEW)
+                    .tag("operation", "rollback").counter().count()).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("preview session create and validate are independent counters")
+        void previewSessionCreateAndValidateAreIndependent() {
+            metrics.recordPreviewSession("t1", "ws1", "p1", "TEST", "create", "SUCCESS", false, null, null);
+            metrics.recordPreviewSession("t1", "ws1", "p1", "TEST", "validate", "BLOCKED", false, null, null);
+
+            assertThat(registry.find(BusinessMetrics.METRIC_PREVIEW_SESSION)
+                    .tag("operation", "create").counter().count()).isEqualTo(1.0);
+            assertThat(registry.find(BusinessMetrics.METRIC_PREVIEW_SESSION)
+                    .tag("operation", "validate").counter().count()).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("degraded source import has degraded=true tag")
+        void degradedSourceImportTagged() {
+            metrics.recordSourceImport("t1", "ws1", "p1", "INIT", "import", "ERROR", true, "IOException", "c9");
+            assertThat(registry.find(BusinessMetrics.METRIC_SOURCE_IMPORT)
+                    .tag("degraded",   "true")
+                    .tag("errorClass", "IOException")
+                    .counter().count()).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("all ten flow metrics have independent counters")
+        void allTenFlowMetricsAreIndependent() {
+            String[] metricNames = {
+                BusinessMetrics.METRIC_PHASE_PACKET_BUILD,
+                BusinessMetrics.METRIC_DASHBOARD_ACTION,
+                BusinessMetrics.METRIC_GENERATION_RUN,
+                BusinessMetrics.METRIC_GENERATION_REVIEW,
+                BusinessMetrics.METRIC_PREVIEW_SESSION,
+                BusinessMetrics.METRIC_SOURCE_IMPORT,
+                BusinessMetrics.METRIC_RESIDUAL_REVIEW,
+                BusinessMetrics.METRIC_EVIDENCE_SEARCH,
+                BusinessMetrics.METRIC_POLICY_EVALUATION,
+                BusinessMetrics.METRIC_LEARNING_PROMOTION,
+            };
+            for (String metricName : metricNames) {
+                metrics.recordCriticalFlow(metricName, "t", "w", "p", "ph", "op", "OK", false, null, null);
+            }
+            for (String metricName : metricNames) {
+                assertThat(registry.find(metricName).counter()).as("counter for %s", metricName).isNotNull();
+            }
+        }
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+
     private double gaugeValue(String name) { 
         var gauge = registry.find(name).gauge(); 
         assertThat(gauge).as("Gauge '%s' must be registered", name).isNotNull(); 

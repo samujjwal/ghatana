@@ -2,7 +2,7 @@
 
 **Purpose**: Track all production-grade implementation tasks for YAPPC hardening  
 **Status**: Active  
-**Last Updated**: 2026-05-11  
+**Last Updated**: 2026-05-12  
 **Source**: docs/implementation/README.md  
 **Based on snapshot**: samujjwal/ghatana@5e03f330990461913b4b8963dbee39f5ac75143a  
 
@@ -29,6 +29,10 @@
 | P1-6.2-A | PhasePacket blocker query async migration | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java | `queryPhaseBlockers` used blocking `phaseGateValidator.validate(...).getResult()` in packet build flow | Converted blocker query to Promise-based flow and threaded async result into `buildPhasePacket` chain | File-level diagnostics clean; broader Gradle test execution still blocked by unrelated `platform/java/agent-core` compile failures | completed |
 | P1-6.2-B | PhasePacket artifacts/activity async migration | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java | `queryCompletedArtifacts` and `queryActivityFeed` used blocking `getResult()` calls in packet assembly | Converted both methods to Promise-based queries and threaded async results through `buildPhasePacket` chain | File-level diagnostics clean; broader Gradle test execution remains externally blocked by `platform/java/agent-core` compile failures | completed |
 | P1-6.2-C | Project-state fallback fail-closed hardening | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/phase/PhasePacketServiceImpl.java | Missing/failed project-state query returned synthetic project name and permissive tier, masking degraded runtime state | Replaced synthetic fallback payloads with explicit degraded markers (`degraded=true`, explicit degraded reason codes) to force degraded packet path | File-level diagnostics clean; module-level test run still blocked by unrelated `platform/java/agent-core` compile failures | completed |
+| TODO-14 | Data model idempotency | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/generation/GenerationServiceImpl.java, GenerationRunRepository.java | Duplicate generation run creation and non-idempotent review decisions | Added idempotency guard: `findByIdempotencyKey` before create, `reviewDecision` rejects duplicate calls with `ALREADY_DECIDED` error | ServiceObservabilityTest + GenerationServiceImpl unit tests | completed |
+| TODO-15 | Observability metric tags | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/common/ServiceObservability.java, src/main/java/com/ghatana/yappc/services/metrics/BusinessMetrics.java | No canonical flow tags or per-flow metrics | Added `flowTags()` (9-key canonical tag map) and `recordCriticalFlow()` + 10 per-flow wrapper methods with Micrometer Tags | BusinessMetricsTest (30 tests pass), ServiceObservabilityTest (5 tests pass) | completed |
+| TODO-16 | Preview session security hardening | products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/PreviewSessionApiController.java | UNTRUSTED/SEMI_TRUSTED artifacts not blocked; token scope not validated | Added trust level enforcement (UNTRUSTED blocked 403, SEMI_TRUSTED requires acknowledged=true), scope validation via `validateTokenWithScope()` | PreviewSessionApiControllerTest (13 tests pass: ProductionStartupGuard×3, TrustLevelEnforcement×3, TokenValidation×3, plus 2 existing, plus parity tests) | completed |
+| TODO-17 | Docs and cleanup | products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md | Tracker not updated with completed sections | Updated tracker to reflect sections 14–17 completed; verified canonical docs do not claim production readiness for unimplemented areas | N/A | completed |
 
 ---
 

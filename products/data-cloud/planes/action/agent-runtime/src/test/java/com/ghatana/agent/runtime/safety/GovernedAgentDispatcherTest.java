@@ -26,6 +26,9 @@ import com.ghatana.agent.release.InMemoryAgentReleaseRepository;
 import com.ghatana.agent.runtime.mode.ExecutionStrategy;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
 import com.ghatana.agent.runtime.mode.ModeSelectionResult;
+import com.ghatana.agent.runtime.mode.TaskClassification;
+import com.ghatana.agent.runtime.mode.TaskNovelty;
+import com.ghatana.agent.runtime.mode.TaskRiskLevel;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,12 +48,14 @@ import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.VersionApplicability;
 import com.ghatana.agent.mastery.VersionScope;
 import com.ghatana.agent.runtime.mode.SupervisionMode;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,8 +117,21 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         
         // Stub modeSelector to return a default mode
         ModeSelectionResult defaultResult = ModeSelectionResult.autonomous(ExecutionStrategy.DETERMINISTIC_EXECUTION, "Default mode");
+        MasteryDecision defaultDecision = MasteryDecision.allow(
+                "default-item", "default-skill", MasteryState.PRACTICED,
+                MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
+                "Default decision");
+        MasteryAwareModeSelector.EnrichedModeSelectionResult enrichedDefaultResult = new MasteryAwareModeSelector.EnrichedModeSelectionResult(
+                defaultResult.strategy(),
+                defaultResult.supervision(),
+                defaultResult.reasoning(),
+                Map.of(),
+                defaultDecision,
+                TaskClassification.of(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR),
+                VersionContext.empty()
+        );
         lenient().when(modeSelector.selectMode(any(), any(), any()))
-                .thenReturn(Promise.of(defaultResult));
+                .thenReturn(Promise.of(enrichedDefaultResult));
     }
 
     // =========================================================================
@@ -168,6 +186,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                 .capabilityMaturityProfile("L1");
         if (state == AgentReleaseState.ACTIVE || state == AgentReleaseState.CANARY) {
             builder.masteryPolicyPackId("mastery-pack-1");
+            builder.learningContractId("learning-contract-1");
         }
         return builder.build();
     }
@@ -426,6 +445,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .capabilityMaturityProfile("L2")
                     .policyPackId("pp-123")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -533,6 +553,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-456")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -568,6 +589,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-789")
                     .masteryPolicyPackId("mastery-pack-1")
+                    .learningContractId("learning-contract-1")
                     .build(); 
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
@@ -750,9 +772,12 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("missing skillId denies when mastery registry is configured")
         void missingSkillIdDeniesWhenMasteryBound() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
+            AgentRelease masteryBoundRelease = release("test-agent", AgentReleaseState.ACTIVE);
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
+                    .thenReturn(Promise.of(Optional.of(masteryBoundRelease)));
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
-                    delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    delegate, invariantMonitor, traceLedger, releaseRepository, null, null,
+                    masteryRegistry, null, null, null, null);
 
             // ctx has no skillId
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
@@ -765,10 +790,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("quarantined mastery denies dispatch")
         void quarantinedMasteryDenies() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision quarantinedDecision = new MasteryDecision(
+            MasteryDecision quarantinedDecision = MasteryDecision.block(
                     "item-1", "skill-1", MasteryState.QUARANTINED,
                     MasteryScore.zero(), VersionScope.empty(),
-                    false, false, false, "Quarantined due to unsafe behavior", List.of());
+                    VersionApplicability.OBSOLETE,
+                    true, "Quarantined due to unsafe behavior");
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(quarantinedDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -777,7 +803,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -789,10 +815,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("obsolete mastery denies dispatch")
         void obsoleteMasteryDenies() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision obsoleteDecision = new MasteryDecision(
+            MasteryDecision obsoleteDecision = MasteryDecision.block(
                     "item-2", "skill-2", MasteryState.OBSOLETE,
                     MasteryScore.zero(), VersionScope.empty(),
-                    false, false, false, "Skill is obsolete", List.of());
+                    VersionApplicability.OBSOLETE,
+                    true, "Skill is obsolete");
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(obsoleteDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -801,7 +828,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -813,10 +840,10 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("practiced mastery requires approval when requiresHumanApproval=true")
         void practicedMasteryRequiresApproval() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision practicedDecision = new MasteryDecision(
+            MasteryDecision practicedDecision = MasteryDecision.requireApproval(
                     "item-3", "skill-3", MasteryState.PRACTICED,
                     MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
-                    true, true, false, "Practiced mastery requires approval", List.of());
+                    "Practiced mastery requires approval");
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(practicedDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -826,7 +853,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -838,10 +865,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("practiced mastery dispatches when approval is present")
         void practicedMasteryDispatchesWithApproval() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision practicedDecision = new MasteryDecision(
+            MasteryDecision practicedDecision = MasteryDecision.allow(
                     "item-4", "skill-4", MasteryState.PRACTICED,
                     MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
-                    true, true, false, "Practiced mastery requires approval", List.of());
+                    VersionApplicability.ACTIVE,
+                    0.5, false, "Practiced mastery dispatches with approval");
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(practicedDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -851,7 +879,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -862,10 +890,10 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("competent mastery requires verification proof")
         void competentMasteryRequiresVerification() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision competentDecision = new MasteryDecision(
+            MasteryDecision competentDecision = MasteryDecision.requireVerification(
                     "item-5", "skill-5", MasteryState.COMPETENT,
                     MasteryScore.correctnessOnly(0.7), VersionScope.empty(),
-                    true, false, true, "Competent mastery requires verification", List.of());
+                    "Competent mastery requires verification", List.of());
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(competentDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -875,7 +903,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -887,10 +915,10 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         @DisplayName("trace ledger receives MASTERY_DECISION_MADE event when mastery configured")
         void traceLedgerReceivesMasteryDecisionEvent() {
             MasteryRegistry masteryRegistry = mock(MasteryRegistry.class);
-            MasteryDecision allowDecision = new MasteryDecision(
+            MasteryDecision allowDecision = MasteryDecision.allow(
                     "item-6", "skill-6", MasteryState.MASTERED,
                     MasteryScore.perfect(), VersionScope.empty(),
-                    true, false, false, "Mastered", List.of());
+                    "Mastered");
             when(masteryRegistry.decide(any())).thenReturn(Promise.of(allowDecision));
 
             AgentContext skillCtx = ctx.toBuilder()
@@ -899,7 +927,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    masteryRegistry, null, null, null);
+                    masteryRegistry, null, null, null, null);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 
@@ -916,7 +944,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    null, resolver, null, null);
+                    null, resolver, null, null, null);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
 
@@ -944,8 +972,21 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             MasteryAwareModeSelector modeSelector = mock(MasteryAwareModeSelector.class);
             ModeSelectionResult autoResult = ModeSelectionResult.autonomous(
                     ExecutionStrategy.DETERMINISTIC_EXECUTION, "direct execution");
+            MasteryDecision masteryDecision = MasteryDecision.allow(
+                    "mode-item", "mode-skill", MasteryState.PRACTICED,
+                    MasteryScore.correctnessOnly(0.5), VersionScope.empty(),
+                    "Mode decision");
+            MasteryAwareModeSelector.EnrichedModeSelectionResult enrichedResult = new MasteryAwareModeSelector.EnrichedModeSelectionResult(
+                    autoResult.strategy(),
+                    autoResult.supervision(),
+                    autoResult.reasoning(),
+                    Map.of(),
+                    masteryDecision,
+                    TaskClassification.of(TaskRiskLevel.LOW, TaskNovelty.FAMILIAR),
+                    VersionContext.empty()
+            );
             when(modeSelector.selectMode(anyString(), anyString(), anyString(), anyString(), anyString(), any()))
-                    .thenReturn(Promise.of(autoResult));
+                    .thenReturn(Promise.of(enrichedResult));
 
             AgentContext skillCtx = ctx.toBuilder()
                     .addConfig("skillId", "skill-mode")
@@ -953,7 +994,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, null, null, null,
-                    null, null, null, modeSelector);
+                    null, null, null, modeSelector, null);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "input", skillCtx));
 

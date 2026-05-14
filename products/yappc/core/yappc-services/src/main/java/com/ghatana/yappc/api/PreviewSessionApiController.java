@@ -173,6 +173,31 @@ public final class PreviewSessionApiController {
                             .build());
                 }
 
+                // Determine effective trust level from payload or policy default
+                PreviewSecurityPolicy.TrustLevel effectiveTrustLevel =
+                        payload.trustLevel() != null ? payload.trustLevel() : securityPolicy.defaultTrustLevel();
+
+                // UNTRUSTED artifacts are never permitted to create preview sessions
+                if (effectiveTrustLevel == PreviewSecurityPolicy.TrustLevel.UNTRUSTED) {
+                    return auditPreviewEvent("preview.session.create", "blocked", principal,
+                            payload.projectId(), payload.artifactId(),
+                            Map.of("reason", "untrusted_artifact_blocked", "trustLevel", effectiveTrustLevel.name()))
+                            .map(ignored -> HttpResponse.ofCode(403)
+                                    .withJson("{\"error\":\"Untrusted artifacts cannot create preview sessions\"}")
+                                    .build());
+                }
+
+                // SEMI_TRUSTED artifacts require explicit user acknowledgement before session creation
+                if (effectiveTrustLevel == PreviewSecurityPolicy.TrustLevel.SEMI_TRUSTED
+                        && !Boolean.TRUE.equals(payload.acknowledged())) {
+                    return auditPreviewEvent("preview.session.create", "blocked", principal,
+                            payload.projectId(), payload.artifactId(),
+                            Map.of("reason", "semi_trusted_requires_acknowledgement", "trustLevel", effectiveTrustLevel.name()))
+                            .map(ignored -> HttpResponse.ofCode(403)
+                                    .withJson("{\"error\":\"Semi-trusted artifacts require explicit acknowledgement before preview\"}")
+                                    .build());
+                }
+
                 // Determine duration
                 int requestedDuration = payload.duration() != null ? payload.duration() : DEFAULT_SESSION_DURATION_SECONDS;
                 int actualDuration = Math.min(requestedDuration, MAX_SESSION_DURATION_SECONDS);
@@ -180,8 +205,8 @@ public final class PreviewSessionApiController {
                 Instant createdAt = Instant.now();
                 Instant expiresAt = createdAt.plusSeconds(actualDuration);
 
-                // Determine trust level and data classification
-                PreviewSecurityPolicy.TrustLevel trustLevel = securityPolicy.defaultTrustLevel();
+                // Use the already-validated effective trust level
+                PreviewSecurityPolicy.TrustLevel trustLevel = effectiveTrustLevel;
                 PreviewSecurityPolicy.DataClassification dataClassification = PreviewSecurityPolicy.DataClassification.INTERNAL;
 
                 // Build session token with trust classification
@@ -251,7 +276,11 @@ public final class PreviewSessionApiController {
                             .build());
                 }
 
-                ValidationResult validation = validateToken(payload.sessionToken());
+                ValidationResult validation = validateTokenWithScope(
+                        payload.sessionToken(),
+                        payload.expectedTenantId(),
+                        payload.expectedProjectId()
+                );
                 Map<String, Object> responseBody = new LinkedHashMap<>();
                 responseBody.put("valid", validation.valid());
                 responseBody.put("reason", validation.reason());
@@ -306,6 +335,25 @@ public final class PreviewSessionApiController {
         } catch (Exception e) {
             return new ValidationResult(false, "Invalid preview session token");
         }
+    }
+
+    private ValidationResult validateTokenWithScope(String sessionToken, String expectedTenantId, String expectedProjectId) {
+        ValidationResult base = validateToken(sessionToken);
+        if (!base.valid()) {
+            return base;
+        }
+        try {
+            Map<String, Object> decoded = decodeSessionToken(sessionToken);
+            if (expectedTenantId != null && !expectedTenantId.equals(decoded.get("tenantId"))) {
+                return new ValidationResult(false, "Token tenant does not match requesting context");
+            }
+            if (expectedProjectId != null && !expectedProjectId.equals(decoded.get("projectId"))) {
+                return new ValidationResult(false, "Token project does not match requesting context");
+            }
+        } catch (Exception e) {
+            return new ValidationResult(false, "Could not decode token for scope validation");
+        }
+        return base;
     }
 
     private Map<String, Object> normalizeScope(
@@ -394,11 +442,17 @@ public final class PreviewSessionApiController {
             Integer duration,
             Map<String, Object> scope,
             PreviewSecurityPolicy.TrustLevel trustLevel,
-            PreviewSecurityPolicy.DataClassification dataClassification
+            PreviewSecurityPolicy.DataClassification dataClassification,
+            Boolean acknowledged
     ) {
     }
 
-    public record ValidatePreviewSessionRequest(String sessionToken) {
+    public record ValidatePreviewSessionRequest(
+            String sessionToken,
+            String expectedTenantId,
+            String expectedWorkspaceId,
+            String expectedProjectId
+    ) {
     }
 
     private record ValidationResult(boolean valid, String reason) {
