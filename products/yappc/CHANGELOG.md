@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: kernel + yappc 1 [`462a414`](https://github.com/samujjwal/ghatana/commit/462a41402c214ccbdf009bab563428fa58505a5f)
 - **Changed**: kernel refactor 2 [`4649ce6`](https://github.com/samujjwal/ghatana/commit/4649ce641eec73b638db9428498c2409cbe54497)
 
 - **Changed**: agent refactor 1 [`9f0647e`](https://github.com/samujjwal/ghatana/commit/9f0647e4a3a46729f372556a010f8e9e0149e106)
