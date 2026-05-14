@@ -232,7 +232,13 @@ export interface ValidationError {
 export interface ProductLifecyclePlan {
   schemaVersion: '1.0.0';
   runId: string;
+  correlationId: string;
   productId: string;
+  productUnitRef?: string;
+  providerRefs?: {
+    registryProviderId: string;
+    sourceProviderId: string;
+  };
   phase: ProductLifecyclePhase;
   phaseMode: 'parallel' | 'sequential' | 'dag';
   lifecycleProfile: string;
@@ -278,6 +284,7 @@ export interface ProductLifecycleStep {
   phase: ProductLifecyclePhase;
   surface: string;
   adapter: string;
+  adapterSelectionSource?: 'profile-default' | 'product-config-override';
   description: string;
   dependsOn: string[];
   estimatedDurationMs: number;
@@ -294,11 +301,20 @@ export interface ProductLifecycleStep {
  */
 export interface ProductLifecycleStepResult {
   stepId: string;
+  phase?: ProductLifecyclePhase;
+  surface?: string;
+  adapter?: string;
   status: 'succeeded' | 'failed' | 'skipped';
+  startedAt?: string;
+  completedAt?: string;
   exitCode?: number;
   stdout?: string;
   stderr?: string;
   durationMs: number;
+  artifacts?: ProductArtifact[];
+  errors?: string[];
+  warnings?: string[];
+  correlationId?: string;
 }
 
 /**
@@ -374,6 +390,8 @@ export interface ProductGatePlan {
   gateName: string;
   required: boolean;
   phase: ProductLifecyclePhase;
+  source: string;
+  providerId?: string;
   status: 'pending' | 'passed' | 'failed' | 'skipped';
 }
 

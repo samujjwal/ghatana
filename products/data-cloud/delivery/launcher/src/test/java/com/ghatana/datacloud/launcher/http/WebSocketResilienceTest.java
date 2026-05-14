@@ -171,7 +171,11 @@ class WebSocketResilienceTest {
 
             // Server should still be alive — verify via HTTP health check
             Thread.sleep(200); 
-            HttpResponse<String> health = httpClient.send( 
+            // Use a fresh HTTP client for the health check to avoid connection reuse issues
+            HttpClient freshHttpClient = HttpClient.newBuilder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .build(); 
+            HttpResponse<String> health = freshHttpClient.send( 
                 HttpRequest.newBuilder().GET() 
                     .uri(URI.create("http://127.0.0.1:" + port + "/health")) 
                     .build(), 

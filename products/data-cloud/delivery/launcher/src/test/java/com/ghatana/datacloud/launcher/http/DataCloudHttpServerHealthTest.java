@@ -216,26 +216,32 @@ class DataCloudHttpServerHealthTest {
 
     @Test
     @DisplayName("ready returns 200 when required dependencies are up")
-    void readyReturns200WhenRequiredDependenciesAreUp() throws Exception { 
-        server = new DataCloudHttpServer(mockClient, port) 
-            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 8)) 
-            .withHealthSubsystem("event_store", () -> Map.of("status", "UP", "latency_ms", 11)); 
-        server.start(); 
+    void readyReturns200WhenRequiredDependenciesAreUp() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 8))
+            .withHealthSubsystem("event_store", () -> Map.of("status", "UP", "latency_ms", 11));
+        server.start();
 
-        HttpResponse<String> response = get("/ready");
+        // Use a fresh HttpClient to avoid connection reuse issues from previous tests
+        HttpClient freshHttpClient = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/ready"))
+            .GET()
+            .build();
+        HttpResponse<String> response = freshHttpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isEqualTo(200); 
+        assertThat(response.statusCode()).isEqualTo(200);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
-        assertThat(body).containsEntry("status", "READY"); 
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "READY");
         @SuppressWarnings("unchecked")
         Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
         @SuppressWarnings("unchecked")
         Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
         @SuppressWarnings("unchecked")
         Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store");
-        assertThat(database).containsEntry("status", "UP"); 
-        assertThat(eventStore).containsEntry("status", "UP"); 
+        assertThat(database).containsEntry("status", "UP");
+        assertThat(eventStore).containsEntry("status", "UP");
     }
 
     @Test

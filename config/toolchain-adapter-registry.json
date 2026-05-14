@@ -237,7 +237,9 @@
         "rollback"
       ],
       "requires": [
-        "composeFile",
+        "composeFile"
+      ],
+      "optionalRequires": [
         "envFile"
       ],
       "outputs": [

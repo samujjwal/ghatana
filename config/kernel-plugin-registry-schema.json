@@ -14,7 +14,7 @@
       "description": "Plugin definitions",
       "additionalProperties": {
         "type": "object",
-        "required": ["id", "name", "kind", "status", "safeForDefault", "capabilities", "lifecycleHooks", "healthOutput", "gateOutput", "implementationRef", "tests"],
+        "required": ["id", "name", "kind", "status", "safeForDefault", "capabilities", "lifecycleHooks", "healthOutput", "gateOutput", "implementationRef", "tests", "maturity", "ownerLayer", "currentLimitations"],
         "properties": {
           "id": {
             "type": "string",
@@ -93,6 +93,23 @@
               "type": "string"
             },
             "description": "Test file paths (required when status=implemented)"
+          },
+          "maturity": {
+            "type": "string",
+            "enum": ["declared-only", "pilot", "implemented"],
+            "description": "Implementation maturity signal independent of plugin category"
+          },
+          "ownerLayer": {
+            "type": "string",
+            "description": "Owning platform layer"
+          },
+          "currentLimitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Known limitations for declared or partial plugins"
           }
         },
         "allOf": [

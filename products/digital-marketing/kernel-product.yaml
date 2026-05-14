@@ -27,6 +27,8 @@ plugins:
     required: true
   identity-entitlement:
     required: true
+  security:
+    required: true
   preview-security:
     required: false
 

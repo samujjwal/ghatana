@@ -16,4 +16,8 @@ export type HealthStatus =
   | "blocked"
   | "failed"
   | "skipped"
-  | "unknown";
+  | "unknown"
+  | "requires-approval"
+  | "requires-verification"
+  | "obsolete"
+  | "quarantined";

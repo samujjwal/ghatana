@@ -1,139 +1,159 @@
-/**
- * Check script for kernel plugin registry.
- *
- * Validates the kernel-plugin-registry.json file against its schema.
- */
+#!/usr/bin/env node
 
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const registryPath = join(repoRoot, 'config', 'kernel-plugin-registry.json');
+const schemaPath = join(repoRoot, 'config', 'kernel-plugin-registry-schema.json');
 
-const REGISTRY_PATH = join(__dirname, '..', 'config', 'kernel-plugin-registry.json');
-const SCHEMA_PATH = join(__dirname, '..', 'config', 'kernel-plugin-registry-schema.json');
+const validKinds = new Set([
+  'pre-phase',
+  'post-phase',
+  'pre-gate',
+  'post-gate',
+  'pre-deployment',
+  'post-deployment',
+  'platform-plugin',
+  'product-plugin',
+]);
 
-function loadJson(path) {
-  try {
-    const content = readFileSync(path, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    console.error(`Error reading ${path}:`, error.message);
-    process.exit(1);
-  }
+const validStatuses = new Set(['declared', 'implemented']);
+const validMaturities = new Set(['declared-only', 'pilot', 'implemented']);
+const validHooks = new Set([
+  'onProductRegistered',
+  'onProductBootstrapped',
+  'onProductDevStarted',
+  'onProductValidated',
+  'onProductTested',
+  'onProductBuildStarted',
+  'onProductBuildCompleted',
+  'onProductPackaged',
+  'onProductDeployStarted',
+  'onProductDeployed',
+  'onProductVerified',
+  'onProductPromoted',
+  'onProductRolledBack',
+  'onProductRetired',
+]);
+
+function loadJson(filePath) {
+  return JSON.parse(readFileSync(filePath, 'utf8'));
 }
 
-function validatePluginEntry(id, entry, errors) {
-  if (!entry.id || entry.id !== id) {
+function isNamespacedCapability(capability) {
+  return typeof capability === 'string' && /^[a-z0-9-]+\.[a-z0-9][a-z0-9.-]*$/.test(capability);
+}
+
+function assertArray(entry, field, id, errors) {
+  if (!Array.isArray(entry[field])) {
+    errors.push(`Plugin "${id}" must have array field "${field}"`);
+    return [];
+  }
+  return entry[field];
+}
+
+function checkPlugin(id, entry, errors, seenIds) {
+  if (seenIds.has(entry.id)) {
+    errors.push(`Duplicate plugin id "${entry.id}"`);
+  }
+  seenIds.add(entry.id);
+
+  if (entry.id !== id) {
     errors.push(`Plugin entry key "${id}" does not match entry.id "${entry.id}"`);
   }
-
-  if (!entry.name) {
-    errors.push(`Plugin "${id}" is missing required field "name"`);
+  if (typeof entry.name !== 'string' || entry.name.length === 0) {
+    errors.push(`Plugin "${id}" is missing name`);
   }
-
-  if (!entry.kind) {
-    errors.push(`Plugin "${id}" is missing required field "kind"`);
-  }
-
-  const validKinds = [
-    'pre-phase',
-    'post-phase',
-    'pre-gate',
-    'post-gate',
-    'pre-deployment',
-    'post-deployment',
-    'platform-plugin',
-    'product-plugin',
-  ];
-
-  if (entry.kind && !validKinds.includes(entry.kind)) {
+  if (!validKinds.has(entry.kind)) {
     errors.push(`Plugin "${id}" has invalid kind "${entry.kind}"`);
   }
-
-  // Validate new required fields
-  if (!entry.status) {
-    errors.push(`Plugin "${id}" is missing required field "status"`);
-  }
-
-  const validStatuses = ['declared', 'implemented'];
-  if (entry.status && !validStatuses.includes(entry.status)) {
+  if (!validStatuses.has(entry.status)) {
     errors.push(`Plugin "${id}" has invalid status "${entry.status}"`);
   }
-
   if (typeof entry.safeForDefault !== 'boolean') {
-    errors.push(`Plugin "${id}" must have a boolean "safeForDefault" field`);
+    errors.push(`Plugin "${id}" must declare boolean safeForDefault`);
+  }
+  if (!validMaturities.has(entry.maturity)) {
+    errors.push(`Plugin "${id}" has invalid maturity "${entry.maturity}"`);
+  }
+  if (typeof entry.ownerLayer !== 'string' || entry.ownerLayer.length === 0) {
+    errors.push(`Plugin "${id}" must declare ownerLayer`);
+  }
+  if (!Array.isArray(entry.currentLimitations) || entry.currentLimitations.length === 0) {
+    errors.push(`Plugin "${id}" must declare currentLimitations`);
   }
 
-  // Validate invariants from the plan
+  const capabilities = assertArray(entry, 'capabilities', id, errors);
+  if (capabilities.length === 0) {
+    errors.push(`Plugin "${id}" must declare at least one capability`);
+  }
+  for (const capability of capabilities) {
+    if (!isNamespacedCapability(capability)) {
+      errors.push(`Plugin "${id}" capability "${String(capability)}" must be namespaced`);
+    }
+  }
+
+  for (const hook of assertArray(entry, 'lifecycleHooks', id, errors)) {
+    if (!validHooks.has(hook)) {
+      errors.push(`Plugin "${id}" has unknown lifecycle hook "${String(hook)}"`);
+    }
+  }
+  assertArray(entry, 'healthOutput', id, errors);
+  assertArray(entry, 'gateOutput', id, errors);
+  const tests = assertArray(entry, 'tests', id, errors);
+
   if (entry.safeForDefault === true && entry.status !== 'implemented') {
-    errors.push(`Plugin "${id}" has safeForDefault=true but status is "${entry.status}" (must be "implemented")`);
+    errors.push(`Plugin "${id}" has safeForDefault=true but is not implemented`);
   }
-
-  if (entry.status === 'implemented' && !entry.implementationRef) {
-    errors.push(`Plugin "${id}" has status="implemented" but missing implementationRef`);
+  if (entry.maturity === 'declared-only' && entry.safeForDefault === true) {
+    errors.push(`Plugin "${id}" is declared-only and cannot be safeForDefault`);
   }
-
-  if (entry.status === 'implemented' && (!entry.tests || !Array.isArray(entry.tests) || entry.tests.length === 0)) {
-    errors.push(`Plugin "${id}" has status="implemented" but tests array is empty or missing`);
-  }
-
-  if (!Array.isArray(entry.capabilities)) {
-    errors.push(`Plugin "${id}" must have an array "capabilities" field`);
-  } else if (entry.capabilities.length === 0) {
-    errors.push(`Plugin "${id}" must have non-empty capabilities array`);
-  }
-
-  if (!Array.isArray(entry.lifecycleHooks)) {
-    errors.push(`Plugin "${id}" must have an array "lifecycleHooks" field`);
-  }
-
-  // Validate new required fields
-  if (!Array.isArray(entry.healthOutput)) {
-    errors.push(`Plugin "${id}" must have an array "healthOutput" field`);
-  }
-
-  if (!Array.isArray(entry.gateOutput)) {
-    errors.push(`Plugin "${id}" must have an array "gateOutput" field`);
-  }
-
-  if (entry.implementationRef === undefined) {
-    errors.push(`Plugin "${id}" is missing required field "implementationRef"`);
-  }
-
-  if (!Array.isArray(entry.tests)) {
-    errors.push(`Plugin "${id}" must have an array "tests" field`);
+  if (entry.status === 'implemented') {
+    if (typeof entry.implementationRef !== 'string' || entry.implementationRef.length === 0) {
+      errors.push(`Plugin "${id}" is implemented but missing implementationRef`);
+    } else {
+      const implementationPath = join(repoRoot, entry.implementationRef);
+      if (!existsSync(implementationPath)) {
+        errors.push(`Plugin "${id}" implementation file does not exist: ${entry.implementationRef}`);
+      }
+      if (entry.kind === 'platform-plugin' && entry.implementationRef.includes('/products/')) {
+        errors.push(`Platform plugin "${id}" implementationRef must not point into products/*`);
+      }
+    }
+    if (tests.length === 0) {
+      errors.push(`Plugin "${id}" is implemented but has no tests`);
+    }
+    for (const testPath of tests) {
+      if (!existsSync(join(repoRoot, testPath))) {
+        errors.push(`Plugin "${id}" test file does not exist: ${testPath}`);
+      }
+    }
   }
 }
 
 function main() {
-  if (!existsSync(REGISTRY_PATH)) {
-    console.error(`Plugin registry not found at ${REGISTRY_PATH}`);
-    process.exit(1);
+  if (!existsSync(registryPath)) {
+    throw new Error(`Plugin registry not found at ${registryPath}`);
+  }
+  if (!existsSync(schemaPath)) {
+    throw new Error(`Plugin registry schema not found at ${schemaPath}`);
   }
 
-  if (!existsSync(SCHEMA_PATH)) {
-    console.error(`Plugin registry schema not found at ${SCHEMA_PATH}`);
-    process.exit(1);
-  }
-
-  const registry = loadJson(REGISTRY_PATH);
-  const schema = loadJson(SCHEMA_PATH);
-
-  console.log('Validating kernel plugin registry...');
-
+  loadJson(schemaPath);
+  const registry = loadJson(registryPath);
   const errors = [];
 
-  if (!registry.version) {
-    errors.push('Registry is missing required field "version"');
+  if (typeof registry.version !== 'string') {
+    errors.push('Registry is missing version');
   }
-
   if (!registry.plugins || typeof registry.plugins !== 'object') {
-    errors.push('Registry is missing required field "plugins"');
+    errors.push('Registry is missing plugins');
   } else {
+    const seenIds = new Set();
     for (const [id, entry] of Object.entries(registry.plugins)) {
-      validatePluginEntry(id, entry, errors);
+      checkPlugin(id, entry, errors, seenIds);
     }
   }
 
@@ -145,8 +165,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log('Plugin registry validation passed.');
-  console.log(`Found ${Object.keys(registry.plugins).length} plugins.`);
+  console.log(`Plugin registry validation passed for ${Object.keys(registry.plugins).length} plugins.`);
 }
 
 main();

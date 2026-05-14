@@ -637,7 +637,7 @@ class AepHttpServerLifecycleTest {
             waitForServerReady(port); 
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Consent Review", "DATA_ACCESS_CONSENTS"); 
+                createCampaignAndGetId(httpClient, "tenant-1", "Consent Review", "DATA_ACCESS_CONSENTS"); 
 
             HttpResponse<String> resp =
                 get("/lifecycle/recertification/campaigns/" + campaignId + "/items"); 
@@ -677,8 +677,8 @@ class AepHttpServerLifecycleTest {
             waitForServerReady(port); 
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Policy Recertification", "POLICIES"); 
-            String itemId = getFirstItemId(campaignId); 
+                createCampaignAndGetId(httpClient, "tenant-1", "Policy Recertification", "POLICIES");
+            String itemId = getFirstItemId(httpClient, campaignId); 
 
             HttpResponse<String> resp = post( 
                 "/lifecycle/recertification/campaigns/" + campaignId + "/items/" + itemId + "/certify",
@@ -699,8 +699,8 @@ class AepHttpServerLifecycleTest {
             waitForServerReady(port); 
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Policy Recertification 2", "POLICIES"); 
-            String itemId = getFirstItemId(campaignId); 
+                createCampaignAndGetId(httpClient, "tenant-1", "Policy Recertification 2", "POLICIES");
+            String itemId = getFirstItemId(httpClient, campaignId); 
 
             HttpResponse<String> resp = post( 
                 "/lifecycle/recertification/campaigns/" + campaignId + "/items/" + itemId + "/certify",
@@ -716,8 +716,8 @@ class AepHttpServerLifecycleTest {
             waitForServerReady(port); 
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Policy Recertification 3", "POLICIES"); 
-            String itemId = getFirstItemId(campaignId); 
+                createCampaignAndGetId(httpClient, "tenant-1", "Policy Recertification 3", "POLICIES");
+            String itemId = getFirstItemId(httpClient, campaignId); 
 
             // Certify once
             post("/lifecycle/recertification/campaigns/" + campaignId + "/items/" + itemId + "/certify", 
@@ -739,25 +739,27 @@ class AepHttpServerLifecycleTest {
 
         @Test
         @DisplayName("revokes a PENDING item, returns REVOKED decision")
-        void revokesItem() throws Exception { 
-            server = new AepHttpServer(engine, port); 
-            server.start(); 
-            waitForServerReady(port); 
+        void revokesItem() throws Exception {
+            // Use a fresh HttpClient to avoid connection reuse issues from previous tests
+            HttpClient freshHttpClient = HttpClient.newBuilder().build();
+            server = new AepHttpServer(engine, port);
+            server.start();
+            waitForServerReady(port);
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Access Revocation Review", "AGENT_PERMISSIONS"); 
-            String itemId = getFirstItemId(campaignId); 
+                createCampaignAndGetId(freshHttpClient, "tenant-1", "Access Revocation Review", "AGENT_PERMISSIONS");
+            String itemId = getFirstItemId(freshHttpClient, campaignId);
 
-            HttpResponse<String> resp = post( 
+            HttpResponse<String> resp = post(freshHttpClient,
                 "/lifecycle/recertification/campaigns/" + campaignId + "/items/" + itemId + "/revoke",
-                mapper.writeValueAsString(Map.of( 
+                mapper.writeValueAsString(Map.of(
                     "certifierId", "security-officer",
                     "reason", "Agent no longer active in this tenant"
                 )));
-            assertThat(resp.statusCode()).isEqualTo(200); 
+            assertThat(resp.statusCode()).isEqualTo(200);
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("decision")).isEqualTo("REVOKED");
         }
 
@@ -769,8 +771,8 @@ class AepHttpServerLifecycleTest {
             waitForServerReady(port); 
 
             String campaignId =
-                createCampaignAndGetId("tenant-1", "Access Revocation Review 2", "AGENT_PERMISSIONS"); 
-            String itemId = getFirstItemId(campaignId); 
+                createCampaignAndGetId(httpClient, "tenant-1", "Access Revocation Review 2", "AGENT_PERMISSIONS");
+            String itemId = getFirstItemId(httpClient, campaignId); 
 
             HttpResponse<String> resp = post( 
                 "/lifecycle/recertification/campaigns/" + campaignId + "/items/" + itemId + "/revoke",
@@ -792,7 +794,7 @@ class AepHttpServerLifecycleTest {
             server.start(); 
             waitForServerReady(port); 
 
-            String campaignId = createCampaignAndGetId("tenant-1", "Full Compliance Audit", "FULL"); 
+            String campaignId = createCampaignAndGetId(httpClient, "tenant-1", "Full Compliance Audit", "FULL"); 
 
             HttpResponse<String> resp =
                 get("/lifecycle/recertification/campaigns/" + campaignId + "/report"); 
@@ -823,25 +825,25 @@ class AepHttpServerLifecycleTest {
     // ==================== helpers ====================
 
     /** Creates a campaign and returns its {@code campaignId}. */
-    private String createCampaignAndGetId(String tenantId, String name, String scope) 
+    private String createCampaignAndGetId(HttpClient client, String tenantId, String name, String scope)
             throws Exception {
-        HttpResponse<String> resp = post("/lifecycle/recertification/campaigns", 
-            mapper.writeValueAsString(Map.of( 
+        HttpResponse<String> resp = post(client, "/lifecycle/recertification/campaigns",
+            mapper.writeValueAsString(Map.of(
                 "tenantId", tenantId,
                 "campaignName", name,
                 "scope", scope
             )));
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
         return (String) body.get("campaignId");
     }
 
     /** Retrieves items for a campaign and returns the first item's {@code itemId}. */
-    private String getFirstItemId(String campaignId) throws Exception { 
+    private String getFirstItemId(HttpClient client, String campaignId) throws Exception {
         HttpResponse<String> resp =
-            get("/lifecycle/recertification/campaigns/" + campaignId + "/items"); 
+            get(client, "/lifecycle/recertification/campaigns/" + campaignId + "/items");
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
         return (String) items.get(0).get("itemId");
@@ -864,22 +866,30 @@ class AepHttpServerLifecycleTest {
         throw new IllegalStateException("Server did not start within 5 seconds on port " + targetPort); 
     }
 
-    private HttpResponse<String> get(String path) throws Exception { 
-        return httpClient.send( 
-            HttpRequest.newBuilder() 
-                .uri(URI.create("http://localhost:" + port + path)) 
-                .GET() 
-                .build(), 
-            HttpResponse.BodyHandlers.ofString()); 
+    private HttpResponse<String> get(HttpClient client, String path) throws Exception {
+        return client.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + path))
+                .GET()
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception { 
-        return httpClient.send( 
-            HttpRequest.newBuilder() 
-                .uri(URI.create("http://localhost:" + port + path)) 
-                .header("Content-Type", "application/json") 
-                .POST(HttpRequest.BodyPublishers.ofString(body)) 
-                .build(), 
-            HttpResponse.BodyHandlers.ofString()); 
+    private HttpResponse<String> post(HttpClient client, String path, String body) throws Exception {
+        return client.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + path))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        return get(httpClient, path);
+    }
+
+    private HttpResponse<String> post(String path, String body) throws Exception {
+        return post(httpClient, path, body);
     }
 }

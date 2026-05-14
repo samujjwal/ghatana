@@ -70,6 +70,10 @@ export default [
         route('lifecycle', 'routes/app/project/lifecycle.tsx'),
       ]),
 
+      // Kernel Health visibility (OWNER/ADMIN only — capability-gated via useCapabilityGate)
+      route('kernel-health', 'routes/app/kernel-health.tsx'),
+      route('kernel-health/products/:productUnitId', 'routes/app/kernel-health-product.tsx'),
+
       // Admin routes (OWNER/ADMIN only — capability-gated via useCapabilityGate)
       route('admin/prompt-versions', 'routes/app/admin/prompt-versions.tsx'),
       route('admin/ab-testing', 'routes/app/admin/ab-testing.tsx'),

@@ -67,6 +67,8 @@ export class PluginGateResolver {
           gateName: gateId,
           required: true,
           phase,
+          source: 'kernel-plugin-registry',
+          providerId: binding.pluginRef.pluginId,
           status: 'pending',
         });
       }
@@ -161,6 +163,7 @@ export class PluginGateResolver {
       gateName: result.gateId,
       required: true,
       phase: 'validate', // Use validate phase for re-evaluation
+      source: 'kernel-plugin-result',
       status: result.passed ? 'passed' : 'failed',
     }));
   }

@@ -180,6 +180,7 @@ export class ProductLifecyclePlanner {
       sourceRef?: string;
       outputDir?: string;
       runId?: string;
+      correlationId?: string;
     } = {},
   ): Promise<ProductLifecyclePlan> {
     const [config, toolchains, productUnit] = await Promise.all([
@@ -190,6 +191,7 @@ export class ProductLifecyclePlanner {
 
     const profile = await this.loadLifecycleProfile(config.lifecycleProfile);
     const runId = options.runId ?? this.generateRunId();
+    const correlationId = options.correlationId ?? `corr-${runId}`;
 
     const outputDirectory = this.resolveOutputDirectory(
       productId,
@@ -214,6 +216,7 @@ export class ProductLifecyclePlanner {
         productId,
         phase,
         config,
+        profile,
         toolchains,
         options.surfaceSelector,
       ));
@@ -239,7 +242,17 @@ export class ProductLifecyclePlanner {
     return {
       schemaVersion: '1.0.0',
       runId,
+      correlationId,
       productId,
+      ...(productUnit ? { productUnitRef: productUnit.id } : {}),
+      ...(productUnit
+        ? {
+            providerRefs: {
+              registryProviderId: productUnit.registryProviderRef.providerId,
+              sourceProviderId: productUnit.sourceProviderRef.providerId,
+            },
+          }
+        : {}),
       phase,
       phaseMode,
       lifecycleProfile: config.lifecycleProfile,
@@ -303,6 +316,10 @@ export class ProductLifecyclePlanner {
         phase,
         surface: surfaceName,
         adapter: String(surfaceConfig.adapter),
+        adapterSelectionSource:
+          String(surfaceConfig.adapter) === this.resolveProfileAdapter(profile, surfaceName)
+            ? 'profile-default'
+            : 'product-config-override',
         description: `${phase} ${surfaceName} via ${String(surfaceConfig.adapter)}`,
         dependsOn:
           phaseMode === 'sequential' && steps.length > 0
@@ -330,6 +347,7 @@ export class ProductLifecyclePlanner {
     productId: string,
     phase: ProductLifecyclePhase,
     config: KernelProductConfiguration,
+    profile: Record<string, unknown>,
     toolchains: ToolchainRegistry,
     surfaceSelector?: string[],
   ): Promise<{
@@ -380,6 +398,10 @@ export class ProductLifecyclePlanner {
         phase,
         surface: surfaceName,
         adapter: adapterId,
+        adapterSelectionSource:
+          adapterId === this.resolveProfileAdapter(profile, `package.${surfaceName}`)
+            ? 'profile-default'
+            : 'product-config-override',
         description: `package ${surfaceName} container image via ${adapterId}`,
         dependsOn:
           phaseMode === 'sequential' && steps.length > 0
@@ -440,6 +462,7 @@ export class ProductLifecyclePlanner {
       phase,
       surface: resolvedEnv,
       adapter: adapterId,
+      adapterSelectionSource: 'product-config-override',
       description: `${phase} to ${resolvedEnv} via ${adapterId}`,
       dependsOn: [],
       estimatedDurationMs: phase === 'verify' ? 60_000 : 90_000,
@@ -488,6 +511,7 @@ export class ProductLifecyclePlanner {
           gateName: gateId,
           required: true,
           phase,
+          source: 'lifecycle-profile',
           status: 'pending',
         });
       }
@@ -669,5 +693,13 @@ export class ProductLifecyclePlanner {
 
   private estimateDuration(steps: ProductLifecycleStep[]): number {
     return steps.reduce((sum, step) => sum + step.estimatedDurationMs, 0);
+  }
+
+  private resolveProfileAdapter(
+    profile: Record<string, unknown> | undefined,
+    adapterKey: string,
+  ): string | undefined {
+    const defaultAdapters = profile?.defaultAdapters as Record<string, string> | undefined;
+    return defaultAdapters?.[adapterKey];
   }
 }

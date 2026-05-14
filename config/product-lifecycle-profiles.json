@@ -74,7 +74,11 @@
       },
       "defaultAdapters": {
         "backend-api": "gradle-java-service",
-        "web": "pnpm-vite-react"
+        "web": "pnpm-vite-react",
+        "package.backend-api": "docker-buildx",
+        "package.web": "docker-buildx",
+        "deploy.local": "compose-local",
+        "verify.local": "compose-local"
       },
       "expectedArtifacts": {
         "build": {
@@ -195,7 +199,10 @@
         ]
       },
       "defaultAdapters": {
-        "backend-api": "gradle-java-service"
+        "backend-api": "gradle-java-service",
+        "package.backend-api": "docker-buildx",
+        "deploy.local": "compose-local",
+        "verify.local": "compose-local"
       },
       "expectedArtifacts": {
         "build": {
@@ -219,6 +226,16 @@
         "package": {
           "backend-api": [
             "container-image"
+          ]
+        },
+        "deploy": {
+          "backend-api": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "backend-api": [
+            "health-check-report"
           ]
         }
       }
@@ -290,7 +307,10 @@
         ]
       },
       "defaultAdapters": {
-        "web": "pnpm-vite-react"
+        "web": "pnpm-vite-react",
+        "package.web": "docker-buildx",
+        "deploy.local": "compose-local",
+        "verify.local": "compose-local"
       },
       "expectedArtifacts": {
         "build": {
@@ -314,6 +334,16 @@
         "package": {
           "web": [
             "container-image"
+          ]
+        },
+        "deploy": {
+          "web": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "web": [
+            "health-check-report"
           ]
         }
       }

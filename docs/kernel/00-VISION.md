@@ -20,6 +20,12 @@ Kernel ProductUnit can represent:
 
 The current executable provider is the Ghatana file-backed registry. External provider support is target architecture until implemented.
 
+## Current-State Discipline
+
+- Digital Marketing is the current lifecycle execution proof target.
+- Other products are shape-validation targets unless `lifecycleStatus=enabled` and executable checks prove lifecycle execution.
+- ProductUnit and provider contracts exist, with provider-backed execution still maturing through the file-backed registry provider.
+
 ## Goals
 
 1. **Single Source of Truth**: Product registration in the canonical registry drives all downstream artifacts and workflows.

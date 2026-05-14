@@ -7,12 +7,28 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["audit.event.write", "audit.event.search"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed", "onProductVerified"],
-      "healthOutput": ["audit-trail-status"],
-      "gateOutput": ["audit-compliance-gate"],
+      "capabilities": [
+        "audit.event.write",
+        "audit.event.search"
+      ],
+      "lifecycleHooks": [
+        "onProductBuildCompleted",
+        "onProductDeployed",
+        "onProductVerified"
+      ],
+      "healthOutput": [
+        "audit-trail-status"
+      ],
+      "gateOutput": [
+        "audit-compliance-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "approval": {
       "id": "approval",
@@ -20,12 +36,26 @@
       "kind": "pre-gate",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["approval.request", "approval.resolve"],
-      "lifecycleHooks": ["onProductPromoted"],
-      "healthOutput": ["approval-workflow-status"],
-      "gateOutput": ["approval-gate"],
+      "capabilities": [
+        "approval.request",
+        "approval.resolve"
+      ],
+      "lifecycleHooks": [
+        "onProductPromoted"
+      ],
+      "healthOutput": [
+        "approval-workflow-status"
+      ],
+      "gateOutput": [
+        "approval-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "policy": {
       "id": "policy",
@@ -33,12 +63,27 @@
       "kind": "pre-phase",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["policy.evaluate", "policy.enforce"],
-      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"],
-      "healthOutput": ["policy-compliance-status"],
-      "gateOutput": ["policy-gate"],
+      "capabilities": [
+        "policy.evaluate",
+        "policy.enforce"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated",
+        "onProductDeployStarted"
+      ],
+      "healthOutput": [
+        "policy-compliance-status"
+      ],
+      "gateOutput": [
+        "policy-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "compliance": {
       "id": "compliance",
@@ -46,12 +91,27 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["rulepack.validate", "policy.evaluate"],
-      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"],
-      "healthOutput": ["compliance-status"],
-      "gateOutput": ["compliance-gate"],
+      "capabilities": [
+        "rulepack.validate",
+        "policy.evaluate"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated",
+        "onProductDeployStarted"
+      ],
+      "healthOutput": [
+        "compliance-status"
+      ],
+      "gateOutput": [
+        "compliance-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "notification": {
       "id": "notification",
@@ -59,12 +119,26 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["notification.send", "notification.template"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed", "onProductVerified"],
-      "healthOutput": ["notification-channel-status"],
+      "capabilities": [
+        "notification.send",
+        "notification.template"
+      ],
+      "lifecycleHooks": [
+        "onProductBuildCompleted",
+        "onProductDeployed",
+        "onProductVerified"
+      ],
+      "healthOutput": [
+        "notification-channel-status"
+      ],
       "gateOutput": [],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "risk": {
       "id": "risk",
@@ -72,12 +146,27 @@
       "kind": "pre-deployment",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["risk.assess", "risk.score"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
-      "healthOutput": ["risk-score"],
-      "gateOutput": ["risk-gate"],
+      "capabilities": [
+        "risk.assess",
+        "risk.score"
+      ],
+      "lifecycleHooks": [
+        "onProductBuildCompleted",
+        "onProductPackaged"
+      ],
+      "healthOutput": [
+        "risk-score"
+      ],
+      "gateOutput": [
+        "risk-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "security": {
       "id": "security",
@@ -85,12 +174,28 @@
       "kind": "pre-deployment",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["security.sast", "security.dependency-scan", "security.container-scan"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
-      "healthOutput": ["security-scan-status"],
-      "gateOutput": ["security-gate"],
+      "capabilities": [
+        "security.sast",
+        "security.dependency-scan",
+        "security.container-scan"
+      ],
+      "lifecycleHooks": [
+        "onProductBuildCompleted",
+        "onProductPackaged"
+      ],
+      "healthOutput": [
+        "security-scan-status"
+      ],
+      "gateOutput": [
+        "security-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "privacy": {
       "id": "privacy",
@@ -98,12 +203,26 @@
       "kind": "pre-phase",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["privacy.validate", "privacy.pii-detect"],
-      "lifecycleHooks": ["onProductValidated"],
-      "healthOutput": ["privacy-compliance-status"],
-      "gateOutput": ["privacy-gate"],
+      "capabilities": [
+        "privacy.validate",
+        "privacy.pii-detect"
+      ],
+      "lifecycleHooks": [
+        "onProductValidated"
+      ],
+      "healthOutput": [
+        "privacy-compliance-status"
+      ],
+      "gateOutput": [
+        "privacy-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "observability": {
       "id": "observability",
@@ -111,12 +230,26 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["metrics.emit", "tracing.span", "logging.structured"],
-      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
-      "healthOutput": ["observability-status"],
+      "capabilities": [
+        "metrics.emit",
+        "tracing.span",
+        "logging.structured"
+      ],
+      "lifecycleHooks": [
+        "onProductDeployed",
+        "onProductVerified"
+      ],
+      "healthOutput": [
+        "observability-status"
+      ],
       "gateOutput": [],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "data-access": {
       "id": "data-access",
@@ -124,12 +257,26 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["data-access.validate", "data-access.audit"],
-      "lifecycleHooks": ["onProductDeployed"],
-      "healthOutput": ["data-access-status"],
-      "gateOutput": ["data-access-gate"],
+      "capabilities": [
+        "data-access.validate",
+        "data-access.audit"
+      ],
+      "lifecycleHooks": [
+        "onProductDeployed"
+      ],
+      "healthOutput": [
+        "data-access-status"
+      ],
+      "gateOutput": [
+        "data-access-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "identity-entitlement": {
       "id": "identity-entitlement",
@@ -137,12 +284,26 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["identity.validate", "entitlement.check"],
-      "lifecycleHooks": ["onProductDeployed"],
-      "healthOutput": ["identity-status"],
-      "gateOutput": ["identity-gate"],
+      "capabilities": [
+        "identity.validate",
+        "entitlement.check"
+      ],
+      "lifecycleHooks": [
+        "onProductDeployed"
+      ],
+      "healthOutput": [
+        "identity-status"
+      ],
+      "gateOutput": [
+        "identity-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "agent-governance": {
       "id": "agent-governance",
@@ -150,12 +311,28 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["agent.validate", "agent.maturity-check", "agent.learning-track"],
-      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
-      "healthOutput": ["agent-governance-status"],
-      "gateOutput": ["agent-governance-gate"],
+      "capabilities": [
+        "agent.validate",
+        "agent.maturity-check",
+        "agent.learning-track"
+      ],
+      "lifecycleHooks": [
+        "onProductDeployed",
+        "onProductVerified"
+      ],
+      "healthOutput": [
+        "agent-governance-status"
+      ],
+      "gateOutput": [
+        "agent-governance-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "mastery-learning": {
       "id": "mastery-learning",
@@ -163,12 +340,29 @@
       "kind": "platform-plugin",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["mastery.track", "learning.delta", "obsolescence.detect"],
-      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
-      "healthOutput": ["mastery-status", "learning-status"],
-      "gateOutput": ["mastery-gate"],
+      "capabilities": [
+        "mastery.track",
+        "learning.delta",
+        "obsolescence.detect"
+      ],
+      "lifecycleHooks": [
+        "onProductDeployed",
+        "onProductVerified"
+      ],
+      "healthOutput": [
+        "mastery-status",
+        "learning-status"
+      ],
+      "gateOutput": [
+        "mastery-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     },
     "preview-security": {
       "id": "preview-security",
@@ -176,12 +370,27 @@
       "kind": "pre-deployment",
       "status": "declared",
       "safeForDefault": false,
-      "capabilities": ["preview.security-scan", "preview.vulnerability-check"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
-      "healthOutput": ["preview-security-status"],
-      "gateOutput": ["preview-security-gate"],
+      "capabilities": [
+        "preview.security-scan",
+        "preview.vulnerability-check"
+      ],
+      "lifecycleHooks": [
+        "onProductBuildCompleted",
+        "onProductPackaged"
+      ],
+      "healthOutput": [
+        "preview-security-status"
+      ],
+      "gateOutput": [
+        "preview-security-gate"
+      ],
       "implementationRef": null,
-      "tests": []
+      "tests": [],
+      "maturity": "declared-only",
+      "ownerLayer": "kernel-plugin-provider",
+      "currentLimitations": [
+        "No executable provider wired into lifecycle gate execution yet"
+      ]
     }
   }
 }

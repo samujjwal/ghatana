@@ -6,10 +6,10 @@ import { describe, it, expect } from "vitest";
 import {
   type ProductUnit,
   isProductUnit,
+  validateProductUnit,
   createMinimalProductUnit,
   type ProductUnitSurface,
 } from "../ProductUnit";
-import type { ProductUnitKind } from "../ProductUnitKind";
 
 describe("ProductUnit", () => {
   describe("isProductUnit", () => {
@@ -56,6 +56,104 @@ describe("ProductUnit", () => {
         surfaces: [],
       };
       expect(isProductUnit(missingId)).toBe(false);
+    });
+
+    it("rejects missing provider ids", () => {
+      const productUnit: ProductUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "registryProviderRef.providerId must be a non-empty string"
+      );
+    });
+
+    it("rejects unknown kind values", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "unknown-kind",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "kind is not a known ProductUnit kind"
+      );
+    });
+
+    it("rejects invalid surface type", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-api",
+            type: "surprise",
+            implementationStatus: "implemented",
+          },
+        ],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "surfaces[0].type is not a known ProductUnit surface type"
+      );
+    });
+
+    it("rejects invalid implementation status", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-api",
+            type: "backend-api",
+            implementationStatus: "half-built",
+          },
+        ],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "surfaces[0].implementationStatus is not a known implementation status"
+      );
+    });
+
+    it("rejects enabled lifecycle without lifecycle profile", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [],
+        lifecycleStatus: "enabled",
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "enabled lifecycle requires lifecycleProfile"
+      );
     });
   });
 

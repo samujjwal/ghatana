@@ -40,13 +40,23 @@ function analyzeProduct(productId, product, profiles, adapters) {
   const lifecycleStatus = product.lifecycleStatus || (product.lifecycle?.enabled ? 'enabled' : 'disabled');
   const surfaces = product.surfaces || [];
   const surfaceTypes = surfaces.map(s => s.type).sort();
+  const productKind = product.kind ?? 'business-product';
+  const shapeValidationMode = lifecycleStatus === 'enabled'
+    ? 'execution'
+    : lifecycleStatus === 'planned'
+      ? 'shape-only'
+      : lifecycleStatus === 'partial'
+        ? 'shape-only-with-known-limitations'
+        : 'disabled-observed';
 
   // Determine required capabilities based on profile and surfaces
   const requiredCapabilities = [];
   const findings = [];
+  const capabilityGaps = [];
 
-  if (!profile) {
+  if (!profile && lifecycleStatus !== 'disabled') {
     findings.push(`Lifecycle profile "${lifecycleProfile}" not found in product-lifecycle-profiles.json`);
+    capabilityGaps.push('missing-lifecycle-profile');
   }
 
   // Check adapter support for each surface
@@ -55,12 +65,15 @@ function analyzeProduct(productId, product, profiles, adapters) {
     const adapterKey = profile?.defaultAdapters?.[surfaceType];
     const adapter = adapterKey ? adapters[adapterKey] : null;
 
-    if (!adapterKey) {
+    if (!adapterKey && lifecycleStatus !== 'disabled') {
       findings.push(`Surface "${surfaceType}" has no default adapter defined in profile "${lifecycleProfile}"`);
+      capabilityGaps.push(`missing-adapter:${surfaceType}`);
     } else if (!adapter) {
       findings.push(`Adapter "${adapterKey}" for surface "${surfaceType}" not found in toolchain-adapter-registry.json`);
+      capabilityGaps.push(`unknown-adapter:${adapterKey}`);
     } else if (adapter.status !== 'implemented') {
       findings.push(`Adapter "${adapterKey}" for surface "${surfaceType}" has status "${adapter.status}" (not fully implemented)`);
+      capabilityGaps.push(`adapter-not-implemented:${adapterKey}`);
     }
 
     // Add capability requirements
@@ -76,10 +89,13 @@ function analyzeProduct(productId, product, profiles, adapters) {
 
     if (!deployAdapterKey) {
       findings.push(`No deployment adapter defined in profile "${lifecycleProfile}"`);
+      capabilityGaps.push('missing-deploy-adapter:local');
     } else if (!deployAdapter) {
       findings.push(`Deployment adapter "${deployAdapterKey}" not found in toolchain-adapter-registry.json`);
+      capabilityGaps.push(`unknown-deploy-adapter:${deployAdapterKey}`);
     } else if (deployAdapter.status !== 'implemented') {
       findings.push(`Deployment adapter "${deployAdapterKey}" has status "${deployAdapter.status}" (not fully implemented)`);
+      capabilityGaps.push(`deploy-adapter-not-implemented:${deployAdapterKey}`);
     }
 
     if (deployAdapterKey) {
@@ -89,36 +105,51 @@ function analyzeProduct(productId, product, profiles, adapters) {
 
   // Determine status based on lifecycle status and findings
   let status;
+  let executionReadiness;
   if (lifecycleStatus === 'enabled') {
     status = 'Pilot';
+    executionReadiness = 'executable';
     if (findings.some(f => f.includes('not found') || f.includes('not fully implemented'))) {
       status = 'Enabled (with findings)';
+      executionReadiness = 'blocked';
     }
   } else if (lifecycleStatus === 'planned') {
     status = 'Shape-only';
+    executionReadiness = 'not-enabled';
   } else if (lifecycleStatus === 'disabled') {
-    status = 'Not enabled';
+    status = 'Disabled observed';
+    executionReadiness = 'disabled';
+  } else if (lifecycleStatus === 'partial') {
+    status = 'Shape-only with limitations';
+    executionReadiness = 'not-enabled';
   } else {
     status = 'Unknown';
+    executionReadiness = 'unknown';
   }
 
   // Determine shape description
-  const shapeDescription = getShapeDescription(surfaceTypes, lifecycleProfile);
+  const shapeDescription = getShapeDescription(surfaceTypes, lifecycleProfile, productKind);
+  const profileStatus = profile ? (profile.status ?? 'unknown') : lifecycleProfile ? 'missing' : 'not-declared';
 
   return {
     productId,
     name: product.name || productId,
+    productKind,
     shape: shapeDescription,
     lifecycleStatus,
+    shapeValidationMode,
+    profileStatus,
     requiredCapabilities: requiredCapabilities.sort(),
+    capabilityGaps: capabilityGaps.sort(),
+    executionReadiness,
     status,
     findings: findings.length > 0 ? findings : undefined,
   };
 }
 
-function getShapeDescription(surfaceTypes, lifecycleProfile) {
+function getShapeDescription(surfaceTypes, lifecycleProfile, productKind) {
   const surfaceDesc = surfaceTypes.join(' + ');
-  return `${surfaceDesc} (${lifecycleProfile})`;
+  return `${productKind}: ${surfaceDesc} (${lifecycleProfile ?? 'no-profile'})`;
 }
 
 function generateMarkdown(matrix) {
@@ -134,13 +165,13 @@ function generateMarkdown(matrix) {
     '',
     '## Matrix',
     '',
-    '| Product | Shape | Lifecycle Status | Required Kernel Capabilities | Status |',
-    '|---------|-------|------------------|------------------------------|--------|',
+    '| Product | Kind | Mode | Profile | Lifecycle Status | Required Kernel Capabilities | Status |',
+    '|---------|------|------|---------|------------------|------------------------------|--------|',
   ];
 
   for (const row of matrix) {
     const capabilities = row.requiredCapabilities.join(', ') || 'None';
-    lines.push(`| ${row.productId} | ${row.shape} | ${row.lifecycleStatus} | ${capabilities} | ${row.status} |`);
+    lines.push(`| ${row.productId} | ${row.productKind} | ${row.shapeValidationMode} | ${row.profileStatus} | ${row.lifecycleStatus} | ${capabilities} | ${row.status} |`);
   }
 
   lines.push('');

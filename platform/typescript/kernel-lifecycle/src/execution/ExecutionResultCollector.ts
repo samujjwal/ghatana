@@ -53,13 +53,14 @@ export class ExecutionResultCollector {
     productId: string,
     phase: ProductLifecyclePhase,
     outputDirectory: string,
+    runId: string = `run-${Date.now()}`,
   ): ProductLifecycleResult {
     const status = this.determineOverallStatus();
     const failure = this.getFailureDetails();
 
     const result: ProductLifecycleResult = {
       schemaVersion: '1.0.0',
-      runId: `run-${Date.now()}`,
+      runId,
       productId,
       phase,
       status,

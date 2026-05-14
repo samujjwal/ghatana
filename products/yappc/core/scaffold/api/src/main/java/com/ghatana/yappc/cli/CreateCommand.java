@@ -102,19 +102,24 @@ public class CreateCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        // Initialize telemetry for CLI context
-        TelemetryManager.initializeForCli();
-        TelemetryInstrumentation instrumentation = TelemetryManager.getInstrumentation("yappc-cli");
+        // Initialize telemetry for CLI context (unless disabled for tests)
+        if (!"true".equals(System.getProperty("yappc.telemetry.disabled"))) {
+            TelemetryManager.initializeForCli();
+            TelemetryInstrumentation instrumentation = TelemetryManager.getInstrumentation("yappc-cli");
 
-        // Instrument the command execution
-        return instrumentation.instrumentCommand(
-                "create",
-                Attributes.of(
-                        AttributeKey.stringKey("project.name"),
-                        projectName != null ? projectName : "unknown",
-                        AttributeKey.stringKey("pack.name"),
-                        packName != null ? packName : "none"),
-                this::executeCreate);
+            // Instrument the command execution
+            return instrumentation.instrumentCommand(
+                    "create",
+                    Attributes.of(
+                            AttributeKey.stringKey("project.name"),
+                            projectName != null ? projectName : "unknown",
+                            AttributeKey.stringKey("pack.name"),
+                            packName != null ? packName : "none"),
+                    this::executeCreate);
+        }
+
+        // Execute without telemetry instrumentation
+        return executeCreate();
     }
 
     private Integer executeCreate() {

@@ -1,80 +1,119 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-14T04:05:37.789Z",
+  "generated": "2026-05-14T05:37:49.775Z",
   "matrix": [
     {
       "productId": "audio-video",
       "name": "Audio-Video",
-      "shape": "backend-api (undefined)",
+      "productKind": "shared-service",
+      "shape": "shared-service: backend-api (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "aura",
       "name": "Aura",
-      "shape": "backend-api (undefined)",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "data-cloud",
       "name": "Data Cloud",
-      "shape": "backend-api + sdk + web (undefined)",
+      "productKind": "platform-provider",
+      "shape": "platform-provider: backend-api + sdk + web (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined",
+        "unknown-adapter:undefined",
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
-        "Surface \"web\" has no default adapter defined in profile \"undefined\"",
-        "Surface \"sdk\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
+        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json",
+        "Adapter \"undefined\" for surface \"sdk\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "dcmaar",
       "name": "DCMAAR",
-      "shape": "backend-api + web (undefined)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + web (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined",
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
-        "Surface \"web\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
+        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "digital-marketing",
       "name": "Digital Marketing Operating System",
-      "shape": "backend-api + web (standard-web-api-product)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + web (standard-web-api-product)",
       "lifecycleStatus": "enabled",
+      "shapeValidationMode": "execution",
+      "profileStatus": "stable",
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
+        "deploy:compose-local",
         "web:pnpm-vite-react"
       ],
-      "status": "Pilot",
-      "findings": [
-        "No deployment adapter defined in profile \"standard-web-api-product\""
-      ]
+      "capabilityGaps": [],
+      "executionReadiness": "executable",
+      "status": "Pilot"
     },
     {
       "productId": "finance",
       "name": "Finance",
-      "shape": "backend-api + operator + portal + sdk (backend-only-java-service)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + operator + portal + sdk (backend-only-java-service)",
       "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "stable",
       "requiredCapabilities": [
         "backend-api:gradle-java-service"
       ],
+      "capabilityGaps": [
+        "missing-adapter:operator",
+        "missing-adapter:portal",
+        "missing-adapter:sdk"
+      ],
+      "executionReadiness": "not-enabled",
       "status": "Shape-only",
       "findings": [
         "Surface \"portal\" has no default adapter defined in profile \"backend-only-java-service\"",
@@ -85,11 +124,19 @@
     {
       "productId": "flashit",
       "name": "FlashIt",
-      "shape": "backend-api + mobile + web (mobile-plus-api-product)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + mobile + web (mobile-plus-api-product)",
       "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "experimental",
       "requiredCapabilities": [
         "backend-api:gradle-java-service"
       ],
+      "capabilityGaps": [
+        "missing-adapter:mobile",
+        "missing-adapter:web"
+      ],
+      "executionReadiness": "not-enabled",
       "status": "Shape-only",
       "findings": [
         "Surface \"web\" has no default adapter defined in profile \"mobile-plus-api-product\"",
@@ -99,72 +146,107 @@
     {
       "productId": "phr",
       "name": "Personal Health Records",
-      "shape": "backend-api + web (standard-web-api-product)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + web (standard-web-api-product)",
       "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "stable",
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "web:pnpm-vite-react"
       ],
+      "capabilityGaps": [],
+      "executionReadiness": "not-enabled",
       "status": "Shape-only"
     },
     {
       "productId": "security-gateway",
       "name": "Security-Gateway",
-      "shape": "backend-api (undefined)",
+      "productKind": "shared-service",
+      "shape": "shared-service: backend-api (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "software-org",
       "name": "Software-Org",
-      "shape": "backend-api (undefined)",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "tutorputor",
       "name": "Tutorputor",
-      "shape": "backend-api + web (standard-web-api-product)",
+      "productKind": "business-product",
+      "shape": "business-product: backend-api + web (standard-web-api-product)",
       "lifecycleStatus": "partial",
+      "shapeValidationMode": "shape-only-with-known-limitations",
+      "profileStatus": "stable",
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "web:pnpm-vite-react"
       ],
-      "status": "Unknown"
+      "capabilityGaps": [],
+      "executionReadiness": "not-enabled",
+      "status": "Shape-only with limitations"
     },
     {
       "productId": "virtual-org",
       "name": "Virtual-Org",
-      "shape": "backend-api (undefined)",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
       ]
     },
     {
       "productId": "yappc",
       "name": "YAPPC",
-      "shape": "backend-api + web (undefined)",
+      "productKind": "platform-provider",
+      "shape": "platform-provider: backend-api + web (no-profile)",
       "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
       "requiredCapabilities": [],
-      "status": "Not enabled",
+      "capabilityGaps": [
+        "unknown-adapter:undefined",
+        "unknown-adapter:undefined"
+      ],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed",
       "findings": [
-        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
-        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
-        "Surface \"web\" has no default adapter defined in profile \"undefined\""
+        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
+        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json"
       ]
     }
   ]

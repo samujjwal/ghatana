@@ -12,7 +12,12 @@
  */
 
 import type { ProductUnitKind } from "./ProductUnitKind";
+import { isProductUnitKind } from "./ProductUnitKind";
 import type { ProductUnitSurface } from "./ProductUnitSurface";
+import {
+  isImplementationStatus,
+  isProductUnitSurfaceType,
+} from "./ProductUnitSurface";
 
 /**
  * The type of producer that created the ProductUnitIntent.
@@ -87,6 +92,11 @@ export interface Producer {
    * Type of producer.
    */
   readonly type: ProducerType;
+
+  /**
+   * Correlation identifier propagated from the producing system.
+   */
+  readonly correlationId: string;
 }
 
 /**
@@ -140,26 +150,137 @@ export interface ProductUnitIntent {
    * Optional requested lifecycle configuration.
    */
   readonly requestedLifecycle?: RequestedLifecycle;
+
+  /**
+   * Optional governance hints for Kernel gate/provider selection.
+   */
+  readonly governanceHints?: Record<string, unknown>;
+
+  /**
+   * Optional provenance information. Must not contain raw secrets.
+   */
+  readonly provenance?: Record<string, unknown>;
+}
+
+const PRODUCER_TYPES: readonly ProducerType[] = [
+  "yappc",
+  "api",
+  "cli",
+  "manual",
+  "external",
+];
+
+const SECRET_KEY_PATTERN = /(secret|password|token|api[-_]?key|credential)/i;
+
+export interface ProductUnitIntentValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+}
+
+function hasSecretLikeField(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => hasSecretLikeField(item));
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return Object.entries(value as Record<string, unknown>).some(([key, nested]) => {
+    if (SECRET_KEY_PATTERN.test(key)) {
+      return true;
+    }
+    return hasSecretLikeField(nested);
+  });
+}
+
+export function validateProductUnitIntent(
+  value: unknown
+): ProductUnitIntentValidationResult {
+  const errors: string[] = [];
+
+  if (typeof value !== "object" || value === null) {
+    return { valid: false, errors: ["ProductUnitIntent must be an object"] };
+  }
+
+  const intent = value as Record<string, unknown>;
+  const producer = intent.producer as Record<string, unknown> | undefined;
+  const target = intent.target as Record<string, unknown> | undefined;
+  const productUnit = intent.productUnit as Record<string, unknown> | undefined;
+
+  if (intent.schemaVersion !== "1.0.0") {
+    errors.push('schemaVersion must be "1.0.0"');
+  }
+  if (typeof intent.intentId !== "string" || intent.intentId.trim().length === 0) {
+    errors.push("intentId must be a non-empty string");
+  }
+  if (typeof producer !== "object" || producer === null) {
+    errors.push("producer must be an object");
+  } else {
+    if (typeof producer.id !== "string" || producer.id.trim().length === 0) {
+      errors.push("producer.id must be a non-empty string");
+    }
+    if (!PRODUCER_TYPES.includes(producer.type as ProducerType)) {
+      errors.push("producer.type is not supported");
+    }
+    if (
+      typeof producer.correlationId !== "string" ||
+      producer.correlationId.trim().length === 0
+    ) {
+      errors.push("producer.correlationId must be a non-empty string");
+    }
+  }
+  if (typeof target !== "object" || target === null) {
+    errors.push("target must be an object");
+  } else {
+    if (
+      typeof target.registryProvider !== "string" ||
+      target.registryProvider.trim().length === 0
+    ) {
+      errors.push("target.registryProvider must be a non-empty string");
+    }
+    if (
+      typeof target.sourceProvider !== "string" ||
+      target.sourceProvider.trim().length === 0
+    ) {
+      errors.push("target.sourceProvider must be a non-empty string");
+    }
+  }
+  if (typeof productUnit !== "object" || productUnit === null) {
+    errors.push("productUnit must be an object");
+  } else {
+    if (!isProductUnitKind(productUnit.kind)) {
+      errors.push("productUnit.kind is not a known ProductUnit kind");
+    }
+    if (!Array.isArray(productUnit.surfaces) || productUnit.surfaces.length === 0) {
+      errors.push("productUnit.surfaces must contain at least one surface");
+    } else {
+      productUnit.surfaces.forEach((surface, index) => {
+        if (typeof surface !== "object" || surface === null) {
+          errors.push(`productUnit.surfaces[${index}] must be an object`);
+          return;
+        }
+        const surfaceRecord = surface as Record<string, unknown>;
+        if (!isProductUnitSurfaceType(surfaceRecord.type)) {
+          errors.push(`productUnit.surfaces[${index}].type is not supported`);
+        }
+        if (!isImplementationStatus(surfaceRecord.implementationStatus)) {
+          errors.push(
+            `productUnit.surfaces[${index}].implementationStatus is not supported`
+          );
+        }
+      });
+    }
+  }
+  if (hasSecretLikeField(value)) {
+    errors.push("ProductUnitIntent must not include raw secret-like fields");
+  }
+
+  return { valid: errors.length === 0, errors };
 }
 
 /**
  * Type guard to check if an object is a valid ProductUnitIntent.
  */
 export function isProductUnitIntent(value: unknown): value is ProductUnitIntent {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const intent = value as Record<string, unknown>;
-
-  return (
-    intent.schemaVersion === "1.0.0" &&
-    typeof intent.intentId === "string" &&
-    typeof intent.producer === "object" &&
-    intent.producer !== null &&
-    typeof intent.target === "object" &&
-    intent.target !== null &&
-    typeof intent.productUnit === "object" &&
-    intent.productUnit !== null
-  );
+  return validateProductUnitIntent(value).valid;
 }

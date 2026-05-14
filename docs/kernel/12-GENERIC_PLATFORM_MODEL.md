@@ -117,6 +117,14 @@ Product-Specific Systems (external)
 
 ## Current-State vs Target-State Classification
 
+| Capability | Current state | Target state |
+|------------|---------------|--------------|
+| ProductUnit contract | Existing partial; strict guards and public exports are hardened | Stable contract for all governable ProductUnits |
+| Provider contracts | Existing partial | Multi-provider contract family with registry, source, artifact, deployment, health, telemetry, and secrets providers |
+| GhatanaFileRegistryProvider | Existing partial file-backed provider | Strict file provider plus external/cloud provider implementations |
+| External providers | Target architecture | Git, cloud, and organization registry providers |
+| Provider-backed lifecycle execution | Partial | Provider-selected execution path with canonical lifecycle truth across products |
+
 ### Current State (Executable)
 - Ghatana file-backed registry provider
 - Digital Marketing lifecycle execution enabled

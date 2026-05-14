@@ -9,50 +9,42 @@ Generated from:
 
 ## Matrix
 
-| Product | Shape | Lifecycle Status | Required Kernel Capabilities | Status |
-|---------|-------|------------------|------------------------------|--------|
-| audio-video | backend-api (undefined) | disabled | None | Not enabled |
-| aura | backend-api (undefined) | disabled | None | Not enabled |
-| data-cloud | backend-api + sdk + web (undefined) | disabled | None | Not enabled |
-| dcmaar | backend-api + web (undefined) | disabled | None | Not enabled |
-| digital-marketing | backend-api + web (standard-web-api-product) | enabled | backend-api:gradle-java-service, web:pnpm-vite-react | Pilot |
-| finance | backend-api + operator + portal + sdk (backend-only-java-service) | planned | backend-api:gradle-java-service | Shape-only |
-| flashit | backend-api + mobile + web (mobile-plus-api-product) | planned | backend-api:gradle-java-service | Shape-only |
-| phr | backend-api + web (standard-web-api-product) | planned | backend-api:gradle-java-service, web:pnpm-vite-react | Shape-only |
-| security-gateway | backend-api (undefined) | disabled | None | Not enabled |
-| software-org | backend-api (undefined) | disabled | None | Not enabled |
-| tutorputor | backend-api + web (standard-web-api-product) | partial | backend-api:gradle-java-service, web:pnpm-vite-react | Unknown |
-| virtual-org | backend-api (undefined) | disabled | None | Not enabled |
-| yappc | backend-api + web (undefined) | disabled | None | Not enabled |
+| Product | Kind | Mode | Profile | Lifecycle Status | Required Kernel Capabilities | Status |
+|---------|------|------|---------|------------------|------------------------------|--------|
+| audio-video | shared-service | disabled-observed | not-declared | disabled | None | Disabled observed |
+| aura | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
+| data-cloud | platform-provider | disabled-observed | not-declared | disabled | None | Disabled observed |
+| dcmaar | business-product | disabled-observed | not-declared | disabled | None | Disabled observed |
+| digital-marketing | business-product | execution | stable | enabled | backend-api:gradle-java-service, deploy:compose-local, web:pnpm-vite-react | Pilot |
+| finance | business-product | shape-only | stable | planned | backend-api:gradle-java-service | Shape-only |
+| flashit | business-product | shape-only | experimental | planned | backend-api:gradle-java-service | Shape-only |
+| phr | business-product | shape-only | stable | planned | backend-api:gradle-java-service, web:pnpm-vite-react | Shape-only |
+| security-gateway | shared-service | disabled-observed | not-declared | disabled | None | Disabled observed |
+| software-org | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
+| tutorputor | business-product | shape-only-with-known-limitations | stable | partial | backend-api:gradle-java-service, web:pnpm-vite-react | Shape-only with limitations |
+| virtual-org | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
+| yappc | platform-provider | disabled-observed | not-declared | disabled | None | Disabled observed |
 
 ## Findings
 
 ### audio-video
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
 
 ### aura
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
 
 ### data-cloud
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
-- Surface "web" has no default adapter defined in profile "undefined"
-- Surface "sdk" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
+- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json
+- Adapter "undefined" for surface "sdk" not found in toolchain-adapter-registry.json
 
 ### dcmaar
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
-- Surface "web" has no default adapter defined in profile "undefined"
-
-### digital-marketing
-
-- No deployment adapter defined in profile "standard-web-api-product"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
+- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json
 
 ### finance
 
@@ -67,21 +59,17 @@ Generated from:
 
 ### security-gateway
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
 
 ### software-org
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
 
 ### virtual-org
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
 
 ### yappc
 
-- Lifecycle profile "undefined" not found in product-lifecycle-profiles.json
-- Surface "backend-api" has no default adapter defined in profile "undefined"
-- Surface "web" has no default adapter defined in profile "undefined"
+- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
+- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json

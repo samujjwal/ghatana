@@ -52,7 +52,11 @@ export class LifecycleHealthAggregator {
 
     // Priority order for overall status
     if (statuses.some((s) => s === "blocked")) return "blocked";
+    if (statuses.some((s) => s === "quarantined")) return "quarantined";
     if (statuses.some((s) => s === "failed")) return "failed";
+    if (statuses.some((s) => s === "requires-approval")) return "requires-approval";
+    if (statuses.some((s) => s === "requires-verification")) return "requires-verification";
+    if (statuses.some((s) => s === "obsolete")) return "obsolete";
     if (statuses.some((s) => s === "degraded")) return "degraded";
     if (statuses.some((s) => s === "skipped")) return "skipped";
     if (statuses.some((s) => s === "unknown")) return "unknown";

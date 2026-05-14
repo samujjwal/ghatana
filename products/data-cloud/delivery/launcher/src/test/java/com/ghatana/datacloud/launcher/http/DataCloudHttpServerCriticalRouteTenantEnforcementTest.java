@@ -736,7 +736,7 @@ class DataCloudHttpServerCriticalRouteTenantEnforcementTest {
         return httpClient.send(
             builder
                 .header("X-API-Key", apiKey)
-                .header("X-Tenant-ID", tenantId)
+                .header("X-Tenant-Id", tenantId)
                 .build(),
             HttpResponse.BodyHandlers.ofString()); 
     }

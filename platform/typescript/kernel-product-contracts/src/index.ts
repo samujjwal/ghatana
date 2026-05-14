@@ -22,6 +22,7 @@ export {
   LifecycleStatus,
   ProviderRef as ProductUnitProviderRef,
   isProductUnit,
+  validateProductUnit,
   createMinimalProductUnit,
   ProductUnitIntent,
   ProductUnitDraft,
@@ -30,6 +31,7 @@ export {
   ProducerType,
   RequestedLifecycle,
   isProductUnitIntent,
+  validateProductUnitIntent,
 } from './product-unit/index.js';
 
 // New provider contracts

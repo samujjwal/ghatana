@@ -12,25 +12,17 @@
  */
 
 import type { ProductUnitKind } from "./ProductUnitKind";
+import { isProductUnitKind } from "./ProductUnitKind";
 import type { ProductUnitSurface } from "./ProductUnitSurface";
+import {
+  isImplementationStatus,
+  isProductUnitSurfaceType,
+} from "./ProductUnitSurface";
+import type { ProviderRef } from "../provider/ProviderRef";
 
 // Re-export ProductUnitSurface for convenience
 export type { ProductUnitSurface };
-
-/**
- * Reference to a provider implementation.
- */
-export interface ProviderRef {
-  /**
-   * Provider identifier (e.g., "ghatana-file-registry", "github", "aws-codepipeline").
-   */
-  readonly providerId: string;
-
-  /**
-   * Optional provider-specific configuration.
-   */
-  readonly config?: Record<string, unknown>;
-}
+export type { ProviderRef };
 
 /**
  * Lifecycle status of a ProductUnit.
@@ -152,31 +144,95 @@ export interface ProductUnit {
   readonly metadata?: Record<string, unknown>;
 }
 
-/**
- * Type guard to check if an object is a valid ProductUnit.
- */
-export function isProductUnit(value: unknown): value is ProductUnit {
+export interface ProductUnitValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+}
+
+function hasProviderId(value: unknown): value is ProviderRef {
   if (typeof value !== "object" || value === null) {
     return false;
   }
 
-  const pu = value as Record<string, unknown>;
-
+  const providerRef = value as Record<string, unknown>;
   return (
-    pu.schemaVersion === "1.0.0" &&
-    typeof pu.id === "string" &&
-    typeof pu.name === "string" &&
-    typeof pu.kind === "string" &&
-    typeof pu.registryProviderRef === "object" &&
-    pu.registryProviderRef !== null &&
-    typeof pu.sourceProviderRef === "object" &&
-    pu.sourceProviderRef !== null &&
-    Array.isArray(pu.surfaces)
+    typeof providerRef.providerId === "string" &&
+    providerRef.providerId.trim().length > 0
   );
 }
 
+function validateSurface(value: unknown, index: number): readonly string[] {
+  const errors: string[] = [];
+  if (typeof value !== "object" || value === null) {
+    return [`surfaces[${index}] must be an object`];
+  }
+
+  const surface = value as Record<string, unknown>;
+  if (typeof surface.id !== "string" || surface.id.trim().length === 0) {
+    errors.push(`surfaces[${index}].id must be a non-empty string`);
+  }
+  if (!isProductUnitSurfaceType(surface.type)) {
+    errors.push(`surfaces[${index}].type is not a known ProductUnit surface type`);
+  }
+  if (!isImplementationStatus(surface.implementationStatus)) {
+    errors.push(
+      `surfaces[${index}].implementationStatus is not a known implementation status`
+    );
+  }
+
+  return errors;
+}
+
+export function validateProductUnit(value: unknown): ProductUnitValidationResult {
+  const errors: string[] = [];
+
+  if (typeof value !== "object" || value === null) {
+    return { valid: false, errors: ["ProductUnit must be an object"] };
+  }
+
+  const pu = value as Record<string, unknown>;
+
+  if (pu.schemaVersion !== "1.0.0") {
+    errors.push('schemaVersion must be "1.0.0"');
+  }
+  if (typeof pu.id !== "string" || pu.id.trim().length === 0) {
+    errors.push("id must be a non-empty string");
+  }
+  if (typeof pu.name !== "string" || pu.name.trim().length === 0) {
+    errors.push("name must be a non-empty string");
+  }
+  if (!isProductUnitKind(pu.kind)) {
+    errors.push("kind is not a known ProductUnit kind");
+  }
+  if (!hasProviderId(pu.registryProviderRef)) {
+    errors.push("registryProviderRef.providerId must be a non-empty string");
+  }
+  if (!hasProviderId(pu.sourceProviderRef)) {
+    errors.push("sourceProviderRef.providerId must be a non-empty string");
+  }
+  if (!Array.isArray(pu.surfaces)) {
+    errors.push("surfaces must be an array");
+  } else {
+    pu.surfaces.forEach((surface, index) => {
+      errors.push(...validateSurface(surface, index));
+    });
+  }
+  if (pu.lifecycleStatus === "enabled" && typeof pu.lifecycleProfile !== "string") {
+    errors.push("enabled lifecycle requires lifecycleProfile");
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 /**
- * Creates a minimal ProductUnit for testing or stub purposes.
+ * Type guard to check if an object is a valid ProductUnit.
+ */
+export function isProductUnit(value: unknown): value is ProductUnit {
+  return validateProductUnit(value).valid;
+}
+
+/**
+ * Creates a valid minimal ProductUnit skeleton for callers that need to seed a ProductUnit.
  */
 export function createMinimalProductUnit(
   id: string,

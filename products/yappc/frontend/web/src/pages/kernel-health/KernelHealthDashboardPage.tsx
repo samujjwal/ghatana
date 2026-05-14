@@ -7,7 +7,7 @@
  * This page is the main entry point for YAPPC's kernel visibility/control-plane layer.
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,94 +16,52 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
-// Placeholder imports for panel components - will be created in subsequent tasks
-// import { LifecycleTimelinePanel } from './LifecycleTimelinePanel';
-// import { GateHealthPanel } from './GateHealthPanel';
-// import { ArtifactHealthPanel } from './ArtifactHealthPanel';
-// import { DeploymentHealthPanel } from './DeploymentHealthPanel';
-// import { AgentGovernanceHealthPanel } from './AgentGovernanceHealthPanel';
-// import { PreviewSecurityHealthPanel } from './PreviewSecurityHealthPanel';
-
-interface ProductUnitHealthSummary {
-  productUnitId: string;
-  overallStatus: 'healthy' | 'degraded' | 'failed' | 'unknown';
-  currentPhase: string;
-  lastRunTimestamp: string;
-}
-
-interface ProductUnitHealthView extends ProductUnitHealthSummary {
-  gateFailureCount: number;
-  deploymentStatus: string;
-  healthSnapshot: Record<string, unknown>;
-  lifecycleResult: Record<string, unknown>;
-  deployment: Record<string, unknown>;
-}
-
-interface ActionRecommendation {
-  severity: 'critical' | 'warning' | 'info';
-  title: string;
-  description: string;
-  actionType: string;
-}
+import { LifecycleTimelinePanel } from './LifecycleTimelinePanel';
+import { GateHealthPanel } from './GateHealthPanel';
+import { ArtifactHealthPanel } from './ArtifactHealthPanel';
+import { DeploymentHealthPanel } from './DeploymentHealthPanel';
+import { AgentGovernanceHealthPanel } from './AgentGovernanceHealthPanel';
+import { PreviewSecurityHealthPanel } from './PreviewSecurityHealthPanel';
+import { RecommendedActionsPanel } from './RecommendedActionsPanel';
+import {
+  useKernelProductUnitHealth,
+  useKernelLifecycleTimeline,
+  useKernelRecommendedActions,
+} from '../../hooks/useKernelHealth';
+import type { KernelProductUnitHealthView } from '../../clients/kernelHealthClient';
 
 export const KernelHealthDashboardPage: React.FC = () => {
-  const { productUnitId } = useParams<{ productUnitId?: string }>();
-  const [selectedProductUnit, setSelectedProductUnit] = useState<string | null>(
-    productUnitId || null
-  );
-  const [healthView, setHealthView] = useState<ProductUnitHealthView | null>(null);
-  const [recommendations, setRecommendations] = useState<ActionRecommendation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { productUnitId: routeProductUnitId } = useParams<{ productUnitId?: string }>();
+  const selectedProductUnit: string | null = routeProductUnitId ?? null;
 
-  // Load health data when selectedProductUnit changes
-  useEffect(() => {
-    if (selectedProductUnit) {
-      loadHealthData(selectedProductUnit);
-    }
-  }, [selectedProductUnit]);
+  const activeProductUnitId = selectedProductUnit ?? undefined;
 
-  const loadHealthData = async (id: string) => {
-    setLoading(true);
-    setError(null);
+  const {
+    data: healthView,
+    isLoading: healthLoading,
+    isError: healthError,
+    refetch: refetchHealth,
+  } = useKernelProductUnitHealth(activeProductUnitId);
 
-    try {
-      // TODO: Replace with actual API call to YAPPC backend
-      // const response = await fetch(`/api/kernel-health/${id}`);
-      // const data = await response.json();
-      
-      // Placeholder data for now
-      const mockData: ProductUnitHealthView = {
-        productUnitId: id,
-        overallStatus: 'healthy',
-        currentPhase: 'deploy',
-        lastRunTimestamp: new Date().toISOString(),
-        gateFailureCount: 0,
-        deploymentStatus: 'deployed',
-        healthSnapshot: {},
-        lifecycleResult: {},
-        deployment: {},
-      };
+  const {
+    data: timeline,
+    isLoading: timelineLoading,
+    refetch: refetchTimeline,
+  } = useKernelLifecycleTimeline(activeProductUnitId);
 
-      setHealthView(mockData);
-      
-      // Load recommendations
-      // const recsResponse = await fetch(`/api/kernel-health/${id}/recommendations`);
-      // const recsData = await recsResponse.json();
-      setRecommendations([]);
-      
-    } catch (err) {
-      setError('Failed to load health data');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: recommendations = [],
+    isLoading: recsLoading,
+    refetch: refetchRecs,
+  } = useKernelRecommendedActions(activeProductUnitId);
+
+  const loading = healthLoading || timelineLoading || recsLoading;
+  const error = healthError ? 'Failed to load Kernel health data' : null;
 
   const handleRefresh = () => {
-    if (selectedProductUnit) {
-      loadHealthData(selectedProductUnit);
-    }
+    void refetchHealth();
+    void refetchTimeline();
+    void refetchRecs();
   };
 
   const getStatusIcon = (status: string) => {
@@ -203,24 +161,10 @@ export const KernelHealthDashboardPage: React.FC = () => {
           </Card>
 
           {/* Action Recommendations */}
-          {recommendations.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommended Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recommendations.map((rec, index) => (
-                    <Alert key={index} variant={rec.severity === 'critical' ? 'destructive' : 'default'}>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>{rec.title}</AlertTitle>
-                      <AlertDescription>{rec.description}</AlertDescription>
-                    </Alert>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <RecommendedActionsPanel
+            productUnitId={healthView.productUnitId}
+            recommendations={recommendations}
+          />
 
           {/* Health Detail Tabs */}
           <Tabs defaultValue="timeline" className="w-full">
@@ -234,87 +178,45 @@ export const KernelHealthDashboardPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="timeline">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lifecycle Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for LifecycleTimelinePanel */}
-                  <p className="text-muted-foreground">
-                    Lifecycle timeline panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <LifecycleTimelinePanel
+                productUnitId={healthView.productUnitId}
+                runs={timeline?.runs ?? []}
+              />
             </TabsContent>
 
             <TabsContent value="gates">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gate Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for GateHealthPanel */}
-                  <p className="text-muted-foreground">
-                    Gate health panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <GateHealthPanel
+                productUnitId={healthView.productUnitId}
+                gates={[]}
+              />
             </TabsContent>
 
             <TabsContent value="artifacts">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Artifact Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for ArtifactHealthPanel */}
-                  <p className="text-muted-foreground">
-                    Artifact health panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <ArtifactHealthPanel
+                productUnitId={healthView.productUnitId}
+                artifacts={[]}
+              />
             </TabsContent>
 
             <TabsContent value="deployment">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Deployment Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for DeploymentHealthPanel */}
-                  <p className="text-muted-foreground">
-                    Deployment health panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <DeploymentHealthPanel
+                productUnitId={healthView.productUnitId}
+                deployment={healthView.deployment as Parameters<typeof DeploymentHealthPanel>[0]['deployment']}
+              />
             </TabsContent>
 
             <TabsContent value="governance">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Agent Governance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for AgentGovernanceHealthPanel */}
-                  <p className="text-muted-foreground">
-                    Agent governance health panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <AgentGovernanceHealthPanel
+                productUnitId={healthView.productUnitId}
+                agents={[]}
+              />
             </TabsContent>
 
             <TabsContent value="security">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Preview Security</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Placeholder for PreviewSecurityHealthPanel */}
-                  <p className="text-muted-foreground">
-                    Preview security health panel will be rendered here.
-                  </p>
-                </CardContent>
-              </Card>
+              <PreviewSecurityHealthPanel
+                productUnitId={healthView.productUnitId}
+                previewSecurity={healthView.healthSnapshot as Parameters<typeof PreviewSecurityHealthPanel>[0]['previewSecurity']}
+              />
             </TabsContent>
           </Tabs>
         </>

@@ -8,6 +8,15 @@ This is the **Kernel Product Lifecycle**, not the YAPPC Creator Lifecycle. YAPPC
 
 ## Lifecycle Phases
 
+## Maturity
+
+| Phase | Current maturity |
+|-------|------------------|
+| plan | Pilot executable for Digital Marketing |
+| validate/test/build | Pilot executable for Digital Marketing |
+| package/deploy/verify | Pilot path; requires manifest completeness and required output validation |
+| promote/rollback | Target/partial |
+
 ### dev
 - **Purpose**: Start development environment for a product
 - **Operations**: Start dev servers, watch for changes

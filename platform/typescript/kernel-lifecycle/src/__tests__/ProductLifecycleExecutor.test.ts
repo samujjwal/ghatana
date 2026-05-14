@@ -58,6 +58,7 @@ function makePlan(
   return {
     schemaVersion: '1.0.0',
     runId: 'run-001',
+    correlationId: 'corr-run-001',
     phaseMode: 'sequential',
     lifecycleProfile: 'standard-web-api-product',
     surfaces: [],

@@ -1,10 +1,6 @@
 /**
  * GhatanaFileRegistryProvider - implementation of RegistryProvider backed by the Ghatana file registry.
  *
- * This provider reads from config/canonical-product-registry.json and converts entries
- * into ProductUnit representations. It preserves lifecycle fields and validates that
- * enabled products have lifecycle configuration paths.
- *
  * @doc.type class
  * @doc.purpose Ghatana file-backed registry provider implementation
  * @doc.layer kernel-providers
@@ -14,73 +10,105 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type {
-  RegistryProvider,
-  ProductUnit,
-  ProductUnitSurface,
-  ProviderRef,
-  ProductUnitConformance,
-  ProductUnitGovernance,
   LifecycleStatus,
+  ProductUnit,
+  ProductUnitConformance,
+  ProductUnitSurface,
+  ProductUnitSurfaceType,
+  RegistryProvider,
 } from "@ghatana/kernel-product-contracts";
 import {
-  ProductUnitKind,
-  ImplementationStatus,
-  type ProductUnitSurfaceType,
+  isImplementationStatus,
+  isProductUnitKind,
+  isProductUnitSurfaceType,
+  validateProductUnit,
 } from "@ghatana/kernel-product-contracts";
 
-/**
- * Ghatana file registry entry structure.
- */
+export interface GhatanaFileRegistryProviderOptions {
+  readonly registryPath?: string;
+  readonly strict?: boolean;
+}
+
+export interface RegistryValidationIssue {
+  readonly productId: string;
+  readonly path: string;
+  readonly message: string;
+}
+
+export interface RegistryValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly RegistryValidationIssue[];
+  readonly warnings: readonly RegistryValidationIssue[];
+}
+
+interface GhatanaRegistrySurface {
+  readonly type: string;
+  readonly path?: string;
+  readonly packagePath?: string;
+  readonly gradleModule?: string;
+  readonly implementationStatus?: string;
+}
+
 interface GhatanaRegistryEntry {
   readonly id: string;
   readonly name: string;
   readonly kind: string;
   readonly owner?: string;
-  readonly surfaces: readonly {
-    readonly type: string;
-    readonly path?: string;
-    readonly packagePath?: string;
-    readonly gradleModule?: string;
-    readonly implementationStatus: string;
-  }[];
+  readonly manifestPath?: string;
+  readonly manifestFormat?: string;
+  readonly buildFile?: string;
+  readonly surfaces?: readonly GhatanaRegistrySurface[];
   readonly lifecycleProfile?: string;
   readonly lifecycleStatus?: string;
   readonly lifecycleConfigPath?: string;
-  readonly conformance?: {
-    readonly manifest: boolean;
-    readonly observability: boolean;
-    readonly security: boolean;
-    readonly dataAccess: boolean;
-    readonly agentDefinitions: boolean;
-    readonly masteryBindings: boolean;
-    readonly evaluationPacks: boolean;
-    readonly runtimeModule: boolean;
-  };
+  readonly ci?: unknown;
+  readonly deployment?: unknown;
+  readonly environments?: unknown;
+  readonly conformance?: Record<string, boolean>;
   readonly metadata?: Record<string, unknown>;
 }
 
-/**
- * Ghatana file registry structure.
- */
 interface GhatanaRegistry {
   readonly version: string;
   readonly registry: Record<string, GhatanaRegistryEntry>;
 }
 
-/**
- * Ghatana file registry provider implementation.
- */
+const LIFECYCLE_STATUSES: readonly LifecycleStatus[] = [
+  "disabled",
+  "planned",
+  "partial",
+  "enabled",
+];
+
 export class GhatanaFileRegistryProvider implements RegistryProvider {
   readonly providerId = "ghatana-file-registry";
   readonly version = "1.0.0";
   readonly capabilities = ["registry-read", "product-unit-conversion"];
 
-  private registryPath: string;
+  private readonly registryPath: string;
+  private readonly strict: boolean;
   private cachedRegistry: GhatanaRegistry | null = null;
 
-  constructor(registryPath?: string) {
+  constructor(options?: string | GhatanaFileRegistryProviderOptions) {
+    if (typeof options === "string" || options === undefined) {
+      this.registryPath =
+        options ?? path.join(process.cwd(), "config/canonical-product-registry.json");
+      this.strict = false;
+      return;
+    }
+
     this.registryPath =
-      registryPath ?? path.join(process.cwd(), "config/canonical-product-registry.json");
+      options.registryPath ??
+      path.join(process.cwd(), "config/canonical-product-registry.json");
+    this.strict = options.strict ?? false;
+  }
+
+  clearCache(): void {
+    this.cachedRegistry = null;
+  }
+
+  reload(): void {
+    this.clearCache();
   }
 
   private async loadRegistry(): Promise<GhatanaRegistry> {
@@ -93,71 +121,178 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
     return this.cachedRegistry;
   }
 
-  private convertSurfaceType(type: string): ProductUnitSurfaceType {
-    const validTypes: readonly ProductUnitSurfaceType[] = [
-      "backend-api",
-      "web",
-      "worker",
-      "operator",
-      "portal",
-      "sdk",
-      "mobile",
-      "mobile-ios",
-      "mobile-android",
-      "cli",
-      "domain-pack",
-      "plugin",
-      "agent-runtime",
-      "data-pipeline",
-    ];
-
-    if (validTypes.includes(type as ProductUnitSurfaceType)) {
-      return type as ProductUnitSurfaceType;
-    }
-
-    return "backend-api"; // Default fallback
+  private issue(
+    productId: string,
+    issuePath: string,
+    message: string
+  ): RegistryValidationIssue {
+    return { productId, path: issuePath, message };
   }
 
-  private convertImplementationStatus(status: string): ImplementationStatus {
-    const validStatuses: readonly ImplementationStatus[] = [
-      "implemented",
-      "planned",
-      "backend-only",
-      "experimental",
-    ];
+  private validateEntry(
+    entry: GhatanaRegistryEntry,
+    productId: string
+  ): RegistryValidationResult {
+    const errors: RegistryValidationIssue[] = [];
+    const warnings: RegistryValidationIssue[] = [];
 
-    if (validStatuses.includes(status as ImplementationStatus)) {
-      return status as ImplementationStatus;
+    if (!isProductUnitKind(entry.kind)) {
+      errors.push(this.issue(productId, "kind", `Unknown product kind "${entry.kind}"`));
     }
 
-    return "planned"; // Default fallback
+    const surfaces = entry.surfaces ?? [];
+    surfaces.forEach((surface, index) => {
+      if (!isProductUnitSurfaceType(surface.type)) {
+        errors.push(
+          this.issue(
+            productId,
+            `surfaces[${index}].type`,
+            `Unknown surface type "${surface.type}"`
+          )
+        );
+      }
+      if (!isImplementationStatus(surface.implementationStatus)) {
+        errors.push(
+          this.issue(
+            productId,
+            `surfaces[${index}].implementationStatus`,
+            `Unknown implementation status "${String(surface.implementationStatus)}"`
+          )
+        );
+      }
+    });
+
+    if (
+      entry.lifecycleStatus !== undefined &&
+      !LIFECYCLE_STATUSES.includes(entry.lifecycleStatus as LifecycleStatus)
+    ) {
+      errors.push(
+        this.issue(
+          productId,
+          "lifecycleStatus",
+          `Unknown lifecycle status "${entry.lifecycleStatus}"`
+        )
+      );
+    }
+
+    if (entry.lifecycleStatus === "enabled" && !entry.lifecycleProfile) {
+      errors.push(
+        this.issue(
+          productId,
+          "lifecycleProfile",
+          "Enabled product must declare lifecycleProfile"
+        )
+      );
+    }
+
+    if (entry.lifecycleStatus === "enabled" && !entry.lifecycleConfigPath) {
+      errors.push(
+        this.issue(
+          productId,
+          "lifecycleConfigPath",
+          "Enabled product must declare lifecycleConfigPath"
+        )
+      );
+    }
+
+    if (!entry.surfaces || entry.surfaces.length === 0) {
+      warnings.push(
+        this.issue(productId, "surfaces", "Product has no registered surfaces")
+      );
+    }
+
+    return { valid: errors.length === 0, errors, warnings };
   }
 
-  private convertLifecycleStatus(status?: string): LifecycleStatus {
-    const validStatuses: readonly LifecycleStatus[] = [
-      "disabled",
-      "planned",
-      "partial",
-      "enabled",
-    ];
+  async validateRegistry(): Promise<RegistryValidationResult> {
+    const registry = await this.loadRegistry();
+    const errors: RegistryValidationIssue[] = [];
+    const warnings: RegistryValidationIssue[] = [];
 
-    if (status && validStatuses.includes(status as LifecycleStatus)) {
+    for (const [productId, entry] of Object.entries(registry.registry)) {
+      const result = this.validateEntry(entry, productId);
+      errors.push(...result.errors);
+      warnings.push(...result.warnings);
+    }
+
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  private assertEntryValid(entry: GhatanaRegistryEntry, productId: string): void {
+    if (!this.strict) {
+      return;
+    }
+
+    const result = this.validateEntry(entry, productId);
+    if (!result.valid) {
+      const details = result.errors
+        .map((error) => `${error.path}: ${error.message}`)
+        .join("; ");
+      throw new Error(`Invalid registry entry "${productId}": ${details}`);
+    }
+  }
+
+  private convertLifecycleStatus(status?: string): LifecycleStatus | undefined {
+    if (status === undefined) {
+      return undefined;
+    }
+    if (LIFECYCLE_STATUSES.includes(status as LifecycleStatus)) {
       return status as LifecycleStatus;
     }
-
-    return "planned"; // Default fallback
+    return status as LifecycleStatus;
   }
 
-  private convertEntryToProductUnit(entry: GhatanaRegistryEntry): ProductUnit {
-    const surfaces: ProductUnitSurface[] = entry.surfaces.map((surface) => ({
+  private convertSurface(
+    entry: GhatanaRegistryEntry,
+    surface: GhatanaRegistrySurface
+  ): ProductUnitSurface {
+    const converted: ProductUnitSurface = {
       id: `${entry.id}-${surface.type}`,
-      type: this.convertSurfaceType(surface.type),
-      sourceRef: surface.path,
-      implementationStatus: this.convertImplementationStatus(surface.implementationStatus),
-      packagePath: surface.packagePath,
-      gradleModule: surface.gradleModule,
-      adapterHint: undefined, // Could be derived from toolchain in a full implementation
-    }));
+      type: surface.type as ProductUnitSurfaceType,
+      implementationStatus: String(surface.implementationStatus) as ProductUnitSurface["implementationStatus"],
+      ...(surface.path !== undefined ? { sourceRef: surface.path } : {}),
+      ...(surface.packagePath !== undefined ? { packagePath: surface.packagePath } : {}),
+      ...(surface.gradleModule !== undefined ? { gradleModule: surface.gradleModule } : {}),
+    };
+
+    return converted;
+  }
+
+  private buildSourceMetadata(
+    entry: GhatanaRegistryEntry,
+    validation: RegistryValidationResult
+  ): Record<string, unknown> {
+    return {
+      ...(entry.metadata ?? {}),
+      sourceRegistry: {
+        ...(entry.manifestPath !== undefined ? { manifestPath: entry.manifestPath } : {}),
+        ...(entry.manifestFormat !== undefined
+          ? { manifestFormat: entry.manifestFormat }
+          : {}),
+        ...(entry.buildFile !== undefined ? { buildFile: entry.buildFile } : {}),
+        ...(entry.lifecycleConfigPath !== undefined
+          ? { lifecycleConfigPath: entry.lifecycleConfigPath }
+          : {}),
+        ...(entry.ci !== undefined ? { ci: entry.ci } : {}),
+        ...(entry.deployment !== undefined ? { deployment: entry.deployment } : {}),
+        ...(entry.environments !== undefined ? { environments: entry.environments } : {}),
+      },
+      validation: {
+        warnings: validation.warnings,
+        errors: validation.errors,
+      },
+    };
+  }
+
+  private convertEntryToProductUnit(
+    entry: GhatanaRegistryEntry,
+    productId: string
+  ): ProductUnit {
+    this.assertEntryValid(entry, productId);
+    const validation = this.validateEntry(entry, productId);
+    const surfaces: ProductUnitSurface[] = (entry.surfaces ?? []).map((surface) =>
+      this.convertSurface(entry, surface)
+    );
 
     const conformance: ProductUnitConformance | undefined = entry.conformance
       ? {
@@ -169,21 +304,31 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
         }
       : undefined;
 
-    return {
+    const metadataOwner =
+      typeof entry.metadata?.owner === "string" ? entry.metadata.owner : undefined;
+
+    const productUnit: ProductUnit = {
       schemaVersion: "1.0.0",
       id: entry.id,
       name: entry.name,
-      kind: entry.kind as ProductUnitKind,
-      owner: entry.owner || entry.metadata?.owner as string,
+      kind: entry.kind as ProductUnit["kind"],
+      ...(entry.owner ?? metadataOwner
+        ? { owner: entry.owner ?? metadataOwner }
+        : {}),
       registryProviderRef: { providerId: this.providerId },
       sourceProviderRef: { providerId: this.providerId },
       surfaces,
-      lifecycleProfile: entry.lifecycleProfile,
-      lifecycleStatus: this.convertLifecycleStatus(entry.lifecycleStatus),
-      conformance,
-      governance: undefined, // Could be derived from conformance in a full implementation
-      metadata: entry.metadata,
+      ...(entry.lifecycleProfile !== undefined
+        ? { lifecycleProfile: entry.lifecycleProfile }
+        : {}),
+      ...(entry.lifecycleStatus !== undefined
+        ? { lifecycleStatus: this.convertLifecycleStatus(entry.lifecycleStatus) }
+        : {}),
+      ...(conformance !== undefined ? { conformance } : {}),
+      metadata: this.buildSourceMetadata(entry, validation),
     };
+
+    return productUnit;
   }
 
   async getProductUnit(productUnitId: string): Promise<ProductUnit | null> {
@@ -194,60 +339,35 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
       return null;
     }
 
-    return this.convertEntryToProductUnit(entry);
+    return this.convertEntryToProductUnit(entry, productUnitId);
   }
 
   async listProductUnits(): Promise<readonly ProductUnit[]> {
     const registry = await this.loadRegistry();
-    const entries = Object.values(registry.registry);
-    return entries.map((entry) => this.convertEntryToProductUnit(entry));
+    return Object.entries(registry.registry).map(([productId, entry]) =>
+      this.convertEntryToProductUnit(entry, productId)
+    );
   }
 
   async listProductUnitsByKind(kind: string): Promise<readonly ProductUnit[]> {
     const registry = await this.loadRegistry();
-    const entries = Object.values(registry.registry).filter(
-      (entry) => entry.kind === kind
-    );
-    return entries.map((entry) => this.convertEntryToProductUnit(entry));
+    return Object.entries(registry.registry)
+      .filter(([, entry]) => entry.kind === kind)
+      .map(([productId, entry]) => this.convertEntryToProductUnit(entry, productId));
   }
 
   async validateProductUnit(productUnit: ProductUnit): Promise<{
     valid: boolean;
     errors: readonly string[];
   }> {
-    const errors: string[] = [];
+    const result = validateProductUnit(productUnit);
+    const errors = [...result.errors];
 
-    // Validate schema version
-    if (productUnit.schemaVersion !== "1.0.0") {
-      errors.push(`Invalid schema version: ${productUnit.schemaVersion}`);
-    }
-
-    // Validate required fields
-    if (!productUnit.id || typeof productUnit.id !== "string") {
-      errors.push("Missing or invalid id");
-    }
-
-    if (!productUnit.name || typeof productUnit.name !== "string") {
-      errors.push("Missing or invalid name");
-    }
-
-    // Validate enabled products have lifecycle config
     if (productUnit.lifecycleStatus === "enabled" && !productUnit.lifecycleProfile) {
       errors.push("Enabled product must have lifecycle profile");
     }
-
-    // Validate surfaces
-    if (!productUnit.surfaces || productUnit.surfaces.length === 0) {
+    if (productUnit.surfaces.length === 0) {
       errors.push("ProductUnit must have at least one surface");
-    }
-
-    // Validate provider refs
-    if (!productUnit.registryProviderRef || !productUnit.registryProviderRef.providerId) {
-      errors.push("Missing registry provider reference");
-    }
-
-    if (!productUnit.sourceProviderRef || !productUnit.sourceProviderRef.providerId) {
-      errors.push("Missing source provider reference");
     }
 
     return {

@@ -61,6 +61,10 @@ describe("GhatanaFileRegistryProvider", () => {
             ],
             lifecycleProfile: "standard-web-api-product",
             lifecycleStatus: "enabled",
+            lifecycleConfigPath: "products/digital-marketing/kernel-product.yaml",
+            deployment: {
+              targets: ["compose-local"],
+            },
           },
         },
       };
@@ -78,6 +82,147 @@ describe("GhatanaFileRegistryProvider", () => {
       expect(result?.surfaces[1].type).toBe("web");
       expect(result?.lifecycleProfile).toBe("standard-web-api-product");
       expect(result?.lifecycleStatus).toBe("enabled");
+      expect(result?.metadata?.sourceRegistry).toMatchObject({
+        lifecycleConfigPath: "products/digital-marketing/kernel-product.yaml",
+        deployment: {
+          targets: ["compose-local"],
+        },
+      });
+    });
+
+    it("strict mode rejects unknown surface type", async () => {
+      provider = new GhatanaFileRegistryProvider({
+        registryPath: mockRegistryPath,
+        strict: true,
+      });
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            broken: {
+              id: "broken",
+              name: "Broken",
+              kind: "business-product",
+              surfaces: [
+                {
+                  type: "desktop",
+                  implementationStatus: "implemented",
+                },
+              ],
+              lifecycleStatus: "planned",
+            },
+          },
+        })
+      );
+
+      await expect(provider.getProductUnit("broken")).rejects.toThrow(
+        'Unknown surface type "desktop"'
+      );
+    });
+
+    it("strict mode rejects unknown lifecycle status", async () => {
+      provider = new GhatanaFileRegistryProvider({
+        registryPath: mockRegistryPath,
+        strict: true,
+      });
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            broken: {
+              id: "broken",
+              name: "Broken",
+              kind: "business-product",
+              surfaces: [
+                {
+                  type: "backend-api",
+                  implementationStatus: "implemented",
+                },
+              ],
+              lifecycleStatus: "ready-ish",
+            },
+          },
+        })
+      );
+
+      await expect(provider.getProductUnit("broken")).rejects.toThrow(
+        'Unknown lifecycle status "ready-ish"'
+      );
+    });
+
+    it("strict mode rejects unknown kind", async () => {
+      provider = new GhatanaFileRegistryProvider({
+        registryPath: mockRegistryPath,
+        strict: true,
+      });
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            broken: {
+              id: "broken",
+              name: "Broken",
+              kind: "mystery",
+              surfaces: [
+                {
+                  type: "backend-api",
+                  implementationStatus: "implemented",
+                },
+              ],
+              lifecycleStatus: "planned",
+            },
+          },
+        })
+      );
+
+      await expect(provider.getProductUnit("broken")).rejects.toThrow(
+        'Unknown product kind "mystery"'
+      );
+    });
+
+    it("non-strict mode preserves validation warning rather than silently changing meaning", async () => {
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            broken: {
+              id: "broken",
+              name: "Broken",
+              kind: "business-product",
+              surfaces: [
+                {
+                  type: "desktop",
+                  implementationStatus: "half-built",
+                },
+              ],
+              lifecycleStatus: "planned",
+            },
+          },
+        })
+      );
+
+      const result = await provider.getProductUnit("broken");
+
+      expect(result?.surfaces[0].type).toBe("desktop");
+      expect(result?.surfaces[0].implementationStatus).toBe("half-built");
+      expect(result?.metadata?.validation).toMatchObject({
+        errors: [
+          {
+            productId: "broken",
+            path: "surfaces[0].type",
+            message: 'Unknown surface type "desktop"',
+          },
+          {
+            productId: "broken",
+            path: "surfaces[0].implementationStatus",
+            message: 'Unknown implementation status "half-built"',
+          },
+        ],
+      });
     });
 
     it("converts Finance backend/operator/sdk shape", async () => {
@@ -170,6 +315,32 @@ describe("GhatanaFileRegistryProvider", () => {
       expect(result?.surfaces[3].type).toBe("mobile-android");
     });
 
+    it("converts FlashIt mobile shorthand shape", async () => {
+      const mockRegistry = {
+        version: "1.0.0",
+        registry: {
+          flashit: {
+            id: "flashit",
+            name: "FlashIt",
+            kind: "business-product",
+            surfaces: [
+              {
+                type: "mobile",
+                packagePath: "products/flashit/mobile",
+                implementationStatus: "planned",
+              },
+            ],
+            lifecycleStatus: "planned",
+          },
+        },
+      };
+      await fs.writeFile(mockRegistryPath, JSON.stringify(mockRegistry));
+
+      const result = await provider.getProductUnit("flashit");
+
+      expect(result?.surfaces[0].type).toBe("mobile");
+    });
+
     it("converts YAPPC platform-provider shape", async () => {
       const mockRegistry = {
         version: "1.0.0",
@@ -239,6 +410,78 @@ describe("GhatanaFileRegistryProvider", () => {
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe("digital-marketing");
       expect(result[1].id).toBe("finance");
+    });
+  });
+
+  describe("cache", () => {
+    it("clearCache reloads an updated registry", async () => {
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            demo: {
+              id: "demo",
+              name: "Demo One",
+              kind: "business-product",
+              surfaces: [],
+            },
+          },
+        })
+      );
+
+      expect((await provider.getProductUnit("demo"))?.name).toBe("Demo One");
+
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            demo: {
+              id: "demo",
+              name: "Demo Two",
+              kind: "business-product",
+              surfaces: [],
+            },
+          },
+        })
+      );
+
+      expect((await provider.getProductUnit("demo"))?.name).toBe("Demo One");
+      provider.clearCache();
+      expect((await provider.getProductUnit("demo"))?.name).toBe("Demo Two");
+    });
+  });
+
+  describe("validateRegistry", () => {
+    it("returns structured registry errors", async () => {
+      await fs.writeFile(
+        mockRegistryPath,
+        JSON.stringify({
+          version: "1.0.0",
+          registry: {
+            broken: {
+              id: "broken",
+              name: "Broken",
+              kind: "business-product",
+              surfaces: [
+                {
+                  type: "backend-api",
+                  implementationStatus: "unknown",
+                },
+              ],
+            },
+          },
+        })
+      );
+
+      const result = await provider.validateRegistry();
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0]).toMatchObject({
+        productId: "broken",
+        path: "surfaces[0].implementationStatus",
+      });
     });
   });
 

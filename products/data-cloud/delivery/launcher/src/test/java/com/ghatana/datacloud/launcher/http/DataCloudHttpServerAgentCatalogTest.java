@@ -101,14 +101,21 @@ class DataCloudHttpServerAgentCatalogTest {
 
         @Test
         @DisplayName("returns 200 with agent array")
-        void listCatalog_returns200WithAgentArray() throws Exception { 
-            startServer(); 
+        void listCatalog_returns200WithAgentArray() throws Exception {
+            startServer();
 
-            HttpResponse<String> response = get("/api/v1/agents/catalog");
+            // Use a fresh HttpClient to avoid connection reuse issues from previous tests
+            HttpClient freshHttpClient = HttpClient.newBuilder().build();
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/agents/catalog"))
+                    .header("X-Tenant-Id", "test-tenant")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = freshHttpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
-            assertThat(response.statusCode()).isEqualTo(200); 
+            assertThat(response.statusCode()).isEqualTo(200);
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class);
             assertThat(body).containsKey("agents");
             assertThat(body).containsKey("total");
             assertThat(((java.util.List<?>) body.get("agents")).size())

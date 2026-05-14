@@ -71,7 +71,8 @@ export class ProductLifecycleExecutor {
       await this.executeSequential(steps, productId, options, logger, plan);
     }
 
-    const result = this.resultCollector.collect(productId, phase, options.outputDirectory);
+    let result = this.resultCollector.collect(productId, phase, options.outputDirectory, runId);
+    result = this.failClosedWhenRequiredArtifactsMissing(result, plan);
     const duration = Date.now() - startTime;
 
     // Emit lifecycle phase complete event
@@ -85,19 +86,21 @@ export class ProductLifecycleExecutor {
       );
     }
 
-    // Aggregate health snapshot
-    if (options.healthAggregator && plan) {
-      const healthSnapshot = await options.healthAggregator.aggregateLifecycleHealth(
-        productId,
-        runId,
-        [phase]
-      );
-      // Write health snapshot to output directory
-      await this.writeHealthSnapshot(healthSnapshot, options.outputDirectory);
-    }
+    const healthSnapshot = options.healthAggregator && plan
+      ? await options.healthAggregator.aggregateLifecycleHealth(productId, runId, [phase])
+      : {
+          schemaVersion: '1.0.0',
+          productId,
+          runId,
+          status: result.status === 'succeeded' ? 'healthy' : result.status === 'failed' ? 'failed' : 'skipped',
+          phase,
+          snapshotAt: new Date().toISOString(),
+        };
+    await this.writeHealthSnapshot(healthSnapshot, options.outputDirectory);
 
     // Write phase-specific output summaries after execution
     await this.writePhaseOutputs(phase, result, options.outputDirectory, productId, options.environment);
+    await this.writeLifecycleResult(result, options.outputDirectory);
 
     return result;
   }
@@ -124,6 +127,53 @@ export class ProductLifecycleExecutor {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[executor] Failed to write health snapshot: ${msg}`);
     }
+  }
+
+  private async writeLifecycleResult(
+    result: ProductLifecycleResult,
+    outputDirectory: string
+  ): Promise<void> {
+    await fs.mkdir(outputDirectory, { recursive: true });
+    await fs.writeFile(
+      path.join(outputDirectory, 'lifecycle-result.json'),
+      JSON.stringify(result, null, 2),
+      'utf-8'
+    );
+  }
+
+  private failClosedWhenRequiredArtifactsMissing(
+    result: ProductLifecycleResult,
+    plan?: ProductLifecyclePlan,
+  ): ProductLifecycleResult {
+    if (!plan || plan.expectedArtifacts.length === 0 || result.status !== 'succeeded') {
+      return result;
+    }
+
+    const missing = plan.expectedArtifacts.filter((expected) => {
+      if (!expected.required) {
+        return false;
+      }
+      return !result.artifacts.some(
+        (artifact) => artifact.surface === expected.surface && artifact.type === expected.type,
+      );
+    });
+
+    if (missing.length === 0) {
+      return result;
+    }
+
+    const message = `Missing required output artifacts: ${missing
+      .map((artifact) => `${artifact.surface}:${artifact.type}`)
+      .join(', ')}`;
+
+    return {
+      ...result,
+      status: 'failed',
+      failure: {
+        stepId: 'artifact-validation',
+        message,
+      },
+    };
   }
 
   /**
@@ -229,14 +279,24 @@ export class ProductLifecycleExecutor {
     plan?: ProductLifecyclePlan,
   ): Promise<ProductLifecycleStepResult> {
     if (options.dryRun) {
+      const timestamp = new Date().toISOString();
       return {
         stepId: step.id,
+        phase: step.phase,
+        surface: step.surface,
+        adapter: step.adapter,
         status: 'skipped' as const,
+        startedAt: timestamp,
+        completedAt: timestamp,
         exitCode: 0,
         stdout: step.execution
           ? `[DRY-RUN] ${step.execution.command} ${step.execution.args.join(' ')}`
           : `[DRY-RUN] ${step.phase} phase for ${step.surface} via ${step.adapter}`,
         durationMs: 0,
+        artifacts: [],
+        errors: [],
+        warnings: [],
+        ...(plan?.correlationId ? { correlationId: plan.correlationId } : {}),
       };
     }
     return this.executeAdapterStep(step, productId, options, logger, plan);
@@ -272,7 +332,20 @@ export class ProductLifecycleExecutor {
       outputDirectory: options.outputDirectory,
     };
 
-    return this.stepRunner.run(step, stepContext);
+    const startedAt = new Date().toISOString();
+    const result = await this.stepRunner.run(step, stepContext);
+    return {
+      ...result,
+      phase: step.phase,
+      surface: step.surface,
+      adapter: step.adapter,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      artifacts: [],
+      errors: result.status === 'failed' ? [result.stderr ?? `Step ${step.id} failed`] : [],
+      warnings: [],
+      ...(plan?.correlationId ? { correlationId: plan.correlationId } : {}),
+    };
   }
 
   /**
@@ -347,4 +420,3 @@ export class ProductLifecycleExecutor {
     return surface;
   }
 }
-

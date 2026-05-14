@@ -67,6 +67,24 @@ async function main() {
     warnings.push(`Products in matrix but not in registry: ${extraInMatrix.join(', ')}`);
   }
 
+  for (const row of matrix.matrix) {
+    if (!row.productKind) {
+      errors.push(`Matrix row "${row.productId}" is missing productKind`);
+    }
+    if (!row.shapeValidationMode) {
+      errors.push(`Matrix row "${row.productId}" is missing shapeValidationMode`);
+    }
+    if (!row.profileStatus) {
+      errors.push(`Matrix row "${row.productId}" is missing profileStatus`);
+    }
+    if (!row.executionReadiness) {
+      errors.push(`Matrix row "${row.productId}" is missing executionReadiness`);
+    }
+    if (row.lifecycleStatus === 'disabled' && row.findings?.some(f => f.includes('Lifecycle profile "undefined" not found'))) {
+      errors.push(`Disabled product "${row.productId}" has a false missing-profile finding`);
+    }
+  }
+
   // 5. Check Digital Marketing is the only enabled lifecycle proof target
   const enabledProducts = matrix.matrix.filter(m => m.lifecycleStatus === 'enabled');
   if (enabledProducts.length === 0) {
@@ -75,6 +93,11 @@ async function main() {
     warnings.push(`Multiple products with lifecycleStatus="enabled": ${enabledProducts.map(m => m.productId).join(', ')}. Expected only Digital Marketing as pilot.`);
   } else if (enabledProducts.length === 1 && enabledProducts[0].productId !== 'digital-marketing') {
     warnings.push(`Enabled lifecycle product is "${enabledProducts[0].productId}" but expected "digital-marketing" as pilot.`);
+  }
+
+  const digitalMarketing = matrix.matrix.find(m => m.productId === 'digital-marketing');
+  if (digitalMarketing?.findings?.some(f => f.includes('deployment adapter'))) {
+    errors.push('Digital Marketing has an avoidable deployment adapter finding');
   }
 
   // 6. Check PHR/Finance/FlashIt have planned status (not enabled)
@@ -93,8 +116,7 @@ async function main() {
     if (!matrixRow) {
       errors.push(`Platform provider product "${productId}" not found in matrix`);
     } else {
-      const shape = matrixRow.shape.toLowerCase();
-      if (!shape.includes('platform-provider') && !shape.includes('provider')) {
+      if (matrixRow.productKind !== 'platform-provider') {
         warnings.push(`Platform provider product "${productId}" shape does not indicate platform-provider status: ${matrixRow.shape}`);
       }
     }
