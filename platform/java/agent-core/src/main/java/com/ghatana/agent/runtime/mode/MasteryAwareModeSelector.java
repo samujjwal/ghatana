@@ -5,6 +5,7 @@
 package com.ghatana.agent.runtime.mode;
 
 import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextCodec;
 import com.ghatana.agent.mastery.MasteryDecision;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryQuery;
@@ -76,8 +77,9 @@ public final class MasteryAwareModeSelector {
         String traceId = UUID.randomUUID().toString();
         Instant startTime = Instant.now();
 
-        // Convert versionContext dependencies map to string format for query
-        String versionContextStr = formatVersionContext(versionContext);
+        // Encode versionContext using the canonical codec
+        VersionContextCodec.EncodedContext encoded = VersionContextCodec.INSTANCE.encodeWithDigest(versionContext);
+        String versionContextStr = encoded.json();
 
         // Query mastery registry with explicit tenant and version context
         MasteryQuery query = MasteryQuery.bySkill(skillId)
@@ -112,6 +114,7 @@ public final class MasteryAwareModeSelector {
                                                 traceMetadata.put("taskRiskLevel", taskClassification.riskLevel().name());
                                                 traceMetadata.put("taskNovelty", taskClassification.novelty().name());
                                                 traceMetadata.put("versionContext", versionContextStr);
+                                                traceMetadata.put("versionContextDigest", encoded.digest());
                                                 traceMetadata.put("modeSelectionReason", modeSelectionResult.reasoning());
 
                                                 return Promise.of(new EnrichedModeSelectionResult(
@@ -146,7 +149,8 @@ public final class MasteryAwareModeSelector {
         Instant startTime = Instant.now();
 
         // Ensure version context is included in query if not already present
-        String versionContextStr = formatVersionContext(versionContext);
+        VersionContextCodec.EncodedContext encoded = VersionContextCodec.INSTANCE.encodeWithDigest(versionContext);
+        String versionContextStr = encoded.json();
         MasteryQuery enrichedQuery = query.versionContext() != null 
                 ? query 
                 : query.withVersionContext(versionContextStr);
@@ -175,6 +179,7 @@ public final class MasteryAwareModeSelector {
                                     traceMetadata.put("taskRiskLevel", taskClassification.riskLevel().name());
                                     traceMetadata.put("taskNovelty", taskClassification.novelty().name());
                                     traceMetadata.put("versionContext", versionContextStr);
+                                    traceMetadata.put("versionContextDigest", encoded.digest());
                                     traceMetadata.put("modeSelectionReason", modeSelectionResult.reasoning());
 
                                     return Promise.of(new EnrichedModeSelectionResult(
@@ -189,24 +194,7 @@ public final class MasteryAwareModeSelector {
                                 }));
     }
 
-    /**
-     * Formats version context dependencies map to string format.
-     * Format: "component1=1.0.0,component2=2.0.0"
-     *
-     * @param versionContext version context
-     * @return formatted string
-     */
-    @NotNull
-    private static String formatVersionContext(@NotNull VersionContext versionContext) {
-        Map<String, String> dependencies = versionContext.dependencies();
-        if (dependencies == null || dependencies.isEmpty()) {
-            return "";
-        }
-        return dependencies.entrySet().stream()
-                .map(e -> e.getKey() + "=" + e.getValue())
-                .reduce((a, b) -> a + "," + b)
-                .orElse("");
-    }
+
 
     /**
      * Enriched mode selection result with trace metadata.

@@ -212,6 +212,15 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
 
     @Override
     @NotNull
+    public Promise<LearningDelta> updateStateWithRejection(
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState newState,
+            @NotNull String rejectionReason) {
+        return doUpdateState(deltaId, newState, rejectionReason);
+    }
+
+    @Override
+    @NotNull
     public Promise<List<LearningDelta>> findPending(@NotNull String agentId) {
         return scanAllTenants()
                 .map(deltas -> deltas.stream()

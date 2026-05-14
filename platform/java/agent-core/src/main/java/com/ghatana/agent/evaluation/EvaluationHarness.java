@@ -7,9 +7,6 @@ package com.ghatana.agent.evaluation;
 import com.ghatana.agent.learning.LearningDelta;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 /**
  * Harness for running evaluation packs in a sandboxed environment.
@@ -64,34 +61,4 @@ public interface EvaluationHarness {
      */
     @NotNull
     EvaluationPack createMasteredPack(@NotNull String targetArtifactId);
-}
-
-/**
- * Evaluation context providing execution environment information.
- *
- * @param tenantId tenant identifier
- * @param agentId agent identifier
- * @param skillId skill identifier
- * @param versionContext version context for compatibility checks
- * @param metadata additional context metadata
- */
-record EvaluationContext(
-        @NotNull String tenantId,
-        @NotNull String agentId,
-        @NotNull String skillId,
-        @Nullable com.ghatana.agent.context.version.VersionContext versionContext,
-        @NotNull Map<String, String> metadata
-) {
-    public EvaluationContext {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalArgumentException("tenantId must not be blank");
-        }
-        if (agentId == null || agentId.isBlank()) {
-            throw new IllegalArgumentException("agentId must not be blank");
-        }
-        if (skillId == null || skillId.isBlank()) {
-            throw new IllegalArgumentException("skillId must not be blank");
-        }
-        metadata = Map.copyOf(metadata);
-    }
 }

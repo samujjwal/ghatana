@@ -126,6 +126,22 @@ public interface LearningDeltaRepository {
     Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState, @NotNull String rejectionReason);
 
     /**
+     * Updates the state of a learning delta to REJECTED with a reason.
+     * Convenience alias for {@link #updateState(String, LearningDeltaState, String)} for
+     * explicit rejection semantics.
+     *
+     * @param deltaId         delta identifier
+     * @param newState        target state (typically REJECTED)
+     * @param rejectionReason human-readable rejection reason
+     * @return promise of updated delta
+     */
+    @NotNull
+    Promise<LearningDelta> updateStateWithRejection(
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState newState,
+            @NotNull String rejectionReason);
+
+    /**
      * Finds pending learning deltas for an agent.
      *
      * @param agentId agent identifier

@@ -59,4 +59,10 @@ public class EnhancedProcedure implements MemoryItem {
     @Builder.Default @NotNull Map<String, Object> prerequisites = Map.of();
     @Builder.Default @NotNull Map<String, Object> environmentConstraints = Map.of();
     @Builder.Default @NotNull List<ProcedureVersion> versionHistory = List.of();
+
+    @Override
+    @NotNull
+    public String getClassification() {
+        return classification != null ? classification : "INTERNAL";
+    }
 }

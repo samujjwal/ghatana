@@ -15,6 +15,7 @@ import com.ghatana.agent.context.version.EnvironmentSnapshot;
 import com.ghatana.agent.context.version.RepositoryConventionFingerprint;
 import com.ghatana.agent.context.version.RuntimeFingerprint;
 import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextCodec;
 import com.ghatana.agent.context.version.VersionContextResolver;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.dispatch.ExecutionTier;
@@ -368,11 +369,11 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                         traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
                                 ? hc.getLastHash(tenantId) : "");
                 
-                // Extract resolved version context and include it in mastery query for version-aware decisions
+                // Extract resolved version context and encode using canonical codec for mastery query
                 String versionContextStr = "";
                 Object vcObj = ctxWithVersion.getConfig("versionContext");
                 if (vcObj instanceof VersionContext vc) {
-                    versionContextStr = vc.toString();
+                    versionContextStr = VersionContextCodec.INSTANCE.encode(vc);
                 }
                 
                 MasteryQuery masteryQuery = MasteryQuery.bySkill(skillId)
@@ -505,10 +506,13 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 versionCtx = (VersionContext) vcObj;
             }
             
+            // Extract a meaningful task description from context (e.g. from input converted to String or a context tag)
+            String taskDescription = extractTaskDescription(input, ctx);
+
             return modeSelector.selectMode(
                     skillId, agentId, tenantId,
-                    agentId + " task",
-                    "",
+                    taskDescription,
+                    ctx.getTraceId() != null ? ctx.getTraceId() : "",
                     versionCtx)
                     .then(modeResult -> {
                         AgentContext ctxWithMode = ctx.toBuilder()
@@ -843,5 +847,37 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         Object v = ctx.getConfig(key);
         if (v instanceof Number n) return n.longValue();
         return defaultVal;
+    }
+
+    /**
+     * Extracts a meaningful task description from the dispatched input or agent context.
+     *
+     * <p>Priority order:
+     * <ol>
+     *   <li>Context config key {@code "taskDescription"} — set by callers with an explicit task.</li>
+     *   <li>Context config key {@code "task"} — shorthand variant.</li>
+     *   <li>{@code input.toString()} when the result is short enough (&le;200 chars) and non-default.</li>
+     *   <li>Fallback: {@code agentId + " dispatch"} so mode-selector never receives a blank description.</li>
+     * </ol>
+     */
+    @NotNull
+    private <I> String extractTaskDescription(@Nullable I input, @NotNull AgentContext ctx) {
+        Object taskDesc = ctx.getConfig("taskDescription");
+        if (taskDesc instanceof String s && !s.isBlank()) {
+            return s;
+        }
+        Object task = ctx.getConfig("task");
+        if (task instanceof String s && !s.isBlank()) {
+            return s;
+        }
+        if (input != null) {
+            String repr = input.toString();
+            // Avoid using unhelpful JVM default representations like "ClassName@hexhash"
+            if (!repr.contains("@") && repr.length() <= 200 && !repr.isBlank()) {
+                return repr;
+            }
+        }
+        String agentId = ctx.getAgentId();
+        return agentId + " dispatch";
     }
 }

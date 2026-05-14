@@ -4,10 +4,15 @@
  */
 package com.ghatana.agent.promotion;
 
+import com.ghatana.agent.evaluation.EvaluationHarness;
+import com.ghatana.agent.evaluation.EvaluationContext;
+import com.ghatana.agent.evaluation.EvaluationPack;
 import com.ghatana.agent.evaluation.EvaluationResult;
+import com.ghatana.agent.evaluation.DefaultEvaluationHarness;
 import com.ghatana.agent.learning.LearningDelta;
 import com.ghatana.agent.learning.LearningDeltaRepository;
 import com.ghatana.agent.learning.LearningDeltaState;
+import com.ghatana.agent.learning.LearningTarget;
 import com.ghatana.agent.mastery.ApplicabilityScope;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
@@ -43,12 +48,15 @@ import java.util.UUID;
  */
 public final class DefaultPromotionEngine implements PromotionEngine {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DefaultPromotionEngine.class);
+
     private final MasteryRegistry masteryRegistry;
     private final LearningDeltaRepository deltaRepository;
+    private final EvaluationHarness evaluationHarness;
     private PromotionPolicy promotionPolicy;
 
     /**
-     * Creates a default promotion engine.
+     * Creates a default promotion engine with a default evaluation harness.
      *
      * @param masteryRegistry mastery registry for state transitions
      * @param deltaRepository learning delta repository for state updates
@@ -57,8 +65,24 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             @NotNull MasteryRegistry masteryRegistry,
             @NotNull LearningDeltaRepository deltaRepository
     ) {
-        this.masteryRegistry = masteryRegistry;
-        this.deltaRepository = deltaRepository;
+        this(masteryRegistry, deltaRepository, new DefaultEvaluationHarness());
+    }
+
+    /**
+     * Creates a default promotion engine with a custom evaluation harness.
+     *
+     * @param masteryRegistry   mastery registry for state transitions
+     * @param deltaRepository   learning delta repository for state updates
+     * @param evaluationHarness harness to run evaluation packs
+     */
+    public DefaultPromotionEngine(
+            @NotNull MasteryRegistry masteryRegistry,
+            @NotNull LearningDeltaRepository deltaRepository,
+            @NotNull EvaluationHarness evaluationHarness
+    ) {
+        this.masteryRegistry = java.util.Objects.requireNonNull(masteryRegistry, "masteryRegistry must not be null");
+        this.deltaRepository = java.util.Objects.requireNonNull(deltaRepository, "deltaRepository must not be null");
+        this.evaluationHarness = java.util.Objects.requireNonNull(evaluationHarness, "evaluationHarness must not be null");
         this.promotionPolicy = new DefaultPromotionPolicy();
     }
 
@@ -412,32 +436,49 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     @Override
     @NotNull
     public Promise<EvaluationResult> evaluate(@NotNull LearningDelta delta) {
-        Instant startedAt = Instant.now();
-        double confidenceGain = delta.confidenceAfter() - delta.confidenceBefore();
-        int totalTests = 1 + delta.evidenceRefs().size();
-        int passedTests = confidenceGain > 0 ? totalTests : 0;
-        int failedTests = totalTests - passedTests;
-        double overallScore = Math.max(0.0, Math.min(1.0, delta.confidenceAfter()));
+        java.util.Objects.requireNonNull(delta, "delta must not be null");
 
-        EvaluationResult result = new EvaluationResult(
-                UUID.randomUUID().toString(),
-                "promotion-evaluation-pack",
-                delta.skillId(),
-                delta.deltaId(),
-                startedAt,
-                Instant.now(),
-                totalTests,
-                passedTests,
-                failedTests,
-                0,
-                overallScore,
-                List.of(),
+        // Build an appropriate evaluation pack based on the delta target
+        EvaluationPack pack = buildEvalPackForDelta(delta);
+
+        EvaluationContext context = new EvaluationContext(
+                delta.tenantId(),
+                delta.agentId(),
+                delta.skillId() != null ? delta.skillId() : delta.agentId(),
+                null,
                 Map.of(
+                        "deltaId", delta.deltaId(),
+                        "agentReleaseId", delta.agentReleaseId(),
                         "confidenceBefore", String.valueOf(delta.confidenceBefore()),
-                        "confidenceAfter", String.valueOf(delta.confidenceAfter()),
-                        "agentId", delta.agentId()
+                        "confidenceAfter", String.valueOf(delta.confidenceAfter())
                 )
         );
-        return Promise.of(result);
+
+        log.info("Running evaluation pack {} for delta {} (target={})",
+                pack.packId(), delta.deltaId(), delta.target());
+
+        return evaluationHarness.run(pack, delta, context);
+    }
+
+    /**
+     * Selects or creates an evaluation pack appropriate for the delta's target type.
+     */
+    @NotNull
+    private EvaluationPack buildEvalPackForDelta(@NotNull LearningDelta delta) {
+        String artifactId = delta.procedureId() != null ? delta.procedureId()
+                : delta.semanticFactId() != null ? delta.semanticFactId()
+                : delta.negativeKnowledgeId() != null ? delta.negativeKnowledgeId()
+                : delta.skillId();
+        if (artifactId == null) artifactId = delta.deltaId();
+
+        return switch (delta.target()) {
+            case PROCEDURAL_SKILL, PROMPT_TEMPLATE, PLANNER_POLICY, ROUTING_POLICY
+                    -> evaluationHarness.createDefaultPackForProceduralSkill(artifactId);
+            case SEMANTIC_FACT, CONFIDENCE_THRESHOLD, RETRIEVAL_POLICY
+                    -> evaluationHarness.createDefaultPackForSemanticFact(artifactId);
+            case MASTERY_STATE
+                    -> evaluationHarness.createMasteredPack(artifactId);
+            default -> evaluationHarness.createDefaultPackForSemanticFact(artifactId);
+        };
     }
 }

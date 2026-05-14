@@ -6,7 +6,10 @@ package com.ghatana.agent.evaluation;
 
 import com.ghatana.agent.learning.LearningDelta;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -15,17 +18,54 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Default implementation of EvaluationHarness for running evaluation test cases.
+ * Default implementation of {@link EvaluationHarness}.
+ *
+ * <p>Dispatches each {@link EvaluationTestCase} to the first {@link EvaluationExecutor} whose
+ * {@link EvaluationExecutor#supports(EvaluationType)} returns {@code true}. If no executor
+ * matches, the test case is recorded as skipped.
+ *
+ * <p>The default executor registry (used when no executors are injected) includes:
+ * <ul>
+ *   <li>{@link SafetyEvaluationExecutor} — handles SAFETY, PROMPT_INJECTION</li>
+ *   <li>{@link OutputContractEvaluationExecutor} — handles OUTPUT_CONTRACT</li>
+ *   <li>{@link TraceReplayEvaluationExecutor} — handles TRACE_GRADE, ROLLBACK_RECOVERY, RECOVERY</li>
+ *   <li>{@link VersionCompatibilityEvaluationExecutor} — handles VERSION_COMPATIBILITY, COMPATIBILITY</li>
+ * </ul>
+ *
+ * <p>Additional executors can be supplied at construction time and are prepended (highest
+ * priority) to the default list.
  *
  * @doc.type class
- * @doc.purpose Default evaluation harness implementation
+ * @doc.purpose Executor-dispatching evaluation harness implementation
  * @doc.layer agent-core
  * @doc.pattern Service
  */
 public class DefaultEvaluationHarness implements EvaluationHarness {
 
+    private static final Logger log = LoggerFactory.getLogger(DefaultEvaluationHarness.class);
+
+    private final List<EvaluationExecutor> executors;
+
+    /**
+     * Creates a harness with the default set of executors.
+     */
     public DefaultEvaluationHarness() {
-        // Default constructor
+        this(List.of());
+    }
+
+    /**
+     * Creates a harness with additional custom executors prepended to the default list.
+     *
+     * @param additionalExecutors custom executors (checked before defaults)
+     */
+    public DefaultEvaluationHarness(@NotNull List<EvaluationExecutor> additionalExecutors) {
+        Objects.requireNonNull(additionalExecutors, "additionalExecutors must not be null");
+        List<EvaluationExecutor> all = new ArrayList<>(additionalExecutors);
+        all.add(new SafetyEvaluationExecutor());
+        all.add(new OutputContractEvaluationExecutor());
+        all.add(new TraceReplayEvaluationExecutor());
+        all.add(new VersionCompatibilityEvaluationExecutor());
+        this.executors = List.copyOf(all);
     }
 
     @Override
@@ -40,64 +80,96 @@ public class DefaultEvaluationHarness implements EvaluationHarness {
 
         String runId = java.util.UUID.randomUUID().toString();
         Instant startedAt = Instant.now();
-        List<EvaluationResult.TestCaseResult> results = new ArrayList<>();
 
-        // Run each test case in the pack
-        for (EvaluationTestCase testCase : pack.testCases()) {
-            EvaluationResult.TestCaseResult result = runTestCase(testCase, context);
-            results.add(result);
-        }
+        // Dispatch each test case to the appropriate executor
+        List<Promise<EvaluationResult.TestCaseResult>> casePromises = pack.testCases().stream()
+                .map(testCase -> dispatchToExecutor(testCase, context))
+                .toList();
 
-        Instant completedAt = Instant.now();
-        int passed = (int) results.stream().filter(EvaluationResult.TestCaseResult::passed).count();
-        int total = results.size();
-        double score = total > 0 ? (double) passed / total : 0.0;
+        return Promises.toList(casePromises).map(results -> {
+            Instant completedAt = Instant.now();
+            int passed = (int) results.stream().filter(EvaluationResult.TestCaseResult::passed).count();
+            int skipped = (int) results.stream()
+                    .filter(r -> !r.passed() && r.errorMessage() != null
+                            && r.errorMessage().startsWith("[SKIPPED]"))
+                    .count();
+            int total = results.size();
+            int failed = total - passed - skipped;
+            double score = total > 0 ? (double) passed / total : 0.0;
 
-        // Build evaluation result with refs for promotion evidence mapping
-        Map<String, String> refs = Map.of(
-                "deltaId", delta.deltaId(),
-                "packId", pack.packId(),
-                "runId", runId,
-                "tenantId", context.tenantId(),
-                "skillId", context.skillId()
-        );
+            Map<String, String> refs = Map.of(
+                    "deltaId", delta.deltaId(),
+                    "packId", pack.packId(),
+                    "runId", runId,
+                    "tenantId", context.tenantId(),
+                    "skillId", context.skillId()
+            );
 
-        EvaluationResult evaluationResult = new EvaluationResult(
-                runId,
-                pack.packId(),
-                pack.targetArtifactId(),
-                delta.deltaId(),
-                startedAt,
-                completedAt,
-                total,
-                passed,
-                total - passed,
-                0,
-                score,
-                results,
-                refs
-        );
-        return Promise.of(evaluationResult);
+            log.info("Evaluation run {} complete: {}/{} passed, {} skipped, score={:.2f}",
+                    runId, passed, total, skipped, score);
+
+            return new EvaluationResult(
+                    runId,
+                    pack.packId(),
+                    pack.targetArtifactId(),
+                    delta.deltaId(),
+                    startedAt,
+                    completedAt,
+                    total,
+                    passed,
+                    failed,
+                    skipped,
+                    score,
+                    results,
+                    refs
+            );
+        });
     }
 
     /**
-     * Runs a single test case.
+     * Dispatches a test case to the first matching executor.
+     * If no executor handles the type, returns a skipped result.
      */
     @NotNull
-    private EvaluationResult.TestCaseResult runTestCase(
+    private Promise<EvaluationResult.TestCaseResult> dispatchToExecutor(
             @NotNull EvaluationTestCase testCase,
             @NotNull EvaluationContext context) {
-        // In a real implementation, this would execute the test case in a sandbox
-        // For now, return a mock result
-        return new EvaluationResult.TestCaseResult(
+
+        for (EvaluationExecutor executor : executors) {
+            if (executor.supports(testCase.type())) {
+                return executor.execute(testCase, context)
+                        .mapException(e -> {
+                            log.error("Executor {} failed for testCase={}: {}",
+                                    executor.getClass().getSimpleName(), testCase.caseId(), e.getMessage(), e);
+                            return e;
+                        })
+                        .then(
+                                result -> Promise.of(result),
+                                error -> Promise.of(new EvaluationResult.TestCaseResult(
+                                        testCase.caseId(),
+                                        testCase.name(),
+                                        false,
+                                        "",
+                                        "Executor error: " + error.getMessage(),
+                                        0L
+                                ))
+                        );
+            }
+        }
+
+        // No executor found — skip gracefully
+        log.debug("No executor registered for EvaluationType={}, marking as skipped: {}",
+                testCase.type(), testCase.caseId());
+        return Promise.of(new EvaluationResult.TestCaseResult(
                 testCase.caseId(),
                 testCase.name(),
-                true, // Assume pass for now
-                testCase.expectedOutput(),
+                false,
                 "",
+                "[SKIPPED] No executor registered for type " + testCase.type(),
                 0L
-        );
+        ));
     }
+
 
     @Override
     @NotNull
