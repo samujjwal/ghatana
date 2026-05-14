@@ -27,6 +27,9 @@ import java.util.Optional;
 /**
  * Validates whether a YAPPC project satisfies all gate criteria for a target lifecycle phase.
  *
+ * <p>This validates YAPPC creator/SDLC phase gates. It does not execute or replace
+ * Kernel Product Lifecycle delivery gates. YAPPC may display Kernel gates but must not execute them.
+ *
  * <p>The validator runs three checks in sequence:
  * <ol>
  *   <li><strong>Entry criteria</strong> — keyword-based matching via {@link GateEvaluator}

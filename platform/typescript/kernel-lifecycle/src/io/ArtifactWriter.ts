@@ -59,10 +59,18 @@ export class ArtifactWriter {
       producedBy: artifact.producedBy,
       image: artifact.image,
       tag: artifact.tag,
-      digest: artifact.digest,
-      localImageId: artifact.localImageId,
-      metadata: artifact.metadata,
     };
+
+    // Only add optional fields if they exist
+    if (artifact.digest !== undefined) {
+      (productArtifact as ProductArtifact & { digest: string }).digest = artifact.digest;
+    }
+    if (artifact.localImageId !== undefined) {
+      (productArtifact as ProductArtifact & { localImageId: string }).localImageId = artifact.localImageId;
+    }
+    if (artifact.metadata !== undefined) {
+      (productArtifact as ProductArtifact & { metadata: Record<string, unknown> }).metadata = artifact.metadata;
+    }
 
     const manifestPath = path.join(outputDir, 'artifact-manifest.json');
     await this.writeArtifactManifest([productArtifact], manifestPath);

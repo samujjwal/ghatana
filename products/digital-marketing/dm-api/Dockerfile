@@ -31,8 +31,8 @@ COPY products/ products/
 COPY config/ config/
 
 # Build the shadow/fat JAR (Gradle task: shadowJar or jar; depends on plugin)
+# Tests run during build to ensure lifecycle correctness
 RUN ./gradlew :products:digital-marketing:dm-api:build \
-      -x test \
       --no-daemon \
       --parallel \
       --build-cache

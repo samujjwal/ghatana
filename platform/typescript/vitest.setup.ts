@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/vitest';
+import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock global APIs that might not be available in test environment

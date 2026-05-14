@@ -25,8 +25,9 @@ services:
       retries: 5
       start_period: 60s
     labels:
-      ghatana.kernel.product: digital-marketing
+      ghatana.kernel.productUnit: digital-marketing
       ghatana.kernel.surface: backend-api
+      ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
     networks:
       - digital-marketing-network
@@ -51,8 +52,9 @@ services:
       retries: 3
       start_period: 15s
     labels:
-      ghatana.kernel.product: digital-marketing
+      ghatana.kernel.productUnit: digital-marketing
       ghatana.kernel.surface: web
+      ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
     networks:
       - digital-marketing-network

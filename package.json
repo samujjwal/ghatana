@@ -90,6 +90,8 @@
     "check:kernel-platform-lifecycle": "pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs",
     "check:digital-marketing-lifecycle-pilot": "node ./scripts/check-digital-marketing-lifecycle-pilot.mjs",
     "check:lifecycle-registry-config-drift": "node ./scripts/check-lifecycle-registry-config-drift.mjs",
+    "generate:product-shape-capability-matrix": "node ./scripts/generate-product-shape-capability-matrix.mjs",
+    "check:product-shape-capability-matrix": "node ./scripts/check-product-shape-capability-matrix.mjs",
     "build:phr-gateway": "pnpm product phr build gateway",
     "test:phr-gateway": "pnpm product phr test gateway",
     "build:phr-web": "pnpm product phr build web",

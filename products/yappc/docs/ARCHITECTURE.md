@@ -215,6 +215,51 @@ yappc/
 
 ---
 
+## Kernel Integration Boundary
+
+YAPPC serves as the **creator, visibility, intelligence, health, and control-plane layer** over Kernel and other platform components. YAPPC does not duplicate Kernel execution, deployment, artifact, or gate logic.
+
+### Responsibility Separation
+
+```
+YAPPC Creator Lifecycle
+  Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve
+    ↓ ProductUnitIntent + lifecycle events
+Kernel Product Lifecycle
+  dev → validate → test → build → package → deploy → verify
+```
+
+**Key Principles:**
+- **YAPPC phase gates** are creator/SDLC gates for project lifecycle transitions
+- **Kernel delivery gates** are execution/governance gates for ProductUnit lifecycle
+- YAPPC may display Kernel gates but must not execute them
+- YAPPC generates ProductUnitIntent for lifecycle-governed ProductUnits; Kernel executes the lifecycle
+- YAPPC consumes Kernel public events, manifests, snapshots, APIs, or CLI results
+- YAPPC must not parse private Kernel logs or mutate Kernel registry files
+
+### Data Flow
+
+```
+YAPPC Creator (Generate/Run)
+  ↓ ProductUnitIntent
+Kernel Product Lifecycle (plan/validate/test/build/package/deploy/verify)
+  ↓ Lifecycle events, health snapshots, manifests
+YAPPC Visibility (Observe/Learn)
+  ↓ Health views, recommendations, explanations
+```
+
+### Forbidden Direct Integrations
+
+- YAPPC must not directly mutate `config/canonical-product-registry.json`
+- YAPPC must not define Kernel Product Lifecycle enum locally
+- YAPPC kernel-health feature must import only public Kernel contracts
+- YAPPC must not parse stdout/stderr logs for lifecycle status
+- YAPPC CreateCommand with `target=kernel-product-unit` must write intent, not registry
+
+For detailed architecture, see [KERNEL_VISIBILITY_AND_CONTROL_PLANE.md](architecture/KERNEL_VISIBILITY_AND_CONTROL_PLANE.md).
+
+---
+
 ## Design Principles
 
 ### 1. Capability-Based Module Taxonomy

@@ -238,6 +238,7 @@ export interface ProductLifecyclePlan {
   lifecycleProfile: string;
   environment?: string;
   sourceRef?: string;
+  productUnit?: unknown; // ProductUnit from @ghatana/kernel-product-contracts
   surfaces: ProductSurfaceSelection[];
   gates: ProductGatePlan[];
   steps: ProductLifecycleStep[];

@@ -14,26 +14,37 @@
       "description": "Plugin definitions",
       "additionalProperties": {
         "type": "object",
-        "required": ["kind", "capabilities", "lifecycleHooks"],
+        "required": ["id", "name", "kind", "status", "safeForDefault", "capabilities", "lifecycleHooks", "healthOutput", "gateOutput", "implementationRef", "tests"],
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique plugin identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable plugin name"
+          },
           "kind": {
             "type": "string",
-            "enum": ["platform-plugin", "product-plugin"],
+            "enum": ["pre-phase", "post-phase", "pre-gate", "post-gate", "pre-deployment", "post-deployment", "platform-plugin", "product-plugin"],
             "description": "Plugin kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["declared", "implemented"],
+            "description": "Plugin implementation status"
+          },
+          "safeForDefault": {
+            "type": "boolean",
+            "description": "Whether the plugin is safe to enable by default"
           },
           "capabilities": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Plugin capabilities"
-          },
-          "requiredRuntimeServices": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Required runtime services"
+            "minItems": 1,
+            "description": "Plugin capabilities (must be non-empty)"
           },
           "lifecycleHooks": {
             "type": "array",
@@ -57,8 +68,74 @@
               ]
             },
             "description": "Lifecycle hooks the plugin subscribes to"
+          },
+          "healthOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Health output metrics provided by the plugin"
+          },
+          "gateOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Gate outputs provided by the plugin"
+          },
+          "implementationRef": {
+            "type": ["string", "null"],
+            "description": "Reference to the plugin implementation (required when status=implemented)"
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Test file paths (required when status=implemented)"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "safeForDefault": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "status": {
+                  "const": "implemented"
+                }
+              },
+              "required": ["status"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "implemented"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "implementationRef": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tests": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              },
+              "required": ["implementationRef", "tests"]
+            }
+          }
+        ]
       }
     }
   }

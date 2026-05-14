@@ -97,7 +97,8 @@ async function checkDrift(productId, product) {
   }
 
   // Check that registry deployment environments match YAML deployment environments
-  const registryEnvironments = Object.keys(product.environments ?? {}).sort();
+  // Registry uses environments.supported array, not object keys
+  const registryEnvironments = (product.environments?.supported ?? []).sort();
   const yamlDeploymentEnvs = Object.keys(config?.deployment ?? {}).sort();
   const yamlVerifyEnvs = Object.keys(config?.verify ?? {}).sort();
   const yamlEnvs = [...new Set([...yamlDeploymentEnvs, ...yamlVerifyEnvs])].sort();

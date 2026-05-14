@@ -18,6 +18,8 @@ import {
   ProductExpectedArtifact,
   LifecycleStepKind,
 } from '../domain/ProductLifecyclePhase.js';
+import type { LifecycleProviderContext } from '../providers/LifecycleProviderContext.js';
+import type { ProductUnit } from '@ghatana/kernel-product-contracts';
 
 /** Phases that are handled by the deployment target adapter, NOT surface adapters. */
 const DEPLOYMENT_PHASES = new Set<ProductLifecyclePhase>(['deploy', 'verify', 'rollback']);
@@ -46,19 +48,40 @@ export class ProductLifecyclePlanner {
   private readonly profilesPath: string;
   private readonly toolchainPath: string;
   private readonly repoRoot: string;
+  private providerContext: LifecycleProviderContext | undefined;
 
-  constructor(repoRoot: string = process.cwd(), configDir?: string) {
+  constructor(
+    repoRoot: string = process.cwd(),
+    configDir?: string,
+    providerContext?: LifecycleProviderContext,
+  ) {
     this.repoRoot = repoRoot;
     const actualConfigDir = configDir ?? path.join(repoRoot, 'config');
     this.exclusionsPath = path.join(actualConfigDir, 'kernel-lifecycle-exclusions.json');
     this.registryPath = path.join(actualConfigDir, 'canonical-product-registry.json');
     this.profilesPath = path.join(actualConfigDir, 'product-lifecycle-profiles.json');
     this.toolchainPath = path.join(actualConfigDir, 'toolchain-adapter-registry.json');
+    this.providerContext = providerContext;
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Public API
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  /**
+   * Load ProductUnit from provider context or fall back to registry-based validation.
+   */
+  async loadProductUnit(productId: string): Promise<ProductUnit | null> {
+    if (this.providerContext?.registryProvider) {
+      try {
+        return await this.providerContext.registryProvider.getProductUnit(productId);
+      } catch (error) {
+        // Fall back to file-based approach if provider fails
+        console.warn(`Provider failed to load ProductUnit for ${productId}, falling back to file-based validation:`, error);
+      }
+    }
+    return null; // Provider not available, will use file-based validation
+  }
 
   /**
    * Load product lifecycle configuration from the canonical registry and kernel-product.yaml.
@@ -159,9 +182,10 @@ export class ProductLifecyclePlanner {
       runId?: string;
     } = {},
   ): Promise<ProductLifecyclePlan> {
-    const [config, toolchains] = await Promise.all([
+    const [config, toolchains, productUnit] = await Promise.all([
       this.loadProductConfig(productId),
       this.loadToolchains(),
+      this.loadProductUnit(productId),
     ]);
 
     const profile = await this.loadLifecycleProfile(config.lifecycleProfile);
@@ -221,6 +245,7 @@ export class ProductLifecyclePlanner {
       lifecycleProfile: config.lifecycleProfile,
       ...(options.environment ? { environment: options.environment } : {}),
       ...(options.sourceRef ? { sourceRef: options.sourceRef } : {}),
+      ...(productUnit ? { productUnit } : {}),
       surfaces: selectedSurfaces,
       gates,
       steps,

@@ -1,0 +1,347 @@
+/*
+ * Copyright (c) 2026 Ghatana Platform Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.ghatana.yappc.kernel;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Exports YAPPC project generation intent as a Kernel ProductUnitIntent.
+ *
+ * <p>This class converts YAPPC project/pack variables into a Kernel ProductUnitIntent payload
+ * that can be consumed by the Kernel CLI or API to create lifecycle-governed ProductUnits.
+ * The exporter validates required fields, includes provenance metadata, and never mutates
+ * Kernel registry files directly.
+ *
+ * <p><b>Usage Example</b></p>
+ * <pre>{@code
+ * ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
+ *
+ * ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
+ *     .projectId("my-project")
+ *     .projectName("My Digital Marketing Campaign")
+ *     .targetType("kernel-product-unit")
+ *     .surfaces(List.of("web-api", "frontend"))
+ *     .runtimeProvider("ghatana-kernel")
+ *     .lifecycleProfile("standard")
+ *     .workspaceId("workspace-123")
+ *     .build();
+ *
+ * Path outputPath = exporter.export(request, Path.of(".yappc/product-unit-intent.yaml"));
+ * }</pre>
+ *
+ * @doc.type class
+ * @doc.purpose Exports YAPPC project generation intent as a Kernel ProductUnitIntent
+ * @doc.layer product
+ * @doc.pattern Adapter
+ */
+public final class ProductUnitIntentExporter {
+
+    private static final Logger log = LoggerFactory.getLogger(ProductUnitIntentExporter.class);
+
+    private static final String SCHEMA_VERSION = "1.0.0";
+    private static final String PRODUCER_TYPE = "yappc";
+
+    private final ObjectMapper yamlMapper;
+    private final ObjectMapper jsonMapper;
+
+    /**
+     * Constructs a new ProductUnitIntentExporter with default YAML and JSON mappers.
+     */
+    public ProductUnitIntentExporter() {
+        this.yamlMapper = new ObjectMapper(new YAMLFactory());
+        this.yamlMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        
+        this.jsonMapper = new ObjectMapper();
+        this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
+    }
+
+    /**
+     * Request parameters for ProductUnitIntent export.
+     */
+    public static final class Request {
+        private final String projectId;
+        private final String projectName;
+        private final String targetType;
+        private final List<String> surfaces;
+        private final String runtimeProvider;
+        private final String lifecycleProfile;
+        private final String workspaceId;
+        private final String sourcePhase;
+        private final Map<String, Object> metadata;
+
+        private Request(Builder builder) {
+            this.projectId = builder.projectId;
+            this.projectName = builder.projectName;
+            this.targetType = builder.targetType;
+            this.surfaces = builder.surfaces;
+            this.runtimeProvider = builder.runtimeProvider;
+            this.lifecycleProfile = builder.lifecycleProfile;
+            this.workspaceId = builder.workspaceId;
+            this.sourcePhase = builder.sourcePhase != null ? builder.sourcePhase : "generate";
+            this.metadata = builder.metadata != null ? builder.metadata : new HashMap<>();
+        }
+
+        public String projectId() { return projectId; }
+        public String projectName() { return projectName; }
+        public String targetType() { return targetType; }
+        public List<String> surfaces() { return surfaces; }
+        public String runtimeProvider() { return runtimeProvider; }
+        public String lifecycleProfile() { return lifecycleProfile; }
+        public String workspaceId() { return workspaceId; }
+        public String sourcePhase() { return sourcePhase; }
+        public Map<String, Object> metadata() { return metadata; }
+
+        /**
+         * Builder for Request.
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String projectId;
+            private String projectName;
+            private String targetType;
+            private List<String> surfaces;
+            private String runtimeProvider;
+            private String lifecycleProfile;
+            private String workspaceId;
+            private String sourcePhase;
+            private Map<String, Object> metadata;
+
+            public Builder projectId(String projectId) {
+                this.projectId = projectId;
+                return this;
+            }
+
+            public Builder projectName(String projectName) {
+                this.projectName = projectName;
+                return this;
+            }
+
+            public Builder targetType(String targetType) {
+                this.targetType = targetType;
+                return this;
+            }
+
+            public Builder surfaces(List<String> surfaces) {
+                this.surfaces = surfaces;
+                return this;
+            }
+
+            public Builder runtimeProvider(String runtimeProvider) {
+                this.runtimeProvider = runtimeProvider;
+                return this;
+            }
+
+            public Builder lifecycleProfile(String lifecycleProfile) {
+                this.lifecycleProfile = lifecycleProfile;
+                return this;
+            }
+
+            public Builder workspaceId(String workspaceId) {
+                this.workspaceId = workspaceId;
+                return this;
+            }
+
+            public Builder sourcePhase(String sourcePhase) {
+                this.sourcePhase = sourcePhase;
+                return this;
+            }
+
+            public Builder metadata(Map<String, Object> metadata) {
+                this.metadata = metadata;
+                return this;
+            }
+
+            public Request build() {
+                return new Request(this);
+            }
+        }
+    }
+
+    /**
+     * Export result containing the intent data and output path.
+     */
+    public static final class ExportResult {
+        private final Map<String, Object> intent;
+        private final Path outputPath;
+        private final String intentId;
+
+        public ExportResult(Map<String, Object> intent, Path outputPath, String intentId) {
+            this.intent = intent;
+            this.outputPath = outputPath;
+            this.intentId = intentId;
+        }
+
+        public Map<String, Object> intent() { return intent; }
+        public Path outputPath() { return outputPath; }
+        public String intentId() { return intentId; }
+    }
+
+    /**
+     * Exports a ProductUnitIntent from the given request and writes it to the specified path.
+     *
+     * @param request the export request parameters
+     * @param outputPath the path where the intent file should be written
+     * @return ExportResult containing the intent data and output path
+     * @throws ExportException if validation fails or writing encounters an error
+     */
+    public ExportResult export(@NotNull Request request, @NotNull Path outputPath) throws ExportException {
+        validateRequest(request);
+
+        String intentId = generateIntentId();
+        Map<String, Object> intent = buildIntent(request, intentId);
+
+        try {
+            if (outputPath.toString().endsWith(".yaml") || outputPath.toString().endsWith(".yml")) {
+                yamlMapper.writeValue(outputPath.toFile(), intent);
+            } else {
+                jsonMapper.writeValue(outputPath.toFile(), intent);
+            }
+            log.info("Exported ProductUnitIntent to {}", outputPath);
+        } catch (Exception e) {
+            throw new ExportException("Failed to write ProductUnitIntent to " + outputPath, e);
+        }
+
+        return new ExportResult(intent, outputPath, intentId);
+    }
+
+    /**
+     * Builds a ProductUnitIntent map from the request without writing to a file.
+     *
+     * @param request the export request parameters
+     * @return ExportResult containing the intent data (outputPath will be null)
+     * @throws ExportException if validation fails
+     */
+    public ExportResult buildIntent(@NotNull Request request) throws ExportException {
+        validateRequest(request);
+        String intentId = generateIntentId();
+        Map<String, Object> intent = buildIntent(request, intentId);
+        return new ExportResult(intent, null, intentId);
+    }
+
+    private void validateRequest(Request request) throws ExportException {
+        if (request.projectId() == null || request.projectId().isBlank()) {
+            throw new ExportException("projectId is required");
+        }
+        if (request.projectName() == null || request.projectName().isBlank()) {
+            throw new ExportException("projectName is required");
+        }
+        if (request.targetType() == null || request.targetType().isBlank()) {
+            throw new ExportException("targetType is required");
+        }
+        if (request.surfaces() == null || request.surfaces().isEmpty()) {
+            throw new ExportException("surfaces must be non-empty");
+        }
+        if (request.runtimeProvider() == null || request.runtimeProvider().isBlank()) {
+            throw new ExportException("runtimeProvider is required");
+        }
+    }
+
+    private Map<String, Object> buildIntent(Request request, String intentId) {
+        Map<String, Object> intent = new HashMap<>();
+        
+        intent.put("schemaVersion", SCHEMA_VERSION);
+        intent.put("intentId", intentId);
+        
+        // Producer information
+        Map<String, Object> producer = new HashMap<>();
+        producer.put("id", "yappc:" + request.workspaceId());
+        producer.put("type", PRODUCER_TYPE);
+        intent.put("producer", producer);
+        
+        // Target providers
+        Map<String, Object> target = new HashMap<>();
+        target.put("registryProvider", request.runtimeProvider());
+        target.put("sourceProvider", "ghatana-file-registry");
+        intent.put("target", target);
+        
+        // ProductUnit draft
+        Map<String, Object> productUnit = new HashMap<>();
+        productUnit.put("id", request.projectId());
+        productUnit.put("name", request.projectName());
+        productUnit.put("kind", inferKindFromTargetType(request.targetType()));
+        productUnit.put("surfaces", request.surfaces());
+        
+        if (request.lifecycleProfile() != null && !request.lifecycleProfile().isBlank()) {
+            productUnit.put("lifecycleProfile", request.lifecycleProfile());
+        }
+        
+        // Add provenance metadata
+        Map<String, Object> metadata = new HashMap<>(request.metadata());
+        metadata.put("producer", PRODUCER_TYPE);
+        metadata.put("sourcePhase", request.sourcePhase());
+        metadata.put("projectId", request.projectId());
+        metadata.put("workspaceId", request.workspaceId());
+        metadata.put("exportedAt", Instant.now().toString());
+        
+        if (!metadata.isEmpty()) {
+            productUnit.put("metadata", metadata);
+        }
+        
+        intent.put("productUnit", productUnit);
+        
+        // Requested lifecycle configuration
+        if (request.lifecycleProfile() != null && !request.lifecycleProfile().isBlank()) {
+            Map<String, Object> requestedLifecycle = new HashMap<>();
+            requestedLifecycle.put("profile", request.lifecycleProfile());
+            requestedLifecycle.put("enableExecution", true);
+            intent.put("requestedLifecycle", requestedLifecycle);
+        }
+        
+        return intent;
+    }
+
+    private String generateIntentId() {
+        return UUID.randomUUID().toString();
+    }
+
+    private String inferKindFromTargetType(String targetType) {
+        return switch (targetType.toLowerCase()) {
+            case "kernel-product-unit" -> "business-product";
+            case "platform-provider" -> "platform-provider";
+            case "shared-service" -> "shared-service";
+            default -> "business-product";
+        };
+    }
+
+    /**
+     * Exception thrown when ProductUnitIntent export fails.
+     */
+    public static final class ExportException extends Exception {
+        public ExportException(String message) {
+            super(message);
+        }
+
+        public ExportException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+}

@@ -25,6 +25,8 @@ import com.ghatana.yappc.core.pack.PackMetadata;
 import com.ghatana.yappc.core.telemetry.TelemetryInstrumentation;
 import com.ghatana.yappc.core.telemetry.TelemetryManager;
 import com.ghatana.yappc.core.template.SimpleTemplateEngine;
+import com.ghatana.yappc.kernel.ProductUnitIntentExporter;
+import com.ghatana.yappc.kernel.ProductUnitIntentValidationService;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import java.io.IOException;
@@ -34,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -83,6 +86,18 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"--pack-path"}, description = "Custom path to packs directory")
     private Path customPackPath;
 
+    @Option(names = {"--target"}, description = "Target type: generic-project or kernel-product-unit")
+    private String targetType = "generic-project";
+
+    @Option(names = {"--intent-output"}, description = "Path to write ProductUnitIntent when target is kernel-product-unit")
+    private Path intentOutputPath;
+
+    @Option(names = {"--runtime-provider"}, description = "Runtime provider for kernel-product-unit (default: ghatana-kernel)")
+    private String runtimeProvider = "ghatana-kernel";
+
+    @Option(names = {"--lifecycle-profile"}, description = "Lifecycle profile for kernel-product-unit")
+    private String lifecycleProfile;
+
     private PackEngine packEngine;
 
     @Override
@@ -104,7 +119,12 @@ public class CreateCommand implements Callable<Integer> {
 
     private Integer executeCreate() {
         try {
-            // Initialize pack engine
+            // Handle kernel-product-unit target type
+            if ("kernel-product-unit".equals(targetType)) {
+                return executeKernelProductUnitCreate();
+            }
+
+            // Initialize pack engine for generic-project
             initializePackEngine();
 
             // Handle list packs mode
@@ -154,6 +174,100 @@ public class CreateCommand implements Callable<Integer> {
             log.error("❌ Error: {}", e.getMessage());
             return 1;
         }
+    }
+
+    private Integer executeKernelProductUnitCreate() {
+        try {
+            // Validate required parameters for kernel-product-unit
+            if (projectName == null || projectName.isBlank()) {
+                log.error("❌ Error: Project name is required for kernel-product-unit target.");
+                return 1;
+            }
+
+            // Convert project name to kebab-case for ProductUnit ID
+            String productUnitId = toKebabCase(projectName);
+
+            // Infer surfaces from variables or default to web-api
+            List<String> surfaces = inferSurfaces();
+
+            // Determine intent output path
+            Path intentPath = resolveIntentOutputPath();
+
+            // Create exporter and validation service
+            ProductUnitIntentExporter exporter = new ProductUnitIntentExporter();
+            ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
+
+            // Build the export request
+            ProductUnitIntentExporter.Request request = ProductUnitIntentExporter.Request.builder()
+                    .projectId(productUnitId)
+                    .projectName(projectName)
+                    .targetType("kernel-product-unit")
+                    .surfaces(surfaces)
+                    .runtimeProvider(runtimeProvider)
+                    .lifecycleProfile(lifecycleProfile)
+                    .workspaceId(UUID.randomUUID().toString())
+                    .sourcePhase("generate")
+                    .build();
+
+            // Generate and validate intent
+            ProductUnitIntentExporter.ExportResult exportResult = exporter.buildIntent(request);
+            ProductUnitIntentValidationService.ValidationResult validationResult = validator.validate(exportResult.intent());
+
+            if (!validationResult.isValid()) {
+                log.error("❌ ProductUnitIntent validation failed:");
+                for (String error : validationResult.errors()) {
+                    log.error("   - {}", error);
+                }
+                return 1;
+            }
+
+            // Write intent to file
+            exporter.export(request, intentPath);
+
+            log.info("\n✅ ProductUnitIntent generated successfully");
+            log.info("   Intent file: {}", intentPath.toAbsolutePath());
+            log.info("   ProductUnit ID: {}", productUnitId);
+            log.info("   Surfaces: {}", surfaces);
+
+            // Print Kernel next command
+            log.info("\n📋 Next steps:");
+            log.info("   pnpm kernel product create --from-intent {}", intentPath);
+
+            return 0;
+
+        } catch (Exception e) {
+            log.error("❌ Error creating ProductUnitIntent: {}", e.getMessage());
+            return 1;
+        }
+    }
+
+    private String toKebabCase(String name) {
+        if (name == null || name.isEmpty()) return name;
+        return name.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+    }
+
+    private List<String> inferSurfaces() {
+        // Try to infer surfaces from variables
+        String surfaceVar = variables.get("surface");
+        if (surfaceVar != null && !surfaceVar.isBlank()) {
+            return List.of(surfaceVar.split(","));
+        }
+        
+        // Default to web-api if not specified
+        return List.of("web-api");
+    }
+
+    private Path resolveIntentOutputPath() {
+        if (intentOutputPath != null) {
+            return intentOutputPath;
+        }
+        
+        // Default to targetPath/.yappc/product-unit-intent.yaml
+        Path targetPath = resolveOutputPath();
+        Path yappcDir = targetPath.resolve(".yappc");
+        return yappcDir.resolve("product-unit-intent.yaml");
     }
 
     private void initializePackEngine() throws IOException {

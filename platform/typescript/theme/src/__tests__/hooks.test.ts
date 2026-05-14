@@ -15,7 +15,7 @@ import {
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ThemeProvider>{children}</ThemeProvider>
-);
+) as React.FC<{ children: React.ReactNode }>;
 
 describe('theme hooks', () => {
   describe('useThemeMode', () => {

@@ -15,8 +15,11 @@ const checks = [
   'check-product-artifact-contracts.mjs',
   'check-product-deployment-contracts.mjs',
   'check-kernel-lifecycle-exclusions.mjs',
-  'check-digital-marketing-lifecycle-pilot.mjs',
   'check-lifecycle-registry-config-drift.mjs',
+  'check-digital-marketing-lifecycle-pilot.mjs',
+  'check-kernel-plugin-registry.mjs',
+  'check-kernel-yappc-boundary.mjs',
+  'check-kernel-product-unit-provider-contracts.mjs',
 ];
 
 function main() {

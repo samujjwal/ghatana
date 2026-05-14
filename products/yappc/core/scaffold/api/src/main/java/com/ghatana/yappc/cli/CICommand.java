@@ -108,10 +108,30 @@ public class CICommand implements Callable<Integer> {
                 defaultValue = "github-actions")
         private String provider;
 
+        @Option(
+                names = {"--target"},
+                description = "Target type: generic-project or kernel-product-unit",
+                defaultValue = "generic-project")
+        private String targetType;
+
         @Override
         public Integer call() throws Exception {
             Path workspace = Paths.get(workspacePath);
 
+            // Handle kernel-product-unit target type
+            if ("kernel-product-unit".equals(targetType)) {
+                log.info("🔧 Kernel Product Unit CI guidance");
+                log.info("\nFor lifecycle-governed ProductUnits, CI/CD is delegated to Kernel.");
+                log.info("\nRecommended Kernel lifecycle CI commands:");
+                log.info("  pnpm check:product-registry-artifacts");
+                log.info("  pnpm kernel product plan <product> build");
+                log.info("  pnpm check:kernel-platform-lifecycle");
+                log.info("\nYAPPC does not generate raw GitHub workflows for kernel-product-unit targets.");
+                log.info("Use the Kernel CLI/API to manage ProductUnit lifecycle execution.");
+                return 0;
+            }
+
+            // Generic project: generate CI configuration
             log.info("🔧 Generating {} CI configuration...", provider);
 
             if ("github-actions".equals(provider)) {

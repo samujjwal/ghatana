@@ -2,7 +2,23 @@
 
 ## Overview
 
-Kernel is the product lifecycle platform that orchestrates product development, build, packaging, deployment, conformance, and operations for the Ghatana ecosystem.
+Kernel is a generic ProductUnit lifecycle execution and governance platform. Kernel orchestrates product development, build, packaging, deployment, conformance, and operations through a provider-based model that supports multiple product shapes and ecosystems.
+
+## Generic Platform Model
+
+Kernel ProductUnit can represent:
+- Monorepo products within the Ghatana ecosystem
+- External repositories and standalone projects
+- Backend services and APIs
+- Web applications and portals
+- Mobile applications (iOS, Android)
+- SDKs and libraries
+- Plugins and extensions
+- Domain packs and feature bundles
+- Data pipelines and ETL workflows
+- Agent runtimes and AI systems
+
+The current executable provider is the Ghatana file-backed registry. External provider support is target architecture until implemented.
 
 ## Goals
 
@@ -10,7 +26,8 @@ Kernel is the product lifecycle platform that orchestrates product development, 
 2. **Tool Abstraction**: Product developers should not need to know whether a product uses Gradle, pnpm, Vite, Docker, Compose, Kubernetes, Helm, or Terraform.
 3. **Lifecycle Orchestration**: Kernel owns the lifecycle orchestration from dev through validate, test, build, package, deploy, verify, promote, and rollback.
 4. **Governance First**: All gates, approvals, security checks, privacy validations, and observability requirements are enforced by Kernel.
-5. **Product Neutral**: Kernel code stays product-neutral and does not import from products.
+5. **Product Neutral**: Kernel code stays product-neutral and does not import from products. Product-specific behavior arrives through contracts, provider data, plugin bindings, or product lifecycle config.
+6. **Provider-Based Architecture**: Kernel uses providers for registry, source, artifact, deployment, environment, secrets, telemetry, and health operations, enabling support for diverse product shapes and ecosystems.
 
 ## Developer Contract
 

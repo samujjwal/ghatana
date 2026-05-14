@@ -13,6 +13,8 @@ import {
 } from './ProductLifecycleStepRunner.js';
 import { ExecutionResultCollector } from './ExecutionResultCollector.js';
 import { ConsoleExecutionLogger } from './ExecutionLogger.js';
+import type { KernelLifecycleEventEmitter } from '../events/KernelLifecycleEventEmitter.js';
+import type { LifecycleHealthAggregator } from '../health/LifecycleHealthAggregator.js';
 
 export interface ProductLifecycleExecutionOptions {
   dryRun: boolean;
@@ -20,6 +22,8 @@ export interface ProductLifecycleExecutionOptions {
   environment?: string;
   sourceRef?: string;
   logger?: ConsoleExecutionLogger;
+  eventEmitter?: KernelLifecycleEventEmitter;
+  healthAggregator?: LifecycleHealthAggregator;
 }
 
 /**
@@ -52,6 +56,14 @@ export class ProductLifecycleExecutor {
     const logger = options.logger ?? new ConsoleExecutionLogger();
 
     const phaseMode = plan?.phaseMode ?? 'sequential';
+    const runId = plan?.runId ?? this.generateRunId();
+
+    // Emit lifecycle phase start event
+    if (options.eventEmitter) {
+      options.eventEmitter.emitLifecyclePhaseStart(productId, runId, phase);
+    }
+
+    const startTime = Date.now();
 
     if (phaseMode === 'parallel' || phaseMode === 'dag') {
       await this.executeDAG(steps, productId, options, logger, plan);
@@ -60,11 +72,58 @@ export class ProductLifecycleExecutor {
     }
 
     const result = this.resultCollector.collect(productId, phase, options.outputDirectory);
+    const duration = Date.now() - startTime;
+
+    // Emit lifecycle phase complete event
+    if (options.eventEmitter) {
+      options.eventEmitter.emitLifecyclePhaseComplete(
+        productId,
+        runId,
+        phase,
+        result.status,
+        duration
+      );
+    }
+
+    // Aggregate health snapshot
+    if (options.healthAggregator && plan) {
+      const healthSnapshot = await options.healthAggregator.aggregateLifecycleHealth(
+        productId,
+        runId,
+        [phase]
+      );
+      // Write health snapshot to output directory
+      await this.writeHealthSnapshot(healthSnapshot, options.outputDirectory);
+    }
 
     // Write phase-specific output summaries after execution
     await this.writePhaseOutputs(phase, result, options.outputDirectory, productId, options.environment);
 
     return result;
+  }
+
+  private generateRunId(): string {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const rand = Math.random().toString(36).substring(2, 11);
+    return `${ts}-${rand}`;
+  }
+
+  private async writeHealthSnapshot(
+    healthSnapshot: unknown,
+    outputDirectory: string
+  ): Promise<void> {
+    try {
+      await fs.mkdir(outputDirectory, { recursive: true });
+      await fs.writeFile(
+        path.join(outputDirectory, 'lifecycle-health-snapshot.json'),
+        JSON.stringify(healthSnapshot, null, 2),
+        'utf-8'
+      );
+    } catch (err) {
+      // Health snapshot writing is best-effort; do not fail the overall result
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[executor] Failed to write health snapshot: ${msg}`);
+    }
   }
 
   /**

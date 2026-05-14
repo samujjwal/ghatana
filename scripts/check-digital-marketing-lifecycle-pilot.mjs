@@ -133,7 +133,7 @@ async function main() {
     }
   }
 
-  // 4. Validate package uses docker-buildx adapter (not gradle/pnpm)
+  // 4. Validate package config has required fields
   const packageConfig = config?.package ?? {};
   for (const [surface, surfacePkg] of Object.entries(packageConfig)) {
     const adapter = surfacePkg?.adapter;
@@ -143,26 +143,49 @@ async function main() {
     if (!adapter) {
       errors.push(`Package phase surface "${surface}" has no adapter declared`);
     }
+    // Validate required package config fields
+    const requiredPkgFields = ['image', 'tag', 'dockerfile', 'context'];
+    for (const field of requiredPkgFields) {
+      if (!surfacePkg?.[field]) {
+        errors.push(`Package phase surface "${surface}" missing required field: ${field}`);
+      }
+    }
   }
 
-  // 5. Validate deploy uses compose-local adapter
+  // 5. Validate deploy uses compose-local adapter and has required fields
   const deployLocal = config?.deployment?.local;
   if (!deployLocal) {
     errors.push('deployment.local configuration is missing');
-  } else if (deployLocal.adapter !== 'compose-local') {
-    errors.push(`deployment.local.adapter must be "compose-local", got "${deployLocal.adapter}"`);
+  } else {
+    if (deployLocal.adapter !== 'compose-local') {
+      errors.push(`deployment.local.adapter must be "compose-local", got "${deployLocal.adapter}"`);
+    }
+    // Validate required deployment config fields
+    const requiredDeployFields = ['composeFile', 'envExampleFile', 'healthChecks'];
+    for (const field of requiredDeployFields) {
+      if (!deployLocal?.[field]) {
+        errors.push(`deployment.local missing required field: ${field}`);
+      }
+    }
+    // Validate requireEnvFile is false for local
+    if (deployLocal.requireEnvFile !== false) {
+      errors.push(`deployment.local.requireEnvFile must be false for local environment, got "${deployLocal.requireEnvFile}"`);
+    }
   }
 
-  // 6. Validate compose file exists
+  // 6. Validate compose file exists and has required Kernel labels
   if (deployLocal?.composeFile) {
     const composePath = join(repoRoot, deployLocal.composeFile);
     if (!existsSync(composePath)) {
       errors.push(`Compose file not found: ${deployLocal.composeFile}`);
     } else {
-      // Check for Kernel labels in compose file
+      // Check for required Kernel labels in compose file
       const composeContent = readFileSync(composePath, 'utf8');
-      if (!composeContent.includes('ghatana.kernel')) {
-        warnings.push(`Compose file ${deployLocal.composeFile} does not include "ghatana.kernel" labels — consider adding them for lifecycle tracking`);
+      const requiredLabels = ['ghatana.kernel.productUnit', 'ghatana.kernel.surface', 'ghatana.kernel.lifecycle'];
+      for (const label of requiredLabels) {
+        if (!composeContent.includes(label)) {
+          errors.push(`Compose file ${deployLocal.composeFile} missing required label: ${label}`);
+        }
       }
     }
   } else {
@@ -204,7 +227,8 @@ async function main() {
   }
 
   // 10. Validate plan generation for key phases
-  for (const phase of ['build', 'test', 'package']) {
+  const planPhases = ['validate', 'build', 'test', 'package'];
+  for (const phase of planPhases) {
     try {
       execFileSync(
         process.execPath,
@@ -213,6 +237,41 @@ async function main() {
       );
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase}": ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // 11. Validate plan generation for deploy and verify with --env local
+  for (const phase of ['deploy', 'verify']) {
+    try {
+      execFileSync(
+        process.execPath,
+        [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json'],
+        { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
+      );
+    } catch (err) {
+      errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // 12. Validate .gitignore includes local env files
+  const deployDir = join(repoRoot, 'products/digital-marketing/deploy');
+  const gitignorePath = join(deployDir, '.gitignore');
+  if (existsSync(gitignorePath)) {
+    const gitignoreContent = readFileSync(gitignorePath, 'utf8');
+    if (!gitignoreContent.includes('local.env') && !gitignoreContent.includes('*.local.env')) {
+      errors.push('deploy/.gitignore must include local.env or *.local.env to prevent committing secrets');
+    }
+  } else {
+    errors.push('deploy/.gitignore not found - must exist to prevent committing local.env files');
+  }
+
+  // 13. Validate no product lifecycle runner script exists in Digital Marketing
+  const productDir = join(repoRoot, 'products/digital-marketing');
+  const forbiddenScripts = ['lifecycle-runner.js', 'lifecycle-runner.mjs', 'run-lifecycle.sh', 'run-lifecycle.js'];
+  for (const script of forbiddenScripts) {
+    const scriptPath = join(productDir, script);
+    if (existsSync(scriptPath)) {
+      errors.push(`Product lifecycle runner script found at ${scriptPath} - lifecycle execution must use Kernel, not product-specific scripts`);
     }
   }
 

@@ -128,4 +128,9 @@ tasks.named("check").configure {
     dependsOn("validateOpenApiSpec")
 }
 
+// Kernel lifecycle task aliases for product lifecycle execution
+tasks.register("kernelBuild") { dependsOn("build") }
+tasks.register("kernelValidate") { dependsOn("check") }
+tasks.register("kernelTest") { dependsOn("test") }
+
 // dm-api tests are enabled to enforce servlet/API validation coverage.

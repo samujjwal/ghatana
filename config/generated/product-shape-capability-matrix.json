@@ -1,0 +1,171 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-14T04:05:37.789Z",
+  "matrix": [
+    {
+      "productId": "audio-video",
+      "name": "Audio-Video",
+      "shape": "backend-api (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "aura",
+      "name": "Aura",
+      "shape": "backend-api (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "data-cloud",
+      "name": "Data Cloud",
+      "shape": "backend-api + sdk + web (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
+        "Surface \"web\" has no default adapter defined in profile \"undefined\"",
+        "Surface \"sdk\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "dcmaar",
+      "name": "DCMAAR",
+      "shape": "backend-api + web (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
+        "Surface \"web\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "digital-marketing",
+      "name": "Digital Marketing Operating System",
+      "shape": "backend-api + web (standard-web-api-product)",
+      "lifecycleStatus": "enabled",
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service",
+        "web:pnpm-vite-react"
+      ],
+      "status": "Pilot",
+      "findings": [
+        "No deployment adapter defined in profile \"standard-web-api-product\""
+      ]
+    },
+    {
+      "productId": "finance",
+      "name": "Finance",
+      "shape": "backend-api + operator + portal + sdk (backend-only-java-service)",
+      "lifecycleStatus": "planned",
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service"
+      ],
+      "status": "Shape-only",
+      "findings": [
+        "Surface \"portal\" has no default adapter defined in profile \"backend-only-java-service\"",
+        "Surface \"operator\" has no default adapter defined in profile \"backend-only-java-service\"",
+        "Surface \"sdk\" has no default adapter defined in profile \"backend-only-java-service\""
+      ]
+    },
+    {
+      "productId": "flashit",
+      "name": "FlashIt",
+      "shape": "backend-api + mobile + web (mobile-plus-api-product)",
+      "lifecycleStatus": "planned",
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service"
+      ],
+      "status": "Shape-only",
+      "findings": [
+        "Surface \"web\" has no default adapter defined in profile \"mobile-plus-api-product\"",
+        "Surface \"mobile\" has no default adapter defined in profile \"mobile-plus-api-product\""
+      ]
+    },
+    {
+      "productId": "phr",
+      "name": "Personal Health Records",
+      "shape": "backend-api + web (standard-web-api-product)",
+      "lifecycleStatus": "planned",
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service",
+        "web:pnpm-vite-react"
+      ],
+      "status": "Shape-only"
+    },
+    {
+      "productId": "security-gateway",
+      "name": "Security-Gateway",
+      "shape": "backend-api (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "software-org",
+      "name": "Software-Org",
+      "shape": "backend-api (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "tutorputor",
+      "name": "Tutorputor",
+      "shape": "backend-api + web (standard-web-api-product)",
+      "lifecycleStatus": "partial",
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service",
+        "web:pnpm-vite-react"
+      ],
+      "status": "Unknown"
+    },
+    {
+      "productId": "virtual-org",
+      "name": "Virtual-Org",
+      "shape": "backend-api (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\""
+      ]
+    },
+    {
+      "productId": "yappc",
+      "name": "YAPPC",
+      "shape": "backend-api + web (undefined)",
+      "lifecycleStatus": "disabled",
+      "requiredCapabilities": [],
+      "status": "Not enabled",
+      "findings": [
+        "Lifecycle profile \"undefined\" not found in product-lifecycle-profiles.json",
+        "Surface \"backend-api\" has no default adapter defined in profile \"undefined\"",
+        "Surface \"web\" has no default adapter defined in profile \"undefined\""
+      ]
+    }
+  ]
+}

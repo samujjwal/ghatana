@@ -1,33 +1,187 @@
 {
   "version": "1.0.0",
   "plugins": {
-    "plugin-audit-trail": {
+    "audit": {
+      "id": "audit",
+      "name": "Audit Plugin",
       "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
       "capabilities": ["audit.event.write", "audit.event.search"],
-      "requiredRuntimeServices": ["tenant-context", "correlation-id"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed"]
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed", "onProductVerified"],
+      "healthOutput": ["audit-trail-status"],
+      "gateOutput": ["audit-compliance-gate"],
+      "implementationRef": null,
+      "tests": []
     },
-    "plugin-compliance": {
-      "kind": "platform-plugin",
-      "capabilities": ["rulepack.validate", "policy.evaluate"],
-      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"]
-    },
-    "plugin-human-approval": {
-      "kind": "platform-plugin",
+    "approval": {
+      "id": "approval",
+      "name": "Approval Plugin",
+      "kind": "pre-gate",
+      "status": "declared",
+      "safeForDefault": false,
       "capabilities": ["approval.request", "approval.resolve"],
-      "lifecycleHooks": ["onProductPromoted"]
+      "lifecycleHooks": ["onProductPromoted"],
+      "healthOutput": ["approval-workflow-status"],
+      "gateOutput": ["approval-gate"],
+      "implementationRef": null,
+      "tests": []
     },
-    "plugin-security-scan": {
-      "kind": "platform-plugin",
-      "capabilities": ["security.sast", "security.dependency-scan"],
-      "requiredRuntimeServices": ["tenant-context"],
-      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"]
+    "policy": {
+      "id": "policy",
+      "name": "Policy Plugin",
+      "kind": "pre-phase",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["policy.evaluate", "policy.enforce"],
+      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"],
+      "healthOutput": ["policy-compliance-status"],
+      "gateOutput": ["policy-gate"],
+      "implementationRef": null,
+      "tests": []
     },
-    "plugin-observability": {
+    "compliance": {
+      "id": "compliance",
+      "name": "Compliance Plugin",
       "kind": "platform-plugin",
-      "capabilities": ["metrics.emit", "tracing.span"],
-      "requiredRuntimeServices": ["correlation-id", "tenant-context"],
-      "lifecycleHooks": ["onProductDeployed", "onProductVerified"]
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["rulepack.validate", "policy.evaluate"],
+      "lifecycleHooks": ["onProductValidated", "onProductDeployStarted"],
+      "healthOutput": ["compliance-status"],
+      "gateOutput": ["compliance-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "notification": {
+      "id": "notification",
+      "name": "Notification Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["notification.send", "notification.template"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductDeployed", "onProductVerified"],
+      "healthOutput": ["notification-channel-status"],
+      "gateOutput": [],
+      "implementationRef": null,
+      "tests": []
+    },
+    "risk": {
+      "id": "risk",
+      "name": "Risk Plugin",
+      "kind": "pre-deployment",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["risk.assess", "risk.score"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
+      "healthOutput": ["risk-score"],
+      "gateOutput": ["risk-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "security": {
+      "id": "security",
+      "name": "Security Plugin",
+      "kind": "pre-deployment",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["security.sast", "security.dependency-scan", "security.container-scan"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
+      "healthOutput": ["security-scan-status"],
+      "gateOutput": ["security-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "privacy": {
+      "id": "privacy",
+      "name": "Privacy Plugin",
+      "kind": "pre-phase",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["privacy.validate", "privacy.pii-detect"],
+      "lifecycleHooks": ["onProductValidated"],
+      "healthOutput": ["privacy-compliance-status"],
+      "gateOutput": ["privacy-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "observability": {
+      "id": "observability",
+      "name": "Observability Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["metrics.emit", "tracing.span", "logging.structured"],
+      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
+      "healthOutput": ["observability-status"],
+      "gateOutput": [],
+      "implementationRef": null,
+      "tests": []
+    },
+    "data-access": {
+      "id": "data-access",
+      "name": "Data Access Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["data-access.validate", "data-access.audit"],
+      "lifecycleHooks": ["onProductDeployed"],
+      "healthOutput": ["data-access-status"],
+      "gateOutput": ["data-access-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "identity-entitlement": {
+      "id": "identity-entitlement",
+      "name": "Identity Entitlement Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["identity.validate", "entitlement.check"],
+      "lifecycleHooks": ["onProductDeployed"],
+      "healthOutput": ["identity-status"],
+      "gateOutput": ["identity-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "agent-governance": {
+      "id": "agent-governance",
+      "name": "Agent Governance Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["agent.validate", "agent.maturity-check", "agent.learning-track"],
+      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
+      "healthOutput": ["agent-governance-status"],
+      "gateOutput": ["agent-governance-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "mastery-learning": {
+      "id": "mastery-learning",
+      "name": "Mastery Learning Plugin",
+      "kind": "platform-plugin",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["mastery.track", "learning.delta", "obsolescence.detect"],
+      "lifecycleHooks": ["onProductDeployed", "onProductVerified"],
+      "healthOutput": ["mastery-status", "learning-status"],
+      "gateOutput": ["mastery-gate"],
+      "implementationRef": null,
+      "tests": []
+    },
+    "preview-security": {
+      "id": "preview-security",
+      "name": "Preview Security Plugin",
+      "kind": "pre-deployment",
+      "status": "declared",
+      "safeForDefault": false,
+      "capabilities": ["preview.security-scan", "preview.vulnerability-check"],
+      "lifecycleHooks": ["onProductBuildCompleted", "onProductPackaged"],
+      "healthOutput": ["preview-security-status"],
+      "gateOutput": ["preview-security-gate"],
+      "implementationRef": null,
+      "tests": []
     }
   }
 }

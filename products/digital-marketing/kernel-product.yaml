@@ -3,6 +3,44 @@ productId: digital-marketing
 lifecycleProfile: standard-web-api-product
 allowExperimentalAdapters: false
 
+requiredManifests:
+  build:
+    - lifecycle-result
+    - artifact-manifest
+    - lifecycle-health-snapshot
+  package:
+    - artifact-manifest
+    - lifecycle-health-snapshot
+  deploy:
+    - deployment-manifest
+    - lifecycle-health-snapshot
+  verify:
+    - verify-health-report
+    - lifecycle-health-snapshot
+
+plugins:
+  audit:
+    required: true
+  observability:
+    required: true
+  data-access:
+    required: true
+  identity-entitlement:
+    required: true
+  preview-security:
+    required: false
+
+environments:
+  local:
+    type: local
+    secretsProvider: local-env
+    deploymentProvider: compose-local
+    safeForDefault: true
+
+telemetry:
+  productUnitId: digital-marketing
+  correlationScope: product-lifecycle
+
 surfaces:
   backend-api:
     source: products/digital-marketing/dm-api

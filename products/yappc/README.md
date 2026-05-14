@@ -8,7 +8,14 @@
 
 ## 🎯 What is YAPPC?
 
-YAPPC (Yet Another Platform Product Creator) is a platform for product lifecycle orchestration following an **8-phase target model**: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
+YAPPC (Yet Another Platform Product Creator) is an **AI-powered product/app creation, visibility, health, and evolution platform**.
+
+YAPPC follows an **8-phase creator lifecycle model**: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
+
+**YAPPC Creator Lifecycle = Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve**
+**Kernel Product Lifecycle = dev → validate → test → build → package → deploy → verify**
+
+When YAPPC generates or manages a lifecycle-governed ProductUnit, delivery execution is delegated to Kernel through public contracts. YAPPC does not directly execute Kernel lifecycle phases or mutate Kernel registry files.
 
 Current implementation is partial and under active delivery.
 
@@ -130,6 +137,8 @@ For detailed setup, see [docs/guides/DEPLOYMENT_GUIDE.md](docs/guides/DEPLOYMENT
 ### Getting Started
 
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and module structure
+- **[Kernel Visibility and Control Plane](docs/architecture/KERNEL_VISIBILITY_AND_CONTROL_PLANE.md)** - YAPPC as visibility layer over Kernel
+- **[Creator Lifecycle to Kernel Mapping](docs/architecture/CREATOR_LIFECYCLE_TO_KERNEL_MAPPING.md)** - Phase mapping between YAPPC and Kernel
 - **[Service Architecture (ADR-001)](docs/architecture/ADR-001-service-architecture.md)** - Service boundaries and responsibilities
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Contributing, coding standards, testing
 - **[Deployment Guide](docs/guides/DEPLOYMENT_GUIDE.md)** - Running YAPPC locally and in production

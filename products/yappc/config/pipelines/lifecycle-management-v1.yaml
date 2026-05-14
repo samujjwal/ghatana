@@ -3,6 +3,10 @@
 #
 # This pipeline defines the core workflow for managing project lifecycle
 # transitions using AEP event processing with TypedAgent integration.
+#
+# This pipeline governs YAPPC-managed project/SDLC phase transitions.
+# It is not the Kernel Product Lifecycle executor.
+# For lifecycle-managed ProductUnits, YAPPC initiates/observes Kernel lifecycle runs.
 
 apiVersion: ghatana.aep/v1
 kind: Pipeline
