@@ -49,6 +49,19 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
 
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {
     const startedAt = Date.now();
+
+    // Package phase: reject if container image is the expected artifact type.
+    // Container images must be built via the docker-buildx adapter.
+    if (context.phase === 'package') {
+      const expectedArtifactType = context.surfaceConfig.expectedArtifactType;
+      if (expectedArtifactType === 'container-image') {
+        throw new Error(
+          `PnpmViteReactAdapter cannot build container images. ` +
+            `Configure the docker-buildx adapter for the package phase of surface ${context.surface.type}.`,
+        );
+      }
+    }
+
     const [step] = await this.plan(context);
 
     if (context.dryRun) {
@@ -67,10 +80,54 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     });
 
     const durationMs = commandResult.durationMs || Date.now() - startedAt;
+
+    if (commandResult.exitCode !== 0) {
+      return {
+        status: 'failed',
+        steps: [
+          {
+            stepId: step.id,
+            status: 'failed',
+            exitCode: commandResult.exitCode,
+            stdout: commandResult.stdout.slice(0, 10000),
+            stderr: commandResult.stderr.slice(0, 10000),
+            durationMs,
+          },
+        ],
+        artifacts: [],
+        durationMs,
+        failure: {
+          stepId: step.id,
+          message: 'pnpm execution failed',
+          ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
+        },
+      };
+    }
+
+    // dev phase: the Vite dev server is long-running; write processes.json, skip dist validation.
+    if (context.phase === 'dev') {
+      await this.writeProcessesJson(context, step.id, durationMs);
+      return {
+        status: 'succeeded',
+        steps: [
+          {
+            stepId: step.id,
+            status: 'succeeded',
+            exitCode: commandResult.exitCode,
+            stdout: commandResult.stdout.slice(0, 10000),
+            stderr: commandResult.stderr.slice(0, 10000),
+            durationMs,
+          },
+        ],
+        artifacts: [],
+        durationMs,
+      };
+    }
+
     const validation = await this.validateOutputs(context);
     const artifacts = await this.extractArtifacts(context);
 
-    const failed = commandResult.exitCode !== 0 || validation.status === 'invalid';
+    const failed = validation.status === 'invalid';
     if (failed) {
       return {
         status: 'failed',
@@ -94,6 +151,10 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       };
     }
 
+    if (context.phase === 'package') {
+      await this.writeArtifactManifest(context, artifacts);
+    }
+
     return {
       status: 'succeeded',
       steps: [
@@ -111,7 +172,60 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     };
   }
 
+  private async writeArtifactManifest(
+    context: ToolchainAdapterContext,
+    staticArtifacts: string[],
+  ): Promise<void> {
+    const packagePath = context.surfaceConfig.packagePath;
+    if (typeof packagePath !== 'string') return;
+
+    const packageDirectory = path.isAbsolute(packagePath)
+      ? this.resolvePackageDirectory(packagePath)
+      : path.join(this.repoRoot, this.resolvePackageDirectory(packagePath));
+
+    const buildDir = path.join(packageDirectory, 'build');
+    await fs.mkdir(buildDir, { recursive: true });
+
+    const manifestArtifacts: Array<{ path: string; metadata: { type: string } }> = staticArtifacts.map(
+      (artifactPath) => ({ path: artifactPath, metadata: { type: 'static-web-bundle' } }),
+    );
+
+    // Detect Dockerfile and build a Docker image if present.
+    const dockerfilePath = path.join(packageDirectory, 'Dockerfile');
+    if (await this.exists(dockerfilePath)) {
+      const imageName = `${context.productId}/${context.surface.path ?? 'web'}:latest`
+        .toLowerCase()
+        .replace(/[^a-z0-9/:.-]/g, '-');
+      const buildResult = await this.commandRunner.run(
+        'docker',
+        ['buildx', 'build', '--load', '-t', imageName, packageDirectory],
+        { cwd: this.repoRoot },
+      );
+      if (buildResult.exitCode === 0) {
+        manifestArtifacts.push({ path: imageName, metadata: { type: 'docker-image' } });
+      }
+    }
+
+    const manifest = {
+      productId: context.productId,
+      phase: context.phase,
+      generatedAt: new Date().toISOString(),
+      artifacts: manifestArtifacts,
+    };
+
+    await fs.writeFile(
+      path.join(buildDir, 'artifact-manifest.json'),
+      JSON.stringify(manifest, null, 2),
+      'utf-8',
+    );
+  }
+
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
+    // dev phase: outputs are a running dev server — nothing to validate on disk.
+    if (context.phase === 'dev') {
+      return { status: 'valid', errors: [], missingArtifacts: [], unexpectedArtifacts: [] };
+    }
+
     const expectedOutputs = this.getExpectedOutputsForPhase(context);
     const outputPaths = expectedOutputs.length > 0
       ? expectedOutputs
@@ -136,6 +250,37 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       missingArtifacts,
       unexpectedArtifacts: [],
     };
+  }
+
+  /** Write a processes.json to outputDir for the dev phase. */
+  private async writeProcessesJson(
+    context: ToolchainAdapterContext,
+    stepId: string,
+    durationMs: number,
+  ): Promise<void> {
+    const outputDir = context.outputDir ?? path.join(this.repoRoot, '.kernel', 'out', 'dev');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const rawPackagePath = String(context.surfaceConfig.packagePath ?? context.surface.path);
+    const packageDirectory = this.resolvePackageDirectory(rawPackagePath);
+    const processEntry = {
+      schemaVersion: '1.0.0',
+      productId: context.productId,
+      surface: context.surface.type,
+      adapter: 'pnpm-vite-react',
+      startedAt: new Date().toISOString(),
+      stepId,
+      durationMs,
+      packageDirectory,
+      script: this.mapPhaseToScript('dev', context.surfaceConfig),
+      note: 'Vite dev server completes when terminated. PID not captured in batch mode.',
+    };
+
+    await fs.writeFile(
+      path.join(outputDir, 'processes.json'),
+      JSON.stringify(processEntry, null, 2),
+      'utf-8',
+    );
   }
 
   private mapPhaseToScript(phase: ProductLifecyclePhase, surfaceConfig: Record<string, unknown>): string {

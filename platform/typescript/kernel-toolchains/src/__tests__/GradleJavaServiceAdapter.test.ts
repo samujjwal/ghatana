@@ -78,6 +78,92 @@ describe('GradleJavaServiceAdapter', () => {
 
     await expect(adapter.plan(context)).rejects.toThrow('does not support phase deploy');
   });
+
+  describe('dev phase', () => {
+    it('skips output validation and writes processes.json', async () => {
+      const outputDir = path.join(repoRoot, '.kernel', 'out', 'dev');
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'Started application', stderr: '', durationMs: 50 },
+      ]);
+      const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+      context.outputDir = outputDir;
+
+      const result = await adapter.execute(context);
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toHaveLength(0);
+
+      // processes.json should be written
+      const processesJson = path.join(outputDir, 'processes.json');
+      const raw = await fs.readFile(processesJson, 'utf-8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      expect(parsed.schemaVersion).toBe('1.0.0');
+      expect(parsed.adapter).toBe('gradle-java-service');
+      expect(parsed.productId).toBe('digital-marketing');
+    });
+
+    it('validateOutputs returns valid for dev phase without checking disk', async () => {
+      const adapter = new GradleJavaServiceAdapter({ repoRoot });
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+
+      const result = await adapter.validateOutputs(context);
+      expect(result.status).toBe('valid');
+      expect(result.missingArtifacts).toHaveLength(0);
+    });
+
+    it('plans bootRun task for dev phase', async () => {
+      const adapter = new GradleJavaServiceAdapter({ repoRoot });
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+
+      const plan = await adapter.plan(context);
+      expect(plan[0].command[1]).toBe(':products:digital-marketing:backend:bootRun');
+    });
+  });
+
+  describe('test phase', () => {
+    it('fails when test result directories are missing', async () => {
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'Tests passed', stderr: '', durationMs: 10 },
+      ]);
+      const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'test';
+
+      const result = await adapter.execute(context);
+
+      // No test result directories exist -> validation fails
+      expect(result.status).toBe('failed');
+      expect(result.failure?.message).toContain('Missing expected output');
+    });
+
+    it('succeeds when test result directories exist', async () => {
+      await fs.mkdir(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'tests'),
+        { recursive: true },
+      );
+      await fs.mkdir(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'test-results', 'test'),
+        { recursive: true },
+      );
+
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+      ]);
+      const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'test';
+
+      const result = await adapter.execute(context);
+      expect(result.status).toBe('succeeded');
+    });
+  });
 });
 
 function createContext(repoRoot: string): ToolchainAdapterContext {

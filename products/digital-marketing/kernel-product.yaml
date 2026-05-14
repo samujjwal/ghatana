@@ -22,7 +22,8 @@ surfaces:
         - products/digital-marketing/dm-api/build/reports/tests
     health:
       type: http
-      path: /health
+      livePath: /health/live
+      readyPath: /health/ready
       portVariable: DMOS_API_PORT
       defaultPort: 8080
 
@@ -62,7 +63,6 @@ phases:
   package:
     defaultSurfaces: [backend-api, web]
     mode: sequential
-    defaultTargets: [container, static-web]
   deploy:
     defaultEnvironment: local
 
@@ -103,16 +103,56 @@ gates:
     - web-typecheck
     - web-bundle-budget
 
+# Per-surface package config used by the docker-buildx adapter during the package phase.
+package:
+  backend-api:
+    adapter: docker-buildx
+    dockerfile: products/digital-marketing/dm-api/Dockerfile
+    context: products/digital-marketing/dm-api
+    image: ghatana/digital-marketing-api
+    tag: local
+    buildArgs: {}
+  web:
+    adapter: docker-buildx
+    dockerfile: products/digital-marketing/ui/Dockerfile
+    context: products/digital-marketing/ui
+    image: ghatana/digital-marketing-web
+    tag: local
+    buildArgs: {}
+
 deployment:
   local:
+    adapter: compose-local
     target: compose-local
     composeFile: products/digital-marketing/deploy/local.compose.yaml
     envFile: products/digital-marketing/deploy/local.env
     envExampleFile: products/digital-marketing/deploy/local.env.example
+    requireEnvFile: false
     healthChecks:
       backend-api:
         type: http
-        url: http://localhost:${DMOS_API_PORT:-8080}/health
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 10
+        intervalMs: 3000
       web:
         type: http
         url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 5
+        intervalMs: 2000
+
+verify:
+  local:
+    adapter: compose-local
+    healthChecks:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 10
+        intervalMs: 3000
+        timeoutMs: 30000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 5
+        intervalMs: 2000
+        timeoutMs: 15000

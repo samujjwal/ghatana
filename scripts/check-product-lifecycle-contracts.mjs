@@ -28,7 +28,7 @@ function loadLifecycleExclusions() {
   return JSON.parse(readFileSync(lifecycleExclusionsPath, 'utf8')).excludedProducts ?? {};
 }
 
-function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts) {
+async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts) {
   const errors = [];
   const warnings = [];
 
@@ -104,15 +104,36 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains,
         }
       }
 
-      for (const planPhase of ['validate', 'test', 'build']) {
+      for (const planPhase of ['validate', 'test', 'build', 'package', 'deploy', 'verify']) {
+        const extraArgs = (planPhase === 'deploy' || planPhase === 'verify') ? ['--env', 'local'] : [];
         try {
           execFileSync(
             process.execPath,
-            [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json'],
+            [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json', ...extraArgs],
             { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
           );
         } catch (error) {
           errors.push(`Product ${productId}: ${planPhase} plan generation failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // Validate registry/YAML config drift: lifecycleConfigPath should declare same profile as registry
+      if (product.lifecycleConfigPath) {
+        const configPath = join(repoRoot, product.lifecycleConfigPath);
+        if (existsSync(configPath)) {
+          try {
+            const { parseDocument } = await import('yaml');
+            const yamlContent = readFileSync(configPath, 'utf8');
+            const doc = parseDocument(yamlContent);
+            const yamlProfile = doc.get('lifecycleProfile');
+            if (yamlProfile && yamlProfile !== product.lifecycleProfile) {
+              errors.push(
+                `Product ${productId}: registry lifecycleProfile "${product.lifecycleProfile}" does not match YAML lifecycleProfile "${yamlProfile}"`,
+              );
+            }
+          } catch {
+            // YAML parsing is best-effort; file may not have lifecycleProfile field
+          }
         }
       }
     } else {
@@ -133,12 +154,12 @@ function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains,
   return { errors, warnings };
 }
 
-function main() {
+async function main() {
   const registry = loadRegistry();
   const lifecycleProfiles = loadLifecycleProfiles();
   const toolchains = loadToolchainRegistry();
   const excludedProducts = loadLifecycleExclusions();
-  const { errors, warnings } = checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts);
+  const { errors, warnings } = await checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts);
 
   if (warnings.length > 0) {
     console.warn('Warnings:');
@@ -159,7 +180,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(`Lifecycle contract check failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);

@@ -191,12 +191,14 @@
         "image-digest"
       ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/DockerBuildxAdapter.ts",
-      "status": "partial",
-      "safeForDefault": false,
-      "tests": [],
+      "status": "implemented",
+      "safeForDefault": true,
+      "tests": [
+        "platform/typescript/kernel-toolchains/src/adapters/__tests__/DockerBuildxAdapter.test.ts"
+      ],
       "planningImplemented": true,
-      "executionImplemented": false,
-      "outputValidationImplemented": false
+      "executionImplemented": true,
+      "outputValidationImplemented": true
     },
     "docker-static-web": {
       "kind": "package-tool",
@@ -243,12 +245,14 @@
         "health-check-report"
       ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/ComposeLocalAdapter.ts",
-      "status": "partial",
-      "safeForDefault": false,
-      "tests": [],
+      "status": "implemented",
+      "safeForDefault": true,
+      "tests": [
+        "platform/typescript/kernel-toolchains/src/adapters/__tests__/ComposeLocalAdapter.test.ts"
+      ],
       "planningImplemented": true,
-      "executionImplemented": false,
-      "outputValidationImplemented": false
+      "executionImplemented": true,
+      "outputValidationImplemented": true
     },
     "kubernetes": {
       "kind": "deployment-tool",

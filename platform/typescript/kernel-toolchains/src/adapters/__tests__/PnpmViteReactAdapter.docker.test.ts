@@ -3,14 +3,22 @@ import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import { PnpmViteReactAdapter } from '../PnpmViteReactAdapter.js';
 import type { ToolchainAdapterContext } from '../../ToolchainAdapter.js';
+import { FakeCommandRunner } from '../../execution/FakeCommandRunner.js';
 
 describe('PnpmViteReactAdapter - Docker artifact generation', () => {
   let tempDir: string;
   let adapter: PnpmViteReactAdapter;
+  let commandRunner: FakeCommandRunner;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(process.cwd(), 'test-temp-'));
-    adapter = new PnpmViteReactAdapter({ repoRoot: tempDir });
+    // Provide a FakeCommandRunner to avoid spawning real pnpm/docker binaries.
+    // The build step runs pnpm build; we return success so artifact detection logic runs.
+    commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: '', stderr: '', durationMs: 50 }, // pnpm build
+      { exitCode: 0, stdout: '', stderr: '', durationMs: 10 }, // docker buildx build
+    ]);
+    adapter = new PnpmViteReactAdapter({ repoRoot: tempDir, commandRunner });
   });
 
   afterEach(async () => {

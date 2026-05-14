@@ -78,6 +78,82 @@ describe('PnpmViteReactAdapter', () => {
 
     await expect(adapter.plan(context)).rejects.toThrow('does not support phase deploy');
   });
+
+  describe('dev phase', () => {
+    it('skips dist validation and writes processes.json', async () => {
+      const outputDir = path.join(repoRoot, '.kernel', 'out', 'dev');
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'VITE v5 ready', stderr: '', durationMs: 20 },
+      ]);
+      const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+      context.outputDir = outputDir;
+
+      const result = await adapter.execute(context);
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toHaveLength(0);
+
+      const processesJson = path.join(outputDir, 'processes.json');
+      const raw = await fs.readFile(processesJson, 'utf-8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      expect(parsed.schemaVersion).toBe('1.0.0');
+      expect(parsed.adapter).toBe('pnpm-vite-react');
+      expect(parsed.productId).toBe('digital-marketing');
+    });
+
+    it('validateOutputs returns valid for dev phase', async () => {
+      const adapter = new PnpmViteReactAdapter({ repoRoot });
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+
+      const result = await adapter.validateOutputs(context);
+      expect(result.status).toBe('valid');
+      expect(result.missingArtifacts).toHaveLength(0);
+    });
+
+    it('plans the dev script for dev phase', async () => {
+      const adapter = new PnpmViteReactAdapter({ repoRoot });
+      const context = createContext(repoRoot);
+      context.phase = 'dev';
+
+      const plan = await adapter.plan(context);
+      expect(plan[0].command).toEqual(['pnpm', '--dir', 'products/digital-marketing/web', 'run', 'dev']);
+    });
+  });
+
+  describe('package phase', () => {
+    it('throws when expectedArtifactType is container-image', async () => {
+      const commandRunner = new FakeCommandRunner([]);
+      const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'package';
+      context.surfaceConfig.expectedArtifactType = 'container-image';
+
+      await expect(adapter.execute(context)).rejects.toThrow('docker-buildx adapter');
+    });
+
+    it('succeeds for static-web-bundle artifacts when dist exists', async () => {
+      const webDir = path.join(repoRoot, 'products', 'digital-marketing', 'web');
+      await fs.mkdir(path.join(webDir, 'dist'), { recursive: true });
+      await fs.writeFile(path.join(webDir, 'dist', 'index.html'), '<html></html>');
+      await fs.writeFile(path.join(webDir, 'package.json'), '{"name":"web"}');
+
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'build complete', stderr: '', durationMs: 10 },
+      ]);
+      const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+      const context = createContext(repoRoot);
+      context.phase = 'package';
+
+      const result = await adapter.execute(context);
+      expect(result.status).toBe('succeeded');
+    });
+  });
 });
 
 function createContext(repoRoot: string): ToolchainAdapterContext {

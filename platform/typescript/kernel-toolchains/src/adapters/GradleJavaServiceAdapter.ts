@@ -65,10 +65,55 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     });
 
     const durationMs = commandResult.durationMs || Date.now() - startedAt;
+
+    if (commandResult.exitCode !== 0) {
+      return {
+        status: 'failed',
+        steps: [
+          {
+            stepId: step.id,
+            status: 'failed',
+            exitCode: commandResult.exitCode,
+            stdout: commandResult.stdout.slice(0, 10000),
+            stderr: commandResult.stderr.slice(0, 10000),
+            durationMs,
+          },
+        ],
+        artifacts: [],
+        durationMs,
+        failure: {
+          stepId: step.id,
+          message: 'Gradle execution failed',
+          ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
+        },
+      };
+    }
+
+    // dev phase: the process is long-running; write processes.json and return immediately.
+    // Do NOT validate dist/jar outputs for dev — the server runs in the foreground.
+    if (context.phase === 'dev') {
+      await this.writeProcessesJson(context, step.id, durationMs);
+      return {
+        status: 'succeeded',
+        steps: [
+          {
+            stepId: step.id,
+            status: 'succeeded',
+            exitCode: commandResult.exitCode,
+            stdout: commandResult.stdout.slice(0, 10000),
+            stderr: commandResult.stderr.slice(0, 10000),
+            durationMs,
+          },
+        ],
+        artifacts: [],
+        durationMs,
+      };
+    }
+
     const validation = await this.validateOutputs(context);
     const artifacts = await this.extractArtifacts(context);
 
-    const failed = commandResult.exitCode !== 0 || validation.status === 'invalid';
+    const failed = validation.status === 'invalid';
     if (failed) {
       return {
         status: 'failed',
@@ -86,7 +131,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         durationMs,
         failure: {
           stepId: step.id,
-          message: validation.errors.map((error) => error.message).join('; ') || 'Gradle execution failed',
+          message: validation.errors.map((error) => error.message).join('; ') || 'Output validation failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
       };
@@ -110,6 +155,11 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
+    // dev phase: outputs are a running process — nothing to validate on disk.
+    if (context.phase === 'dev') {
+      return { status: 'valid', errors: [], missingArtifacts: [], unexpectedArtifacts: [] };
+    }
+
     const expectedOutputs = this.getExpectedOutputsForPhase(context);
     const fallbackExpectedOutputs = this.getFallbackExpectedOutputs(context);
     const outputPatterns = expectedOutputs.length > 0 ? expectedOutputs : fallbackExpectedOutputs;
@@ -130,6 +180,36 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       missingArtifacts,
       unexpectedArtifacts: [],
     };
+  }
+
+  /** Write a processes.json to outputDir for the dev phase. */
+  private async writeProcessesJson(
+    context: ToolchainAdapterContext,
+    stepId: string,
+    durationMs: number,
+  ): Promise<void> {
+    const outputDir = context.outputDir ?? path.join(this.repoRoot, '.kernel', 'out', 'dev');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const gradleModule = context.surfaceConfig.gradleModule ?? context.surface.path;
+    const processEntry = {
+      schemaVersion: '1.0.0',
+      productId: context.productId,
+      surface: context.surface.type,
+      adapter: 'gradle-java-service',
+      startedAt: new Date().toISOString(),
+      stepId,
+      durationMs,
+      gradleModule,
+      task: this.mapPhaseToTask('dev', context.surfaceConfig),
+      note: 'bootRun completes when the server terminates. PID not captured in batch mode.',
+    };
+
+    await fs.writeFile(
+      path.join(outputDir, 'processes.json'),
+      JSON.stringify(processEntry, null, 2),
+      'utf-8',
+    );
   }
 
   private mapPhaseToTask(phase: ProductLifecyclePhase, surfaceConfig: Record<string, unknown>): string {

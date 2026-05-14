@@ -1,3 +1,37 @@
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
+
+/**
+ * Configuration for a single HTTP health check.
+ */
+export interface HealthCheckConfig {
+  url: string;
+  required?: boolean;
+  retries?: number;
+  retryIntervalMs?: number;
+  timeoutMs?: number;
+}
+
+/**
+ * Result entry for a single health check.
+ */
+export interface HealthCheckVerificationEntry {
+  url: string;
+  status: 'passed' | 'failed' | 'skipped';
+  latencyMs: number | null;
+  error: string | null;
+  checkedAt: string;
+}
+
+/**
+ * Overall result of live health check verification.
+ */
+export interface HealthCheckVerificationResult {
+  allPassed: boolean;
+  checks: HealthCheckVerificationEntry[];
+  errors: string[];
+}
+
 /**
  * Deployment verifier
  */
@@ -162,6 +196,96 @@ export class DeploymentVerifier {
       valid: errors.length === 0,
       errors,
     };
+  }
+
+  /**
+   * Perform live HTTP health checks with retry + exponential backoff.
+   * Writes results to `outputDir/health-check-results.json`.
+   * Fails closed — if a required check does not pass after all retries, the result is not valid.
+   */
+  async verifyLiveHealthChecks(
+    checks: HealthCheckConfig[],
+    outputDir: string,
+  ): Promise<HealthCheckVerificationResult> {
+    const entries: HealthCheckVerificationEntry[] = [];
+    const aggregateErrors: string[] = [];
+
+    for (const check of checks) {
+      const required = check.required ?? true;
+      const maxRetries = check.retries ?? 3;
+      const timeoutMs = check.timeoutMs ?? 5_000;
+      const intervalMs = check.retryIntervalMs ?? 1_000;
+
+      let lastError: string | null = null;
+      let passed = false;
+      let latencyMs: number | null = null;
+      let checkedAt = new Date().toISOString();
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        const requestStart = Date.now();
+
+        try {
+          const response = await fetch(check.url, { signal: controller.signal });
+          latencyMs = Date.now() - requestStart;
+          checkedAt = new Date().toISOString();
+
+          if (response.ok) {
+            passed = true;
+            lastError = null;
+            break;
+          }
+
+          lastError = `HTTP ${response.status} ${response.statusText}`;
+        } catch (err: unknown) {
+          latencyMs = Date.now() - requestStart;
+          checkedAt = new Date().toISOString();
+          lastError = err instanceof Error ? err.message : String(err);
+        } finally {
+          clearTimeout(timer);
+        }
+
+        if (attempt < maxRetries - 1) {
+          // Exponential backoff
+          await this.sleep(intervalMs * Math.pow(2, attempt));
+        }
+      }
+
+      entries.push({
+        url: check.url,
+        status: passed ? 'passed' : 'failed',
+        latencyMs: passed ? latencyMs : null,
+        error: lastError,
+        checkedAt,
+      });
+
+      if (!passed && required) {
+        aggregateErrors.push(
+          `Required health check failed: ${check.url} — ${lastError ?? 'no response'}`,
+        );
+      }
+    }
+
+    const result: HealthCheckVerificationResult = {
+      allPassed: aggregateErrors.length === 0,
+      checks: entries,
+      errors: aggregateErrors,
+    };
+
+    // Persist results for observability
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.writeFile(
+      path.join(outputDir, 'health-check-results.json'),
+      JSON.stringify(result, null, 2),
+      'utf-8',
+    );
+
+    return result;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

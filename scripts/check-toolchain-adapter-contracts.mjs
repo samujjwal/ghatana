@@ -118,6 +118,16 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycle
       errors.push(`Adapter ${adapterId}: implemented adapters must set planningImplemented/executionImplemented/outputValidationImplemented to true`);
     }
 
+    // Enforce: safeForDefault: true requires status: implemented + all three flags true
+    if (adapter.safeForDefault === true) {
+      if (adapter.status !== 'implemented') {
+        errors.push(`Adapter ${adapterId}: safeForDefault: true requires status: implemented (currently: ${adapter.status})`);
+      }
+      if (!adapter.planningImplemented || !adapter.executionImplemented || !adapter.outputValidationImplemented) {
+        errors.push(`Adapter ${adapterId}: safeForDefault: true requires planningImplemented, executionImplemented, and outputValidationImplemented to all be true`);
+      }
+    }
+
     const requiresImplementationFile = adapter.status === 'implemented' || adapter.status === 'partial' || usedAdapters.has(adapterId);
     if (requiresImplementationFile) {
       if (!adapter.implementation) {
@@ -140,6 +150,18 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycle
       for (const testPath of adapter.tests) {
         if (!existsSync(join(repoRoot, testPath))) {
           errors.push(`Adapter ${adapterId}: declared test file not found at ${testPath}`);
+        }
+      }
+
+      // Validate implementation is exported from kernel-toolchains index.ts
+      if (adapter.implementation) {
+        const indexPath = join(repoRoot, 'platform/typescript/kernel-toolchains/src/index.ts');
+        if (existsSync(indexPath)) {
+          const indexContent = readFileSync(indexPath, 'utf8');
+          const implFile = adapter.implementation.replace(/.*src\/adapters\//, '').replace('.ts', '');
+          if (!indexContent.includes(implFile)) {
+            errors.push(`Adapter ${adapterId}: implementation "${implFile}" not exported from kernel-toolchains/src/index.ts`);
+          }
         }
       }
     }

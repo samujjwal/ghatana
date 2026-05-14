@@ -1,0 +1,3 @@
+# Local env files contain secrets — never commit
+local.env
+*.local.env

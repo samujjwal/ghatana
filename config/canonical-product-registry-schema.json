@@ -181,6 +181,21 @@
               "buildFile": { "type": "string", "minLength": 1 }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "lifecycleStatus": { "const": "enabled" }
+            },
+            "required": ["lifecycleStatus"]
+          },
+          "then": {
+            "required": ["lifecycleProfile", "lifecycleConfigPath", "lifecycle", "toolchain", "artifacts", "deployment", "environments"],
+            "properties": {
+              "lifecycleProfile": { "type": "string", "minLength": 1 },
+              "lifecycleConfigPath": { "type": "string", "minLength": 1 }
+            }
+          }
         }
       ]
     },

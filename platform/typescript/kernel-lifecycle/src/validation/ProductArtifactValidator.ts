@@ -28,6 +28,8 @@ export class ProductArtifactValidator {
 
     if (!artifact.fingerprint || artifact.fingerprint.trim().length === 0) {
       errors.push({ path: 'fingerprint', message: 'Artifact fingerprint is required' });
+    } else {
+      errors.push(...this.validateFingerprint(artifact.fingerprint));
     }
 
     if (!artifact.producedBy || artifact.producedBy.trim().length === 0) {
