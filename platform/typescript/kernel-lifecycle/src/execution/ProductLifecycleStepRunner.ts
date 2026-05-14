@@ -72,6 +72,24 @@ export class ProductLifecycleStepRunner {
 
       const result = await adapter.execute(adapterContext);
 
+      // Fail closed: a non-dry-run required step must not silently skip.
+      if (result.status === 'skipped' && !context.dryRun) {
+        const stepResult: ProductLifecycleStepResult = {
+          stepId: step.id,
+          status: 'failed',
+          exitCode: 1,
+          durationMs: Date.now() - startTime,
+        };
+
+        context.logger.error(`Step ${step.id} returned skipped for a non-dry-run required step`, {
+          phase: step.phase,
+          surface: step.surface,
+          adapter: step.adapter,
+        });
+
+        return stepResult;
+      }
+
       const stepResult: ProductLifecycleStepResult = {
         stepId: step.id,
         status: result.status === 'succeeded' ? 'succeeded' : 'failed',

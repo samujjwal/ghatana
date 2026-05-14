@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import * as path from 'node:path';
+import * as url from 'node:url';
 import { ProductLifecyclePlanner } from '../planning/ProductLifecyclePlanner.js';
 import { SurfaceSelector } from '../planning/SurfaceSelector.js';
 import { LifecycleProfileResolver } from '../planning/LifecycleProfileResolver.js';
@@ -8,9 +10,11 @@ import { EnvironmentResolver } from '../planning/EnvironmentResolver.js';
 import { ToolchainResolver } from '../planning/ToolchainResolver.js';
 import { ProductSurface, ProductLifecyclePhase, ProductSurfaceType } from '../domain/ProductLifecyclePhase.js';
 
+const REPO_ROOT = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '../../../../..');
+
 describe('ProductLifecyclePlanner', () => {
   it('should load product configuration', async () => {
-    const planner = new ProductLifecyclePlanner();
+    const planner = new ProductLifecyclePlanner(REPO_ROOT);
     const config = await planner.loadProductConfig('digital-marketing');
 
     expect(config.productId).toBe('digital-marketing');
@@ -20,7 +24,7 @@ describe('ProductLifecyclePlanner', () => {
   });
 
   it('should plan build phase for digital-marketing', async () => {
-    const planner = new ProductLifecyclePlanner();
+    const planner = new ProductLifecyclePlanner(REPO_ROOT);
     const plan = await planner.plan('digital-marketing', 'build');
 
     expect(plan.productId).toBe('digital-marketing');
@@ -30,17 +34,17 @@ describe('ProductLifecyclePlanner', () => {
   });
 
   it('should plan dev phase in parallel mode', async () => {
-    const planner = new ProductLifecyclePlanner();
+    const planner = new ProductLifecyclePlanner(REPO_ROOT);
     const plan = await planner.plan('digital-marketing', 'dev');
 
     expect(plan.surfaces.length).toBeGreaterThan(0);
   });
 
   it('should throw error for unknown product', async () => {
-    const planner = new ProductLifecyclePlanner();
+    const planner = new ProductLifecyclePlanner(REPO_ROOT);
 
     await expect(planner.loadProductConfig('unknown-product')).rejects.toThrow(
-      'Product unknown-product not found in registry',
+      'not found in the canonical registry',
     );
   });
 });

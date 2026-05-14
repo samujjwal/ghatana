@@ -59,6 +59,7 @@ export class ExecutionResultCollector {
 
     const result: ProductLifecycleResult = {
       schemaVersion: '1.0.0',
+      runId: `run-${Date.now()}`,
       productId,
       phase,
       status,

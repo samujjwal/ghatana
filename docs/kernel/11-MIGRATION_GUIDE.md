@@ -119,6 +119,39 @@ pnpm deploy:local:your-product
 
 Migrate products in this order:
 
+## Product Readiness Matrix
+
+This matrix tracks the lifecycle migration readiness of each Ghatana product. Update this table as products progress through migration stages.
+
+| Product | Lifecycle Status | Profile | Surfaces | Package Adapter | Deploy Adapter | Health Checks | Notes |
+|---------|-----------------|---------|----------|-----------------|----------------|---------------|-------|
+| **Digital Marketing** | ✅ `enabled` | `standard-web-api-product` | `backend-api`, `web` | `docker-buildx` | `compose-local` | `/health/ready`, `/health/live` | Pilot product — fully configured |
+| **PHR** | 🔶 `partial` | `standard-web-api-product` | `backend-api`, `web` | — | — | — | Needs `kernel-product.yaml`, deploy config |
+| **Finance** | 🔶 `partial` | `standard-web-api-product` | `backend-api`, `web` | — | — | — | Needs `kernel-product.yaml`, deploy config |
+| **FlashIt** | 🔶 `partial` | `standard-web-api-product` | `backend-api`, `web` | — | — | — | Needs `kernel-product.yaml`, deploy config |
+| **Aura / AEP** | 🔶 `partial` | — | `backend-api` | — | — | — | Non-standard profile; needs assessment |
+| **DCMAAR** | 🔶 `partial` | — | `backend-api` | — | — | — | Data platform; needs custom profile |
+| **Data Cloud** | 🔶 `partial` | — | `backend-api` | — | — | — | Shared data service; needs assessment |
+| **YAPPC** | 🔶 `partial` | — | `backend-api` | — | — | — | Multi-module platform; needs custom profile |
+
+### Readiness Legend
+
+| Status | Meaning |
+|--------|---------|
+| ✅ `enabled` | Fully configured and lifecycle-managed; CI/CD enforces all phases |
+| 🔶 `partial` | Registered in registry; `kernel-product.yaml` partially complete or missing |
+| 📋 `planned` | Registered; migration not yet started |
+| ❌ `disabled` | Excluded from lifecycle management (see `config/kernel-lifecycle-exclusions.json`) |
+
+### Next Steps per Product
+
+1. **PHR** — Create `products/phr/kernel-product.yaml`, add Dockerfiles, configure `compose-local` for local deploy
+2. **Finance** — Create `products/finance/kernel-product.yaml`, add Dockerfiles, configure `compose-local` for local deploy
+3. **FlashIt** — Create `products/flashit/kernel-product.yaml`, add Dockerfiles, configure `compose-local` for local deploy
+4. **Aura/AEP** — Define a custom lifecycle profile; document multi-surface orchestration
+5. **DCMAAR, Data Cloud** — Assess data platform requirements; may need a `data-platform-product` lifecycle profile
+6. **YAPPC** — Assess multi-module toolchain requirements; may need a `multi-module-platform` lifecycle profile
+
 1. digital-marketing
 2. phr
 3. flashit

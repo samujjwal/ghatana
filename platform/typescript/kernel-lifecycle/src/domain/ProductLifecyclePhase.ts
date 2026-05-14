@@ -64,45 +64,108 @@ export interface ProductLifecycleConfiguration {
 export interface KernelProductConfiguration {
   productId: string;
   lifecycleProfile: string;
+  allowExperimentalAdapters?: boolean;
   surfaces: Record<string, ProductSurface>;
   phases: Record<string, LifecyclePhaseConfiguration>;
+  package?: Record<string, PackageSurfaceConfig>;
+  deployment?: Record<string, DeploymentEnvironmentConfig>;
+  verify?: Record<string, VerifyEnvironmentConfig>;
+  gates?: Record<string, string[]>;
+  artifacts?: Record<string, Record<string, ArtifactConfig>>;
+}
+
+/**
+ * Package surface configuration (adapter, dockerfile, image, etc.)
+ */
+export interface PackageSurfaceConfig {
+  adapter: string;
+  context?: string;
+  dockerfile?: string;
+  image: string;
+  tag?: string;
+  buildArgs?: Record<string, string>;
+}
+
+/**
+ * Deployment environment configuration
+ */
+export interface DeploymentEnvironmentConfig {
+  adapter: string;
+  target: string;
+  composeFile?: string;
+  envFile?: string;
+  envExampleFile?: string;
+  requireEnvFile?: boolean;
+}
+
+/**
+ * Verify environment configuration
+ */
+export interface VerifyEnvironmentConfig {
+  adapter: string;
+  healthChecks?: Record<string, HealthCheckConfig>;
+}
+
+/**
+ * Health check configuration
+ */
+export interface HealthCheckConfig {
+  type: 'http' | 'tcp';
+  url?: string;
+  host?: string;
+  port?: number;
+  path?: string;
+  retries?: number;
+  intervalMs?: number;
+  timeoutMs?: number;
+}
+
+/**
+ * Artifact configuration
+ */
+export interface ArtifactConfig {
+  type: string;
+  packaging?: string;
+  required?: boolean;
+  paths?: string[];
+}
+
+/**
+ * Step kind discriminant — identifies what kind of work a plan step represents.
+ */
+export type LifecycleStepKind =
+  | 'gate'
+  | 'surface'
+  | 'package'
+  | 'deploy'
+  | 'verify'
+  | 'release'
+  | 'promotion'
+  | 'rollback';
+
+/**
+ * Adapter context payload passed to each step so the executor can build the
+ * correct adapter call without re-reading config files.
+ */
+export interface LifecycleStepAdapterContext {
+  surfaceConfig?: Record<string, unknown>;
+  packageConfig?: Record<string, unknown>;
+  deploymentConfig?: Record<string, unknown>;
+  artifactConfig?: Record<string, unknown>;
+  environmentConfig?: Record<string, unknown>;
 }
 
 /**
  * Lifecycle plan step
+ * @deprecated Use ProductLifecycleStep directly. This alias is kept for backward compatibility.
  */
-export interface LifecyclePlanStep {
-  id: string;
-  phase: ProductLifecyclePhase;
-  surface: string;
-  adapter: string;
-  description: string;
-  dependsOn: string[];
-  estimatedDurationMs?: number;
-  execution?: {
-    command: string;
-    args: string[];
-    workingDirectory: string;
-  };
-}
+export type LifecyclePlanStep = ProductLifecycleStep;
 
 /**
  * Lifecycle plan
+ * @deprecated Use ProductLifecyclePlan directly. This alias is kept for backward compatibility.
  */
-export interface LifecyclePlan {
-  schemaVersion?: '1.0.0';
-  productId: string;
-  phase: ProductLifecyclePhase;
-  lifecycleProfile?: string;
-  environment?: string;
-  sourceRef?: string;
-  surfaces: string[];
-  gates?: ProductGatePlan[];
-  steps: LifecyclePlanStep[];
-  expectedArtifacts?: ProductExpectedArtifact[];
-  outputDirectory?: string;
-  estimatedDurationMs: number;
-}
+export type LifecyclePlan = ProductLifecyclePlan;
 
 /**
  * Execution context
@@ -164,12 +227,14 @@ export interface ValidationError {
 }
 
 /**
- * Product lifecycle plan
+ * Product lifecycle plan — canonical plan type (consolidates LifecyclePlan usage)
  */
 export interface ProductLifecyclePlan {
   schemaVersion: '1.0.0';
+  runId: string;
   productId: string;
   phase: ProductLifecyclePhase;
+  phaseMode: 'parallel' | 'sequential' | 'dag';
   lifecycleProfile: string;
   environment?: string;
   sourceRef?: string;
@@ -186,6 +251,7 @@ export interface ProductLifecyclePlan {
  */
 export interface ProductLifecycleResult {
   schemaVersion: '1.0.0';
+  runId: string;
   productId: string;
   phase: ProductLifecyclePhase;
   status: 'succeeded' | 'failed' | 'skipped';
@@ -207,12 +273,14 @@ export interface ProductLifecycleResult {
  */
 export interface ProductLifecycleStep {
   id: string;
+  stepKind: LifecycleStepKind;
   phase: ProductLifecyclePhase;
   surface: string;
   adapter: string;
   description: string;
   dependsOn: string[];
   estimatedDurationMs: number;
+  adapterContext?: LifecycleStepAdapterContext;
   execution?: {
     command: string;
     args: string[];
@@ -246,16 +314,27 @@ export interface ProductLifecycleEvent {
 
 /**
  * Product artifact
+ *
+ * For container image artifacts, populate the optional image-specific fields.
  */
 export interface ProductArtifact {
   id: string;
   surface: string;
   type: string;
+  /** File-system path for file-based artifacts, or image ref for container images. */
   path: string;
   fingerprint: string;
   producedBy: string;
   sizeBytes?: number;
   metadata?: Record<string, unknown>;
+  /** Container image reference (e.g. "registry/image:tag"). Set when type === 'container-image'. */
+  image?: string;
+  /** Container image tag. */
+  tag?: string;
+  /** Container image digest (sha256:...). */
+  digest?: string;
+  /** Local Docker image ID (short hash). */
+  localImageId?: string;
 }
 
 /**

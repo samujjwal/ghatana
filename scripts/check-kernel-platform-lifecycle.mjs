@@ -15,6 +15,8 @@ const checks = [
   'check-product-artifact-contracts.mjs',
   'check-product-deployment-contracts.mjs',
   'check-kernel-lifecycle-exclusions.mjs',
+  'check-digital-marketing-lifecycle-pilot.mjs',
+  'check-lifecycle-registry-config-drift.mjs',
 ];
 
 function main() {

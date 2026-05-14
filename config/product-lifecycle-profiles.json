@@ -111,6 +111,22 @@
           "web": [
             "container-image"
           ]
+        },
+        "deploy": {
+          "backend-api": [
+            "deployment-manifest"
+          ],
+          "web": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "backend-api": [
+            "health-check-report"
+          ],
+          "web": [
+            "health-check-report"
+          ]
         }
       }
     },

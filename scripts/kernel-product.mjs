@@ -7,6 +7,7 @@ import {
   ProductLifecyclePlanner,
   ProductLifecycleStepRunner,
 } from '../platform/typescript/kernel-lifecycle/dist/index.js';
+import { createDefaultToolchainAdapterRegistry } from '../platform/typescript/kernel-toolchains/dist/ToolchainAdapterRegistry.js';
 
 const VALID_PHASES = new Set([
   'create',
@@ -112,19 +113,6 @@ function parseArgs(argv) {
   return { mode, productId, phase, options };
 }
 
-function createFallbackAdapterRegistry() {
-  return {
-    getAdapter(adapterId) {
-      return {
-        async execute() {
-          throw new Error(
-            `Step adapter ${adapterId} was invoked without planner-provided execution command.`,
-          );
-        },
-      };
-    },
-  };
-}
 
 async function main() {
   const { mode, productId, phase, options } = parseArgs(process.argv.slice(2));
@@ -138,15 +126,25 @@ async function main() {
     outputDir: options.outputDir,
   });
 
-  const outputDirectory = plan.outputDirectory ?? join(repoRoot, '.kernel', 'out', 'products', productId, phase, 'latest');
+  const runId = plan.runId ?? `run-${Date.now()}`;
+  const outputDirectory = plan.outputDirectory
+    ?? join(repoRoot, '.kernel', 'out', 'products', productId, phase, runId);
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(join(outputDirectory, 'lifecycle-plan.json'), `${JSON.stringify(plan, null, 2)}\n`);
+
+  // Also write a pointer file under 'latest' for tooling convenience
+  const latestDir = join(repoRoot, '.kernel', 'out', 'products', productId, phase, 'latest');
+  await mkdir(latestDir, { recursive: true });
+  await writeFile(join(latestDir, 'run-id.txt'), runId);
 
   let result = null;
   if (mode !== 'plan') {
     const logger = new ConsoleExecutionLogger('[kernel-product]');
     const collector = new ExecutionResultCollector(logger);
-    const runner = new ProductLifecycleStepRunner(createFallbackAdapterRegistry());
+
+    // Build real adapter registry with safe SpawnCommandRunner
+    const { bridge } = createDefaultToolchainAdapterRegistry({ repoRoot });
+    const runner = new ProductLifecycleStepRunner(bridge);
     const executor = new ProductLifecycleExecutor(runner, collector);
 
     result = await executor.executePlan(plan, {
@@ -160,7 +158,24 @@ async function main() {
     await writeFile(join(outputDirectory, 'lifecycle-result.json'), `${JSON.stringify(result, null, 2)}\n`);
   }
 
-  console.log(JSON.stringify({ plan, result }, null, 2));
+  if (options.json) {
+    console.log(JSON.stringify({ plan, result }, null, 2));
+  } else {
+    const status = result ? result.status : 'planned';
+    const stepCount = plan.steps?.length ?? 0;
+    const durationMs = result?.durationMs ?? 0;
+    console.log(`\n[kernel] ${productId} / ${phase} — ${status.toUpperCase()} (${stepCount} steps, ${durationMs}ms)\n`);
+    if (result?.failure) {
+      console.error(`  FAILURE: ${result.failure.message}`);
+      if (result.failure.cause) {
+        console.error(`  CAUSE:   ${result.failure.cause}`);
+      }
+    }
+  }
+
+  if (result && result.status === 'failed') {
+    process.exit(1);
+  }
 }
 
 main().catch((error) => {

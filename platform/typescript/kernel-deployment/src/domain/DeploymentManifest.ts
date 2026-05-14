@@ -28,6 +28,26 @@ export interface DeploymentSurfaceStatus {
 }
 
 /**
+ * Health check verification entry recorded in the manifest.
+ */
+export interface ManifestHealthCheckEntry {
+  url: string;
+  status: 'passed' | 'failed' | 'skipped';
+  latencyMs: number | null;
+  error: string | null;
+  checkedAt: string;
+}
+
+/**
+ * Verifier result recorded in the manifest.
+ */
+export interface ManifestVerifierResult {
+  valid: boolean;
+  checkedAt: string;
+  errors: string[];
+}
+
+/**
  * Deployment manifest
  */
 export interface DeploymentManifest {
@@ -39,6 +59,18 @@ export interface DeploymentManifest {
   surfaces: DeploymentSurfaceStatus[];
   deployedAt: string;
   rollbackPlan: RollbackPlan;
+  /** The deployment target adapter type (e.g. compose-local, kubernetes). */
+  target?: DeploymentTargetType;
+  /** Path to the artifact manifest that was deployed. */
+  artifactManifestRef?: string;
+  /** Per-service status map keyed by service name. */
+  services?: Record<string, { status: string; healthCheckPassed: boolean }>;
+  /** Live health check results written by the verifier. */
+  healthChecks?: ManifestHealthCheckEntry[];
+  /** Overall deployment status after verification. */
+  overallStatus?: DeploymentStatus;
+  /** Summary of the verifier run recorded during the verify phase. */
+  verifierResult?: ManifestVerifierResult;
 }
 
 /**
@@ -50,6 +82,20 @@ export interface RollbackPlan {
   reason: string;
   steps: string[];
 }
+
+const ManifestHealthCheckEntrySchema = z.object({
+  url: z.string().min(1),
+  status: z.enum(['passed', 'failed', 'skipped']),
+  latencyMs: z.number().nullable(),
+  error: z.string().nullable(),
+  checkedAt: z.string().datetime(),
+});
+
+const ManifestVerifierResultSchema = z.object({
+  valid: z.boolean(),
+  checkedAt: z.string().datetime(),
+  errors: z.array(z.string()),
+});
 
 /**
  * Zod schema for deployment manifest validation
@@ -77,6 +123,13 @@ export const DeploymentManifestSchema = z.object({
     reason: z.string().min(1),
     steps: z.array(z.string()),
   }),
+  // Optional extended fields
+  target: z.enum(['compose-local', 'kubernetes', 'helm', 'terraform']).optional(),
+  artifactManifestRef: z.string().optional(),
+  services: z.record(z.string(), z.object({ status: z.string(), healthCheckPassed: z.boolean() })).optional(),
+  healthChecks: z.array(ManifestHealthCheckEntrySchema).optional(),
+  overallStatus: z.enum(['pending', 'in-progress', 'deployed', 'failed', 'rolled-back']).optional(),
+  verifierResult: ManifestVerifierResultSchema.optional(),
 });
 
 export type DeploymentManifestInput = z.infer<typeof DeploymentManifestSchema>;
@@ -94,6 +147,8 @@ export class DeploymentManifestGenerator {
     environment: DeploymentEnvironment;
     surfaces: Omit<DeploymentSurfaceStatus, 'deployedAt' | 'healthCheckPassed'>[];
     rollbackPlan: RollbackPlan;
+    target?: DeploymentTargetType;
+    artifactManifestRef?: string;
   }): DeploymentManifest {
     return {
       schemaVersion: '1.0.0',
@@ -108,6 +163,8 @@ export class DeploymentManifestGenerator {
       })),
       deployedAt: new Date().toISOString(),
       rollbackPlan: params.rollbackPlan,
+      ...(params.target !== undefined ? { target: params.target } : {}),
+      ...(params.artifactManifestRef !== undefined ? { artifactManifestRef: params.artifactManifestRef } : {}),
     };
   }
 

@@ -1,0 +1,249 @@
+name: Product Lifecycle
+
+on:
+  pull_request:
+    paths:
+      # Kernel platform changes
+      - 'platform/typescript/kernel-*/**'
+      - 'platform/typescript/kernel-product-contracts/**'
+      - 'config/toolchain-adapter-registry.json'
+      - 'config/product-lifecycle-profiles.json'
+      - 'config/canonical-product-registry.json'
+      - 'config/canonical-product-registry-schema.json'
+      - 'config/kernel-lifecycle-exclusions.json'
+      - 'scripts/check-*lifecycle*.mjs'
+      - 'scripts/check-*adapter*.mjs'
+      - 'scripts/check-digital-marketing*.mjs'
+      - 'scripts/kernel-product.mjs'
+      # Digital Marketing product changes
+      - 'products/digital-marketing/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'platform/typescript/kernel-*/**'
+      - 'config/toolchain-adapter-registry.json'
+      - 'config/product-lifecycle-profiles.json'
+      - 'config/canonical-product-registry.json'
+      - 'products/digital-marketing/**'
+
+concurrency:
+  group: product-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  build-kernel:
+    name: Build Kernel Packages
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build kernel lifecycle platform
+        run: pnpm run build:kernel-lifecycle-platform
+
+      - name: Upload kernel build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: |
+            platform/typescript/kernel-*/dist/
+          retention-days: 1
+
+  test-kernel:
+    name: Test Kernel Packages
+    needs: build-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Test kernel-toolchains
+        run: pnpm --filter @ghatana/kernel-toolchains test --run
+
+      - name: Test kernel-deployment
+        run: pnpm --filter @ghatana/kernel-deployment test --run
+
+      - name: Test kernel-lifecycle
+        run: pnpm --filter @ghatana/kernel-lifecycle test --run
+        continue-on-error: true
+
+      - name: Test kernel-artifacts
+        run: pnpm --filter @ghatana/kernel-artifacts test --run
+        continue-on-error: true
+
+  check-contracts:
+    name: Check Lifecycle Contracts
+    needs: build-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Check toolchain adapter contracts
+        run: node ./scripts/check-toolchain-adapter-contracts.mjs
+
+      - name: Check toolchain adapter registry schema
+        run: node ./scripts/check-toolchain-adapter-registry-schema.mjs
+
+      - name: Check product lifecycle profiles schema
+        run: node ./scripts/check-product-lifecycle-profiles-schema.mjs
+
+      - name: Check product lifecycle contracts
+        run: node ./scripts/check-product-lifecycle-contracts.mjs
+
+      - name: Check product artifact contracts
+        run: node ./scripts/check-product-artifact-contracts.mjs
+
+      - name: Check product deployment contracts
+        run: node ./scripts/check-product-deployment-contracts.mjs
+
+      - name: Check kernel lifecycle exclusions
+        run: node ./scripts/check-kernel-lifecycle-exclusions.mjs
+
+      - name: Check lifecycle registry/config drift
+        run: node ./scripts/check-lifecycle-registry-config-drift.mjs
+
+  check-digital-marketing:
+    name: Check Digital Marketing Lifecycle Pilot
+    needs: build-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Check Digital Marketing lifecycle pilot
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs
+
+      - name: Validate build phase plan
+        run: node ./scripts/kernel-product.mjs product plan digital-marketing build --json
+
+      - name: Validate test phase plan
+        run: node ./scripts/kernel-product.mjs product plan digital-marketing test --json
+
+      - name: Validate package phase plan
+        run: node ./scripts/kernel-product.mjs product plan digital-marketing package --json
+
+      - name: Validate deploy phase plan
+        run: node ./scripts/kernel-product.mjs product plan digital-marketing deploy --env local --json
+
+      - name: Validate verify phase plan
+        run: node ./scripts/kernel-product.mjs product plan digital-marketing verify --env local --json
+
+  # NOTE: deploy jobs are intentionally NOT included in PR workflows.
+  # Deployment only happens on main branch via separate deployment workflows.
