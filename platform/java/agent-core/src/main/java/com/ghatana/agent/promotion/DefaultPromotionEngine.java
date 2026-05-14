@@ -267,25 +267,36 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 ));
             }
 
-            // Update mastery item with delta's procedure/fact/negative IDs, evaluation refs, score, and version scope
-            return updateMasteryItemWithDelta(delta, item)
-                    .then(updatedItem -> updateDeltaToPromoted(delta)
-                            .map(ignored -> PromotionResult.success(
-                                    delta.deltaId(),
-                                    item.masteryId(),
-                                    previousState,
-                                    targetState
-                            )));
+            // Reload the item from registry to get the post-transition state, then update with delta metadata
+            return masteryRegistry.getById(delta.tenantId(), item.masteryId())
+                    .then(currentItemOpt -> {
+                        MasteryItem baseItem = currentItemOpt.orElse(item);
+                        // Update mastery item with delta's procedure/fact/negative IDs, evaluation refs, score, and version scope
+                        // using the target state from the successful transition
+                        return updateMasteryItemWithDelta(delta, baseItem, targetState)
+                                .then(updatedItem -> updateDeltaToPromoted(delta)
+                                        .map(ignored -> PromotionResult.success(
+                                                delta.deltaId(),
+                                                item.masteryId(),
+                                                previousState,
+                                                targetState
+                                        )));
+                    });
         });
     }
 
     /**
      * Updates the MasteryItem with procedure/fact/negative IDs, evaluation refs, score, and version scope from the LearningDelta.
+     *
+     * @param delta learning delta containing metadata to merge
+     * @param item base mastery item to update (should be post-transition state)
+     * @param targetState the target mastery state after transition
      */
     @NotNull
     private Promise<MasteryItem> updateMasteryItemWithDelta(
             @NotNull LearningDelta delta,
-            @NotNull MasteryItem item) {
+            @NotNull MasteryItem item,
+            @NotNull MasteryState targetState) {
         // Build updated lists with delta's IDs
         List<String> updatedProcedureIds = new java.util.ArrayList<>(item.procedureIds());
         List<String> updatedSemanticFactIds = new java.util.ArrayList<>(item.semanticFactIds());
@@ -320,7 +331,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             // For now, keep existing version scope
         }
         
-        // Create updated MasteryItem
+        // Create updated MasteryItem using targetState to preserve the transition
         MasteryItem updatedItem = new MasteryItem(
                 item.masteryId(),
                 item.tenantId(),
@@ -328,7 +339,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 item.domain(),
                 item.agentId(),
                 item.agentReleaseId(),
-                item.state(),
+                targetState,
                 updatedVersionScope,
                 item.applicability(),
                 updatedScore,

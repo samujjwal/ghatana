@@ -5,6 +5,8 @@
 package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
+import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextCodec;
 import com.ghatana.agent.mastery.*;
 import com.ghatana.agent.mastery.transition.DefaultMasteryTransitionPolicy;
 import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
@@ -676,5 +678,396 @@ class DataCloudMasteryRegistryTest extends EventloopTestBase {
         public Promise<Optional<MasteryTransition>> findLatestByMasteryId(String masteryId) {
             return Promise.of(Optional.empty());
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // P0.2: Version context codec compatibility tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("JSON-encoded version context decodes correctly in findBest()")
+    void jsonEncodedVersionContextDecodesInFindBest() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-json", "skill-json", MasteryState.MASTERED);
+        runPromise(() -> registry.save(item));
+
+        // Create a version context with react-router@7.x (active version)
+        VersionContext versionContext = new VersionContext(
+                Map.of("react-router", "7.2.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "sha256:abc123",
+                Instant.now()
+        );
+        String encodedContext = VersionContextCodec.INSTANCE.encode(versionContext);
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-json")
+                .withTenantId(TENANT)
+                .withVersionContext(encodedContext);
+        Optional<MasteryItem> result = runPromise(() -> registry.findBest(query));
+
+        assertThat(result).isPresent();
+        assertThat(result.get().masteryId()).isEqualTo("mastery-json");
+    }
+
+    @Test
+    @DisplayName("Legacy comma-separated version context still works as fallback")
+    void legacyCommaSeparatedVersionContextFallback() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-legacy", "skill-legacy", MasteryState.COMPETENT);
+        runPromise(() -> registry.save(item));
+
+        // Legacy format: "react-router=6.4.0,spring-boot=3.2.0"
+        String legacyContext = "react-router=6.4.0,spring-boot=3.2.0";
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-legacy")
+                .withTenantId(TENANT)
+                .withVersionContext(legacyContext);
+        Optional<MasteryItem> result = runPromise(() -> registry.findBest(query));
+
+        assertThat(result).isPresent();
+        assertThat(result.get().masteryId()).isEqualTo("mastery-legacy");
+    }
+
+    @Test
+    @DisplayName("JSON-encoded version context decodes correctly in decide()")
+    void jsonEncodedVersionContextDecodesInDecide() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-decide-json", "skill-decide-json", MasteryState.MASTERED);
+        runPromise(() -> registry.save(item));
+
+        VersionContext versionContext = new VersionContext(
+                Map.of("react-router", "7.2.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "sha256:def456",
+                Instant.now()
+        );
+        String encodedContext = VersionContextCodec.INSTANCE.encode(versionContext);
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-decide-json")
+                .withTenantId(TENANT)
+                .withVersionContext(encodedContext);
+        MasteryDecision decision = runPromise(() -> registry.decide(query));
+
+        assertThat(decision.allowed()).isTrue();
+        assertThat(decision.state()).isEqualTo(MasteryState.MASTERED);
+    }
+
+    @Test
+    @DisplayName("Obsolete version blocks dispatch in decide()")
+    void obsoleteVersionBlocksDispatch() {
+        DataCloudMasteryRegistry registry = registry();
+        
+        // Create a mastery item with a version scope that only supports react-router < 5
+        VersionScope obsoleteScope = new VersionScope(
+                List.of(VersionConstraint.packageVersion("react-router", "<5", "npm")),
+                List.of(),
+                List.of(VersionConstraint.packageVersion("react-router", ">=5", "npm"))
+        );
+        
+        ApplicabilityScope applicability = ApplicabilityScope.minimal(TENANT, "production");
+        MasteryScore score = new MasteryScore(0.9, 0.8, 0.7, 0.95, 0.6, 0.8, 0.9);
+        
+        MasteryItem obsoleteItem = new MasteryItem(
+                "mastery-obsolete", TENANT, "skill-obsolete", "domain-1", "agent-123", "release-1.0.0",
+                MasteryState.MASTERED, obsoleteScope, applicability, score,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
+        );
+        runPromise(() -> registry.save(obsoleteItem));
+
+        // Query with a version context that has react-router@7.x (should be obsolete)
+        VersionContext versionContext = new VersionContext(
+                Map.of("react-router", "7.2.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "sha256:ghi789",
+                Instant.now()
+        );
+        String encodedContext = VersionContextCodec.INSTANCE.encode(versionContext);
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-obsolete")
+                .withTenantId(TENANT)
+                .withVersionContext(encodedContext);
+        MasteryDecision decision = runPromise(() -> registry.decide(query));
+
+        assertThat(decision.allowed()).isFalse();
+        assertThat(decision.reason()).contains("obsolete");
+    }
+
+    @Test
+    @DisplayName("Malformed version context fails gracefully with UNKNOWN applicability")
+    void malformedVersionContextFailsGracefully() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-malformed", "skill-malformed", MasteryState.COMPETENT);
+        runPromise(() -> registry.save(item));
+
+        // Malformed JSON that cannot be parsed
+        String malformedContext = "{invalid json}";
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-malformed")
+                .withTenantId(TENANT)
+                .withVersionContext(malformedContext);
+        
+        // Should not throw exception, but handle gracefully
+        Optional<MasteryItem> result = runPromise(() -> registry.findBest(query));
+        
+        // With malformed context, version applicability will be UNKNOWN, but item should still be found
+        assertThat(result).isPresent();
+    }
+
+    @Test
+    @DisplayName("Empty version context is handled gracefully")
+    void emptyVersionContextHandledGracefully() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-empty", "skill-empty", MasteryState.COMPETENT);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-empty")
+                .withTenantId(TENANT)
+                .withVersionContext("");
+        
+        Optional<MasteryItem> result = runPromise(() -> registry.findBest(query));
+        
+        assertThat(result).isPresent();
+        assertThat(result.get().masteryId()).isEqualTo("mastery-empty");
+    }
+
+    // -------------------------------------------------------------------------
+    // P0.5: Unified mastery decision policy tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("queryMastery and decide use the same state-based policy for MASTERED")
+    void queryMasteryAndDecideUseSamePolicyForMastered() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-mastered", "skill-mastered", MasteryState.MASTERED);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-mastered").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isTrue();
+        assertThat(decideResult.allowed()).isTrue();
+        // Both should use the same state-based policy
+        assertThat(queryResult.get().state()).isEqualTo(decideResult.state());
+    }
+
+    @Test
+    @DisplayName("queryMastery and decide use the same state-based policy for COMPETENT")
+    void queryMasteryAndDecideUseSamePolicyForCompetent() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-competent", "skill-competent", MasteryState.COMPETENT);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-competent").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isTrue();
+        assertThat(queryResult.get().requiresVerification()).isTrue();
+        assertThat(decideResult.allowed()).isTrue();
+        assertThat(decideResult.requiresVerification()).isTrue();
+        assertThat(queryResult.get().state()).isEqualTo(decideResult.state());
+    }
+
+    @Test
+    @DisplayName("queryMastery and decide use the same state-based policy for PRACTICED")
+    void queryMasteryAndDecideUseSamePolicyForPracticed() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-practiced", "skill-practiced", MasteryState.PRACTICED);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-practiced").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isTrue();
+        assertThat(queryResult.get().requiresHumanApproval()).isTrue();
+        assertThat(decideResult.allowed()).isTrue();
+        assertThat(decideResult.requiresHumanApproval()).isTrue();
+        assertThat(queryResult.get().state()).isEqualTo(decideResult.state());
+    }
+
+    @Test
+    @DisplayName("queryMastery and decide use the same state-based policy for OBSERVED")
+    void queryMasteryAndDecideUseSamePolicyForObserved() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-observed", "skill-observed", MasteryState.OBSERVED);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-observed").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isTrue();
+        assertThat(queryResult.get().requiresHumanApproval()).isTrue();
+        assertThat(decideResult.allowed()).isTrue();
+        assertThat(decideResult.requiresHumanApproval()).isTrue();
+        assertThat(queryResult.get().state()).isEqualTo(decideResult.state());
+    }
+
+    @Test
+    @DisplayName("queryMastery and decide use the same state-based policy for UNKNOWN")
+    void queryMasteryAndDecideUseSamePolicyForUnknown() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem item = buildItem("mastery-unknown", "skill-unknown", MasteryState.UNKNOWN);
+        runPromise(() -> registry.save(item));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-unknown").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isFalse();
+        assertThat(decideResult.allowed()).isFalse();
+        assertThat(queryResult.get().state()).isEqualTo(decideResult.state());
+    }
+
+    @Test
+    @DisplayName("decide adds additional checks (stale) on top of state-based policy")
+    void decideAddsAdditionalChecksOnTopOfStatePolicy() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem staleItem = buildStaleItem("mastery-stale-decide", "skill-stale-decide", MasteryState.COMPETENT);
+        runPromise(() -> registry.save(staleItem));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-stale-decide").withTenantId(TENANT);
+
+        Optional<MasteryDecision> queryResult = runPromise(() -> registry.queryMastery(query));
+        MasteryDecision decideResult = runPromise(() -> registry.decide(query));
+
+        // queryMastery uses only state-based policy (COMPETENT -> allow)
+        assertThat(queryResult).isPresent();
+        assertThat(queryResult.get().allowed()).isTrue();
+
+        // decide adds stale check and blocks
+        assertThat(decideResult.allowed()).isFalse();
+        assertThat(decideResult.reason()).contains("stale");
+    }
+
+    // -------------------------------------------------------------------------
+    // P0.6: Correct retrieval ordering tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Query returns items in correct order: higher mastery state ranks first")
+    void queryReturnsItemsInCorrectOrderByMasteryState() {
+        DataCloudMasteryRegistry registry = registry();
+        MasteryItem observed = buildItem("mastery-obs", "skill-order", MasteryState.OBSERVED);
+        MasteryItem practiced = buildItem("mastery-prac", "skill-order", MasteryState.PRACTICED);
+        MasteryItem competent = buildItem("mastery-comp", "skill-order", MasteryState.COMPETENT);
+        MasteryItem mastered = buildItem("mastery-mast", "skill-order", MasteryState.MASTERED);
+
+        runPromise(() -> registry.save(observed));
+        runPromise(() -> registry.save(practiced));
+        runPromise(() -> registry.save(competent));
+        runPromise(() -> registry.save(mastered));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-order").withTenantId(TENANT);
+        List<MasteryItem> results = runPromise(() -> registry.query(query));
+
+        assertThat(results).hasSize(4);
+        // Order should be: MASTERED (highest) > COMPETENT > PRACTICED > OBSERVED (lowest)
+        assertThat(results.get(0).state()).isEqualTo(MasteryState.MASTERED);
+        assertThat(results.get(1).state()).isEqualTo(MasteryState.COMPETENT);
+        assertThat(results.get(2).state()).isEqualTo(MasteryState.PRACTICED);
+        assertThat(results.get(3).state()).isEqualTo(MasteryState.OBSERVED);
+    }
+
+    @Test
+    @DisplayName("Query returns items in correct order: higher execution score ranks first when states are equal")
+    void queryReturnsItemsInCorrectOrderByExecutionScore() {
+        DataCloudMasteryRegistry registry = registry();
+        
+        // Two items with same state but different scores
+        ApplicabilityScope applicability = ApplicabilityScope.minimal(TENANT, "production");
+        VersionScope versionScope = VersionScope.empty();
+        
+        MasteryScore lowScore = new MasteryScore(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+        MasteryScore highScore = new MasteryScore(0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9);
+        
+        MasteryItem itemLow = new MasteryItem(
+                "mastery-low", TENANT, "skill-score", "domain-1", "agent-123", "release-1.0.0",
+                MasteryState.COMPETENT, versionScope, applicability, lowScore,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.5
+        );
+        MasteryItem itemHigh = new MasteryItem(
+                "mastery-high", TENANT, "skill-score", "domain-1", "agent-123", "release-1.0.0",
+                MasteryState.COMPETENT, versionScope, applicability, highScore,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
+        );
+
+        runPromise(() -> registry.save(itemLow));
+        runPromise(() -> registry.save(itemHigh));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-score").withTenantId(TENANT);
+        List<MasteryItem> results = runPromise(() -> registry.query(query));
+
+        assertThat(results).hasSize(2);
+        // Higher score should come first
+        assertThat(results.get(0).masteryId()).isEqualTo("mastery-high");
+        assertThat(results.get(0).score().executionScore()).isEqualTo(0.9 * 0.9 * 0.9 * 0.9 * 0.9);
+        assertThat(results.get(1).masteryId()).isEqualTo("mastery-low");
+        assertThat(results.get(1).score().executionScore()).isEqualTo(0.5 * 0.5 * 0.5 * 0.5 * 0.5);
+    }
+
+    @Test
+    @DisplayName("Query returns items in correct order: mastery state takes precedence over score")
+    void queryReturnsItemsInCorrectOrderStatePrecedenceOverScore() {
+        DataCloudMasteryRegistry registry = registry();
+        
+        ApplicabilityScope applicability = ApplicabilityScope.minimal(TENANT, "production");
+        VersionScope versionScope = VersionScope.empty();
+        
+        // High score but lower state
+        MasteryScore highScore = new MasteryScore(0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9);
+        MasteryScore lowScore = new MasteryScore(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5);
+        
+        MasteryItem practicedHigh = new MasteryItem(
+                "mastery-prac-high", TENANT, "skill-precedence", "domain-1", "agent-123", "release-1.0.0",
+                MasteryState.PRACTICED, versionScope, applicability, highScore,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.9
+        );
+        MasteryItem competentLow = new MasteryItem(
+                "mastery-comp-low", TENANT, "skill-precedence", "domain-1", "agent-123", "release-1.0.0",
+                MasteryState.COMPETENT, versionScope, applicability, lowScore,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)), Map.of(),
+                0.5
+        );
+
+        runPromise(() -> registry.save(practicedHigh));
+        runPromise(() -> registry.save(competentLow));
+
+        MasteryQuery query = MasteryQuery.bySkill("skill-precedence").withTenantId(TENANT);
+        List<MasteryItem> results = runPromise(() -> registry.query(query));
+
+        assertThat(results).hasSize(2);
+        // COMPETENT (lower score but higher state) should come before PRACTICED (higher score but lower state)
+        assertThat(results.get(0).masteryId()).isEqualTo("mastery-comp-low");
+        assertThat(results.get(0).state()).isEqualTo(MasteryState.COMPETENT);
+        assertThat(results.get(1).masteryId()).isEqualTo("mastery-prac-high");
+        assertThat(results.get(1).state()).isEqualTo(MasteryState.PRACTICED);
     }
 }

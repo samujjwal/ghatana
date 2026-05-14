@@ -439,8 +439,18 @@ public final class LearningEngine {
                 .toList();
 
         // Chain approved deltas sequentially (high-confidence → PROPOSED via proposeProceduralSkill)
+        // Only create procedural deltas if the contract permits PROCEDURAL_SKILL
         Promise<Integer> approvedChain = Promise.of(0);
+        final boolean proceduralSkillPermitted = learningContract.permits(LearningTarget.PROCEDURAL_SKILL);
+        final int[] rejectedByContract = {0}; // Track deltas rejected by contract
+        
         for (CandidatePolicy candidate : approved) {
+            if (!proceduralSkillPermitted) {
+                // Contract does not permit procedural skills - record rejection and skip delta creation
+                rejectedByContract[0]++;
+                continue;
+            }
+            
             final String skillId = "skill-" + agentId + "-" + Math.abs(candidate.situation().hashCode());
             final String procedureId = UUID.randomUUID().toString();
             final String rollbackRef = "rollback:" + skillId;
@@ -475,9 +485,16 @@ public final class LearningEngine {
         final int totalFlagged = flaggedCandidates.size();
 
         // After approved deltas complete, chain flagged deltas (low-confidence → PENDING_HUMAN_REVIEW)
+        // Only create procedural deltas if the contract permits PROCEDURAL_SKILL
         return approvedChain.then(approvedCount -> {
             Promise<Integer> pendingChain = Promise.of(0);
             for (CandidatePolicy candidate : flaggedCandidates) {
+                if (!proceduralSkillPermitted) {
+                    // Contract does not permit procedural skills - record rejection and skip delta creation
+                    rejectedByContract[0]++;
+                    continue;
+                }
+                
                 final String skillId = "skill-" + agentId + "-" + Math.abs(candidate.situation().hashCode());
                 final Map<String, Object> content = Map.of(
                         "situation", candidate.situation(),
@@ -506,7 +523,7 @@ public final class LearningEngine {
                 return new LearningOutcome(
                         agentId, start, duration, learningContract.level(),
                         episodeCount, 0, approvedCount, totalFlagged,
-                        totalCandidates, 0, pendingCreated, approvedCount);
+                        totalCandidates, rejectedByContract[0], pendingCreated, approvedCount);
             });
         });
     }

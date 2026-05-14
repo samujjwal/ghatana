@@ -55,9 +55,10 @@ public enum LearningTarget {
 
     /**
      * Returns true if this target is only allowed in offline mode.
-     * MODEL_ADAPTER and potentially future high-risk targets are offline-only.
+     * MODEL_ADAPTER and MASTERY_STATE are offline-only.
+     * MASTERY_STATE mutations are only permitted for L5 governance workflows.
      */
     public boolean isOfflineOnlyTarget() {
-        return this == MODEL_ADAPTER;
+        return this == MODEL_ADAPTER || this == MASTERY_STATE;
     }
 }
