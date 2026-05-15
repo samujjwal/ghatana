@@ -7,6 +7,7 @@
  * @doc.pattern Provider
  */
 
+import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type {
@@ -155,6 +156,23 @@ interface GhatanaRegistry {
   readonly registry: Record<string, GhatanaRegistryEntry>;
 }
 
+function resolveDefaultRegistryPath(startDirectory: string = process.cwd()): string {
+  let currentDirectory = path.resolve(startDirectory);
+
+  while (true) {
+    const candidate = path.join(currentDirectory, "config", "canonical-product-registry.json");
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+
+    const parentDirectory = path.dirname(currentDirectory);
+    if (parentDirectory === currentDirectory) {
+      return path.join(startDirectory, "config", "canonical-product-registry.json");
+    }
+    currentDirectory = parentDirectory;
+  }
+}
+
 const LIFECYCLE_STATUSES: readonly LifecycleStatus[] = [
   "disabled",
   "planned",
@@ -165,6 +183,7 @@ const LIFECYCLE_STATUSES: readonly LifecycleStatus[] = [
 export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegistryProvider {
   readonly providerId = "ghatana-file-registry";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["registry-read", "product-unit-conversion", "product-unit-intent-apply"];
 
   private readonly registryPath: string;
@@ -174,15 +193,14 @@ export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegi
 
   constructor(options?: string | GhatanaFileRegistryProviderOptions) {
     if (typeof options === "string" || options === undefined) {
-      this.registryPath =
-        options ?? path.join(process.cwd(), "config/canonical-product-registry.json");
+      this.registryPath = options ?? resolveDefaultRegistryPath();
       this.strict = false;
       return;
     }
 
     this.registryPath =
       options.registryPath ??
-      path.join(process.cwd(), "config/canonical-product-registry.json");
+      resolveDefaultRegistryPath();
     this.strict = options.strict ?? false;
   }
 
@@ -396,7 +414,7 @@ export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegi
   ): Promise<ProductUnitIntentApplyResult> {
     // Conflict detection: re-read registry to detect concurrent modifications
     const currentRegistry = await this.loadRegistry();
-    const existingEntry = currentRegistry.registry[intent.productUnit.id];
+    const existingEntry = currentRegistry.registry[intent.productUnit.id] ?? null;
 
     // Check for conflicts: if entry was modified since preview
     if (existingEntry !== null && JSON.stringify(existingEntry) !== JSON.stringify(preview.before)) {
@@ -412,7 +430,7 @@ export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegi
       ...currentRegistry,
       registry: {
         ...currentRegistry.registry,
-        [preview.productUnitId]: preview.after,
+        [preview.productUnitId]: preview.after as GhatanaRegistryEntry,
       },
     };
 

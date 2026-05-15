@@ -46,6 +46,7 @@ const RUNTIME_TRUTH_STATUSES = [
 export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
   readonly providerId = "file-runtime-truth";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["runtime-truth", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

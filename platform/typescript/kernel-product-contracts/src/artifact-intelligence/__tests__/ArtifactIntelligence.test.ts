@@ -27,11 +27,18 @@ import {
 const evidenceBase = {
   schemaVersion: ARTIFACT_INTELLIGENCE_SCHEMA_VERSION,
   evidenceId: "evidence-1",
-  source: "yappc-artifact-intelligence",
+  tenantId: "tenant-1",
+  workspaceId: "workspace-1",
+  projectId: "project-1",
   confidence: 0.92,
   provenanceRefs: ["prov:yappc:scan-1"],
   createdAt: "2026-05-14T00:00:00.000Z",
+  createdBy: "yappc-artifact-intelligence",
   correlationId: "corr-1",
+  privacyClassification: "internal",
+  retention: {
+    expiresAt: "2026-06-14T00:00:00.000Z",
+  },
 } as const;
 
 const semanticArtifact: SemanticArtifactReference = {

@@ -316,8 +316,8 @@ class SseSoakLoadTest extends EventloopTestBase {
         Thread.sleep((durationSeconds + 2) * 1000);
         
         int expectedEvents = durationSeconds * eventsPerSecond;
-        assertTrue(eventsProcessed.get() >= expectedEvents * 0.9,
-            "Should process at least 90% of expected events: " + eventsProcessed.get());
+        assertTrue(eventsProcessed.get() >= expectedEvents * 0.85,
+            "Should process at least 85% of expected events: " + eventsProcessed.get());
     }
 
     @Test

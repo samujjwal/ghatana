@@ -35,7 +35,9 @@ describe("GhatanaFileRegistryProvider", () => {
       );
       const defaultProvider = new GhatanaFileRegistryProvider();
 
-      expect(defaultRegistryPath).toContain("config/canonical-product-registry.json");
+      expect(defaultRegistryPath.replaceAll("\\", "/")).toContain(
+        "config/canonical-product-registry.json"
+      );
       defaultProvider.reload();
     });
 

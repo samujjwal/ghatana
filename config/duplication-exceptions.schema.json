@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.io/schemas/duplication-exceptions.json",
+  "title": "Duplication Exceptions Schema",
+  "type": "object",
+  "required": ["version", "exceptions"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/exception"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "exception": {
+      "type": "object",
+      "required": [
+        "id",
+        "owner",
+        "duplicateType",
+        "paths",
+        "reason",
+        "riskLevel",
+        "expiryDate",
+        "removalPlan",
+        "validationCheck"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "duplicateType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "expiryDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "removalPlan": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validationCheck": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

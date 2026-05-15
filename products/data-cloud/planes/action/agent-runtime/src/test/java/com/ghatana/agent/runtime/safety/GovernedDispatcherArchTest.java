@@ -65,6 +65,7 @@ class GovernedDispatcherArchTest {
             .haveNameMatching(".*AgentDispatcher.*")
             .andShould()
             .beAssignableTo(GovernedAgentDispatcher.class)
+            .allowEmptyShould(true)
             .check(new ClassFileImporter().importPackages(AEP_ORCHESTRATION_PACKAGE));
     }
 

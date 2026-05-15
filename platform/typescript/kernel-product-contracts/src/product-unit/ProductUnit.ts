@@ -54,14 +54,15 @@ export interface ProductUnitScope {
  * Draft ProductUnit shape for ideation and intent flows. Drafts are not executable.
  */
 export interface ProductUnitDraft {
+  readonly schemaVersion?: "1.0.0" | undefined;
   readonly id: string;
   readonly name: string;
   readonly kind: ProductUnitKind;
-  readonly scope?: ProductUnitScope;
-  readonly owner?: string;
+  readonly scope?: ProductUnitScope | undefined;
+  readonly owner?: string | undefined;
   readonly surfaces: readonly ProductUnitSurface[];
-  readonly lifecycleProfile?: string;
-  readonly metadata?: Record<string, unknown>;
+  readonly lifecycleProfile?: string | undefined;
+  readonly metadata?: Record<string, unknown> | undefined;
 }
 
 /**
@@ -81,7 +82,7 @@ export interface ProductUnitConformance {
   /**
    * Exemptions from specific checks.
    */
-  readonly exemptions?: readonly string[];
+  readonly exemptions?: readonly string[] | undefined;
 }
 
 /**
@@ -91,22 +92,22 @@ export interface ProductUnitGovernance {
   /**
    * Required approval gates.
    */
-  readonly approvalGates?: readonly string[];
+  readonly approvalGates?: readonly string[] | undefined;
 
   /**
    * Required verification gates.
    */
-  readonly verificationGates?: readonly string[];
+  readonly verificationGates?: readonly string[] | undefined;
 
   /**
    * Security requirements.
    */
-  readonly securityRequirements?: readonly string[];
+  readonly securityRequirements?: readonly string[] | undefined;
 
   /**
    * Privacy requirements.
    */
-  readonly privacyRequirements?: readonly string[];
+  readonly privacyRequirements?: readonly string[] | undefined;
 }
 
 /**
@@ -131,7 +132,7 @@ export interface ProductUnit {
   /**
    * Optional tenant/workspace/project scope for multi-tenant lifecycle truth.
    */
-  readonly scope?: ProductUnitScope;
+  readonly scope?: ProductUnitScope | undefined;
 
   /**
    * Kind of ProductUnit (determines governance and lifecycle treatment).
@@ -141,7 +142,7 @@ export interface ProductUnit {
   /**
    * Owner or team responsible for the ProductUnit.
    */
-  readonly owner?: string;
+  readonly owner?: string | undefined;
 
   /**
    * Reference to the registry provider for this ProductUnit.
@@ -161,27 +162,27 @@ export interface ProductUnit {
   /**
    * Lifecycle profile name (e.g., "standard-web-api-product").
    */
-  readonly lifecycleProfile?: string;
+  readonly lifecycleProfile?: string | undefined;
 
   /**
    * Current lifecycle execution status.
    */
-  readonly lifecycleStatus?: LifecycleStatus;
+  readonly lifecycleStatus?: LifecycleStatus | undefined;
 
   /**
    * Conformance requirements for this ProductUnit.
    */
-  readonly conformance?: ProductUnitConformance;
+  readonly conformance?: ProductUnitConformance | undefined;
 
   /**
    * Governance configuration for this ProductUnit.
    */
-  readonly governance?: ProductUnitGovernance;
+  readonly governance?: ProductUnitGovernance | undefined;
 
   /**
    * Additional metadata for the ProductUnit.
    */
-  readonly metadata?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown> | undefined;
 }
 
 export interface ProductUnitValidationResult {
@@ -293,6 +294,7 @@ export const ProviderRefSchema = z
 
 export const ProductUnitDraftSchema = z
   .object({
+    schemaVersion: z.literal("1.0.0").optional(),
     id: z.string().trim().min(1),
     name: z.string().trim().min(1),
     kind: z.enum(PRODUCT_UNIT_KINDS),

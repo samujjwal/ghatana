@@ -36,6 +36,7 @@ const PRIVACY_CLASSIFICATIONS = [
 export class FileMemoryProvider implements LifecycleMemoryProvider {
   readonly providerId = "file-memory";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["memory", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

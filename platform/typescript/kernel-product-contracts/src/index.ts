@@ -1,3 +1,5 @@
+import { isProductUnit as isProductUnitContract } from './product-unit/ProductUnit.js';
+
 // Existing lifecycle contracts
 export type { ProductLifecyclePhase } from './lifecycle/ProductLifecyclePhase.js';
 export type { ProductSurface, ProductSurfaceType } from './surface/ProductSurface.js';
@@ -8,14 +10,37 @@ export type { ProductDeployment } from './deployment/ProductDeployment.js';
 
 // New ProductUnit contracts (explicit re-exports to avoid naming conflicts)
 export {
-  ProductUnitKind,
   isProductUnitKind,
   getProductUnitKindLabel,
+  isProductUnitSurfaceType,
+  isImplementationStatus,
+  ProductUnitSchema,
+  ProductUnitScopeSchema,
+  ProductUnitSurfaceSchema,
+  ProductUnitDraftSchema,
+  ProviderRefSchema,
+  validateProductUnit,
+  validateProductUnitDetailed,
+  createMinimalProductUnit,
+  createProductUnitDraftSkeleton,
+  createExecutableProductUnit,
+  ProductUnitIntentApplicationResultSchema,
+  ProductUnitIntentSchema,
+  ProducerSchema,
+  TargetProvidersSchema,
+  RequestedLifecycleSchema,
+  ProductUnitGovernanceHintsSchema,
+  IntentProvenanceSchema,
+  isProductUnitIntent,
+  validateProductUnitIntent,
+  validateProductUnitIntentDetailed,
+} from './product-unit/index.js';
+export const isProductUnit = isProductUnitContract;
+export type {
+  ProductUnitKind,
   ProductUnitSurface,
   ProductUnitSurfaceType,
-  isProductUnitSurfaceType,
   ImplementationStatus,
-  isImplementationStatus,
   ProductUnit,
   ProductUnitScope,
   ProductUnitDraft,
@@ -28,17 +53,6 @@ export {
   ProductUnitValidationIssue,
   ProductUnitValidationReasonCode,
   ProductUnitValidationSeverity,
-  ProductUnitSchema,
-  ProductUnitScopeSchema,
-  ProductUnitSurfaceSchema,
-  ProductUnitDraftSchema,
-  ProviderRefSchema,
-  isProductUnit,
-  validateProductUnit,
-  validateProductUnitDetailed,
-  createMinimalProductUnit,
-  createProductUnitDraftSkeleton,
-  createExecutableProductUnit,
   ProductUnitIntent,
   TargetProviders,
   Producer,
@@ -49,22 +63,12 @@ export {
   ProductUnitIntentApplicationStatus,
   ProductUnitIntentApplicationReasonCode,
   ProductUnitIntentApplicationResult,
-  ProductUnitIntentApplicationResultSchema,
   RequestedLifecycle,
   ProductUnitGovernanceHints,
   IntentProvenance,
   ProductUnitIntentDetailedValidationResult,
   ProductUnitIntentValidationIssue,
   ProductUnitIntentValidationReasonCode,
-  ProductUnitIntentSchema,
-  ProducerSchema,
-  TargetProvidersSchema,
-  RequestedLifecycleSchema,
-  ProductUnitGovernanceHintsSchema,
-  IntentProvenanceSchema,
-  isProductUnitIntent,
-  validateProductUnitIntent,
-  validateProductUnitIntentDetailed,
 } from './product-unit/index.js';
 
 // New provider contracts

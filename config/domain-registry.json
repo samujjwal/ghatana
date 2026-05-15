@@ -1,0 +1,396 @@
+{
+  "version": "1.0.0",
+  "domains": [
+    {
+      "id": "platform-coherence-governance",
+      "name": "Platform Coherence & Governance",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "docs/GOVERNANCE.md",
+        "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+        "config/canonical-product-registry.json",
+        "scripts/check-doc-truth.mjs"
+      ],
+      "secondaryLocations": [
+        "config/documentation-truth-scope.json",
+        "scripts/check-domain-boundaries.mjs",
+        "scripts/check-deprecated-imports.mjs"
+      ],
+      "allowedConsumers": ["all-products", "platform", "shared-services", "ci"],
+      "forbiddenDependencies": ["product-runtime-logic", "product-local-lifecycle-execution"],
+      "requiredChecks": [
+        "node scripts/check-doc-authority.mjs",
+        "node scripts/validate-domain-registry.mjs",
+        "node scripts/check-domain-boundaries.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
+      "currentStateEvidence": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "scripts/check-doc-truth.mjs"]
+    },
+    {
+      "id": "product-development-kernel-lifecycle",
+      "name": "Product Development Kernel Lifecycle",
+      "ownerLayer": "platform-kernel",
+      "classification": "existing-executable",
+      "primaryLocations": [
+        "platform/typescript/kernel-product-contracts",
+        "platform/typescript/kernel-lifecycle",
+        "scripts/kernel-product.mjs"
+      ],
+      "secondaryLocations": [
+        "products/digital-marketing/kernel-product.yaml",
+        "scripts/check-kernel-platform-lifecycle.mjs",
+        "scripts/check-digital-marketing-lifecycle-pilot.mjs"
+      ],
+      "allowedConsumers": ["digital-marketing", "ghatana-studio", "kernel-api", "ci"],
+      "forbiddenDependencies": ["products/data-cloud/planes", "products/yappc implementation internals"],
+      "requiredChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "pnpm --dir platform/typescript/kernel-lifecycle test",
+        "node scripts/check-kernel-platform-lifecycle.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
+      "currentStateEvidence": [
+        "platform/typescript/kernel-lifecycle/src",
+        "scripts/check-digital-marketing-lifecycle-pilot.mjs"
+      ]
+    },
+    {
+      "id": "toolchain-adapter-runtime",
+      "name": "Toolchain Adapter Runtime",
+      "ownerLayer": "platform-kernel",
+      "classification": "existing-executable",
+      "primaryLocations": [
+        "platform/typescript/kernel-toolchains",
+        "config/command-registry-manifest.json"
+      ],
+      "secondaryLocations": [
+        "scripts/check-toolchain-adapter-contracts.mjs",
+        "scripts/check-toolchain-adapter-registry-schema.mjs"
+      ],
+      "allowedConsumers": ["kernel-lifecycle", "product-surfaces", "ci"],
+      "forbiddenDependencies": ["unsafe-command-expansion", "product-local-build-runtimes"],
+      "requiredChecks": [
+        "pnpm --dir platform/typescript/kernel-toolchains test",
+        "pnpm --dir platform/typescript/kernel-toolchains typecheck",
+        "node scripts/check-toolchain-adapter-contracts.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
+      "currentStateEvidence": ["platform/typescript/kernel-toolchains/src", "config/command-registry-manifest.json"]
+    },
+    {
+      "id": "artifact-supply-chain-provenance",
+      "name": "Artifact Supply Chain & Provenance",
+      "ownerLayer": "platform-kernel",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/kernel-artifacts",
+        "platform/typescript/kernel-providers/src/artifacts",
+        "platform/typescript/kernel-providers/src/provenance"
+      ],
+      "secondaryLocations": [
+        "scripts/check-product-artifact-contracts.mjs"
+      ],
+      "allowedConsumers": ["kernel-lifecycle", "kernel-release", "deployment", "audit"],
+      "forbiddenDependencies": ["fake-artifact-success", "product-specific-shared-storage-adapters"],
+      "requiredChecks": [
+        "pnpm --dir platform/typescript/kernel-artifacts test",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "node scripts/check-product-artifact-contracts.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
+      "currentStateEvidence": ["platform/typescript/kernel-artifacts/src", "platform/typescript/kernel-providers/src/provenance"]
+    },
+    {
+      "id": "deployment-environment-release",
+      "name": "Deployment, Environment & Release",
+      "ownerLayer": "platform-kernel",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/kernel-deployment",
+        "platform/typescript/kernel-release",
+        "config/deployment-targets.json"
+      ],
+      "secondaryLocations": [
+        "config/rollback-policies.json",
+        "scripts/check-product-deployment-contracts.mjs",
+        "scripts/check-product-environment-contracts.mjs"
+      ],
+      "allowedConsumers": ["kernel-lifecycle", "operators", "release-governance"],
+      "forbiddenDependencies": ["fake-promotion-success", "unsupported-environment-defaults"],
+      "requiredChecks": [
+        "pnpm --dir platform/typescript/kernel-deployment test",
+        "pnpm --dir platform/typescript/kernel-release test",
+        "node scripts/check-product-deployment-contracts.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
+      "currentStateEvidence": ["platform/typescript/kernel-deployment/src", "platform/typescript/kernel-release/src"]
+    },
+    {
+      "id": "data-cloud-runtime-truth",
+      "name": "Data Cloud Runtime Truth",
+      "ownerLayer": "product",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "products/data-cloud",
+        "products/data-cloud/libs/kernel-bridge-providers",
+        "scripts/check-kernel-provider-mode.mjs"
+      ],
+      "secondaryLocations": [
+        "scripts/check-data-access-contract.mjs",
+        "scripts/check-kernel-product-unit-provider-contracts.mjs"
+      ],
+      "allowedConsumers": ["kernel-provider-mode", "kernel-runtime-truth", "ci"],
+      "forbiddenDependencies": ["ordinary-lifecycle-enablement", "shared-platform-packaging-of-data-cloud-internals"],
+      "requiredChecks": [
+        "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
+        "node scripts/check-kernel-provider-mode.mjs"
+      ],
+      "productAssociations": ["data-cloud"],
+      "currentStateEvidence": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"]
+    },
+    {
+      "id": "aep-agent-runtime-governance",
+      "name": "AEP Agent Runtime Governance",
+      "ownerLayer": "product",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "products/data-cloud/planes/action/server",
+        "platform/java/agent-core",
+        "scripts/check-agentic-lifecycle-action-contracts.mjs"
+      ],
+      "secondaryLocations": [
+        "docs/AI_GOVERNANCE_CONTRACTS.md"
+      ],
+      "allowedConsumers": ["aep", "kernel-agentic-actions", "products"],
+      "forbiddenDependencies": ["duplicate-product-local-agent-registries"],
+      "requiredChecks": [
+        "node scripts/check-agentic-lifecycle-action-contracts.mjs",
+        "./gradlew :platform:java:agent-core:check"
+      ],
+      "productAssociations": ["digital-marketing", "data-cloud", "yappc"],
+      "currentStateEvidence": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"]
+    },
+    {
+      "id": "semantic-artifact-intelligence",
+      "name": "Semantic Artifact Intelligence",
+      "ownerLayer": "platform-kernel",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+        "scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "secondaryLocations": [
+        "docs/kernel"
+      ],
+      "allowedConsumers": ["yappc", "kernel-lifecycle", "governance-review"],
+      "forbiddenDependencies": ["direct-yappc-implementation-coupling"],
+      "requiredChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "productAssociations": ["yappc", "digital-marketing"],
+      "currentStateEvidence": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"]
+    },
+    {
+      "id": "canvas-diagramming-context",
+      "name": "Canvas, Diagramming & Context",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/canvas",
+        "platform/typescript/ui-builder"
+      ],
+      "secondaryLocations": [
+        "docs/platform-libraries"
+      ],
+      "allowedConsumers": ["ghatana-studio", "products", "design-tooling"],
+      "forbiddenDependencies": ["deprecated-split-canvas-packages", "product-specific-canvas-forks"],
+      "requiredChecks": [
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "dcmaar", "tutorputor"],
+      "currentStateEvidence": ["platform/typescript/canvas/src", "platform/typescript/ui-builder"]
+    },
+    {
+      "id": "ui-builder-preview",
+      "name": "UI Builder Preview",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/ui-builder",
+        "platform/typescript/ghatana-studio"
+      ],
+      "secondaryLocations": [
+        "scripts/check-studio-kernel-api.mjs"
+      ],
+      "allowedConsumers": ["ghatana-studio", "design-system-registry-generator"],
+      "forbiddenDependencies": ["unsafe-preview-shortcuts", "product-specific-preview-runtimes-in-shared-platform"],
+      "requiredChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "flashit", "phr"],
+      "currentStateEvidence": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"]
+    },
+    {
+      "id": "design-system-registry-generator",
+      "name": "Design System Registry & Generator",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/design-system",
+        "platform/typescript/ds-registry",
+        "platform/typescript/ds-generator",
+        "platform/typescript/LIBRARY_GOVERNANCE.md"
+      ],
+      "secondaryLocations": [
+        "scripts/check-platform-package-governance.js",
+        "scripts/check-deprecated-imports.mjs"
+      ],
+      "allowedConsumers": ["all-products", "ghatana-studio", "ui-builder"],
+      "forbiddenDependencies": ["deprecated-package-aliases", "product-prefixed-platform-packages"],
+      "requiredChecks": [
+        "node scripts/check-platform-package-governance.js",
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "flashit", "tutorputor", "dcmaar"],
+      "currentStateEvidence": ["platform/typescript/LIBRARY_GOVERNANCE.md", "platform/typescript/design-system"]
+    },
+    {
+      "id": "ghatana-studio",
+      "name": "Ghatana Studio",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/ghatana-studio"
+      ],
+      "secondaryLocations": [
+        "scripts/check-studio-kernel-api.mjs",
+        "docs/kernel"
+      ],
+      "allowedConsumers": ["product-teams", "ui-builder", "kernel-lifecycle"],
+      "forbiddenDependencies": ["direct-product-implementation-imports"],
+      "requiredChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "flashit", "data-cloud"],
+      "currentStateEvidence": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"]
+    },
+    {
+      "id": "product-domain-packs",
+      "name": "Product Domain Packs",
+      "ownerLayer": "product",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "products/phr/domain-pack-manifest.yaml",
+        "products/finance/domain-pack-manifest.yaml",
+        "products/flashit/domain-pack-manifest.yaml",
+        "products/digital-marketing/dm-domain-packs/domain-pack.json"
+      ],
+      "secondaryLocations": [
+        "scripts/check-product-manifest-contracts.mjs",
+        "scripts/check-product-conformance.mjs"
+      ],
+      "allowedConsumers": ["product-builds", "product-governance", "kernel-registry"],
+      "forbiddenDependencies": ["platform-wide-product-domain-logic", "fake-manifest-conformance"],
+      "requiredChecks": [
+        "node scripts/check-product-manifest-contracts.mjs",
+        "node scripts/check-product-conformance.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
+      "currentStateEvidence": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"]
+    },
+    {
+      "id": "event-streaming-operational-graph",
+      "name": "Event Streaming & Operational Graph",
+      "ownerLayer": "platform",
+      "classification": "existing-partial",
+      "primaryLocations": [
+        "platform/typescript/events",
+        "platform/typescript/realtime",
+        "products/data-cloud/planes/data/entity"
+      ],
+      "secondaryLocations": [
+        "platform/java/workflow"
+      ],
+      "allowedConsumers": ["data-cloud", "aep", "products", "observability"],
+      "forbiddenDependencies": ["product-specific-event-schemas-in-generic-platform-packages"],
+      "requiredChecks": [
+        "node scripts/check-openapi-contract-canonical.mjs"
+      ],
+      "productAssociations": ["data-cloud", "yappc", "digital-marketing"],
+      "currentStateEvidence": ["platform/typescript/realtime", "products/data-cloud/planes/data/entity"]
+    },
+    {
+      "id": "security-privacy-policy-compliance",
+      "name": "Security, Privacy & Policy Compliance",
+      "ownerLayer": "platform",
+      "classification": "existing-executable",
+      "primaryLocations": [
+        "platform/java/security",
+        "config/security-secret-scan.json",
+        "scripts/check-security-workflow-coverage.mjs"
+      ],
+      "secondaryLocations": [
+        "scripts/check-secret-default-credentials.mjs",
+        "docs/SECRETS_CLASSIFICATION.md"
+      ],
+      "allowedConsumers": ["all-products", "deployment", "ci"],
+      "forbiddenDependencies": ["default-credentials", "silent-compliance-bypasses"],
+      "requiredChecks": [
+        "node scripts/check-security-workflow-coverage.mjs",
+        "node scripts/check-secret-default-credentials.mjs",
+        "./gradlew :platform:java:security:check"
+      ],
+      "productAssociations": ["phr", "finance", "flashit", "digital-marketing"],
+      "currentStateEvidence": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"]
+    },
+    {
+      "id": "observability-health-operations",
+      "name": "Observability, Health & Operations",
+      "ownerLayer": "platform",
+      "classification": "existing-executable",
+      "primaryLocations": [
+        "platform/java/observability",
+        "monitoring",
+        "scripts/check-observability-conformance.mjs"
+      ],
+      "secondaryLocations": [
+        "platform/typescript/kernel-providers/src/health"
+      ],
+      "allowedConsumers": ["all-deployable-services", "kernel-lifecycle", "operators"],
+      "forbiddenDependencies": ["silent-health-failures", "unverifiable-deployment-health"],
+      "requiredChecks": [
+        "node scripts/check-observability-conformance.mjs",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "./gradlew :platform:java:observability:check"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
+      "currentStateEvidence": ["platform/java/observability", "platform/typescript/kernel-providers/src/health"]
+    },
+    {
+      "id": "testing-verification-quality-gates",
+      "name": "Testing, Verification & Quality Gates",
+      "ownerLayer": "platform",
+      "classification": "existing-executable",
+      "primaryLocations": [
+        "scripts",
+        "integration-tests",
+        "platform/java/testing"
+      ],
+      "secondaryLocations": [
+        "vitest.shared.config.ts",
+        "docs/TESTING.md"
+      ],
+      "allowedConsumers": ["all-modules", "ci", "audit"],
+      "forbiddenDependencies": ["test-theatre", "disabled-tests-without-tracking"],
+      "requiredChecks": [
+        "pnpm test",
+        "./gradlew check",
+        "node scripts/check-production-stubs.mjs"
+      ],
+      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc", "tutorputor", "dcmaar"],
+      "currentStateEvidence": ["scripts/check-production-stubs.mjs", "docs/TESTING.md"]
+    }
+  ]
+}

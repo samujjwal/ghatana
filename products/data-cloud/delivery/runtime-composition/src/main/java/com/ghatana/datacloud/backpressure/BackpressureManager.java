@@ -265,7 +265,13 @@ public class BackpressureManager {
             (Supplier<Promise<Object>>) (Supplier<?>) operation,
             (SettablePromise<Object>) (SettablePromise<?>) promise);
 
-        pendingQueue.offer(request);
+        boolean added = pendingQueue.offer(request);
+        if (!added) {
+            droppedRequests.incrementAndGet();
+            log.warn("Request dropped - queue offer failed (queue: {}, capacity: {})",
+                pendingQueue.size(), queueCapacity);
+            return Promise.ofException(new BackpressureException("Queue capacity exceeded"));
+        }
         log.debug("Request queued (queue size: {})", pendingQueue.size());
 
         // Try to process queue

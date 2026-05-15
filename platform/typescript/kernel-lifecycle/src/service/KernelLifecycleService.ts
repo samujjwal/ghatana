@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import {
   type ApprovalDecision,
   type ApprovalRequest,
+  type KernelLifecycleEvent,
   type KernelLifecycleProviderContext,
   type ProductUnit,
   type ProductUnitScope,
@@ -191,17 +192,16 @@ export class KernelLifecycleService {
 
     // Append lifecycle event for plan creation
     if (this.providerContext.events !== undefined) {
-      await this.providerContext.events.appendLifecycleEvent({
-        eventId: `plan-created-${plan.runId}`,
-        productUnitId: plan.productId,
-        runId: plan.runId,
-        phase: plan.phase,
-        eventType: 'plan-created',
-        status: 'succeeded',
-        occurredAt: this.clock(),
-        correlationId: plan.correlationId,
-        source: 'kernel-lifecycle-service',
-      }, { required: false, correlationId: plan.correlationId });
+      await this.providerContext.events.appendEvent(
+        this.createLifecyclePhaseStartedEvent(
+          plan.productId,
+          plan.runId,
+          plan.phase,
+          plan.correlationId,
+          this.clock(),
+        ),
+        { required: false, correlationId: plan.correlationId },
+      );
     }
 
     return plan;
@@ -223,17 +223,16 @@ export class KernelLifecycleService {
 
     // Append lifecycle event for execution start
     if (this.providerContext.events !== undefined) {
-      await this.providerContext.events.appendLifecycleEvent({
-        eventId: `execution-start-${plan.runId}`,
-        productUnitId: plan.productId,
-        runId: plan.runId,
-        phase: plan.phase,
-        eventType: 'execution-start',
-        status: 'succeeded',
-        occurredAt: this.clock(),
-        correlationId: plan.correlationId,
-        source: 'kernel-lifecycle-service',
-      }, { required: false, correlationId: plan.correlationId });
+      await this.providerContext.events.appendEvent(
+        this.createLifecyclePhaseStartedEvent(
+          plan.productId,
+          plan.runId,
+          plan.phase,
+          plan.correlationId,
+          this.clock(),
+        ),
+        { required: false, correlationId: plan.correlationId },
+      );
     }
 
     // Record runtime truth for execution started
@@ -256,17 +255,18 @@ export class KernelLifecycleService {
 
     // Append lifecycle event for execution complete
     if (this.providerContext.events !== undefined) {
-      await this.providerContext.events.appendLifecycleEvent({
-        eventId: `execution-complete-${plan.runId}`,
-        productUnitId: plan.productId,
-        runId: plan.runId,
-        phase: plan.phase,
-        eventType: 'execution-complete',
-        status,
-        occurredAt: this.clock(),
-        correlationId: plan.correlationId,
-        source: 'kernel-lifecycle-service',
-      }, { required: false, correlationId: plan.correlationId });
+      await this.providerContext.events.appendEvent(
+        this.createLifecyclePhaseCompletedEvent(
+          plan.productId,
+          plan.runId,
+          plan.phase,
+          plan.correlationId,
+          result.startedAt,
+          result.completedAt,
+          status,
+        ),
+        { required: false, correlationId: plan.correlationId },
+      );
     }
 
     if (result.status === 'failed') {
@@ -470,61 +470,60 @@ export class KernelLifecycleService {
     const applyOptions: ProductUnitIntentApplyOptions = { allowWrite: options.allowWrite };
 
     // In preview mode or apply mode
-    const providerResult = options.allowWrite
+    const applyProviderResult = options.allowWrite
       ? await capableRegistry.applyProductUnitIntent(intent, applyOptions)
+      : undefined;
+    const previewProviderResult = options.allowWrite
+      ? undefined
       : await capableRegistry.previewApplyProductUnitIntent(intent);
-
-    // Build result
-    const result: ProductUnitIntentApplicationResult = {
-      schemaVersion: '1.0.0',
-      intentId: intent.intentId,
-      status: options.allowWrite && providerResult.applied ? 'applied' : 'previewed',
-      productUnitId: intent.productUnit.id,
-      correlationId: intent.producer.correlationId,
-      providerMode,
-      registryProviderId: this.registryProvider.providerId,
-      sourceProviderId: intent.target.sourceProvider,
-      lifecycleEventRefs: [],
-      provenanceRefs: [],
-      runtimeTruthRefs: [],
-      blockedReasons: providerResult.errors,
-      errors: providerResult.errors,
-    };
-
-    // Append lifecycle event
-    if (this.providerContext.events !== undefined) {
-      const eventResult = await this.providerContext.events.appendLifecycleEvent({
-        eventId: `intent-${intent.intentId}`,
+    const providerResult = applyProviderResult ?? previewProviderResult;
+    if (providerResult === undefined) {
+      throw new ProviderUnavailableError('ProductUnitIntent application did not produce a registry result', {
+        correlationId: intent.producer.correlationId,
         productUnitId: intent.productUnit.id,
         runId: intent.intentId,
-        phase: 'create' as ProductLifecyclePhase,
-        eventType: options.allowWrite ? 'intent-apply' : 'intent-preview',
-        status: result.status,
-        occurredAt: this.clock(),
-        correlationId: intent.producer.correlationId,
-        source: 'kernel-lifecycle-service',
-      }, { required: false, correlationId: intent.producer.correlationId });
+        phase: 'create',
+      });
+    }
+    const applied = applyProviderResult?.applied === true;
+    const status = !providerResult.valid || providerResult.errors.length > 0
+      ? 'blocked'
+      : applied
+        ? 'applied'
+        : 'previewed';
+    const lifecycleEventRefs: string[] = [];
+    const runtimeTruthRefs: string[] = [];
+    const provenanceRefs: string[] = [];
+
+    // Build result
+    if (this.providerContext.events !== undefined) {
+      const eventResult = await this.providerContext.events.appendEvent(
+        applied
+          ? this.createIntentAppliedEvent(intent, applyProviderResult)
+          : this.createIntentValidatedEvent(intent, providerResult),
+        { required: false, correlationId: intent.producer.correlationId },
+      );
       if (eventResult.success && eventResult.ref !== undefined) {
-        result.lifecycleEventRefs = [eventResult.ref];
+        lifecycleEventRefs.push(eventResult.ref);
       }
     }
 
     // Record runtime truth and provenance
-    const evidenceRefs: string[] = [];
+    const evidenceRefs = [...lifecycleEventRefs];
     if (this.providerContext.runtimeTruth !== undefined) {
       const truthResult = await this.providerContext.runtimeTruth.recordRuntimeTruth(
         {
           productUnitId: intent.productUnit.id,
           runId: intent.intentId,
           phase: 'create' as ProductLifecyclePhase,
-          status: result.status,
+          status,
           observedAt: this.clock(),
           evidenceRefs,
         },
         { required: true, correlationId: intent.producer.correlationId },
       );
       if (truthResult.success) {
-        result.runtimeTruthRefs = [truthResult.ref ?? 'runtime-truth://kernel-lifecycle'];
+        runtimeTruthRefs.push(truthResult.ref ?? 'runtime-truth://kernel-lifecycle');
       }
     }
 
@@ -541,12 +540,30 @@ export class KernelLifecycleService {
         { required: true, correlationId: intent.producer.correlationId },
       );
       if (provenanceResult.success) {
-        result.provenanceRefs = [provenanceResult.ref ?? 'provenance://kernel-lifecycle'];
+        provenanceRefs.push(provenanceResult.ref ?? 'provenance://kernel-lifecycle');
       }
     }
 
+    const result: ProductUnitIntentApplicationResult = {
+      schemaVersion: '1.0.0',
+      intentId: intent.intentId,
+      status,
+      productUnitId: intent.productUnit.id,
+      correlationId: intent.producer.correlationId,
+      providerMode,
+      registryProviderId: this.registryProvider.providerId,
+      sourceProviderId: intent.target.sourceProvider,
+      ...(options.allowWrite ? { applicationRef: providerResult.registryPath } : { previewRef: providerResult.registryPath }),
+      ...(applied ? { appliedAt: this.clock() } : {}),
+      lifecycleEventRefs,
+      provenanceRefs,
+      runtimeTruthRefs,
+      blockedReasons: providerResult.errors,
+      errors: providerResult.errors,
+    };
+
     // Clear/refresh registry cache after successful apply
-    if (options.allowWrite && providerResult.applied && 'reload' in this.registryProvider) {
+    if (applied && 'reload' in this.registryProvider) {
       (this.registryProvider as { reload: () => void }).reload();
     }
 
@@ -631,6 +648,114 @@ export class KernelLifecycleService {
         );
       }
     }
+  }
+
+  private createLifecyclePhaseStartedEvent(
+    productUnitId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    correlationId: string | undefined,
+    startedAt: string,
+  ): KernelLifecycleEvent {
+    return {
+      metadata: {
+        eventId: `phase-started:${runId}:${phase}`,
+        schemaVersion: '1.0.0',
+        eventType: 'lifecycle.phase.started',
+        productUnitId,
+        runId,
+        phase,
+        timestamp: startedAt,
+        source: 'kernel-lifecycle-service',
+        correlationId: correlationId ?? runId,
+      },
+      payload: {
+        phase,
+        status: 'running',
+        startedAt,
+      },
+    };
+  }
+
+  private createLifecyclePhaseCompletedEvent(
+    productUnitId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    correlationId: string | undefined,
+    startedAt: string,
+    completedAt: string,
+    status: 'succeeded' | 'failed' | 'skipped',
+  ): KernelLifecycleEvent {
+    return {
+      metadata: {
+        eventId: `phase-completed:${runId}:${phase}`,
+        schemaVersion: '1.0.0',
+        eventType: 'lifecycle.phase.completed',
+        productUnitId,
+        runId,
+        phase,
+        timestamp: completedAt,
+        source: 'kernel-lifecycle-service',
+        correlationId: correlationId ?? runId,
+      },
+      payload: {
+        phase,
+        status,
+        durationMs: Math.max(0, Date.parse(completedAt) - Date.parse(startedAt)),
+        completedAt,
+      },
+    };
+  }
+
+  private createIntentValidatedEvent(
+    intent: ProductUnitIntent,
+    providerResult: { readonly valid: boolean; readonly errors: readonly string[] },
+  ): KernelLifecycleEvent {
+    const timestamp = this.clock();
+    return {
+      metadata: {
+        eventId: `intent-validated:${intent.intentId}`,
+        schemaVersion: '1.0.0',
+        eventType: 'product-unit.intent.validated',
+        productUnitId: intent.productUnit.id,
+        runId: intent.intentId,
+        phase: 'create',
+        timestamp,
+        source: 'kernel-lifecycle-service',
+        correlationId: intent.producer.correlationId,
+      },
+      payload: {
+        intentId: intent.intentId,
+        valid: providerResult.valid,
+        errors: [...providerResult.errors],
+      },
+    };
+  }
+
+  private createIntentAppliedEvent(
+    intent: ProductUnitIntent,
+    providerResult: { readonly applied: boolean; readonly diff: readonly string[] },
+  ): KernelLifecycleEvent {
+    const timestamp = this.clock();
+    return {
+      metadata: {
+        eventId: `intent-applied:${intent.intentId}`,
+        schemaVersion: '1.0.0',
+        eventType: 'product-unit.intent.applied',
+        productUnitId: intent.productUnit.id,
+        runId: intent.intentId,
+        phase: 'create',
+        timestamp,
+        source: 'kernel-lifecycle-service',
+        correlationId: intent.producer.correlationId,
+      },
+      payload: {
+        intentId: intent.intentId,
+        productUnitId: intent.productUnit.id,
+        applied: providerResult.applied,
+        changedFiles: [...providerResult.diff],
+      },
+    };
   }
 
   private scopeMatches(actual: ProductUnitScope | undefined, expected: ProductUnitScope): boolean {

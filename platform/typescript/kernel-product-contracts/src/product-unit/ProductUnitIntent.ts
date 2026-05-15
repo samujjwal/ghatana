@@ -101,12 +101,12 @@ export interface ProductUnitIntentApplicationResult {
   /**
    * Reference to the preview result if in preview mode.
    */
-  readonly previewRef?: string;
+  readonly previewRef?: string | undefined;
 
   /**
    * Reference to the application result if in apply mode.
    */
-  readonly applicationRef?: string;
+  readonly applicationRef?: string | undefined;
 
   /**
    * References to lifecycle events recorded during application.
@@ -136,7 +136,7 @@ export interface ProductUnitIntentApplicationResult {
   /**
    * ISO timestamp when the intent was applied (for successful applies).
    */
-  readonly appliedAt?: string;
+  readonly appliedAt?: string | undefined;
 }
 
 export type ProductUnitPrivacyLevel = "public" | "internal" | "confidential" | "restricted";
@@ -195,19 +195,19 @@ export interface RequestedLifecycle {
   /**
    * Requested lifecycle phases.
    */
-  readonly phases?: readonly ProductLifecyclePhase[];
+  readonly phases?: readonly ProductLifecyclePhase[] | undefined;
 }
 
 export interface ProductUnitGovernanceHints {
-  readonly privacyLevel?: ProductUnitPrivacyLevel;
-  readonly evidencePrivacyClassification?: ProductUnitPrivacyLevel;
-  readonly regulatedDomain?: string;
-  readonly requiresHumanApproval?: boolean;
-  readonly requiredPolicyPacks?: readonly string[];
-  readonly dataSensitivity?: ProductUnitDataSensitivity;
-  readonly retentionPolicyId?: string;
-  readonly retentionDays?: number;
-  readonly evidenceRequired?: boolean;
+  readonly privacyLevel?: ProductUnitPrivacyLevel | undefined;
+  readonly evidencePrivacyClassification?: ProductUnitPrivacyLevel | undefined;
+  readonly regulatedDomain?: string | undefined;
+  readonly requiresHumanApproval?: boolean | undefined;
+  readonly requiredPolicyPacks?: readonly string[] | undefined;
+  readonly dataSensitivity?: ProductUnitDataSensitivity | undefined;
+  readonly retentionPolicyId?: string | undefined;
+  readonly retentionDays?: number | undefined;
+  readonly evidenceRequired?: boolean | undefined;
 }
 
 export interface IntentProvenance {
@@ -215,7 +215,7 @@ export interface IntentProvenance {
   readonly sourceArtifactRefs: readonly string[];
   readonly createdBy: string;
   readonly createdAt: string;
-  readonly evidenceRefs?: readonly string[];
+  readonly evidenceRefs?: readonly string[] | undefined;
 }
 
 /**
@@ -263,17 +263,17 @@ export interface ProductUnitIntent {
   /**
    * Optional requested lifecycle configuration.
    */
-  readonly requestedLifecycle?: RequestedLifecycle;
+  readonly requestedLifecycle?: RequestedLifecycle | undefined;
 
   /**
    * Optional governance hints for Kernel gate/provider selection.
    */
-  readonly governanceHints?: ProductUnitGovernanceHints;
+  readonly governanceHints?: ProductUnitGovernanceHints | undefined;
 
   /**
    * Optional provenance information. Must not contain raw secrets.
    */
-  readonly provenance?: IntentProvenance;
+  readonly provenance?: IntentProvenance | undefined;
 }
 
 const PRODUCER_TYPES: readonly ProducerType[] = [

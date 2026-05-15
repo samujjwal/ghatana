@@ -36,6 +36,7 @@ const PRIVACY_CLASSIFICATIONS = [
 export class FileProvenanceProvider implements LifecycleProvenanceProvider {
   readonly providerId = "file-provenance";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["provenance", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

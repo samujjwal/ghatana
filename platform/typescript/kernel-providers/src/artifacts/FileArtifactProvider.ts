@@ -52,6 +52,7 @@ interface LatestArtifactManifestPointer {
 export class FileArtifactProvider implements LifecycleArtifactProvider {
   readonly providerId = "file-artifact-manifests";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["artifact-manifests", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

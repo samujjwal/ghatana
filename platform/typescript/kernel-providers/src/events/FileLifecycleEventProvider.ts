@@ -52,6 +52,7 @@ interface StoredLifecycleEvents {
 export class FileLifecycleEventProvider implements LifecycleEventProvider {
   readonly providerId = "file-lifecycle-events";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["lifecycle-events", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

@@ -47,17 +47,22 @@ export interface AgentLifecycleActionRequest {
   readonly requiredVerification: readonly AgentLifecycleVerificationRequirement[];
   readonly evidenceRefs: readonly string[];
   readonly rollbackPlanRef: string;
-  readonly policyEvidenceRefs?: readonly string[];
-  readonly masteryStateRef?: string;
-  readonly toolPermissionRefs?: readonly string[];
-  readonly approvalTicketRefs?: readonly string[];
-  readonly verificationEvidenceRefs?: readonly string[];
-  readonly privacyClassification?: "public" | "internal" | "confidential" | "restricted";
+  readonly policyEvidenceRefs?: readonly string[] | undefined;
+  readonly masteryStateRef?: string | undefined;
+  readonly toolPermissionRefs?: readonly string[] | undefined;
+  readonly approvalTicketRefs?: readonly string[] | undefined;
+  readonly verificationEvidenceRefs?: readonly string[] | undefined;
+  readonly privacyClassification?:
+    | "public"
+    | "internal"
+    | "confidential"
+    | "restricted"
+    | undefined;
   readonly retention?: {
     readonly expiresAt: string;
-  };
-  readonly modelDecisionContextRef?: string;
-  readonly redactionRequired?: boolean;
+  } | undefined;
+  readonly modelDecisionContextRef?: string | undefined;
+  readonly redactionRequired?: boolean | undefined;
 }
 
 export type AgentLifecycleActionRequestReasonCode =

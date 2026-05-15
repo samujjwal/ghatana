@@ -6,3 +6,55 @@ executionEnabled: false
 migration:
   status: planned
   reason: "FlashIt requires mobile surface and adapter normalization before lifecycle execution."
+
+readiness:
+  reasonCodes:
+    - planned-shape-only
+    - requires-mobile-adapters
+    - requires-preview-security-gate
+    - requires-personal-data-classification
+    - requires-mobile-bundle-artifacts
+  requiredGates:
+    - privacy
+    - preview-security
+    - personal-data-classification
+    - mobile-bundle-contract
+  nextRequiredWork:
+    - Keep FlashIt mobile lifecycle disabled until iOS and Android adapters are execution-ready.
+    - Add ipa and aab artifact contracts before enabling mobile bundle execution.
+
+surfaces:
+  backend-api:
+    source: products/flashit/backend/gateway
+    runtime: java-service
+    adapter: gradle-java-service
+  web:
+    source: products/flashit/client/web
+    runtime: static-web
+    adapter: pnpm-vite-react
+    packagePath: products/flashit/client/web/package.json
+  mobile-ios:
+    source: products/flashit/client/mobile
+    runtime: mobile-ios
+    adapter: xcode-ios
+    packagePath: products/flashit/client/mobile/package.json
+  mobile-android:
+    source: products/flashit/client/mobile
+    runtime: mobile-android
+    adapter: gradle-android
+    packagePath: products/flashit/client/mobile/package.json
+
+phases:
+  dev:
+    defaultSurfaces: [backend-api, web]
+    mode: parallel
+  build:
+    defaultSurfaces: [backend-api, web, mobile-ios, mobile-android]
+    mode: parallel
+
+gates:
+  validate:
+    - privacy
+    - preview-security
+    - personal-data-classification
+    - mobile-bundle-contract

@@ -79,7 +79,7 @@ export interface ProductUnitSurface {
   /**
    * Optional reference to the source code location (e.g., Git ref, path).
    */
-  readonly sourceRef?: string;
+  readonly sourceRef?: string | undefined;
 
   /**
    * Current implementation status of the surface.
@@ -89,22 +89,22 @@ export interface ProductUnitSurface {
   /**
    * Runtime environment for the surface (e.g., "nodejs", "java", "python").
    */
-  readonly runtime?: string;
+  readonly runtime?: string | undefined;
 
   /**
    * Package path for the surface (e.g., in a monorepo).
    */
-  readonly packagePath?: string;
+  readonly packagePath?: string | undefined;
 
   /**
    * Gradle module identifier for the surface (if applicable).
    */
-  readonly gradleModule?: string;
+  readonly gradleModule?: string | undefined;
 
   /**
    * Adapter hint for lifecycle operations (e.g., "gradle-java-service", "pnpm-vite-react").
    */
-  readonly adapterHint?: string;
+  readonly adapterHint?: string | undefined;
 }
 
 /**

@@ -46,6 +46,7 @@ export class FileApprovalProvider
 {
   readonly providerId = "file-approvals";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["approvals", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

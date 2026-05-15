@@ -89,13 +89,13 @@ describe("createBootstrapKernelProviders", () => {
 
     expect(result).toEqual({
       success: true,
-      ref: path.join(
+      ref: `${path.join(
         "tenant-a",
         "workspace-a",
         "project-a",
         "events",
         "lifecycle-events.json"
-      ),
+      )}?correlationId=corr-1&providerId=file-lifecycle-events`,
     });
   });
 

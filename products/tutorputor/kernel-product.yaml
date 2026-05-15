@@ -1,6 +1,22 @@
 schemaVersion: "1.0.0"
 id: "tutorputor"
 lifecycleProfile: "standard-web-api-product"
+status: draft
+executionEnabled: false
+
+readiness:
+  reasonCodes:
+    - planned-shape-only
+    - requires-content-safety
+    - requires-learner-data-privacy
+    - requires-model-output-evaluation
+  requiredGates:
+    - content-safety
+    - learner-data-privacy
+    - model-output-evaluation
+  nextRequiredWork:
+    - Keep Tutorputor lifecycle disabled until content moderation and learner privacy evidence are executable.
+    - Add model evaluation evidence contracts before enabling lifecycle execution.
 
 surfaces:
   - type: "backend-api"

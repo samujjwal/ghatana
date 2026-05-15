@@ -29,7 +29,7 @@ describe("FileLifecycleEventProvider", () => {
 
     expect(result).toEqual({
       success: true,
-      ref: "lifecycle-events.json",
+      ref: "lifecycle-events.json?correlationId=corr-1&providerId=file-lifecycle-events",
     });
     await expect(readEventsFile(tempDir)).resolves.toMatchObject({
       schemaVersion: "1.0.0",
@@ -78,7 +78,7 @@ describe("FileLifecycleEventProvider", () => {
 
     expect(result).toEqual({
       success: true,
-      ref: path.join("tenant-1", "workspace-1", "project-1", "events", "lifecycle-events.json"),
+      ref: `${path.join("tenant-1", "workspace-1", "project-1", "events", "lifecycle-events.json")}?correlationId=corr-1&providerId=file-lifecycle-events`,
     });
     await expect(
       readEventsFile(path.join(tempDir, "tenant-1", "workspace-1", "project-1", "events"))
@@ -141,7 +141,7 @@ describe("FileLifecycleEventProvider", () => {
       expect.objectContaining({
         eventCount: 2,
         threshold: 1,
-        ref: "lifecycle-events.json",
+        ref: "lifecycle-events.json?correlationId=corr-2&providerId=file-lifecycle-events",
       })
     );
   });
@@ -242,7 +242,7 @@ describe("FileLifecycleEventProvider", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("optional lifecycle event write skipped");
+    expect(result.error).toContain("optional write skipped:");
   });
 });
 

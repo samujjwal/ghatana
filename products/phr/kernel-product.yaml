@@ -6,3 +6,49 @@ executionEnabled: false
 migration:
   status: planned
   reason: "PHR lifecycle config requires path/module correction before execution."
+
+readiness:
+  reasonCodes:
+    - planned-shape-only
+    - requires-consent-gate
+    - requires-pii-classification
+    - requires-audit-evidence
+    - requires-fhir-contract-validation
+    - requires-data-sovereignty-gate
+  requiredGates:
+    - consent
+    - pii-classification
+    - audit-evidence
+    - fhir-contract-validation
+    - tenant-data-sovereignty
+  nextRequiredWork:
+    - Validate backend-api and web lifecycle adapters against healthcare gates before enabling execution.
+    - Add FHIR contract and tenant sovereignty evidence to executable manifests.
+
+surfaces:
+  backend-api:
+    source: products/phr
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:phr
+  web:
+    source: products/phr/apps/web
+    runtime: static-web
+    adapter: pnpm-vite-react
+    packagePath: products/phr/apps/web/package.json
+
+phases:
+  dev:
+    defaultSurfaces: [backend-api, web]
+    mode: parallel
+  build:
+    defaultSurfaces: [backend-api, web]
+    mode: sequential
+
+gates:
+  validate:
+    - consent
+    - pii-classification
+    - audit-evidence
+    - fhir-contract-validation
+    - tenant-data-sovereignty

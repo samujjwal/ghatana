@@ -935,7 +935,6 @@
       "pnpmPackages": [
         "products/audio-video/apps/*",
         "products/audio-video/libs/*",
-        "products/audio-video/libs/typescript/*",
         "products/audio-video/modules/intelligence/ai-voice/apps/*",
         "products/audio-video/modules/intelligence/ai-voice/libs/*"
       ],

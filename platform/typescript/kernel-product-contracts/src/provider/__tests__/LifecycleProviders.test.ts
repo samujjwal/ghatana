@@ -40,9 +40,9 @@ describe("LifecycleProviders", () => {
   });
 
   it("platform context fails when memory provider is missing", () => {
-    const context: KernelLifecycleProviderContext = {
+    const { memory: _memory, ...context } = {
       ...bootstrapContext(),
-      mode: "platform",
+      mode: "platform" as const,
     };
 
     const result = validateKernelLifecycleProviderContext(context);

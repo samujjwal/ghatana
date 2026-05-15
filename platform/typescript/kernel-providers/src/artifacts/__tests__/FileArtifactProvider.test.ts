@@ -286,7 +286,7 @@ describe("FileArtifactProvider", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("cannot access artifact path dist/index.html");
+    expect(result.error).toMatch(/cannot access artifact path dist\/index\.html|required artifact path does not exist: dist\/index\.html/);
   });
 
   it("fails manifest writes when ref indexing fails", async () => {

@@ -6,3 +6,56 @@ executionEnabled: false
 migration:
   status: planned
   reason: "Finance lifecycle must map real registered modules and surfaces before execution."
+
+readiness:
+  reasonCodes:
+    - planned-shape-only
+    - requires-regulatory-gates
+    - requires-promotion-approval
+    - requires-multi-module-build-validation
+    - requires-portal-operator-sdk-adapters
+  requiredGates:
+    - regulatory-compliance
+    - risk-controls
+    - promotion-approval
+    - multi-module-build
+  nextRequiredWork:
+    - Validate the multi-module Gradle graph before enabling lifecycle execution.
+    - Add operator, portal, and SDK adapter evidence only after those surfaces are executable.
+
+surfaces:
+  backend-api:
+    source: products/finance
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:finance
+  worker:
+    source: products/finance
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:finance:launcher
+  operator:
+    source: products/finance/operator-workflows
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:finance:operator-workflows
+  sdk:
+    source: products/finance/platform-sdk
+    runtime: java-library
+    adapter: gradle-java-service
+    gradleModule: :products:finance:platform-sdk
+
+phases:
+  dev:
+    defaultSurfaces: [backend-api, worker, operator]
+    mode: parallel
+  build:
+    defaultSurfaces: [backend-api, worker, operator, sdk]
+    mode: parallel
+
+gates:
+  validate:
+    - regulatory-compliance
+    - risk-controls
+    - promotion-approval
+    - multi-module-build

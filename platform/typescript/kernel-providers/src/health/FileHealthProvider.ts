@@ -86,6 +86,7 @@ const HEALTH_REASON_CODES: Record<string, string> = {
 export class FileHealthProvider implements LifecycleHealthProvider {
   readonly providerId = "file-health-snapshots";
   readonly version = "1.0.0";
+  readonly backingStore = "file" as const;
   readonly capabilities = ["health-snapshots", "bootstrap-mode", "file-backed"];
 
   private readonly outputDirectory: string;

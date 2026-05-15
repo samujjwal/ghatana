@@ -45,6 +45,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:openapi-canonical',
   'check:production-stubs',
   'check:doc-truth',
+  'check:product-registry',
   'check:doc-claims-evidence',
   'check:circular-deps',
   'check:kernel-boundaries',

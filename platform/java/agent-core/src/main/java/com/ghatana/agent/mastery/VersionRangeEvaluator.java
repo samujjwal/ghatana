@@ -661,7 +661,10 @@ public final class VersionRangeEvaluator {
             return true; // tilde range
         }
         if (range.matches("^(>=|<=|>|<)\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$")) {
-            return true; // operator range
+            return true; // operator range with full semver
+        }
+        if (range.matches("^(>=|<=|>|<)\\d+$")) {
+            return true; // operator range with single number (e.g., <5, >=21)
         }
         if (range.contains(" ")) {
             String[] parts = range.split("\\s+");
@@ -679,10 +682,25 @@ public final class VersionRangeEvaluator {
      * Validates Maven-style range syntax.
      */
     private static boolean isValidMavenRange(@NotNull String range) {
-        // Maven ranges: [1.0,2.0), (1.0,2.0], [1.0,), (,2.0]
-        return range.matches("^[\\[\\(][^,]*,[^,]*[\\]\\)]$") ||
-               range.matches("^[\\[\\(][^,]*,[\\]\\)]$") ||
-               range.matches("^[\\[\\(],[^,]*[\\]\\)]$");
+        // Maven bracket notation: [1.0,2.0), (1.0,2.0], [1.0,), (,2.0]
+        if (range.matches("^[\\[\\(][^,]*,[^,]*[\\]\\)]$") ||
+            range.matches("^[\\[\\(][^,]*,[\\]\\)]$") ||
+            range.matches("^[\\[\\(],[^,]*[\\]\\)]$")) {
+            return true;
+        }
+        // Handle compound ranges (space-separated constraints)
+        if (range.contains(" ")) {
+            String[] parts = range.split("\\s+");
+            for (String part : parts) {
+                if (!isValidMavenRange(part)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        // Also accept operator syntax for Maven (e.g., >=21, <5)
+        return range.matches("^(>=|<=|>|<)\\d+(\\.\\d+)*$") ||
+               range.matches("^\\d+(\\.\\d+)*$");
     }
 
     /**
