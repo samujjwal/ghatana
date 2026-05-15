@@ -43,7 +43,8 @@ const lifecycleRun: LifecycleRun = {
 };
 
 function SnapshotProbe(): ReactElement {
-  const snapshot = useStudioLifecycleData();
+  const lifecycle = useStudioLifecycleData();
+  const snapshot = lifecycle.snapshot;
 
   return (
     <div>

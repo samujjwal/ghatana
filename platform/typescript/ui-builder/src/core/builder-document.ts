@@ -70,7 +70,7 @@ const ActionDefinitionSchema = z.object({
     "update-binding",
     "custom",
   ]),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   condition: z.string().optional(),
 });
 
@@ -79,7 +79,7 @@ const ResponsiveVariantSchema = z.object({
   breakpoint: z.string(),
   minWidth: z.number().optional(),
   maxWidth: z.number().optional(),
-  props: z.record(z.unknown()).optional(),
+  props: z.record(z.string(), z.unknown()).optional(),
   hidden: z.boolean().optional(),
   position: PositionSchema.optional(),
   size: SizeSchema.optional(),
@@ -88,7 +88,7 @@ const ResponsiveVariantSchema = z.object({
 /** State variant schema. */
 const StateVariantSchema = z.object({
   state: z.enum(["hover", "focus", "active", "disabled", "error", "loading", "selected"]),
-  props: z.record(z.unknown()).optional(),
+  props: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Privacy metadata schema. */
@@ -102,7 +102,7 @@ const PrivacyMetadataSchema = z.object({
 const AIChangeRecordSchema = z.object({
   changeId: z.string(),
   timestamp: z.string(),
-  descriptor: z.record(z.unknown()),
+  descriptor: z.record(z.string(), z.unknown()),
   reviewStatus: z.object({
     status: z.enum(["none", "pending", "approved", "rejected", "requires-manual"]),
     reviewedBy: z.string().optional(),
@@ -127,7 +127,7 @@ const InstanceMetadataSchema = z.object({
   size: SizeSchema.optional(),
   locked: z.boolean().optional(),
   hidden: z.boolean().optional(),
-  ownership: z.record(z.unknown()).optional(),
+  ownership: z.record(z.string(), z.unknown()).optional(),
   layout: LayoutConstraintsSchema.optional(),
   responsiveVariants: z.array(ResponsiveVariantSchema).optional(),
   stateVariants: z.array(StateVariantSchema).optional(),
@@ -138,9 +138,9 @@ const InstanceMetadataSchema = z.object({
     reviewedAt: z.string().optional(),
     notes: z.string().optional(),
   }).optional(),
-  pendingProps: z.record(z.unknown()).optional(),
+  pendingProps: z.record(z.string(), z.unknown()).optional(),
   privacyMetadata: PrivacyMetadataSchema.optional(),
-  dataClassification: z.record(z.unknown()).optional(),
+  dataClassification: z.record(z.string(), z.unknown()).optional(),
   aiLineage: z.array(AIChangeRecordSchema).optional(),
   collaborationId: z.string().optional(),
   provenance: ProvenanceRecordSchema.optional(),
@@ -150,8 +150,8 @@ const InstanceMetadataSchema = z.object({
 const ComponentInstanceSchema = z.object({
   id: NodeIdSchema,
   contractName: z.string().min(1),
-  props: z.record(z.unknown()),
-  slots: z.record(z.array(NodeIdSchema)),
+  props: z.record(z.string(), z.unknown()),
+  slots: z.record(z.string(), z.array(NodeIdSchema)),
   bindings: z.array(z.object({
     id: z.string(),
     type: z.enum(["data", "event", "slot", "theme", "computed"]),
@@ -169,7 +169,7 @@ const DesignSystemModelSchema = z.object({
   name: z.string().min(1),
   version: z.string(),
   tokenSetIds: z.array(z.string()),
-  componentContracts: z.array(z.record(z.unknown())),
+  componentContracts: z.array(z.record(z.string(), z.unknown())),
   themeId: z.string(),
 });
 
@@ -183,16 +183,16 @@ const DocumentMetadataSchema = z.object({
   changeCount: z.number().optional(),
   collaborationVersion: z.number().optional(),
   checkpointId: z.string().optional(),
-  dataClassification: z.record(z.unknown()).optional(),
+  dataClassification: z.record(z.string(), z.unknown()).optional(),
   reviewStatus: z.object({
     status: z.enum(["none", "pending", "approved", "rejected", "requires-manual"]),
     reviewedBy: z.string().optional(),
     reviewedAt: z.string().optional(),
     notes: z.string().optional(),
   }).optional(),
-  syncStatus: z.record(z.unknown()).optional(),
-  visibilityContract: z.record(z.unknown()).optional(),
-  trustLevel: z.record(z.unknown()).optional(),
+  syncStatus: z.record(z.string(), z.unknown()).optional(),
+  visibilityContract: z.record(z.string(), z.unknown()).optional(),
+  trustLevel: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Layout node schema. */
@@ -201,13 +201,13 @@ const LayoutNodeSchema = z.object({
   type: z.enum(["root", "container", "leaf"]),
   children: z.array(NodeIdSchema).optional(),
   layout: z.enum(["flex", "grid", "absolute", "stack"]).optional(),
-  layoutProps: z.record(z.unknown()).optional(),
+  layoutProps: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Layout definition schema. */
 const LayoutSchema = z.object({
   type: z.enum(["flex", "grid", "absolute", "stack", "flow"]),
-  nodes: z.record(LayoutNodeSchema),
+  nodes: z.record(z.string(), LayoutNodeSchema),
   rootId: NodeIdSchema,
 });
 
@@ -225,7 +225,7 @@ const BindingSchema = z.object({
 const I18nSchema = z.object({
   defaultLocale: z.string(),
   locales: z.array(z.string()),
-  translations: z.record(z.record(z.string())),
+  translations: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
 /** a11y schema. */
@@ -259,7 +259,7 @@ const ValidationRuleSchema = z.object({
   type: z.enum(["required", "format", "range", "custom"]),
   target: z.string(),
   message: z.string(),
-  params: z.record(z.unknown()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Validation schema. */
@@ -274,7 +274,7 @@ export const BuilderDocumentSchema = z.object({
   documentId: DocumentIdSchema,
   owner: z.string(),
   root: NodeIdSchema,
-  nodes: z.record(ComponentInstanceSchema),
+  nodes: z.record(z.string(), ComponentInstanceSchema),
   bindings: z.array(BindingSchema),
   layout: LayoutSchema,
   metadata: DocumentMetadataSchema,

@@ -53,7 +53,7 @@ requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClien
 // Check Studio data context uses Kernel lifecycle client
 requireFile('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'KernelLifecycleClient', 'Studio data context');
-requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'createKernelLifecycleClient', 'Studio data context');
+requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'client?: KernelLifecycleClient', 'Studio data context');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'createPlan', 'Studio data context');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'executePhase', 'Studio data context');
 
@@ -62,7 +62,7 @@ requireFile('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'createPlan', 'Studio LifecyclePage');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'executePhase', 'Studio LifecyclePage');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'useStudioLifecycleData', 'Studio LifecyclePage');
-requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'fetch('/api/kernel', 'Studio LifecyclePage must use typed client');
+requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', "fetch('/api/kernel", 'Studio LifecyclePage must use typed client');
 requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'axios.get', 'Studio LifecyclePage must use typed client');
 
 // Check Studio AgentsPage uses agent lifecycle client

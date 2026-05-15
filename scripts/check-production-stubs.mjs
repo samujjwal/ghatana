@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: docs/TESTING.md
 /**
  * Production Stub / Placeholder Scan
  *

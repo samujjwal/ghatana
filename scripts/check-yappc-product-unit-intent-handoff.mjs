@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
+const pnpmCommand = 'pnpm';
 
 function read(relativePath) {
   if (!existsSync(join(repoRoot, relativePath))) {
@@ -61,6 +62,14 @@ requireIncludes(routeTestPath, 'requires explicit permission for apply');
 requireIncludes(frontendTestPath, 'stores evidence through Data Cloud before platform-mode handoff');
 requireIncludes(frontendTestPath, 'requires Data Cloud evidence persistence responses to include evidence refs');
 
+function runPnpm(args, cwd) {
+  return spawnSync(pnpmCommand, args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+}
+
 for (const command of [
   {
     cwd: 'products/yappc/frontend/apps/api',
@@ -76,30 +85,30 @@ for (const command of [
     ],
   },
 ]) {
-  try {
-    execFileSync('pnpm', command.args, {
-      cwd: join(repoRoot, command.cwd),
-      stdio: 'inherit',
-    });
-  } catch (error) {
+  const result = runPnpm(command.args, join(repoRoot, command.cwd));
+  if (result.error) {
+    errors.push(
+      `Focused YAPPC ProductUnitIntent handoff test failed in ${command.cwd}: ${result.error.message}`,
+    );
+    continue;
+  }
+  if (result.status !== 0) {
     errors.push(
       `Focused YAPPC ProductUnitIntent handoff test failed in ${command.cwd}: ${
-        error instanceof Error ? error.message : String(error)
+        typeof result.status === 'number' ? `exit status ${result.status}` : 'unknown failure'
       }`,
     );
   }
 }
 
-try {
-  execFileSync('pnpm', ['check:yappc-artifact-intelligence-boundary'], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
-} catch (error) {
+const boundaryResult = runPnpm(['check:yappc-artifact-intelligence-boundary'], repoRoot);
+if (boundaryResult.error) {
   errors.push(
-    `YAPPC artifact intelligence boundary check failed: ${
-      error instanceof Error ? error.message : String(error)
-    }`,
+    `YAPPC artifact intelligence boundary check failed: ${boundaryResult.error.message}`,
+  );
+} else if (boundaryResult.status !== 0) {
+  errors.push(
+    `YAPPC artifact intelligence boundary check failed: exit status ${boundaryResult.status}`,
   );
 }
 

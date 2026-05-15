@@ -22,8 +22,8 @@ describe('@ghatana/ghatana-studio - Section Components', () => {
     it('should render Builder Studio section with title and button', () => {
       render(<BuilderStudio />);
       expect(screen.getByText('Builder Studio')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /new document/i })).toBeInTheDocument();
-      expect(screen.getByText(/create and edit builderdocument/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^new document$/i })).toBeInTheDocument();
+      expect(screen.getByText(/select a document to view details or create a new document to get started/i)).toBeInTheDocument();
       expect(screen.getByText(/no documents yet/i)).toBeInTheDocument();
     });
 
@@ -174,8 +174,8 @@ describe('@ghatana/ghatana-studio - Section Components', () => {
       render(<PreviewLab />);
       expect(screen.getByText('Preview Lab')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /launch preview/i })).toBeInTheDocument();
-      expect(screen.getByText(/test preview sandbox/i)).toBeInTheDocument();
-      expect(screen.getByText(/load a builderdocument/i)).toBeInTheDocument();
+      expect(screen.getByText(/no preview sessions\. load a sample document to get started\./i)).toBeInTheDocument();
+      expect(screen.getByText(/select a preview session or load a sample document to get started\./i)).toBeInTheDocument();
     });
 
     it('should have proper heading hierarchy', () => {
@@ -187,7 +187,7 @@ describe('@ghatana/ghatana-studio - Section Components', () => {
 
     it('should display empty state message', () => {
       render(<PreviewLab />);
-      expect(screen.getByText(/load a builderdocument to test preview rendering/i)).toBeInTheDocument();
+      expect(screen.getByText(/select a preview session or load a sample document to get started\./i)).toBeInTheDocument();
     });
   });
 });

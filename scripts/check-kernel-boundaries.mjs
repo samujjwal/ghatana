@@ -38,6 +38,26 @@ const ignoredPathFragments = [
   '.spec.',
 ];
 
+// Contract packages that are safe to import from anywhere
+const contractPackages = [
+  '@ghatana/kernel-product-contracts',
+  '@ghatana/kernel-lifecycle',
+  '@ghatana/kernel-artifacts',
+  '@ghatana/kernel-deployment',
+  '@ghatana/kernel-toolchains',
+  '@ghatana/kernel-release',
+];
+
+// Contract directories that are safe to import from
+const contractDirectories = [
+  'platform/typescript/kernel-product-contracts',
+  'platform/typescript/kernel-lifecycle',
+  'platform/typescript/kernel-artifacts',
+  'platform/typescript/kernel-deployment',
+  'platform/typescript/kernel-toolchains',
+  'platform/typescript/kernel-release',
+];
+
 const violations = [];
 
 function readJson(relativePath) {
@@ -175,12 +195,17 @@ function validateSourceImports(productIds, strictProducts, packageMap) {
       const importedProduct = packageMap.get(packageName);
       const relativeTarget = relativeImportTarget(file, specifier);
 
+      // Check if the import is from a contract package
+      const isContractPackage = contractPackages.some((contract) => specifier.startsWith(contract));
+      const isContractDirectory = contractDirectories.some((dir) => relativeTarget?.startsWith(dir));
+
       if (isPlatformFile) {
-        if (importedProduct) {
-          addViolation(file, `platform code imports product package '${packageName}' owned by ${importedProduct}`);
+        // Platform code can import contract packages from other platform modules
+        if (importedProduct && !isContractPackage) {
+          addViolation(file, `platform code imports product package '${packageName}' owned by ${importedProduct}. Remediation: Remove import or use contract package instead.`);
         }
         if (relativeTarget?.startsWith('products/')) {
-          addViolation(file, `platform code imports product source path '${specifier}'`);
+          addViolation(file, `platform code imports product source path '${specifier}'. Remediation: Remove import or use contract package instead.`);
         }
       }
 
@@ -188,21 +213,23 @@ function validateSourceImports(productIds, strictProducts, packageMap) {
         continue;
       }
 
-      if (importedProduct && importedProduct !== fileProduct) {
-        addViolation(file, `product ${fileProduct} imports product package '${packageName}' owned by ${importedProduct}`);
+      if (importedProduct && importedProduct !== fileProduct && !isContractPackage) {
+        addViolation(file, `product ${fileProduct} imports product package '${packageName}' owned by ${importedProduct}. Remediation: Remove import or use contract package instead.`);
       }
 
       const targetProduct = relativeTarget ? productFromPath(relativeTarget, productIds) : null;
-      if (targetProduct && targetProduct !== fileProduct) {
-        addViolation(file, `product ${fileProduct} imports source from product ${targetProduct} via '${specifier}'`);
+      if (targetProduct && targetProduct !== fileProduct && !isContractDirectory) {
+        addViolation(file, `product ${fileProduct} imports source from product ${targetProduct} via '${specifier}'. Remediation: Remove import or use contract package instead.`);
       }
 
-      if (
+      // Allow imports from contract directories even if they're in platform
+      const isBypassingPlatform = 
         relativeTarget?.startsWith('platform/') ||
         specifier.startsWith('platform/') ||
-        /^@ghatana\/[^/]+\/src(?:\/|$)/.test(specifier)
-      ) {
-        addViolation(file, `product ${fileProduct} bypasses platform public package exports via '${specifier}'`);
+        /^@ghatana\/[^/]+\/src(?:\/|$)/.test(specifier);
+
+      if (isBypassingPlatform && !isContractDirectory && !isContractPackage) {
+        addViolation(file, `product ${fileProduct} bypasses platform public package exports via '${specifier}'. Remediation: Use public platform exports or contract packages instead.`);
       }
     }
   }

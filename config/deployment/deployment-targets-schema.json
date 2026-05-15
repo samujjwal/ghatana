@@ -3,6 +3,7 @@
   "$id": "https://ghatana/config/deployment/deployment-targets-schema.json",
   "title": "Deployment Targets Schema",
   "description": "Schema for deployment target definitions",
+  "authoritativeSource": "docs/kernel/PRODUCT_DEPLOYMENT_CONTRACT.md",
   "type": "object",
   "required": ["version", "targets"],
   "properties": {

@@ -5,6 +5,8 @@
 > **Attendees**: Platform Leads, Product Architects, DevEx  
 > **Tooling Reference**: `docs/audits/MONOREPO_BOUNDARY_RIGHT_SIZING_AUDIT_2026-03-22.md`
 
+**Authoritative Source:** [`docs/GOVERNANCE.md`](../GOVERNANCE.md)
+
 ---
 
 ## Purpose

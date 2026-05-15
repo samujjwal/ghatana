@@ -120,6 +120,46 @@ export function validateDomainRegistryDocument(document, options = {}) {
     validateStringArray(domain, 'productAssociations', issues);
     validateStringArray(domain, 'currentStateEvidence', issues);
 
+    // Validate boundaryPolicy
+    if (domain.boundaryPolicy) {
+      if (!domain.boundaryPolicy.mayImport || !Array.isArray(domain.boundaryPolicy.mayImport)) {
+        issues.push(formatIssue(domainId, 'boundaryPolicy.mayImport', 'must be an array', 'Set boundaryPolicy.mayImport to an array of import patterns.'));
+      }
+      if (!domain.boundaryPolicy.mustNotImport || !Array.isArray(domain.boundaryPolicy.mustNotImport)) {
+        issues.push(formatIssue(domainId, 'boundaryPolicy.mustNotImport', 'must be an array', 'Set boundaryPolicy.mustNotImport to an array of forbidden import patterns.'));
+      }
+      if (!domain.boundaryPolicy.mayOwn || !Array.isArray(domain.boundaryPolicy.mayOwn)) {
+        issues.push(formatIssue(domainId, 'boundaryPolicy.mayOwn', 'must be an array', 'Set boundaryPolicy.mayOwn to an array of ownership patterns.'));
+      }
+      if (!domain.boundaryPolicy.mustNotOwn || !Array.isArray(domain.boundaryPolicy.mustNotOwn)) {
+        issues.push(formatIssue(domainId, 'boundaryPolicy.mustNotOwn', 'must be an array', 'Set boundaryPolicy.mustNotOwn to an array of forbidden ownership patterns.'));
+      }
+    } else {
+      issues.push(formatIssue(domainId, 'boundaryPolicy', 'must be present', 'Add boundaryPolicy with mayImport, mustNotImport, mayOwn, and mustNotOwn fields.'));
+    }
+
+    // Validate sourceOfTruth
+    if (!isNonEmptyString(domain.sourceOfTruth)) {
+      issues.push(formatIssue(domainId, 'sourceOfTruth', 'must be a non-empty string', 'Set sourceOfTruth to the canonical source document or directory.'));
+    }
+
+    // Validate independentExecutionChecks
+    if (!Array.isArray(domain.independentExecutionChecks) || domain.independentExecutionChecks.length === 0) {
+      issues.push(formatIssue(domainId, 'independentExecutionChecks', 'must be a non-empty array', 'Add at least one independent execution check command.'));
+    }
+
+    // Validate fullRegressionChecks
+    if (!Array.isArray(domain.fullRegressionChecks) || domain.fullRegressionChecks.length === 0) {
+      issues.push(formatIssue(domainId, 'fullRegressionChecks', 'must be a non-empty array', 'Add at least one full regression check command.'));
+    }
+
+    // Validate reasonCodes for non-executable classifications
+    if (domain.classification !== 'existing-executable') {
+      if (!Array.isArray(domain.reasonCodes) || domain.reasonCodes.length === 0) {
+        issues.push(formatIssue(domainId, 'reasonCodes', `required for classification '${domain.classification}'`, 'Add reasonCodes explaining why this domain is not fully executable.'));
+      }
+    }
+
     for (const productId of domain.productAssociations ?? []) {
       if (isNonEmptyString(productId) && !productIds.has(productId)) {
         issues.push(formatIssue(domainId, 'productAssociations', `unknown product association '${productId}'`, `Replace '${productId}' with a product id from config/canonical-product-registry.json.`));

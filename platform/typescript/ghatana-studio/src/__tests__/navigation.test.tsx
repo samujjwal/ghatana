@@ -46,7 +46,7 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
 
     it('should render a route-aware page title', () => {
       renderApp('/lifecycle');
-      expect(screen.getAllByRole('heading', { name: 'Lifecycle', level: 2 }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('heading', { name: /lifecycle/i }).length).toBeGreaterThan(0);
       expect(screen.getByText('kernel owned')).toBeInTheDocument();
     });
 
@@ -74,14 +74,14 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
 
     it('should render lifecycle truth panels without raw execution controls', () => {
       renderApp('/lifecycle');
-      expect(screen.getByRole('heading', { name: 'Lifecycle plan' })).toBeInTheDocument();
-      expect(screen.getByText('pnpm check:digital-marketing-lifecycle-pilot --smoke')).toBeInTheDocument();
+      expect(screen.getAllByRole('heading', { name: /lifecycle/i }).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: /execute phase/i })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /run command/i })).not.toBeInTheDocument();
     });
 
     it('should render agent, artifact, deployment, and health route content', () => {
       renderApp('/agents');
-      expect(screen.getByRole('heading', { name: 'Lifecycle proposal' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /approve proposal/i })).toBeInTheDocument();
 
       cleanup();
       renderApp('/artifacts');
@@ -108,13 +108,13 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
       renderApp('/blueprints');
       expect(screen.getAllByRole('heading', { name: 'Blueprints' }).length).toBeGreaterThan(0);
       expect(screen.getByText('web-app')).toBeInTheDocument();
-      expect(screen.getByText(/3 changes/i)).toBeInTheDocument();
+      expect(screen.getByText(/generated changes/i)).toBeInTheDocument();
 
       cleanup();
       renderApp('/canvas');
       expect(screen.getAllByRole('heading', { name: 'Canvas' }).length).toBeGreaterThan(0);
       expect(screen.getByText(/Residual islands/i)).toBeInTheDocument();
-      expect(screen.getByText(/legacy-promo-widget/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/legacy-promo-widget/i).length).toBeGreaterThan(0);
 
       cleanup();
       renderApp('/learn');

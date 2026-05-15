@@ -25,7 +25,26 @@
         "node scripts/check-domain-boundaries.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "scripts/check-doc-truth.mjs"]
+      "currentStateEvidence": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "scripts/check-doc-truth.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/**", "config/**", "scripts/**"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["config/*.json", "docs/**/*.md", "scripts/**/*.mjs"],
+        "mustNotOwn": ["product-runtime-logic", "product-local-lifecycle-execution"]
+      },
+      "sourceOfTruth": "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+      "independentExecutionChecks": [
+        "node scripts/check-doc-authority.mjs",
+        "node scripts/validate-domain-registry.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-doc-authority.mjs",
+        "node scripts/validate-domain-registry.mjs",
+        "node scripts/check-domain-boundaries.mjs",
+        "node scripts/check-deprecated-imports.mjs",
+        "node scripts/check-current-state-claims.mjs"
+      ],
+      "reasonCodes": ["governance-truth-partial", "documentation-authority-in-progress"]
     },
     {
       "id": "product-development-kernel-lifecycle",
@@ -53,7 +72,25 @@
       "currentStateEvidence": [
         "platform/typescript/kernel-lifecycle/src",
         "scripts/check-digital-marketing-lifecycle-pilot.mjs"
-      ]
+      ],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-*", "platform/java/*"],
+        "mustNotImport": ["products/data-cloud/planes/**", "products/yappc/**"],
+        "mayOwn": ["platform/typescript/kernel-*"],
+        "mustNotOwn": ["product-specific-logic"]
+      },
+      "sourceOfTruth": "platform/typescript/kernel-product-contracts",
+      "independentExecutionChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "pnpm --dir platform/typescript/kernel-lifecycle test"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "pnpm --dir platform/typescript/kernel-lifecycle test",
+        "node scripts/check-kernel-platform-lifecycle.mjs",
+        "node scripts/check-digital-marketing-lifecycle-pilot.mjs"
+      ],
+      "reasonCodes": []
     },
     {
       "id": "toolchain-adapter-runtime",
@@ -76,7 +113,25 @@
         "node scripts/check-toolchain-adapter-contracts.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["platform/typescript/kernel-toolchains/src", "config/command-registry-manifest.json"]
+      "currentStateEvidence": ["platform/typescript/kernel-toolchains/src", "config/command-registry-manifest.json"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-*", "config/command-registry-manifest.json"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["platform/typescript/kernel-toolchains"],
+        "mustNotOwn": ["unsafe-command-expansion"]
+      },
+      "sourceOfTruth": "config/command-registry-manifest.json",
+      "independentExecutionChecks": [
+        "pnpm --dir platform/typescript/kernel-toolchains test",
+        "node scripts/check-toolchain-adapter-contracts.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir platform/typescript/kernel-toolchains test",
+        "pnpm --dir platform/typescript/kernel-toolchains typecheck",
+        "node scripts/check-toolchain-adapter-contracts.mjs",
+        "node scripts/check-toolchain-adapter-registry-schema.mjs"
+      ],
+      "reasonCodes": []
     },
     {
       "id": "artifact-supply-chain-provenance",
@@ -99,7 +154,24 @@
         "node scripts/check-product-artifact-contracts.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/typescript/kernel-artifacts/src", "platform/typescript/kernel-providers/src/provenance"]
+      "currentStateEvidence": ["platform/typescript/kernel-artifacts/src", "platform/typescript/kernel-providers/src/provenance"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-*", "platform/typescript/kernel-providers"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["platform/typescript/kernel-artifacts", "platform/typescript/kernel-providers/src/artifacts", "platform/typescript/kernel-providers/src/provenance"],
+        "mustNotOwn": ["fake-artifact-success"]
+      },
+      "sourceOfTruth": "platform/typescript/kernel-artifacts",
+      "independentExecutionChecks": [
+        "pnpm --dir platform/typescript/kernel-artifacts test",
+        "node scripts/check-product-artifact-contracts.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir platform/typescript/kernel-artifacts test",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "node scripts/check-product-artifact-contracts.mjs"
+      ],
+      "reasonCodes": ["artifact-provenance-partial", "supply-chain-tracking-incomplete"]
     },
     {
       "id": "deployment-environment-release",
@@ -124,7 +196,25 @@
         "node scripts/check-product-deployment-contracts.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["platform/typescript/kernel-deployment/src", "platform/typescript/kernel-release/src"]
+      "currentStateEvidence": ["platform/typescript/kernel-deployment/src", "platform/typescript/kernel-release/src"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-*", "config/deployment-targets.json"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["platform/typescript/kernel-deployment", "platform/typescript/kernel-release"],
+        "mustNotOwn": ["fake-promotion-success"]
+      },
+      "sourceOfTruth": "config/deployment-targets.json",
+      "independentExecutionChecks": [
+        "pnpm --dir platform/typescript/kernel-deployment test",
+        "node scripts/check-product-deployment-contracts.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir platform/typescript/kernel-deployment test",
+        "pnpm --dir platform/typescript/kernel-release test",
+        "node scripts/check-product-deployment-contracts.mjs",
+        "node scripts/check-product-environment-contracts.mjs"
+      ],
+      "reasonCodes": ["deployment-contracts-partial", "release-promotion-incomplete"]
     },
     {
       "id": "data-cloud-runtime-truth",
@@ -147,7 +237,24 @@
         "node scripts/check-kernel-provider-mode.mjs"
       ],
       "productAssociations": ["data-cloud"],
-      "currentStateEvidence": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"]
+      "currentStateEvidence": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-product-contracts", "platform/java/*"],
+        "mustNotImport": ["other-products/**"],
+        "mayOwn": ["products/data-cloud/**"],
+        "mustNotOwn": ["ordinary-lifecycle-enablement"]
+      },
+      "sourceOfTruth": "products/data-cloud/libs/kernel-bridge-providers",
+      "independentExecutionChecks": [
+        "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
+        "node scripts/check-kernel-provider-mode.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
+        "node scripts/check-kernel-provider-mode.mjs",
+        "node scripts/check-data-access-contract.mjs"
+      ],
+      "reasonCodes": ["platform-provider-mode-partial", "runtime-truth-provider-incomplete"]
     },
     {
       "id": "aep-agent-runtime-governance",
@@ -169,7 +276,23 @@
         "./gradlew :platform:java:agent-core:check"
       ],
       "productAssociations": ["digital-marketing", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"]
+      "currentStateEvidence": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/java/agent-core", "platform/java/*"],
+        "mustNotImport": ["duplicate-product-local-agent-registries"],
+        "mayOwn": ["products/data-cloud/planes/action/**", "platform/java/agent-core"],
+        "mustNotOwn": ["duplicate-product-local-agent-registries"]
+      },
+      "sourceOfTruth": "platform/java/agent-core",
+      "independentExecutionChecks": [
+        "node scripts/check-agentic-lifecycle-action-contracts.mjs",
+        "./gradlew :platform:java:agent-core:check"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-agentic-lifecycle-action-contracts.mjs",
+        "./gradlew :platform:java:agent-core:check"
+      ],
+      "reasonCodes": ["agent-governance-partial", "central-registry-incomplete"]
     },
     {
       "id": "semantic-artifact-intelligence",
@@ -190,7 +313,23 @@
         "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
       ],
       "productAssociations": ["yappc", "digital-marketing"],
-      "currentStateEvidence": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"]
+      "currentStateEvidence": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/kernel-product-contracts"],
+        "mustNotImport": ["products/yappc/**"],
+        "mayOwn": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence"],
+        "mustNotOwn": ["direct-yappc-implementation-coupling"]
+      },
+      "sourceOfTruth": "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+      "independentExecutionChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "reasonCodes": ["artifact-intelligence-partial", "yappc-boundary-strict"]
     },
     {
       "id": "canvas-diagramming-context",
@@ -210,7 +349,21 @@
         "node scripts/check-deprecated-imports.mjs"
       ],
       "productAssociations": ["digital-marketing", "dcmaar", "tutorputor"],
-      "currentStateEvidence": ["platform/typescript/canvas/src", "platform/typescript/ui-builder"]
+      "currentStateEvidence": ["platform/typescript/canvas/src", "platform/typescript/ui-builder"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*"],
+        "mustNotImport": ["products/**", "@ghatana/canvas-core", "@ghatana/canvas-react"],
+        "mayOwn": ["platform/typescript/canvas", "platform/typescript/ui-builder"],
+        "mustNotOwn": ["deprecated-split-canvas-packages"]
+      },
+      "sourceOfTruth": "platform/typescript/canvas",
+      "independentExecutionChecks": [
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "reasonCodes": ["canvas-partial", "deprecated-split-packages-exist"]
     },
     {
       "id": "ui-builder-preview",
@@ -230,7 +383,21 @@
         "node scripts/check-studio-kernel-api.mjs"
       ],
       "productAssociations": ["digital-marketing", "flashit", "phr"],
-      "currentStateEvidence": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"]
+      "currentStateEvidence": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
+        "mustNotOwn": ["unsafe-preview-shortcuts"]
+      },
+      "sourceOfTruth": "platform/typescript/ui-builder",
+      "independentExecutionChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "reasonCodes": ["preview-partial", "preview-security-gates-incomplete"]
     },
     {
       "id": "design-system-registry-generator",
@@ -254,7 +421,23 @@
         "node scripts/check-deprecated-imports.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "flashit", "tutorputor", "dcmaar"],
-      "currentStateEvidence": ["platform/typescript/LIBRARY_GOVERNANCE.md", "platform/typescript/design-system"]
+      "currentStateEvidence": ["platform/typescript/LIBRARY_GOVERNANCE.md", "platform/typescript/design-system"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*"],
+        "mustNotImport": ["products/**", "@ghatana/canvas-core", "@ghatana/canvas-react", "@ghatana/ui", "@ghatana/utils"],
+        "mayOwn": ["platform/typescript/design-system", "platform/typescript/ds-registry", "platform/typescript/ds-generator"],
+        "mustNotOwn": ["deprecated-package-aliases"]
+      },
+      "sourceOfTruth": "platform/typescript/LIBRARY_GOVERNANCE.md",
+      "independentExecutionChecks": [
+        "node scripts/check-platform-package-governance.js",
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-platform-package-governance.js",
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "reasonCodes": ["registry-generator-partial", "deprecated-packages-exist"]
     },
     {
       "id": "ghatana-studio",
@@ -274,7 +457,21 @@
         "node scripts/check-studio-kernel-api.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "flashit", "data-cloud"],
-      "currentStateEvidence": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"]
+      "currentStateEvidence": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*", "platform/typescript/kernel-*"],
+        "mustNotImport": ["products/**"],
+        "mayOwn": ["platform/typescript/ghatana-studio"],
+        "mustNotOwn": ["direct-product-implementation-imports"]
+      },
+      "sourceOfTruth": "platform/typescript/ghatana-studio",
+      "independentExecutionChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "reasonCodes": ["studio-partial", "kernel-api-integration-incomplete"]
     },
     {
       "id": "product-domain-packs",
@@ -298,7 +495,22 @@
         "node scripts/check-product-conformance.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"]
+      "currentStateEvidence": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*", "platform/java/*"],
+        "mustNotImport": ["other-products/**"],
+        "mayOwn": ["products/*/domain-pack-manifest.*", "products/*/domain-packs/**"],
+        "mustNotOwn": ["platform-wide-product-domain-logic"]
+      },
+      "sourceOfTruth": "config/canonical-product-registry.json",
+      "independentExecutionChecks": [
+        "node scripts/check-product-manifest-contracts.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-product-manifest-contracts.mjs",
+        "node scripts/check-product-conformance.mjs"
+      ],
+      "reasonCodes": ["domain-packs-partial", "manifest-conformance-incomplete"]
     },
     {
       "id": "event-streaming-operational-graph",
@@ -319,7 +531,21 @@
         "node scripts/check-openapi-contract-canonical.mjs"
       ],
       "productAssociations": ["data-cloud", "yappc", "digital-marketing"],
-      "currentStateEvidence": ["platform/typescript/realtime", "products/data-cloud/planes/data/entity"]
+      "currentStateEvidence": ["platform/typescript/realtime", "products/data-cloud/planes/data/entity"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/typescript/*", "platform/java/*"],
+        "mustNotImport": ["product-specific-event-schemas-in-generic-platform-packages"],
+        "mayOwn": ["platform/typescript/events", "platform/typescript/realtime", "platform/java/workflow"],
+        "mustNotOwn": ["product-specific-event-schemas-in-generic-platform-packages"]
+      },
+      "sourceOfTruth": "platform/typescript/events",
+      "independentExecutionChecks": [
+        "node scripts/check-openapi-contract-canonical.mjs"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-openapi-contract-canonical.mjs"
+      ],
+      "reasonCodes": ["event-streaming-partial", "operational-graph-incomplete"]
     },
     {
       "id": "security-privacy-policy-compliance",
@@ -343,7 +569,25 @@
         "./gradlew :platform:java:security:check"
       ],
       "productAssociations": ["phr", "finance", "flashit", "digital-marketing"],
-      "currentStateEvidence": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"]
+      "currentStateEvidence": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/java/*", "config/security-*"],
+        "mustNotImport": ["default-credentials", "silent-compliance-bypasses"],
+        "mayOwn": ["platform/java/security", "config/security-secret-scan.json"],
+        "mustNotOwn": ["default-credentials"]
+      },
+      "sourceOfTruth": "platform/java/security",
+      "independentExecutionChecks": [
+        "node scripts/check-security-workflow-coverage.mjs",
+        "node scripts/check-secret-default-credentials.mjs",
+        "./gradlew :platform:java:security:check"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-security-workflow-coverage.mjs",
+        "node scripts/check-secret-default-credentials.mjs",
+        "./gradlew :platform:java:security:check"
+      ],
+      "reasonCodes": []
     },
     {
       "id": "observability-health-operations",
@@ -366,7 +610,25 @@
         "./gradlew :platform:java:observability:check"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/java/observability", "platform/typescript/kernel-providers/src/health"]
+      "currentStateEvidence": ["platform/java/observability", "platform/typescript/kernel-providers/src/health"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/java/*", "platform/typescript/kernel-providers"],
+        "mustNotImport": ["silent-health-failures", "unverifiable-deployment-health"],
+        "mayOwn": ["platform/java/observability", "monitoring", "platform/typescript/kernel-providers/src/health"],
+        "mustNotOwn": ["silent-health-failures"]
+      },
+      "sourceOfTruth": "platform/java/observability",
+      "independentExecutionChecks": [
+        "node scripts/check-observability-conformance.mjs",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "./gradlew :platform:java:observability:check"
+      ],
+      "fullRegressionChecks": [
+        "node scripts/check-observability-conformance.mjs",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "./gradlew :platform:java:observability:check"
+      ],
+      "reasonCodes": []
     },
     {
       "id": "testing-verification-quality-gates",
@@ -390,7 +652,25 @@
         "node scripts/check-production-stubs.mjs"
       ],
       "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc", "tutorputor", "dcmaar"],
-      "currentStateEvidence": ["scripts/check-production-stubs.mjs", "docs/TESTING.md"]
+      "currentStateEvidence": ["scripts/check-production-stubs.mjs", "docs/TESTING.md"],
+      "boundaryPolicy": {
+        "mayImport": ["platform/java/*", "platform/typescript/*"],
+        "mustNotImport": ["test-theatre", "disabled-tests-without-tracking"],
+        "mayOwn": ["scripts", "integration-tests", "platform/java/testing"],
+        "mustNotOwn": ["test-theatre"]
+      },
+      "sourceOfTruth": "docs/TESTING.md",
+      "independentExecutionChecks": [
+        "pnpm test",
+        "./gradlew check",
+        "node scripts/check-production-stubs.mjs"
+      ],
+      "fullRegressionChecks": [
+        "pnpm test",
+        "./gradlew check",
+        "node scripts/check-production-stubs.mjs"
+      ],
+      "reasonCodes": []
     }
   ]
 }

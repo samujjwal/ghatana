@@ -3,7 +3,8 @@
 **Status:** Accepted  
 **Date:** 2026-04-07  
 **Decision Makers:** Platform Architecture Team  
-**Phase:** 8 — Agent System Modernization
+**Phase:** 8 — Agent System Modernization  
+**Classification:** target-architecture
 
 ## Context
 

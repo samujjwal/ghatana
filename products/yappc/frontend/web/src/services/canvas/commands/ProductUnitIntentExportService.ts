@@ -99,7 +99,6 @@ interface DataCloudEvidencePersistenceResponse {
 }
 
 const DEFAULT_INTENT_ENDPOINT = '/api/v1/yappc/product-unit-intents';
-const EVIDENCE_SOURCE = 'yappc-creator-ui';
 
 function requireNonEmpty(value: string, field: string): string {
   const trimmed = value.trim();
@@ -138,14 +137,23 @@ export function buildYappcArtifactIntelligenceEvidence(
 ): YappcArtifactIntelligenceEvidenceBundle {
   const createdAt = options.now?.() ?? new Date().toISOString();
   const productUnitId = requireNonEmpty(request.scope.projectId, 'scope.projectId');
+  const retentionExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const provenanceRefs = request.artifacts.map((artifact) => `yappc:artifact:${artifact.artifactId}`);
   const base = {
     schemaVersion: '1.0.0',
-    source: EVIDENCE_SOURCE,
+    tenantId: requireNonEmpty(request.scope.tenantId, 'scope.tenantId'),
+    workspaceId: requireNonEmpty(request.scope.workspaceId, 'scope.workspaceId'),
+    projectId: productUnitId,
+    productUnitId,
     confidence: 0.9,
     provenanceRefs: provenanceRefs.length > 0 ? provenanceRefs : ['yappc:artifact:unknown'],
     createdAt,
+    createdBy: requireNonEmpty(request.createdBy, 'createdBy'),
     correlationId: requireNonEmpty(request.correlationId, 'correlationId'),
+    privacyClassification: 'internal',
+    retention: {
+      expiresAt: retentionExpiresAt,
+    },
   } as const;
 
   const semanticArtifacts = request.artifacts.flatMap((artifact) => {

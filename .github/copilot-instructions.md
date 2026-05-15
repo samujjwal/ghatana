@@ -3,6 +3,7 @@
 > **Purpose**: This file is the repo-specific source of truth for AI-assisted changes in Ghatana.
 > **Rule of precedence**: Follow the conventions already present in the touched workspace. Do not introduce a new stack, architecture, naming scheme, or library pattern when the repo already has an established one.
 > **Last Updated:** 2026-04-12
+> **Testing Standards Reference**: [`docs/TESTING.md`](../docs/TESTING.md)
 
 ## 1. Non-Negotiable Repo Rules
 

@@ -3,6 +3,7 @@
   "$id": "https://schemas.ghatana.com/command-registry-manifest/v1",
   "title": "Command Registry Manifest",
   "description": "Manifest-driven command registry for root scripts organized by capability",
+  "authoritativeSource": "docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md",
   "type": "object",
   "properties": {
     "capabilities": {

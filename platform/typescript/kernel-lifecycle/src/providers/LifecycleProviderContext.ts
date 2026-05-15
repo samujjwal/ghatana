@@ -92,6 +92,26 @@ export function requirePlatformLifecycleContext(
   } catch (error) {
     throw new Error(`${error instanceof Error ? error.message : String(error)}${formatCorrelationId(correlationId)}`);
   }
+
+  // Platform mode must be backed by Data Cloud providers rather than file-backed fallbacks.
+  const platformProviders = [
+    ['events provider', context.events],
+    ['artifacts provider', context.artifacts],
+    ['health provider', context.health],
+    ['approvals provider', context.approvals],
+    ['provenance provider', context.provenance],
+    ['memory provider', context.memory],
+    ['runtimeTruth provider', context.runtimeTruth],
+  ] as const;
+  const invalidProviders = platformProviders
+    .filter(([, provider]) => provider?.backingStore === 'file')
+    .map(([providerName]) => providerName);
+  if (invalidProviders.length > 0) {
+    throw new Error(
+      `Kernel platform mode requires Data Cloud-backed ${invalidProviders.join(', ')}${formatCorrelationId(correlationId)}`,
+    );
+  }
+
   return context;
 }
 

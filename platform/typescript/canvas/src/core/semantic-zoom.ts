@@ -544,15 +544,18 @@ export function validateZoomBands(
   // Check for gaps and overlaps
   const sorted = [...bands].sort((a, b) => a.minScale - b.minScale);
 
+  // Validate each band range independently so single-band configurations are checked.
+  for (const band of sorted) {
+    if (band.maxScale < band.minScale) {
+      errors.push(
+        `Band "${band.level}" has invalid range: maxScale (${band.maxScale}) < minScale (${band.minScale})`,
+      );
+    }
+  }
+
   for (let i = 0; i < sorted.length - 1; i++) {
     const current = sorted[i];
     const next = sorted[i + 1];
-
-    if (current.maxScale < current.minScale) {
-      errors.push(
-        `Band "${current.level}" has invalid range: maxScale (${current.maxScale}) < minScale (${current.minScale})`,
-      );
-    }
 
     if (next.minScale < current.maxScale) {
       errors.push(

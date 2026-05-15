@@ -11,11 +11,14 @@ const requiredTokens = [
   'name: Node Dependency Vulnerability Scan',
   'uses: pnpm/action-setup@v4',
   'version: 10.33.0',
-  '{ name: phr-web, workspaceDir: ., auditCommand: "pnpm --filter @ghatana/phr-web audit --audit-level=moderate --json > npm-audit.json || true" }',
-  '{ name: dmos-ui, workspaceDir: ., auditCommand: "pnpm --filter @dmos/ui audit --audit-level=moderate --json > npm-audit.json || true" }',
-  '{ name: flashit-web, workspaceDir: ., auditCommand: "pnpm --filter @flashit/web audit --audit-level=moderate --json > npm-audit.json || true" }',
-  '{ name: flashit-gateway, workspaceDir: products/flashit, auditCommand: "pnpm --filter @flashit/web-api audit --audit-level=moderate --json > npm-audit.json || true" }',
   'run: bash scripts/security-audit.sh',
+];
+
+const requiredMatrixEntries = [
+  { name: 'phr-web', workspaceDir: '.', filter: '--filter @ghatana/phr-web' },
+  { name: 'dmos-ui', workspaceDir: '.', filter: '--filter @dmos/ui' },
+  { name: 'flashit-web', workspaceDir: '.', filter: '--filter @flashit/web' },
+  { name: 'flashit-gateway', workspaceDir: 'products/flashit', filter: '--filter @flashit/web-api' },
 ];
 
 const violations = [];
@@ -23,6 +26,16 @@ const violations = [];
 for (const token of requiredTokens) {
   if (!source.includes(token)) {
     violations.push(`.github/workflows/security-scan.yml: missing required token ${JSON.stringify(token)}`);
+  }
+}
+
+for (const entry of requiredMatrixEntries) {
+  const matrixLine = `- { name: ${entry.name}, workspaceDir: ${entry.workspaceDir}, auditFilter: "${entry.filter}" }`;
+  const legacyMatrixLine = `- { name: ${entry.name}, workspaceDir: ${entry.workspaceDir}, auditCommand: "pnpm ${entry.filter} audit --audit-level=moderate --json > npm-audit.json || true" }`;
+  if (!source.includes(matrixLine) && !source.includes(legacyMatrixLine)) {
+    violations.push(
+      `.github/workflows/security-scan.yml: missing required matrix entry for ${entry.name} with filter ${entry.filter}`,
+    );
   }
 }
 

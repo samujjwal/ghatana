@@ -67,7 +67,14 @@ function main() {
   requireIncludes(productUnit, '../provider/ProviderRef', 'ProductUnit canonical ProviderRef import', errors);
 
   const providerSource = readText('platform/typescript/kernel-providers/src/registry/GhatanaFileRegistryProvider.ts');
-  requireIncludes(providerSource, 'implements RegistryProvider', 'GhatanaFileRegistryProvider', errors);
+  if (
+    !providerSource.includes('implements RegistryProvider') &&
+    !providerSource.includes('implements ProductUnitIntentCapableRegistryProvider')
+  ) {
+    errors.push(
+      'GhatanaFileRegistryProvider must implement RegistryProvider or ProductUnitIntentCapableRegistryProvider',
+    );
+  }
   requireIncludes(providerSource, 'validateRegistry', 'GhatanaFileRegistryProvider', errors);
   requireIncludes(providerSource, 'clearCache', 'GhatanaFileRegistryProvider', errors);
 

@@ -1,15 +1,17 @@
 # Library: @ghatana/canvas
 
+**Authoritative Source:** [`platform/typescript/LIBRARY_GOVERNANCE.md`](../../platform/typescript/LIBRARY_GOVERNANCE.md)
+
 Status note (2026-04-11):
 
 - Treat [CANVAS_PLATFORM_ENHANCEMENT_AND_IMPLEMENTATION_PLAN.md](/Users/samujjwal/Development/ghatana/docs/architecture/CANVAS_PLATFORM_ENHANCEMENT_AND_IMPLEMENTATION_PLAN.md) as the canonical source for current canvas package-boundary, public API, and anti-bloat decisions.
 - Treat [LIVE_UI_BUILDER_AND_EXECUTION_PLATFORM_ARCHITECTURE.md](/Users/samujjwal/Development/ghatana/docs/architecture/LIVE_UI_BUILDER_AND_EXECUTION_PLATFORM_ARCHITECTURE.md) as the canonical source for how canvas participates as a governed editing surface for live UI builders.
 
-**Package name:** `@ghatana/canvas`  
-**Version:** `0.1.0`  
-**Location:** `platform/typescript/capabilities/canvas-core/`  
-**Owner:** Data-Cloud + YAPPC (joint stewardship)  
-**Created:** 2026-03-21  
+**Package name:** `@ghatana/canvas`
+**Version:** `0.1.0`
+**Location:** `platform/typescript/capabilities/canvas-core/`
+**Owner:** Data-Cloud + YAPPC (joint stewardship)
+**Created:** 2026-03-21
 **Audit phase:** BDY-2
 
 ---

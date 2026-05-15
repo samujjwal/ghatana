@@ -49,12 +49,13 @@ describe("BuilderDocument", () => {
     });
 
     it("should set creation timestamp", () => {
-      const before = new Date().toISOString();
+      const before = Date.now();
       const doc = createBuilderDocument("test-user");
-      const after = new Date().toISOString();
+      const after = Date.now();
+      const createdAtMs = Date.parse(doc.metadata.createdAt);
 
-      expect(doc.metadata.createdAt).toBeGreaterThanOrEqual(before);
-      expect(doc.metadata.createdAt).toBeLessThanOrEqual(after);
+      expect(createdAtMs).toBeGreaterThanOrEqual(before);
+      expect(createdAtMs).toBeLessThanOrEqual(after);
     });
 
     it("should initialize with empty bindings", () => {

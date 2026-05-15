@@ -23,6 +23,17 @@ const packageLayers = {
   '@ghatana/ui-integration': 5,
 };
 
+// Deprecated package names that should not exist in platform packages
+const deprecatedPackageNames = [
+  '@ghatana/accessibility-audit',
+  '@ghatana/audit-components',
+  '@ghatana/canvas-core',
+  '@ghatana/canvas-react',
+  '@ghatana/canvas-plugins',
+  '@ghatana/canvas-tools',
+  '@ghatana/canvas-chrome',
+];
+
 function findPackageJsonFiles(dirPath) {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   const files = [];
@@ -70,6 +81,52 @@ function checkReadmeContract(filePath, pkg, violations) {
   const readmePath = path.join(path.dirname(filePath), 'README.md');
   if (!fs.existsSync(readmePath)) {
     violations.push(`${path.relative(repoRoot, filePath)} advertises README.md in files but the package directory has no README.md`);
+  }
+}
+
+function checkRequiredFiles(filePath, pkg, violations) {
+  const packageDir = path.dirname(filePath);
+  const pkgName = pkg.name;
+
+  // Check for tsconfig.json
+  const tsconfigPath = path.join(packageDir, 'tsconfig.json');
+  if (!fs.existsSync(tsconfigPath)) {
+    violations.push(`${path.relative(repoRoot, filePath)} missing tsconfig.json`);
+  } else {
+    const tsconfig = readJson(tsconfigPath);
+    // Validate tsconfig extends base
+    const extendsConfig = tsconfig.extends;
+    if (!extendsConfig || (!extendsConfig.includes('tsconfig.base.json') && !extendsConfig.includes('../../tsconfig.base.json'))) {
+      violations.push(`${path.relative(repoRoot, filePath)} tsconfig.json must extend tsconfig.base.json`);
+    }
+  }
+
+  // Check for src/index.ts barrel export
+  const srcIndexPath = path.join(packageDir, 'src', 'index.ts');
+  if (!fs.existsSync(srcIndexPath)) {
+    violations.push(`${path.relative(repoRoot, filePath)} missing src/index.ts barrel export`);
+  }
+
+  // Check for typecheck script
+  if (!pkg.scripts || !pkg.scripts.typecheck) {
+    violations.push(`${path.relative(repoRoot, filePath)} missing typecheck script`);
+  } else if (!pkg.scripts.typecheck.includes('tsc --noEmit')) {
+    violations.push(`${path.relative(repoRoot, filePath)} typecheck script must include "tsc --noEmit"`);
+  }
+
+  // Validate package.json configuration
+  if (pkg.type !== 'module') {
+    violations.push(`${path.relative(repoRoot, filePath)} must have "type": "module" for ESM-only exports`);
+  }
+
+  if (pkg.sideEffects !== false && pkg.sideEffects !== undefined) {
+    violations.push(`${path.relative(repoRoot, filePath)} should have "sideEffects": false`);
+  }
+}
+
+function checkDeprecatedPackageName(filePath, pkg, violations) {
+  if (deprecatedPackageNames.includes(pkg.name)) {
+    violations.push(`${path.relative(repoRoot, filePath)} uses deprecated package name "${pkg.name}". Remediation: Migrate to canonical replacement per LIBRARY_GOVERNANCE.md`);
   }
 }
 
@@ -167,6 +224,8 @@ function main() {
   for (const filePath of packageJsonFiles) {
     const pkg = readJson(filePath);
     checkReadmeContract(filePath, pkg, violations);
+    checkRequiredFiles(filePath, pkg, violations);
+    checkDeprecatedPackageName(filePath, pkg, violations);
     checkDependencyDirection(filePath, pkg, violations);
   }
 
@@ -182,7 +241,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`Validated ${packageJsonFiles.length} platform TypeScript packages: README contracts, dependency direction, and workspace dependency policy are consistent.`);
+  console.log(`Validated ${packageJsonFiles.length} platform TypeScript packages: README contracts, required files, deprecated names, dependency direction, and workspace dependency policy are consistent.`);
 }
 
 main();

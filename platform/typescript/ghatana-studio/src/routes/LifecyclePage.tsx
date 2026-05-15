@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
-import { Badge, Button, Select, Toggle } from '@ghatana/design-system';
+import { Badge, Button, Select, Switch } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
@@ -25,6 +25,7 @@ export default function LifecyclePage(): ReactElement {
   const [providerMode, setProviderMode] = useState<ProviderMode>(lifecycleData.selectedProviderMode);
   const [dryRun, setDryRun] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(lifecycleData.selectedRunId);
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const selectedRun = selectedRunId
     ? lifecycleData.snapshot.lifecycleRuns.find((run) => run.runId === selectedRunId)
@@ -32,6 +33,22 @@ export default function LifecyclePage(): ReactElement {
 
   // Platform mode is disabled unless Data Cloud provider context is ready
   const platformModeDisabled = lifecycleData.snapshot.status === 'degraded' || lifecycleData.snapshot.status === 'unconfigured';
+
+  const runSelectedPhase = async (): Promise<void> => {
+    setIsExecuting(true);
+    lifecycleData.setEnvironment(environment);
+    lifecycleData.setProviderMode(providerMode);
+    try {
+      if (dryRun) {
+        await lifecycleData.createPlan(selectedPhase, { dryRun: true, environment });
+      } else {
+        await lifecycleData.executePhase(selectedPhase, { dryRun: false, environment });
+      }
+      await lifecycleData.refresh();
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
   return (
     <section className="space-y-6" aria-labelledby="lifecycle-title">
@@ -60,6 +77,9 @@ export default function LifecyclePage(): ReactElement {
             <Select
               id="product-unit-select"
               value={lifecycleData.snapshot.productUnit?.id ?? 'digital-marketing'}
+              onChange={(event) => {
+                void event;
+              }}
               disabled={lifecycleData.snapshot.status === 'loading'}
             >
               <option value="digital-marketing">Digital Marketing</option>
@@ -87,10 +107,10 @@ export default function LifecyclePage(): ReactElement {
 
           {/* Dry-run toggle */}
           <div className="flex items-center gap-3">
-            <Toggle
+            <Switch
               id="dry-run-toggle"
               checked={dryRun}
-              onCheckedChange={setDryRun}
+              onToggle={(checked) => setDryRun(checked)}
               aria-label={t('studio.route.lifecycle.dryRunLabel')}
             />
             <label htmlFor="dry-run-toggle" className="text-sm text-gray-900">
@@ -106,7 +126,11 @@ export default function LifecyclePage(): ReactElement {
             <Select
               id="environment-select"
               value={environment}
-              onChange={(e) => setEnvironment(e.target.value as Environment)}
+              onChange={(e) => {
+                const nextEnvironment = e.target.value as Environment;
+                setEnvironment(nextEnvironment);
+                lifecycleData.setEnvironment(nextEnvironment);
+              }}
             >
               {ENVIRONMENTS.map((env) => (
                 <option key={env} value={env}>
@@ -124,7 +148,11 @@ export default function LifecyclePage(): ReactElement {
             <Select
               id="provider-mode-select"
               value={providerMode}
-              onChange={(e) => setProviderMode(e.target.value as ProviderMode)}
+              onChange={(e) => {
+                const nextProviderMode = e.target.value as ProviderMode;
+                setProviderMode(nextProviderMode);
+                lifecycleData.setProviderMode(nextProviderMode);
+              }}
               disabled={platformModeDisabled}
             >
               {PROVIDER_MODES.map((mode) => (
@@ -141,7 +169,14 @@ export default function LifecyclePage(): ReactElement {
           {/* Execute button */}
           <Button
             variant="primary"
-            disabled={lifecycleData.snapshot.status === 'loading' || lifecycleData.snapshot.status === 'degraded'}
+            disabled={
+              isExecuting ||
+              lifecycleData.snapshot.status === 'loading' ||
+              lifecycleData.snapshot.status === 'degraded'
+            }
+            onClick={() => {
+              void runSelectedPhase();
+            }}
           >
             {t('studio.route.lifecycle.executePhaseButton')}
           </Button>

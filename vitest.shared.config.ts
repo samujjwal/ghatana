@@ -1,6 +1,7 @@
 /**
  * @fileoverview Vitest configuration for coverage reporting
  * Enforces minimum coverage thresholds per product
+ * @doc.authoritativeSource docs/TESTING.md
  */
 
 import { defineConfig } from 'vitest/config';

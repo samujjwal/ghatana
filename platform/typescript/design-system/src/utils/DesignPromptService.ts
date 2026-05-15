@@ -1,5 +1,4 @@
-// AI service integration: @ghatana/ui-integration types are imported below when available
-// import type { CompletionOptions, CompletionResponse, IAIService } from '@ghatana/ui-integration';
+// AI service integration types are defined locally for this utility.
 
 export interface CompletionOptions {
     model?: string;

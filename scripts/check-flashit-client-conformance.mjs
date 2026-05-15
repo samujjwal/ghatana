@@ -17,6 +17,10 @@ const errors = [];
 const productShape = readJson('config/product-shape.json');
 const declaredFlashitPackages = productShape.products.flashit?.clientPackages ?? [];
 
+function toPosixPath(value) {
+  return value.replace(/\\/g, '/');
+}
+
 function collectClientPackages(relativeDir) {
   const absoluteDir = path.join(repoRoot, relativeDir);
   const entries = readdirSync(absoluteDir, { withFileTypes: true });
@@ -30,7 +34,7 @@ function collectClientPackages(relativeDir) {
     const packageJsonPath = path.join(relativeDir, entry.name, 'package.json');
     try {
       readFileSync(path.join(repoRoot, packageJsonPath), 'utf8');
-      packagePaths.push(packageJsonPath);
+      packagePaths.push(toPosixPath(packageJsonPath));
     } catch {
       // Ignore non-package subdirectories.
     }
@@ -40,9 +44,10 @@ function collectClientPackages(relativeDir) {
 }
 
 const actualFlashitPackages = collectClientPackages('products/flashit/client');
-if (JSON.stringify(actualFlashitPackages) !== JSON.stringify([...declaredFlashitPackages].sort())) {
+const normalizedDeclaredPackages = [...declaredFlashitPackages].map(toPosixPath).sort();
+if (JSON.stringify(actualFlashitPackages) !== JSON.stringify(normalizedDeclaredPackages)) {
   errors.push(
-    `FlashIt client packages must match config/product-shape.json. Actual=${JSON.stringify(actualFlashitPackages)} Declared=${JSON.stringify(declaredFlashitPackages)}`
+    `FlashIt client packages must match config/product-shape.json. Actual=${JSON.stringify(actualFlashitPackages)} Declared=${JSON.stringify(normalizedDeclaredPackages)}`
   );
 }
 

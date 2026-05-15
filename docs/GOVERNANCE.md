@@ -2,6 +2,10 @@
 
 > **Owner:** Platform Team | **Status:** Active | **Effective:** 2026-03-22
 
+**Authoritative Sources:**
+- Repository-wide engineering standards: [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
+- Platform library governance: [`platform/typescript/LIBRARY_GOVERNANCE.md`](platform/typescript/LIBRARY_GOVERNANCE.md)
+
 ---
 
 ## 1. Governance Model

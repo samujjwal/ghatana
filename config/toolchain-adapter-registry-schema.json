@@ -3,6 +3,7 @@
   "$id": "https://ghatana/config/toolchain-adapter-registry-schema.json",
   "title": "Toolchain Adapter Registry Schema",
   "description": "Schema for toolchain adapter definitions",
+  "authoritativeSource": "docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md",
   "type": "object",
   "required": ["version", "adapters"],
   "properties": {

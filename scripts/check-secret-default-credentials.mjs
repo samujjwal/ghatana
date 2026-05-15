@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: docs/SECRETS_CLASSIFICATION.md
 
 import { execFileSync } from "child_process";
 import { readFileSync } from "fs";

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://ghatana.io/schemas/domain-boundary-exceptions.json",
+  "schemaVersion": "1.0.0",
+  "description": "Domain boundary exceptions with expiry tracking. Each exception must have a clear rationale and expiry date. Expired exceptions must be removed or renewed.",
+  "exceptions": []
+}

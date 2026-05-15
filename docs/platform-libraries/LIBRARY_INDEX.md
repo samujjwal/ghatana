@@ -2,6 +2,8 @@
 
 > **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-04-14
 
+**Authoritative Source:** [`platform/typescript/LIBRARY_GOVERNANCE.md`](../../platform/typescript/LIBRARY_GOVERNANCE.md)
+
 Reference for all canonical `@ghatana/*` TypeScript platform libraries.
 
 **Dependency direction:** `tokens` / `theme` → `platform-utils` → `design-system` / `canvas` / `realtime` / `events` → domain packages. Products must never depend on each other through `@ghatana/*` libraries.

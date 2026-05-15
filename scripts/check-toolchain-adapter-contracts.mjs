@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md
 
 /**
  * Check toolchain adapter contracts

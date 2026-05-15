@@ -4,9 +4,11 @@ Target commit baseline: `3d11768b045870c73b7f1ad7761a7b916203f768`
 
 Authoritative human-readable domain map for governance truth. Every implementation slice must re-check the latest state of the target baseline before editing code, docs, contracts, schemas, or generated workspace wiring.
 
+**Classification:** declared-only
+
 ## Current-State Classifications
 
-- Existing and executable
+- Existing and executable (evidence: `pnpm test`, `./gradlew check`, `node scripts/check-current-state-claims.mjs`)
 - Existing but partial
 - Declared only
 - Target architecture
@@ -31,7 +33,7 @@ Authoritative human-readable domain map for governance truth. Every implementati
 - Owner layer: platform-kernel
 - Current module/package associations: `platform/typescript/kernel-product-contracts`, `platform/typescript/kernel-lifecycle`, `scripts/kernel-product.mjs`, `products/digital-marketing/kernel-product.yaml`
 - Consumers: Digital Marketing pilot, product registry tooling, studio and kernel APIs
-- Current-state classification: Existing and executable
+- Current-state classification: Existing and executable (evidence: `pnpm --dir platform/typescript/kernel-product-contracts test`, `pnpm --dir platform/typescript/kernel-lifecycle test`)
 - Owned capabilities: product-unit modeling, lifecycle planning, lifecycle execution, result/event emission, pilot lifecycle validation
 - Forbidden ownership: product-specific branching in generic kernel code, direct Data Cloud plane coupling, silent lifecycle enablement for blocked products
 - Validation gates: `pnpm --dir platform/typescript/kernel-product-contracts test`, `pnpm --dir platform/typescript/kernel-lifecycle test`, `node scripts/check-kernel-platform-lifecycle.mjs`, `node scripts/check-digital-marketing-lifecycle-pilot.mjs`
@@ -42,7 +44,7 @@ Authoritative human-readable domain map for governance truth. Every implementati
 - Owner layer: platform-kernel
 - Current module/package associations: `platform/typescript/kernel-toolchains`, `config/command-registry-manifest.json`, `scripts/check-toolchain-adapter-contracts.mjs`
 - Consumers: kernel lifecycle planner, lifecycle execution, product surfaces
-- Current-state classification: Existing and executable
+- Current-state classification: Existing and executable (evidence: `pnpm --dir platform/typescript/kernel-toolchains test`, `node scripts/check-toolchain-adapter-contracts.mjs`)
 - Owned capabilities: `gradle-java-service`, `pnpm-vite-react`, output validation, structured execution results, adapter governance
 - Forbidden ownership: product-local shell scripts as primary lifecycle runtime, unsupported mobile success paths, unsafe command expansion
 - Validation gates: `pnpm --dir platform/typescript/kernel-toolchains test`, `pnpm --dir platform/typescript/kernel-toolchains typecheck`, `node scripts/check-toolchain-adapter-contracts.mjs`
@@ -174,7 +176,7 @@ Authoritative human-readable domain map for governance truth. Every implementati
 - Owner layer: platform
 - Current module/package associations: `platform/java/security`, `config/security-secret-scan.json`, `scripts/check-security-workflow-coverage.mjs`, `scripts/check-secret-default-credentials.mjs`
 - Consumers: regulated products, deployment flows, lifecycle gates, CI
-- Current-state classification: Existing and executable
+- Current-state classification: Existing and executable (evidence: `node scripts/check-security-workflow-coverage.mjs`, `node scripts/check-secret-default-credentials.mjs`)
 - Owned capabilities: security gates, policy enforcement, secret hygiene, privacy/compliance evidence hooks
 - Forbidden ownership: product-local security forks, default credentials, silent compliance bypasses
 - Validation gates: `node scripts/check-security-workflow-coverage.mjs`, `node scripts/check-secret-default-credentials.mjs`, `./gradlew :platform:java:security:check`
@@ -185,7 +187,7 @@ Authoritative human-readable domain map for governance truth. Every implementati
 - Owner layer: platform
 - Current module/package associations: `platform/java/observability`, `monitoring`, `scripts/check-observability-conformance.mjs`, `platform/typescript/kernel-providers/src/health`
 - Consumers: all deployable services, lifecycle verification, operations tooling
-- Current-state classification: Existing and executable
+- Current-state classification: Existing and executable (evidence: `node scripts/check-observability-conformance.mjs`, `pnpm --dir platform/typescript/kernel-providers test`)
 - Owned capabilities: observability contracts, health snapshots, operational readiness checks
 - Forbidden ownership: silent health failures, unverifiable deployment health, product-specific observability drift in shared modules
 - Validation gates: `node scripts/check-observability-conformance.mjs`, `pnpm --dir platform/typescript/kernel-providers test`, `./gradlew :platform:java:observability:check`
@@ -196,7 +198,7 @@ Authoritative human-readable domain map for governance truth. Every implementati
 - Owner layer: platform
 - Current module/package associations: `scripts`, `integration-tests`, `platform/java/testing`, `vitest.shared.config.ts`
 - Consumers: all modules, CI, audit and release workflows
-- Current-state classification: Existing and executable
+- Current-state classification: Existing and executable (evidence: `pnpm test`, `./gradlew check`, `node scripts/check-production-stubs.mjs`)
 - Owned capabilities: regression tests, conformance checks, anti-theatre enforcement, focused validation gates
 - Forbidden ownership: object-literal test theatre, disabled tests without tracking, unvalidated lifecycle claims
 - Validation gates: `pnpm test`, `./gradlew check`, `node scripts/check-production-stubs.mjs`, `node scripts/check-doc-truth.mjs`

@@ -3,8 +3,11 @@
  * Mocks the HTML5 Canvas 2D rendering context so jsdom can execute canvas tests.
  */
 import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
 
-// Note: cleanup not needed as we're not using React testing library here
+afterEach(() => {
+  cleanup();
+});
 
 const mockContext: Partial<CanvasRenderingContext2D> = {
   clearRect: () => undefined,

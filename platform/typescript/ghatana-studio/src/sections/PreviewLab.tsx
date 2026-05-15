@@ -50,8 +50,12 @@ export default function PreviewLab(): ReactElement {
   const [previewService, setPreviewService] = useState<PreviewHostService | null>(null);
 
   useEffect(() => {
-    // Initialize preview service
-    const service = new PreviewHostService();
+    if (!selectedSession || !iframeRef.current) {
+      setPreviewService(null);
+      return;
+    }
+
+    const service = new PreviewHostService(iframeRef.current, selectedSession.sandbox);
     setPreviewService(service);
 
     // Set up message handlers
@@ -73,16 +77,11 @@ export default function PreviewLab(): ReactElement {
     });
 
     return () => {
-      service.teardown();
+      void service.teardown();
     };
   }, [selectedSession]);
 
   const createPreviewSession = (document: BuilderDocument): void => {
-    if (!previewService) {
-      setError('Preview service not initialized');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 

@@ -2,6 +2,7 @@ schemaVersion: 1.0.0
 productId: digital-marketing
 lifecycleProfile: standard-web-api-product
 allowExperimentalAdapters: false
+# Authoritative Source: docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md
 
 requiredManifests:
   build:

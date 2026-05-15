@@ -39,6 +39,10 @@ export interface CardHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElemen
   titleLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
 export interface CardContentProps extends BoxProps { }
 
 export interface CardActionsProps extends BoxProps {
@@ -50,6 +54,30 @@ export interface CardMediaProps extends React.ImgHTMLAttributes<HTMLDivElement> 
   image?: string;
   alt?: string;
 }
+
+export const CardTitle: React.FC<CardTitleProps> = ({
+  level = 3,
+  className,
+  style,
+  children,
+  ...rest
+}) => {
+  const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements;
+  return (
+    <HeadingTag
+      className={cn("gh-card__title", className)}
+      style={{
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.semibold,
+        margin: 0,
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+    </HeadingTag>
+  );
+};
 
 /**
  * Card component – flexible surface container.
@@ -288,6 +316,7 @@ Card.displayName = 'Card';
 export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action, avatar, titleLevel = 2, className, style, ...rest }) => {
   const TitleElement = `h${titleLevel}` as keyof React.JSX.IntrinsicElements;
   const headerTitle = title ?? rest.children;
+  const shouldWrapTitle = title !== undefined;
 
   return (
     <div
@@ -297,7 +326,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action
     >
       <div style={{ flex: '1 1 auto' }}>
         {avatar ? <div style={{ display: 'inline-flex', marginRight: '8px' }}>{avatar}</div> : null}
-        {headerTitle ? (
+        {headerTitle && shouldWrapTitle ? (
           <TitleElement
             className="gh-card__title"
             style={{ margin: 0, fontSize: fontSize.lg, fontWeight: fontWeight.semibold }}
@@ -305,6 +334,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action
             {headerTitle}
           </TitleElement>
         ) : null}
+        {!shouldWrapTitle && headerTitle ? headerTitle : null}
         {subheader ? <div className="gh-card__subtitle" style={{ fontSize: fontSize.sm }}>{subheader}</div> : null}
       </div>
       {action ? <div className="gh-card__actions" style={{ display: 'inline-flex', gap: '8px' }}>{action}</div> : null}

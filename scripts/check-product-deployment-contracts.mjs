@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: docs/kernel/PRODUCT_DEPLOYMENT_CONTRACT.md
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

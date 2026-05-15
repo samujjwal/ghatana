@@ -1,5 +1,7 @@
 ## Static scan scope
 
+**Classification:** target-architecture
+
 I scanned the `samujjwal/ghatana` repo at target commit:
 
 `b6fb8fd5ebd9b760db9e89fa6b88f6bf7d341d10`

@@ -1,4 +1,6 @@
 {
+  "$schema": "https://ghatana.io/schemas/duplication-exceptions.json",
   "version": "1.0.0",
+  "description": "Duplication exceptions with expiry tracking. Each exception must have a clear rationale and expiry date. Expired exceptions must be removed or renewed.",
   "exceptions": []
 }

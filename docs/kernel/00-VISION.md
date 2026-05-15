@@ -1,5 +1,7 @@
 # Kernel Vision
 
+**Classification:** target-architecture
+
 ## Overview
 
 Kernel is a generic ProductUnit lifecycle execution and governance platform. Kernel orchestrates product development, build, packaging, deployment, conformance, and operations through a provider-based model that supports multiple product shapes and ecosystems.

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
+const gradleCommand = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 
 const checks = [
   {
@@ -35,7 +36,7 @@ const checks = [
   },
   {
     name: 'Java Kernel data-access context tests',
-    command: './gradlew',
+    command: gradleCommand,
     args: [
       ':platform:java:database:test',
       '--tests',

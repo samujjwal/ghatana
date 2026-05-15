@@ -458,6 +458,13 @@ export function validateDiagram(diagram: Diagram): DiagramValidationResult {
     return { valid: false, errors, warnings };
   }
 
+  if (diagram.diagramType === "swimlane" && (!diagram.swimlanes || diagram.swimlanes.length === 0)) {
+    errors.push({
+      code: "MISSING_SWIMLANES",
+      message: "Swimlane diagram must define at least one swimlane",
+    });
+  }
+
   // Validate nodes
   if (diagram.nodes.size === 0) {
     warnings.push({
@@ -543,13 +550,6 @@ export function validateDiagram(diagram: Diagram): DiagramValidationResult {
 
   // Validate swimlane-specific requirements
   if (diagram.diagramType === "swimlane") {
-    if (!diagram.swimlanes || diagram.swimlanes.length === 0) {
-      errors.push({
-        code: "MISSING_SWIMLANES",
-        message: "Swimlane diagram must define at least one swimlane",
-      });
-    }
-
     // Validate all nodes reference valid swimlanes
     const validLaneIds = new Set(diagram.swimlanes?.map((s) => s.id) ?? []);
     for (const [id, node] of diagram.nodes) {

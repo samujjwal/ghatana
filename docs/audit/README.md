@@ -1,5 +1,7 @@
 # GAA implementation plan for `samujjwal/ghatana` at commit `55adc72be6b8b3a592e2cb47b5c966b7db688e91`
 
+**Classification:** target-architecture
+
 I scanned the target commit and the current code is already much closer to your goal than the earlier conceptual model: the repo now has concrete mastery lifecycle states, learning deltas, learning contracts, promotion policies, Data Cloud-backed mastery persistence, mastery-aware mode selection, governed dispatch, version-aware retrieval, obsolescence detection, and pilot/CI gate documentation. The commit itself is titled “build fixes,” but its diff includes the mastery CI gates, pilot adoption guide, execution-gate decision model, and safety-policy-backed evaluation changes.
 
 The goal now is not to invent a new architecture. It is to **stabilize, connect, harden, and make the existing mastery system production-grade**.

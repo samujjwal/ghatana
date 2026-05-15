@@ -32,7 +32,11 @@
         "forbiddenDependencies",
         "requiredChecks",
         "productAssociations",
-        "currentStateEvidence"
+        "currentStateEvidence",
+        "boundaryPolicy",
+        "sourceOfTruth",
+        "independentExecutionChecks",
+        "fullRegressionChecks"
       ],
       "properties": {
         "id": {
@@ -83,6 +87,51 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "currentStateEvidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "boundaryPolicy": {
+          "type": "object",
+          "required": ["mayImport", "mustNotImport", "mayOwn", "mustNotOwn"],
+          "properties": {
+            "mayImport": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "mustNotImport": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "mayOwn": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "mustNotOwn": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "allowedOutputContracts": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "additionalProperties": false
+        },
+        "sourceOfTruth": {
+          "type": "string",
+          "minLength": 1
+        },
+        "independentExecutionChecks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "fullRegressionChecks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "reasonCodes": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         }

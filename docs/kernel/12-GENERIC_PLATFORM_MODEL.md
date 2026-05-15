@@ -1,5 +1,7 @@
 # Generic Platform Model
 
+**Classification:** target-architecture
+
 ## Overview
 
 Kernel uses a provider-based model to support diverse ProductUnit shapes and ecosystems. This document explains the ProductUnit abstraction, the provider model, the current Ghatana file-backed registry provider, and the target architecture for external providers.

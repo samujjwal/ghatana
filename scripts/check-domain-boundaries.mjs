@@ -118,7 +118,24 @@ function productFromPath(filePath, productIds) {
 export function analyzeBoundaryViolations(files, options) {
   const productIds = options.productIds;
   const productPackageOwners = options.productPackageOwners;
+  const domainRegistry = options.domainRegistry || { domains: [] };
+  const boundaryExceptions = options.boundaryExceptions || { exceptions: [] };
   const violations = [];
+
+  // Build domain boundary policy lookup
+  const domainBoundaryPolicies = new Map();
+  for (const domain of domainRegistry.domains || []) {
+    if (domain.boundaryPolicy) {
+      domainBoundaryPolicies.set(domain.id, domain.boundaryPolicy);
+    }
+  }
+
+  // Build exception lookup for allowlist support
+  const exceptionLookup = new Map();
+  for (const exception of boundaryExceptions.exceptions || []) {
+    const key = `${exception.sourceFile}:${exception.targetImport || exception.ownershipViolation}`;
+    exceptionLookup.set(key, exception);
+  }
 
   for (const file of files) {
     const filePath = normalize(file.path);
@@ -129,57 +146,153 @@ export function analyzeBoundaryViolations(files, options) {
     const isSharedTsPackage = filePath.startsWith('platform/typescript/');
     const isKernelFile = filePath.startsWith('platform/typescript/kernel-') || filePath.startsWith('platform-kernel/');
 
+    // Determine which domain this file belongs to (if any)
+    let fileDomain = null;
+    for (const domain of domainRegistry.domains || []) {
+      const primaryLocations = domain.primaryLocations || [];
+      const secondaryLocations = domain.secondaryLocations || [];
+      const allLocations = [...primaryLocations, ...secondaryLocations];
+      
+      for (const location of allLocations) {
+        if (filePath.startsWith(location.replace(/\/$/, '')) || location.includes(filePath)) {
+          fileDomain = domain;
+          break;
+        }
+      }
+      if (fileDomain) break;
+    }
+
     for (const specifier of imports) {
       const relativeTarget = relativeImportTarget(filePath, specifier);
       const packageName = packageNameFromSpecifier(specifier);
       const ownedProduct = productPackageOwners.get(packageName);
 
+      // Use domain boundary policies if available
+      if (fileDomain && fileDomain.boundaryPolicy) {
+        const policy = fileDomain.boundaryPolicy;
+        
+        // Check mustNotImport patterns with allowlist support
+        for (const forbiddenPattern of policy.mustNotImport || []) {
+          const pattern = forbiddenPattern.replace(/\*\*/g, '**').replace(/\*/g, '*');
+          if (relativeTarget?.match(pattern.replace(/\*/g, '[^/]*')) || specifier.match(pattern.replace(/\*/g, '[^/]*'))) {
+            // Check if there's an exception for this import
+            const exceptionKey = `${filePath}:${specifier}`;
+            const exception = exceptionLookup.get(exceptionKey);
+            
+            if (!exception) {
+              violations.push(`${filePath}: domain '${fileDomain.id}' must not import '${specifier}' (forbidden by boundary policy). Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+            }
+          }
+        }
+      }
+
       if (isPlatformFile) {
         if (ownedProduct) {
-          violations.push(`${filePath}: platform code imports product package '${packageName}' owned by ${ownedProduct}`);
+          // Check for exception
+          const exceptionKey = `${filePath}:${packageName}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: platform code imports product package '${packageName}' owned by ${ownedProduct}. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
         if (relativeTarget?.startsWith('products/')) {
-          violations.push(`${filePath}: platform code imports product implementation path '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: platform code imports product implementation path '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
       }
 
       if (isKernelFile) {
         if (relativeTarget?.startsWith('products/yappc/')) {
-          violations.push(`${filePath}: kernel code imports YAPPC implementation internals via '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: kernel code imports YAPPC implementation internals via '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
         if (relativeTarget?.startsWith('products/data-cloud/planes/')) {
-          violations.push(`${filePath}: kernel code imports Data Cloud plane internals via '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: kernel code imports Data Cloud plane internals via '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
         if (/^products\/yappc\//.test(specifier)) {
-          violations.push(`${filePath}: kernel code imports YAPPC implementation internals via '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: kernel code imports YAPPC implementation internals via '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
         if (/^products\/data-cloud\/planes\//.test(specifier)) {
-          violations.push(`${filePath}: kernel code imports Data Cloud plane internals via '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: kernel code imports Data Cloud plane internals via '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
       }
 
       if (isSharedTsPackage) {
         if (ownedProduct) {
-          violations.push(`${filePath}: shared TypeScript package imports product package '${packageName}' owned by ${ownedProduct}`);
+          const exceptionKey = `${filePath}:${packageName}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: shared TypeScript package imports product package '${packageName}' owned by ${ownedProduct}. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
         if (relativeTarget?.startsWith('products/')) {
-          violations.push(`${filePath}: shared TypeScript package imports product implementation path '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: shared TypeScript package imports product implementation path '${specifier}'. Remediation: Remove import or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
       }
 
       if (fileProduct) {
         if (relativeTarget?.startsWith('platform/') || /^@ghatana\/[^/]+\/src(?:\/|$)/.test(specifier)) {
-          violations.push(`${filePath}: product code bypasses platform public exports via '${specifier}'`);
+          const exceptionKey = `${filePath}:${specifier}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: product code bypasses platform public exports via '${specifier}'. Remediation: Use public platform exports or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
         }
       }
     }
 
     if (/^products\/[^/]+\/.*(?:kernel-product|kernel-lifecycle|run-product-task|lifecycle-runner)\.(?:[cm]?[jt]s|tsx?)$/.test(filePath)) {
-      violations.push(`${filePath}: product-local lifecycle runner detected; lifecycle execution must remain centralized in kernel tooling`);
+      const exceptionKey = `${filePath}:lifecycle-runner`;
+      const exception = exceptionLookup.get(exceptionKey);
+      if (!exception) {
+        violations.push(`${filePath}: product-local lifecycle runner detected; lifecycle execution must remain centralized in kernel tooling. Remediation: Remove lifecycle runner or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+      }
     }
 
     if (/^platform\/typescript\/[^/]*(digital-marketing|phr|finance|flashit|data-cloud|yappc)[^/]*\//.test(filePath)) {
-      violations.push(`${filePath}: product-named code must not live under generic platform TypeScript modules`);
+      const exceptionKey = `${filePath}:product-named-code`;
+      const exception = exceptionLookup.get(exceptionKey);
+      if (!exception) {
+        violations.push(`${filePath}: product-named code must not live under generic platform TypeScript modules. Remediation: Move code to product area or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+      }
+    }
+
+    // Validate file ownership against domain boundary policies
+    if (fileDomain && fileDomain.boundaryPolicy) {
+      const policy = fileDomain.boundaryPolicy;
+      
+      // Check mustNotOwn patterns
+      for (const forbiddenPattern of policy.mustNotOwn || []) {
+        if (filePath.match(forbiddenPattern.replace(/\*/g, '[^/]*'))) {
+          const exceptionKey = `${filePath}:${forbiddenPattern}`;
+          const exception = exceptionLookup.get(exceptionKey);
+          if (!exception) {
+            violations.push(`${filePath}: domain '${fileDomain.id}' must not own this file (forbidden by boundary policy). Remediation: Move file or add exception to config/domain-boundary-exceptions.json with expiresAt.`);
+          }
+        }
+      }
     }
   }
 
@@ -196,6 +309,41 @@ function loadRepoFiles() {
 
 function loadProductIds() {
   return Object.keys(readJson('config/canonical-product-registry.json').registry ?? {});
+}
+
+function loadDomainRegistry() {
+  try {
+    return readJson('config/domain-registry.json');
+  } catch (error) {
+    console.warn('Warning: Failed to load domain registry:', error.message);
+    return { domains: [] };
+  }
+}
+
+function loadDomainBoundaryExceptions() {
+  try {
+    const exceptions = readJson('config/domain-boundary-exceptions.json');
+    const now = new Date();
+    
+    // Filter out expired exceptions
+    const activeExceptions = (exceptions.exceptions || []).filter((exception) => {
+      if (!exception.expiresAt) {
+        console.warn(`Warning: Boundary exception missing expiresAt: ${JSON.stringify(exception)}`);
+        return false;
+      }
+      const expiryDate = new Date(exception.expiresAt);
+      if (expiryDate < now) {
+        console.warn(`Warning: Boundary exception expired on ${exception.expiresAt}: ${exception.id}`);
+        return false;
+      }
+      return true;
+    });
+    
+    return { exceptions: activeExceptions };
+  } catch (error) {
+    console.warn('Warning: Failed to load domain boundary exceptions:', error.message);
+    return { exceptions: [] };
+  }
 }
 
 function loadProductPackageOwners(productIds) {
@@ -220,7 +368,9 @@ export function checkDomainBoundaries(options = {}) {
   const productIds = options.productIds ?? loadProductIds();
   const files = options.files ?? loadRepoFiles();
   const productPackageOwners = options.productPackageOwners ?? loadProductPackageOwners(productIds);
-  return analyzeBoundaryViolations(files, { productIds, productPackageOwners });
+  const domainRegistry = options.domainRegistry ?? loadDomainRegistry();
+  const boundaryExceptions = options.boundaryExceptions ?? loadDomainBoundaryExceptions();
+  return analyzeBoundaryViolations(files, { productIds, productPackageOwners, domainRegistry, boundaryExceptions });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

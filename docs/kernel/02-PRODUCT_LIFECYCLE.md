@@ -1,5 +1,7 @@
 # Kernel Product Lifecycle
 
+> **Authoritative Source**: [`PRODUCT_LIFECYCLE_CONTRACT.md`](PRODUCT_LIFECYCLE_CONTRACT.md)
+
 ## Overview
 
 The Kernel Product Lifecycle defines a standard lifecycle for all ProductUnits: dev → validate → test → build → package → deploy → verify → promote → rollback.

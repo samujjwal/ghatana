@@ -11,12 +11,13 @@
  */
 
 import { existsSync, readFileSync } from "fs";
-import { execFileSync } from "child_process";
+import { spawnSync } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+const pnpmCommand = "pnpm";
 const flowManifestFile = "config/observability/product-observability-flows.json";
 const flowSchemaFile = "config/observability/product-observability-flows.schema.json";
 const registryFile = "config/canonical-product-registry.json";
@@ -241,26 +242,30 @@ function validateFlowManifest() {
 }
 
 function validateExecutableTelemetryHarness() {
-  try {
-    execFileSync(
-      "pnpm",
-      [
-        "--dir",
-        "platform/typescript/product-conformance",
-        "exec",
-        "vitest",
-        "run",
-        "src/observability-flows/__tests__/observability-flows.test.ts",
-        "src/telemetry/__tests__/telemetry.test.ts",
-      ],
-      {
-        cwd: repoRoot,
-        stdio: "inherit",
-      },
-    );
-  } catch (error) {
-    const status = typeof error.status === "number" ? ` exited with status ${error.status}` : "";
-    violations.push(`Executable telemetry conformance tests failed${status}`);
+  const result = spawnSync(
+    pnpmCommand,
+    [
+      "--dir",
+      "platform/typescript/product-conformance",
+      "exec",
+      "vitest",
+      "run",
+      "src/observability-flows/__tests__/observability-flows.test.ts",
+      "src/telemetry/__tests__/telemetry.test.ts",
+    ],
+    {
+      cwd: repoRoot,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    },
+  );
+
+  if (result.error) {
+    violations.push(`Executable telemetry conformance tests failed: ${result.error.message}`);
+    return;
+  }
+  if (result.status !== 0) {
+    violations.push(`Executable telemetry conformance tests failed exited with status ${result.status}`);
   }
 }
 

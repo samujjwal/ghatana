@@ -1,0 +1,258 @@
+{
+  "$schema": "https://ghatana.io/schemas/documentation-authority-map.json",
+  "schemaVersion": "1.0.0",
+  "description": "Maps governance rules to their authoritative sources. All other documents must reference the authoritative source when declaring these rules.",
+  "rules": [
+    {
+      "ruleId": "repo-wide-engineering-standards",
+      "name": "Repository-Wide Engineering Standards",
+      "authoritativeDocument": ".github/copilot-instructions.md",
+      "dependentDocuments": [
+        "platform/typescript/LIBRARY_GOVERNANCE.md",
+        "docs/GOVERNANCE.md",
+        "docs/TESTING.md"
+      ],
+      "allowedDuplicateSummary": "Platform-specific and governance docs may reference these standards but must not redefine them.",
+      "forbiddenDuplicatePatterns": [
+        "**/README.md",
+        "products/*/docs/**",
+        "docs/architecture/**"
+      ]
+    },
+    {
+      "ruleId": "platform-library-governance",
+      "name": "Platform Library Registry and Governance",
+      "authoritativeDocument": "platform/typescript/LIBRARY_GOVERNANCE.md",
+      "dependentDocuments": [
+        "docs/GOVERNANCE.md",
+        "docs/platform-libraries/LIBRARY_INDEX.md",
+        "docs/platform-libraries/LIBRARY_design-system.md",
+        "docs/platform-libraries/LIBRARY_canvas.md"
+      ],
+      "allowedDuplicateSummary": "Individual library docs may describe their purpose but must not redefine governance rules.",
+      "forbiddenDuplicatePatterns": [
+        "docs/platform-libraries/LIBRARY_*.md",
+        "products/*/libs/**",
+        "platform/typescript/*/README.md"
+      ]
+    },
+    {
+      "ruleId": "monorepo-governance-model",
+      "name": "Monorepo Governance Model",
+      "authoritativeDocument": "docs/GOVERNANCE.md",
+      "dependentDocuments": [
+        ".github/copilot-instructions.md",
+        "docs/process/QUARTERLY_BOUNDARY_REVIEW.md"
+      ],
+      "allowedDuplicateSummary": "Process docs may reference governance but must not redefine decision authority.",
+      "forbiddenDuplicatePatterns": [
+        "docs/process/**",
+        "docs/adr/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "domain-registry",
+      "name": "Domain Registry and Classification",
+      "authoritativeDocument": "config/domain-registry.json",
+      "dependentDocuments": [
+        "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+        "scripts/validate-domain-registry.mjs",
+        "scripts/check-domain-boundaries.mjs"
+      ],
+      "allowedDuplicateSummary": "Domain workstream map may describe domains but must not reclassify them.",
+      "forbiddenDuplicatePatterns": [
+        "docs/architecture/**",
+        "products/*/docs/**",
+        "docs/kernel/**"
+      ]
+    },
+    {
+      "ruleId": "product-registry",
+      "name": "Canonical Product Registry",
+      "authoritativeDocument": "config/canonical-product-registry.json",
+      "dependentDocuments": [
+        "config/generated/product-shape-capability-matrix.json",
+        "scripts/validate-product-registry.mjs",
+        "scripts/generate-product-registry-artifacts.mjs"
+      ],
+      "allowedDuplicateSummary": "Generated artifacts derived from the registry are allowed.",
+      "forbiddenDuplicatePatterns": [
+        "products/*/docs/**",
+        "config/generated/**",
+        "docs/kernel/**"
+      ]
+    },
+    {
+      "ruleId": "domain-workstream-map",
+      "name": "Domain Workstream Map",
+      "authoritativeDocument": "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+      "dependentDocuments": [
+        "config/domain-registry.json",
+        "docs/kernel/**"
+      ],
+      "allowedDuplicateSummary": "Domain registry references workstream map for domain definitions.",
+      "forbiddenDuplicatePatterns": [
+        "docs/kernel/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "documentation-truth-scope",
+      "name": "Documentation Truth Scope",
+      "authoritativeDocument": "config/documentation-truth-scope.json",
+      "dependentDocuments": [
+        "scripts/check-doc-truth.mjs",
+        "scripts/check-current-state-claims.mjs"
+      ],
+      "allowedDuplicateSummary": "Validation scripts may reference the scope but must not redefine it.",
+      "forbiddenDuplicatePatterns": [
+        "docs/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "kernel-lifecycle-contract",
+      "name": "Kernel Product Lifecycle Contract",
+      "authoritativeDocument": "docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md",
+      "dependentDocuments": [
+        "docs/kernel/01-ARCHITECTURE.md",
+        "docs/kernel/02-PRODUCT_LIFECYCLE.md",
+        "platform/typescript/kernel-lifecycle",
+        "products/digital-marketing/kernel-product.yaml"
+      ],
+      "allowedDuplicateSummary": "Architecture docs may describe lifecycle but must not redefine contract.",
+      "forbiddenDuplicatePatterns": [
+        "docs/kernel/**",
+        "products/*/docs/**",
+        "products/*/kernel-product.yaml"
+      ]
+    },
+    {
+      "ruleId": "kernel-artifact-contract",
+      "name": "Kernel Product Artifact Contract",
+      "authoritativeDocument": "docs/kernel/PRODUCT_ARTIFACT_CONTRACT.md",
+      "dependentDocuments": [
+        "platform/typescript/kernel-artifacts",
+        "scripts/check-product-artifact-contracts.mjs"
+      ],
+      "allowedDuplicateSummary": "Implementation code may follow contract but must not redefine it.",
+      "forbiddenDuplicatePatterns": [
+        "docs/kernel/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "kernel-deployment-contract",
+      "name": "Kernel Product Deployment Contract",
+      "authoritativeDocument": "docs/kernel/PRODUCT_DEPLOYMENT_CONTRACT.md",
+      "dependentDocuments": [
+        "platform/typescript/kernel-deployment",
+        "scripts/check-product-deployment-contracts.mjs",
+        "config/deployment/deployment-targets-schema.json"
+      ],
+      "allowedDuplicateSummary": "Implementation code may follow contract but must not redefine it.",
+      "forbiddenDuplicatePatterns": [
+        "docs/kernel/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "kernel-toolchain-adapter-spec",
+      "name": "Kernel Toolchain Adapter Specification",
+      "authoritativeDocument": "docs/kernel/PRODUCT_TOOLCHAIN_ADAPTER_SPEC.md",
+      "dependentDocuments": [
+        "config/command-registry-manifest.json",
+        "config/toolchain-adapter-registry-schema.json",
+        "platform/typescript/kernel-toolchains",
+        "scripts/check-toolchain-adapter-contracts.mjs"
+      ],
+      "allowedDuplicateSummary": "Registry and implementation may follow spec but must not redefine it.",
+      "forbiddenDuplicatePatterns": [
+        "docs/kernel/**",
+        "products/*/docs/**",
+        "config/command-registry.config.json"
+      ]
+    },
+    {
+      "ruleId": "ai-governance-contracts",
+      "name": "AI Governance Contracts",
+      "authoritativeDocument": "docs/AI_GOVERNANCE_CONTRACTS.md",
+      "dependentDocuments": [
+        "docs/agent-system/**",
+        "platform/java/agent-core",
+        "scripts/check-agentic-lifecycle-action-contracts.mjs"
+      ],
+      "allowedDuplicateSummary": "Agent system docs may describe implementation but must not redefine governance.",
+      "forbiddenDuplicatePatterns": [
+        "docs/agent-system/**",
+        "products/*/docs/**"
+      ]
+    },
+    {
+      "ruleId": "testing-standards",
+      "name": "Testing Standards and Coverage",
+      "authoritativeDocument": "docs/TESTING.md",
+      "dependentDocuments": [
+        ".github/copilot-instructions.md",
+        "vitest.shared.config.ts",
+        "scripts/check-production-stubs.mjs"
+      ],
+      "allowedDuplicateSummary": "Package-level test docs may describe local patterns but must not redefine standards.",
+      "forbiddenDuplicatePatterns": [
+        "products/*/docs/**",
+        "platform/typescript/*/README.md"
+      ]
+    },
+    {
+      "ruleId": "secrets-classification",
+      "name": "Secrets Classification Policy",
+      "authoritativeDocument": "docs/SECRETS_CLASSIFICATION.md",
+      "dependentDocuments": [
+        "config/security-secret-scan.json",
+        "scripts/check-secret-default-credentials.mjs"
+      ],
+      "allowedDuplicateSummary": "Security config may reference policy but must not redefine classification.",
+      "forbiddenDuplicatePatterns": [
+        "products/*/docs/**",
+        "config/**"
+      ]
+    },
+    {
+      "ruleId": "generated-artifact-policy",
+      "name": "Generated Artifact Policy",
+      "authoritativeDocument": "docs/GENERATED_ARTIFACT_POLICY.md",
+      "dependentDocuments": [
+        "config/generated/**",
+        "scripts/generate-product-registry-artifacts.mjs"
+      ],
+      "allowedDuplicateSummary": "Generated artifacts derived from canonical sources are allowed.",
+      "forbiddenDuplicatePatterns": [
+        "config/generated/**",
+        "docs/generated/**"
+      ]
+    }
+  ],
+  "duplicatePatterns": [
+    {
+      "pattern": "package registry",
+      "forbiddenIn": ["products/*/docs/**", "docs/architecture/**"],
+      "mustReference": "platform/typescript/LIBRARY_GOVERNANCE.md"
+    },
+    {
+      "pattern": "domain classification",
+      "forbiddenIn": ["products/*/docs/**", "docs/kernel/**"],
+      "mustReference": "config/domain-registry.json"
+    },
+    {
+      "pattern": "lifecycle contract",
+      "forbiddenIn": ["products/*/docs/**"],
+      "mustReference": "docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md"
+    },
+    {
+      "pattern": "engineering standards",
+      "forbiddenIn": ["products/*/docs/**"],
+      "mustReference": ".github/copilot-instructions.md"
+    }
+  ]
+}

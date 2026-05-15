@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: docs/GENERATED_ARTIFACT_POLICY.md
 
 /**
  * Product Registry Artifact Generator
