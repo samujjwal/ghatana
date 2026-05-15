@@ -10,6 +10,20 @@
 import type { KernelEventMetadata } from "./KernelLifecycleEvent.js";
 
 /**
+ * Mastery states (aligned with Java MasteryState enum).
+ */
+export type MasteryState =
+  | 'UNKNOWN'
+  | 'OBSERVED'
+  | 'PRACTICED'
+  | 'COMPETENT'
+  | 'MASTERED'
+  | 'MAINTENANCE_ONLY'
+  | 'OBSOLETE'
+  | 'RETIRED'
+  | 'QUARANTINED';
+
+/**
  * Agent governance event payload.
  */
 export interface AgentGovernanceEventPayload {
@@ -36,7 +50,7 @@ export interface AgentGovernanceEventPayload {
   /**
    * Mastery state at time of decision.
    */
-  readonly masteryState?: string;
+  readonly masteryState?: MasteryState;
 
   /**
    * Execution mode selected.

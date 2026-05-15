@@ -4,157 +4,109 @@
  */
 package com.ghatana.datacloud.agent.evaluation;
 
+import com.ghatana.agent.evaluation.pack.EvaluationPack;
+import com.ghatana.agent.evaluation.pack.EvaluationPackRepository;
+import com.ghatana.datacloud.entity.Entity;
+import com.ghatana.datacloud.entity.EntityRepository;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 /**
  * Data Cloud-backed repository for evaluation packs.
  *
  * <p>Evaluation packs contain test cases and benchmarks for evaluating agent skills.
  *
- * <p>TODO: Replace in-memory storage with actual Data Cloud persistence.
+ * <p>This implementation uses EntityRepository for durable persistence with tenant isolation.
  *
  * @doc.type class
  * @doc.purpose Data Cloud repository for evaluation packs
  * @doc.layer data-cloud
- * @doc.pattern Repository
+ * @doc.pattern Repository Implementation
  */
-public final class DataCloudEvaluationPackRepository {
+public final class DataCloudEvaluationPackRepository implements EvaluationPackRepository {
 
-    private final ConcurrentHashMap<String, EvaluationPack> packs = new ConcurrentHashMap<>();
+    private static final String COLLECTION_EVALUATION_PACKS = "agent-evaluation-packs";
+
+    private final EntityRepository entityRepository;
 
     /**
-     * Saves an evaluation pack.
+     * Creates a new DataCloudEvaluationPackRepository.
      *
-     * @param pack evaluation pack to save
-     * @return promise of saved evaluation pack
+     * @param entityRepository Data Cloud entity repository
      */
+    public DataCloudEvaluationPackRepository(@NotNull EntityRepository entityRepository) {
+        this.entityRepository = entityRepository;
+    }
+
+    @Override
     @NotNull
-    public Promise<EvaluationPack> save(@NotNull EvaluationPack pack) {
-        packs.put(pack.packId(), pack);
-        return Promise.of(pack);
+    public Promise<Void> save(@NotNull EvaluationPack pack) {
+        String tenantId = pack.tenantId();
+        Map<String, Object> dataMap = EvaluationPackMapper.toDataMap(pack);
+
+        // Check if pack already exists
+        return entityRepository.findAll(tenantId, COLLECTION_EVALUATION_PACKS,
+                Map.of("evaluationPackId", pack.evaluationPackId()), null, 0, 1)
+                .then(entities -> {
+                    UUID entityId = entities.isEmpty() ? UUID.randomUUID() : entities.get(0).getId();
+
+                    Entity entity = Entity.builder()
+                            .id(entityId)
+                            .tenantId(tenantId)
+                            .collectionName(COLLECTION_EVALUATION_PACKS)
+                            .data(dataMap)
+                            .createdBy("system")
+                            .build();
+
+                    return entityRepository.save(tenantId, entity).map(saved -> null);
+                });
     }
 
-    /**
-     * Finds an evaluation pack by ID.
-     *
-     * @param packId pack identifier
-     * @return promise of optional evaluation pack
-     */
+    @Override
     @NotNull
-    public Promise<Optional<EvaluationPack>> findById(@NotNull String packId) {
-        return Promise.of(Optional.ofNullable(packs.get(packId)));
+    public Promise<Optional<EvaluationPack>> findById(
+            @NotNull String tenantId,
+            @NotNull String evaluationPackId) {
+        return entityRepository.findAll(tenantId, COLLECTION_EVALUATION_PACKS,
+                Map.of("evaluationPackId", evaluationPackId), null, 0, 1)
+                .then(entities -> {
+                    if (entities.isEmpty()) {
+                        return Promise.of(Optional.empty());
+                    }
+                    EvaluationPack pack = EvaluationPackMapper.fromDataMap(entities.get(0).getData());
+                    return Promise.of(Optional.of(pack));
+                });
     }
 
-    /**
-     * Finds evaluation packs by skill ID.
-     *
-     * @param skillId skill identifier
-     * @return promise of list of evaluation packs
-     */
+    @Override
     @NotNull
-    public Promise<List<EvaluationPack>> findBySkillId(@NotNull String skillId) {
-        return Promise.of(packs.values().stream()
-                .filter(p -> p.skillId().equals(skillId))
-                .toList());
+    public Promise<List<EvaluationPack>> findBySkill(
+            @NotNull String tenantId,
+            @NotNull String skillId) {
+        return entityRepository.findAll(tenantId, COLLECTION_EVALUATION_PACKS,
+                Map.of("skillId", skillId), null, 0, 100)
+                .map(entities -> entities.stream()
+                        .map(e -> EvaluationPackMapper.fromDataMap(e.getData()))
+                        .toList());
     }
 
-    /**
-     * Finds evaluation packs by agent ID.
-     *
-     * @param agentId agent identifier
-     * @return promise of list of evaluation packs
-     */
+    @Override
     @NotNull
-    public Promise<List<EvaluationPack>> findByAgentId(@NotNull String agentId) {
-        return Promise.of(packs.values().stream()
-                .filter(p -> p.agentId().equals(agentId))
-                .toList());
-    }
-
-    /**
-     * Finds active evaluation packs.
-     *
-     * @return promise of list of active evaluation packs
-     */
-    @NotNull
-    public Promise<List<EvaluationPack>> findActive() {
-        return Promise.of(packs.values().stream()
-                .filter(EvaluationPack::isActive)
-                .toList());
-    }
-
-    /**
-     * Deletes an evaluation pack.
-     *
-     * @param packId pack identifier
-     * @return promise of completion
-     */
-    @NotNull
-    public Promise<Void> delete(@NotNull String packId) {
-        packs.remove(packId);
-        return Promise.of(null);
-    }
-
-    /**
-     * Evaluation pack record.
-     *
-     * @doc.type record
-     * @doc.purpose Evaluation pack record
-     * @doc.layer data-cloud
-     * @doc.pattern Record
-     */
-    public record EvaluationPack(
-            @NotNull String packId,
-            @NotNull String skillId,
-            @NotNull String agentId,
-            @NotNull String name,
-            @NotNull String description,
-            @NotNull List<TestCase> testCases,
-            @NotNull Instant createdAt,
-            @NotNull Instant updatedAt,
-            boolean active,
-            @NotNull String createdBy
-    ) {
-        public EvaluationPack {
-            testCases = List.copyOf(testCases);
-        }
-
-        /**
-         * Returns true if this pack is active.
-         *
-         * @return true if active
-         */
-        public boolean isActive() {
-            return active;
-        }
-    }
-
-    /**
-     * Test case within an evaluation pack.
-     *
-     * @doc.type record
-     * @doc.purpose Test case record
-     * @doc.layer data-cloud
-     * @doc.pattern Record
-     */
-    public record TestCase(
-            @NotNull String caseId,
-            @NotNull String name,
-            @NotNull String description,
-            @NotNull Map<String, Object> input,
-            @NotNull Map<String, Object> expectedOutput,
-            @NotNull String category
-    ) {
-        public TestCase {
-            input = Map.copyOf(input);
-            expectedOutput = Map.copyOf(expectedOutput);
-        }
+    public Promise<Void> delete(
+            @NotNull String tenantId,
+            @NotNull String evaluationPackId) {
+        return entityRepository.findAll(tenantId, COLLECTION_EVALUATION_PACKS,
+                Map.of("evaluationPackId", evaluationPackId), null, 0, 1)
+                .then(entities -> {
+                    if (entities.isEmpty()) {
+                        return Promise.of(null);
+                    }
+                    return entityRepository.delete(tenantId, COLLECTION_EVALUATION_PACKS, entities.get(0).getId());
+                });
     }
 }

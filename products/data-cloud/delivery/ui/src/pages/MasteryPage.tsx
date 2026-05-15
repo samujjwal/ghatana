@@ -18,13 +18,16 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { masteryService, type MasteryItem, type LearningDelta, type ObsolescenceEvent, type PromotionQueueItem } from '../api/mastery.service';
+import { masteryService, type MasteryItem, type LearningDelta, type ObsolescenceEvent, type PromotionQueueItem, type MasteryState } from '../api/mastery.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp, Filter, Info } from 'lucide-react';
 
 interface MasteryPageProps {
   tenantId: string;
@@ -32,6 +35,10 @@ interface MasteryPageProps {
 
 export function MasteryPage({ tenantId }: MasteryPageProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedItem, setSelectedItem] = useState<MasteryItem | null>(null);
+  const [filterState, setFilterState] = useState<MasteryState | 'ALL'>('ALL');
+  const [filterSkillId, setFilterSkillId] = useState('');
+  const [filterAgentId, setFilterAgentId] = useState('');
 
   // Fetch mastery statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -88,6 +95,34 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       window.location.reload();
     } catch (error) {
       console.error('Failed to promote delta:', error);
+    }
+  };
+
+  // Filter mastery items based on filters
+  const filteredMasteryItems = masteryItems?.filter(item => {
+    if (filterState !== 'ALL' && item.state !== filterState) return false;
+    if (filterSkillId && !item.skillId.toLowerCase().includes(filterSkillId.toLowerCase())) return false;
+    if (filterAgentId && item.agentId && !item.agentId.toLowerCase().includes(filterAgentId.toLowerCase())) return false;
+    return true;
+  }) || [];
+
+  // Get state badge color
+  const getStateBadgeVariant = (state: MasteryState) => {
+    switch (state) {
+      case 'MASTERED':
+      case 'COMPETENT':
+        return 'default';
+      case 'PRACTICED':
+      case 'OBSERVED':
+        return 'secondary';
+      case 'MAINTENANCE_ONLY':
+        return 'outline';
+      case 'OBSOLETE':
+      case 'RETIRED':
+      case 'QUARANTINED':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -158,6 +193,43 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
               <CardDescription>Current mastery state across all skills</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Filters */}
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Filters:</span>
+                </div>
+                <Input
+                  placeholder="Filter by Skill ID"
+                  value={filterSkillId}
+                  onChange={(e) => setFilterSkillId(e.target.value)}
+                  className="max-w-xs"
+                />
+                <Input
+                  placeholder="Filter by Agent ID"
+                  value={filterAgentId}
+                  onChange={(e) => setFilterAgentId(e.target.value)}
+                  className="max-w-xs"
+                />
+                <Select value={filterState} onValueChange={(value) => setFilterState(value as MasteryState | 'ALL')}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All States</SelectItem>
+                    <SelectItem value="UNKNOWN">UNKNOWN</SelectItem>
+                    <SelectItem value="OBSERVED">OBSERVED</SelectItem>
+                    <SelectItem value="PRACTICED">PRACTICED</SelectItem>
+                    <SelectItem value="COMPETENT">COMPETENT</SelectItem>
+                    <SelectItem value="MASTERED">MASTERED</SelectItem>
+                    <SelectItem value="MAINTENANCE_ONLY">MAINTENANCE_ONLY</SelectItem>
+                    <SelectItem value="OBSOLETE">OBSOLETE</SelectItem>
+                    <SelectItem value="RETIRED">RETIRED</SelectItem>
+                    <SelectItem value="QUARANTINED">QUARANTINED</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {masteryLoading ? (
                 <div>Loading...</div>
               ) : (
@@ -170,15 +242,16 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
                       <TableHead>Learning Level</TableHead>
                       <TableHead>Evidence Count</TableHead>
                       <TableHead>Last Transitioned</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {masteryItems?.map((item) => (
+                    {filteredMasteryItems.map((item) => (
                       <TableRow key={item.masteryId}>
                         <TableCell className="font-medium">{item.skillId}</TableCell>
                         <TableCell>{item.agentId || '-'}</TableCell>
                         <TableCell>
-                          <Badge variant={item.state === 'KNOWN' ? 'default' : 'secondary'}>
+                          <Badge variant={getStateBadgeVariant(item.state)}>
                             {item.state}
                           </Badge>
                         </TableCell>
@@ -187,7 +260,71 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
                         <TableCell>
                           {item.lastTransitionedAt
                             ? new Date(item.lastTransitionedAt).toLocaleDateString()
-                            : '-'}
+                            : '-}
+                        </TableCell>
+                        <TableCell>
+                          <Sheet>
+                            <SheetTrigger asChild>
+                              <Button size="sm" variant="outline" onClick={() => setSelectedItem(item)}>
+                                <Info className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent>
+                              <SheetHeader>
+                                <SheetTitle>Mastery Item Details</SheetTitle>
+                                <SheetDescription>Detailed information about this mastery item</SheetDescription>
+                              </SheetHeader>
+                              {selectedItem && (
+                                <div className="space-y-4 mt-4">
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Basic Information</h3>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                      <div><span className="text-muted-foreground">Mastery ID:</span> {selectedItem.masteryId}</div>
+                                      <div><span className="text-muted-foreground">Skill ID:</span> {selectedItem.skillId}</div>
+                                      <div><span className="text-muted-foreground">Agent ID:</span> {selectedItem.agentId || '-'}</div>
+                                      <div><span className="text-muted-foreground">Tenant ID:</span> {selectedItem.tenantId}</div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Mastery State</h3>
+                                    <Badge variant={getStateBadgeVariant(selectedItem.state)} className="mr-2">
+                                      {selectedItem.state}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">Learning Level: {selectedItem.learningLevel}</span>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Evidence</h3>
+                                    <div className="text-sm">
+                                      <span className="text-muted-foreground">Evidence Count:</span> {selectedItem.evidenceCount}
+                                    </div>
+                                  </div>
+                                  {selectedItem.versionScope && (
+                                    <div>
+                                      <h3 className="font-semibold mb-2">Version Scope</h3>
+                                      <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div><span className="text-muted-foreground">Kind:</span> {selectedItem.versionScope.kind}</div>
+                                        <div><span className="text-muted-foreground">Name:</span> {selectedItem.versionScope.name}</div>
+                                        <div><span className="text-muted-foreground">Range:</span> {selectedItem.versionScope.range}</div>
+                                        <div><span className="text-muted-foreground">Ecosystem:</span> {selectedItem.versionScope.ecosystem}</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <h3 className="font-semibold mb-2">Timestamps</h3>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Created:</span> {new Date(selectedItem.createdAt).toLocaleString()}
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Last Transitioned:</span> {selectedItem.lastTransitionedAt ? new Date(selectedItem.lastTransitionedAt).toLocaleString() : '-'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </SheetContent>
+                          </Sheet>
                         </TableCell>
                       </TableRow>
                     ))}

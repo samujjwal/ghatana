@@ -9,6 +9,12 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.DeterminismGuarantee;
 import com.ghatana.agent.FailureMode;
 import com.ghatana.agent.StateMutability;
+import com.ghatana.agent.framework.config.materializer.AgentDescriptorMaterializer;
+import com.ghatana.agent.framework.config.materializer.FreshnessPolicyMaterializer;
+import com.ghatana.agent.framework.config.materializer.LearningContractMaterializer;
+import com.ghatana.agent.framework.config.materializer.MasteryBindingMaterializer;
+import com.ghatana.agent.framework.config.materializer.ReleaseDraftMaterializer;
+import com.ghatana.agent.framework.config.materializer.VersionCompatibilityPolicyMaterializer;
 import com.ghatana.agent.learning.LearningContract;
 import com.ghatana.agent.learning.LearningLevel;
 import com.ghatana.agent.learning.LearningTarget;
@@ -239,126 +245,29 @@ public final class AgentDefinition {
 
     /**
      * Materializes the runtime descriptor from this canonical definition.
+     * Delegates to {@link AgentDescriptorMaterializer}.
      */
     @NotNull
     public AgentDescriptor toDescriptor() {
-        Map<String, Object> descriptorMetadata = new LinkedHashMap<>(metadata);
-        descriptorMetadata.put("specDigest", canonicalDigest());
-        descriptorMetadata.put("status", status);
-        descriptorMetadata.put("roles", roles);
-        descriptorMetadata.put("personas", personas);
-        descriptorMetadata.put("policyRefs", policyRefs);
-        descriptorMetadata.put("evaluationRefs", evaluationRefs);
-
-        Map<String, String> descriptorLabels = new LinkedHashMap<>(labels);
-        if (criticality != null) descriptorLabels.put("criticality", criticality);
-        if (autonomyLevel != null) descriptorLabels.put("autonomyLevel", autonomyLevel);
-        if (learningLevel != null) descriptorLabels.put("learningLevel", learningLevel);
-
-        return AgentDescriptor.builder()
-                .agentId(id)
-                .name(name)
-                .version(version)
-                .description(description)
-                .namespace(namespace)
-                .type(type)
-                .subtype(subtype)
-                .determinism(determinism)
-                .latencySla(timeout)
-                .stateMutability(stateMutability)
-                .failureMode(failureMode)
-                .capabilities(capabilities)
-                .metadata(Map.copyOf(descriptorMetadata))
-                .labels(Map.copyOf(descriptorLabels))
-                .build();
+        return AgentDescriptorMaterializer.materialize(this);
     }
 
     /**
      * Materializes a typed LearningContract from this definition's learning level string.
      * This ensures consistency between definition.learningLevel, metadata.learningLevel, and the contract.
+     * Delegates to {@link LearningContractMaterializer}.
      *
      * @return typed LearningContract
      * @throws IllegalStateException if learningLevel values are inconsistent
      */
     @NotNull
     public LearningContract toLearningContract() {
-        // Extract learning level from both sources
-        String definitionLevel = learningLevel;
-        String metadataLevel = metadata.containsKey("learningLevel")
-                ? String.valueOf(metadata.get("learningLevel"))
-                : null;
-
-        // Validate consistency
-        if (definitionLevel != null && metadataLevel != null && !definitionLevel.equals(metadataLevel)) {
-            throw new IllegalStateException(
-                    String.format("Learning level mismatch: definition.learningLevel='%s' vs metadata.learningLevel='%s'",
-                            definitionLevel, metadataLevel));
-        }
-
-        // Use definition level as primary, fall back to metadata
-        String levelStr = definitionLevel != null ? definitionLevel : metadataLevel;
-        if (levelStr == null) {
-            levelStr = "L0"; // Default to L0 if not specified
-        }
-
-        // Parse the level
-        LearningLevel level;
-        try {
-            level = LearningLevel.valueOf(levelStr);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("Invalid learning level: " + levelStr, e);
-        }
-
-        // Extract adaptation targets if present
-        Set<LearningTarget> allowedTargets = Set.of();
-        Object adaptationTargetsObj = metadata.get("adaptationTargets");
-        if (adaptationTargetsObj instanceof List<?> targetsList) {
-            allowedTargets = targetsList.stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .map(targetStr -> {
-                        try {
-                            return LearningTarget.valueOf(targetStr);
-                        } catch (IllegalArgumentException e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-        }
-
-        // Extract provenance and promotion requirements
-        boolean provenanceRequired = metadata.containsKey("provenanceRequired")
-                && Boolean.TRUE.equals(metadata.get("provenanceRequired"));
-        boolean promotionRequired = metadata.containsKey("promotionRequired")
-                && Boolean.TRUE.equals(metadata.get("promotionRequired"));
-
-        // Set defaults based on level
-        if (level.ordinal() >= LearningLevel.L2.ordinal() && !metadata.containsKey("provenanceRequired")) {
-            provenanceRequired = true;
-        }
-        if (level.ordinal() >= LearningLevel.L3.ordinal() && !metadata.containsKey("promotionRequired")) {
-            promotionRequired = true;
-        }
-
-        // Extract governance workflow flag - only true for L5 agents with explicit governance label
-        boolean governanceWorkflow = level == LearningLevel.L5
-                && "governance".equalsIgnoreCase(labels.get("agentType"))
-                && Boolean.TRUE.equals(metadata.get("governanceWorkflow"));
-
-        // Silently filter MASTERY_STATE from allowedTargets for non-governance workflows;
-        // governance workflows at L5 may include it only when the governanceWorkflow flag is set.
-        if (!governanceWorkflow) {
-            allowedTargets = allowedTargets.stream()
-                    .filter(t -> t != LearningTarget.MASTERY_STATE)
-                    .collect(Collectors.toSet());
-        }
-
-        return new LearningContract(level, allowedTargets, provenanceRequired, promotionRequired, governanceWorkflow);
+        return LearningContractMaterializer.materialize(this);
     }
 
     /**
      * Materializes typed MasteryBindings from this definition's mastery bindings.
+     * Delegates to {@link MasteryBindingMaterializer}.
      *
      * <p>Supports multiple mastery bindings for agents that need to interact with
      * multiple mastery registries or have multiple binding configurations.
@@ -367,62 +276,12 @@ public final class AgentDefinition {
      */
     @NotNull
     public List<com.ghatana.agent.mastery.MasteryBinding> toMasteryBindings() {
-        if (masteryBindings.isEmpty()) {
-            return List.of();
-        }
-
-        // Check if masteryBindings is a list (multiple bindings) or a map (single binding)
-        if (masteryBindings.containsKey("namespace")) {
-            // Single binding as a map - backward compatible format
-            return List.of(parseSingleMasteryBinding(masteryBindings));
-        }
-
-        // Multiple bindings as a list
-        Object bindingsListObj = metadata.get("masteryBindingsList");
-        if (bindingsListObj instanceof List<?> bindingsList) {
-            return bindingsList.stream()
-                    .filter(Map.class::isInstance)
-                    .map(Map.class::cast)
-                    .map(this::parseSingleMasteryBinding)
-                    .toList();
-        }
-
-        return List.of();
-    }
-
-    /**
-     * Parses a single mastery binding from a map.
-     *
-     * @param bindingMap the binding configuration map
-     * @return typed MasteryBinding
-     * @throws IllegalStateException if required fields are missing
-     */
-    @NotNull
-    private com.ghatana.agent.mastery.MasteryBinding parseSingleMasteryBinding(Map<String, Object> bindingMap) {
-        String namespace = (String) bindingMap.get("namespace");
-        String registryRef = (String) bindingMap.get("registryRef");
-        String freshnessPolicyRef = (String) bindingMap.get("freshnessPolicyRef");
-        String versionCompatibilityPolicyRef = (String) bindingMap.get("versionCompatibilityPolicyRef");
-        String obsolescencePolicyRef = (String) bindingMap.get("obsolescencePolicyRef");
-
-        if (namespace == null || namespace.isBlank()) {
-            throw new IllegalStateException("Mastery binding 'namespace' is required");
-        }
-        if (registryRef == null || registryRef.isBlank()) {
-            throw new IllegalStateException("Mastery binding 'registryRef' is required");
-        }
-
-        return new com.ghatana.agent.mastery.MasteryBinding(
-                namespace,
-                registryRef,
-                freshnessPolicyRef,
-                versionCompatibilityPolicyRef,
-                obsolescencePolicyRef
-        );
+        return MasteryBindingMaterializer.materialize(this);
     }
 
     /**
      * Materializes a typed MasteryBinding from this definition's mastery bindings.
+     * Delegates to {@link MasteryBindingMaterializer}.
      *
      * <p>Legacy method for backward compatibility. Returns the first binding if multiple exist.
      *
@@ -433,15 +292,12 @@ public final class AgentDefinition {
     @Deprecated
     @NotNull
     public com.ghatana.agent.mastery.MasteryBinding toMasteryBinding() {
-        List<com.ghatana.agent.mastery.MasteryBinding> bindings = toMasteryBindings();
-        if (bindings.isEmpty()) {
-            throw new IllegalStateException("Mastery bindings are not configured for this agent");
-        }
-        return bindings.get(0);
+        return MasteryBindingMaterializer.materializeSingle(this);
     }
 
     /**
      * Materializes a typed FreshnessPolicy from this definition's mastery bindings.
+     * Delegates to {@link FreshnessPolicyMaterializer}.
      *
      * <p>If no freshness policy configuration is present in mastery bindings,
      * returns the default policy.
@@ -450,51 +306,12 @@ public final class AgentDefinition {
      */
     @NotNull
     public com.ghatana.agent.mastery.FreshnessPolicy toFreshnessPolicy() {
-        if (masteryBindings.isEmpty()) {
-            return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
-        }
-
-        String policyId = (String) masteryBindings.get("freshnessPolicyRef");
-        if (policyId == null || policyId.isBlank()) {
-            return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
-        }
-
-        // Extract policy configuration from metadata if present
-        Object policyConfigObj = metadata.get("freshnessPolicy");
-        if (policyConfigObj instanceof Map<?, ?> policyConfig) {
-            try {
-                String defaultStaleAfterStr = (String) policyConfig.get("defaultStaleAfter");
-                String maxStaleAfterStr = (String) policyConfig.get("maxStaleAfter");
-                Double minEvidenceStrength = (Double) policyConfig.get("minEvidenceStrength");
-                Boolean requireRecentVerification = (Boolean) policyConfig.get("requireRecentVerification");
-
-                java.time.Duration defaultStaleAfter = defaultStaleAfterStr != null
-                        ? java.time.Duration.parse(defaultStaleAfterStr)
-                        : java.time.Duration.ofDays(30);
-                java.time.Duration maxStaleAfter = maxStaleAfterStr != null
-                        ? java.time.Duration.parse(maxStaleAfterStr)
-                        : java.time.Duration.ofDays(90);
-                double minEvidenceStrengthVal = minEvidenceStrength != null ? minEvidenceStrength : 0.7;
-                boolean requireRecentVerificationVal = requireRecentVerification != null ? requireRecentVerification : true;
-
-                return new com.ghatana.agent.mastery.FreshnessPolicy(
-                        policyId,
-                        defaultStaleAfter,
-                        maxStaleAfter,
-                        minEvidenceStrengthVal,
-                        requireRecentVerificationVal
-                );
-            } catch (Exception e) {
-                // Fall back to default policy on any parsing error
-                return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
-            }
-        }
-
-        return com.ghatana.agent.mastery.FreshnessPolicy.defaultPolicy();
+        return FreshnessPolicyMaterializer.materialize(this);
     }
 
     /**
      * Materializes a typed VersionCompatibilityPolicy from this definition's mastery bindings.
+     * Delegates to {@link VersionCompatibilityPolicyMaterializer}.
      *
      * <p>If no version compatibility policy configuration is present in mastery bindings,
      * returns a default policy with an empty version scope.
@@ -503,44 +320,7 @@ public final class AgentDefinition {
      */
     @NotNull
     public com.ghatana.agent.mastery.VersionCompatibilityPolicy toVersionCompatibilityPolicy() {
-        if (masteryBindings.isEmpty()) {
-            return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy("default");
-        }
-
-        String policyId = (String) masteryBindings.get("versionCompatibilityPolicyRef");
-        if (policyId == null || policyId.isBlank()) {
-            return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy("default");
-        }
-
-        // Extract policy configuration from metadata if present
-        Object policyConfigObj = metadata.get("versionCompatibilityPolicy");
-        if (policyConfigObj instanceof Map<?, ?> policyConfig) {
-            try {
-                Boolean strictMode = (Boolean) policyConfig.get("strictMode");
-                Boolean allowMinorVersionDrift = (Boolean) policyConfig.get("allowMinorVersionDrift");
-                Boolean allowPatchVersionDrift = (Boolean) policyConfig.get("allowPatchVersionDrift");
-
-                boolean strictModeVal = strictMode != null ? strictMode : false;
-                boolean allowMinorVersionDriftVal = allowMinorVersionDrift != null ? allowMinorVersionDrift : true;
-                boolean allowPatchVersionDriftVal = allowPatchVersionDrift != null ? allowPatchVersionDrift : true;
-
-                // Extract version scope constraints from policy configuration
-                com.ghatana.agent.mastery.VersionScope versionScope = extractVersionScope(policyConfig);
-
-                return new com.ghatana.agent.mastery.VersionCompatibilityPolicy(
-                        policyId,
-                        versionScope,
-                        strictModeVal,
-                        allowMinorVersionDriftVal,
-                        allowPatchVersionDriftVal
-                );
-            } catch (Exception e) {
-                // Fall back to default policy on any parsing error
-                return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy(policyId);
-            }
-        }
-
-        return com.ghatana.agent.mastery.VersionCompatibilityPolicy.defaultPolicy(policyId);
+        return VersionCompatibilityPolicyMaterializer.materialize(this);
     }
 
     /**
@@ -612,53 +392,12 @@ public final class AgentDefinition {
     }
 
     /**
-     * Extracts a {@link com.ghatana.agent.mastery.VersionScope} from a policy-config map.
-     * Reads optional {@code active}, {@code maintenance}, and {@code obsolete} constraint lists.
-     */
-    @NotNull
-    private static com.ghatana.agent.mastery.VersionScope extractVersionScope(Map<?, ?> policyConfig) {
-        return new com.ghatana.agent.mastery.VersionScope(
-                extractConstraintList(policyConfig.get("active")),
-                extractConstraintList(policyConfig.get("maintenance")),
-                extractConstraintList(policyConfig.get("obsolete"))
-        );
-    }
-
-    /** Converts a raw list of constraint maps to typed {@link com.ghatana.agent.mastery.VersionConstraint} objects. */
-    @NotNull
-    private static List<com.ghatana.agent.mastery.VersionConstraint> extractConstraintList(Object raw) {
-        if (!(raw instanceof List<?> list)) {
-            return List.of();
-        }
-        List<com.ghatana.agent.mastery.VersionConstraint> result = new ArrayList<>();
-        for (Object item : list) {
-            if (item instanceof Map<?, ?> m) {
-                Object kind = m.get("kind");
-                Object name = m.get("name");
-                Object range = m.get("range");
-                Object ecosystem = m.get("ecosystem");
-                if (kind instanceof String k && name instanceof String n
-                        && range instanceof String r && ecosystem instanceof String e
-                        && !k.isBlank() && !n.isBlank() && !r.isBlank() && !e.isBlank()) {
-                    result.add(new com.ghatana.agent.mastery.VersionConstraint(k, n, r, e));
-                }
-            }
-        }
-        return List.copyOf(result);
-    }
-
-    /**
      * Creates a release draft builder rooted in this exact canonical definition.
+     * Delegates to {@link ReleaseDraftMaterializer}.
      */
     @NotNull
     public AgentReleaseBuilder toReleaseDraft(@NotNull String releaseVersion, @NotNull String createdBy) {
-        return new AgentReleaseBuilder()
-                .agentId(id)
-                .specVersion(version)
-                .releaseVersion(releaseVersion)
-                .state(AgentReleaseState.DRAFT)
-                .specDigest(canonicalDigest())
-                .createdBy(createdBy);
+        return ReleaseDraftMaterializer.materialize(this, releaseVersion, createdBy);
     }
 
     /**

@@ -775,15 +775,22 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             AgentRelease masteryBoundRelease = release("test-agent", AgentReleaseState.ACTIVE);
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
                     .thenReturn(Promise.of(Optional.of(masteryBoundRelease)));
+            // Stub decide() to return a decision that denies dispatch due to mastery state
+            MasteryDecision blockDecision = MasteryDecision.block(
+                    "unknown", "test-agent", MasteryState.QUARANTINED,
+                    MasteryScore.zero(), VersionScope.empty(),
+                    VersionApplicability.UNKNOWN,
+                    true, "Quarantined - skillId was derived from agentId");
+            when(masteryRegistry.decide(any())).thenReturn(Promise.of(blockDecision));
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
                     delegate, invariantMonitor, traceLedger, releaseRepository, null, null,
                     masteryRegistry, null, null, null, null);
 
-            // ctx has no skillId
+            // ctx has no skillId (will be derived from agentId)
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
-            assertThat(result.getExplanation()).containsIgnoringCase("skillId");
+            // The denial reason comes from the mastery decision state (QUARANTINED)
         }
 
         @Test

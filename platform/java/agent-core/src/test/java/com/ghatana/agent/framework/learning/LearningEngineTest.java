@@ -279,4 +279,149 @@ class LearningEngineTest extends EventloopTestBase {
                     assertThat(d.tenantId()).isNotEqualTo("default"));
         }
     }
+
+    // -------------------------------------------------------------------------
+    // P0.3: Learning contract enforcement tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Contract that does not permit PROCEDURAL_SKILL rejects procedural deltas")
+    void contractRejectsProceduralDeltasWhenNotPermitted() {
+        // Contract allows only EPISODIC_MEMORY, not PROCEDURAL_SKILL
+        LearningContract contract = new LearningContract(
+                LearningLevel.L3,
+                Set.of(LearningTarget.EPISODIC_MEMORY), // Does not include PROCEDURAL_SKILL
+                true,
+                true,
+                false
+        );
+
+        LearningEngine engine = LearningEngine.create(EXECUTOR)
+                .withLearningContract(contract)
+                .withTenantId("tenant-1")
+                .withAgentReleaseId("release-1.0.0")
+                .withHumanReviewThreshold(0.5)
+                .withLearningDeltaRepository(deltaRepository);
+
+        List<Episode> episodes = episodesWithPattern("action-proc", 5, 1.0);
+        when(memoryStore.queryEpisodes(any(MemoryFilter.class), anyInt()))
+                .thenReturn(Promise.of(episodes));
+
+        LearningEngine.LearningOutcome outcome = runPromise(() -> engine.reflect("agent-123", memoryStore));
+
+        // Deltas should be rejected by contract
+        assertThat(outcome.deltasRejectedByContract()).isGreaterThan(0);
+        // Procedural delta is proposed but then rejected by contract (contract check happens after proposal)
+        assertThat(outcome.deltasProposed()).isGreaterThan(0);
+        // Delta repository should not be called to save any procedural deltas (rejected by contract)
+        verify(deltaRepository, never()).save(any(LearningDelta.class));
+    }
+
+    @Test
+    @DisplayName("Contract that permits PROCEDURAL_SKILL allows procedural deltas")
+    void contractAllowsProceduralDeltasWhenPermitted() {
+        LearningContract contract = new LearningContract(
+                LearningLevel.L3,
+                Set.of(LearningTarget.PROCEDURAL_SKILL), // Includes PROCEDURAL_SKILL
+                true,
+                true,
+                false
+        );
+
+        LearningEngine engine = LearningEngine.create(EXECUTOR)
+                .withLearningContract(contract)
+                .withTenantId("tenant-1")
+                .withAgentReleaseId("release-1.0.0")
+                .withHumanReviewThreshold(0.5)
+                .withLearningDeltaRepository(deltaRepository);
+
+        List<Episode> episodes = episodesWithPattern("action-proc", 5, 1.0);
+        when(memoryStore.queryEpisodes(any(MemoryFilter.class), anyInt()))
+                .thenReturn(Promise.of(episodes));
+        when(deltaRepository.save(any(LearningDelta.class)))
+                .thenAnswer(inv -> Promise.of(inv.getArgument(0, LearningDelta.class)));
+
+        LearningEngine.LearningOutcome outcome = runPromise(() -> engine.reflect("agent-123", memoryStore));
+
+        // Deltas should be proposed (not rejected by contract)
+        assertThat(outcome.deltasRejectedByContract()).isEqualTo(0);
+        assertThat(outcome.deltasProposed()).isGreaterThan(0);
+        // Delta repository should be called to save procedural deltas
+        verify(deltaRepository).save(any(LearningDelta.class));
+    }
+
+    @Test
+    @DisplayName("Contract with empty allowedTargets rejects all procedural deltas")
+    void contractWithEmptyAllowedTargetsRejectsAllDeltas() {
+        LearningContract contract = new LearningContract(
+                LearningLevel.L3,
+                Set.of(), // Empty allowed targets
+                true,
+                true,
+                false
+        );
+
+        LearningEngine engine = LearningEngine.create(EXECUTOR)
+                .withLearningContract(contract)
+                .withTenantId("tenant-1")
+                .withAgentReleaseId("release-1.0.0")
+                .withHumanReviewThreshold(0.5)
+                .withLearningDeltaRepository(deltaRepository);
+
+        List<Episode> episodes = episodesWithPattern("action-proc", 5, 1.0);
+        when(memoryStore.queryEpisodes(any(MemoryFilter.class), anyInt()))
+                .thenReturn(Promise.of(episodes));
+
+        LearningEngine.LearningOutcome outcome = runPromise(() -> engine.reflect("agent-123", memoryStore));
+
+        // All deltas should be rejected by contract (empty allowedTargets)
+        assertThat(outcome.deltasRejectedByContract()).isGreaterThan(0);
+        // Delta is proposed but then rejected by contract (contract check happens after proposal)
+        assertThat(outcome.deltasProposed()).isGreaterThan(0);
+        verify(deltaRepository, never()).save(any(LearningDelta.class));
+    }
+
+    @Test
+    @DisplayName("Contract permits() is called before delta creation for both approved and flagged candidates")
+    void contractPermitsCalledForApprovedAndFlaggedCandidates() {
+        // Contract permits PROCEDURAL_SKILL
+        LearningContract contract = new LearningContract(
+                LearningLevel.L3,
+                Set.of(LearningTarget.PROCEDURAL_SKILL),
+                true,
+                true,
+                false
+        );
+
+        LearningEngine engine = LearningEngine.create(EXECUTOR)
+                .withLearningContract(contract)
+                .withTenantId("tenant-1")
+                .withAgentReleaseId("release-1.0.0")
+                .withHumanReviewThreshold(0.9) // High threshold to create flagged candidates
+                .withLearningDeltaRepository(deltaRepository);
+
+        // Create episodes that will produce both approved and flagged candidates
+        List<Episode> episodes = episodesWithPattern("action-mixed", 4, 1.0);
+        episodes.add(Episode.builder()
+                .id("ep-action-mixed-neg")
+                .agentId("agent-123")
+                .turnId("turn-neg")
+                .timestamp(Instant.now())
+                .input("input-neg")
+                .action("action-mixed")
+                .reward(-1.0)
+                .build());
+
+        when(memoryStore.queryEpisodes(any(MemoryFilter.class), anyInt()))
+                .thenReturn(Promise.of(episodes));
+        when(deltaRepository.save(any(LearningDelta.class)))
+                .thenAnswer(inv -> Promise.of(inv.getArgument(0, LearningDelta.class)));
+
+        LearningEngine.LearningOutcome outcome = runPromise(() -> engine.reflect("agent-123", memoryStore));
+
+        // No deltas should be rejected by contract (contract permits PROCEDURAL_SKILL)
+        assertThat(outcome.deltasRejectedByContract()).isEqualTo(0);
+        // Both approved and flagged deltas should be created
+        assertThat(outcome.deltasProposed() + outcome.deltasNeedingReview()).isGreaterThan(0);
+    }
 }

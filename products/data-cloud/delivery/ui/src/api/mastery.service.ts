@@ -15,13 +15,24 @@
 
 import axios from 'axios';
 
-// Mastery State Types
+// Mastery State Types (aligned with Java MasteryState enum)
+export type MasteryState =
+  | 'UNKNOWN'
+  | 'OBSERVED'
+  | 'PRACTICED'
+  | 'COMPETENT'
+  | 'MASTERED'
+  | 'MAINTENANCE_ONLY'
+  | 'OBSOLETE'
+  | 'RETIRED'
+  | 'QUARANTINED';
+
 export interface MasteryItem {
   masteryId: string;
   tenantId: string;
   skillId: string;
   agentId?: string;
-  state: 'UNKNOWN' | 'LEARNING' | 'KNOWN' | 'MAINTENANCE_ONLY' | 'OBSOLETE';
+  state: MasteryState;
   learningLevel: 'L0' | 'L1' | 'L2' | 'L3' | 'L4';
   versionScope?: {
     kind: string;
@@ -123,20 +134,168 @@ export const masteryService = {
   /**
    * Get mastery item by ID
    */
-  async getMasteryItem(masteryId: string): Promise<MasteryItem> {
-    const response = await axios.get<MasteryItem>(`${API_BASE}/items/${masteryId}`);
+  async getMasteryItem(masteryId: string, tenantId: string): Promise<MasteryItem> {
+    const response = await axios.get<MasteryItem>(`${API_BASE}/items/${masteryId}?tenantId=${tenantId}`);
     return response.data;
   },
 
   /**
-   * Query learning deltas
+   * Find stale mastery items
    */
-  async queryLearningDeltas(tenantId: string, state?: string): Promise<LearningDelta[]> {
+  async findStale(tenantId: string): Promise<MasteryItem[]> {
+    const response = await axios.get<MasteryItem[]>(`${API_BASE}/stale?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Find obsolete or quarantined mastery items
+   */
+  async findObsoleteOrQuarantined(tenantId: string): Promise<MasteryItem[]> {
+    const response = await axios.get<MasteryItem[]>(`${API_BASE}/obsolete-quarantined?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * List evidence for a mastery item
+   */
+  async listEvidence(masteryId: string, tenantId: string): Promise<{
+    evidenceRefs: readonly string[];
+    evaluationRefs: readonly string[];
+    knownFailureModeIds: readonly string[];
+  }> {
+    const response = await axios.get(`${API_BASE}/items/${masteryId}/evidence?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * List transitions for a mastery item
+   */
+  async listTransitions(masteryId: string, tenantId: string): Promise<{
+    state: MasteryState;
+    stateHistory: readonly string[];
+  }> {
+    const response = await axios.get(`${API_BASE}/items/${masteryId}/transitions?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Get state distribution
+   */
+  async getStateDistribution(tenantId: string): Promise<Record<MasteryState, number>> {
+    const response = await axios.get(`${API_BASE}/distribution?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Get version compatibility for a mastery item
+   */
+  async getVersionCompatibility(masteryId: string, tenantId: string): Promise<{
+    versionScope?: {
+      kind: string;
+      name: string;
+      range: string;
+      ecosystem: string;
+    };
+    applicability: {
+      tenantId: string;
+      environmentFingerprint?: string;
+    };
+    staleAfter?: string;
+  }> {
+    const response = await axios.get(`${API_BASE}/items/${masteryId}/version-compatibility?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Get promotion history for a mastery item
+   */
+  async getPromotionHistory(masteryId: string, tenantId: string): Promise<{
+    stateHistory: readonly string[];
+    evidenceRefs: readonly string[];
+    evaluationRefs: readonly string[];
+  }> {
+    const response = await axios.get(`${API_BASE}/items/${masteryId}/promotion-history?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Get skill evaluation status
+   */
+  async getSkillEvalStatus(skillId: string, tenantId: string): Promise<{
+    skillId: string;
+    hasMastery: boolean;
+    state: MasteryState;
+    confidence?: number;
+    evaluationRefs?: readonly string[];
+    knownFailureModeIds?: readonly string[];
+  }> {
+    const response = await axios.get(`${API_BASE}/skills/${skillId}/eval-status?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Scan for obsolescence events
+   */
+  async scanObsolescence(tenantId: string, env?: {
+    repoId?: string;
+    projectType?: string;
+    dependencies?: Record<string, string>;
+    runtimes?: Record<string, string>;
+  }): Promise<ObsolescenceEvent[]> {
     const params = new URLSearchParams();
     params.append('tenantId', tenantId);
-    if (state) params.append('state', state);
+    if (env?.repoId) params.append('repoId', env.repoId);
+    if (env?.projectType) params.append('projectType', env.projectType);
+    if (env?.dependencies) {
+      params.append('dependencies', Object.entries(env.dependencies)
+        .map(([k, v]) => `${k}:${v}`).join(','));
+    }
+    if (env?.runtimes) {
+      params.append('runtimes', Object.entries(env.runtimes)
+        .map(([k, v]) => `${k}:${v}`).join(','));
+    }
 
-    const response = await axios.get<LearningDelta[]>(`/api/v1/learning-deltas/query?${params.toString()}`);
+    const response = await axios.get<ObsolescenceEvent[]>(`${API_BASE}/obsolescence/scan?${params.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * Get mode explanation for agent/skill
+   */
+  async getModeExplanation(agentId: string, skillId: string, tenantId: string): Promise<{
+    agentId: string;
+    skillId: string;
+    tenantId: string;
+    masteryState: MasteryState;
+    confidence: number;
+    isExecutable: boolean;
+    executionMode: MasteryState;
+    requiresApproval: boolean;
+    requiresVerification: boolean;
+    reasoning: string;
+    versionScope?: {
+      kind: string;
+      name: string;
+      range: string;
+      ecosystem: string;
+    };
+  }> {
+    const response = await axios.get(`${API_BASE}/mode-explanation?tenantId=${tenantId}&agentId=${agentId}&skillId=${skillId}`);
+    return response.data;
+  },
+
+  /**
+   * Query learning deltas (aligned with MasteryController.listLearningDeltas)
+   */
+  async queryLearningDeltas(tenantId: string, agentId?: string, skillId?: string, limit?: number, offset?: number): Promise<LearningDelta[]> {
+    const params = new URLSearchParams();
+    params.append('tenantId', tenantId);
+    if (agentId) params.append('agentId', agentId);
+    if (skillId) params.append('skillId', skillId);
+    if (limit) params.append('limit', limit.toString());
+    if (offset) params.append('offset', offset.toString());
+
+    const response = await axios.get<LearningDelta[]>(`/api/v1/learning-deltas?${params.toString()}`);
     return response.data;
   },
 
@@ -149,10 +308,25 @@ export const masteryService = {
   },
 
   /**
-   * Get pending learning deltas for an agent
+   * Evaluate a learning delta (aligned with MasteryController.evaluateLearningDelta)
    */
-  async getPendingDeltas(agentId: string): Promise<LearningDelta[]> {
-    const response = await axios.get<LearningDelta[]>(`/api/v1/learning-deltas/pending/${agentId}`);
+  async evaluateLearningDelta(deltaId: string, tenantId: string): Promise<{
+    deltaId: string;
+    evaluationResult: {
+      passed: boolean;
+      score: number;
+      reasons: string[];
+    };
+  }> {
+    const response = await axios.post(`/api/v1/learning-deltas/${deltaId}/evaluate?tenantId=${tenantId}`);
+    return response.data;
+  },
+
+  /**
+   * Promote a learning delta (aligned with MasteryController.promoteLearningDelta)
+   */
+  async promoteLearningDelta(deltaId: string, tenantId: string): Promise<LearningDelta> {
+    const response = await axios.post<LearningDelta>(`/api/v1/learning-deltas/${deltaId}/promote?tenantId=${tenantId}`);
     return response.data;
   },
 
@@ -177,6 +351,14 @@ export const masteryService = {
    */
   async rejectDelta(deltaId: string, reason: string): Promise<LearningDelta> {
     const response = await axios.post<LearningDelta>(`/api/v1/learning-deltas/${deltaId}/reject`, { reason });
+    return response.data;
+  },
+
+  /**
+   * Get pending learning deltas for an agent
+   */
+  async getPendingDeltas(agentId: string): Promise<LearningDelta[]> {
+    const response = await axios.get<LearningDelta[]>(`/api/v1/learning-deltas/pending/${agentId}`);
     return response.data;
   },
 

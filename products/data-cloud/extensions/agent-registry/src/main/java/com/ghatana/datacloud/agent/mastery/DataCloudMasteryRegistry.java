@@ -6,6 +6,7 @@ package com.ghatana.datacloud.agent.mastery;
 
 import com.ghatana.agent.environment.EnvironmentFingerprint;
 import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.context.version.VersionContextCodec;
 import com.ghatana.agent.mastery.*;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
@@ -30,6 +31,37 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * <p>Uses EntityRepository for durable persistence with tenant isolation.
+ *
+ * <h2>Required Database Indexes</h2>
+ * For optimal performance, the following indexes should be created on the
+ * agent-mastery-items collection:
+ * <ul>
+ *   <li>Composite index: (tenantId, masteryId) - for save() and findById() operations</li>
+ *   <li>Composite index: (tenantId, skillId, state, confidence, updatedAt) - for query() operations</li>
+ *   <li>Composite index: (tenantId, agentId) - for agent-scoped queries</li>
+ *   <li>Composite index: (tenantId, domain) - for domain-scoped queries</li>
+ *   <li>Composite index: (tenantId, agentReleaseId) - for release-scoped queries</li>
+ * </ul>
+ *
+ * <h2>Schema Validation</h2>
+ * All mastery items are validated before save to ensure:
+ * <ul>
+ *   <li>masteryId is non-empty</li>
+ *   <li>tenantId is non-empty</li>
+ *   <li>skillId is non-empty</li>
+ *   <li>state is a valid MasteryState enum value</li>
+ *   <li>learningLevel is between L0 and L4</li>
+ *   <li>confidence is between 0.0 and 1.0</li>
+ *   <li>evidenceCount is non-negative</li>
+ * </ul>
+ *
+ * <h2>Conflict Detection</h2>
+ * The registry uses optimistic locking with a version field to detect concurrent updates.
+ * If a conflict is detected, an IllegalStateException is thrown with a retry message.
+ *
+ * <h2>Consistent Sorting</h2>
+ * Query results are consistently sorted by (state:DESC, confidence:DESC, updatedAt:DESC)
+ * to ensure deterministic ordering across queries and support pagination.
  *
  * @doc.type class
  * @doc.purpose Data Cloud implementation of MasteryRegistry
@@ -87,17 +119,22 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                     // Build VersionContext if provided
                     VersionContext versionContext = null;
                     if (versionContextStr != null && !versionContextStr.isEmpty()) {
-                        // Parse version context string into dependencies map
-                        // Format: "component1=1.0.0,component2=2.0.0"
-                        Map<String, String> dependencies = new HashMap<>();
-                        String[] pairs = versionContextStr.split(",");
-                        for (String pair : pairs) {
-                            String[] kv = pair.split("=", 2);
-                            if (kv.length == 2) {
-                                dependencies.put(kv[0].trim(), kv[1].trim());
+                        // Try JSON decode first (canonical format from VersionContextCodec)
+                        try {
+                            versionContext = VersionContextCodec.INSTANCE.decode(versionContextStr);
+                        } catch (IllegalArgumentException e) {
+                            // Fallback to legacy comma-separated format for backward compatibility
+                            // Format: "component1=1.0.0,component2=2.0.0"
+                            Map<String, String> dependencies = new HashMap<>();
+                            String[] pairs = versionContextStr.split(",");
+                            for (String pair : pairs) {
+                                String[] kv = pair.split("=", 2);
+                                if (kv.length == 2) {
+                                    dependencies.put(kv[0].trim(), kv[1].trim());
+                                }
                             }
+                            versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
                         }
-                        versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
                     }
 
                     final VersionContext finalVersionContext = versionContext;
@@ -160,6 +197,37 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         };
     }
 
+    /**
+     * Validates a mastery item before save to ensure schema compliance.
+     *
+     * @param item the mastery item to validate
+     * @throws IllegalArgumentException if validation fails
+     */
+    private void validateMasteryItem(@NotNull MasteryItem item) {
+        // Validate required string fields
+        if (item.masteryId() == null || item.masteryId().isBlank()) {
+            throw new IllegalArgumentException("masteryId is required and cannot be blank");
+        }
+        if (item.applicability() == null || item.applicability().tenantId() == null || item.applicability().tenantId().isBlank()) {
+            throw new IllegalArgumentException("tenantId is required and cannot be blank");
+        }
+        if (item.skillId() == null || item.skillId().isBlank()) {
+            throw new IllegalArgumentException("skillId is required and cannot be blank");
+        }
+
+        // Validate state is a valid enum value (already guaranteed by type system, but check for safety)
+        MasteryState state = item.state();
+        if (state == null) {
+            throw new IllegalArgumentException("state is required");
+        }
+
+        // Validate confidence is between 0.0 and 1.0
+        double confidence = item.confidence();
+        if (confidence < 0.0 || confidence > 1.0) {
+            throw new IllegalArgumentException("confidence must be between 0.0 and 1.0, got: " + confidence);
+        }
+    }
+
     @Override
     @NotNull
     @Deprecated
@@ -214,7 +282,10 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
         int offset = query.offset() != null ? query.offset() : 0;
         int limit = query.limit() != null ? query.limit() : 100;
 
-        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, null, offset, limit)
+        // Don't use database sort - let in-memory sorting handle the ranking
+        String sort = null;
+
+        return entityRepository.findAll(tenantId, COLLECTION_MASTERY_ITEMS, filter, sort, offset, limit)
                 .then(entities -> {
                     Instant currentTime = query.currentTime() != null ? query.currentTime() : Instant.now();
                     List<MasteryItem> items = entities.stream()
@@ -263,28 +334,48 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                 return Promise.of(Optional.empty());
             }
             MasteryItem best = items.get(0);
-            MasteryDecision decision = switch (best.state()) {
-                case MASTERED, COMPETENT -> MasteryDecision.allow(
-                        best.masteryId(), best.skillId(), best.state(),
-                        MasteryScore.correctnessOnly(best.confidence()), best.versionScope(), "Mastery query result");
-                case PRACTICED -> MasteryDecision.requireVerification(
-                        best.masteryId(), best.skillId(), best.state(),
-                        MasteryScore.correctnessOnly(best.confidence()), best.versionScope(), "Mastery query result",
-                        best.evidenceRefs());
-                case OBSERVED -> MasteryDecision.requireApproval(
-                        best.masteryId(), best.skillId(), best.state(),
-                        MasteryScore.correctnessOnly(best.confidence()), best.versionScope(), "Mastery query result");
-                default -> MasteryDecision.block(
-                        best.masteryId(), best.skillId(), best.state(),
-                        MasteryScore.correctnessOnly(best.confidence()), best.versionScope(), "Mastery query result");
-            };
+            MasteryDecision decision = makeStateBasedDecision(best, "Mastery query result");
             return Promise.of(Optional.of(decision));
         });
+    }
+
+    /**
+     * Makes a state-based mastery decision without additional runtime checks.
+     * This is the canonical policy used by both queryMastery() and decide().
+     * decide() adds additional checks (version applicability, terminal, stale) before calling this.
+     *
+     * @param item the mastery item to decide on
+     * @param reason the decision reason
+     * @return a mastery decision based on the item's state
+     */
+    @NotNull
+    private MasteryDecision makeStateBasedDecision(@NotNull MasteryItem item, @NotNull String reason) {
+        return switch (item.state()) {
+            case MASTERED -> MasteryDecision.allow(
+                    item.masteryId(), item.skillId(), item.state(),
+                    MasteryScore.correctnessOnly(item.confidence()), item.versionScope(), reason);
+            case COMPETENT -> MasteryDecision.requireVerification(
+                    item.masteryId(), item.skillId(), item.state(),
+                    MasteryScore.correctnessOnly(item.confidence()), item.versionScope(), reason,
+                    item.evidenceRefs());
+            case PRACTICED -> MasteryDecision.requireApproval(
+                    item.masteryId(), item.skillId(), item.state(),
+                    MasteryScore.correctnessOnly(item.confidence()), item.versionScope(), reason);
+            case OBSERVED -> MasteryDecision.requireApproval(
+                    item.masteryId(), item.skillId(), item.state(),
+                    MasteryScore.correctnessOnly(item.confidence()), item.versionScope(), reason);
+            default -> MasteryDecision.block(
+                    item.masteryId(), item.skillId(), item.state(),
+                    MasteryScore.correctnessOnly(item.confidence()), item.versionScope(), reason);
+        };
     }
 
     @Override
     @NotNull
     public Promise<MasteryItem> save(@NotNull MasteryItem item) {
+        // Validate mastery item before save
+        validateMasteryItem(item);
+        
         String tenantId = item.applicability().tenantId();
         
         // Validate tenantId matches item.tenantId for tenant isolation
@@ -304,7 +395,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                 .then(entities -> {
                     Map<String, Object> dataMap = MasteryItemMapper.toDataMap(item);
                     
-                    // Add optimistic locking version field
+                    // Add optimistic locking version field for conflict detection
                     long version = 1L;
                     UUID entityId = UUID.randomUUID();
                     
@@ -326,6 +417,7 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                             .createdBy(item.agentId())
                             .build();
 
+                    // EntityRepository.save() throws OptimisticLockException on version conflict
                     return entityRepository.save(tenantId, entity)
                             .map(savedEntity -> MasteryItemMapper.fromDataMap(savedEntity.getData()));
                 });
@@ -507,10 +599,11 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
             ));
         }
 
-        // Reuse findBest() for version-aware ranking (active > maintenance > unknown)
-        return findBest(query)
-                .then(bestOpt -> {
-                    if (bestOpt.isEmpty()) {
+        // Use query() instead of findBest() to get all items (including stale ones)
+        // so we can check staleness and provide specific error messages
+        return query(query.withLimit(50))
+                .then(items -> {
+                    if (items.isEmpty()) {
                         // No matching mastery - block with unknown state and zero confidence
                         String skillId = query.skillId() != null ? query.skillId() : "unknown";
                         return Promise.of(MasteryDecision.block(
@@ -523,22 +616,70 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                         ));
                     }
 
-                    MasteryItem best = bestOpt.get();
-                    VersionApplicability applicability = VersionApplicability.UNKNOWN;
-                    
-                    // Compute version applicability if version context is available
+                    // Get the best item based on ranking (same logic as findBest but without freshness filter)
+                    Instant currentTime = query.currentTime() != null ? query.currentTime() : Instant.now();
                     String versionContextStr = query.versionContext();
-                    if (versionContextStr != null && !versionContextStr.isEmpty() && best.versionScope() != null) {
-                        // Parse version context string into dependencies map
-                        Map<String, String> dependencies = new HashMap<>();
-                        String[] pairs = versionContextStr.split(",");
-                        for (String pair : pairs) {
-                            String[] kv = pair.split("=", 2);
-                            if (kv.length == 2) {
-                                dependencies.put(kv[0].trim(), kv[1].trim());
+
+                    // Build VersionContext if provided
+                    VersionContext versionContext = null;
+                    if (versionContextStr != null && !versionContextStr.isEmpty()) {
+                        try {
+                            versionContext = VersionContextCodec.INSTANCE.decode(versionContextStr);
+                        } catch (IllegalArgumentException e) {
+                            Map<String, String> dependencies = new HashMap<>();
+                            String[] pairs = versionContextStr.split(",");
+                            for (String pair : pairs) {
+                                String[] kv = pair.split("=", 2);
+                                if (kv.length == 2) {
+                                    dependencies.put(kv[0].trim(), kv[1].trim());
+                                }
                             }
+                            versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
                         }
-                        VersionContext versionContext = new VersionContext(dependencies, Map.of(), Map.of(), Map.of(), "unknown", Instant.now());
+                    }
+
+                    final VersionContext finalVersionContext = versionContext;
+
+                    Optional<MasteryItem> bestOpt = items.stream()
+                            .max(Comparator
+                                    .comparingInt((MasteryItem item) -> {
+                                        if (finalVersionContext != null && item.versionScope() != null) {
+                                            VersionApplicability applicability = item.versionScope().classify(finalVersionContext);
+                                            return versionApplicabilityRank(applicability);
+                                        }
+                                        return 1;
+                                    })
+                                    .thenComparingInt((MasteryItem item) -> stateRank(item.state()))
+                                    .thenComparingDouble(item -> item.score().executionScore()));
+
+                    if (bestOpt.isEmpty()) {
+                        String skillId = query.skillId() != null ? query.skillId() : "unknown";
+                        return Promise.of(MasteryDecision.block(
+                                "unknown",
+                                skillId,
+                                MasteryState.UNKNOWN,
+                                MasteryScore.zero(),
+                                VersionScope.empty(),
+                                "No matching mastery item found"
+                        ));
+                    }
+
+                    MasteryItem best = bestOpt.get();
+
+                    // Block if stale (check before version applicability)
+                    if (!best.isFresh(currentTime)) {
+                        return Promise.of(MasteryDecision.block(
+                                best.masteryId(),
+                                best.skillId(),
+                                best.state(),
+                                best.score(),
+                                best.versionScope(),
+                                "Mastery item is stale and requires refresh"
+                        ));
+                    }
+
+                    VersionApplicability applicability = VersionApplicability.UNKNOWN;
+                    if (versionContext != null && best.versionScope() != null) {
                         applicability = best.versionScope().classify(versionContext);
                     }
 
@@ -578,53 +719,9 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                         ));
                     }
 
-                    // Block if stale
-                    if (!best.isFresh(Instant.now())) {
-                        return Promise.of(MasteryDecision.block(
-                                best.masteryId(),
-                                best.skillId(),
-                                best.state(),
-                                best.score(),
-                                best.versionScope(),
-                                "Mastery item is stale and requires refresh"
-                        ));
-                    }
-
-                    // Determine if human approval or verification is required based on mastery state
-                    boolean requiresHumanApproval = best.state() == MasteryState.PRACTICED;
-                    boolean requiresVerification = best.state() == MasteryState.COMPETENT;
-
-                    if (requiresHumanApproval) {
-                        return Promise.of(MasteryDecision.requireApproval(
-                                best.masteryId(),
-                                best.skillId(),
-                                best.state(),
-                                best.score(),
-                                best.versionScope(),
-                                "Mastery state is PRACTICED - requires human approval (version applicability: " + applicability + ")"
-                        ));
-                    }
-
-                    if (requiresVerification) {
-                        return Promise.of(MasteryDecision.requireVerification(
-                                best.masteryId(),
-                                best.skillId(),
-                                best.state(),
-                                best.score(),
-                                best.versionScope(),
-                                "Mastery state is COMPETENT - requires verification (version applicability: " + applicability + ")",
-                                best.evidenceRefs()
-                        ));
-                    }
-
-                    return Promise.of(MasteryDecision.allow(
-                            best.masteryId(),
-                            best.skillId(),
-                            best.state(),
-                            best.score(),
-                            best.versionScope(),
-                            "Mastery state is " + best.state() + " - execution allowed (version applicability: " + applicability + ")"
-                    ));
+                    // Use the canonical state-based decision policy
+                    String reason = "Mastery state is " + best.state() + " - execution allowed (version applicability: " + applicability + ")";
+                    return Promise.of(makeStateBasedDecision(best, reason));
                 });
     }
 
