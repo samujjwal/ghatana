@@ -184,7 +184,7 @@ describe('ProductLifecyclePlanner', () => {
   it('should fall back to file planning when registry provider lookup fails', async () => {
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const context: ProductLifecyclePlannerProviderContext = {
-      ...createPlatformProviderContext(),
+      ...createFullPlatformProviderContext(),
       registryProvider: {
         providerId: 'failing-registry',
         version: '1.0.0',

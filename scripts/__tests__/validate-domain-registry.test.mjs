@@ -4,6 +4,55 @@ import test from 'node:test';
 import { validateDomainRegistryDocument } from '../validate-domain-registry.mjs';
 
 const productIds = new Set(['digital-marketing', 'phr', 'finance', 'flashit', 'data-cloud', 'yappc']);
+const schema = {
+  type: 'object',
+  required: ['version', 'domains'],
+  properties: {
+    version: { type: 'string' },
+    domains: {
+      type: 'array',
+      minItems: 1,
+      items: {
+        type: 'object',
+        required: [
+          'id',
+          'name',
+          'ownerLayer',
+          'classification',
+          'primaryLocations',
+          'secondaryLocations',
+          'allowedConsumers',
+          'forbiddenDependencies',
+          'requiredChecks',
+          'productAssociations',
+          'currentStateEvidence',
+        ],
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          ownerLayer: { type: 'string' },
+          classification: {
+            type: 'string',
+            enum: [
+              'existing-executable',
+              'existing-partial',
+              'declared-only',
+              'target-architecture',
+              'anti-pattern',
+            ],
+          },
+          primaryLocations: { type: 'array', minItems: 1, items: { type: 'string' } },
+          secondaryLocations: { type: 'array', items: { type: 'string' } },
+          allowedConsumers: { type: 'array', items: { type: 'string' } },
+          forbiddenDependencies: { type: 'array', items: { type: 'string' } },
+          requiredChecks: { type: 'array', items: { type: 'string' } },
+          productAssociations: { type: 'array', items: { type: 'string' } },
+          currentStateEvidence: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+  },
+};
 
 function validDocument() {
   return {
@@ -28,6 +77,7 @@ function validDocument() {
 
 test('valid registry passes', () => {
   const issues = validateDomainRegistryDocument(validDocument(), {
+    schema,
     productIds,
     pathExists: () => true,
   });
@@ -40,6 +90,7 @@ test('missing required field fails', () => {
   delete document.domains[0].name;
 
   const issues = validateDomainRegistryDocument(document, {
+    schema,
     productIds,
     pathExists: () => true,
   });
@@ -52,6 +103,7 @@ test('unknown classification fails', () => {
   document.domains[0].classification = 'implemented';
 
   const issues = validateDomainRegistryDocument(document, {
+    schema,
     productIds,
     pathExists: () => true,
   });
@@ -64,6 +116,7 @@ test('invalid product association fails', () => {
   document.domains[0].productAssociations = ['unknown-product'];
 
   const issues = validateDomainRegistryDocument(document, {
+    schema,
     productIds,
     pathExists: () => true,
   });
@@ -73,6 +126,7 @@ test('invalid product association fails', () => {
 
 test('missing path fails for non-target architecture domains', () => {
   const issues = validateDomainRegistryDocument(validDocument(), {
+    schema,
     productIds,
     pathExists: () => false,
   });
@@ -85,9 +139,23 @@ test('target-architecture missing path passes when classification is explicit', 
   document.domains[0].classification = 'target-architecture';
 
   const issues = validateDomainRegistryDocument(document, {
+    schema,
     productIds,
     pathExists: () => false,
   });
 
   assert(!issues.some((issue) => issue.issue.includes('does not exist')));
+});
+
+test('schema violation fails when required array is missing', () => {
+  const document = validDocument();
+  delete document.domains[0].requiredChecks;
+
+  const issues = validateDomainRegistryDocument(document, {
+    schema,
+    productIds,
+    pathExists: () => true,
+  });
+
+  assert(issues.some((issue) => issue.issue.includes('schema violation')));
 });

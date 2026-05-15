@@ -236,6 +236,24 @@ export * from '../theme/ThemeProvider.js';
 // ── Accessibility ──────────────────────────────────────────────────────────
 export * from '../accessibility/accessibility.js';
 export * from '../accessibility/AccessibilityProvider.js';
+export {
+  TraversableRegistry,
+  TraversalEngine,
+  AriaLabelGenerator,
+  FocusVisibleManager,
+  getNonColorStatusSignal,
+  applyNonColorStatus,
+  reconcileFocusPath,
+  isFocusPathValid,
+  NON_COLOR_STATUS_SIGNALS,
+  type TraversalDirection,
+  type TraversableElement,
+  type TraversalResult,
+  type FocusVisibleState,
+  type NonColorStatus,
+  type NonColorPattern,
+  type NonColorStatusSignal,
+} from '../accessibility/keyboard-traversal.js';
 
 // ── Core systems ───────────────────────────────────────────────────────────
 export * from '../core/viewport.js';
@@ -377,6 +395,97 @@ export * from '../elements/portal.js';
 // @ghatana/ui-builder for BuilderDocument, scene projection, codegen, and
 // contract-aware builder operations instead.
 // export * from '../ui-builder/index.js'; // intentionally removed
+
+// ── Semantic Zoom / Multilevel Visual Context ───────────────────────────────
+export type {
+  SemanticZoomLevel,
+  SemanticZoomBand,
+  FocusPath,
+  FocusPathSegment,
+  ViewportContext,
+  ContextShiftPolicy,
+  DetailDisclosurePolicy,
+  DisclosureThreshold,
+  ZoomValidationResult,
+  ZoomKeyboardCommand,
+} from '../core/semantic-zoom.js';
+export {
+  DEFAULT_ZOOM_BANDS,
+  createFocusPath,
+  pushFocusSegment,
+  popFocusSegment,
+  truncateFocusPath,
+  getCurrentFocusSegment,
+  createViewportContext,
+  serializeViewportContext,
+  deserializeViewportContext,
+  DEFAULT_CONTEXT_SHIFT_POLICY,
+  KEYBOARD_CONTEXT_SHIFT_POLICY,
+  REDUCED_MOTION_CONTEXT_SHIFT_POLICY,
+  isContextShiftAllowed,
+  calculateTransitionDuration,
+  PROGRESSIVE_DISCLOSURE_POLICY,
+  getDisclosureThreshold,
+  isDetailDisclosureAllowed,
+  resolveZoomLevel,
+  getZoomBand,
+  getDefaultScaleForLevel,
+  snapToSemanticLevel,
+  validateZoomBands,
+  ZOOM_KEYBOARD_SHORTCUTS,
+  handleZoomKeyboardEvent,
+  semanticZoomLevelAtom,
+  focusPathAtom,
+  viewportContextAtom,
+  contextShiftPolicyAtom,
+  detailDisclosurePolicyAtom,
+  SemanticZoomManager,
+} from '../core/semantic-zoom.js';
+
+// ── Diagram Primitives ─────────────────────────────────────────────────────
+export type {
+  DiagramType,
+  Diagram,
+  DiagramNode,
+  DiagramEdge,
+  LayoutConfig,
+  LayoutValidationResult,
+  DiagramValidationResult,
+  DiagramValidationError,
+  DiagramValidationWarning,
+  NodeShape,
+  NodeStyle,
+  EdgeRouting,
+  ArrowHead,
+  EdgeStyle,
+  Swimlane,
+  SwimlanePhase,
+  FlowNode,
+  FlowNodeType,
+  FlowEdge,
+  DagNode,
+  DagEdge,
+  TopologyNode,
+  TopologyNodeType,
+  TopologyEdge,
+  TopologyEdgeType,
+  SwimlaneNode,
+  DependencyNode,
+  DependencyEdge,
+  DependencyType,
+  ProvenanceNode,
+  ProvenanceNodeType,
+  ProvenanceEdge,
+  ProvenanceEdgeType,
+} from '../diagram/types.js';
+export {
+  isValidDiagramType,
+  getValidDiagramTypes,
+  validateDiagram,
+  validateLayoutConfig,
+  createDiagram,
+  DiagramBuilder,
+} from '../diagram/types.js';
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 export * from '../utils/export-import.js';

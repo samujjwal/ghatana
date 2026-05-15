@@ -169,6 +169,7 @@ describe('KernelLifecycleService', () => {
       providerContext: {
         ...createBootstrapProviderContext(),
         mode: 'platform',
+        memory: undefined,
       },
     });
 
@@ -228,6 +229,13 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
       capabilities: ['provenance'],
       recordProvenance: vi.fn().mockResolvedValue({ success: true, ref: 'provenance.json' }),
       listProvenance: vi.fn().mockResolvedValue([]),
+    },
+    memory: {
+      providerId: 'memory',
+      version: '1.0.0',
+      capabilities: ['memory'],
+      recordMemory: vi.fn().mockResolvedValue({ success: true, ref: 'memory.json' }),
+      listMemory: vi.fn().mockResolvedValue([]),
     },
     runtimeTruth: {
       providerId: 'runtime-truth',

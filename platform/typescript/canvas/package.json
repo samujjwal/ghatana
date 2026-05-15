@@ -110,6 +110,8 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/dagre": "^0.7.54",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",

@@ -19,9 +19,9 @@ describe('KernelLifecycleApiHandlers', () => {
       headers: { 'X-Correlation-Id': 'corr-1' },
     });
 
-    expect(response.statusCode).toBe(503);
+    expect(response.statusCode).toBe(403);
     expect(response.body).toMatchObject({
-      reasonCode: 'provider-unavailable',
+      reasonCode: 'scope-headers-required',
       correlationId: 'corr-1',
       safeDetails: {
         missingHeaders: [

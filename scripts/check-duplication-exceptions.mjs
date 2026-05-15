@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateJsonSchemaLite } from './lib/validate-json-schema-lite.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -15,12 +16,29 @@ function formatIssue(field, issue, remediation) {
   return { field, issue, remediation };
 }
 
+function readSchema() {
+  return readJson('config/duplication-exceptions.schema.json');
+}
+
 export function validateDuplicationExceptions(document, options = {}) {
   const today = options.today ?? new Date().toISOString().slice(0, 10);
+  const schema = options.schema ?? readSchema();
   const issues = [];
 
   if (!document || typeof document !== 'object') {
     return [formatIssue('document', 'must be an object', 'Load config/duplication-exceptions.json as an object.')];
+  }
+
+  const schemaErrors = validateJsonSchemaLite(schema, document);
+  for (const schemaError of schemaErrors) {
+    const field = schemaError.path.startsWith('#/') ? schemaError.path.slice(2).replace(/\//g, '.') : schemaError.path;
+    issues.push(
+      formatIssue(
+        field,
+        `schema violation: ${schemaError.message}`,
+        'Update config/duplication-exceptions.json to satisfy config/duplication-exceptions.schema.json.',
+      ),
+    );
   }
   if (typeof document.version !== 'string' || !/^\d+\.\d+\.\d+$/.test(document.version)) {
     issues.push(formatIssue('version', 'must be a semver string', 'Set version to a string like 1.0.0.'));

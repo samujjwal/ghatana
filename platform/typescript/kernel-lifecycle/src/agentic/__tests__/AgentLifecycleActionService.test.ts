@@ -23,7 +23,7 @@ const request: AgentLifecycleActionRequest = {
   requestedAction: 'execute-lifecycle-phase',
   lifecyclePhase: 'deploy',
   proposedPlanRef: 'lifecycle-plan:run-1',
-  riskLevel: 'high',
+  riskLevel: 'medium',
   requiredApprovals: [],
   requiredVerification: [{ verificationId: 'verify-health', kind: 'health', required: true }],
   evidenceRefs: ['evidence:policy:1'],

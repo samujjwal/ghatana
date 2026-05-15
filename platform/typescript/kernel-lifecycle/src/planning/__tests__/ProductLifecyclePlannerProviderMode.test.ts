@@ -26,6 +26,7 @@ import type {
 
 describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
   let tempDir: string;
+  let configDir: string;
   let registryPath: string;
   let exclusionsPath: string;
   let profilesPath: string;
@@ -34,10 +35,12 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "planner-test-"));
-    registryPath = path.join(tempDir, "registry.json");
-    exclusionsPath = path.join(tempDir, "exclusions.json");
-    profilesPath = path.join(tempDir, "profiles.json");
-    toolchainPath = path.join(tempDir, "toolchain.json");
+    configDir = path.join(tempDir, "config");
+    registryPath = path.join(configDir, "canonical-product-registry.json");
+    exclusionsPath = path.join(configDir, "kernel-lifecycle-exclusions.json");
+    profilesPath = path.join(configDir, "product-lifecycle-profiles.json");
+    toolchainPath = path.join(configDir, "toolchain-adapter-registry.json");
+    await fs.mkdir(configDir, { recursive: true });
 
     // Create minimal registry
     const registry = {
@@ -56,7 +59,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     await fs.writeFile(registryPath, JSON.stringify(registry, null, 2), "utf-8");
 
     // Create minimal exclusions
-    const exclusions = { excluded: [] };
+    const exclusions = { excludedProducts: {} };
     await fs.writeFile(exclusionsPath, JSON.stringify(exclusions, null, 2), "utf-8");
 
     // Create minimal profiles
@@ -77,8 +80,6 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     await fs.writeFile(toolchainPath, JSON.stringify(toolchains, null, 2), "utf-8");
 
     // Create minimal kernel-product.yaml
-    const configDir = path.join(tempDir, "config");
-    await fs.mkdir(configDir, { recursive: true });
     const kernelProductConfig = {
       productId: "test-product",
       lifecycleProfile: "default",
@@ -97,12 +98,94 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     };
     await fs.writeFile(
       path.join(configDir, "kernel-product.yaml"),
-      kernelProductConfig as unknown as string,
+      JSON.stringify(kernelProductConfig, null, 2),
       "utf-8"
     );
 
     planner = new ProductLifecyclePlanner(tempDir, configDir);
   });
+
+  function createRegistryProviderStub(): RegistryProvider {
+    return {
+      providerId: "registry",
+      version: "1.0.0",
+      capabilities: ["product-units"],
+      getProductUnit: async () => null,
+      listProductUnits: async () => [],
+      listProductUnitsByKind: async () => [],
+      validateProductUnit: async () => ({ valid: true, errors: [] }),
+    };
+  }
+
+  function createSourceProviderStub(): SourceProvider {
+    return {
+      providerId: "source",
+      version: "1.0.0",
+      capabilities: ["source"],
+      getSource: async () => ({ sourceRef: "test-source", path: "products/test-product" }),
+      listSources: async () => [],
+    };
+  }
+
+  function createEventProviderStub(): LifecycleEventProvider {
+    return {
+      providerId: "events",
+      version: "1.0.0",
+      capabilities: ["events"],
+      appendEvent: async () => ({ success: true, ref: "events.jsonl" }),
+      listEvents: async () => [],
+    };
+  }
+
+  function createArtifactProviderStub(): LifecycleArtifactProvider {
+    return {
+      providerId: "artifacts",
+      version: "1.0.0",
+      capabilities: ["artifact-manifests"],
+      recordArtifactManifest: async () => ({ success: true, ref: "artifact-manifest.json" }),
+      listArtifactManifests: async () => [],
+    };
+  }
+
+  function createHealthProviderStub(): LifecycleHealthProvider {
+    return {
+      providerId: "health",
+      version: "1.0.0",
+      capabilities: ["health"],
+      recordHealthSnapshot: async () => ({ success: true, ref: "health.json" }),
+      getLatestHealthSnapshot: async () => null,
+    };
+  }
+
+  function createApprovalProviderStub(): LifecycleApprovalProvider {
+    return {
+      providerId: "approvals",
+      version: "1.0.0",
+      capabilities: ["approvals"],
+      requestLifecycleApproval: async () => ({ success: true, ref: "approval.json" }),
+      decideLifecycleApproval: async () => ({ success: true, ref: "approval.json" }),
+    };
+  }
+
+  function createProvenanceProviderStub(): LifecycleProvenanceProvider {
+    return {
+      providerId: "provenance",
+      version: "1.0.0",
+      capabilities: ["provenance"],
+      recordProvenance: async () => ({ success: true, ref: "provenance.json" }),
+      listProvenance: async () => [],
+    };
+  }
+
+  function createRuntimeTruthProviderStub(): LifecycleRuntimeTruthProvider {
+    return {
+      providerId: "runtime-truth",
+      version: "1.0.0",
+      capabilities: ["runtime-truth"],
+      recordRuntimeTruth: async () => ({ success: true, ref: "runtime-truth.json" }),
+      getRuntimeTruth: async () => null,
+    };
+  }
 
   afterEach(async () => {
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -124,7 +207,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         mode: "bootstrap",
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, partialContext as KernelLifecycleProviderContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, partialContext as KernelLifecycleProviderContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "bootstrap",
       };
@@ -152,7 +235,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         mode: "bootstrap",
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, wrongContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, wrongContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: false,
@@ -166,11 +249,11 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     it("should reject platform mode with missing required providers", async () => {
       const incompleteContext: KernelLifecycleProviderContext = {
         mode: "platform",
-        registryProvider: {} as RegistryProvider,
+        registryProvider: createRegistryProviderStub(),
         // Missing: sourceProvider, artifacts, events, health, approvals, provenance, runtimeTruth
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, incompleteContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: false,
@@ -184,17 +267,17 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     it("should accept platform mode with all required providers", async () => {
       const completeContext: KernelLifecycleProviderContext = {
         mode: "platform",
-        registryProvider: {} as RegistryProvider,
-        sourceProvider: {} as SourceProvider,
-        artifacts: {} as LifecycleArtifactProvider,
-        events: {} as LifecycleEventProvider,
-        health: {} as LifecycleHealthProvider,
-        approvals: {} as LifecycleApprovalProvider,
-        provenance: {} as LifecycleProvenanceProvider,
-        runtimeTruth: {} as LifecycleRuntimeTruthProvider,
+        registryProvider: createRegistryProviderStub(),
+        sourceProvider: createSourceProviderStub(),
+        artifacts: createArtifactProviderStub(),
+        events: createEventProviderStub(),
+        health: createHealthProviderStub(),
+        approvals: createApprovalProviderStub(),
+        provenance: createProvenanceProviderStub(),
+        runtimeTruth: createRuntimeTruthProviderStub(),
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, completeContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, completeContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: false,
@@ -234,7 +317,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         mode: "bootstrap",
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, wrongContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, wrongContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: true,
@@ -259,11 +342,11 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     it("should fall back to bootstrap when allowBootstrapFallback: true and providers missing", async () => {
       const incompleteContext: KernelLifecycleProviderContext = {
         mode: "platform",
-        registryProvider: {} as RegistryProvider,
+        registryProvider: createRegistryProviderStub(),
         // Missing: sourceProvider, artifacts, events, health, approvals, provenance, runtimeTruth
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, incompleteContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: true,
@@ -304,10 +387,10 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     it("should not fall back when allowBootstrapFallback: false and providers missing", async () => {
       const incompleteContext: KernelLifecycleProviderContext = {
         mode: "platform",
-        registryProvider: {} as RegistryProvider,
+        registryProvider: createRegistryProviderStub(),
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, incompleteContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext);
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: false,
@@ -335,7 +418,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
 
     it("should default to bootstrap when providerContext has no mode", async () => {
       const contextWithoutMode = {} as KernelLifecycleProviderContext;
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, contextWithoutMode);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, contextWithoutMode);
       const options: ProductLifecyclePlanOptions = {};
 
       const plan = await plannerWithContext.plan("test-product", "dev", options);
@@ -346,17 +429,17 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
     it("should use providerContext.mode when available", async () => {
       const contextWithMode: KernelLifecycleProviderContext = {
         mode: "bootstrap",
-        registryProvider: {} as RegistryProvider,
-        sourceProvider: {} as SourceProvider,
-        artifacts: {} as LifecycleArtifactProvider,
-        events: {} as LifecycleEventProvider,
-        health: {} as LifecycleHealthProvider,
-        approvals: {} as LifecycleApprovalProvider,
-        provenance: {} as LifecycleProvenanceProvider,
-        runtimeTruth: {} as LifecycleRuntimeTruthProvider,
+        registryProvider: createRegistryProviderStub(),
+        sourceProvider: createSourceProviderStub(),
+        artifacts: createArtifactProviderStub(),
+        events: createEventProviderStub(),
+        health: createHealthProviderStub(),
+        approvals: createApprovalProviderStub(),
+        provenance: createProvenanceProviderStub(),
+        runtimeTruth: createRuntimeTruthProviderStub(),
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, tempDir, contextWithMode);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, contextWithMode);
       const options: ProductLifecyclePlanOptions = {};
 
       const plan = await plannerWithContext.plan("test-product", "dev", options);

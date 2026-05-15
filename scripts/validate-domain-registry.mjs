@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateJsonSchemaLite } from './lib/validate-json-schema-lite.mjs';
 
 export const DOMAIN_CLASSIFICATIONS = new Set([
   'existing-executable',
@@ -21,6 +22,26 @@ function formatIssue(domainId, field, issue, remediation) {
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
+}
+
+function domainIdFromSchemaPath(document, schemaPath) {
+  const match = /^#\/domains\/(\d+)(?:\/|$)/.exec(schemaPath);
+  if (!match) {
+    return '<registry>';
+  }
+  const domainIndex = Number(match[1]);
+  return document?.domains?.[domainIndex]?.id ?? '<unknown>';
+}
+
+function fieldFromSchemaPath(schemaPath) {
+  if (!schemaPath.startsWith('#/')) {
+    return schemaPath;
+  }
+  const segments = schemaPath
+    .slice(2)
+    .split('/')
+    .filter((segment) => segment !== 'domains' && !/^\d+$/.test(segment));
+  return segments.length > 0 ? segments.join('.') : 'document';
 }
 
 function isNonEmptyString(value) {
@@ -48,9 +69,22 @@ export function validateDomainRegistryDocument(document, options = {}) {
   const productIds = options.productIds ?? new Set();
   const root = options.repoRoot ?? repoRoot;
   const pathExists = options.pathExists ?? ((relativePath) => existsSync(path.join(root, relativePath)));
+  const schema = options.schema ?? readJson(path.join(root, 'config/domain-registry.schema.json'));
 
   if (!document || typeof document !== 'object') {
     return [formatIssue('<registry>', 'document', 'must be an object', 'Load a JSON object for the registry document.')];
+  }
+
+  const schemaErrors = validateJsonSchemaLite(schema, document);
+  for (const schemaError of schemaErrors) {
+    issues.push(
+      formatIssue(
+        domainIdFromSchemaPath(document, schemaError.path),
+        fieldFromSchemaPath(schemaError.path),
+        `schema violation: ${schemaError.message}`,
+        'Update config/domain-registry.json to satisfy config/domain-registry.schema.json.',
+      ),
+    );
   }
 
   if (!isNonEmptyString(document.version) || !/^\d+\.\d+\.\d+$/.test(document.version)) {
@@ -123,8 +157,14 @@ export function loadCanonicalProductIds(root = repoRoot) {
 export function validateDomainRegistryFiles(options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const document = options.document ?? readJson(path.join(root, 'config/domain-registry.json'));
+  const schema = options.schema ?? readJson(path.join(root, 'config/domain-registry.schema.json'));
   const productIds = options.productIds ?? loadCanonicalProductIds(root);
-  return validateDomainRegistryDocument(document, { repoRoot: root, productIds, pathExists: options.pathExists });
+  return validateDomainRegistryDocument(document, {
+    repoRoot: root,
+    schema,
+    productIds,
+    pathExists: options.pathExists,
+  });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

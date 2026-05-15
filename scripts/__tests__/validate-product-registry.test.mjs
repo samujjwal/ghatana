@@ -3,6 +3,52 @@ import test from 'node:test';
 
 import { validateProductRegistryDocument } from '../validate-product-registry.mjs';
 
+const schema = {
+  type: 'object',
+  required: ['version', 'registry'],
+  properties: {
+    version: { type: 'string' },
+    registry: {
+      type: 'object',
+      additionalProperties: {
+        type: 'object',
+        required: ['id', 'name', 'description', 'kind', 'type', 'metadata', 'gradleModules', 'surfaces'],
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          description: { type: 'string' },
+          kind: {
+            type: 'string',
+            enum: ['platform-provider', 'business-product', 'shared-service', 'domain-pack', 'demo/example'],
+          },
+          type: { type: 'string' },
+          metadata: {
+            type: 'object',
+            required: ['owner', 'status'],
+            properties: {
+              owner: { type: 'string' },
+              status: { type: 'string' },
+            },
+          },
+          gradleModules: { type: 'array', items: { type: 'string' } },
+          surfaces: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['type', 'path', 'implementationStatus'],
+              properties: {
+                type: { type: 'string' },
+                path: { type: 'string' },
+                implementationStatus: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 function createRegistry() {
   return {
     version: '1.0.0',
@@ -55,6 +101,7 @@ function createRegistry() {
 
 test('valid registry passes', () => {
   const issues = validateProductRegistryDocument(createRegistry(), {
+    schema,
     generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
     pnpmWorkspace: '',
     pathExists: () => true,
@@ -70,6 +117,7 @@ test('valid registry passes', () => {
 
 test('bridge adapter test file missing fails', () => {
   const issues = validateProductRegistryDocument(createRegistry(), {
+    schema,
     generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
     pnpmWorkspace: '',
     pathExists: (relativePath) => relativePath !== 'bridge.test.java',
@@ -85,6 +133,7 @@ test('enabled mismatch fails', () => {
   registry.registry['digital-marketing'].lifecycleStatus = 'planned';
 
   const issues = validateProductRegistryDocument(registry, {
+    schema,
     generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
     pnpmWorkspace: '',
     pathExists: () => true,
@@ -101,6 +150,7 @@ test('platform provider enabled fails', () => {
   registry.registry['data-cloud'].lifecycle = { enabled: true };
 
   const issues = validateProductRegistryDocument(registry, {
+    schema,
     generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
     pnpmWorkspace: '',
     pathExists: () => true,
@@ -113,6 +163,7 @@ test('platform provider enabled fails', () => {
 
 test('disabled product yaml must remain fail closed', () => {
   const issues = validateProductRegistryDocument(createRegistry(), {
+    schema,
     generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
     pnpmWorkspace: '',
     pathExists: () => true,
@@ -124,4 +175,20 @@ test('disabled product yaml must remain fail closed', () => {
   });
 
   assert(issues.some((problem) => problem.message.includes('must set executionEnabled: false')));
+});
+
+test('schema violation fails on unknown kind', () => {
+  const registry = createRegistry();
+  registry.registry.phr.kind = 'unknown-kind';
+
+  const issues = validateProductRegistryDocument(registry, {
+    schema,
+    generatedIncludes: 'include(":products:digital-marketing:dm-api")\ninclude(":products:phr")\ninclude(":products:data-cloud:delivery:api")',
+    pnpmWorkspace: '',
+    pathExists: () => true,
+    yamlReader: () => ({ executionEnabled: false, readiness: { requiredGates: ['consent'] } }),
+    runArtifactCheck: () => 'ok',
+  });
+
+  assert(issues.some((problem) => problem.message.includes('schema violation')));
 });

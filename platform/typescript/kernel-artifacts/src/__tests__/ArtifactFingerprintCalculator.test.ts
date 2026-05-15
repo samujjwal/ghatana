@@ -61,12 +61,21 @@ describe('ArtifactFingerprintCalculator', () => {
     expect(withGenerated.fingerprint.hash).toBe(baseline.fingerprint.hash);
   });
 
-  it('fingerprints individual files and ignores non-file directory entries', async () => {
+  it('fingerprints individual files and ignores non-file directory entries when available', async () => {
     await fs.mkdir(path.join(testDir, 'dist', 'nested', '.cache'), { recursive: true });
     await fs.writeFile(path.join(testDir, 'dist', 'index.html'), '<html></html>');
     await fs.writeFile(path.join(testDir, 'dist', 'nested', 'chunk.js'), 'console.log("chunk");');
     await fs.writeFile(path.join(testDir, 'dist', 'nested', '.cache', 'ignored.json'), '{}');
-    await fs.symlink(path.join(testDir, 'dist', 'index.html'), path.join(testDir, 'dist', 'index-link.html'));
+    let symlinkCreated = false;
+    try {
+      await fs.symlink(path.join(testDir, 'dist', 'index.html'), path.join(testDir, 'dist', 'index-link.html'));
+      symlinkCreated = true;
+    } catch (error) {
+      const errorCode = error instanceof Error && 'code' in error ? String(error.code) : '';
+      if (errorCode !== 'EPERM' && errorCode !== 'UNKNOWN') {
+        throw error;
+      }
+    }
 
     const calculator = new ArtifactFingerprintCalculator();
     const fileResult = await calculator.calculateForPath(path.join(testDir, 'dist', 'index.html'));
@@ -75,6 +84,10 @@ describe('ArtifactFingerprintCalculator', () => {
     expect(fileResult.fingerprint.algorithm).toBe('sha256');
     expect(fileResult.sizeBytes).toBe('<html></html>'.length);
     expect(directoryResult.sizeBytes).toBe('<html></html>'.length + 'console.log("chunk");'.length);
+    if (symlinkCreated) {
+      const linkStats = await fs.lstat(path.join(testDir, 'dist', 'index-link.html'));
+      expect(linkStats.isSymbolicLink()).toBe(true);
+    }
   });
 
   it('creates manifests with semantic artifact packaging', () => {

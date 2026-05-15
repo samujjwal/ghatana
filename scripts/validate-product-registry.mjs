@@ -5,6 +5,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { validateJsonSchemaLite } from './lib/validate-json-schema-lite.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -15,6 +16,24 @@ function readJson(filePath) {
 
 function issue(productId, field, message, remediation) {
   return { productId, field, message, remediation };
+}
+
+function schemaPathToProductAndField(registry, schemaPath) {
+  const registryMatch = /^#\/registry\/([^/]+)(?:\/(.+))?$/.exec(schemaPath);
+  if (registryMatch) {
+    const productId = registryMatch[1].replace(/~1/g, '/').replace(/~0/g, '~');
+    const fieldPath = (registryMatch[2] ?? 'document').replace(/\//g, '.');
+    return { productId, field: fieldPath };
+  }
+
+  if (schemaPath.startsWith('#/')) {
+    return {
+      productId: '<registry>',
+      field: schemaPath.slice(2).replace(/\//g, '.'),
+    };
+  }
+
+  return { productId: '<registry>', field: schemaPath };
 }
 
 function pathExists(root, relativePath) {
@@ -75,9 +94,21 @@ export function validateProductRegistryDocument(registry, options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const yamlReader = options.yamlReader ?? ((relativePath) => readYamlFile(root, relativePath));
   const exists = options.pathExists ?? ((relativePath) => pathExists(root, relativePath));
+  const schema = options.schema ?? readJson(path.join(root, 'config/canonical-product-registry-schema.json'));
   const runArtifactCheck = options.runArtifactCheck ?? (() => execFileSync(process.execPath, [path.join(root, 'scripts/generate-product-registry-artifacts.mjs'), '--check'], { cwd: root, encoding: 'utf8' }));
   const packageDirectories = options.packageDirectories ?? listPackageJsonDirectories(root);
   const issues = [];
+
+  const schemaErrors = validateJsonSchemaLite(schema, registry);
+  for (const schemaError of schemaErrors) {
+    const location = schemaPathToProductAndField(registry, schemaError.path);
+    issues.push(issue(
+      location.productId,
+      location.field,
+      `schema violation: ${schemaError.message}`,
+      'Update config/canonical-product-registry.json to satisfy config/canonical-product-registry-schema.json.',
+    ));
+  }
 
   const entries = Object.entries(registry.registry ?? {});
   for (const [productId, product] of entries) {

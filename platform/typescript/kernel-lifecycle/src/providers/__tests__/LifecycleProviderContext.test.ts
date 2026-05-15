@@ -97,6 +97,7 @@ function bootstrapContext(): LifecycleProviderContext {
     health,
     approvals,
     provenance,
+    memory,
     runtimeTruth,
   };
 }
@@ -137,6 +138,7 @@ describe('LifecycleProviderContext', () => {
     expect(validateLifecycleProviderContext(bootstrapContext())).toEqual({
       valid: true,
       missingProviders: [],
+      invalidBackingStores: [],
       mode: 'bootstrap',
       reasonCodes: [],
     });
@@ -153,6 +155,7 @@ describe('LifecycleProviderContext', () => {
     expect(validateLifecycleProviderContext(context)).toEqual({
       valid: false,
       missingProviders: ['memory', 'runtimeTruth'],
+      invalidBackingStores: [],
       mode: 'platform',
       reasonCodes: ['missing-provider'],
     });

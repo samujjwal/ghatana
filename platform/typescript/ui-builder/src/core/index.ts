@@ -166,3 +166,29 @@ export {
   dsViolationsToValidationResult,
   checkStoryContractParity,
 } from './ds-binding';
+
+export type {
+  BuilderDocument,
+  ValidationIssue,
+  ValidationIssueSeverity,
+  DocumentValidationResult,
+  MigrationFunction,
+} from './builder-document';
+
+export {
+  CURRENT_SCHEMA_VERSION,
+  SCHEMA_VERSIONS,
+  BuilderDocumentSchema,
+  createBuilderDocument,
+  validateBuilderDocument,
+  MIGRATIONS,
+  detectSchemaVersion,
+  migrateBuilderDocument,
+  serializeBuilderDocument,
+  deserializeBuilderDocument,
+  getNode,
+  getRootNodes,
+  getNodeBindings,
+  hasPrivacySensitiveData,
+  requiresAccessibility,
+} from './builder-document';
