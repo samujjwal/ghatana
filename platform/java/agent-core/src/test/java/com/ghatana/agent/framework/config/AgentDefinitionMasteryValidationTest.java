@@ -287,6 +287,7 @@ class AgentDefinitionMasteryValidationTest {
 
         if (!result.isValid()) {
             System.err.println("Validation errors: " + result.errors());
+            result.errors().forEach(System.err::println);
         }
         assertThat(result.isValid()).isTrue();
     }

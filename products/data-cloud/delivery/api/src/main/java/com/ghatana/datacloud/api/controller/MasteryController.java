@@ -142,8 +142,14 @@ public class MasteryController extends JsonServlet {
     }
 
     /**
-     * Save a mastery item with governance check.
+     * P1 FIX: Deprecated - Save a mastery item with governance check.
+     * This endpoint bypasses proper governance through LearningDelta + PromotionEngine.
+     * Use POST /learning-deltas to create learning deltas and POST /learning-deltas/{deltaId}/promote
+     * for proper mastery state transitions with evidence and policy validation.
+     *
+     * @deprecated Use LearningDelta + PromotionEngine workflow for mastery state changes
      */
+    @Deprecated
     public Promise<HttpResponse> saveMastery(@NotNull HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null || tenantId.isBlank()) {
@@ -170,8 +176,14 @@ public class MasteryController extends JsonServlet {
     }
 
     /**
-     * Transition a mastery item to a new state with governance check.
+     * P1 FIX: Deprecated - Transition a mastery item to a new state with governance check.
+     * This endpoint bypasses proper governance through LearningDelta + PromotionEngine or ObsolescenceTransitionService.
+     * Use POST /learning-deltas to create learning deltas and POST /learning-deltas/{deltaId}/promote
+     * for promotion transitions, or use ObsolescenceTransitionService for obsolescence transitions.
+     *
+     * @deprecated Use LearningDelta + PromotionEngine for promotion, or ObsolescenceTransitionService for obsolescence
      */
+    @Deprecated
     public Promise<HttpResponse> transition(@NotNull HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null || tenantId.isBlank()) {

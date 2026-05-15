@@ -166,7 +166,12 @@ public final class LearningDeltaMapper {
                 promotedAt,
                 rejectedAt,
                 labels,
-                rejectionReason
+                rejectionReason,
+                null, // approvalProofRef
+                null, // versionContextDigest
+                null, // environmentFingerprintRef
+                null, // repositoryConventionRef
+                null  // runtimeFingerprintRef
         );
     }
 

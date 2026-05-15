@@ -4,6 +4,7 @@
  */
 package com.ghatana.agent.promotion;
 
+import com.ghatana.agent.evaluation.EvaluationHarness;
 import com.ghatana.agent.evaluation.EvaluationResult;
 import com.ghatana.agent.learning.LearningDelta;
 import com.ghatana.agent.learning.LearningDeltaFactory;
@@ -110,6 +111,25 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
 
     private static EvaluationResult buildPassingEvaluation(String deltaId) {
         Instant now = Instant.now();
+        // Build case results that include regression and safety tests to pass promotion policy checks
+        List<EvaluationResult.TestCaseResult> caseResults = List.of(
+                new EvaluationResult.TestCaseResult(
+                        "regression-test-1",
+                        "regression-test-1",
+                        true,
+                        "passed",
+                        "",
+                        100
+                ),
+                new EvaluationResult.TestCaseResult(
+                        "safety-test-1",
+                        "safety-test-1",
+                        true,
+                        "passed",
+                        "",
+                        100
+                )
+        );
         return new EvaluationResult(
                 "result-1",
                 "pack-1",
@@ -117,12 +137,12 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
                 deltaId,
                 now,
                 now.plusSeconds(1),
-                5,
-                5,
+                2,
+                2,
                 0,
                 0,
                 100.0,
-                List.of(),
+                caseResults,
                 Map.of()
         );
     }
@@ -359,7 +379,12 @@ class DefaultPromotionEngineTest extends EventloopTestBase {
                 Instant.now(), // promotedAt
                 delta.rejectedAt(),
                 delta.labels(),
-                delta.rejectionReason()
+                delta.rejectionReason(),
+                null,
+                null,
+                null,
+                null,
+                null
         );
         EvaluationResult evaluation = buildPassingEvaluation(delta.deltaId());
         MasteryItem masteredItem = new MasteryItem(

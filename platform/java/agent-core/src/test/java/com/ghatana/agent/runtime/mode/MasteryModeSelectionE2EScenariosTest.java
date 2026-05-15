@@ -246,7 +246,8 @@ class MasteryModeSelectionE2EScenariosTest extends EventloopTestBase {
                 proposed.evidenceRefs(), proposed.evaluationRefs(), proposed.sourceEpisodeIds(),
                 proposed.rollbackRef(), proposed.confidenceBefore(), proposed.confidenceAfter(),
                 proposed.requiresHumanReview(), proposed.proposedBy(), proposed.proposedAt(),
-                Instant.now(), null, null, proposed.labels(), null
+                Instant.now(), null, null, proposed.labels(), null,
+                null, null, null, null, null
         );
 
         // Then: EVALUATED delta is promotable — EvaluationPack passed
@@ -263,7 +264,8 @@ class MasteryModeSelectionE2EScenariosTest extends EventloopTestBase {
                 evaluated.evidenceRefs(), evaluated.evaluationRefs(), evaluated.sourceEpisodeIds(),
                 evaluated.rollbackRef(), evaluated.confidenceBefore(), evaluated.confidenceAfter(),
                 evaluated.requiresHumanReview(), evaluated.proposedBy(), evaluated.proposedAt(),
-                evaluated.evaluatedAt(), Instant.now(), null, evaluated.labels(), null
+                evaluated.evaluatedAt(), Instant.now(), null, evaluated.labels(), null,
+                null, null, null, null, null
         );
 
         // Then: delta is PROMOTED — delta becomes active improvement, not stuck in PROPOSED

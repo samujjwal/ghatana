@@ -6,8 +6,10 @@ package com.ghatana.agent.release;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -52,6 +54,9 @@ public final class AgentReleaseBuilder {
     private Set<String> dataClassesHandled = new HashSet<>();
     private Set<String> permittedPurposes = new HashSet<>();
     private String capabilityMaturityProfile;
+    // Phase 1 FIX: Add skill-specific governance refs fields
+    private Map<String, String> skillEvaluationPackRefs = new HashMap<>();
+    private Map<String, String> masteryPolicyPackRefs = new HashMap<>();
     private Instant createdAt = Instant.now();
     private Instant updatedAt = Instant.now();
     private String createdBy;
@@ -88,6 +93,11 @@ public final class AgentReleaseBuilder {
     public AgentReleaseBuilder permittedPurposes(Set<String> p)   { this.permittedPurposes = new HashSet<>(p); return this; }
     public AgentReleaseBuilder addPermittedPurpose(String p)      { this.permittedPurposes.add(p); return this; }
     public AgentReleaseBuilder capabilityMaturityProfile(String p){ this.capabilityMaturityProfile = p; return this; }
+    // Phase 1 FIX: Add builder methods for skill-specific governance refs
+    public AgentReleaseBuilder skillEvaluationPackRefs(Map<String, String> refs) { this.skillEvaluationPackRefs = new HashMap<>(refs); return this; }
+    public AgentReleaseBuilder addSkillEvaluationPackRef(String skillId, String packId) { this.skillEvaluationPackRefs.put(skillId, packId); return this; }
+    public AgentReleaseBuilder masteryPolicyPackRefs(Map<String, String> refs) { this.masteryPolicyPackRefs = new HashMap<>(refs); return this; }
+    public AgentReleaseBuilder addMasteryPolicyPackRef(String skillId, String packId) { this.masteryPolicyPackRefs.put(skillId, packId); return this; }
     public AgentReleaseBuilder createdAt(Instant t)               { this.createdAt = t; return this; }
     public AgentReleaseBuilder updatedAt(Instant t)               { this.updatedAt = t; return this; }
     public AgentReleaseBuilder createdBy(String principal)        { this.createdBy = principal; return this; }
@@ -121,6 +131,7 @@ public final class AgentReleaseBuilder {
                 redactionProfileId, threatModelId,
                 Set.copyOf(dataClassesHandled), Set.copyOf(permittedPurposes),
                 capabilityMaturityProfile,
+                Map.copyOf(skillEvaluationPackRefs), Map.copyOf(masteryPolicyPackRefs),
                 createdAt, updatedAt, createdBy);
     }
 }

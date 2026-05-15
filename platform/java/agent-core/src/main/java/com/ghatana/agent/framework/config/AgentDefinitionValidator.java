@@ -314,6 +314,50 @@ public final class AgentDefinitionValidator {
             errors.add("[mastery] ADAPTIVE agents must declare skillRefs");
         }
 
+        // Phase 1 FIX: Every skillRef must have a matching mastery binding
+        // Only check if masteryBindings is a nested structure (skillId -> binding config)
+        // If masteryBindings is a flat config map, skip this check
+        boolean isNestedStructure = def.getMasteryBindings().values().stream()
+                .anyMatch(v -> v instanceof Map);
+        if (isNestedStructure && !def.getSkillRefs().isEmpty()) {
+            for (String skillRef : def.getSkillRefs()) {
+                boolean hasMatchingBinding = def.getMasteryBindings().entrySet().stream()
+                        .anyMatch(entry -> {
+                            Object bindingObj = entry.getValue();
+                            if (bindingObj instanceof Map) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> binding = (Map<String, Object>) bindingObj;
+                                String skillId = binding.get("skillId") != null 
+                                        ? binding.get("skillId").toString() 
+                                        : entry.getKey();
+                                return skillRef.equals(skillId);
+                            }
+                            return false;
+                        });
+                if (!hasMatchingBinding) {
+                    errors.add("[mastery] skillRef '" + skillRef + "' has no matching mastery binding");
+                }
+            }
+        }
+
+        // Phase 1 FIX: Every mastery binding must have a version compatibility policy
+        for (Map.Entry<String, Object> entry : def.getMasteryBindings().entrySet()) {
+            Object bindingObj = entry.getValue();
+            if (bindingObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> binding = (Map<String, Object>) bindingObj;
+                String versionCompatibilityPolicyRef = binding.get("versionCompatibilityPolicyRef") != null 
+                        ? binding.get("versionCompatibilityPolicyRef").toString() 
+                        : null;
+                String skillId = binding.get("skillId") != null 
+                        ? binding.get("skillId").toString() 
+                        : entry.getKey();
+                if (versionCompatibilityPolicyRef == null || versionCompatibilityPolicyRef.isBlank()) {
+                    errors.add("[mastery] mastery binding for skill '" + skillId + "' must have a version compatibility policy");
+                }
+            }
+        }
+
         // L3+ agents must declare masteryPolicyRefs and evaluationRefs
         com.ghatana.agent.learning.LearningLevel learningLevel = null;
         try {
@@ -330,6 +374,14 @@ public final class AgentDefinitionValidator {
             }
             if (def.getEvaluationRefs().isEmpty()) {
                 errors.add("[mastery] L3+ agents must declare evaluationRefs");
+            }
+        }
+
+        // Phase 1 FIX: L5 agent definitions must not be response-serving
+        if (learningLevel == com.ghatana.agent.learning.LearningLevel.L5) {
+            String status = def.getStatus();
+            if (status != null && (status.equalsIgnoreCase("ACTIVE") || status.equalsIgnoreCase("CANARY"))) {
+                errors.add("[mastery] L5 agent definitions must not be response-serving (status must not be ACTIVE or CANARY)");
             }
         }
     }

@@ -69,7 +69,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -139,7 +141,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.copyOf(sourceEpisodeIds), rollbackRef,
                 confidenceBefore, confidenceAfter, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -186,7 +190,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -233,7 +239,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -278,7 +286,9 @@ public final class LearningDeltaFactory {
                 List.copyOf(evaluationRefs), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -323,7 +333,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, confidenceAfter, true, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -358,7 +370,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -389,7 +403,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 
@@ -420,7 +436,9 @@ public final class LearningDeltaFactory {
                 List.of(), List.of(), null,
                 0.0, 0.0, false, proposedBy,
                 Instant.now(), null, null, null,
-                Map.of(), null
+                Map.of(), null, null,
+                // Phase 6 FIX: New environment/version fields (null for new deltas)
+                null, null, null, null
         );
     }
 

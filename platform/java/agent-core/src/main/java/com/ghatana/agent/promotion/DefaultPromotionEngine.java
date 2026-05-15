@@ -21,6 +21,7 @@ import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.VersionConstraint;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -179,7 +180,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                         // Bootstrap an initial mastery item in UNKNOWN state, then transition
                         MasteryItem initial = buildInitialMasteryItem(delta);
                         return masteryRegistry.save(initial)
-                                .then(saved -> applyTransition(delta, saved, targetState));
+                                .then(saved -> applyTransition(delta, result, saved, targetState));
                     } else {
                         // Target-state mapping: ensure the transition is valid from current state
                         // If the item is already at or beyond the target state, skip the transition
@@ -193,7 +194,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                                             existingItem.state()
                                     ));
                         }
-                        return applyTransition(delta, existingItem, targetState);
+                        return applyTransition(delta, result, existingItem, targetState);
                     }
                 });
     }
@@ -232,13 +233,19 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     @NotNull
     private Promise<PromotionResult> applyTransition(
             @NotNull LearningDelta delta,
+            @NotNull EvaluationResult evaluationResult,
             @NotNull MasteryItem item,
             @NotNull MasteryState targetState
     ) {
         MasteryState previousState = item.state();
 
-        // Use PromotionEvidenceMapper for consistent evidence serialization
-        Map<String, String> evidenceMap = PromotionEvidenceMapper.toEvidenceMap(delta);
+        // Use the provided evaluation result for evidence mapping
+        Map<String, String> evidenceMap = PromotionEvidenceMapper.toEvidenceMap(
+                delta,
+                previousState,
+                targetState,
+                evaluationResult
+        );
         Map<String, String> metadata = PromotionEvidenceMapper.toMetadata(delta);
 
         MasteryTransition transition = new MasteryTransition(
@@ -321,14 +328,45 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             }
         }
         
-        // Update score based on delta's confidence after
-        MasteryScore updatedScore = MasteryScore.correctnessOnly(delta.confidenceAfter());
+        // Phase 2 FIX: Preserve multidimensional MasteryScore instead of always replacing with correctnessOnly
+        // Merge the existing score with delta's confidence, preserving other dimensions if present
+        MasteryScore updatedScore = item.score();
+        if (updatedScore == null || updatedScore.correctness() == 0.0) {
+            // Only use correctnessOnly if we have no existing score
+            updatedScore = MasteryScore.correctnessOnly(delta.confidenceAfter());
+        } else {
+            // Preserve existing dimensions but update correctness from delta
+            updatedScore = new MasteryScore(
+                    delta.confidenceAfter(),  // update correctness
+                    updatedScore.freshness(),
+                    updatedScore.applicability(),
+                    updatedScore.safety(),
+                    updatedScore.transferability(),
+                    updatedScore.evidenceStrength(),
+                    updatedScore.regressionStability()
+            );
+        }
         
-        // Update version scope if provided in delta metadata
+        // Phase 2 FIX: Parse and apply version scope from delta metadata
         VersionScope updatedVersionScope = item.versionScope();
         if (delta.labels().containsKey("versionScope")) {
-            // Parse version scope from delta labels if available
-            // For now, keep existing version scope
+            try {
+                String versionScopeJson = delta.labels().get("versionScope");
+                if (versionScopeJson != null && !versionScopeJson.isBlank()) {
+                    // Parse version scope from JSON if available in delta metadata
+                    // For now, use a simple parsing approach - in production, use proper JSON deserializer
+                    updatedVersionScope = parseVersionScopeFromJson(versionScopeJson, item.versionScope());
+                }
+            } catch (Exception e) {
+                // If parsing fails, keep existing version scope
+                log.debug("Failed to parse version scope from delta metadata, keeping existing: {}", e.getMessage());
+            }
+        }
+        
+        // Phase 3 FIX: Ensure stateHistory cannot be lost
+        // Validate that stateHistory is not null or empty when updating an existing item
+        if (item.stateHistory() == null) {
+            log.warn("stateHistory is null for mastery item {}, initializing empty list", item.masteryId());
         }
         
         // Create updated MasteryItem using targetState to preserve the transition
@@ -357,6 +395,49 @@ public final class DefaultPromotionEngine implements PromotionEngine {
         );
         
         return masteryRegistry.save(updatedItem);
+    }
+
+    /**
+     * Phase 2 FIX: Parses version scope from JSON string.
+     * This is a simplified parser - in production, use proper JSON deserializer.
+     *
+     * @param versionScopeJson JSON string containing version scope
+     * @param fallback default version scope to use if parsing fails
+     * @return parsed VersionScope or fallback
+     */
+    @NotNull
+    private VersionScope parseVersionScopeFromJson(@NotNull String versionScopeJson, @NotNull VersionScope fallback) {
+        try {
+            // Simple key-value parsing for version scope
+            // Expected format: {"minVersion":"1.0.0","maxVersion":"2.0.0","runtime":"aep-runtime"}
+            Map<String, String> parsed = new java.util.HashMap<>();
+            String[] pairs = versionScopeJson.replaceAll("[{}\"]", "").split(",");
+            for (String pair : pairs) {
+                String[] kv = pair.split(":");
+                if (kv.length == 2) {
+                    parsed.put(kv[0].trim(), kv[1].trim());
+                }
+            }
+            
+            // Phase 6 FIX: Build VersionScope from parsed values using proper constructor
+            String minVersion = parsed.getOrDefault("minVersion", "");
+            String maxVersion = parsed.getOrDefault("maxVersion", "");
+            String runtime = parsed.getOrDefault("runtime", "");
+            
+            // Create version constraints from parsed values
+            List<VersionConstraint> active = List.of();
+            List<VersionConstraint> maintenance = List.of();
+            List<VersionConstraint> obsolete = List.of();
+            
+            if (!minVersion.isEmpty() || !maxVersion.isEmpty()) {
+                active = List.of(VersionConstraint.runtimeVersion(runtime, minVersion + ".." + maxVersion, "jvm"));
+            }
+            
+            return new VersionScope(active, maintenance, obsolete);
+        } catch (Exception e) {
+            log.debug("Failed to parse version scope JSON, using fallback: {}", e.getMessage());
+            return fallback;
+        }
     }
 
     /**

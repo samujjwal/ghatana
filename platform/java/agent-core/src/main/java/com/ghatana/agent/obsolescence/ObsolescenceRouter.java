@@ -209,6 +209,7 @@ public final class ObsolescenceRouter {
             case REPEATED_FAILURES -> MasteryState.QUARANTINED;
             case SECURITY_VULNERABILITY -> MasteryState.QUARANTINED;
             case DOCUMENTATION_CONTRADICTION -> MasteryState.QUARANTINED;
+            case EVAL_REGRESSION -> MasteryState.QUARANTINED;
             // Superseded/deprecated items go to OBSOLETE
             case SUPERSEDED_BY_ALTERNATIVE -> MasteryState.OBSOLETE;
             case DEPRECATED_PATTERN -> MasteryState.OBSOLETE;

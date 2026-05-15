@@ -6,7 +6,7 @@ package com.ghatana.agent.memory.retrieval;
 
 import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.framework.memory.MemoryFilter;
-import com.ghatana.agent.framework.memory.MemoryPlane;
+import com.ghatana.agent.framework.memory.MemoryProjectionBridge;
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.model.MemoryQuery;
@@ -39,7 +39,7 @@ public final class MasteryAwareMemoryRetriever {
 
     private final MasteryRegistry masteryRegistry;
     @Nullable
-    private final MemoryPlane memoryPlane;
+    private final MemoryProjectionBridge memoryPlane;
 
     /**
      * Creates a mastery-aware memory retriever.
@@ -52,14 +52,14 @@ public final class MasteryAwareMemoryRetriever {
     }
 
     /**
-     * Creates a mastery-aware memory retriever composed with MemoryPlane.
+     * Creates a mastery-aware memory retriever composed with MemoryProjectionBridge.
      *
      * @param masteryRegistry mastery registry
-     * @param memoryPlane memory plane for memory operations
+     * @param memoryPlane memory projection bridge for memory operations
      */
     public MasteryAwareMemoryRetriever(
             @NotNull MasteryRegistry masteryRegistry,
-            @Nullable MemoryPlane memoryPlane) {
+            @Nullable MemoryProjectionBridge memoryPlane) {
         this.masteryRegistry = masteryRegistry;
         this.memoryPlane = memoryPlane;
     }
@@ -329,8 +329,9 @@ public final class MasteryAwareMemoryRetriever {
                                             priority));
                                 }
 
-                                // Sort selected by priority descending, then cap to limit
-                                selected.sort(createMasteryPriorityComparator(skillIndex, versionContext).reversed());
+                                // P0 FIX: Sort selected by priority descending (higher priority first)
+                                // Removed .reversed() which was causing lower priority items to come first
+                                selected.sort(createMasteryPriorityComparator(skillIndex, versionContext));
                                 List<MemoryItem> capped = selected.stream().limit(limit).toList();
 
                                 Map<String, Object> trace = new HashMap<>();
@@ -396,11 +397,12 @@ public final class MasteryAwareMemoryRetriever {
         }
 
         // Adjust priority based on memory type
+        // Phase 5 FIX: Make negative knowledge first (higher priority than facts/procedures)
         int typeAdjustment = switch (item.getType()) {
-            case PROCEDURE -> 5; // Procedural knowledge
+            case NEGATIVE_KNOWLEDGE -> 15; // What does not work — highest priority for safety
             case FACT -> 10; // Stable knowledge
+            case PROCEDURE -> 5; // Procedural knowledge
             case EPISODE -> 0; // Contextual experiences
-            case NEGATIVE_KNOWLEDGE -> 5; // What does not work — valuable
             case TASK_STATE -> -5; // Workflow patterns
             case WORKING -> -15; // Ephemeral state
             case PREFERENCE -> -10; // User preferences

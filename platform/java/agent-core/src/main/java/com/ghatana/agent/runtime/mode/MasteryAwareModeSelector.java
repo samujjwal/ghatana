@@ -88,46 +88,71 @@ public final class MasteryAwareModeSelector {
                 .withVersionContext(versionContextStr);
 
         return masteryRegistry.decide(query)
-                .then(masteryDecision -> {
-                    // Classify task
-                    return taskClassifier.classify(taskDescription, context)
-                            .then(taskClassification ->
-                                    // Apply selection policy
-                                    selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
-                                            .then(modeSelectionResult -> {
-                                                // Enrich result with trace metadata
-                                                Instant endTime = Instant.now();
-                                                Map<String, Object> traceMetadata = new HashMap<>();
-                                                traceMetadata.put("traceId", traceId);
-                                                traceMetadata.put("startTime", startTime.toString());
-                                                traceMetadata.put("endTime", endTime.toString());
-                                                traceMetadata.put("durationMs", endTime.toEpochMilli() - startTime.toEpochMilli());
-                                                traceMetadata.put("skillId", skillId);
-                                                traceMetadata.put("agentId", agentId);
-                                                traceMetadata.put("tenantId", tenantId);
-                                                traceMetadata.put("masteryItemId", masteryDecision.masteryItemId());
-                                                traceMetadata.put("masteryState", masteryDecision.state().name());
-                                                traceMetadata.put("versionApplicability", masteryDecision.versionApplicability().name());
-                                                traceMetadata.put("executionScore", masteryDecision.executionScore());
-                                                traceMetadata.put("stale", masteryDecision.stale());
-                                                traceMetadata.put("terminal", masteryDecision.terminal());
-                                                traceMetadata.put("taskRiskLevel", taskClassification.riskLevel().name());
-                                                traceMetadata.put("taskNovelty", taskClassification.novelty().name());
-                                                traceMetadata.put("versionContext", versionContextStr);
-                                                traceMetadata.put("versionContextDigest", encoded.digest());
-                                                traceMetadata.put("modeSelectionReason", modeSelectionResult.reasoning());
+                .then(masteryDecision ->
+                        selectModeWithDecision(masteryDecision, taskDescription, context, versionContext, traceId, startTime));
+    }
 
-                                                return Promise.of(new EnrichedModeSelectionResult(
-                                                        modeSelectionResult.strategy(),
-                                                        modeSelectionResult.supervision(),
-                                                        modeSelectionResult.reasoning(),
-                                                        traceMetadata,
-                                                        masteryDecision,
-                                                        taskClassification,
-                                                        versionContext
-                                                ));
-                                            }));
-                });
+    /**
+     * Phase 4 FIX: Selects execution mode using a pre-computed mastery decision.
+     * This avoids duplicate mastery registry calls when the decision is already known.
+     *
+     * @param masteryDecision pre-computed mastery decision
+     * @param taskDescription task description
+     * @param context additional context
+     * @param versionContext version context
+     * @param traceId trace ID for this operation
+     * @param startTime start time for this operation
+     * @return promise of enriched mode selection result with trace metadata
+     */
+    @NotNull
+    public Promise<EnrichedModeSelectionResult> selectModeWithDecision(
+            @NotNull MasteryDecision masteryDecision,
+            @NotNull String taskDescription,
+            @NotNull String context,
+            @NotNull VersionContext versionContext,
+            @NotNull String traceId,
+            @NotNull Instant startTime
+    ) {
+        // Encode versionContext for trace metadata
+        VersionContextCodec.EncodedContext encoded = VersionContextCodec.INSTANCE.encodeWithDigest(versionContext);
+        String versionContextStr = encoded.json();
+
+        // Classify task
+        return taskClassifier.classify(taskDescription, context)
+                .then(taskClassification ->
+                        // Apply selection policy
+                        selectionPolicy.selectMode(masteryDecision, taskClassification, versionContext)
+                                .then(modeSelectionResult -> {
+                                    // Enrich result with trace metadata
+                                    Instant endTime = Instant.now();
+                                    Map<String, Object> traceMetadata = new HashMap<>();
+                                    traceMetadata.put("traceId", traceId);
+                                    traceMetadata.put("startTime", startTime.toString());
+                                    traceMetadata.put("endTime", endTime.toString());
+                                    traceMetadata.put("durationMs", endTime.toEpochMilli() - startTime.toEpochMilli());
+                                    traceMetadata.put("skillId", masteryDecision.skillId());
+                                    traceMetadata.put("masteryItemId", masteryDecision.masteryItemId());
+                                    traceMetadata.put("masteryState", masteryDecision.state().name());
+                                    traceMetadata.put("versionApplicability", masteryDecision.versionApplicability().name());
+                                    traceMetadata.put("executionScore", masteryDecision.executionScore());
+                                    traceMetadata.put("stale", masteryDecision.stale());
+                                    traceMetadata.put("terminal", masteryDecision.terminal());
+                                    traceMetadata.put("taskRiskLevel", taskClassification.riskLevel().name());
+                                    traceMetadata.put("taskNovelty", taskClassification.novelty().name());
+                                    traceMetadata.put("versionContext", versionContextStr);
+                                    traceMetadata.put("versionContextDigest", encoded.digest());
+                                    traceMetadata.put("modeSelectionReason", modeSelectionResult.reasoning());
+
+                                    return Promise.of(new EnrichedModeSelectionResult(
+                                            modeSelectionResult.strategy(),
+                                            modeSelectionResult.supervision(),
+                                            modeSelectionResult.reasoning(),
+                                            traceMetadata,
+                                            masteryDecision,
+                                            taskClassification,
+                                            versionContext
+                                    ));
+                                }));
     }
 
     /**

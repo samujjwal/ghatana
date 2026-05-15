@@ -48,6 +48,8 @@ import java.util.Set;
  * @param dataClassesHandled          data classes processed by this agent
  * @param permittedPurposes           permitted processing purposes
  * @param capabilityMaturityProfile   capability maturity level (e.g., {@code "L3"})
+ * @param skillEvaluationPackRefs     P1 FIX: Map of skill ID to evaluation pack ID for skill-specific evaluation
+ * @param masteryPolicyPackRefs       P1 FIX: Map of skill ID to mastery policy pack ID for skill-specific mastery governance
  * @param createdAt                   creation timestamp
  * @param updatedAt                   last-update timestamp
  * @param createdBy                   principal that created the release
@@ -84,6 +86,8 @@ public record AgentRelease(
         Set<String> dataClassesHandled,
         Set<String> permittedPurposes,
         String capabilityMaturityProfile,
+        Map<String, String> skillEvaluationPackRefs,
+        Map<String, String> masteryPolicyPackRefs,
         java.time.Instant createdAt,
         java.time.Instant updatedAt,
         String createdBy
@@ -137,6 +141,9 @@ public record AgentRelease(
         compatibleRuntimeVersions = List.copyOf(compatibleRuntimeVersions);
         dataClassesHandled        = Set.copyOf(dataClassesHandled);
         permittedPurposes         = Set.copyOf(permittedPurposes);
+        // P1 FIX: Handle skill-specific governance refs - default to empty maps if null
+        skillEvaluationPackRefs   = skillEvaluationPackRefs != null ? Map.copyOf(skillEvaluationPackRefs) : Map.of();
+        masteryPolicyPackRefs     = masteryPolicyPackRefs != null ? Map.copyOf(masteryPolicyPackRefs) : Map.of();
     }
 
     /**
@@ -146,9 +153,8 @@ public record AgentRelease(
      * @return map of skill ID to evaluation pack ID
      */
     public Map<String, String> skillEvaluationPackRefs() {
-        // In a full implementation, this would be stored as a separate field or in metadata
-        // For now, return empty map - this is a placeholder for Phase 6.2
-        return Map.of();
+        // P1 FIX: Return the actual field value instead of empty map placeholder
+        return skillEvaluationPackRefs;
     }
 
     /**
@@ -158,9 +164,8 @@ public record AgentRelease(
      * @return map of skill ID to mastery policy pack ID
      */
     public Map<String, String> masteryPolicyPackRefs() {
-        // In a full implementation, this would be stored as a separate field or in metadata
-        // For now, return empty map - this is a placeholder for Phase 6.2
-        return Map.of();
+        // P1 FIX: Return the actual field value instead of empty map placeholder
+        return masteryPolicyPackRefs;
     }
 
     /**
@@ -191,6 +196,7 @@ public record AgentRelease(
                 telemetryContractVersion, explanationContractVersion,
                 redactionProfileId, threatModelId,
                 dataClassesHandled, permittedPurposes, capabilityMaturityProfile,
+                skillEvaluationPackRefs, masteryPolicyPackRefs,
                 createdAt, updatedAt, createdBy);
     }
 
@@ -218,9 +224,21 @@ public record AgentRelease(
      * Stable SHA-256 digest over governance-critical release fields.
      * Changes when mastery policy, learning contract, spec, policy pack, or evaluation pack change.
      *
+     * Phase 1 FIX: Now includes skill-specific governance refs in digest calculation.
+     *
      * @return hex-encoded SHA-256 digest
      */
     public String releaseDigest() {
+        // Phase 1 FIX: Include skill-specific governance refs in canonical digest
+        String skillEvalRefsCanonical = skillEvaluationPackRefs.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(java.util.stream.Collectors.joining(","));
+        String masteryPolicyRefsCanonical = masteryPolicyPackRefs.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(java.util.stream.Collectors.joining(","));
+
         String canonical = String.join("\n",
                 "agentId=" + agentId,
                 "specVersion=" + specVersion,
@@ -232,7 +250,9 @@ public record AgentRelease(
                 "masteryPolicyPackId=" + (masteryPolicyPackId != null ? masteryPolicyPackId : ""),
                 "learningContractId=" + (learningContractId != null ? learningContractId : ""),
                 "versionCompatibilityPolicyId=" + (versionCompatibilityPolicyId != null ? versionCompatibilityPolicyId : ""),
-                "freshnessPolicyId=" + (freshnessPolicyId != null ? freshnessPolicyId : ""));
+                "freshnessPolicyId=" + (freshnessPolicyId != null ? freshnessPolicyId : ""),
+                "skillEvaluationPackRefs=" + skillEvalRefsCanonical,
+                "masteryPolicyPackRefs=" + masteryPolicyRefsCanonical);
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes = digest.digest(canonical.getBytes(StandardCharsets.UTF_8));

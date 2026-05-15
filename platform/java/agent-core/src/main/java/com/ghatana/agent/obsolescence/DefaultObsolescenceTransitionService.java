@@ -54,31 +54,21 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
             ));
         }
 
-        // Fetch the mastery item
-        return masteryRegistry.query(
-                com.ghatana.agent.mastery.MasteryQuery.bySkill(event.masteryId())
-        ).then(items -> {
-            if (items.isEmpty()) {
+        // P0 FIX: Use getById with tenantId instead of query to get the exact item
+        return masteryRegistry.getById(event.tenantId(), event.masteryId()).then(itemOpt -> {
+            if (itemOpt.isEmpty()) {
                 return Promise.of(MasteryTransitionResult.failure(
                         event.masteryId(),
                         MasteryState.UNKNOWN,
-                        "Mastery item not found: " + event.masteryId()
+                        "Mastery item not found for tenant " + event.tenantId() + ": " + event.masteryId()
                 ));
             }
 
-            MasteryItem item = items.get(0);
+            MasteryItem item = itemOpt.get();
 
-            // Validate tenant match
-            if (!item.tenantId().equals(event.tenantId())) {
-                return Promise.of(MasteryTransitionResult.failure(
-                        event.masteryId(),
-                        item.state(),
-                        "Tenant mismatch: item tenant " + item.tenantId() + " != event tenant " + event.tenantId()
-                ));
-            }
-
-            // Create transition from event
-            MasteryTransition transition = createTransitionFromEvent(event);
+            // P0 FIX: Use actual item state, skill ID, agent ID, and release ID
+            // Create transition from event with real item metadata
+            MasteryTransition transition = createTransitionFromEvent(event, item);
 
             // Route through mastery registry
             return masteryRegistry.transition(transition);
@@ -123,32 +113,40 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
         return true;
     }
 
-    @Override
+    /**
+     * P0 FIX: Updated to accept MasteryItem for accurate transition creation.
+     * Uses actual item state, skill ID, agent ID, and release ID instead of hardcoded values.
+     */
     @NotNull
-    public MasteryTransition createTransitionFromEvent(@NotNull ObsolescenceEvent event) {
+    public MasteryTransition createTransitionFromEvent(@NotNull ObsolescenceEvent event, @NotNull MasteryItem item) {
         // Build evidence map from event metadata and evidence refs
         Map<String, String> evidenceMap = new HashMap<>(event.metadata());
         evidenceMap.put("obsolescenceReason", event.reason().name());
         evidenceMap.put("severity", event.severity().name());
         evidenceMap.put("eventId", event.eventId());
+        evidenceMap.put("originalEventId", event.eventId()); // Track original obsolescence event
 
         // Add evidence refs to evidence map
         for (int i = 0; i < event.evidenceRefs().size(); i++) {
             evidenceMap.put("evidence_" + i, event.evidenceRefs().get(i).toString());
         }
 
-        // Determine the current state by querying the mastery item
-        // For now, we'll use UNKNOWN as the from state since we don't have the item here
-        // The actual transition will be validated by the mastery registry
+        // P0 FIX: Use actual item state instead of hardcoded MASTERED
+        MasteryState fromState = item.state();
+
+        // P0 FIX: Use actual item metadata instead of fake values
+        String agentId = item.agentId();
+        String agentReleaseId = item.agentReleaseId();
+        String skillId = item.skillId();
 
         return new MasteryTransition(
                 UUID.randomUUID().toString(),
                 event.tenantId(),
-                event.masteryId(),
-                "obsolescence-detector",
-                "obsolescence-detector",
-                event.masteryId().split("-")[0], // Extract skillId from masteryId
-                MasteryState.MASTERED, // Assume current state, will be validated by registry
+                item.masteryId(),
+                agentId,
+                agentReleaseId,
+                skillId,
+                fromState, // P0 FIX: Use actual current state
                 event.recommendedTransition(),
                 "Obsolescence detected: " + event.description(),
                 "obsolescence-transition-service",
@@ -157,8 +155,36 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
                 Map.of(
                         "eventId", event.eventId(),
                         "reason", event.reason().name(),
-                        "severity", event.severity().name()
+                        "severity", event.severity().name(),
+                        "originalState", fromState.name()
                 )
+        );
+    }
+
+    /**
+     * @deprecated Use {@link #createTransitionFromEvent(ObsolescenceEvent, MasteryItem)} instead.
+     * This version cannot accurately determine the current state or metadata.
+     */
+    @Override
+    @NotNull
+    @Deprecated
+    public MasteryTransition createTransitionFromEvent(@NotNull ObsolescenceEvent event) {
+        // This method is kept for interface compatibility but should not be used
+        // It will create an invalid transition that will be rejected by the registry
+        return new MasteryTransition(
+                UUID.randomUUID().toString(),
+                event.tenantId(),
+                event.masteryId(),
+                "unknown",
+                "unknown",
+                "unknown",
+                MasteryState.UNKNOWN,
+                event.recommendedTransition(),
+                "DEPRECATED: Use createTransitionFromEvent(ObsolescenceEvent, MasteryItem)",
+                "obsolescence-transition-service",
+                Instant.now(),
+                Map.of("deprecated", "true"),
+                Map.of("deprecated", "true")
         );
     }
 }

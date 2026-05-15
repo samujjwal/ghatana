@@ -44,9 +44,10 @@ class DefaultEvaluationHarnessTest extends EventloopTestBase {
                 "agent-1", "release-1", "skill-1", "tenant-1",
                 null, "fact-1", null,
                 "sha256",
-                Map.of(), List.of("ev-1"), List.of(), List.of(),
+                Map.<String, Object>of(), List.of("ev-1"), List.of(), List.of(),
                 null, 0.5, 0.8, false, "engine",
-                Instant.now(), null, null, null, Map.of(), null
+                Instant.now(), null, null, null, Map.<String, String>of(), null,
+                null, null, null, null, null
         );
     }
 

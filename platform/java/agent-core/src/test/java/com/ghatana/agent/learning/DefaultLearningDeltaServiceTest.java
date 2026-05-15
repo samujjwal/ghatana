@@ -60,17 +60,22 @@ class DefaultLearningDeltaServiceTest extends EventloopTestBase {
                 "agent-1", "release-1", "skill-1", "tenant-1",
                 "proc-1", "fact-1", null,
                 "sha256-test",
-                Map.of("key", "value"),
-                List.of("ev-1", "ev-2"),
-                List.of(),
-                List.of(),
+                Map.<String, Object>of("key", "value"),
+                List.<String>of("ev-1", "ev-2"),
+                List.<String>of(),
+                List.<String>of(),
                 null,
                 0.5, 0.8,
                 false,
                 "test-engine",
                 Instant.now(),
                 null, null, null,
-                Map.of(),
+                Map.<String, String>of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }
@@ -188,11 +193,12 @@ class DefaultLearningDeltaServiceTest extends EventloopTestBase {
                 "agent-1", "release-1", "skill-1", "tenant-1",
                 null, "fact-1", null,
                 "sha256-test",
-                Map.of(),
+                Map.<String, Object>of(),
                 List.of(),  // empty evidence
                 List.of(), List.of(),
                 null, 0.5, 0.8, false, "test-engine",
-                Instant.now(), null, null, null, Map.of(), null
+                Instant.now(), null, null, null, Map.<String, String>of(), null,
+                null, null, null, null, null
         );
 
         assertThatThrownBy(() ->

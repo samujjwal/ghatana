@@ -151,8 +151,11 @@ public final class DefaultLearningDeltaService implements LearningDeltaService {
                             delta.confidenceBefore(), delta.confidenceAfter(),
                             false, // requiresHumanReview cleared on approval
                             approvedBy, // proposedBy tracks the approver identity for audit
-                            delta.proposedAt(), delta.evaluatedAt(), Instant.now(), // promotedAt = approval instant
-                            null, delta.labels(), null
+                            delta.proposedAt(), delta.evaluatedAt(), Instant.now(), null,
+                            delta.labels(), null, delta.approvalProofRef(),
+                            // Phase 6 FIX: New environment/version fields (null for existing deltas)
+                            delta.versionContextDigest(), delta.environmentFingerprintRef(),
+                            delta.repositoryConventionRef(), delta.runtimeFingerprintRef()
                     );
                     return deltaRepository.save(approved);
                 });
@@ -243,7 +246,10 @@ public final class DefaultLearningDeltaService implements LearningDeltaService {
                             nextState == LearningDeltaState.PENDING_HUMAN_REVIEW,
                             delta.proposedBy(),
                             delta.proposedAt(), Instant.now(), null, null,
-                            delta.labels(), null
+                            delta.labels(), null, delta.approvalProofRef(),
+                            // Phase 6 FIX: New environment/version fields (null for existing deltas)
+                            delta.versionContextDigest(), delta.environmentFingerprintRef(),
+                            delta.repositoryConventionRef(), delta.runtimeFingerprintRef()
                     );
 
                     log.info("Delta {} transitioned to {} after evaluation", delta.deltaId(), nextState);
@@ -280,7 +286,10 @@ public final class DefaultLearningDeltaService implements LearningDeltaService {
                 delta.confidenceBefore(), delta.confidenceAfter(),
                 delta.requiresHumanReview(), delta.proposedBy(),
                 delta.proposedAt(), delta.evaluatedAt(), delta.promotedAt(), delta.rejectedAt(),
-                delta.labels(), rejectionReason
+                delta.labels(), rejectionReason, delta.approvalProofRef(),
+                // Phase 6 FIX: New environment/version fields (null for existing deltas)
+                delta.versionContextDigest(), delta.environmentFingerprintRef(),
+                delta.repositoryConventionRef(), delta.runtimeFingerprintRef()
         );
     }
 

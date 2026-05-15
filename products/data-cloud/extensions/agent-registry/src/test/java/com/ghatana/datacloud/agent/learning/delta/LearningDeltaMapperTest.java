@@ -60,7 +60,12 @@ class LearningDeltaMapperTest {
                 FIXED_PROMO,
                 FIXED_REJECT,
                 Map.of("env", "staging", "version", "v2"),
-                "low confidence — pending review"
+                "low confidence — pending review",
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Map<String, Object> dataMap = LearningDeltaMapper.toDataMap(original);
@@ -125,7 +130,12 @@ class LearningDeltaMapperTest {
                 null,   // promotedAt
                 null,   // rejectedAt
                 Map.of(),
-                null    // rejectionReason
+                null,   // rejectionReason
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Map<String, Object> dataMap = LearningDeltaMapper.toDataMap(original);
@@ -155,17 +165,24 @@ class LearningDeltaMapperTest {
                 "tenant-abc",
                 null, null, null,
                 "sha256-empty",
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(),
+                Map.<String, Object>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
                 null,
                 0.5, 0.9,
                 false,
                 "system",
                 FIXED_NOW,
-                FIXED_EVAL, FIXED_PROMO, null,
-                Map.of(),
+                FIXED_EVAL,
+                FIXED_PROMO,
+                null,
+                Map.<String, String>of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -204,6 +221,11 @@ class LearningDeltaMapperTest {
                 FIXED_NOW,
                 null, null, null,
                 Map.of("label-a", "value-a", "label-b", "value-b"),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -243,6 +265,11 @@ class LearningDeltaMapperTest {
                 evaluatedAt,
                 null, null,
                 Map.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -267,10 +294,10 @@ class LearningDeltaMapperTest {
                 "tenant-rej",
                 null, null, null,
                 "sha256-rej",
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(),
+                Map.<String, Object>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
                 null,
                 0.3, 0.3,
                 false,
@@ -279,8 +306,13 @@ class LearningDeltaMapperTest {
                 FIXED_EVAL,
                 null,
                 FIXED_REJECT,
-                Map.of(),
-                "Insufficient evidence for procedural claim"
+                Map.<String, String>of(),
+                "Insufficient evidence for procedural claim",
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Map<String, Object> dataMap = LearningDeltaMapper.toDataMap(original);

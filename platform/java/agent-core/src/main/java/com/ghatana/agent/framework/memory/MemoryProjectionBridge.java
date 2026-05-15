@@ -10,8 +10,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * Typed bridge interface between the agent framework's {@link MemoryStore} and the
- * GAA memory plane abstraction.
+ * P1 FIX: Renamed from MemoryPlane to MemoryProjectionBridge to avoid conflict with
+ * the canonical Data Cloud runtime MemoryPlane.
+ *
+ * <p>This is a compatibility facade for the framework's projection/consolidation/reflection
+ * operations. The canonical memory plane is now {@link com.ghatana.agent.memory.store.MemoryPlane}
+ * in the Data Cloud runtime, which supports episodic, semantic, procedural, typed artifacts,
+ * cross-tier queries, semantic search, working memory, task state, checkpointing, and stats.
  *
  * <p>This interface resolves the type-erasure limitation of
  * {@link MemoryStore#asMemoryPlane()}, which previously returned raw {@code Object}
@@ -28,18 +33,20 @@ import java.util.List;
  * <h2>Usage</h2>
  * <pre>{@code
  * Object raw = memoryStore.asMemoryPlane();
- * if (raw instanceof MemoryPlane plane) {
+ * if (raw instanceof MemoryProjectionBridge plane) {
  *     plane.consolidate(agentId, episodes).await();
  * }
  * }</pre>
  *
  * @doc.type interface
- * @doc.purpose Typed bridge from MemoryStore to GAA memory plane operations
+ * @doc.purpose Compatibility facade for framework memory projection operations
  * @doc.layer framework
  * @doc.pattern Bridge
  * @doc.gaa.memory episodic|semantic|procedural
+ * @deprecated Use {@link com.ghatana.agent.memory.store.MemoryPlane} for the canonical multi-tier memory plane
  */
-public interface MemoryPlane {
+@Deprecated
+public interface MemoryProjectionBridge {
 
     /**
      * Consolidates a list of recent episodes into the semantic/procedural memory plane.

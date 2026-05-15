@@ -6,7 +6,7 @@ package com.ghatana.agent.memory.retrieval;
 
 import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.memory.MemoryPlane;
+import com.ghatana.agent.framework.memory.MemoryProjectionBridge;
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.model.MemoryQuery;
@@ -55,18 +55,18 @@ public final class MemoryRetrievalService {
 
     private final MasteryRegistry masteryRegistry;
     @Nullable
-    private final MemoryPlane memoryPlane;
+    private final MemoryProjectionBridge memoryPlane;
     private final MasteryAwareMemoryRetriever masteryAwareRetriever;
 
     /**
      * Creates a memory retrieval service.
      *
      * @param masteryRegistry mastery registry for mastery state queries
-     * @param memoryPlane memory plane for memory operations (optional)
+     * @param memoryPlane memory projection bridge for memory operations (optional)
      */
     public MemoryRetrievalService(
             @NotNull MasteryRegistry masteryRegistry,
-            @Nullable MemoryPlane memoryPlane) {
+            @Nullable MemoryProjectionBridge memoryPlane) {
         this.masteryRegistry = masteryRegistry;
         this.memoryPlane = memoryPlane;
         this.masteryAwareRetriever = new MasteryAwareMemoryRetriever(masteryRegistry, memoryPlane);

@@ -163,6 +163,11 @@ class DefaultPromotionPolicyTest {
                 null,
                 null,
                 Map.of("label", "test"),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }
@@ -195,6 +200,11 @@ class DefaultPromotionPolicyTest {
                 null,
                 null,
                 Map.of("label", "test"),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }

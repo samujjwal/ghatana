@@ -195,7 +195,7 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
 
     /**
      * Determines the target state for policy targets based on evidence and approval.
-     * Policy targets require human approval for MASTERED state.
+     * Policy targets require explicit approval proof for MASTERED state.
      */
     @NotNull
     private MasteryState determinePolicyTargetState(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
@@ -209,17 +209,18 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
             return null;
         }
 
-        // All tests passed with human approval → MASTERED
-        if (result.allPassed() && delta.requiresHumanReview()) {
+        // P1 FIX: All tests passed with explicit approval proof → MASTERED
+        // Changed from requiresHumanReview to approvalProofRef to ensure review actually happened
+        if (result.allPassed() && delta.approvalProofRef() != null && !delta.approvalProofRef().isBlank()) {
             return MasteryState.MASTERED;
         }
 
-        // All tests passed without human approval → COMPETENT
+        // All tests passed without approval proof → COMPETENT
         if (result.allPassed()) {
             return MasteryState.COMPETENT;
         }
 
-        // Regression and safety passed → COMPETENT
+        // P1 FIX: Regression and safety passed → COMPETENT (only if tests exist)
         if (hasPassedRegressionAndSafety(result)) {
             return MasteryState.COMPETENT;
         }
@@ -468,11 +469,34 @@ public final class DefaultPromotionPolicy implements PromotionPolicy {
                 .anyMatch(cr -> !cr.passed());
     }
 
+    /**
+     * P1 FIX: Checks if regression and safety tests passed.
+     * Fixed to require at least one regression test and at least one safety test exist.
+     * Previously, allMatch on empty stream returned true, allowing promotion without tests.
+     */
     private boolean hasPassedRegressionAndSafety(@NotNull EvaluationResult result) {
+        // P1 FIX: Require at least one regression test to exist
+        long regressionCount = result.caseResults().stream()
+                .filter(cr -> cr.name().toLowerCase().contains("regression"))
+                .count();
+        if (regressionCount == 0) {
+            return false; // No regression tests - cannot pass
+        }
+
+        // P1 FIX: Require at least one safety test to exist
+        long safetyCount = result.caseResults().stream()
+                .filter(cr -> cr.name().toLowerCase().contains("safety"))
+                .count();
+        if (safetyCount == 0) {
+            return false; // No safety tests - cannot pass
+        }
+
+        // Check that all regression tests passed
         boolean regressionPassed = result.caseResults().stream()
                 .filter(cr -> cr.name().toLowerCase().contains("regression"))
                 .allMatch(cr -> cr.passed());
 
+        // Check that all safety tests passed
         boolean safetyPassed = result.caseResults().stream()
                 .filter(cr -> cr.name().toLowerCase().contains("safety"))
                 .allMatch(cr -> cr.passed());

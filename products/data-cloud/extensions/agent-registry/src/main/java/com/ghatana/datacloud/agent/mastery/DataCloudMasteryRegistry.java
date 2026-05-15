@@ -695,15 +695,16 @@ public final class DataCloudMasteryRegistry implements MasteryRegistry {
                         ));
                     }
 
-                    // Block if version is maintenance but no legacy context matches
-                    if (applicability == VersionApplicability.MAINTENANCE && !best.state().requiresLegacyContext()) {
+                    // Phase 3 FIX: Block if version is maintenance but state is not MAINTENANCE_ONLY
+                    // Invariant: if version scope classifies as MAINTENANCE, only MAINTENANCE_ONLY should be executable
+                    if (applicability == VersionApplicability.MAINTENANCE && best.state() != MasteryState.MAINTENANCE_ONLY) {
                         return Promise.of(MasteryDecision.block(
                                 best.masteryId(),
                                 best.skillId(),
                                 best.state(),
                                 best.score(),
                                 best.versionScope(),
-                                "Maintenance version requires legacy context for state " + best.state()
+                                "Maintenance version requires MAINTENANCE_ONLY state, but current state is " + best.state()
                         ));
                     }
 

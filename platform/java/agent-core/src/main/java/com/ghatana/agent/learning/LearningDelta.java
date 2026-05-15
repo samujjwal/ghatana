@@ -50,7 +50,13 @@ public record LearningDelta(
         @Nullable Instant promotedAt,
         @Nullable Instant rejectedAt,
         @NotNull Map<String, String> labels,
-        @Nullable String rejectionReason
+        @Nullable String rejectionReason,
+        @Nullable String approvalProofRef,
+        // Phase 6 FIX: Add environment/version fields for learning loop provenance
+        @Nullable String versionContextDigest,
+        @Nullable String environmentFingerprintRef,
+        @Nullable String repositoryConventionRef,
+        @Nullable String runtimeFingerprintRef
 ) {
     public LearningDelta {
         Objects.requireNonNull(deltaId, "deltaId must not be null");

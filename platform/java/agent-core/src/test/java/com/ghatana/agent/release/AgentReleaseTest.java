@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -272,15 +273,16 @@ class AgentReleaseTest {
 
     @Test
     @DisplayName("record compact constructor rejects blank agentReleaseId")
-    void rejectsBlankReleaseId() { 
-        assertThatThrownBy(() -> new AgentRelease( 
+    void rejectsBlankReleaseId() {
+        assertThatThrownBy(() -> new AgentRelease(
                 "", "agentId", "tenant-test", "1.0.0", "1.0.0", AgentReleaseState.DRAFT,
                 null, null, null, null, null, null,
                 null, null, null, null,
-                List.of(), null, null, null, null, null, null, 
-                Set.of(), Set.of(), null, 
-                Instant.now(), Instant.now(), "user")) 
-                .isInstanceOf(IllegalArgumentException.class) 
+                List.of(), null, null, null, null, null, null,
+                Set.of(), Set.of(), null,
+                Map.of(), Map.of(),
+                Instant.now(), Instant.now(), "user"))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("agentReleaseId");
     }
 

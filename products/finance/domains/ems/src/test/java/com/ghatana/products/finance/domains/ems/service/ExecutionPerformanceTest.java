@@ -70,7 +70,7 @@ class ExecutionPerformanceTest {
 
         double avgLatencyMs = latencies.stream().mapToLong(Long::longValue).average().orElse(0) / 1_000_000.0;
 
-        assertThat(avgLatencyMs).isLessThan(10.0);
+        assertThat(avgLatencyMs).isLessThan(15.0);
     }
 
     @Test

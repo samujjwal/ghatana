@@ -56,5 +56,10 @@ public enum ObsolescenceReason {
     /**
      * Dependency is no longer maintained.
      */
-    DEPRECATED_DEPENDENCY
+    DEPRECATED_DEPENDENCY,
+
+    /**
+     * Phase 8 FIX: Evaluation regression detected.
+     */
+    EVAL_REGRESSION
 }

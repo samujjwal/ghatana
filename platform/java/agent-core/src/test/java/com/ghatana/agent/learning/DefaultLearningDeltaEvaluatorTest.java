@@ -56,15 +56,20 @@ class DefaultLearningDeltaEvaluatorTest extends EventloopTestBase {
                 "sha256-test",
                 proposedContent,
                 evidenceRefs,
-                List.of(),
-                List.of(),
+                List.<String>of(),
+                List.<String>of(),
                 null,
                 0.5, confidenceAfter,
                 false,
                 "test-engine",
                 Instant.now(),
                 null, null, null,
-                Map.of(),
+                Map.<String, String>of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }
@@ -122,17 +127,22 @@ class DefaultLearningDeltaEvaluatorTest extends EventloopTestBase {
                 "agent-1", "release-1", "skill-1", "tenant-1",
                 "procedure-001", null, null,
                 "sha256-test",
-                Map.of("step", "do-something"),
-                List.of("ev-1"),
-                List.of(),
-                List.of(),
+                Map.<String, Object>of("step", "do-something"),
+                List.<String>of("ev-1"),
+                List.<String>of(),
+                List.<String>of(),
                 "rollback-ref-001",   // required for execution target
                 0.5, 0.85,
                 false,
                 "test-engine",
                 Instant.now(),
                 null, null, null,
-                Map.of(),
+                Map.<String, String>of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -213,17 +223,22 @@ class DefaultLearningDeltaEvaluatorTest extends EventloopTestBase {
                 "agent-1", "release-1", "skill-1", "tenant-1",
                 null, null, null,
                 "sha256-test",
-                Map.of("plan", "route-dense"),
-                List.of("ev-1"),
-                List.of("eval-ref-1"),   // required by validatePlannerPolicy
-                List.of(),
+                Map.<String, Object>of("plan", "route-dense"),
+                List.<String>of("ev-1"),
+                List.<String>of("eval-ref-1"),   // required by validatePlannerPolicy
+                List.<String>of(),
                 null,                    // no rollbackRef — triggers execution-target check
                 0.5, 0.9,
                 false,
                 "test-engine",
                 Instant.now(),
                 null, null, null,
-                Map.of(),
+                Map.<String, String>of(),
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 

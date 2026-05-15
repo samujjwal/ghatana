@@ -448,7 +448,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                                                 return denyDispatch(agentId, traceId, tenantId, reason);
                                                             }
                                                             return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
-                                                                    tenantId, traceId, finalSkillId);
+                                                                    tenantId, traceId, finalSkillId, masteryDecision);
                                                         });
                                             }
                                             // Deny if verification required and proof not valid
@@ -484,26 +484,44 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                                                 return denyDispatch(agentId, traceId, tenantId, reason);
                                                             }
                                                             return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
-                                                                    tenantId, traceId, finalSkillId);
+                                                                    tenantId, traceId, finalSkillId, masteryDecision);
                                                         });
                                             }
                                             return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
-                                                    tenantId, traceId, finalSkillId);
+                                                    tenantId, traceId, finalSkillId, masteryDecision);
                                         }));
             }
 
-            return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release, tenantId, traceId, finalSkillId);
+            // No mastery registry or skillId, check if mode selector is configured
+            if (modeSelector != null && finalSkillId != null) {
+                return doModeSelectionAndDispatch(agentId, input, ctxWithVersion, release,
+                        tenantId, traceId, finalSkillId, null);
+            }
+
+            // No mastery registry, no mode selector, or no skillId - proceed directly to dispatch
+            // Extract version context for memory retrieval
+            Object vcObj = ctxWithVersion.getConfig("versionContext");
+            VersionContext versionContext = null;
+            if (vcObj instanceof VersionContext) {
+                versionContext = (VersionContext) vcObj;
+            }
+            if (versionContext == null) {
+                versionContext = VersionContext.empty();
+            }
+            return doMemoryRetrievalAndDispatch(agentId, input, ctxWithVersion, release, tenantId, traceId, finalSkillId, versionContext);
         });
     }
 
     /**
      * Performs mode selection (if configured) then evaluates invariants and dispatches.
+     * Phase 4 FIX: Accepts pre-computed mastery decision to avoid duplicate registry calls.
      */
     private <I, O> Promise<AgentResult<O>> doModeSelectionAndDispatch(
             String agentId, I input, AgentContext ctx,
             @Nullable AgentRelease release,
             String tenantId, String traceId,
-            @Nullable String skillId) {
+            @Nullable String skillId,
+            @Nullable com.ghatana.agent.mastery.MasteryDecision masteryDecision) {
 
         // ── Phase 6: mode selection (promise-composed) ────────────────────────
         if (modeSelector != null && skillId != null) {
@@ -512,14 +530,45 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                     currentLedgerHash(tenantId));
             
             // Extract resolved version context from context if available
-            VersionContext versionCtx = VersionContext.empty();
             Object vcObj = ctx.getConfig("versionContext");
-            if (vcObj instanceof VersionContext) {
-                versionCtx = (VersionContext) vcObj;
-            }
+            final VersionContext versionCtx = vcObj instanceof VersionContext ? (VersionContext) vcObj : VersionContext.empty();
             
             // Extract a meaningful task description from context (e.g. from input converted to String or a context tag)
             String taskDescription = extractTaskDescription(input, ctx);
+
+            // Phase 4 FIX: Use selectModeWithDecision to avoid duplicate mastery registry calls
+            if (masteryDecision != null) {
+                return modeSelector.selectModeWithDecision(
+                        masteryDecision,
+                        taskDescription,
+                        ctx.getTraceId() != null ? ctx.getTraceId() : "",
+                        versionCtx,
+                        traceId,
+                        Instant.now())
+                        .then(modeResult -> {
+                            // Check if mode selection blocked execution
+                            if (modeResult.supervision() == com.ghatana.agent.runtime.mode.SupervisionMode.BLOCKED) {
+                                String reason = "Mode selection blocked execution for agent " + agentId;
+                                log.warn("Dispatch rejected: {}", reason);
+                                return denyDispatch(agentId, traceId, tenantId, reason);
+                            }
+                            
+                            AgentContext ctxWithMode = ctx.toBuilder()
+                                    .addConfig("executionStrategy", modeResult.strategy().name())
+                                    .addConfig("supervisionMode", modeResult.supervision().name())
+                                    .addConfig("modeRequiresApproval", String.valueOf(modeResult.requiresApproval()))
+                                    .addConfig("modeRequiresVerification", String.valueOf(modeResult.requiresVerification()))
+                                    .build();
+                            return traceLedger.append(modeEventBuilder.build(
+                                    TraceEventType.MODE_SELECTED,
+                                    "Mode selected for agent " + agentId + ": " + modeResult.strategy(),
+                                    Map.of("agentId", agentId, "strategy", modeResult.strategy().name(),
+                                            "supervision", modeResult.supervision().name(),
+                                            "requiresApproval", String.valueOf(modeResult.requiresApproval()),
+                                            "requiresVerification", String.valueOf(modeResult.requiresVerification()))))
+                                    .then(ignored -> doMemoryRetrievalAndDispatch(agentId, input, ctxWithMode, release, tenantId, traceId, skillId, versionCtx));
+                        });
+            }
 
             return modeSelector.selectMode(
                     skillId, agentId, tenantId,
@@ -547,11 +596,89 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                         "supervision", modeResult.supervision().name(),
                                         "requiresApproval", String.valueOf(modeResult.requiresApproval()),
                                         "requiresVerification", String.valueOf(modeResult.requiresVerification()))))
-                                .then(ignored -> doInvariantsAndDispatch(agentId, input, ctxWithMode, release, tenantId, traceId, skillId));
+                                .then(ignored -> doMemoryRetrievalAndDispatch(agentId, input, ctxWithMode, release, tenantId, traceId, skillId, versionCtx));
                     });
         }
 
-        return doInvariantsAndDispatch(agentId, input, ctx, release, tenantId, traceId, null);
+        // Extract version context for memory retrieval even without mode selection
+        VersionContext versionCtx = VersionContext.empty();
+        Object vcObj = ctx.getConfig("versionContext");
+        if (vcObj instanceof VersionContext) {
+            versionCtx = (VersionContext) vcObj;
+        }
+        return doMemoryRetrievalAndDispatch(agentId, input, ctx, release, tenantId, traceId, skillId, versionCtx);
+    }
+
+    /**
+     * P0 FIX: Performs mastery-aware memory retrieval then evaluates invariants and dispatches.
+     * This step was previously missing, causing memory retrieval to be accepted but never invoked.
+     */
+    private <I, O> Promise<AgentResult<O>> doMemoryRetrievalAndDispatch(
+            String agentId, I input, AgentContext ctx,
+            @Nullable AgentRelease release,
+            String tenantId, String traceId,
+            @Nullable String skillId,
+            VersionContext versionContext) {
+
+        // Capture skillId for lambda use (must be effectively final)
+        final String capturedSkillId = skillId;
+
+        // P0 FIX: Integrate memory retrieval if MasteryAwareMemoryRetriever is configured
+        if (memoryRetriever != null) {
+            Object retriever = memoryRetriever;
+            if (retriever.getClass().getName().equals("com.ghatana.agent.memory.retrieval.MasteryAwareMemoryRetriever")) {
+                com.ghatana.agent.memory.retrieval.MasteryAwareMemoryRetriever masteryAwareRetriever =
+                        (com.ghatana.agent.memory.retrieval.MasteryAwareMemoryRetriever) retriever;
+            String effectiveSkillId = skillId != null ? skillId : agentId;
+            int memoryLimit = 20; // Configurable limit for retrieved memory items
+
+            TraceEventBuilder memoryEventBuilder = new TraceEventBuilder(
+                    traceId, agentId, tenantId,
+                    traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
+                            ? hc.getLastHash(tenantId) : "");
+
+            return masteryAwareRetriever.retrieve(
+                    agentId,
+                    tenantId,
+                    effectiveSkillId,
+                    versionContext,
+                    memoryLimit)
+                    .then(retrievalBundle -> {
+                        // Inject retrieved memory into context
+                        AgentContext ctxWithMemory = ctx.toBuilder()
+                                .addConfig("retrievedMemoryCount", retrievalBundle.selectedItems().size())
+                                .addConfig("rejectedMemoryCount", retrievalBundle.rejectedItems().size())
+                                .addConfig("retrievalTrace", retrievalBundle.trace())
+                                .build();
+
+                        // Add individual memory item IDs to context for traceability
+                        java.util.List<String> memoryIds = retrievalBundle.selectedItems().stream()
+                                .map(item -> item.getId())
+                                .toList();
+                        if (!memoryIds.isEmpty()) {
+                            ctxWithMemory = ctxWithMemory.toBuilder()
+                                    .addConfig("retrievedMemoryIds", String.join(",", memoryIds))
+                                    .build();
+                        }
+
+                        final AgentContext finalCtxWithMemory = ctxWithMemory;
+
+                        log.debug("Retrieved {} memory items for agent {} (skill: {}, rejected: {})",
+                                retrievalBundle.selectedItems().size(), agentId, effectiveSkillId, retrievalBundle.rejectedItems().size());
+
+                        return traceLedger.append(memoryEventBuilder.build(
+                                TraceEventType.MEMORY_RETRIEVAL_COMPLETED,
+                                "Memory retrieved for agent " + agentId + " (skill: " + effectiveSkillId + ")",
+                                Map.of("agentId", agentId, "skillId", effectiveSkillId,
+                                        "retrievedCount", String.valueOf(retrievalBundle.selectedItems().size()),
+                                        "rejectedCount", String.valueOf(retrievalBundle.rejectedItems().size()))))
+                                .then(ignored -> doInvariantsAndDispatch(agentId, input, finalCtxWithMemory, release, tenantId, traceId, capturedSkillId));
+                    });
+            }
+        }
+
+        // No mastery-aware memory retriever configured, proceed without memory injection
+        return doInvariantsAndDispatch(agentId, input, ctx, release, tenantId, traceId, skillId);
     }
 
     /**

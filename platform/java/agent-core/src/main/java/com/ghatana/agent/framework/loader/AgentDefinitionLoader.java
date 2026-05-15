@@ -363,7 +363,19 @@ public final class AgentDefinitionLoader {
             }
         }
 
-        return builder.build();
+        AgentDefinition definition = builder.build();
+
+        // Phase 1 FIX: Enforce learning level consistency validation in loader
+        List<String> learningLevelErrors = definition.validateLearningLevelConsistency();
+        if (!learningLevelErrors.isEmpty()) {
+            throw new IllegalStateException(
+                    "Agent definition '" + definition.getId() + "' from '" + source
+                    + "' failed learning level consistency validation:\n  - "
+                    + String.join("\n  - ", learningLevelErrors)
+            );
+        }
+
+        return definition;
     }
 
     @NotNull
