@@ -9,8 +9,8 @@ describe('PolicyForm Component', () => {
 
     render(<PolicyForm onSubmit={mockSubmit} onCancel={mockCancel} />);
     
-    expect(screen.getByLabelText('Policy Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Policy Type')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Policy Name/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Policy Type/)).toBeInTheDocument();
     expect(screen.getByText('Create Policy')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
@@ -21,8 +21,10 @@ describe('PolicyForm Component', () => {
 
     render(<PolicyForm onSubmit={mockSubmit} onCancel={mockCancel} />);
     
-    // Default type is time-limit
-    expect(screen.getByLabelText('Maximum Usage (minutes)')).toBeInTheDocument();
+    const typeSelect = screen.getByLabelText(/Policy Type/);
+    fireEvent.change(typeSelect, { target: { value: 'time-limit' } });
+
+    expect(screen.getByLabelText(/Maximum Usage \(minutes\)/)).toBeInTheDocument();
   });
 
   it('should display content filter fields when type is content-filter', () => {
@@ -31,7 +33,7 @@ describe('PolicyForm Component', () => {
 
     render(<PolicyForm onSubmit={mockSubmit} onCancel={mockCancel} />);
     
-    const typeSelect = screen.getByLabelText('Policy Type');
+    const typeSelect = screen.getByLabelText(/Policy Type/);
     fireEvent.change(typeSelect, { target: { value: 'content-filter' } });
     
     expect(screen.getByLabelText(/Blocked Categories/)).toBeInTheDocument();
@@ -46,7 +48,7 @@ describe('PolicyForm Component', () => {
     const submitButton = screen.getByText('Create Policy');
     fireEvent.click(submitButton);
     
-    expect(screen.getByText('Policy name is required')).toBeInTheDocument();
+    expect(screen.getByText('Policy Name is required')).toBeInTheDocument();
     expect(mockSubmit).not.toHaveBeenCalled();
   });
 });

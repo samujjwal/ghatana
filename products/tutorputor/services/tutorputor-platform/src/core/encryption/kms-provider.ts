@@ -64,9 +64,6 @@ export class AWSKMSProvider implements KMSProvider {
   constructor(keyId: string, region = "us-east-1") {
     this.keyId = keyId;
     this.region = region;
-    
-    // Dynamic import to avoid bundling AWS SDK in browser
-    this.initializeClient();
   }
 
   private async initializeClient(): Promise<void> {

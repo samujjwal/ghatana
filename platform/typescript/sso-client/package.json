@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "jest",
+    "test": "vitest run",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -62,7 +62,8 @@
     "@types/jest": "^30.0.0",
     "@types/react": "^19.2.14",
     "jest": "^30.3.0",
-    "ts-jest": "^29.4.9"
+    "ts-jest": "^29.4.9",
+    "vitest": "^4.1.4"
   },
   "peerDependencies": {
     "react": "^19.0.0"

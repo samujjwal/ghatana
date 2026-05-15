@@ -1,56 +1,74 @@
 # Kernel Architecture
 
-## Core Components
+## Current State
 
-### 1. Canonical Product Registry
+Ghatana lifecycle execution is centered on the shared TypeScript Kernel packages. Product code describes what can be built and operated; Kernel code owns planning, execution, truth, manifests, and provider boundaries.
 
-- **Location**: `config/canonical-product-registry.json`
-- **Purpose**: Single source of truth for product registration
-- **Schema**: `config/canonical-product-registry-schema.json`
+- Canonical product registry: `config/canonical-product-registry.json`
+- Product contract schemas: `platform/typescript/kernel-product-contracts`
+- Lifecycle planner, executor, service, API handlers, and manifests: `platform/typescript/kernel-lifecycle`
+- Bootstrap file-backed providers: `platform/typescript/kernel-providers`
+- Toolchain adapters: `platform/typescript/kernel-toolchains`
+- Digital Marketing pilot config: `products/digital-marketing/kernel-product.yaml`
 
-### 2. Lifecycle Engine
+Digital Marketing is the only lifecycle-enabled pilot. Other products may have shape entries, registry metadata, and readiness evidence, but they remain planned, partial, disabled, or shape-only until the product-shape matrix and lifecycle checks prove them executable.
 
-- **Package**: `@ghatana/kernel-lifecycle` (platform/typescript/kernel-lifecycle)
-- **Purpose**: Plans and executes product lifecycle phases
-- **Phases**: dev, validate, test, build, package, deploy, verify, promote, rollback
+## Lifecycle Boundary
 
-### 3. Toolchain Adapters
+`KernelLifecycleService` is the reusable orchestration boundary. CLI, Studio/API clients, Data Cloud Action gateway routes, and agentic lifecycle services must call the shared service or its public API handlers instead of wiring separate planner/executor runners.
 
-- **Package**: `@ghatana/kernel-toolchains` (platform/typescript/kernel-toolchains)
-- **Purpose**: Abstract toolchain-specific operations behind a common interface
-- **Adapters**: GradleJavaServiceAdapter, PnpmViteReactAdapter, VitestAdapter, PlaywrightAdapter, DockerBuildxAdapter, ComposeLocalAdapter, XcodeIosAdapter, GradleAndroidAdapter, KubernetesDeploymentAdapter, HelmDeploymentAdapter, TerraformDeploymentAdapter
+```text
+CLI scripts/kernel-product.mjs
+Studio kernelLifecycleClient
+Data Cloud Action gateway /api/kernel/*
+AgentLifecycleActionService
+        |
+        v
+KernelLifecycleService
+        |
+        +-- ProductLifecyclePlanner
+        +-- ProductLifecycleExecutor
+        +-- ManifestPointerStore
+        +-- Kernel lifecycle providers
+```
 
-### 4. Artifact System
+The service keeps lifecycle artifacts in the existing `.kernel/out/products/<product>/<phase>/<runId>` shape and writes latest pointers for bootstrap/local reads. API responses expose safe plan, result, manifest, approval, and error shapes; raw command lines, secrets, and unsafe stdout/stderr are not UI or agent contracts.
 
-- **Package**: `@ghatana/kernel-artifacts` (platform/typescript/kernel-artifacts)
-- **Purpose**: Manage artifact manifests and validation
-- **Schema**: Zod-based validation for artifact contracts
+## Provider Modes
 
-### 5. Release Management
+Kernel has two explicit provider modes.
 
-- **Package**: `@ghatana/kernel-release` (platform/typescript/kernel-release)
-- **Purpose**: Handle release, promotion, and rollback operations
-- **Components**: ProductReleaseManager, ProductPromotionPlanManager, ProductRollbackPlanManager, ProductApprovalGateManager
+- `bootstrap`: file-backed providers under `.kernel/out`. This mode can build, package, deploy, and verify the Data Cloud product itself because it does not depend on Data Cloud.
+- `platform`: Data Cloud-backed providers. This mode requires events, artifacts, health, approvals, provenance, memory, and runtime truth providers and fails closed until the Data Cloud provider bridge is configured.
 
-### 6. Plugin Platform
+Bootstrap requires events, artifacts, health, approvals, provenance, and runtime truth. Memory is available through the file-backed provider for local summaries, while platform mode treats memory as required.
 
-- **Registry**: `config/kernel-plugin-registry.json`
-- **Purpose**: Enable platform and product plugins to hook into lifecycle events
-- **Hooks**: onProductRegistered, onProductBootstrapped, onProductDevStarted, onProductValidated, onProductTested, onProductBuildStarted, onProductBuildCompleted, onProductPackaged, onProductDeployStarted, onProductDeployed, onProductVerified, onProductPromoted, onProductRolledBack, onProductRetired
+## Truth And Observability
 
-## Data Flow
+Lifecycle truth is a feature contract, not best-effort decoration. Required provider writes fail closed. Runtime truth and provenance are recorded for plan creation, phase transitions, failure, approval pending, and agentic actions. Event writes are awaited when required and logged as structured warnings only when optional.
 
-1. Product registration in canonical registry
-2. Generator creates derived artifacts (product-shape.json, CI matrix, package scripts)
-3. Lifecycle planner creates execution plans based on product lifecycle profile
-4. Toolchain adapters execute plans using appropriate tools
-5. Artifact system validates outputs
-6. Release management handles promotion and rollback
-7. Plugin platform executes registered lifecycle hooks
+Manifests include run and correlation identifiers so Studio, CLI, API handlers, and future Data Cloud provider bridges can correlate artifacts, deployments, health, and evidence.
 
-## Boundary Rules
+## Product Boundaries
 
-- Kernel code must stay product-neutral
-- Platform modules must not import from `products/**`
-- Products consume Kernel through public package exports or declared bridge/adapters
-- Registry entries distinguish business-product, platform-provider, shared-service, domain-pack, and demo/example
+- Kernel packages stay product-neutral.
+- Product-specific lifecycle config belongs under the owning product.
+- Data Cloud internals remain under `products/data-cloud`; Kernel uses public provider interfaces or API-backed adapters.
+- YAPPC exports `ProductUnitIntent` and evidence through public Kernel/Data Cloud boundaries and must not mutate Kernel registry files directly.
+- Agents can request lifecycle work only through `AgentLifecycleActionService` and canonical request/result contracts.
+
+## Validation
+
+Focused checks:
+
+```bash
+pnpm check:kernel-lifecycle-service
+pnpm check:kernel-api-contracts
+pnpm check:kernel-lifecycle-truth
+pnpm check:kernel-provider-mode
+pnpm check:agentic-lifecycle-action-contracts
+pnpm check:digital-marketing-lifecycle-pilot --smoke
+pnpm check:product-shape-capability-matrix
+```
+
+Broader release checks also include TypeScript package tests, gateway tests, Studio checks, production readiness, and Gradle builds.

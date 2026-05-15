@@ -55,14 +55,14 @@ export class ExtensionConnectorBridge {
                 ...(auth && typeof auth === 'object' && auth !== null ? { auth: auth as { [key: string]: unknown; type: 'none' | 'basic' | 'bearer' | 'api_key' | 'oauth2' } } : {}),
             } as ConnectionOptions);
 
+            this.connectors.set(profile.id, connector);
+
             // Best-effort connect; failures are surfaced via send()/status.
             try {
                 await connector.connect();
             } catch {
                 // Caller can inspect connector.status via getConnector if needed.
             }
-
-            this.connectors.set(profile.id, connector);
         });
 
         await Promise.all(tasks);

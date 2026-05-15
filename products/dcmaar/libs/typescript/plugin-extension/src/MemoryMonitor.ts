@@ -181,7 +181,10 @@ export class MemoryMonitor extends BaseDeviceMonitor {
         free: heapTotal - heapUsed,
         used: heapUsed,
         cached: external,
-        usagePercent: Math.round((heapUsed / heapTotal) * 100),
+        usagePercent:
+          heapTotal + external > 0
+            ? Math.round(((heapUsed + external) / (heapTotal + external)) * 100)
+            : 0,
         timestamp: Date.now(),
       };
     }

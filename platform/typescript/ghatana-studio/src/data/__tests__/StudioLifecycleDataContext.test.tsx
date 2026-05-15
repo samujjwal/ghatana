@@ -86,6 +86,7 @@ function createClient(overrides: Partial<KernelLifecycleClient> = {}): KernelLif
     listProductUnits: vi.fn().mockResolvedValue([productUnit]),
     getProductUnit: vi.fn().mockResolvedValue(productUnit),
     createLifecyclePlan: vi.fn(),
+    executeLifecyclePhase: vi.fn().mockResolvedValue(lifecycleRun),
     getLifecycleRun: vi.fn().mockResolvedValue(lifecycleRun),
     listLifecycleRuns: vi.fn().mockResolvedValue([lifecycleRun]),
     getGateResultManifest: vi.fn().mockResolvedValue({

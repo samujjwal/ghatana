@@ -133,6 +133,9 @@ export function parseCsfSource(content: string, filePath: string): ExtractedCsfD
               if (Array.isArray(storyObj['decorators'])) {
                 for (const d of storyObj['decorators']) {
                   if (typeof d === 'string') decorators.push(d);
+                  if (d && typeof d === 'object' && 'function' in d) {
+                    decorators.push(String(d['function']));
+                  }
                 }
               }
 

@@ -63,6 +63,11 @@ export const darkModeSemanticColors = {
   },
 };
 
+export const darkMode = {
+  colors: darkModeColors,
+  semanticColors: darkModeSemanticColors,
+};
+
 /**
  * Get computed dark mode styles
  */

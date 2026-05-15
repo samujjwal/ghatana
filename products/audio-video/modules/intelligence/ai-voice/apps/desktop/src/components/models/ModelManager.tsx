@@ -42,7 +42,7 @@ export const ModelManager: React.FC = () => {
 
       const modelInfos: ModelInfo[] = available.map(id => ({
         id,
-        name: id.split('-')[1] || id,
+        name: id,
         version: 'v4',
         size_mb: getModelSize(id),
         description: getModelDescription(id),
@@ -50,7 +50,7 @@ export const ModelManager: React.FC = () => {
       }));
 
       setModels(modelInfos);
-      setCacheSize(size);
+      setCacheSize(typeof size === 'number' && Number.isFinite(size) ? size : 0);
       logger.info('LoadModels:success', { available: available.length, downloaded: downloaded.length, cacheSize: size });
     } catch (error) {
       logger.error('LoadModels:error', {}, error);
@@ -132,7 +132,7 @@ export const ModelManager: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" role="status" aria-label="Loading models">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
@@ -249,4 +249,3 @@ export const ModelManager: React.FC = () => {
     </div>
   );
 };
-

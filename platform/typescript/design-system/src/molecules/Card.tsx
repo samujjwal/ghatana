@@ -287,6 +287,7 @@ Card.displayName = 'Card';
 // CardHeader component (exported for consumer composition)
 export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action, avatar, titleLevel = 2, className, style, ...rest }) => {
   const TitleElement = `h${titleLevel}` as keyof React.JSX.IntrinsicElements;
+  const headerTitle = title ?? rest.children;
 
   return (
     <div
@@ -296,12 +297,12 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ title, subheader, action
     >
       <div style={{ flex: '1 1 auto' }}>
         {avatar ? <div style={{ display: 'inline-flex', marginRight: '8px' }}>{avatar}</div> : null}
-        {title ? (
+        {headerTitle ? (
           <TitleElement
             className="gh-card__title"
             style={{ margin: 0, fontSize: fontSize.lg, fontWeight: fontWeight.semibold }}
           >
-            {title}
+            {headerTitle}
           </TitleElement>
         ) : null}
         {subheader ? <div className="gh-card__subtitle" style={{ fontSize: fontSize.sm }}>{subheader}</div> : null}
@@ -338,3 +339,10 @@ export const CardMedia: React.FC<CardMediaProps> = ({ component: Component = 'di
     </Tag>
   );
 };
+
+Object.assign(Card, {
+  Header: CardHeader,
+  Content: CardContent,
+  Actions: CardActions,
+  Media: CardMedia,
+});

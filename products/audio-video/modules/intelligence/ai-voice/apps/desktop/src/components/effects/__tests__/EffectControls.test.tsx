@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { EffectControls } from '../EffectControls';
 import {
   createTauriInvokeMock,
@@ -15,7 +16,6 @@ import {
   cleanupAllMocks,
   mockAlert,
   clickButton,
-  render,
   screen,
   waitFor,
   fireEvent,
@@ -273,8 +273,11 @@ describe('EffectControls', () => {
     it('should show processing state', async () => {
       mockOpen.mockResolvedValue('/path/to/input.wav');
       mockSave.mockResolvedValue('/path/to/output.wav');
+      let resolveProcess: ((value: string) => void) | undefined;
       mockInvoke.mockImplementation(() =>
-        new Promise(resolve => setTimeout(() => resolve('/path/to/output.wav'), 100))
+        new Promise(resolve => {
+          resolveProcess = resolve;
+        })
       );
 
       render(<EffectControls />);
@@ -282,7 +285,11 @@ describe('EffectControls', () => {
       await clickButton(/browse/i);
       await clickButton(/apply effects/i);
 
-      expect(screen.getByText(/processing/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/processing/i)).toBeInTheDocument();
+      });
+
+      resolveProcess?.('/path/to/output.wav');
 
       await waitFor(() => {
         expect(screen.queryByText(/processing/i)).not.toBeInTheDocument();
@@ -443,4 +450,3 @@ describe('EffectControls', () => {
     });
   });
 });
-

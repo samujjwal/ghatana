@@ -35,6 +35,10 @@ export {
   type FileProvenanceProviderOptions,
 } from "./provenance/FileProvenanceProvider.js";
 export {
+  FileMemoryProvider,
+  type FileMemoryProviderOptions,
+} from "./memory/FileMemoryProvider.js";
+export {
   FileRuntimeTruthProvider,
   type FileRuntimeTruthProviderOptions,
 } from "./runtime-truth/FileRuntimeTruthProvider.js";

@@ -119,8 +119,9 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
      */
     @NotNull
     public MasteryTransition createTransitionFromEvent(@NotNull ObsolescenceEvent event, @NotNull MasteryItem item) {
-        // Build evidence map from event metadata and evidence refs
+        // Build policy-compatible evidence map from event metadata and reason.
         Map<String, String> evidenceMap = new HashMap<>(event.metadata());
+        evidenceMap.putAll(ObsolescenceEvidenceMapper.toTransitionEvidence(event));
         evidenceMap.put("obsolescenceReason", event.reason().name());
         evidenceMap.put("severity", event.severity().name());
         evidenceMap.put("eventId", event.eventId());
@@ -131,8 +132,9 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
             evidenceMap.put("evidence_" + i, event.evidenceRefs().get(i).toString());
         }
 
-        // P0 FIX: Use actual item state instead of hardcoded MASTERED
+        // Use actual item state and route to a policy-valid target transition.
         MasteryState fromState = item.state();
+        MasteryState routedTarget = routeTransitionTarget(fromState, event.recommendedTransition(), event.reason());
 
         // P0 FIX: Use actual item metadata instead of fake values
         String agentId = item.agentId();
@@ -147,7 +149,7 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
                 agentReleaseId,
                 skillId,
                 fromState, // P0 FIX: Use actual current state
-                event.recommendedTransition(),
+                routedTarget,
                 "Obsolescence detected: " + event.description(),
                 "obsolescence-transition-service",
                 Instant.now(),
@@ -156,9 +158,31 @@ public final class DefaultObsolescenceTransitionService implements ObsolescenceT
                         "eventId", event.eventId(),
                         "reason", event.reason().name(),
                         "severity", event.severity().name(),
-                        "originalState", fromState.name()
+                        "originalState", fromState.name(),
+                        "recommendedState", event.recommendedTransition().name(),
+                        "routedState", routedTarget.name()
                 )
         );
+    }
+
+    @NotNull
+    private static MasteryState routeTransitionTarget(
+            @NotNull MasteryState fromState,
+            @NotNull MasteryState recommended,
+            @NotNull ObsolescenceReason reason) {
+        if (reason == ObsolescenceReason.SECURITY_VULNERABILITY) {
+            return MasteryState.QUARANTINED;
+        }
+        if (fromState == MasteryState.MASTERED && recommended == MasteryState.OBSOLETE) {
+            return MasteryState.MAINTENANCE_ONLY;
+        }
+        if (fromState == MasteryState.OBSOLETE && recommended == MasteryState.RETIRED) {
+            return MasteryState.RETIRED;
+        }
+        if (fromState == MasteryState.MAINTENANCE_ONLY && recommended == MasteryState.OBSOLETE) {
+            return MasteryState.OBSOLETE;
+        }
+        return recommended;
     }
 
     /**

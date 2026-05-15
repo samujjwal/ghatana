@@ -30,7 +30,7 @@ export interface DataGridProps<T extends Record<string, unknown>> {
   pageSize?: number;
   onSortChange?: (sort: SortState | undefined) => void;
   onFilterChange?: (filters: FilterState[]) => void;
-  onPageChange?: (page: number) => void;
+  onPageChange?: (pagination: PaginationState) => void;
   isLoading?: boolean;
   emptyMessage?: string;
   'aria-label'?: string;
@@ -75,17 +75,52 @@ export function DataGrid<T extends Record<string, unknown>>({
         ? [...filters.filter((f) => f.column !== column), { column, value }]
         : filters.filter((f) => f.column !== column);
       setFilters(newFilters);
+      setPage(1);
       onFilterChange?.(newFilters);
     },
     [filters, onFilterChange]
   );
 
+  const filteredData = useMemo(() => {
+    return filters.reduce<T[]>((rows, filter) => {
+      const normalizedFilter = filter.value.trim().toLowerCase();
+      if (!normalizedFilter) {
+        return rows;
+      }
+
+      return rows.filter((row) =>
+        String(row[filter.column] ?? '').toLowerCase().includes(normalizedFilter)
+      );
+    }, data);
+  }, [data, filters]);
+
+  const sortedData = useMemo(() => {
+    if (!sort) {
+      return filteredData;
+    }
+
+    return [...filteredData].sort((left, right) => {
+      const leftValue = left[sort.column];
+      const rightValue = right[sort.column];
+
+      if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+        return sort.direction === 'asc' ? leftValue - rightValue : rightValue - leftValue;
+      }
+
+      const comparison = String(leftValue ?? '').localeCompare(String(rightValue ?? ''), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      return sort.direction === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredData, sort]);
+
   const pagedData = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return data.slice(start, start + pageSize);
-  }, [data, page, pageSize]);
+    return sortedData.slice(start, start + pageSize);
+  }, [page, pageSize, sortedData]);
 
-  const totalPages = Math.ceil(data.length / pageSize);
+  const totalPages = Math.ceil(sortedData.length / pageSize);
 
   return (
     <div>
@@ -93,18 +128,21 @@ export function DataGrid<T extends Record<string, unknown>>({
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key} scope="col">
+              <th
+                key={col.key}
+                scope="col"
+                aria-sort={
+                  col.sortable && sort?.column === col.key
+                    ? sort.direction === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : undefined
+                }
+              >
                 {col.sortable ? (
                   <button
                     type="button"
                     onClick={() => handleSort(col.key)}
-                    aria-sort={
-                      sort?.column === col.key
-                        ? sort.direction === 'asc'
-                          ? 'ascending'
-                          : 'descending'
-                        : 'none'
-                    }
                   >
                     {col.header}
                   </button>
@@ -153,7 +191,7 @@ export function DataGrid<T extends Record<string, unknown>>({
           totalPages={totalPages}
           onPageChange={(p) => {
             setPage(p);
-            onPageChange?.(p);
+            onPageChange?.({ page: p, pageSize, total: sortedData.length });
           }}
         />
       )}

@@ -6,6 +6,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from '@react-native-vector-icons/material-icons';
 import DashboardScreen from '@/screens/DashboardScreen';
+import DevicesScreen from '@/screens/DevicesScreen';
+import PoliciesScreen from '@/screens/PoliciesScreen';
+import AlertsScreen from '@/screens/AlertsScreen';
 import UsageScreen from '@/screens/UsageScreen';
 import BlocksScreen from '@/screens/BlocksScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
@@ -28,6 +31,15 @@ const AppNavigator: React.FC = () => {
                 break;
               case 'Usage':
                 iconName = 'bar-chart';
+                break;
+              case 'Devices':
+                iconName = 'devices';
+                break;
+              case 'Policies':
+                iconName = 'policy';
+                break;
+              case 'Alerts':
+                iconName = 'notifications';
                 break;
               case 'Blocks':
                 iconName = 'block';
@@ -61,6 +73,21 @@ const AppNavigator: React.FC = () => {
           name="Usage"
           component={UsageScreen}
           options={{ title: 'Usage' }}
+        />
+        <Tab.Screen
+          name="Devices"
+          component={DevicesScreen}
+          options={{ title: 'Devices' }}
+        />
+        <Tab.Screen
+          name="Policies"
+          component={PoliciesScreen}
+          options={{ title: 'Policies' }}
+        />
+        <Tab.Screen
+          name="Alerts"
+          component={AlertsScreen}
+          options={{ title: 'Alerts' }}
         />
         <Tab.Screen
           name="Blocks"

@@ -58,7 +58,7 @@ requireAll('platform/typescript/kernel-product-contracts/src/agentic/AgentLifecy
 ]);
 
 requireAll('platform/typescript/kernel-lifecycle/src/agentic/AgentLifecycleActionService.ts', [
-  'AgentLifecycleActionRequestSchema.parse',
+  'parseAgentLifecycleActionRequest',
   'evaluatePolicy',
   'evaluateMastery',
   'evaluateApproval',
@@ -66,14 +66,30 @@ requireAll('platform/typescript/kernel-lifecycle/src/agentic/AgentLifecycleActio
   'planner.plan',
   'executor.executePlan',
   'recordProvenance',
+  'recordRuntimeTruth',
+  'recordMemory',
   'AgentLifecycleActionResultSchema.parse',
 ]);
 
 requireAll('products/data-cloud/planes/action/gateway/src/__tests__/agentic-lifecycle-actions.test.ts', [
+  'schemaVersion: \'1.0.0\'',
+  'requestedAction: \'create-lifecycle-plan\'',
+  'lifecyclePhase: \'build\'',
   'without proxying to raw backend tools',
   'fails closed when the governed Kernel service is not configured',
   'surfaces service validation failures for raw command attempts',
 ]);
+
+const gatewayTestSource = read('products/data-cloud/planes/action/gateway/src/__tests__/agentic-lifecycle-actions.test.ts');
+for (const legacyNeedle of [
+  'schemaVersion: \'agent.lifecycle.action.request.v1\'',
+  'requestedAction: \'plan\'',
+  'lifecyclePhase: \'plan\'',
+]) {
+  if (gatewayTestSource.includes(legacyNeedle)) {
+    errors.push(`gateway agentic lifecycle test must not use legacy shape: ${legacyNeedle}`);
+  }
+}
 
 if (errors.length > 0) {
   console.error('Agentic lifecycle action contract check failed:');

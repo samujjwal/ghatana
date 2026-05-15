@@ -75,19 +75,19 @@ function createCompilerHost(
 
   return {
     ...defaultHost,
-    getSourceFile: (name, languageVersion, onError, shouldCreateNewSourceFile) => {
-      if (name === fileName) {
+    getSourceFile: (requestedFileName, languageVersion, onError, shouldCreateNewSourceFile) => {
+      if (requestedFileName === fileName) {
         return ts.createSourceFile(fileName, fileContent, languageVersion, true, ts.ScriptKind.TSX);
       }
-      return defaultHost.getSourceFile(name, languageVersion, onError, shouldCreateNewSourceFile);
+      return defaultHost.getSourceFile(requestedFileName, languageVersion, onError, shouldCreateNewSourceFile);
     },
-    readFile: (fileName) => {
-      if (fileName === fileName) return fileContent;
-      return defaultHost.readFile(fileName);
+    readFile: (requestedFileName) => {
+      if (requestedFileName === fileName) return fileContent;
+      return defaultHost.readFile(requestedFileName);
     },
-    fileExists: (fileName) => {
-      if (fileName === fileName) return true;
-      return defaultHost.fileExists(fileName);
+    fileExists: (requestedFileName) => {
+      if (requestedFileName === fileName) return true;
+      return defaultHost.fileExists(requestedFileName);
     },
   };
 }
@@ -277,6 +277,37 @@ function extractPropsFromDestructuring(
   return props;
 }
 
+function extractDefaultValuesFromDestructuring(
+  param: ts.ParameterDeclaration,
+): Map<string, unknown> {
+  const defaults = new Map<string, unknown>();
+
+  if (!ts.isObjectBindingPattern(param.name)) {
+    return defaults;
+  }
+
+  for (const element of param.name.elements) {
+    if (ts.isBindingElement(element) && ts.isIdentifier(element.name) && element.initializer) {
+      defaults.set(element.name.text, extractLiteralValue(element.initializer));
+    }
+  }
+
+  return defaults;
+}
+
+function applyPropDefaults(
+  props: PropSchema[],
+  defaults: ReadonlyMap<string, unknown>,
+): PropSchema[] {
+  if (defaults.size === 0) return props;
+
+  return props.map(prop => (
+    defaults.has(prop.name)
+      ? { ...prop, defaultValue: defaults.get(prop.name), required: false }
+      : prop
+  ));
+}
+
 function extractLiteralValue(node: ts.Expression): unknown {
   if (ts.isStringLiteral(node)) return node.text;
   if (ts.isNumericLiteral(node)) return Number(node.text);
@@ -294,6 +325,23 @@ function extractLiteralValue(node: ts.Expression): unknown {
     return obj;
   }
   return undefined;
+}
+
+function extractClassProps(
+  node: ts.ClassDeclaration,
+  sourceFile: ts.SourceFile,
+  typeChecker: ts.TypeChecker | undefined,
+): PropSchema[] {
+  for (const clause of node.heritageClauses ?? []) {
+    for (const type of clause.types) {
+      const propsType = type.typeArguments?.[0];
+      if (propsType) {
+        return extractPropsFromType(propsType, sourceFile, typeChecker);
+      }
+    }
+  }
+
+  return [];
 }
 
 // ============================================================================
@@ -437,7 +485,14 @@ function extractAccessibility(node: ts.Node, _sourceFile: ts.SourceFile): Access
         focusable = true;
       }
       if (attrName === 'aria-label' && n.initializer) {
-        screenReaderLabel = ts.isStringLiteral(n.initializer) ? n.initializer.text : undefined;
+        if (ts.isStringLiteral(n.initializer)) {
+          screenReaderLabel = n.initializer.text;
+        } else if (
+          ts.isJsxExpression(n.initializer) &&
+          n.initializer.expression
+        ) {
+          screenReaderLabel = n.initializer.expression.getText(_sourceFile);
+        }
       }
       if (attrName === 'onKeyDown' || attrName === 'onKeyUp' || attrName === 'onKeyPress') {
         keyboardNavigation = true;
@@ -499,7 +554,7 @@ export function extractComponentsFromSource(
   content: string,
   filePath: string,
 ): ExtractedComponent[] {
-  const sourceFile = ts.createSourceFile(
+  const parsedSourceFile = ts.createSourceFile(
     filePath,
     content,
     ts.ScriptTarget.Latest,
@@ -517,6 +572,7 @@ export function extractComponentsFromSource(
   }, host);
 
   const typeChecker = program.getTypeChecker();
+  const sourceFile = program.getSourceFile(filePath) ?? parsedSourceFile;
   const components = findExportedComponents(sourceFile);
 
   return components.map(node => {
@@ -546,11 +602,31 @@ export function extractComponentsFromSource(
       if (params.length > 0 && params[0] !== undefined) {
         const firstParam = params[0];
         if (firstParam.type) {
-          props = extractPropsFromType(firstParam.type, sourceFile, typeChecker);
+          props = applyPropDefaults(
+            extractPropsFromType(firstParam.type, sourceFile, typeChecker),
+            extractDefaultValuesFromDestructuring(firstParam),
+          );
         } else if (ts.isObjectBindingPattern(firstParam.name)) {
           props = extractPropsFromDestructuring(params, sourceFile);
         }
       }
+    } else if (ts.isVariableDeclaration(node) && node.initializer) {
+      if (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer)) {
+        const params = node.initializer.parameters;
+        if (params.length > 0 && params[0] !== undefined) {
+          const firstParam = params[0];
+          if (firstParam.type) {
+            props = applyPropDefaults(
+              extractPropsFromType(firstParam.type, sourceFile, typeChecker),
+              extractDefaultValuesFromDestructuring(firstParam),
+            );
+          } else if (ts.isObjectBindingPattern(firstParam.name)) {
+            props = extractPropsFromDestructuring(params, sourceFile);
+          }
+        }
+      }
+    } else if (ts.isClassDeclaration(node)) {
+      props = extractClassProps(node, sourceFile, typeChecker);
     }
 
     // Extract slots

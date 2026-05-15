@@ -21,6 +21,20 @@ interface FlattenContext {
   result: Record<string, string | number>;
 }
 
+function normalizePathSegment(segment: string): string {
+  return segment
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/\./g, '-')
+    .toLowerCase();
+}
+
+function normalizeVariableName(prefix: string, path: string): string {
+  return `--${prefix}-${path
+    .split('-')
+    .map(normalizePathSegment)
+    .join('-')}`.replace(/[^a-z0-9-]/g, '-');
+}
+
 function flattenTokens(
   input: unknown,
   ctx: FlattenContext
@@ -68,8 +82,24 @@ export function createCssVariableMap(
   const entries: Record<string, string | number> = {};
 
   Object.entries(flattened).forEach(([path, value]) => {
-    entries[`--${prefix}-${path}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')] = value;
+    entries[normalizeVariableName(prefix, path)] = value === 0 ? '0' : value;
   });
+
+  const semanticSpacing = registry.spacing?.semantic;
+  if (semanticSpacing && typeof semanticSpacing === 'object') {
+    Object.entries(semanticSpacing).forEach(([key, value]) => {
+      if (typeof value === 'string' || typeof value === 'number') {
+        entries[normalizeVariableName(prefix, `spacing-${key}`)] =
+          value === 0 ? '0' : value;
+      }
+    });
+  }
+
+  const baseFontFamily = registry.typography?.fontFamily?.sans;
+  if (typeof baseFontFamily === 'string') {
+    entries[normalizeVariableName(prefix, 'typography-font-family-base')] =
+      baseFontFamily;
+  }
 
   return entries;
 }

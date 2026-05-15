@@ -56,7 +56,8 @@ export function Wizard({
                 aria-label={`Step ${idx + 1}: ${step.title}`}
                 disabled={!completedSteps.has(step.id) && idx > currentStepIndex}
               >
-                {idx + 1}. {step.title}
+                <span aria-hidden="true">{idx + 1}. </span>
+                <span>{step.title}</span>
                 {completedSteps.has(step.id) && (
                   <span aria-label="Completed"> ✓</span>
                 )}

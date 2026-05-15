@@ -25,6 +25,7 @@ export interface LatencyHistogram {
 
 export interface GatewayMetricsSnapshot {
   httpProxyRequestsByStatus: Record<string, number>;
+  kernelLifecycleRequestsByOperation: Record<string, number>;
   authFailuresByReason: Record<string, number>;
   tenantMismatchTotal: number;
   sseAcceptedTotal: number;
@@ -38,6 +39,7 @@ export interface GatewayMetricsSnapshot {
 
 export class GatewayMetrics {
   private readonly _httpProxyRequestsByStatus = new Map<string, number>();
+  private readonly _kernelLifecycleRequestsByOperation = new Map<string, number>();
   private readonly _authFailuresByReason = new Map<string, number>();
   private _tenantMismatchTotal = 0;
   private _sseAcceptedTotal = 0;
@@ -56,6 +58,15 @@ export class GatewayMetrics {
   recordHttpProxyRequest(status: number): void {
     const key = String(status);
     this._httpProxyRequestsByStatus.set(key, (this._httpProxyRequestsByStatus.get(key) ?? 0) + 1);
+  }
+
+  /** Record an injected Kernel lifecycle API operation by operation and status code. */
+  recordKernelLifecycleRequest(operation: string, status: number): void {
+    const key = `${operation}:${status}`;
+    this._kernelLifecycleRequestsByOperation.set(
+      key,
+      (this._kernelLifecycleRequestsByOperation.get(key) ?? 0) + 1,
+    );
   }
 
   /**
@@ -120,6 +131,7 @@ export class GatewayMetrics {
   snapshot(): GatewayMetricsSnapshot {
     return {
       httpProxyRequestsByStatus: Object.fromEntries(this._httpProxyRequestsByStatus),
+      kernelLifecycleRequestsByOperation: Object.fromEntries(this._kernelLifecycleRequestsByOperation),
       authFailuresByReason: Object.fromEntries(this._authFailuresByReason),
       tenantMismatchTotal: this._tenantMismatchTotal,
       sseAcceptedTotal: this._sseAcceptedTotal,
@@ -139,6 +151,7 @@ export class GatewayMetrics {
   /** Reset all counters. Useful in tests. */
   reset(): void {
     this._httpProxyRequestsByStatus.clear();
+    this._kernelLifecycleRequestsByOperation.clear();
     this._authFailuresByReason.clear();
     this._tenantMismatchTotal = 0;
     this._sseAcceptedTotal = 0;

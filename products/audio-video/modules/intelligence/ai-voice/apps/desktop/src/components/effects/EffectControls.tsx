@@ -149,11 +149,11 @@ export const EffectControls: React.FC = () => {
       if (limiterEnabled) effectsConfig.limiter = limiter;
 
       logger.info('ApplyEffects:request', { audioPath, outputPath });
-      await invokeWithLog<void>(logger, 'apply_effects', {
-        audioPath,
-        outputPath,
-        effectsConfig,
-        sampleRate: 44100,
+      await invokeWithLog<void>(logger, 'process_audio_effects', {
+        inputAudioPath: audioPath,
+        outputAudioPath: outputPath,
+        effectsConfiguration: effectsConfig,
+        audioSampleRate: 44100,
       });
 
       logger.info('ApplyEffects:success', { outputPath });
@@ -570,4 +570,3 @@ export const EffectControls: React.FC = () => {
     </div>
   );
 };
-

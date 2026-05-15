@@ -125,6 +125,73 @@ public class AgentMemoryPlaneClient {
     }
 
     /**
+     * Queries canonical memory items and applies mastery-state filtering.
+     *
+     * <p>This method is used by governed runtime retrieval so the canonical runtime
+     * MemoryPlane can back mastery-aware retrieval without legacy projection bridges.
+     */
+    public Promise<List<MemoryItem>> queryMemoryItemsMasteryAware(
+            @NotNull String agentId,
+            @NotNull String skillId,
+            int limit,
+            boolean includeObsolete,
+            boolean includeMaintenanceOnly,
+            boolean includeNegativeKnowledge) {
+        return queryMemoryItemsMasteryAware(
+            this.tenantId,
+            agentId,
+            skillId,
+            limit,
+            includeObsolete,
+            includeMaintenanceOnly,
+            includeNegativeKnowledge);
+        }
+
+        /**
+         * Queries canonical memory items and applies mastery-state filtering for an explicit tenant.
+         *
+         * <p>This overload is used by governed dispatch to preserve request-tenant isolation.
+         */
+        public Promise<List<MemoryItem>> queryMemoryItemsMasteryAware(
+            @NotNull String tenantId,
+            @NotNull String agentId,
+            @NotNull String skillId,
+            int limit,
+            boolean includeObsolete,
+            boolean includeMaintenanceOnly,
+            boolean includeNegativeKnowledge) {
+        MemoryQuery query = MemoryQuery.builder()
+            .tenantId(tenantId)
+                .agentId(agentId)
+                .skillId(skillId)
+                .limit(limit)
+                .includeObsolete(includeObsolete)
+                .includeMaintenanceOnly(includeMaintenanceOnly)
+                .includeNegativeKnowledge(includeNegativeKnowledge)
+                .build();
+
+        return memoryPlane.query(query)
+                .map(items -> {
+                    if (masteryRegistry == null) {
+                        return items;
+                    }
+                    return items.stream()
+                            .filter(item -> {
+                                String masteryState = item.getLabels().get("masteryState");
+                                if (!includeObsolete
+                                        && ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState))) {
+                                    return false;
+                                }
+                                if (!includeMaintenanceOnly && "MAINTENANCE_ONLY".equals(masteryState)) {
+                                    return false;
+                                }
+                                return true;
+                            })
+                            .toList();
+                });
+    }
+
+    /**
      * Filters procedures by mastery state based on the include flags.
      */
     private List<EnhancedProcedure> filterByMasteryState(

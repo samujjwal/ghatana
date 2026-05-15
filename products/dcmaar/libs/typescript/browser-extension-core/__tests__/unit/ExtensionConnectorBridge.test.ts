@@ -6,12 +6,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ExtensionConnectorBridge } from "../../src/plugins/ExtensionConnectorBridge";
 import type { ExtensionConnectorProfile } from "@dcmaar/types";
 
-// Mock @ghatana/dcmaar-connectors to avoid real network behavior
+// Mock @dcmaar/connectors to avoid real network behavior
 const connectMock = vi.fn();
 const disconnectMock = vi.fn();
 const sendMock = vi.fn();
 
-vi.mock("@ghatana/dcmaar-connectors", () => {
+vi.mock("@dcmaar/connectors", () => {
     return {
         // Minimal type exports for the bridge
         createConnector: (config: unknown) => {

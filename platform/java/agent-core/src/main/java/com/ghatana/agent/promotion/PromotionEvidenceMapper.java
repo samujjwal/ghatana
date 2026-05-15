@@ -13,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 
 /**
  * Mapper for converting learning deltas to promotion evidence maps.
@@ -164,14 +163,30 @@ public final class PromotionEvidenceMapper {
         if (!result.allPassed()) {
             return false;
         }
-        // Check if category-specific test passed
+
+        // First preference: explicit category metadata emitted by evaluation pack.
         Map<String, String> metadata = result.metadata();
         if (metadata != null && metadata.containsKey(category + "_passed")) {
             String value = metadata.get(category + "_passed");
             return Boolean.TRUE.equals(Boolean.valueOf(value));
         }
-        // If no category-specific result, require at least one test result
-        return !result.caseResults().isEmpty();
+
+        // Fallback: require category-scoped test cases and verify they all pass.
+        List<EvaluationResult.TestCaseResult> categoryCases = result.caseResults().stream()
+                .filter(caseResult -> caseMatchesCategory(caseResult, category))
+                .toList();
+        if (categoryCases.isEmpty()) {
+            return false;
+        }
+        return categoryCases.stream().allMatch(EvaluationResult.TestCaseResult::passed);
+    }
+
+    private static boolean caseMatchesCategory(
+            @NotNull EvaluationResult.TestCaseResult caseResult,
+            @NotNull String category) {
+        String c = category.toLowerCase();
+        return caseResult.caseId().toLowerCase().contains(c)
+                || caseResult.name().toLowerCase().contains(c);
     }
 
     /**

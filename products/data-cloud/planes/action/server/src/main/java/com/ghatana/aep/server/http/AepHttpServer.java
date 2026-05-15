@@ -1194,6 +1194,21 @@ public class AepHttpServer {
         log.info("AEP HTTP Server stopped");
     }
 
+    /**
+     * Returns the currently bound HTTP listen port.
+     * If the server has not completed binding yet, returns the configured port.
+     */
+    public int getListenPort() {
+        if (server == null) {
+            return port;
+        }
+        List<InetSocketAddress> addresses = server.getListenAddresses();
+        if (addresses.isEmpty()) {
+            return port;
+        }
+        return addresses.get(0).getPort();
+    }
+
     private void awaitShutdown(CountDownLatch shutdownLatch) {
         try {
             if (!shutdownLatch.await(2, TimeUnit.SECONDS)) {

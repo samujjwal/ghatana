@@ -10,6 +10,14 @@
  */
 import type { PrismaClient } from "@tutorputor/core/db";
 
+interface AIAuditLogDelegate {
+  create(args: { data: Record<string, unknown> }): Promise<unknown>;
+}
+
+interface PrismaWithOptionalAIAuditLog {
+  aIAuditLog?: AIAuditLogDelegate;
+}
+
 export interface AIAuditLogEntry {
   tenantId: string;
   userId: string;
@@ -35,6 +43,20 @@ export class AIAuditService {
    * Log an AI inference
    */
   async logInference(entry: AIAuditLogEntry): Promise<void> {
+    const auditLogDelegate = (
+      this.prisma as unknown as PrismaWithOptionalAIAuditLog | undefined
+    )?.aIAuditLog;
+    if (!auditLogDelegate) {
+      console.warn("ai_audit_log_delegate_unavailable", {
+        tenantId: entry.tenantId,
+        userId: entry.userId,
+        modelId: entry.modelId,
+        endpoint: entry.endpoint,
+        success: entry.success,
+      });
+      return;
+    }
+
     // Truncate large payloads to avoid database bloat
     const maxPayloadSize = 10000; // 10KB
     const requestPayload = entry.requestPayload
@@ -44,24 +66,35 @@ export class AIAuditService {
       ? entry.responsePayload.substring(0, maxPayloadSize)
       : null;
 
-    await this.prisma.aIAuditLog.create({
-      data: {
+    try {
+      await auditLogDelegate.create({
+        data: {
+          tenantId: entry.tenantId,
+          userId: entry.userId,
+          modelId: entry.modelId,
+          modelName: entry.modelName || null,
+          modelVersion: entry.modelVersion || null,
+          endpoint: entry.endpoint,
+          requestPayload,
+          responsePayload,
+          policyDecision: entry.policyDecision || null,
+          latencyMs: entry.latencyMs || null,
+          success: entry.success,
+          errorMessage: entry.errorMessage || null,
+          ipAddress: entry.ipAddress || null,
+          userAgent: entry.userAgent || null,
+        },
+      });
+    } catch (error: unknown) {
+      console.warn("ai_audit_log_write_failed", {
         tenantId: entry.tenantId,
         userId: entry.userId,
         modelId: entry.modelId,
-        modelName: entry.modelName || null,
-        modelVersion: entry.modelVersion || null,
         endpoint: entry.endpoint,
-        requestPayload,
-        responsePayload,
-        policyDecision: entry.policyDecision || null,
-        latencyMs: entry.latencyMs || null,
         success: entry.success,
-        errorMessage: entry.errorMessage || null,
-        ipAddress: entry.ipAddress || null,
-        userAgent: entry.userAgent || null,
-      },
-    });
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   /**

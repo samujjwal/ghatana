@@ -94,6 +94,14 @@ const defaultCSPConfig: CSPConfig = {
 export function buildCSPHeader(config: CSPConfig): string {
   const directives: string[] = [];
 
+  if (config.directives) {
+    for (const [directive, sources] of Object.entries(config.directives)) {
+      directives.push(
+        sources.length > 0 ? `${directive} ${sources.join(' ')}` : directive
+      );
+    }
+  }
+
   if (config.defaultSrc) {
     directives.push(`default-src ${config.defaultSrc.join(' ')}`);
   }
@@ -250,7 +258,7 @@ import { type Request, type Response, type NextFunction } from 'express';
 export function cspMiddleware(config: CSPConfig = defaultCSPConfig) {
   return (req: Request, res: Response, next: NextFunction) => {
     const nonce = generateNonce();
-    (req as any).cspNonce = nonce;
+    (req as Request & { cspNonce: string }).cspNonce = nonce;
 
     let cspHeader = buildCSPHeader(config);
     if (config.generateNonce) {

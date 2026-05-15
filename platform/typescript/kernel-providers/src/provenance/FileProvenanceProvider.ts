@@ -57,14 +57,18 @@ export class FileProvenanceProvider implements LifecycleProvenanceProvider {
     }
 
     try {
+      const recordWithWriteMetadata = enrichProvenanceRecord(record, options);
       const stored = await this.readStoredRecords();
       const nextRecords = stored.records.filter(
-        (storedRecord) => storedRecord.provenanceId !== record.provenanceId
+        (storedRecord) =>
+          storedRecord.provenanceId !== recordWithWriteMetadata.provenanceId
       );
+      const records = [...nextRecords, recordWithWriteMetadata];
       await this.writeStoredRecords({
         schemaVersion: "1.0.0",
-        records: [...nextRecords, record],
+        records,
       });
+      await this.writeRunScopedRecords(recordWithWriteMetadata, records);
       return { success: true, ref: this.recordsPath };
     } catch (error) {
       return fail(String(error).replace(/^Error: /, ""), options.required);
@@ -80,6 +84,12 @@ export class FileProvenanceProvider implements LifecycleProvenanceProvider {
         return false;
       }
       if (query.runId !== undefined && record.runId !== query.runId) {
+        return false;
+      }
+      if (
+        query.correlationId !== undefined &&
+        record.correlationId !== query.correlationId
+      ) {
         return false;
       }
       return true;
@@ -115,6 +125,52 @@ export class FileProvenanceProvider implements LifecycleProvenanceProvider {
     await fs.writeFile(tempPath, `${JSON.stringify(records, null, 2)}\n`, "utf-8");
     await fs.rename(tempPath, this.recordsPath);
   }
+
+  private async writeRunScopedRecords(
+    record: LifecycleProvenanceRecord,
+    records: readonly LifecycleProvenanceRecord[]
+  ): Promise<void> {
+    const runRecords = records.filter(
+      (storedRecord) =>
+        storedRecord.productUnitId === record.productUnitId &&
+        storedRecord.runId === record.runId
+    );
+    const runScopedPath = path.join(
+      this.outputDirectory,
+      "products",
+      encodeURIComponent(record.productUnitId),
+      "runs",
+      encodeURIComponent(record.runId),
+      "provenance-records.json"
+    );
+    await fs.mkdir(path.dirname(runScopedPath), { recursive: true });
+    const tempPath = `${runScopedPath}.${process.pid}.${Date.now()}.tmp`;
+    await fs.writeFile(
+      tempPath,
+      `${JSON.stringify({ schemaVersion: "1.0.0", records: runRecords }, null, 2)}\n`,
+      "utf-8"
+    );
+    await fs.rename(tempPath, runScopedPath);
+  }
+}
+
+function enrichProvenanceRecord(
+  record: LifecycleProvenanceRecord,
+  options: LifecycleProviderWriteOptions
+): LifecycleProvenanceRecord {
+  return {
+    ...record,
+    correlationId: record.correlationId ?? options.correlationId,
+    ...(record.privacyClassification ?? options.privacyClassification
+      ? {
+          privacyClassification:
+            record.privacyClassification ?? options.privacyClassification,
+        }
+      : {}),
+    ...(record.retention ?? options.retention
+      ? { retention: record.retention ?? options.retention }
+      : {}),
+  };
 }
 
 function validateProvenanceRecord(record: LifecycleProvenanceRecord): string[] {

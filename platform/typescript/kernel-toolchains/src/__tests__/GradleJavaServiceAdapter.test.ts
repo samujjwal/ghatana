@@ -11,6 +11,7 @@ describe('GradleJavaServiceAdapter', () => {
 
   beforeEach(async () => {
     repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'gradle-adapter-'));
+    await fs.writeFile(path.join(repoRoot, 'settings.gradle.kts'), 'include(":products:digital-marketing:backend")');
   });
 
   afterEach(async () => {
@@ -75,7 +76,7 @@ describe('GradleJavaServiceAdapter', () => {
     });
     expect(commandRunner.invocations).toHaveLength(1);
     expect(commandRunner.invocations[0].options.cwd).toBe(repoRoot);
-    expect(commandRunner.invocations[0].options.timeoutMs).toBe(900_000);
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(1_200_000);
   });
 
   it('uses configured command timeout', async () => {
@@ -132,7 +133,7 @@ describe('GradleJavaServiceAdapter', () => {
 
     await adapter.execute(context);
 
-    expect(commandRunner.invocations[0].options.timeoutMs).toBe(900_000);
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(1_200_000);
   });
 
   it('returns failure cause when Gradle exits non-zero', async () => {
@@ -217,7 +218,7 @@ describe('GradleJavaServiceAdapter', () => {
     const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
     const context = createContext(repoRoot);
 
-    await expect(adapter.execute(context)).rejects.toThrow('is not declared in settings.gradle');
+    await expect(adapter.execute(context)).rejects.toThrow('gradle-module-not-found');
     expect(commandRunner.invocations).toHaveLength(0);
   });
 
@@ -294,6 +295,9 @@ describe('GradleJavaServiceAdapter', () => {
       expect(parsed.schemaVersion).toBe('1.0.0');
       expect(parsed.adapter).toBe('gradle-java-service');
       expect(parsed.productId).toBe('digital-marketing');
+      expect(parsed.runId).toBe('run-1');
+      expect(parsed.correlationId).toBe('corr-1');
+      expect(parsed.healthUrl).toBe('http://localhost:8080/health');
     });
 
     it('validateOutputs returns valid for dev phase without checking disk', async () => {
@@ -343,9 +347,20 @@ describe('GradleJavaServiceAdapter', () => {
         path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'test-results', 'test'),
         { recursive: true },
       );
+      await fs.writeFile(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'test-results', 'test', 'TEST-dmos.xml'),
+        '<testsuite tests="4" failures="1" errors="0" skipped="1" time="1.5"></testsuite>',
+      );
       await fs.mkdir(
-        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'jacoco'),
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'jacoco', 'test'),
         { recursive: true },
+      );
+      await fs.writeFile(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'jacoco', 'test', 'jacocoTestReport.csv'),
+        [
+          'GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED',
+          'dmos,com.ghatana,Service,10,90,2,8,5,95',
+        ].join('\n'),
       );
 
       const commandRunner = new FakeCommandRunner([
@@ -358,6 +373,17 @@ describe('GradleJavaServiceAdapter', () => {
 
       const result = await adapter.execute(context);
       expect(result.status).toBe('succeeded');
+      expect(result.testResults).toEqual({
+        tests: 4,
+        failures: 1,
+        skipped: 1,
+        durationMs: 1500,
+      });
+      expect(result.coverageResults).toEqual({
+        lineCoverage: 95,
+        branchCoverage: 80,
+        instructionCoverage: 90,
+      });
       expect(result.artifacts).toEqual(
         expect.arrayContaining([
           'products/digital-marketing/backend/build/reports/tests',
@@ -428,10 +454,13 @@ function createContext(repoRoot: string): ToolchainAdapterContext {
     surfaceConfig: {
       gradleModule: ':products:digital-marketing:backend',
       source: 'products/digital-marketing/backend',
+      healthUrl: 'http://localhost:8080/health',
     },
     phaseConfig: {},
     logger: createLogger(),
     outputDir: path.join(repoRoot, '.kernel', 'artifacts'),
+    runId: 'run-1',
+    correlationId: 'corr-1',
     metadata: {
       version: '1.0.0',
       gitCommit: 'abcdef0',

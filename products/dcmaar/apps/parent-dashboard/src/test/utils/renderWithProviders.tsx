@@ -1,7 +1,7 @@
 import { type ReactElement, type ReactNode, useMemo } from 'react';
 import { MemoryRouter, type MemoryRouterProps } from 'react-router-dom';
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
-import { Provider as JotaiProvider } from 'jotai';
+import { createStore, Provider as JotaiProvider } from 'jotai';
 import { RoleContext, ROLE_CONFIG, type RoleDefinition, type UserRole } from '@dcmaar/dashboard-core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -12,6 +12,7 @@ interface DashboardTestProvidersProps {
   withRouter?: boolean;
   routerProps?: MemoryRouterProps;
   queryClient?: QueryClient;
+  initializeStore?: (store: ReturnType<typeof createStore>) => void;
 }
 
 export function DashboardTestProviders({
@@ -20,9 +21,15 @@ export function DashboardTestProviders({
   roleConfig,
   withRouter = true,
   routerProps,
-  queryClient
+  queryClient,
+  initializeStore
 }: DashboardTestProvidersProps): ReactElement {
   const value = roleConfig ?? ROLE_CONFIG[role];
+  const jotaiStore = useMemo(() => {
+    const store = createStore();
+    initializeStore?.(store);
+    return store;
+  }, [initializeStore]);
   const client = useMemo(
     () =>
       queryClient ??
@@ -42,7 +49,7 @@ export function DashboardTestProviders({
   const content = (
     <QueryClientProvider client={client}>
       <RoleContext.Provider value={value}>
-        <JotaiProvider>{children}</JotaiProvider>
+        <JotaiProvider store={jotaiStore}>{children}</JotaiProvider>
       </RoleContext.Provider>
     </QueryClientProvider>
   );
@@ -60,6 +67,7 @@ interface RenderWithDashboardProvidersOptions extends Omit<RenderOptions, 'wrapp
   withRouter?: boolean;
   routerProps?: MemoryRouterProps;
   queryClient?: QueryClient;
+  initializeStore?: (store: ReturnType<typeof createStore>) => void;
 }
 
 export function renderWithDashboardProviders(
@@ -70,6 +78,7 @@ export function renderWithDashboardProviders(
     withRouter,
     routerProps,
     queryClient,
+    initializeStore,
     ...renderOptions
   }: RenderWithDashboardProvidersOptions = {}
 ): RenderResult {
@@ -80,6 +89,8 @@ export function renderWithDashboardProviders(
         roleConfig={roleConfig}
         withRouter={withRouter}
         routerProps={routerProps}
+        queryClient={queryClient}
+        initializeStore={initializeStore}
       >
         {children}
       </DashboardTestProviders>

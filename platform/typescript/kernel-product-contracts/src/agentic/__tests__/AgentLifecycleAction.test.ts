@@ -4,6 +4,7 @@ import {
   AgentLifecycleActionResultSchema,
   isAgentLifecycleActionRequest,
   isAgentLifecycleActionResult,
+  parseAgentLifecycleActionRequest,
   type AgentLifecycleActionRequest,
   type AgentLifecycleActionResult,
 } from "../index";
@@ -98,9 +99,46 @@ describe("AgentLifecycleAction contracts", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("returns typed reason codes for invalid requests", () => {
+    try {
+      parseAgentLifecycleActionRequest({
+        ...request,
+        proposedPlanRef: "pnpm test",
+        evidenceRefs: [],
+        rollbackPlanRef: "",
+      })
+    } catch (error) {
+      expect((error as { readonly issues: readonly { readonly reasonCode: string }[] }).issues.map((issue) => issue.reasonCode)).toEqual(
+        expect.arrayContaining([
+          "raw-command-not-allowed",
+          "missing-evidence",
+          "missing-rollback-plan",
+        ])
+      );
+      return;
+    }
+
+    throw new Error("expected parseAgentLifecycleActionRequest to throw");
+  });
+
   it("accepts governed agent lifecycle action results", () => {
     expect(isAgentLifecycleActionResult(result)).toBe(true);
     expect(AgentLifecycleActionResultSchema.parse(result).rollbackReadiness).toBe("ready");
+  });
+
+  it("accepts structured failure and required next action", () => {
+    const parsed = AgentLifecycleActionResultSchema.parse({
+      ...result,
+      failure: {
+        reasonCode: "gate-failed",
+        message: "Required gate failed",
+        evidenceRefs: ["evidence:gate:1"],
+      },
+      requiredNextAction: "inspect-failure",
+    });
+
+    expect(parsed.failure?.reasonCode).toBe("gate-failed");
+    expect(parsed.requiredNextAction).toBe("inspect-failure");
   });
 
   it("rejects result drift and malformed nested requests", () => {

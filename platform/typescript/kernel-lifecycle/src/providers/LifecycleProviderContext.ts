@@ -13,6 +13,12 @@ import type {
   RegistryProvider,
   SourceProvider,
 } from '@ghatana/kernel-product-contracts';
+import {
+  KernelProviderModeRequirements,
+  requireLifecycleProviderSet,
+  validateKernelLifecycleProviderContext,
+  type KernelLifecycleProviderContextValidationResult,
+} from '@ghatana/kernel-product-contracts';
 
 export interface LifecycleProviderContext extends KernelLifecycleProviderContext {
   readonly registryProvider?: RegistryProvider;
@@ -37,4 +43,58 @@ export function requireLifecycleContextProvider<TProvider extends KernelProvider
   }
 
   return provider as unknown as TProvider;
+}
+
+export function validateLifecycleProviderContext(
+  context: LifecycleProviderContext,
+): KernelLifecycleProviderContextValidationResult {
+  return validateKernelLifecycleProviderContext(context);
+}
+
+export function requireBootstrapLifecycleContext(
+  context: LifecycleProviderContext | undefined,
+  correlationId?: string,
+): LifecycleProviderContext {
+  if (context === undefined) {
+    throw new Error(
+      `Kernel bootstrap mode requires lifecycle provider context${formatCorrelationId(correlationId)}`,
+    );
+  }
+  if (context.mode !== 'bootstrap') {
+    throw new Error(
+      `Expected bootstrap lifecycle provider context but received ${context.mode}${formatCorrelationId(correlationId)}`,
+    );
+  }
+  try {
+    requireLifecycleProviderSet(context, KernelProviderModeRequirements.bootstrap);
+  } catch (error) {
+    throw new Error(`${error instanceof Error ? error.message : String(error)}${formatCorrelationId(correlationId)}`);
+  }
+  return context;
+}
+
+export function requirePlatformLifecycleContext(
+  context: LifecycleProviderContext | undefined,
+  correlationId?: string,
+): LifecycleProviderContext {
+  if (context === undefined) {
+    throw new Error(
+      `Kernel platform mode requires lifecycle provider context${formatCorrelationId(correlationId)}`,
+    );
+  }
+  if (context.mode !== 'platform') {
+    throw new Error(
+      `Expected platform lifecycle provider context but received ${context.mode}${formatCorrelationId(correlationId)}`,
+    );
+  }
+  try {
+    requireLifecycleProviderSet(context, KernelProviderModeRequirements.platform);
+  } catch (error) {
+    throw new Error(`${error instanceof Error ? error.message : String(error)}${formatCorrelationId(correlationId)}`);
+  }
+  return context;
+}
+
+function formatCorrelationId(correlationId: string | undefined): string {
+  return correlationId === undefined ? '' : ` (correlationId=${correlationId})`;
 }

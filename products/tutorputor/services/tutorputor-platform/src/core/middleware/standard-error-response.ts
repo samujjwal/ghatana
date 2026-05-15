@@ -68,6 +68,19 @@ export async function standardErrorResponseMiddleware(
     return;
   }
 
+  const statusCode = (error as { statusCode?: unknown }).statusCode;
+  const code = (error as { code?: unknown }).code;
+  if (typeof statusCode === "number" && typeof code === "string") {
+    const response = createErrorEnvelope({
+      code,
+      message: error.message,
+      statusCode,
+      traceId: requestId,
+    });
+    reply.status(statusCode).send(response);
+    return;
+  }
+
   if (error.name === "UnauthorizedError") {
     const response = createErrorEnvelope({
       code: "UNAUTHORIZED",
@@ -105,6 +118,9 @@ export async function standardErrorResponseMiddleware(
   const response = createErrorEnvelope({
     code: "INTERNAL_ERROR",
     message: "An unexpected error occurred",
+    ...(process.env.NODE_ENV !== "production"
+      ? { details: { message: error.message, name: error.name } }
+      : {}),
     statusCode: 500,
     traceId: requestId,
   });

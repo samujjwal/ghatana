@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.api.controller.MasteryController;
 import com.ghatana.datacloud.launcher.http.handlers.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.RoutingServlet;
@@ -120,6 +121,7 @@ class DataCloudRouterBuilderIntegrationTest {
         MemoryPlaneHandler memoryHandler = mock(MemoryPlaneHandler.class);
         BrainHandler brainHandler = mock(BrainHandler.class);
         LearningHandler learningHandler = mock(LearningHandler.class);
+        MasteryController masteryController = mock(MasteryController.class);
         AnalyticsHandler analyticsHandler = mock(AnalyticsHandler.class);
         AiModelHandler aiModelHandler = mock(AiModelHandler.class);
         AiAssistHandler aiAssistHandler = mock(AiAssistHandler.class);
@@ -134,11 +136,6 @@ class DataCloudRouterBuilderIntegrationTest {
         AutonomyHandler autonomyHandler = mock(AutonomyHandler.class);
         AgentCatalogHandler agentCatalogHandler = mock(AgentCatalogHandler.class);
         PluginInstallHandler pluginInstallHandler = mock(PluginInstallHandler.class);
-        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
-        FederatedQueryHandler federatedQueryHandler = mock(FederatedQueryHandler.class);
-        TierMigrationHandler tierMigrationHandler = mock(TierMigrationHandler.class);
-        DataSourceRegistryHandler dataSourceRegistryHandler = mock(DataSourceRegistryHandler.class);
-        StorageCostHandler storageCostHandler = mock(StorageCostHandler.class);
         
         DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
         
@@ -153,6 +150,7 @@ class DataCloudRouterBuilderIntegrationTest {
             .withMemoryRoutes(memoryHandler)
             .withBrainRoutes(brainHandler, sseHandler)
             .withLearningRoutes(learningHandler)
+            .withMasteryRoutes(masteryController)
             .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
             .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
             .withExecutionRoutes(workflowExecutionHandler)

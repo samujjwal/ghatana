@@ -1,5 +1,6 @@
 import { useState, useEffect, memo, useCallback } from 'react';
 import { DataGrid, type DataGridColumnConfig, type DataGridStatConfig, type DataGridFilterConfig, type CrudConfig } from '@ghatana/design-system';
+import { apiUrl } from '../config/api';
 import { PolicyForm } from './PolicyForm';
 
 export interface Policy {

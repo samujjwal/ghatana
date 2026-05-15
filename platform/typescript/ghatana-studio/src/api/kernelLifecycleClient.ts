@@ -43,6 +43,7 @@ const LIFECYCLE_RUN_STATUSES = [
   'blocked',
   'failed',
   'skipped',
+  'planned',
   'running',
   'pending approval',
   'requires verification',
@@ -259,6 +260,10 @@ export interface LifecyclePlanOptions {
   readonly correlationId?: string;
 }
 
+export interface ExecuteLifecyclePhaseOptions extends LifecyclePlanOptions {
+  readonly dryRun?: boolean;
+}
+
 export interface LifecycleRunQuery {
   readonly correlationId?: string;
 }
@@ -275,6 +280,11 @@ export interface KernelLifecycleClient {
     phase: ProductLifecyclePhase,
     options?: LifecyclePlanOptions,
   ): Promise<LifecyclePlan>;
+  executeLifecyclePhase(
+    productUnitId: string,
+    phase: ProductLifecyclePhase,
+    options?: ExecuteLifecyclePhaseOptions,
+  ): Promise<LifecycleRun>;
   getLifecycleRun(productUnitId: string, runId: string): Promise<LifecycleRun>;
   listLifecycleRuns(productUnitId: string): Promise<readonly LifecycleRun[]>;
   getGateResultManifest(productUnitId: string, runId: string): Promise<GateResultManifest>;
@@ -354,6 +364,29 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
           ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
         },
         schema: LifecyclePlanSchema,
+      },
+    );
+    return response.data;
+  }
+
+  async executeLifecyclePhase(
+    productUnitId: string,
+    phase: ProductLifecyclePhase,
+    options: ExecuteLifecyclePhaseOptions = {},
+  ): Promise<LifecycleRun> {
+    assertPhase(phase);
+    const correlationId = options.correlationId ?? this.correlationIdFactory();
+    const response = await this.apiClient.post<LifecycleRun>(
+      `/api/kernel/product-units/${encodePathSegment(assertIdentifier(productUnitId, 'productUnitId'))}/lifecycle/execute`,
+      {
+        headers: this.buildHeaders(correlationId),
+        body: {
+          phase,
+          correlationId,
+          dryRun: options.dryRun ?? false,
+          ...(options.environment !== undefined ? { environment: options.environment } : {}),
+        },
+        schema: LifecycleRunSchema,
       },
     );
     return response.data;

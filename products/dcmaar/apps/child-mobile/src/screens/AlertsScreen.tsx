@@ -10,7 +10,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useAlerts, useMarkAlertRead } from '@dcmaar/mobile-shared';
+import { useAlerts, useMarkAlertRead } from '@/hooks/useApi';
 import { formatRelativeTime } from '@/utils/format';
 
 const AlertsScreen: React.FC = () => {

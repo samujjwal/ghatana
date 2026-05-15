@@ -12,6 +12,8 @@ import type { ProductLifecyclePhase } from "../lifecycle/ProductLifecyclePhase";
 import type { ApprovalDecision, ApprovalRequest } from "./ApprovalProvider.js";
 import type { GateProvider } from "./GateProvider.js";
 import type { KernelProvider } from "./KernelProvider.js";
+import type { RegistryProvider } from "./RegistryProvider.js";
+import type { SourceProvider } from "./SourceProvider.js";
 
 export const KERNEL_PROVIDER_MODES = ["bootstrap", "platform"] as const;
 
@@ -20,6 +22,8 @@ export type KernelProviderMode = (typeof KERNEL_PROVIDER_MODES)[number];
 export interface LifecycleProviderWriteOptions {
   readonly required: boolean;
   readonly correlationId: string;
+  readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
+  readonly retention?: LifecycleRetentionMetadata;
 }
 
 export interface LifecycleProviderResult {
@@ -32,6 +36,8 @@ export interface LifecycleProviderQuery {
   readonly productUnitId: string;
   readonly runId?: string;
   readonly correlationId?: string;
+  readonly limit?: number;
+  readonly cursor?: string;
 }
 
 export interface LifecycleArtifactManifestRef {
@@ -39,6 +45,8 @@ export interface LifecycleArtifactManifestRef {
   readonly runId: string;
   readonly manifestPath: string;
   readonly artifactCount: number;
+  readonly correlationId?: string;
+  readonly digestStatus?: "complete" | "partial" | "missing";
 }
 
 export interface LifecycleHealthSnapshotRef {
@@ -46,6 +54,11 @@ export interface LifecycleHealthSnapshotRef {
   readonly runId: string;
   readonly status: string;
   readonly snapshotPath: string;
+  readonly snapshotAt?: string;
+  readonly correlationId?: string;
+  readonly reasonCode?: string;
+  readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
+  readonly retention?: LifecycleRetentionMetadata;
 }
 
 export type LifecycleEvidencePrivacyClassification =
@@ -67,6 +80,7 @@ export interface LifecycleProvenanceRecord {
   readonly runId: string;
   readonly source: string;
   readonly evidenceRefs: readonly string[];
+  readonly correlationId?: string;
   readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
   readonly retention?: LifecycleRetentionMetadata;
   readonly recordedAt: string;
@@ -78,6 +92,8 @@ export interface LifecycleMemoryRecord {
   readonly runId: string;
   readonly kind: string;
   readonly contentRef: string;
+  readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
+  readonly retention?: LifecycleRetentionMetadata;
   readonly recordedAt: string;
 }
 
@@ -88,6 +104,10 @@ export interface LifecycleRuntimeTruthSnapshot {
   readonly status: string;
   readonly observedAt: string;
   readonly evidenceRefs: readonly string[];
+  readonly correlationId?: string;
+  readonly providerMode?: KernelProviderMode;
+  readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
+  readonly retention?: LifecycleRetentionMetadata;
 }
 
 export interface LifecycleEventProvider extends KernelProvider {
@@ -166,6 +186,8 @@ export interface LifecycleRuntimeTruthProvider extends KernelProvider {
 
 export interface KernelLifecycleProviderContext {
   readonly mode: KernelProviderMode;
+  readonly registryProvider?: RegistryProvider;
+  readonly sourceProvider?: SourceProvider;
   readonly events?: LifecycleEventProvider;
   readonly artifacts?: LifecycleArtifactProvider;
   readonly health?: LifecycleHealthProvider;
@@ -176,11 +198,75 @@ export interface KernelLifecycleProviderContext {
   readonly runtimeTruth?: LifecycleRuntimeTruthProvider;
 }
 
+export const KernelProviderModeRequirements = {
+  bootstrap: [
+    "events",
+    "artifacts",
+    "health",
+    "approvals",
+    "provenance",
+    "runtimeTruth",
+  ],
+  platform: [
+    "events",
+    "artifacts",
+    "health",
+    "approvals",
+    "provenance",
+    "memory",
+    "runtimeTruth",
+  ],
+} as const satisfies Record<
+  KernelProviderMode,
+  readonly (keyof Omit<
+    KernelLifecycleProviderContext,
+    "mode" | "gates" | "registryProvider" | "sourceProvider"
+  >)[]
+>;
+
+export type KernelLifecycleProviderName =
+  (typeof KernelProviderModeRequirements)[KernelProviderMode][number];
+
+export type KernelLifecycleProviderContextReasonCode =
+  | "missing-provider"
+  | "invalid-provider-mode";
+
+export interface KernelLifecycleProviderContextValidationResult {
+  readonly valid: boolean;
+  readonly missingProviders: readonly KernelLifecycleProviderName[];
+  readonly mode?: KernelProviderMode;
+  readonly reasonCodes: readonly KernelLifecycleProviderContextReasonCode[];
+}
+
 export function isKernelProviderMode(value: unknown): value is KernelProviderMode {
   return (
     typeof value === "string" &&
     KERNEL_PROVIDER_MODES.includes(value as KernelProviderMode)
   );
+}
+
+export function validateKernelLifecycleProviderContext(
+  context: KernelLifecycleProviderContext
+): KernelLifecycleProviderContextValidationResult {
+  if (!isKernelProviderMode(context.mode)) {
+    return {
+      valid: false,
+      missingProviders: [],
+      reasonCodes: ["invalid-provider-mode"],
+    };
+  }
+
+  const requiredProviders = KernelProviderModeRequirements[context.mode];
+  const missingProviders = requiredProviders.filter(
+    (providerName) => context[providerName] === undefined
+  );
+
+  return {
+    valid: missingProviders.length === 0,
+    missingProviders,
+    mode: context.mode,
+    reasonCodes: missingProviders.length > 0 ? ["missing-provider"] : [],
+  };
 }
 
 export function requireLifecycleProvider<TProvider extends KernelProvider>(
@@ -194,4 +280,18 @@ export function requireLifecycleProvider<TProvider extends KernelProvider>(
     );
   }
   return provider as unknown as TProvider;
+}
+
+export function requireLifecycleProviderSet(
+  context: KernelLifecycleProviderContext,
+  providerNames: readonly KernelLifecycleProviderName[]
+): void {
+  const missingProviders = providerNames.filter(
+    (providerName) => context[providerName] === undefined
+  );
+  if (missingProviders.length > 0) {
+    throw new Error(
+      `Kernel ${context.mode} mode requires lifecycle providers: ${missingProviders.join(", ")}`
+    );
+  }
 }

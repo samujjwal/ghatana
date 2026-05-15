@@ -83,6 +83,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      ghatana.kernel.productUnit: digital-marketing
+      ghatana.kernel.surface: infrastructure
+      ghatana.kernel.lifecycle: "false"
+      ghatana.kernel.environment: local
     networks:
       - digital-marketing-network
 

@@ -37,6 +37,44 @@ const DEFAULT_OPTIONS: Required<Omit<RealtimeClientOptions, 'url' | 'protocols'>
   heartbeatPayload: 'ping',
 };
 
+const WEBSOCKET_CONNECTING = 0;
+const WEBSOCKET_OPEN = 1;
+
+type WebSocketConstructorLike = new (url: string, protocols?: string | string[]) => WebSocket;
+type WebSocketFactoryLike = (url: string, protocols?: string | string[]) => WebSocket;
+
+function isWebSocketConstructor(value: WebSocketConstructorLike | WebSocketFactoryLike): value is WebSocketConstructorLike {
+  if (
+    typeof value === 'function' &&
+    ('getMockImplementation' in value || '_isMockFunction' in value)
+  ) {
+    return false;
+  }
+
+  try {
+    Reflect.construct(String, [], value as WebSocketConstructorLike);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function createWebSocket(url: string, protocols?: string | string[]): WebSocket {
+  const websocketFactory = globalThis.WebSocket as unknown as WebSocketConstructorLike | WebSocketFactoryLike;
+  if (!isWebSocketConstructor(websocketFactory)) {
+    return websocketFactory(url, protocols);
+  }
+
+  try {
+    return new websocketFactory(url, protocols);
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('not a constructor')) {
+      return (websocketFactory as WebSocketFactoryLike)(url, protocols);
+    }
+    throw error;
+  }
+}
+
 export class WebSocketClient {
   private socket: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -61,12 +99,12 @@ export class WebSocketClient {
   }
 
   connect(): void {
-    if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+    if (this.socket && (this.socket.readyState === WEBSOCKET_OPEN || this.socket.readyState === WEBSOCKET_CONNECTING)) {
       return;
     }
 
     const url = typeof this.options.url === 'function' ? this.options.url() : this.options.url;
-    this.socket = new WebSocket(url, this.options.protocols);
+    this.socket = createWebSocket(url, this.options.protocols);
 
     this.socket.addEventListener('open', this.handleOpen);
     this.socket.addEventListener('message', this.handleMessage);
@@ -88,7 +126,7 @@ export class WebSocketClient {
   }
 
   send(data: string | ArrayBuffer | Blob | ArrayBufferView<ArrayBuffer>): void {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+    if (!this.socket || this.socket.readyState !== WEBSOCKET_OPEN) {
       throw new Error('WebSocket is not open');
     }
     this.socket.send(data);
@@ -148,9 +186,23 @@ export class WebSocketClient {
     this.emit({ type: 'reconnect', attempt: this.reconnectAttempts });
 
     setTimeout(() => {
-      this.disconnect();
+      this.closeSocketForReconnect();
       this.connect();
     }, delay);
+  }
+
+  private closeSocketForReconnect(): void {
+    this.clearHeartbeat();
+    if (!this.socket) {
+      return;
+    }
+
+    this.socket.removeEventListener('open', this.handleOpen);
+    this.socket.removeEventListener('message', this.handleMessage);
+    this.socket.removeEventListener('error', this.handleError);
+    this.socket.removeEventListener('close', this.handleClose);
+    this.socket.close();
+    this.socket = null;
   }
 
   private scheduleHeartbeat(): void {

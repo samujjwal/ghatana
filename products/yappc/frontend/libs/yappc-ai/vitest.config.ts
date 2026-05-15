@@ -4,13 +4,18 @@ import { resolve } from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
+    testTimeout: 30_000,
   },
   resolve: {
     alias: {
       '@ghatana/ui-builder': resolve(
         __dirname,
         '../../../../../platform/typescript/ui-builder/src/index.ts',
+      ),
+      '@ghatana/design-system': resolve(
+        __dirname,
+        '../../../../../platform/typescript/design-system/src/index.ts',
       ),
       '@ghatana/platform-events': resolve(
         __dirname,

@@ -16,7 +16,8 @@ import {
   beforeEach,
 } from "vitest";
 import { FastifyInstance } from "fastify";
-import { createServer } from "../../setup.js";
+import { createHmac } from "crypto";
+import { createServer } from "../../../setup.js";
 
 /**
  * Test fixture for AI tutor flow
@@ -26,9 +27,6 @@ interface AITestFixture {
   authToken: string;
 }
 
-/**
- * Creates test JWT token with claims
- */
 function createTestJWT(
   claims: {
     userId: string;
@@ -37,11 +35,10 @@ function createTestJWT(
   },
   signingKey: string,
 ): string {
-  const { createHmac } = await import("crypto");
   const payload = {
-    sub: claims.userId,
+    userId: claims.userId,
     tenantId: claims.tenantId,
-    role: claims.role || "student",
+    role: claims.role || "learner",
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600,
   };
@@ -57,6 +54,90 @@ function createTestJWT(
   return `${header}.${body}.${signature}`;
 }
 
+function createMockRedis(): Record<string, unknown> {
+  const storage = new Map<string, string>();
+  return {
+    incr: vi.fn((key: string) => {
+      const value = Number.parseInt(storage.get(key) ?? "0", 10) + 1;
+      storage.set(key, String(value));
+      return Promise.resolve(value);
+    }),
+    get: vi.fn((key: string) => Promise.resolve(storage.get(key) ?? null)),
+    set: vi.fn((key: string, value: string) => {
+      storage.set(key, value);
+      return Promise.resolve("OK");
+    }),
+    expire: vi.fn(() => Promise.resolve(1)),
+    del: vi.fn((key: string) => {
+      storage.delete(key);
+      return Promise.resolve(1);
+    }),
+    ping: vi.fn().mockResolvedValue("PONG"),
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+    duplicate: vi.fn().mockReturnValue({
+      subscribe: vi.fn().mockResolvedValue(undefined),
+      unsubscribe: vi.fn().mockResolvedValue(undefined),
+      on: vi.fn(),
+      removeAllListeners: vi.fn(),
+      disconnect: vi.fn(),
+    }),
+    status: "ready",
+  };
+}
+
+function createMockPrisma(): Record<string, unknown> {
+  return {
+    $connect: vi.fn().mockResolvedValue(undefined),
+    $disconnect: vi.fn().mockResolvedValue(undefined),
+    $queryRaw: vi.fn().mockResolvedValue([{ result: 1 }]),
+    userConsent: {
+      findMany: vi.fn().mockResolvedValue([{ category: "ai_processing" }]),
+      findFirst: vi.fn().mockResolvedValue({
+        category: "ai_processing",
+        granted: true,
+      }),
+    },
+    aIAuditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-test" }),
+    },
+  };
+}
+
+function createValidAiQueryPayload(question: string): {
+  question: string;
+  moduleId: string;
+  claimIds: string[];
+  currentSimulationState: Record<string, unknown>;
+  recentAttempts: Array<{
+    attemptId: string;
+    taskId: string;
+    correct: boolean;
+    confidence: "medium";
+  }>;
+  misconceptions: string[];
+  allowedHelpMode: "hint";
+  locale: string;
+} {
+  return {
+    question,
+    moduleId: "module-123",
+    claimIds: ["claim-123"],
+    currentSimulationState: { step: "intro" },
+    recentAttempts: [
+      {
+        attemptId: "attempt-123",
+        taskId: "task-123",
+        correct: true,
+        confidence: "medium",
+      },
+    ],
+    misconceptions: [],
+    allowedHelpMode: "hint",
+    locale: "en",
+  };
+}
+
 describe("AI Tutor Flow Integration Tests", () => {
   let fixture: AITestFixture;
   const JWT_SECRET = "test-secret-key-min-32-chars-long!!";
@@ -64,8 +145,13 @@ describe("AI Tutor Flow Integration Tests", () => {
   beforeAll(async () => {
     const app = await createServer({
       jwtSecret: JWT_SECRET,
+      startContentWorker: false,
+      startLearnerProfileGrpcServer: false,
+      prisma: createMockPrisma() as never,
+      redis: createMockRedis() as never,
     });
 
+    await app.ready();
     const authToken = createTestJWT(
       {
         userId: "test-user-123",
@@ -74,13 +160,11 @@ describe("AI Tutor Flow Integration Tests", () => {
       },
       JWT_SECRET,
     );
-
-    await app.ready();
     fixture = { app, authToken };
   });
 
   afterAll(async () => {
-    await fixture.app.close();
+    await fixture?.app.close();
   });
 
   describe("AI Tutor Query Flow", () => {
@@ -93,11 +177,7 @@ describe("AI Tutor Flow Integration Tests", () => {
           "x-tenant-id": "test-tenant-456",
           "x-user-id": "test-user-123",
         },
-        payload: {
-          question: "What is photosynthesis?",
-          moduleId: "module-123",
-          locale: "en",
-        },
+        payload: createValidAiQueryPayload("What is photosynthesis?"),
       });
 
       // Should not be 401 (auth) or 400 (validation)
@@ -120,7 +200,7 @@ describe("AI Tutor Flow Integration Tests", () => {
         },
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode, response.body).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.error).toBeDefined();
     });
@@ -140,7 +220,7 @@ describe("AI Tutor Flow Integration Tests", () => {
         },
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode, response.body).toBe(400);
     });
 
     it("should enforce rate limiting on AI queries", async () => {
@@ -154,10 +234,7 @@ describe("AI Tutor Flow Integration Tests", () => {
             "x-tenant-id": "test-tenant-456",
             "x-user-id": "test-user-123",
           },
-          payload: {
-            question: "Test question",
-            moduleId: "module-123",
-          },
+          payload: createValidAiQueryPayload("Test question"),
         }),
       );
 
@@ -184,15 +261,14 @@ describe("AI Tutor Flow Integration Tests", () => {
       // Health endpoint should be accessible
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body).toHaveProperty("status");
+      expect(body).toHaveProperty("healthy");
     });
   });
 
   describe("AI Cache Integration", () => {
     it("should cache AI responses for identical queries", async () => {
       const queryPayload = {
-        question: "What is the capital of France?",
-        moduleId: "module-123",
+        ...createValidAiQueryPayload("What is the capital of France?"),
       };
 
       // First request
@@ -220,8 +296,8 @@ describe("AI Tutor Flow Integration Tests", () => {
       });
 
       // Both should succeed
-      expect(firstResponse.statusCode).not.toBe(500);
-      expect(secondResponse.statusCode).not.toBe(500);
+      expect(firstResponse.statusCode, firstResponse.body).not.toBe(500);
+      expect(secondResponse.statusCode, secondResponse.body).not.toBe(500);
     });
   });
 });

@@ -7,8 +7,8 @@ package com.ghatana.agent.memory.retrieval;
 import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.memory.MemoryProjectionBridge;
+import com.ghatana.agent.memory.MemoryRetriever;
 import com.ghatana.agent.memory.model.MemoryItem;
-import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.model.MemoryQuery;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
@@ -35,9 +35,12 @@ import java.util.stream.Collectors;
  * @doc.layer agent-core
  * @doc.pattern Service
  */
-public final class MasteryAwareMemoryRetriever {
+@SuppressWarnings("deprecation")
+public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
 
     private final MasteryRegistry masteryRegistry;
+    @Nullable
+    private final AgentMemoryQueryPort memoryQueryPort;
     @Nullable
     private final MemoryProjectionBridge memoryPlane;
 
@@ -48,6 +51,21 @@ public final class MasteryAwareMemoryRetriever {
      */
     public MasteryAwareMemoryRetriever(@NotNull MasteryRegistry masteryRegistry) {
         this.masteryRegistry = masteryRegistry;
+        this.memoryQueryPort = null;
+        this.memoryPlane = null;
+    }
+
+    /**
+     * Creates a mastery-aware memory retriever composed with a canonical memory query port.
+     *
+     * @param masteryRegistry mastery registry
+     * @param memoryQueryPort canonical runtime memory query port
+     */
+    public MasteryAwareMemoryRetriever(
+            @NotNull MasteryRegistry masteryRegistry,
+            @Nullable AgentMemoryQueryPort memoryQueryPort) {
+        this.masteryRegistry = masteryRegistry;
+        this.memoryQueryPort = memoryQueryPort;
         this.memoryPlane = null;
     }
 
@@ -61,6 +79,7 @@ public final class MasteryAwareMemoryRetriever {
             @NotNull MasteryRegistry masteryRegistry,
             @Nullable MemoryProjectionBridge memoryPlane) {
         this.masteryRegistry = masteryRegistry;
+        this.memoryQueryPort = null;
         this.memoryPlane = memoryPlane;
     }
 
@@ -253,10 +272,15 @@ public final class MasteryAwareMemoryRetriever {
                 .limit(limit)
                 .build();
 
+        if (memoryQueryPort != null) {
+            return memoryQueryPort.queryMemoryItems(agentId, tenantId, skillId, versionContext, Math.max(limit * 3, 30))
+                .then(raw -> buildRetrievalBundle(agentId, tenantId, skillId, versionContext, limit, stub, raw));
+        }
+
         if (memoryPlane == null) {
             return Promise.of(new RetrievalBundle(
                     List.of(), List.of(),
-                    Map.of("reason", "No MemoryPlane configured", "agentId", agentId, "tenantId", tenantId),
+                Map.of("reason", "No memory source configured", "agentId", agentId, "tenantId", tenantId),
                     stub, List.of()));
         }
 
@@ -281,72 +305,82 @@ public final class MasteryAwareMemoryRetriever {
                         raw.add(new PolicyMemoryItemAdapter(policy, tenantId, skillId));
                     }
 
-                    String resolvedSkill = skillId.isBlank() ? agentId : skillId;
-                    MasteryQuery masteryQuery = MasteryQuery.bySkill(resolvedSkill)
-                            .withAgentId(agentId)
-                            .withTenantId(tenantId);
-
-                    return masteryRegistry.query(masteryQuery)
-                            .then(masteryItems -> {
-                                Map<String, MasteryItem> skillIndex = masteryItems.stream()
-                                        .collect(Collectors.toMap(MasteryItem::skillId, m -> m));
-
-                                Instant now = Instant.now();
-                                List<MemoryItem> selected = new ArrayList<>();
-                                List<MemoryRetrievalService.RejectedItem> rejected = new ArrayList<>();
-                                List<RetrievalDecision> decisions = new ArrayList<>();
-
-                                for (MemoryItem item : raw) {
-                                    MasteryItem mi = skillIndex.get(item.getSkillId());
-                                    MasteryState state = mi != null ? mi.state() : MasteryState.UNKNOWN;
-                                    VersionApplicability applicability = mi != null
-                                            ? mi.versionScope().classify(versionContext)
-                                            : VersionApplicability.UNKNOWN;
-
-                                    if (applicability == VersionApplicability.OBSOLETE) {
-                                        String reason = "Version scope is OBSOLETE";
-                                        rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
-                                        decisions.add(RetrievalDecision.excluded(
-                                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
-                                        continue;
-                                    }
-
-                                    boolean allowed = isAllowedForRetrieval(state, versionContext, now, applicability);
-                                    if (!allowed) {
-                                        String reason = "Mastery state " + state + " excluded from retrieval";
-                                        rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
-                                        decisions.add(RetrievalDecision.excluded(
-                                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
-                                        continue;
-                                    }
-
-                                    int priority = getRetrievalPriority(item, skillIndex, versionContext);
-                                    selected.add(item);
-                                    decisions.add(RetrievalDecision.included(
-                                            item.getId(), item.getSkillId(), state, applicability,
-                                            freshness(item, now),
-                                            "Mastery state " + state + " approved for retrieval",
-                                            priority));
-                                }
-
-                                // P0 FIX: Sort selected by priority descending (higher priority first)
-                                // Removed .reversed() which was causing lower priority items to come first
-                                selected.sort(createMasteryPriorityComparator(skillIndex, versionContext));
-                                List<MemoryItem> capped = selected.stream().limit(limit).toList();
-
-                                Map<String, Object> trace = new HashMap<>();
-                                trace.put("fetchedCount", raw.size());
-                                trace.put("selectedCount", capped.size());
-                                trace.put("rejectedCount", rejected.size());
-                                trace.put("agentId", agentId);
-                                trace.put("tenantId", tenantId);
-                                trace.put("skillId", skillId);
-                                trace.put("retrievedAt", now.toString());
-
-                                return Promise.of(new RetrievalBundle(capped, rejected, trace, stub, decisions));
-                            });
+                        return buildRetrievalBundle(agentId, tenantId, skillId, versionContext, limit, stub, raw);
                 });
     }
+
+                @NotNull
+                private Promise<RetrievalBundle> buildRetrievalBundle(
+                    @NotNull String agentId,
+                    @NotNull String tenantId,
+                    @NotNull String skillId,
+                    @NotNull VersionContext versionContext,
+                    int limit,
+                    @NotNull MemoryQuery stub,
+                    @NotNull List<MemoryItem> raw) {
+                String resolvedSkill = skillId.isBlank() ? agentId : skillId;
+                MasteryQuery masteryQuery = MasteryQuery.bySkill(resolvedSkill)
+                    .withAgentId(agentId)
+                    .withTenantId(tenantId);
+
+                return masteryRegistry.query(masteryQuery)
+                    .then(masteryItems -> {
+                        Map<String, MasteryItem> skillIndex = masteryItems.stream()
+                            .collect(Collectors.toMap(MasteryItem::skillId, m -> m));
+
+                        Instant now = Instant.now();
+                        List<MemoryItem> selected = new ArrayList<>();
+                        List<MemoryRetrievalService.RejectedItem> rejected = new ArrayList<>();
+                        List<RetrievalDecision> decisions = new ArrayList<>();
+
+                        for (MemoryItem item : raw) {
+                        MasteryItem mi = skillIndex.get(item.getSkillId());
+                        MasteryState state = mi != null ? mi.state() : MasteryState.UNKNOWN;
+                        VersionApplicability applicability = mi != null
+                            ? mi.versionScope().classify(versionContext)
+                            : VersionApplicability.UNKNOWN;
+
+                        if (applicability == VersionApplicability.OBSOLETE) {
+                            String reason = "Version scope is OBSOLETE";
+                            rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
+                            decisions.add(RetrievalDecision.excluded(
+                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
+                            continue;
+                        }
+
+                        boolean allowed = isAllowedForRetrieval(state, versionContext, now, applicability);
+                        if (!allowed) {
+                            String reason = "Mastery state " + state + " excluded from retrieval";
+                            rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
+                            decisions.add(RetrievalDecision.excluded(
+                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
+                            continue;
+                        }
+
+                        int priority = getRetrievalPriority(item, skillIndex, versionContext);
+                        selected.add(item);
+                        decisions.add(RetrievalDecision.included(
+                            item.getId(), item.getSkillId(), state, applicability,
+                            freshness(item, now),
+                            "Mastery state " + state + " approved for retrieval",
+                            priority));
+                        }
+
+                        selected.sort(createMasteryPriorityComparator(skillIndex, versionContext));
+                        List<MemoryItem> capped = selected.stream().limit(limit).toList();
+
+                        Map<String, Object> trace = new HashMap<>();
+                        trace.put("fetchedCount", raw.size());
+                        trace.put("selectedCount", capped.size());
+                        trace.put("rejectedCount", rejected.size());
+                        trace.put("agentId", agentId);
+                        trace.put("tenantId", tenantId);
+                        trace.put("skillId", skillId);
+                        trace.put("retrievedAt", now.toString());
+
+                        return Promise.of(new RetrievalBundle(capped, rejected, trace, stub, decisions));
+                    });
+                }
 
     /** Freshness score between 0.0 and 1.0 based on item age (capped at 30 days old). */
     private double freshness(@NotNull MemoryItem item, @NotNull Instant now) {
@@ -467,5 +501,38 @@ public final class MasteryAwareMemoryRetriever {
             @NotNull VersionContext versionContext) {
         // Use default tenant ID for backward compatibility
         return shouldRetrieve(skillId, "default", versionContext);
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<Object>> retrieve(@NotNull String query, @NotNull String context) {
+        return retrieve(query, context, Map.of());
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<Object>> retrieve(
+            @NotNull String query,
+            @NotNull String context,
+            @NotNull Map<String, String> options) {
+        String agentId = options.getOrDefault("agentId", context);
+        String tenantId = options.getOrDefault("tenantId", "default");
+        String skillId = options.getOrDefault("skillId", query);
+        int limit = parseLimit(options.get("limit"));
+
+        return retrieve(agentId, tenantId, skillId, VersionContext.empty(), limit)
+                .map(bundle -> new ArrayList<>(bundle.selectedItems()));
+    }
+
+    private static int parseLimit(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return 20;
+        }
+        try {
+            int parsed = Integer.parseInt(raw);
+            return Math.max(1, parsed);
+        } catch (NumberFormatException ignored) {
+            return 20;
+        }
     }
 }

@@ -227,6 +227,18 @@ describe('ProductUnitIntentExportService', () => {
     expect(response.evidenceRef).toBe('evidence:bundle-1');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(fetchImpl.mock.calls[0]?.[0]).toBe('/handoff');
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    expect((init.headers as Record<string, string>)['X-Correlation-Id']).toBe('corr-1');
+    expect((init.headers as Record<string, string>)['X-Ghatana-Tenant-Id']).toBe('tenant-1');
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      mode: 'preview',
+      providerMode: 'bootstrap',
+      evidenceMetadata: {
+        residualIslandReports: 'confidential',
+        riskHotspotReports: 'confidential',
+      },
+      blockedReasons: ['artifact-confidence-below-threshold', 'residual-island-review-required'],
+    });
   });
 
   it('stores evidence through Data Cloud before platform-mode handoff', async () => {
@@ -250,6 +262,49 @@ describe('ProductUnitIntentExportService', () => {
       '/datacloud/evidence',
       '/handoff',
     ]);
+    expect(JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body))).toMatchObject({
+      correlationId: 'corr-1',
+      scope: baseRequest.scope,
+      evidenceMetadata: {
+        semanticArtifacts: 'internal',
+      },
+    });
+    expect(JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body))).toMatchObject({
+      providerMode: 'platform',
+      evidence: {
+        evidenceRefs: ['datacloud:evidence:1'],
+      },
+    });
+  });
+
+  it('accepts blocked and failed handoff statuses from the backend', async () => {
+    await expect(
+      exportProductUnitIntentFromYappcArtifacts(baseRequest, {
+        fetchImpl: vi.fn(async () =>
+          jsonResponse({
+            intentId: 'intent:yappc:project-1:corr-1',
+            status: 'blocked',
+            blockedReasons: ['approval-required'],
+            previewRef: 'preview:1',
+          }),
+        ) as unknown as typeof fetch,
+      }),
+    ).resolves.toMatchObject({
+      status: 'blocked',
+      blockedReasons: ['approval-required'],
+      previewRef: 'preview:1',
+    });
+
+    await expect(
+      exportProductUnitIntentFromYappcArtifacts(baseRequest, {
+        fetchImpl: vi.fn(async () =>
+          jsonResponse({
+            intentId: 'intent:yappc:project-1:corr-1',
+            status: 'failed',
+          }),
+        ) as unknown as typeof fetch,
+      }),
+    ).resolves.toMatchObject({ status: 'failed' });
   });
 
   it('fails closed when platform mode has no Data Cloud evidence endpoint', async () => {
@@ -291,6 +346,18 @@ describe('ProductUnitIntentExportService', () => {
         },
       ),
     ).rejects.toThrow('Data Cloud evidence persistence failed');
+  });
+
+  it('requires Data Cloud evidence persistence responses to include evidence refs', async () => {
+    await expect(
+      exportProductUnitIntentFromYappcArtifacts(
+        { ...baseRequest, providerMode: 'platform' },
+        {
+          dataCloudEvidenceEndpoint: '/datacloud/evidence',
+          fetchImpl: vi.fn(async () => jsonResponse({ ok: true })) as unknown as typeof fetch,
+        },
+      ),
+    ).rejects.toThrow('did not include evidence refs');
   });
 
   it('still reports failed responses when error bodies cannot be read', async () => {

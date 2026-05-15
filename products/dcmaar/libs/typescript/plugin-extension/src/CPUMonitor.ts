@@ -118,16 +118,19 @@ export class CPUMonitor extends BaseDeviceMonitor {
     // Calculate usage percentage
     if (this.previousMetrics) {
       const deltaNonIdle =
-        (metrics.user - this.previousMetrics.user) +
-        (metrics.system - this.previousMetrics.system) +
-        (metrics.iowait - this.previousMetrics.iowait);
+        Math.max(0, metrics.user - this.previousMetrics.user) +
+        Math.max(0, metrics.system - this.previousMetrics.system) +
+        Math.max(0, metrics.iowait - this.previousMetrics.iowait);
 
       const deltaTotal =
         deltaNonIdle +
-        (metrics.idle - this.previousMetrics.idle);
+        Math.max(0, metrics.idle - this.previousMetrics.idle);
 
       if (deltaTotal > 0) {
-        metrics.usagePercent = Math.round((deltaNonIdle / deltaTotal) * 100);
+        metrics.usagePercent = Math.min(
+          100,
+          Math.max(0, Math.round((deltaNonIdle / deltaTotal) * 100)),
+        );
       } else {
         metrics.usagePercent = 0;
       }
@@ -188,10 +191,10 @@ export class CPUMonitor extends BaseDeviceMonitor {
     } else {
       // Simulated data for testing/demo on non-Linux systems
       return {
-        user: Math.floor(Math.random() * 10000),
-        system: Math.floor(Math.random() * 5000),
-        idle: Math.floor(Math.random() * 50000),
-        iowait: Math.floor(Math.random() * 1000),
+        user: (this.previousMetrics?.user ?? 0) + Math.floor(Math.random() * 100),
+        system: (this.previousMetrics?.system ?? 0) + Math.floor(Math.random() * 50),
+        idle: (this.previousMetrics?.idle ?? 0) + Math.floor(Math.random() * 500),
+        iowait: (this.previousMetrics?.iowait ?? 0) + Math.floor(Math.random() * 10),
         timestamp: Date.now(),
         usagePercent: 0, // Calculated later
       };

@@ -25,6 +25,24 @@ interface StoredRuntimeTruthSnapshots {
   readonly snapshots: readonly LifecycleRuntimeTruthSnapshot[];
 }
 
+const RUNTIME_TRUTH_STATUSES = [
+  "planned",
+  "running",
+  "pending approval",
+  "approval-pending",
+  "requires verification",
+  "healthy",
+  "degraded",
+  "failed",
+  "blocked",
+  "agent-action-received",
+  "policy-denied",
+  "mastery-denied",
+  "lifecycle-plan-created",
+  "lifecycle-executed",
+  "verification-failed",
+] as const;
+
 export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
   readonly providerId = "file-runtime-truth";
   readonly version = "1.0.0";
@@ -49,18 +67,28 @@ export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
     }
 
     try {
+      const snapshotWithWriteMetadata = enrichRuntimeTruthSnapshot(snapshot, options);
       const stored = await this.readStoredSnapshots();
       const nextSnapshots = stored.snapshots.filter(
         (storedSnapshot) =>
-          storedSnapshot.productUnitId !== snapshot.productUnitId ||
-          storedSnapshot.runId !== snapshot.runId ||
-          storedSnapshot.phase !== snapshot.phase
+          storedSnapshot.productUnitId !== snapshotWithWriteMetadata.productUnitId ||
+          storedSnapshot.runId !== snapshotWithWriteMetadata.runId ||
+          storedSnapshot.phase !== snapshotWithWriteMetadata.phase
       );
+      const nextStoredSnapshots = [...nextSnapshots, snapshotWithWriteMetadata];
       await this.writeStoredSnapshots({
         schemaVersion: "1.0.0",
-        snapshots: [...nextSnapshots, snapshot],
+        snapshots: nextStoredSnapshots,
       });
-      await this.writeLatestSnapshot(snapshot);
+      const latest = selectLatestRuntimeTruthSnapshot(
+        nextStoredSnapshots.filter(
+          (storedSnapshot) =>
+            storedSnapshot.productUnitId === snapshotWithWriteMetadata.productUnitId
+        )
+      );
+      if (latest) {
+        await this.writeLatestSnapshot(latest);
+      }
       return { success: true, ref: this.snapshotsPath };
     } catch (error) {
       return fail(String(error).replace(/^Error: /, ""), options.required);
@@ -74,7 +102,7 @@ export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
     const matches = stored.snapshots.filter(
       (snapshot) => snapshot.productUnitId === productUnitId
     );
-    return matches.at(-1) ?? null;
+    return selectLatestRuntimeTruthSnapshot(matches);
   }
 
   private get snapshotsPath(): string {
@@ -132,6 +160,46 @@ export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
   }
 }
 
+function enrichRuntimeTruthSnapshot(
+  snapshot: LifecycleRuntimeTruthSnapshot,
+  options: LifecycleProviderWriteOptions
+): LifecycleRuntimeTruthSnapshot {
+  return {
+    ...snapshot,
+    correlationId: snapshot.correlationId ?? options.correlationId,
+    ...(snapshot.privacyClassification ?? options.privacyClassification
+      ? {
+          privacyClassification:
+            snapshot.privacyClassification ?? options.privacyClassification,
+        }
+      : {}),
+    ...(snapshot.retention ?? options.retention
+      ? { retention: snapshot.retention ?? options.retention }
+      : {}),
+    ...(snapshot.providerMode ? { providerMode: snapshot.providerMode } : {}),
+  };
+}
+
+function selectLatestRuntimeTruthSnapshot(
+  snapshots: readonly LifecycleRuntimeTruthSnapshot[]
+): LifecycleRuntimeTruthSnapshot | null {
+  if (snapshots.length === 0) {
+    return null;
+  }
+
+  return snapshots.reduce((latest, candidate) => {
+    const latestTime = Date.parse(latest.observedAt);
+    const candidateTime = Date.parse(candidate.observedAt);
+    if (!Number.isNaN(candidateTime) && candidateTime > latestTime) {
+      return candidate;
+    }
+    if (candidateTime === latestTime) {
+      return candidate;
+    }
+    return latest;
+  });
+}
+
 function validateRuntimeTruthSnapshot(
   snapshot: LifecycleRuntimeTruthSnapshot
 ): string[] {
@@ -147,6 +215,8 @@ function validateRuntimeTruthSnapshot(
   }
   if (snapshot.status.trim().length === 0) {
     errors.push("runtime truth snapshot requires status");
+  } else if (!isRuntimeTruthStatus(snapshot.status)) {
+    errors.push(`unsupported runtime truth status ${snapshot.status}`);
   }
   if (!isIsoTimestamp(snapshot.observedAt)) {
     errors.push("runtime truth snapshot requires ISO observedAt");
@@ -155,6 +225,12 @@ function validateRuntimeTruthSnapshot(
     errors.push("runtime truth evidence refs must be non-empty");
   }
   return errors;
+}
+
+function isRuntimeTruthStatus(value: string): boolean {
+  return RUNTIME_TRUTH_STATUSES.includes(
+    value as (typeof RUNTIME_TRUTH_STATUSES)[number]
+  );
 }
 
 function isIsoTimestamp(value: string): boolean {

@@ -231,6 +231,33 @@ describe('kernelLifecycleClient', () => {
     });
   });
 
+  it('executes lifecycle phases without retrying mutation semantics in the client layer', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(lifecycleRun));
+    const client = createKernelLifecycleClient({
+      baseUrl: 'https://studio.test',
+      correlationIdFactory: () => 'corr-execute',
+    });
+
+    await expect(
+      client.executeLifecyclePhase('digital-marketing', 'build', {
+        dryRun: true,
+        environment: 'local',
+      }),
+    ).resolves.toEqual(lifecycleRun);
+
+    const [call] = getFetchCalls(mockFetch);
+    expect(call.url).toBe(
+      'https://studio.test/api/kernel/product-units/digital-marketing/lifecycle/execute',
+    );
+    expect(JSON.parse(String(call.init.body))).toEqual({
+      phase: 'build',
+      correlationId: 'corr-execute',
+      dryRun: true,
+      environment: 'local',
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
   it('loads lifecycle run, run list, and manifests with output validation', async () => {
     mockFetch
       .mockResolvedValueOnce(jsonResponse(lifecycleRun))

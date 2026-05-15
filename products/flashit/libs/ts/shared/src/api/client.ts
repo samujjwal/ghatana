@@ -82,6 +82,24 @@ export class FlashitApiClient {
     return response.json();
   }
 
+  private getAuthToken(response: AuthResponse): string | undefined {
+    return response.accessToken ?? response.token;
+  }
+
+  private unwrap<T>(
+    response: T | Record<string, unknown>,
+    key: string,
+  ): T {
+    if (
+      response &&
+      typeof response === "object" &&
+      key in response
+    ) {
+      return (response as Record<string, T>)[key] as T;
+    }
+    return response as T;
+  }
+
   // Auth endpoints
   async login(email: string, password: string): Promise<AuthResponse>;
   async login(data: LoginRequest): Promise<AuthResponse>;
@@ -99,8 +117,9 @@ export class FlashitApiClient {
       body: JSON.stringify(data),
     });
 
-    if (this.onTokenChange && response.accessToken) {
-      await this.onTokenChange(response.accessToken);
+    const token = this.getAuthToken(response);
+    if (this.onTokenChange && token) {
+      await this.onTokenChange(token);
     }
 
     return response;
@@ -127,8 +146,9 @@ export class FlashitApiClient {
       body: JSON.stringify(data),
     });
 
-    if (this.onTokenChange && response.accessToken) {
-      await this.onTokenChange(response.accessToken);
+    const token = this.getAuthToken(response);
+    if (this.onTokenChange && token) {
+      await this.onTokenChange(token);
     }
 
     return response;
@@ -159,34 +179,34 @@ export class FlashitApiClient {
 
   // Sphere endpoints
   async getSpheres(): Promise<Sphere[]> {
-    const response = await this.request<{ spheres: Sphere[] }>("/api/spheres");
-    return response.spheres;
+    const response = await this.request<{ spheres: Sphere[] } | Sphere[]>("/api/spheres");
+    return Array.isArray(response) ? response : response.spheres;
   }
 
   async getSphere(id: string): Promise<Sphere> {
-    const response = await this.request<{ sphere: Sphere }>(
+    const response = await this.request<{ sphere: Sphere } | Sphere>(
       `/api/spheres/${id}`,
     );
-    return response.sphere;
+    return this.unwrap<Sphere>(response, "sphere");
   }
 
   async createSphere(data: CreateSphereRequest): Promise<Sphere> {
-    const response = await this.request<{ sphere: Sphere }>("/api/spheres", {
+    const response = await this.request<{ sphere: Sphere } | Sphere>("/api/spheres", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    return response.sphere;
+    return this.unwrap<Sphere>(response, "sphere");
   }
 
   async updateSphere(id: string, data: UpdateSphereRequest): Promise<Sphere> {
-    const response = await this.request<{ sphere: Sphere }>(
+    const response = await this.request<{ sphere: Sphere } | Sphere>(
       `/api/spheres/${id}`,
       {
         method: "PATCH",
         body: JSON.stringify(data),
       },
     );
-    return response.sphere;
+    return this.unwrap<Sphere>(response, "sphere");
   }
 
   async deleteSphere(id: string): Promise<void> {
@@ -225,11 +245,11 @@ export class FlashitApiClient {
   }
 
   async createMoment(data: CreateMomentRequest): Promise<Moment> {
-    const response = await this.request<{ moment: Moment }>("/api/moments", {
+    const response = await this.request<{ moment: Moment } | Moment>("/api/moments", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    return response.moment;
+    return this.unwrap<Moment>(response, "moment");
   }
 
   async updateMoment(id: string, data: UpdateMomentRequest): Promise<Moment> {

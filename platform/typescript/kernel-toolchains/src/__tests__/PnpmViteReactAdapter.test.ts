@@ -19,6 +19,7 @@ describe('PnpmViteReactAdapter', () => {
 
   it('plans pnpm execution against the package directory', async () => {
     const adapter = new PnpmViteReactAdapter({ repoRoot });
+    await writeWebPackageJson(repoRoot);
 
     const plan = await adapter.plan(createContext(repoRoot));
 
@@ -46,6 +47,7 @@ describe('PnpmViteReactAdapter', () => {
     const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
     const context = createContext(repoRoot);
     context.dryRun = true;
+    await writeWebPackageJson(repoRoot);
 
     const result = await adapter.execute(context);
 
@@ -57,7 +59,7 @@ describe('PnpmViteReactAdapter', () => {
 
   it('executes successfully when dist output exists', async () => {
     await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist'), { recursive: true });
-    await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'package.json'), '{"name":"web"}');
+    await writeWebPackageJson(repoRoot);
     await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist', 'index.html'), '<html></html>');
 
     const commandRunner = new FakeCommandRunner([
@@ -81,7 +83,7 @@ describe('PnpmViteReactAdapter', () => {
 
   it('fails closed when required configured output is missing', async () => {
     await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist'), { recursive: true });
-    await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'package.json'), '{"name":"web"}');
+    await writeWebPackageJson(repoRoot);
     await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist', 'index.html'), '<html></html>');
 
     const commandRunner = new FakeCommandRunner([
@@ -106,6 +108,7 @@ describe('PnpmViteReactAdapter', () => {
       { exitCode: 2, stdout: longOutput, stderr: 'lint failed', durationMs: 15 },
     ]);
     const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+    await writeWebPackageJson(repoRoot);
 
     const result = await adapter.execute(createContext(repoRoot));
 
@@ -117,7 +120,7 @@ describe('PnpmViteReactAdapter', () => {
 
   it('returns validation details when dist/index.html is missing', async () => {
     await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'dist'), { recursive: true });
-    await fs.writeFile(path.join(repoRoot, 'products', 'digital-marketing', 'web', 'package.json'), '{"name":"web"}');
+    await writeWebPackageJson(repoRoot);
 
     const commandRunner = new FakeCommandRunner([
       { exitCode: 0, stdout: 'vite build complete', stderr: '', durationMs: 15 },
@@ -146,6 +149,7 @@ describe('PnpmViteReactAdapter', () => {
         { exitCode: 0, stdout: 'VITE v5 ready', stderr: '', durationMs: 20 },
       ]);
       const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+      await writeWebPackageJson(repoRoot);
 
       const context = createContext(repoRoot);
       context.phase = 'dev';
@@ -168,6 +172,7 @@ describe('PnpmViteReactAdapter', () => {
       const adapter = new PnpmViteReactAdapter({ repoRoot });
       const context = createContext(repoRoot);
       context.phase = 'dev';
+      await writeWebPackageJson(repoRoot);
 
       const result = await adapter.validateOutputs(context);
       expect(result.status).toBe('valid');
@@ -178,6 +183,7 @@ describe('PnpmViteReactAdapter', () => {
       const adapter = new PnpmViteReactAdapter({ repoRoot });
       const context = createContext(repoRoot);
       context.phase = 'dev';
+      await writeWebPackageJson(repoRoot);
 
       const plan = await adapter.plan(context);
       expect(plan[0].command).toEqual(['pnpm', '--dir', 'products/digital-marketing/web', 'run', 'dev']);
@@ -211,7 +217,7 @@ describe('PnpmViteReactAdapter', () => {
       const webDir = path.join(repoRoot, 'products', 'digital-marketing', 'web');
       await fs.mkdir(path.join(webDir, 'dist'), { recursive: true });
       await fs.writeFile(path.join(webDir, 'dist', 'index.html'), '<html></html>');
-      await fs.writeFile(path.join(webDir, 'package.json'), '{"name":"web"}');
+      await writeWebPackageJson(repoRoot);
 
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'build complete', stderr: '', durationMs: 10 },
@@ -231,7 +237,7 @@ describe('PnpmViteReactAdapter', () => {
       const webDir = path.join(repoRoot, 'products', 'digital-marketing', 'web');
       await fs.mkdir(path.join(webDir, 'dist'), { recursive: true });
       await fs.writeFile(path.join(webDir, 'dist', 'index.html'), '<html></html>');
-      await fs.writeFile(path.join(webDir, 'package.json'), '{"name":"web"}');
+      await writeWebPackageJson(repoRoot);
 
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'build complete', stderr: '', durationMs: 10 },
@@ -252,7 +258,7 @@ describe('PnpmViteReactAdapter', () => {
     it('validates package.json and returns no build artifacts', async () => {
       const webDir = path.join(repoRoot, 'products', 'digital-marketing', 'web');
       await fs.mkdir(webDir, { recursive: true });
-      await fs.writeFile(path.join(webDir, 'package.json'), '{"name":"web"}');
+      await writeWebPackageJson(repoRoot);
 
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'lint complete', stderr: '', durationMs: 10 },
@@ -275,10 +281,39 @@ describe('PnpmViteReactAdapter', () => {
       const context = createContext(repoRoot);
       context.phase = 'test';
       context.surfaceConfig.testScript = 'test:unit';
+      await writeWebPackageJson(repoRoot, { 'test:unit': 'vitest run' });
 
       const plan = await adapter.plan(context);
       expect(plan[0].command).toEqual(['pnpm', '--dir', 'products/digital-marketing/web', 'run', 'test:unit']);
     });
+  });
+
+  it('fails before command execution when package path is missing', async () => {
+    const commandRunner = new FakeCommandRunner([{ exitCode: 0, stdout: '', stderr: '', durationMs: 1 }]);
+    const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+    await expect(adapter.execute(createContext(repoRoot))).rejects.toThrow('package-path-not-found');
+    expect(commandRunner.invocations).toHaveLength(0);
+  });
+
+  it('fails before command execution when the required package script is missing', async () => {
+    await writeWebPackageJson(repoRoot, { build: undefined });
+    const commandRunner = new FakeCommandRunner([{ exitCode: 0, stdout: '', stderr: '', durationMs: 1 }]);
+    const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
+
+    await expect(adapter.execute(createContext(repoRoot))).rejects.toThrow('script-not-found');
+    expect(commandRunner.invocations).toHaveLength(0);
+  });
+
+  it('prefers typecheck for validate when no validateScript is configured', async () => {
+    await writeWebPackageJson(repoRoot);
+    const adapter = new PnpmViteReactAdapter({ repoRoot });
+    const context = createContext(repoRoot);
+    context.phase = 'validate';
+
+    const plan = await adapter.plan(context);
+
+    expect(plan[0].command).toEqual(['pnpm', '--dir', 'products/digital-marketing/web', 'run', 'typecheck']);
   });
 });
 
@@ -310,4 +345,31 @@ function createLogger(): AdapterLogger {
     error: () => undefined,
     debug: () => undefined,
   };
+}
+
+async function writeWebPackageJson(
+  repoRoot: string,
+  scriptOverrides: Record<string, string | undefined> = {},
+): Promise<void> {
+  const webDir = path.join(repoRoot, 'products', 'digital-marketing', 'web');
+  await fs.mkdir(webDir, { recursive: true });
+  const scripts: Record<string, string> = {
+    build: 'vite build',
+    dev: 'vite dev',
+    lint: 'eslint .',
+    test: 'vitest run',
+    typecheck: 'tsc --noEmit',
+  };
+  for (const [script, command] of Object.entries(scriptOverrides)) {
+    if (command === undefined) {
+      delete scripts[script];
+    } else {
+      scripts[script] = command;
+    }
+  }
+  await fs.writeFile(
+    path.join(webDir, 'package.json'),
+    JSON.stringify({ name: 'web', scripts }),
+    'utf-8',
+  );
 }

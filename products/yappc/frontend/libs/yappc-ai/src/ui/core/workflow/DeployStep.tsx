@@ -232,7 +232,7 @@ export const DeployStep: React.FC<DeployStepProps> = ({
                     control={<Radio />}
                     label={
                       <Box>
-                        <Typography as="p" className="text-lg font-medium">
+                        <Typography as="div" className="text-lg font-medium">
                           {env.label}
                           {env.warning && (
                             <Chip

@@ -16,6 +16,7 @@ import {
   registerRoutePolicy,
   isInPublicAllowlist,
   getRoutePolicy,
+  validateRoutePolicy,
 } from "../routePolicyRegistry.js";
 
 describe("JWT Auth Pre-Handler", () => {
@@ -91,7 +92,9 @@ describe("JWT Auth Pre-Handler", () => {
         send: vi.fn().mockReturnThis(),
       } as unknown as FastifyReply;
 
-      await expect(jwtAuthPreHandler(req, reply)).rejects.toThrow("UNAUTHORIZED");
+      await expect(jwtAuthPreHandler(req, reply)).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      });
       expect(req.jwtVerify).toHaveBeenCalled();
     });
 
@@ -126,7 +129,9 @@ describe("JWT Auth Pre-Handler", () => {
       } as unknown as FastifyRequest;
       const reply = {} as FastifyReply;
 
-      await expect(jwtAuthPreHandler(req, reply)).rejects.toThrow("UNAUTHORIZED");
+      await expect(jwtAuthPreHandler(req, reply)).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      });
     });
   });
 
@@ -156,8 +161,6 @@ describe("JWT Auth Pre-Handler", () => {
     });
 
     it("should validate route policy completeness", () => {
-      const { validateRoutePolicy } = await import("../routePolicyRegistry.js");
-
       const validPolicy = {
         authMode: "jwt" as const,
         tenantMode: "required" as const,

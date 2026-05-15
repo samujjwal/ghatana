@@ -196,9 +196,10 @@ function DateRangePickerComponent({
   const today = maxDate || toIsoDate(new Date());
   const defaultStartDate = minDate || toIsoDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
   
-  const [startDate, setStartDate] = useState(initialRange?.startDate || defaultStartDate);
-  const [endDate, setEndDate] = useState(initialRange?.endDate || today);
+  const [startDate, setStartDate] = useState(initialRange?.startDate ?? defaultStartDate);
+  const [endDate, setEndDate] = useState(initialRange?.endDate ?? today);
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
+  const isCustomRangeValid = Boolean(startDate && endDate && startDate <= endDate);
 
   const handlePresetSelect = (preset: DateRangePreset) => {
     setSelectedPreset(preset.id);
@@ -225,7 +226,7 @@ function DateRangePickerComponent({
   };
 
   const handleApplyCustomRange = () => {
-    if (startDate && endDate) {
+    if (isCustomRangeValid) {
       onDateRangeChange({ startDate, endDate });
     }
   };
@@ -294,7 +295,7 @@ function DateRangePickerComponent({
         {showApplyButton && selectedPreset === 'custom' && (
           <button
             onClick={handleApplyCustomRange}
-            disabled={disabled || !startDate || !endDate}
+            disabled={disabled || !isCustomRangeValid}
             className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             aria-label="Apply custom date range"
           >

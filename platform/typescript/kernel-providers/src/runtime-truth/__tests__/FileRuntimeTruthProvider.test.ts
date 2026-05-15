@@ -35,8 +35,12 @@ describe("FileRuntimeTruthProvider", () => {
       correlationId: "corr-1",
     });
 
-    await expect(provider.getRuntimeTruth("digital-marketing")).resolves.toEqual(second);
-    await expect(provider.getRuntimeTruth("finance")).resolves.toEqual(otherProduct);
+    await expect(provider.getRuntimeTruth("digital-marketing")).resolves.toEqual(
+      expect.objectContaining({ ...second, correlationId: "corr-1" })
+    );
+    await expect(provider.getRuntimeTruth("finance")).resolves.toEqual(
+      expect.objectContaining({ ...otherProduct, correlationId: "corr-1" })
+    );
     await expect(provider.getRuntimeTruth("missing")).resolves.toBeNull();
     await expect(
       readJson(
@@ -51,6 +55,52 @@ describe("FileRuntimeTruthProvider", () => {
       runId: "run-2",
       phase: "verify",
       status: "healthy",
+    });
+  });
+
+  it("uses observedAt to select latest runtime truth and preserves write metadata", async () => {
+    const newer = {
+      ...buildSnapshot("run-2", "verify", "blocked"),
+      observedAt: "2026-05-14T00:00:05.000Z",
+    };
+    const olderWrittenLater = {
+      ...buildSnapshot("run-1", "build", "healthy"),
+      observedAt: "2026-05-14T00:00:01.000Z",
+    };
+
+    await provider.recordRuntimeTruth(newer, {
+      required: true,
+      correlationId: "corr-newer",
+      privacyClassification: "restricted",
+      retention: { policyId: "runtime-truth", retentionDays: 90 },
+    });
+    await provider.recordRuntimeTruth(olderWrittenLater, {
+      required: true,
+      correlationId: "corr-older",
+    });
+
+    await expect(provider.getRuntimeTruth("digital-marketing")).resolves.toEqual(
+      expect.objectContaining({
+        runId: "run-2",
+        status: "blocked",
+        correlationId: "corr-newer",
+        privacyClassification: "restricted",
+        retention: { policyId: "runtime-truth", retentionDays: 90 },
+      })
+    );
+    await expect(
+      readJson(
+        path.join(
+          tempDir,
+          "digital-marketing",
+          "latest",
+          "runtime-truth-snapshot.json"
+        )
+      )
+    ).resolves.toMatchObject({
+      runId: "run-2",
+      status: "blocked",
+      correlationId: "corr-newer",
     });
   });
 
@@ -77,6 +127,18 @@ describe("FileRuntimeTruthProvider", () => {
     await expect(
       fs.access(path.join(tempDir, "runtime-truth-snapshots.json"))
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("rejects unsupported runtime truth statuses", async () => {
+    const result = await provider.recordRuntimeTruth(
+      buildSnapshot("run-1", "build", "approval-required"),
+      { required: true, correlationId: "corr-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "unsupported runtime truth status approval-required",
+    });
   });
 
   it("returns optional failure when correlation id is missing", async () => {

@@ -41,6 +41,7 @@ import planningRoutes from './routes/planning';
 import sourceImportRoutes from './routes/source-imports';
 import importReviewRoutes from './routes/import-review';
 import registryCandidateRoutes from './routes/registry-candidates';
+import productUnitIntentRoutes from './routes/product-unit-intents';
 import { devAuthBypass } from './middleware/devAuth';
 import {
   assertDevAuthBypassAllowed,
@@ -500,6 +501,7 @@ export async function createApp(
   registerApiPrefixes(app, sourceImportRoutes);
   registerApiPrefixes(app, importReviewRoutes);
   registerApiPrefixes(app, registryCandidateRoutes);
+  registerApiPrefixes(app, productUnitIntentRoutes);
   registerApiPrefixes(app, planningRoutes);
 
 async function readResponseText(response: Response): Promise<string> {

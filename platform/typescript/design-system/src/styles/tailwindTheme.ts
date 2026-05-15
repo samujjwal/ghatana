@@ -365,3 +365,19 @@ export type ModalStyleKey = keyof typeof modalStyles;
 export type ToastStyleKey = keyof typeof toastStyles;
 export type MetricCardStyleKey = keyof typeof metricCardStyles;
 export type NavStyleKey = keyof typeof navStyles;
+
+export const tailwindTheme = {
+    cardStyles,
+    textStyles,
+    bgStyles,
+    borderStyles,
+    inputStyles,
+    buttonStyles,
+    badgeStyles,
+    statusStyles,
+    tableStyles,
+    modalStyles,
+    toastStyles,
+    metricCardStyles,
+    navStyles,
+} as const;

@@ -38,12 +38,65 @@ function authHeaders(overrides: Record<string, string> = {}): Record<string, str
   };
 }
 
+function createMockRedis(): Record<string, unknown> {
+  const counters = new Map<string, number>();
+  return {
+    async incr(key: string): Promise<number> {
+      const next = (counters.get(key) ?? 0) + 1;
+      counters.set(key, next);
+      return next;
+    },
+    async expire(): Promise<number> {
+      return 1;
+    },
+    async get(): Promise<null> {
+      return null;
+    },
+    async set(): Promise<string> {
+      return "OK";
+    },
+    async del(): Promise<number> {
+      return 1;
+    },
+  };
+}
+
+function createMockPrisma(): Record<string, unknown> {
+  return {
+    userConsent: {
+      findMany: vi.fn().mockResolvedValue([{ category: "ai_processing" }]),
+      findFirst: vi.fn().mockResolvedValue({ granted: true }),
+    },
+  };
+}
+
+function validTutorPayload(question: string, overrides: Record<string, unknown> = {}) {
+  return {
+    question,
+    moduleId: "module-123",
+    claimIds: ["claim-123"],
+    currentSimulationState: { step: "intro" },
+    recentAttempts: [
+      {
+        attemptId: "attempt-123",
+        taskId: "task-123",
+        correct: true,
+        confidence: "medium",
+      },
+    ],
+    misconceptions: [],
+    allowedHelpMode: "hint",
+    ...overrides,
+  };
+}
+
 describe("AI Routes", () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
+    app.decorate("redis", createMockRedis());
+    app.decorate("prisma", createMockPrisma());
 
     // Inject auth context so getTenantId/getUserId resolve without a real JWT stack.
     // The role is read from the x-user-role header (if present) so individual
@@ -64,6 +117,7 @@ describe("AI Routes", () => {
       ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
     });
 
+    await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
     await app.ready();
   });
 
@@ -92,7 +146,7 @@ describe("AI Routes", () => {
         url: "/tutor/query",
         headers: authHeaders(),
         payload: {
-          question: "What is photosynthesis?",
+          ...validTutorPayload("What is photosynthesis?"),
           locale: "en",
         },
       });
@@ -112,7 +166,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
-        payload: { question: "Test?" },
+        payload: validTutorPayload("Test?"),
       });
 
       expect(response.statusCode).toBe(401);
@@ -130,7 +184,7 @@ describe("AI Routes", () => {
         headers: {
           "x-tenant-id": "test-tenant",
         },
-        payload: { question: "Test?" },
+        payload: validTutorPayload("Test?"),
       });
 
       expect(response.statusCode).toBe(401);
@@ -141,12 +195,12 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/tutor/query",
         headers: authHeaders(),
-        payload: { question: "" },
+        payload: validTutorPayload(""),
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toBe("Validation Error");
+      expect(body.error.code).toBe("VALIDATION_ERROR");
     });
 
     it("returns 400 for missing question", async () => {
@@ -165,7 +219,7 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/tutor/query",
         headers: authHeaders(),
-        payload: { question: "   " },
+        payload: validTutorPayload("   "),
       });
 
       expect(response.statusCode).toBe(400);
@@ -182,8 +236,7 @@ describe("AI Routes", () => {
         url: "/tutor/query",
         headers: authHeaders({ "x-tenant-id": "test" }),
         payload: {
-          question: "Help with this module",
-          moduleId: "mod-123",
+          ...validTutorPayload("Help with this module", { moduleId: "mod-123" }),
         },
       });
 
@@ -205,7 +258,7 @@ describe("AI Routes", () => {
         url: "/tutor/query",
         headers: authHeaders(),
         payload: {
-          question: "¿Qué es la fotosíntesis?",
+          ...validTutorPayload("¿Qué es la fotosíntesis?"),
           locale: "es",
         },
       });
@@ -226,7 +279,7 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/tutor/query",
         headers: authHeaders(),
-        payload: { question: "Test" },
+        payload: validTutorPayload("Test"),
       });
 
       expect(response.statusCode).toBe(500);
@@ -389,12 +442,8 @@ describe("AI Routes", () => {
     it("returns 501 when generateQuestionsFromContent is not available", async () => {
       // Create new app without the method
       const appWithoutMethod = Fastify({ logger: false });
-      await registerAIRoutes(appWithoutMethod, {
-        aiProxyService: {
-          handleTutorQuery: vi.fn(),
-          // No generateQuestionsFromContent
-        } as any,
-      });
+      appWithoutMethod.decorate("redis", createMockRedis());
+      appWithoutMethod.decorate("prisma", createMockPrisma());
 
       appWithoutMethod.addHook("preHandler", async (request) => {
         const userIdHeader = request.headers["x-user-id"];
@@ -412,6 +461,16 @@ describe("AI Routes", () => {
         ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
       });
 
+      await registerAIRoutes(appWithoutMethod, {
+        aiProxyService: {
+          handleTutorQuery: vi.fn(),
+          parseSimulationIntent: vi.fn(),
+          explainSimulation: vi.fn(),
+          generateLearningUnitDraft: vi.fn(),
+          parseContentQuery: vi.fn(),
+          // No generateQuestionsFromContent
+        },
+      });
       await appWithoutMethod.ready();
 
       const response = await appWithoutMethod.inject({
@@ -591,7 +650,7 @@ describe("AI Routes", () => {
         headers: {
           ...authHeaders({ "x-tenant-id": "tenant-from-array" }),
         },
-        payload: { question: "Test" },
+        payload: validTutorPayload("Test"),
       });
 
       expect(response.statusCode).toBe(200);
@@ -622,6 +681,7 @@ describe("AI Routes - Error Boundaries", () => {
 describe("AI Routes - Tenant Rate Limit", () => {
   it("returns 429 when tenant AI quota is exceeded", async () => {
     const app = Fastify({ logger: false });
+    app.decorate("prisma", createMockPrisma());
 
     const counters = new Map<string, number>();
     app.decorate("redis", {
@@ -646,8 +706,6 @@ describe("AI Routes - Tenant Rate Limit", () => {
         safety: { blocked: false },
       });
 
-      await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
-
       app.addHook("preHandler", async (request) => {
         const userIdHeader = request.headers["x-user-id"];
         const tenantIdHeader = request.headers["x-tenant-id"];
@@ -664,6 +722,7 @@ describe("AI Routes - Tenant Rate Limit", () => {
         ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
       });
 
+      await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
       await app.ready();
 
       const first = await app.inject({
@@ -675,7 +734,7 @@ describe("AI Routes - Tenant Rate Limit", () => {
             "x-user-id": "user-a",
           }),
         },
-        payload: { question: "hello" },
+        payload: validTutorPayload("hello"),
       });
       expect(first.statusCode).toBe(200);
 
@@ -688,7 +747,7 @@ describe("AI Routes - Tenant Rate Limit", () => {
             "x-user-id": "user-a",
           }),
         },
-        payload: { question: "hello again" },
+        payload: validTutorPayload("hello again"),
       });
 
       expect(second.statusCode).toBe(429);

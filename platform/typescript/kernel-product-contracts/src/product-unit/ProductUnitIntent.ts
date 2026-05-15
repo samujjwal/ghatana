@@ -28,6 +28,8 @@ export type { ProductUnitDraft, ProductUnitScope };
 export type ProducerType = "yappc" | "api" | "cli" | "manual" | "external";
 
 export type ProductUnitIntentType = "create" | "update" | "promote-candidate";
+export type ProductUnitIntentApplyMode = "preview" | "apply";
+export type ProductUnitIntentStatus = "accepted" | "queued" | "blocked" | "failed";
 
 export type ProductUnitPrivacyLevel = "public" | "internal" | "confidential" | "restricted";
 
@@ -97,6 +99,7 @@ export interface ProductUnitGovernanceHints {
   readonly dataSensitivity?: ProductUnitDataSensitivity;
   readonly retentionPolicyId?: string;
   readonly retentionDays?: number;
+  readonly evidenceRequired?: boolean;
 }
 
 export interface IntentProvenance {
@@ -218,6 +221,26 @@ export interface ProductUnitIntentValidationResult {
   readonly errors: readonly string[];
 }
 
+export type ProductUnitIntentValidationReasonCode =
+  | "missing-evidence"
+  | "missing-source-artifact-refs"
+  | "secret-like-field"
+  | "invalid-scope"
+  | "unsupported-lifecycle-phase"
+  | "schema-invalid";
+
+export interface ProductUnitIntentValidationIssue {
+  readonly path: string;
+  readonly reasonCode: ProductUnitIntentValidationReasonCode;
+  readonly message: string;
+  readonly severity: "error" | "warning";
+}
+
+export interface ProductUnitIntentDetailedValidationResult
+  extends ProductUnitIntentValidationResult {
+  readonly issues: readonly ProductUnitIntentValidationIssue[];
+}
+
 function hasSecretLikeField(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((item) => hasSecretLikeField(item));
@@ -267,6 +290,7 @@ export const ProductUnitGovernanceHintsSchema = z
     dataSensitivity: z.enum(DATA_SENSITIVITY_LEVELS).optional(),
     retentionPolicyId: z.string().trim().min(1).optional(),
     retentionDays: z.number().int().nonnegative().optional(),
+    evidenceRequired: z.boolean().optional(),
   })
   .strict();
 
@@ -301,6 +325,28 @@ export const ProductUnitIntentSchema = z
       context.addIssue({
         code: "custom",
         message: "ProductUnitIntent must not include raw secret-like fields",
+      });
+    }
+    if (
+      intent.intentType === "promote-candidate" &&
+      intent.provenance !== undefined &&
+      intent.provenance.sourceArtifactRefs.length === 0
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["provenance", "sourceArtifactRefs"],
+        message: "promote-candidate requires provenance.sourceArtifactRefs",
+      });
+    }
+    if (
+      intent.intentType === "promote-candidate" &&
+      (intent.provenance?.evidenceRefs === undefined ||
+        intent.provenance.evidenceRefs.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["provenance", "evidenceRefs"],
+        message: "promote-candidate requires provenance.evidenceRefs",
       });
     }
   });
@@ -369,21 +415,75 @@ function formatProductUnitIntentIssue(issue: z.ZodIssue): string {
   return issue.message;
 }
 
-export function validateProductUnitIntent(
+function productUnitIntentReasonCode(
+  path: string,
+  message: string
+): ProductUnitIntentValidationReasonCode {
+  if (path.startsWith("scope")) {
+    return "invalid-scope";
+  }
+  if (path === "requestedLifecycle.phases" || path.includes("phases")) {
+    return "unsupported-lifecycle-phase";
+  }
+  if (path === "provenance.evidenceRefs") {
+    return "missing-evidence";
+  }
+  if (path === "provenance.sourceArtifactRefs") {
+    return "missing-source-artifact-refs";
+  }
+  if (message.includes("secret-like")) {
+    return "secret-like-field";
+  }
+  return "schema-invalid";
+}
+
+function toProductUnitIntentIssue(
+  path: string,
+  reasonCode: ProductUnitIntentValidationReasonCode,
+  message: string
+): ProductUnitIntentValidationIssue {
+  return {
+    path,
+    reasonCode,
+    message,
+    severity: "error",
+  };
+}
+
+export function validateProductUnitIntentDetailed(
   value: unknown
-): ProductUnitIntentValidationResult {
+): ProductUnitIntentDetailedValidationResult {
   if (typeof value !== "object" || value === null) {
-    return { valid: false, errors: ["ProductUnitIntent must be an object"] };
+    const issue = toProductUnitIntentIssue(
+      "",
+      "schema-invalid",
+      "ProductUnitIntent must be an object"
+    );
+    return { valid: false, errors: [issue.message], issues: [issue] };
   }
 
   const parsed = ProductUnitIntentSchema.safeParse(value);
-  const errors = parsed.success
+  const issues = parsed.success
     ? []
-    : parsed.error.issues.map((issue: z.ZodIssue) =>
-        formatProductUnitIntentIssue(issue)
-      );
+    : parsed.error.issues.map((issue: z.ZodIssue) => {
+        const path = issue.path.join(".");
+        const message = formatProductUnitIntentIssue(issue);
+        return toProductUnitIntentIssue(
+          path,
+          productUnitIntentReasonCode(path, message),
+          message
+        );
+      });
+  const errors = issues.map((issue) => issue.message);
 
-  return { valid: errors.length === 0, errors };
+  return { valid: errors.length === 0, errors, issues };
+}
+
+export function validateProductUnitIntent(
+  value: unknown
+): ProductUnitIntentValidationResult {
+  const result = validateProductUnitIntentDetailed(value);
+  return { valid: result.valid, errors: result.errors };
 }
 
 /**

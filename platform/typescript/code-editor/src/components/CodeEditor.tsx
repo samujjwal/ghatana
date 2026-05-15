@@ -15,7 +15,7 @@ import Editor, {
   type OnChange,
   type Monaco,
 } from '@monaco-editor/react';
-import type { editor } from 'monaco-editor';
+import type { editor, languages, Position } from 'monaco-editor';
 import React, { useRef, useEffect, useCallback } from 'react';
 
 import type { CodeEditorProps, CodeEditorConfig } from '../types';
@@ -131,7 +131,7 @@ function registerSqlAutocomplete(
   monaco.languages.registerCompletionItemProvider('sql', {
     provideCompletionItems: (
       model: editor.ITextModel,
-      position: { lineNumber: number; column: number }
+      position: Position
     ) => {
       const word = model.getWordUntilPosition(position);
       const range = {
@@ -141,7 +141,7 @@ function registerSqlAutocomplete(
         endColumn: word.endColumn,
       };
 
-      const suggestions: unknown[] = []; // use any to avoid monaco types dependency here
+      const suggestions: languages.CompletionItem[] = [];
 
       // Add SQL keywords
       sqlKeywords.forEach((keyword) => {

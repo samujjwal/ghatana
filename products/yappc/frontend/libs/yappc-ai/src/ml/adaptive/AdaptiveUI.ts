@@ -135,6 +135,8 @@ export class AdaptiveUI {
     value: UserContext;
     expiresAt: number;
     matchMediaRef: unknown | null;
+    width: number | null;
+    height: number | null;
   } | null = null;
   private contextCacheTTL = 200; // ms
   private observer: MutationObserver | null = null;
@@ -550,8 +552,15 @@ export class AdaptiveUI {
     // invalidate the cache so consumers see the updated environment.
     const currentMatchMedia =
       typeof window !== 'undefined' ? (window as unknown).matchMedia : null;
+    const currentWidth = typeof window !== 'undefined' ? window.innerWidth : null;
+    const currentHeight =
+      typeof window !== 'undefined' ? window.innerHeight : null;
     if (this.contextCache && this.contextCache.expiresAt > now) {
-      if (this.contextCache.matchMediaRef === currentMatchMedia) {
+      if (
+        this.contextCache.matchMediaRef === currentMatchMedia &&
+        this.contextCache.width === currentWidth &&
+        this.contextCache.height === currentHeight
+      ) {
         return this.contextCache.value;
       }
       // identity changed: invalidate cache and continue to rebuild
@@ -580,6 +589,8 @@ export class AdaptiveUI {
       value: ctx,
       expiresAt: now + this.contextCacheTTL,
       matchMediaRef: currentMatchMedia,
+      width: currentWidth,
+      height: currentHeight,
     };
     return ctx;
   }
@@ -694,13 +705,13 @@ export class AdaptiveUI {
   private inferPreferences(context: UserContext): Partial<UserPreferences> {
     const inferred: Partial<UserPreferences> = {};
 
-    // Infer theme preference from time of day
+    // Infer theme preference from current environment first, then time of day.
     if (!context.preferences.theme) {
-      const hour = new Date().getHours();
-      if (hour >= 20 || hour < 6) {
+      if (context.environment.colorScheme === 'dark') {
         inferred.theme = 'dark';
       } else {
-        inferred.theme = 'light';
+        const hour = new Date().getHours();
+        inferred.theme = hour >= 20 || hour < 6 ? 'dark' : 'light';
       }
     }
 

@@ -33,7 +33,7 @@ export const useChildUsage = () => {
     }, []);
 
     const data = nativeDevices ?? devicesQuery.data;
-    const isLoading = devicesQuery.isLoading || nativeLoading;
+    const isLoading = !data && (devicesQuery.isLoading || nativeLoading);
 
     return {
         ...devicesQuery,
@@ -67,7 +67,7 @@ export const useChildBlocks = () => {
     }, []);
 
     const data = nativeAlerts ?? alertsQuery.data;
-    const isLoading = alertsQuery.isLoading || nativeLoading;
+    const isLoading = !data && (alertsQuery.isLoading || nativeLoading);
 
     return {
         ...alertsQuery,

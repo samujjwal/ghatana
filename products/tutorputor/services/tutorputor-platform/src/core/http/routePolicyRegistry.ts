@@ -141,8 +141,8 @@ export function isInPublicAllowlist(method: string, path: string): boolean {
  * Simple path matching with parameter support
  */
 function pathMatch(actualPath: string, pattern: string): boolean {
-  const patternSegments = pattern.split("/");
-  const actualSegments = actualPath.split("/");
+  const patternSegments = pattern.split("/").filter(Boolean);
+  const actualSegments = actualPath.split("/").filter(Boolean);
 
   if (patternSegments.length !== actualSegments.length) {
     return false;

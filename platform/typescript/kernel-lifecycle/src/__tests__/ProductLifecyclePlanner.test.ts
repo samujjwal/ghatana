@@ -36,6 +36,11 @@ function createFullPlatformProviderContext(): ProductLifecyclePlannerProviderCon
     id: 'digital-marketing',
     name: 'Digital Marketing',
     kind: 'business-product',
+    scope: {
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+    },
     lifecycleProfile: 'standard-web-api-product',
     lifecycleStatus: 'enabled',
     registryProviderRef: { providerId: 'platform-registry' },

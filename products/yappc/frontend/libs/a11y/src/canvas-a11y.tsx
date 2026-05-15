@@ -20,6 +20,7 @@ export interface A11yConfig {
   description?: string;
   labelledBy?: string;
   describedBy?: string;
+  controls?: string;
   liveRegion?: 'polite' | 'assertive' | 'off';
   hidden?: boolean;
   expanded?: boolean;
@@ -50,6 +51,7 @@ export function generateAriaProps(
   if (config.description) props['aria-description'] = config.description;
   if (config.labelledBy) props['aria-labelledby'] = config.labelledBy;
   if (config.describedBy) props['aria-describedby'] = config.describedBy;
+  if (config.controls) props['aria-controls'] = config.controls;
   if (config.liveRegion) props['aria-live'] = config.liveRegion;
   if (config.hidden !== undefined) props['aria-hidden'] = config.hidden;
   if (config.expanded !== undefined) props['aria-expanded'] = config.expanded;
@@ -72,11 +74,18 @@ export function generateAriaProps(
  * Hook for managing focus within canvas
  * @doc.purpose Handle keyboard navigation and focus trapping
  */
-export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
+export function useCanvasFocus(containerRef?: React.RefObject<HTMLElement>) {
   const [focusedElement, setFocusedElement] = React.useState<string | null>(
     null
   );
   const focusableElementsRef = useRef<string[]>([]);
+  const focusedElementRef = useRef<string | null>(null);
+  const savedFocusedElementRef = useRef<string | null>(null);
+
+  const setFocus = useCallback((id: string | null) => {
+    focusedElementRef.current = id;
+    setFocusedElement(id);
+  }, []);
 
   const registerFocusable = useCallback((id: string) => {
     if (!focusableElementsRef.current.includes(id)) {
@@ -92,22 +101,30 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
 
   const focusNext = useCallback(() => {
     const elements = focusableElementsRef.current;
+    if (elements.length === 0) {
+      setFocusedElement(null);
+      return;
+    }
     const currentIndex = focusedElement ? elements.indexOf(focusedElement) : -1;
     const nextIndex = (currentIndex + 1) % elements.length;
     const nextId = elements[nextIndex];
 
-    setFocusedElement(nextId);
+    setFocus(nextId);
     document.getElementById(nextId)?.focus();
   }, [focusedElement]);
 
   const focusPrevious = useCallback(() => {
     const elements = focusableElementsRef.current;
+    if (elements.length === 0) {
+      setFocusedElement(null);
+      return;
+    }
     const currentIndex = focusedElement ? elements.indexOf(focusedElement) : -1;
     const prevIndex =
       currentIndex <= 0 ? elements.length - 1 : currentIndex - 1;
     const prevId = elements[prevIndex];
 
-    setFocusedElement(prevId);
+    setFocus(prevId);
     document.getElementById(prevId)?.focus();
   }, [focusedElement]);
 
@@ -123,7 +140,7 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
       }
     };
 
-    const container = containerRef.current;
+    const container = containerRef?.current;
     if (container) {
       container.addEventListener('keydown', handleKeyDown);
       return () => container.removeEventListener('keydown', handleKeyDown);
@@ -132,11 +149,20 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
 
   return {
     focusedElement,
-    setFocusedElement,
+    setFocusedElement: setFocus,
+    setFocus,
     registerFocusable,
     unregisterFocusable,
     focusNext,
+    navigateNext: focusNext,
     focusPrevious,
+    navigatePrevious: focusPrevious,
+    saveFocusState: () => {
+      savedFocusedElementRef.current = focusedElementRef.current;
+    },
+    restoreFocusState: () => {
+      setFocus(savedFocusedElementRef.current);
+    },
   };
 }
 
@@ -171,12 +197,20 @@ export function useAnnouncer() {
 /**
  * Screen Reader Announcer Component
  */
-export const ScreenReaderAnnouncer: React.FC = () => {
+export interface ScreenReaderAnnouncerProps {
+  id?: string;
+  polite?: boolean;
+}
+
+export const ScreenReaderAnnouncer: React.FC<ScreenReaderAnnouncerProps> = ({
+  id = 'yappc-announcer',
+  polite = true,
+}) => {
   return (
     <div
-      id="yappc-announcer"
+      id={id}
       role="status"
-      aria-live="polite"
+      aria-live={polite ? 'polite' : 'assertive'}
       aria-atomic="true"
       style={{
         position: 'absolute',
@@ -203,6 +237,9 @@ export interface AccessibleCanvasElementProps {
   label?: string;
   description?: string;
   selected?: boolean;
+  role?: string;
+  focusable?: boolean;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
   onSelect?: () => void;
   onDelete?: () => void;
   onMove?: (x: number, y: number) => void;
@@ -225,9 +262,11 @@ export const AccessibleCanvasElement: React.FC<
   label,
   description,
   selected,
+  role = 'button',
   onSelect,
   onDelete,
   onMove,
+  onKeyDown,
   children,
 }) => {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -287,14 +326,17 @@ export const AccessibleCanvasElement: React.FC<
     <div
       ref={elementRef}
       id={id}
-      role="button"
+      role={role}
       tabIndex={0}
       aria-label={
         label || `${typeLabel} at position ${Math.round(x)}, ${Math.round(y)}`
       }
       aria-description={description}
       aria-selected={selected}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+        handleKeyDown(event);
+      }}
       onClick={onSelect}
       style={{
         position: 'absolute',

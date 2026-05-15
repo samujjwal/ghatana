@@ -19,6 +19,7 @@ export {
   tokenRegistrySchema,
   validateTokenRegistryDTCG,
   assertTokenRegistryDTCG,
+  toDTCGTokenFile,
   type DTCGValidationResult,
 } from './dtcg-bridge';
 
@@ -76,11 +77,49 @@ function validateValue(value: unknown, path: string = ''): string[] {
   return errors;
 }
 
+function valueAtPath(registry: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, segment) => {
+    if (!current || typeof current !== 'object') {
+      return undefined;
+    }
+
+    return (current as Record<string, unknown>)[segment];
+  }, registry);
+}
+
+function validateRequiredTokenPaths(registry: Record<string, unknown>): string[] {
+  const requiredPaths: ReadonlyArray<{
+    readonly path: string;
+    readonly type: 'string' | 'number';
+  }> = [
+    { path: 'colors.palette.primary.500', type: 'string' },
+    { path: 'spacing.semantic.md', type: 'number' },
+  ];
+
+  return requiredPaths.flatMap((requirement) => {
+    const value = valueAtPath(registry, requirement.path);
+    if (value === undefined || value === null) {
+      return [`${requirement.path}: Missing required token value`];
+    }
+
+    if (typeof value !== requirement.type) {
+      return [
+        `${requirement.path}: Expected ${requirement.type}, received ${typeof value}`,
+      ];
+    }
+
+    return [];
+  });
+}
+
 /**
  * Validates a token registry
  */
 export function validateTokens(registry: Record<string, unknown>): TokenValidationResult {
-  const errors = validateValue(registry);
+  const errors = [
+    ...validateValue(registry),
+    ...validateRequiredTokenPaths(registry),
+  ];
   return {
     success: errors.length === 0,
     errors: errors.length > 0 ? errors : undefined,

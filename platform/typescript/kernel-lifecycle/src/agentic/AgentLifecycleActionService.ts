@@ -8,16 +8,18 @@
  */
 
 import {
-  AgentLifecycleActionRequestSchema,
   AgentLifecycleActionResultSchema,
   type AgentLifecycleActionRequest,
   type AgentLifecycleActionResult,
+  type AgentLifecycleActionFailure,
   type AgentLifecycleApprovalDecision,
   type AgentLifecycleDecision,
   type AgentLifecycleHealthStatus,
   type AgentLifecycleRollbackReadiness,
+  type AgentLifecycleRequiredNextAction,
   type KernelLifecycleProviderContext,
   type LifecycleProviderWriteOptions,
+  parseAgentLifecycleActionRequest,
 } from '@ghatana/kernel-product-contracts';
 import type {
   ProductLifecyclePlan,
@@ -67,6 +69,7 @@ export interface AgentLifecycleActionServiceOptions {
   readonly providerContext?: KernelLifecycleProviderContext;
   readonly checks?: AgentLifecycleActionChecks;
   readonly now?: () => string;
+  readonly allowBootstrapDevDefaults?: boolean;
 }
 
 export class AgentLifecycleActionService {
@@ -76,6 +79,7 @@ export class AgentLifecycleActionService {
   private readonly providerContext: KernelLifecycleProviderContext | undefined;
   private readonly checks: AgentLifecycleActionChecks;
   private readonly now: () => string;
+  private readonly allowBootstrapDevDefaults: boolean;
 
   constructor(options: AgentLifecycleActionServiceOptions) {
     this.planner = options.planner;
@@ -84,12 +88,15 @@ export class AgentLifecycleActionService {
     this.providerContext = options.providerContext;
     this.checks = options.checks ?? {};
     this.now = options.now ?? (() => new Date().toISOString());
+    this.allowBootstrapDevDefaults = options.allowBootstrapDevDefaults ?? false;
   }
 
   async handle(requestInput: unknown): Promise<AgentLifecycleActionResult> {
-    const request = AgentLifecycleActionRequestSchema.parse(requestInput);
+    const request = parseAgentLifecycleActionRequest(requestInput);
+    await this.recordRuntimeTruth(request, 'agent-action-received', request.evidenceRefs);
     const policyDecision = await this.evaluatePolicy(request);
     if (policyDecision === 'denied') {
+      await this.recordRuntimeTruth(request, 'policy-denied', request.evidenceRefs);
       return this.result(request, {
         policyDecision,
         masteryDecision: 'denied',
@@ -97,11 +104,18 @@ export class AgentLifecycleActionService {
         lifecycleRunRef: request.proposedPlanRef,
         healthStatus: 'unknown',
         rollbackReadiness: 'not-ready',
+        failure: {
+          reasonCode: 'policy-denied',
+          message: 'Agent lifecycle action was denied by policy',
+          evidenceRefs: request.evidenceRefs,
+        },
+        requiredNextAction: 'none',
       });
     }
 
     const masteryDecision = await this.evaluateMastery(request);
     if (masteryDecision === 'denied') {
+      await this.recordRuntimeTruth(request, 'mastery-denied', request.evidenceRefs);
       return this.result(request, {
         policyDecision,
         masteryDecision,
@@ -109,17 +123,71 @@ export class AgentLifecycleActionService {
         lifecycleRunRef: request.proposedPlanRef,
         healthStatus: 'unknown',
         rollbackReadiness: 'not-ready',
+        failure: {
+          reasonCode: 'mastery-denied',
+          message: 'Agent lifecycle action was denied by mastery evaluation',
+          evidenceRefs: request.evidenceRefs,
+        },
+        requiredNextAction: 'request-approval',
       });
     }
 
-    const plan = await this.planner.plan(request.productUnitId, request.lifecyclePhase, {
+    if (policyDecision === 'requires-approval' || masteryDecision === 'requires-approval') {
+      await this.recordRuntimeTruth(request, 'approval-pending', request.evidenceRefs);
+      return this.result(request, {
+        policyDecision,
+        masteryDecision,
+        approvalDecision: 'pending',
+        lifecycleRunRef: request.proposedPlanRef,
+        healthStatus: 'unknown',
+        rollbackReadiness: 'not-ready',
+        failure: {
+          reasonCode: 'approval-required',
+          message: 'Agent lifecycle action requires approval before planning or execution',
+          evidenceRefs: request.evidenceRefs,
+        },
+        requiredNextAction: 'request-approval',
+      });
+    }
+
+    const lifecyclePhase = this.phaseForRequestedAction(request);
+    const plan = await this.planner.plan(request.productUnitId, lifecyclePhase, {
       correlationId: request.correlationId,
       providerMode: this.providerContext?.mode ?? 'bootstrap',
     });
     await this.recordProvenance(request, plan);
 
+    if (request.requestedAction === 'create-lifecycle-plan' || request.requestedAction === 'prepare-rollback') {
+      await this.recordRuntimeTruth(request, 'lifecycle-plan-created', [`lifecycle-plan:${plan.runId}`]);
+      return this.result(request, {
+        policyDecision,
+        masteryDecision,
+        approvalDecision: 'not-required',
+        lifecycleRunRef: `lifecycle-plan:${plan.runId}`,
+        healthStatus: 'unknown',
+        rollbackReadiness: request.requestedAction === 'prepare-rollback' ? 'ready' : 'not-required',
+        evidenceRefs: [...request.evidenceRefs, `lifecycle-plan:${plan.runId}`],
+        requiredNextAction: request.requestedAction === 'prepare-rollback' ? 'none' : 'run-verification',
+      });
+    }
+
+    if (request.requestedAction === 'request-approval') {
+      await this.recordRuntimeTruth(request, 'approval-pending', [`lifecycle-plan:${plan.runId}`]);
+      return this.result(request, {
+        policyDecision,
+        masteryDecision,
+        approvalDecision: 'pending',
+        lifecycleRunRef: `lifecycle-plan:${plan.runId}`,
+        healthStatus: 'unknown',
+        rollbackReadiness: 'not-ready',
+        evidenceRefs: [...request.evidenceRefs, `lifecycle-plan:${plan.runId}`],
+        requiredNextAction: 'request-approval',
+      });
+    }
+
     const approvalDecision = await this.evaluateApproval(request, plan);
     if (approvalDecision === 'pending' || approvalDecision === 'rejected') {
+      await this.recordRuntimeTruth(request, 'approval-pending', [`lifecycle-plan:${plan.runId}`]);
       return this.result(request, {
         policyDecision,
         masteryDecision,
@@ -127,6 +195,16 @@ export class AgentLifecycleActionService {
         lifecycleRunRef: `lifecycle-plan:${plan.runId}`,
         healthStatus: 'unknown',
         rollbackReadiness: 'ready',
+        requiredNextAction: approvalDecision === 'pending' ? 'request-approval' : 'inspect-failure',
+        ...(approvalDecision === 'rejected'
+          ? {
+              failure: {
+                reasonCode: 'approval-rejected',
+                message: 'Agent lifecycle action approval was rejected',
+                evidenceRefs: request.evidenceRefs,
+              },
+            }
+          : {}),
       });
     }
 
@@ -136,6 +214,12 @@ export class AgentLifecycleActionService {
       ...(this.providerContext !== undefined ? { providerContext: this.providerContext } : {}),
     });
     const verificationPassed = await this.evaluateVerification(request, lifecycleResult);
+    if (!verificationPassed) {
+      await this.recordRuntimeTruth(request, 'verification-failed', this.resultEvidenceRefs(request, lifecycleResult));
+    } else {
+      await this.recordRuntimeTruth(request, 'lifecycle-executed', this.resultEvidenceRefs(request, lifecycleResult));
+    }
+    await this.recordMemory(request, lifecycleResult, verificationPassed);
     return this.result(request, {
       policyDecision,
       masteryDecision,
@@ -143,21 +227,38 @@ export class AgentLifecycleActionService {
       lifecycleRunRef: `lifecycle-run:${lifecycleResult.runId}`,
       healthStatus: this.healthStatus(lifecycleResult, verificationPassed),
       rollbackReadiness: verificationPassed ? 'ready' : 'not-ready',
-      evidenceRefs: [
-        ...request.evidenceRefs,
-        ...(lifecycleResult.manifestRefs?.lifecycleResult !== undefined
-          ? [lifecycleResult.manifestRefs.lifecycleResult]
-          : []),
-      ],
+      evidenceRefs: this.resultEvidenceRefs(request, lifecycleResult),
+      ...(verificationPassed ? { requiredNextAction: 'none' } : { requiredNextAction: 'run-verification' }),
+      ...(!verificationPassed
+        ? {
+            failure: {
+              reasonCode: 'verification-failed',
+              message: 'Lifecycle execution completed but required verification failed',
+              evidenceRefs: this.resultEvidenceRefs(request, lifecycleResult),
+            },
+          }
+        : {}),
     });
   }
 
   private async evaluatePolicy(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision> {
-    return this.checks.policy ? this.checks.policy(request) : 'allowed';
+    if (this.checks.policy) {
+      return this.checks.policy(request);
+    }
+    if (this.allowBootstrapDevDefaults && request.requestedAction === 'create-lifecycle-plan' && request.riskLevel === 'low') {
+      return 'allowed';
+    }
+    return 'denied';
   }
 
   private async evaluateMastery(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision> {
-    return this.checks.mastery ? this.checks.mastery(request) : 'allowed';
+    if (this.checks.mastery) {
+      return this.checks.mastery(request);
+    }
+    if (request.riskLevel === 'critical') {
+      return 'denied';
+    }
+    return 'requires-approval';
   }
 
   private async evaluateApproval(
@@ -168,6 +269,16 @@ export class AgentLifecycleActionService {
       return this.checks.approval(request, plan);
     }
     return request.requiredApprovals.some((approval) => approval.required) ? 'pending' : 'not-required';
+  }
+
+  private phaseForRequestedAction(request: AgentLifecycleActionRequest): AgentLifecycleActionRequest['lifecyclePhase'] {
+    if (request.requestedAction === 'verify-lifecycle-health') {
+      return 'verify';
+    }
+    if (request.requestedAction === 'prepare-rollback') {
+      return 'rollback';
+    }
+    return request.lifecyclePhase;
   }
 
   private async evaluateVerification(
@@ -185,13 +296,16 @@ export class AgentLifecycleActionService {
     plan: ProductLifecyclePlan
   ): Promise<void> {
     if (!this.providerContext?.provenance) {
+      if (this.providerContext?.mode === 'platform') {
+        throw new Error('Kernel platform mode requires provenance provider for agent lifecycle actions');
+      }
       return;
     }
     const options: LifecycleProviderWriteOptions = {
-      required: false,
+      required: this.providerContext.mode === 'platform',
       correlationId: request.correlationId,
     };
-    await this.providerContext.provenance.recordProvenance(
+    const result = await this.providerContext.provenance.recordProvenance(
       {
         provenanceId: `agent-lifecycle:${request.requestId}`,
         productUnitId: request.productUnitId,
@@ -202,6 +316,75 @@ export class AgentLifecycleActionService {
       },
       options
     );
+    if (!result.success && options.required) {
+      throw new Error(result.error ?? 'Required provenance write failed for agent lifecycle action');
+    }
+  }
+
+  private async recordRuntimeTruth(
+    request: AgentLifecycleActionRequest,
+    status: string,
+    evidenceRefs: readonly string[],
+  ): Promise<void> {
+    if (!this.providerContext?.runtimeTruth) {
+      return;
+    }
+    const result = await this.providerContext.runtimeTruth.recordRuntimeTruth(
+      {
+        productUnitId: request.productUnitId,
+        runId: request.requestId,
+        phase: request.lifecyclePhase,
+        status,
+        observedAt: this.now(),
+        evidenceRefs,
+      },
+      {
+        required: this.providerContext.mode === 'platform',
+        correlationId: request.correlationId,
+      },
+    );
+    if (!result.success && this.providerContext.mode === 'platform') {
+      throw new Error(result.error ?? 'Required runtime truth write failed for agent lifecycle action');
+    }
+  }
+
+  private async recordMemory(
+    request: AgentLifecycleActionRequest,
+    result: ProductLifecycleResult,
+    verificationPassed: boolean,
+  ): Promise<void> {
+    if (!this.providerContext?.memory) {
+      return;
+    }
+    const writeResult = await this.providerContext.memory.recordMemory(
+      {
+        memoryId: `agent-lifecycle:${request.requestId}:${result.runId}`,
+        productUnitId: request.productUnitId,
+        runId: result.runId,
+        kind: verificationPassed ? 'lifecycle-result-summary' : 'lifecycle-failure-diagnosis',
+        contentRef: result.manifestRefs?.lifecycleResult ?? `lifecycle-run:${result.runId}`,
+        recordedAt: this.now(),
+      },
+      {
+        required: this.providerContext.mode === 'platform',
+        correlationId: request.correlationId,
+      },
+    );
+    if (!writeResult.success && this.providerContext.mode === 'platform') {
+      throw new Error(writeResult.error ?? 'Required memory write failed for agent lifecycle action');
+    }
+  }
+
+  private resultEvidenceRefs(
+    request: AgentLifecycleActionRequest,
+    lifecycleResult: ProductLifecycleResult,
+  ): readonly string[] {
+    return [
+      ...request.evidenceRefs,
+      ...(lifecycleResult.manifestRefs?.lifecycleResult !== undefined
+        ? [lifecycleResult.manifestRefs.lifecycleResult]
+        : []),
+    ];
   }
 
   private healthStatus(
@@ -224,6 +407,8 @@ export class AgentLifecycleActionService {
       readonly healthStatus: AgentLifecycleHealthStatus;
       readonly rollbackReadiness: AgentLifecycleRollbackReadiness;
       readonly evidenceRefs?: readonly string[];
+      readonly failure?: AgentLifecycleActionFailure;
+      readonly requiredNextAction?: AgentLifecycleRequiredNextAction;
     }
   ): AgentLifecycleActionResult {
     return AgentLifecycleActionResultSchema.parse({
@@ -240,6 +425,8 @@ export class AgentLifecycleActionService {
       healthStatus: overrides.healthStatus,
       rollbackReadiness: overrides.rollbackReadiness,
       evaluatedAt: this.now(),
+      ...(overrides.failure === undefined ? {} : { failure: overrides.failure }),
+      ...(overrides.requiredNextAction === undefined ? {} : { requiredNextAction: overrides.requiredNextAction }),
       request,
     });
   }

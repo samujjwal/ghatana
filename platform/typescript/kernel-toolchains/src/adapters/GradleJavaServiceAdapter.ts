@@ -17,6 +17,7 @@ import {
   createToolchainExecutionResult,
   truncateToolchainOutput,
 } from '../execution/ToolchainExecutionResultFactory.js';
+import type { ToolchainCoverageResults, ToolchainTestResults } from '../ToolchainAdapter.js';
 
 /**
  * Gradle Java service adapter
@@ -93,7 +94,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         durationMs,
         failure: {
           stepId: step.id,
-          message: 'Gradle execution failed',
+          message: 'gradle-task-failed: Gradle execution failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
         observability: createCommandObservability(step.id, commandResult, durationMs),
@@ -118,12 +119,15 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         ],
         artifacts: [],
         durationMs,
+        evidenceRefs: [`process:${context.productId}:${context.surface.type}`],
         observability: createCommandObservability(step.id, commandResult, durationMs),
       });
     }
 
     const validation = await this.validateOutputs(context);
     const artifacts = await this.extractArtifacts(context);
+    const testResults = await this.extractTestResults(context);
+    const coverageResults = await this.extractCoverageResults(context);
 
     const failed = validation.status === 'invalid';
     if (failed) {
@@ -144,7 +148,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         evidenceRefs: artifacts.map((artifact) => `artifact:${artifact}`),
         failure: {
           stepId: step.id,
-          message: validation.errors.map((error) => error.message).join('; ') || 'Output validation failed',
+          message: validation.errors.map((error) => error.message).join('; ') || 'output-validation-failed: Output validation failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
         observability: createCommandObservability(step.id, commandResult, durationMs),
@@ -164,6 +168,8 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         },
       ],
       artifacts,
+      ...(testResults ? { testResults } : {}),
+      ...(coverageResults ? { coverageResults } : {}),
       durationMs,
       evidenceRefs: artifacts.map((artifact) => `artifact:${artifact}`),
       observability: createCommandObservability(step.id, commandResult, durationMs),
@@ -219,6 +225,11 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       gradleModule,
       task: this.mapPhaseToTask('dev', context.surfaceConfig),
       note: 'bootRun completes when the server terminates. PID not captured in batch mode.',
+      ...(context.runId ? { runId: context.runId } : {}),
+      ...(context.correlationId ? { correlationId: context.correlationId } : {}),
+      ...(typeof context.surfaceConfig.healthUrl === 'string'
+        ? { healthUrl: context.surfaceConfig.healthUrl }
+        : {}),
     };
 
     await fs.writeFile(
@@ -318,13 +329,8 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       return;
     }
 
-    if (await this.exists(this.resolveSurfacePath(context))) {
-      return;
-    }
-
     throw new Error(
-      `Gradle module ${gradleModule} is not declared in settings.gradle(.kts) and ` +
-        `surface source path ${this.resolveSurfacePath(context)} does not exist.`,
+      `gradle-module-not-found: Gradle module ${gradleModule} is not declared in settings.gradle(.kts).`,
     );
   }
 
@@ -341,7 +347,94 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     const configured = context.phaseConfig.timeoutMs ?? context.surfaceConfig.timeoutMs;
     return typeof configured === 'number' && Number.isFinite(configured) && configured > 0
       ? configured
-      : 900_000;
+      : this.defaultTimeoutMs(context.phase);
+  }
+
+  private defaultTimeoutMs(phase: ProductLifecyclePhase): number {
+    switch (phase) {
+      case 'dev':
+        return 86_400_000;
+      case 'test':
+        return 900_000;
+      case 'build':
+      case 'package':
+        return 1_200_000;
+      case 'validate':
+        return 600_000;
+      default:
+        return 900_000;
+    }
+  }
+
+  private async extractTestResults(
+    context: ToolchainAdapterContext,
+  ): Promise<ToolchainTestResults | undefined> {
+    if (!['test', 'validate', 'build'].includes(context.phase)) {
+      return undefined;
+    }
+    const resultsDir = path.join(this.resolveSurfacePath(context), 'build', 'test-results', 'test');
+    if (!(await this.exists(resultsDir))) {
+      return undefined;
+    }
+    const files = (await this.walkFiles(resultsDir)).filter((filePath) => filePath.endsWith('.xml'));
+    let tests = 0;
+    let failures = 0;
+    let skipped = 0;
+    let durationMs = 0;
+    for (const filePath of files) {
+      const content = await fs.readFile(filePath, 'utf-8');
+      tests += numberAttribute(content, 'tests');
+      failures += numberAttribute(content, 'failures') + numberAttribute(content, 'errors');
+      skipped += numberAttribute(content, 'skipped');
+      durationMs += Math.round(numberAttribute(content, 'time') * 1000);
+    }
+    return files.length === 0 ? undefined : { tests, failures, skipped, durationMs };
+  }
+
+  private async extractCoverageResults(
+    context: ToolchainAdapterContext,
+  ): Promise<ToolchainCoverageResults | undefined> {
+    const csvPath = path.join(
+      this.resolveSurfacePath(context),
+      'build',
+      'reports',
+      'jacoco',
+      'test',
+      'jacocoTestReport.csv',
+    );
+    if (!(await this.exists(csvPath))) {
+      return undefined;
+    }
+    const content = await fs.readFile(csvPath, 'utf-8');
+    const lines = content.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      return undefined;
+    }
+    const totals = lines.slice(1).reduce(
+      (acc, line) => {
+        const columns = line.split(',');
+        acc.instructionMissed += Number(columns[3] ?? 0);
+        acc.instructionCovered += Number(columns[4] ?? 0);
+        acc.branchMissed += Number(columns[5] ?? 0);
+        acc.branchCovered += Number(columns[6] ?? 0);
+        acc.lineMissed += Number(columns[7] ?? 0);
+        acc.lineCovered += Number(columns[8] ?? 0);
+        return acc;
+      },
+      {
+        instructionMissed: 0,
+        instructionCovered: 0,
+        branchMissed: 0,
+        branchCovered: 0,
+        lineMissed: 0,
+        lineCovered: 0,
+      },
+    );
+    return {
+      lineCoverage: percentage(totals.lineCovered, totals.lineMissed),
+      branchCoverage: percentage(totals.branchCovered, totals.branchMissed),
+      instructionCoverage: percentage(totals.instructionCovered, totals.instructionMissed),
+    };
   }
 
   private async patternExists(pattern: string): Promise<boolean> {
@@ -401,4 +494,21 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       return false;
     }
   }
+}
+
+function numberAttribute(content: string, name: string): number {
+  const match = content.match(new RegExp(`${name}="([^"]+)"`));
+  if (!match) {
+    return 0;
+  }
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function percentage(covered: number, missed: number): number {
+  const total = covered + missed;
+  if (total === 0) {
+    return 0;
+  }
+  return Math.round((covered / total) * 10_000) / 100;
 }

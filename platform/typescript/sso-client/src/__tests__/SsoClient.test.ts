@@ -5,7 +5,7 @@
  * are available via the global environment.
  */
 
-import { SsoClient, decodeJwtPayload, isPlatformToken, tokenTtlSeconds } from '../src/index';
+import { SsoClient, decodeJwtPayload, isPlatformToken, tokenTtlSeconds } from '../index';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +40,14 @@ const BASE_CONFIG = {
   authGatewayBaseUrl:  'https://gateway.ghatana.io',
   productId:           'tutorputor',
 };
+
+class TestableSsoClient extends SsoClient {
+  public navigatedTo: string | null = null;
+
+  protected override navigate(url: string): void {
+    this.navigatedTo = url;
+  }
+}
 
 // ─── decodeJwtPayload ────────────────────────────────────────────────────────
 
@@ -184,21 +192,17 @@ describe('SsoClient', () => {
 
   describe('login()', () => {
     it('redirects to auth-service with correct params', () => {
-      const assignSpy = jest.spyOn(window.location, 'assign').mockImplementation(() => {});
-
-      const client = new SsoClient({
+      const client = new TestableSsoClient({
         ...BASE_CONFIG,
         postLoginRedirectUrl: 'http://localhost/after-login',
       });
       client.login();
 
-      expect(assignSpy).toHaveBeenCalledTimes(1);
-      const called = new URL(assignSpy.mock.calls[0]![0] as string);
+      expect(client.navigatedTo).not.toBeNull();
+      const called = new URL(client.navigatedTo!);
       expect(called.pathname).toBe('/auth/login');
       expect(called.searchParams.get('product_id')).toBe('tutorputor');
       expect(called.searchParams.get('redirect_uri')).toBe('http://localhost/after-login');
-
-      assignSpy.mockRestore();
     });
   });
 

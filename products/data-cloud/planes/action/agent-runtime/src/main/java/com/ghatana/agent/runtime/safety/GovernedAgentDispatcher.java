@@ -30,9 +30,7 @@ import com.ghatana.agent.pluggability.InteractionMode;
 import com.ghatana.agent.release.AgentInstanceConfig;
 import com.ghatana.agent.release.AgentRelease;
 import com.ghatana.agent.release.AgentReleaseRepository;
-import com.ghatana.agent.runtime.mode.ExecutionStrategy;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
-import com.ghatana.agent.runtime.mode.SupervisionMode;
 import com.ghatana.agent.runtime.mode.TaskClassifier;
 import com.ghatana.platform.observability.agent.AgentRunTracer;
 import com.ghatana.platform.observability.agent.AgentRunTracer.AgentRunSpan;
@@ -206,11 +204,27 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         String tenantId = extractTenantId(ctx);
         String traceId = extractTraceId(ctx);
 
+        TraceEventBuilder dispatchRequestedBuilder = new TraceEventBuilder(
+            traceId, agentId, tenantId,
+            currentLedgerHash(tenantId));
+        traceLedger.append(dispatchRequestedBuilder.build(
+            TraceEventType.DISPATCH_REQUESTED,
+            "Dispatch requested for agent " + agentId,
+            Map.of("agentId", agentId, "tenantId", tenantId)));
+
         // ── Release guard (only when repository is configured) ──────────────
         if (releaseRepository != null) {
             return releaseRepository.findGoverningRelease(agentId, tenantId)
                     .then(optRelease -> checkReleaseAndDispatch(agentId, input, ctx, optRelease, tenantId, traceId));
         }
+
+        TraceEventBuilder releaseCheckedBuilder = new TraceEventBuilder(
+            traceId, agentId, tenantId,
+            currentLedgerHash(tenantId));
+        traceLedger.append(releaseCheckedBuilder.build(
+            TraceEventType.RELEASE_CHECKED,
+            "Release check skipped because no release repository is configured",
+            Map.of("agentId", agentId, "releasePresent", "false", "checkMode", "disabled")));
 
         return doDispatch(agentId, input, ctx, null, tenantId, traceId);
     }
@@ -223,10 +237,24 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             Optional<AgentRelease> optRelease,
             String tenantId, String traceId) {
 
+        TraceEventBuilder releaseCheckedBuilder = new TraceEventBuilder(
+            traceId, agentId, tenantId,
+            currentLedgerHash(tenantId));
+
         if (optRelease.isPresent()) {
             AgentRelease release = optRelease.get();
             boolean shadowMode = isShadowMode(ctx);
             boolean allowed = shadowMode ? release.isRunnable() : release.isResponseServing();
+            traceLedger.append(releaseCheckedBuilder.build(
+                TraceEventType.RELEASE_CHECKED,
+                "Release check completed for " + release.agentReleaseId(),
+                Map.of(
+                    "agentId", agentId,
+                    "releasePresent", "true",
+                    "releaseId", release.agentReleaseId(),
+                    "releaseState", release.state().name(),
+                    "allowed", String.valueOf(allowed),
+                    "shadowMode", String.valueOf(shadowMode))));
             if (!allowed) {
                 log.warn("Dispatch rejected for agent [{}]: release {} is in state {} for {} path",
                         agentId, release.agentReleaseId(), release.state(),
@@ -242,6 +270,13 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 return denyDispatch(agentId, traceId, tenantId,
                         "Release " + release.agentReleaseId() + " is SHADOW and cannot serve responses");
             }
+        }
+
+        if (optRelease.isEmpty()) {
+            traceLedger.append(releaseCheckedBuilder.build(
+                    TraceEventType.RELEASE_CHECKED,
+                    "No governing release found; dispatch continues",
+                    Map.of("agentId", agentId, "releasePresent", "false", "allowed", "true")));
         }
 
         return doDispatch(agentId, input, ctx, optRelease.orElse(null), tenantId, traceId);
@@ -636,6 +671,11 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                     traceId, agentId, tenantId,
                     traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
                             ? hc.getLastHash(tenantId) : "");
+
+                traceLedger.append(memoryEventBuilder.build(
+                    TraceEventType.MEMORY_RETRIEVAL_STARTED,
+                    "Memory retrieval started for agent " + agentId + " (skill: " + effectiveSkillId + ")",
+                    Map.of("agentId", agentId, "skillId", effectiveSkillId)));
 
             return masteryAwareRetriever.retrieve(
                     agentId,

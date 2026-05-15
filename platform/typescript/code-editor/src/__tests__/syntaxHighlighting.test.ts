@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
+import { LazyMonacoEditor } from "../index";
 import type { LazyMonacoEditorProps } from "../index";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -77,7 +78,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
   describe("Language prop acceptance", () => {
     LANGUAGES.forEach((lang) => {
       it(`accepts "${lang}" language without throwing`, () => {
-        const { LazyMonacoEditor } = require("../index");
         expect(() =>
           render(React.createElement(LazyMonacoEditor, makeProps(lang))),
         ).not.toThrow();
@@ -87,7 +87,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("JavaScript highlighting", () => {
     it("renders with javascript language", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps("javascript")),
       );
@@ -95,7 +94,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
     });
 
     it("passes arrow function value correctly", () => {
-      const { LazyMonacoEditor } = require("../index");
       const onChange = vi.fn();
       expect(() =>
         render(
@@ -110,7 +108,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("TypeScript highlighting", () => {
     it("renders with typescript language", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps("typescript")),
       );
@@ -118,7 +115,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
     });
 
     it("defaults to typescript when language is omitted", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(LazyMonacoEditor, { value: "const x = 1;" }),
@@ -129,7 +125,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("Python highlighting", () => {
     it("renders with python language", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps("python")),
       );
@@ -139,7 +134,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("Java highlighting", () => {
     it("renders with java language", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps("java")),
       );
@@ -149,7 +143,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("SQL highlighting", () => {
     it("renders with sql language", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps("sql")),
       );
@@ -159,7 +152,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("Performance — sequential language switching", () => {
     it("renders 5 instances with different languages without throwing", () => {
-      const { LazyMonacoEditor } = require("../index");
       const languages: SupportedLanguage[] = [
         "typescript",
         "python",
@@ -177,7 +169,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
 
   describe("Theme and language combinations", () => {
     it("renders typescript with vs-dark theme", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -189,7 +180,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
     });
 
     it("renders typescript with vs-light theme", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -201,7 +191,6 @@ describe("LazyMonacoEditor — syntax highlighting configuration", () => {
     });
 
     it("renders python with vs-light theme", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(

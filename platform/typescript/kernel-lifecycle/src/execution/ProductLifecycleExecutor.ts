@@ -69,7 +69,7 @@ export class ProductLifecycleExecutor {
 
     // Emit lifecycle phase start event
     if (options.eventEmitter) {
-      options.eventEmitter.emitLifecyclePhaseStart(productId, runId, phase, plan?.correlationId);
+      await options.eventEmitter.emitLifecyclePhaseStart(productId, runId, phase, plan?.correlationId);
     }
 
     const startTime = Date.now();
@@ -86,20 +86,27 @@ export class ProductLifecycleExecutor {
           ...(plan.productUnit !== undefined ? { productUnit: plan.productUnit } : {}),
           providerMode: plan.providerMode,
         })
-      : { gates: [] };
+      : {
+          gates: [],
+          summary: {
+            passedCount: 0,
+            failedRequiredCount: 0,
+            skippedOptionalCount: 0,
+          },
+        };
     for (const gateResult of gateExecution.gates) {
       this.resultCollector.addGateResult(gateResult);
-      options.eventEmitter?.emitGateEvaluated(
-        productId,
-        runId,
-        phase,
-        gateResult.gateId,
-        gateResult.status === 'passed',
-        gateResult.details ?? gateResult.status,
-        gateResult.evidenceRefs ?? [],
-        gateResult.durationMs ?? 0,
-        plan?.correlationId,
-      );
+      await options.eventEmitter?.emitGateEvaluated(
+          productId,
+          runId,
+          phase,
+          gateResult.gateId,
+          gateResult.status === 'passed',
+          gateResult.details ?? gateResult.status,
+          gateResult.evidenceRefs ?? [],
+          gateResult.durationMs ?? 0,
+          plan?.correlationId,
+        );
     }
 
     const approvalResolution = gateExecution.failedRequiredGate === undefined && plan
@@ -127,7 +134,7 @@ export class ProductLifecycleExecutor {
 
     // Emit lifecycle phase complete event
     if (options.eventEmitter) {
-      options.eventEmitter.emitLifecyclePhaseComplete(
+      await options.eventEmitter.emitLifecyclePhaseComplete(
         productId,
         runId,
         phase,
@@ -359,7 +366,7 @@ export class ProductLifecycleExecutor {
       const unmetDependency = step.dependsOn.find((dependencyId) => state.get(dependencyId) !== 'done');
       if (unmetDependency) {
         const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-        this.emitStepComplete(productId, runId, step, result, options, plan, [
+        await this.emitStepComplete(productId, runId, step, result, options, plan, [
           `dependency:${unmetDependency}:not-done`,
         ]);
         this.recordStepResult(result);
@@ -406,7 +413,7 @@ export class ProductLifecycleExecutor {
         for (const step of steps) {
           if (!settled.has(step.id)) {
             const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-            this.emitStepComplete(productId, runId, step, result, options, plan, [
+            await this.emitStepComplete(productId, runId, step, result, options, plan, [
               'dag:no-ready-steps',
             ]);
             this.recordStepResult(result);
@@ -418,21 +425,22 @@ export class ProductLifecycleExecutor {
       }
 
       // Skip steps whose dependencies have failed
-      const toRun = ready.filter((step) => {
+      const toRun: ProductLifecycleStep[] = [];
+      for (const step of ready) {
         const hasFailedDep = step.dependsOn.some((dep) => state.get(dep) === 'failed');
         if (hasFailedDep) {
           const failedDependency = step.dependsOn.find((dep) => state.get(dep) === 'failed') ?? 'unknown';
           const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-          this.emitStepComplete(productId, runId, step, result, options, plan, [
+          await this.emitStepComplete(productId, runId, step, result, options, plan, [
             `dependency:${failedDependency}:failed`,
           ]);
           this.recordStepResult(result);
           settled.add(step.id);
           state.set(step.id, 'skipped');
-          return false;
+        } else {
+          toRun.push(step);
         }
-        return true;
-      });
+      }
 
       if (toRun.length === 0) continue;
 
@@ -457,7 +465,7 @@ export class ProductLifecycleExecutor {
     logger: ConsoleExecutionLogger,
     plan?: ProductLifecyclePlan,
   ): Promise<ProductLifecycleStepResult> {
-    this.emitStepStart(productId, runId, step, options, plan);
+    await this.emitStepStart(productId, runId, step, options, plan);
 
     if (options.dryRun) {
       const timestamp = new Date().toISOString();
@@ -479,11 +487,11 @@ export class ProductLifecycleExecutor {
         warnings: [],
         ...(plan?.correlationId ? { correlationId: plan.correlationId } : {}),
       };
-      this.emitStepComplete(productId, runId, step, result, options, plan, ['dry-run']);
+      await this.emitStepComplete(productId, runId, step, result, options, plan, ['dry-run']);
       return result;
     }
     const result = await this.executeAdapterStep(step, productId, options, logger, plan);
-    this.emitStepComplete(productId, runId, step, result, options, plan);
+    await this.emitStepComplete(productId, runId, step, result, options, plan);
     return result;
   }
 
@@ -542,14 +550,14 @@ export class ProductLifecycleExecutor {
     }
   }
 
-  private emitStepStart(
+  private async emitStepStart(
     productId: string,
     runId: string,
     step: ProductLifecycleStep,
     options: ProductLifecycleExecutionOptions,
     plan?: ProductLifecyclePlan,
-  ): void {
-    options.eventEmitter?.emitLifecycleStepStart(
+  ): Promise<void> {
+    await options.eventEmitter?.emitLifecycleStepStart(
       productId,
       runId,
       step.phase,
@@ -561,7 +569,7 @@ export class ProductLifecycleExecutor {
     );
   }
 
-  private emitStepComplete(
+  private async emitStepComplete(
     productId: string,
     runId: string,
     step: ProductLifecycleStep,
@@ -569,8 +577,8 @@ export class ProductLifecycleExecutor {
     options: ProductLifecycleExecutionOptions,
     plan?: ProductLifecyclePlan,
     extraEvidenceRefs: readonly string[] = [],
-  ): void {
-    options.eventEmitter?.emitLifecycleStepComplete(
+  ): Promise<void> {
+    await options.eventEmitter?.emitLifecycleStepComplete(
       productId,
       runId,
       step.phase,

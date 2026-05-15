@@ -256,6 +256,7 @@ describe('ProjectManager', () => {
         expect(screen.getAllByRole('button', { name: /delete/i })[0]).toBeInTheDocument();
       });
 
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'name' } });
       fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
 
       expect(confirmSpy).toHaveBeenCalled();
@@ -453,4 +454,3 @@ describe('ProjectManager', () => {
     });
   });
 });
-

@@ -115,7 +115,7 @@ describe('WebSocketClient', () => {
     });
 
     describe('Message Handling', () => {
-        it('should receive and parse messages', (done) => {
+        it('should receive and parse messages', () => new Promise<void>((resolve) => {
             const testMessage = { type: 'event', data: { id: 1 } };
             const mockWS = {
                 readyState: WebSocket.OPEN,
@@ -135,13 +135,13 @@ describe('WebSocketClient', () => {
 
             client.onMessage((msg) => {
                 expect(msg).toEqual(testMessage);
-                done();
+                resolve();
             });
 
             client.connect();
-        });
+        }));
 
-        it('should handle binary messages', (done) => {
+        it('should handle binary messages', () => new Promise<void>((resolve) => {
             const mockWS = {
                 readyState: WebSocket.OPEN,
                 addEventListener: vi.fn((event, handler) => {
@@ -157,11 +157,11 @@ describe('WebSocketClient', () => {
 
             client.onMessage((msg) => {
                 expect(msg).toBeInstanceOf(ArrayBuffer);
-                done();
+                resolve();
             });
 
             client.connect();
-        });
+        }));
 
         it('should handle malformed JSON', () => {
             const mockWS = {
@@ -291,7 +291,7 @@ describe('WebSocketClient', () => {
             );
         });
 
-        it('should filter messages by topic', (done) => {
+        it('should filter messages by topic', () => new Promise<void>((resolve) => {
             const mockWS = {
                 readyState: WebSocket.OPEN,
                 addEventListener: vi.fn((event, handler) => {
@@ -314,12 +314,12 @@ describe('WebSocketClient', () => {
 
             client.onMessage((msg) => {
                 if (msg.topic === 'topic1') {
-                    done();
+                    resolve();
                 }
             });
 
             client.connect();
-        });
+        }));
     });
 
     describe('Backpressure', () => {
@@ -423,7 +423,7 @@ describe('SSEClient', () => {
     });
 
     describe('Event Handling', () => {
-        it('should receive SSE events', (done) => {
+        it('should receive SSE events', () => new Promise<void>((resolve) => {
             const testEvent = { data: 'test message' };
             const mockEventSource = {
                 readyState: EventSource.OPEN,
@@ -439,13 +439,13 @@ describe('SSEClient', () => {
 
             client.onMessage((msg) => {
                 expect(msg.data).toBe('test message');
-                done();
+                resolve();
             });
 
             client.connect();
-        });
+        }));
 
-        it('should handle custom event types', (done) => {
+        it('should handle custom event types', () => new Promise<void>((resolve) => {
             const mockEventSource = {
                 readyState: EventSource.OPEN,
                 addEventListener: vi.fn((event, handler) => {
@@ -460,11 +460,11 @@ describe('SSEClient', () => {
 
             client.addEventListener('custom-event', (msg) => {
                 expect(msg.data).toBe('custom');
-                done();
+                resolve();
             });
 
             client.connect();
-        });
+        }));
     });
 
     describe('Reconnection', () => {

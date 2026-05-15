@@ -40,6 +40,18 @@ public interface LearningDeltaRepository {
     @NotNull
     Promise<Optional<LearningDelta>> findById(@NotNull String deltaId);
 
+        /**
+         * Finds a learning delta by tenant-scoped ID.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @return promise of optional learning delta
+         */
+        @NotNull
+        default Promise<Optional<LearningDelta>> findById(@NotNull String tenantId, @NotNull String deltaId) {
+                return findById(deltaId);
+        }
+
     /**
      * Finds learning deltas by agent ID.
      *
@@ -114,6 +126,22 @@ public interface LearningDeltaRepository {
     @NotNull
     Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState);
 
+        /**
+         * Updates the state of a tenant-scoped learning delta.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @param newState new state
+         * @return promise of updated learning delta
+         */
+        @NotNull
+        default Promise<LearningDelta> updateState(
+                        @NotNull String tenantId,
+                        @NotNull String deltaId,
+                        @NotNull LearningDeltaState newState) {
+                return updateState(deltaId, newState);
+        }
+
     /**
      * Updates the state of a learning delta with a rejection reason.
      *
@@ -124,6 +152,24 @@ public interface LearningDeltaRepository {
      */
     @NotNull
     Promise<LearningDelta> updateState(@NotNull String deltaId, @NotNull LearningDeltaState newState, @NotNull String rejectionReason);
+
+        /**
+         * Updates the state of a tenant-scoped learning delta with a rejection reason.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @param newState new state
+         * @param rejectionReason rejection reason
+         * @return promise of updated learning delta
+         */
+        @NotNull
+        default Promise<LearningDelta> updateState(
+                        @NotNull String tenantId,
+                        @NotNull String deltaId,
+                        @NotNull LearningDeltaState newState,
+                        @NotNull String rejectionReason) {
+                return updateState(deltaId, newState, rejectionReason);
+        }
 
     /**
      * Updates the state of a learning delta to REJECTED with a reason.
@@ -160,6 +206,22 @@ public interface LearningDeltaRepository {
     @NotNull
     Promise<LearningDelta> transition(@NotNull String deltaId, @NotNull LearningDeltaState state);
 
+        /**
+         * Transitions a tenant-scoped learning delta to a new state.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @param state new state
+         * @return promise of updated delta
+         */
+        @NotNull
+        default Promise<LearningDelta> transition(
+                        @NotNull String tenantId,
+                        @NotNull String deltaId,
+                        @NotNull LearningDeltaState state) {
+                return transition(deltaId, state);
+        }
+
     /**
      * Appends an evaluation result to a learning delta.
      *
@@ -176,6 +238,26 @@ public interface LearningDeltaRepository {
             @NotNull String outcome,
             @NotNull java.util.Map<String, Object> metrics);
 
+        /**
+         * Appends an evaluation result to a tenant-scoped learning delta.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @param evaluationRunId evaluation run identifier
+         * @param outcome evaluation outcome
+         * @param metrics evaluation metrics
+         * @return promise of updated delta
+         */
+        @NotNull
+        default Promise<LearningDelta> appendEvaluationResult(
+                        @NotNull String tenantId,
+                        @NotNull String deltaId,
+                        @NotNull String evaluationRunId,
+                        @NotNull String outcome,
+                        @NotNull java.util.Map<String, Object> metrics) {
+                return appendEvaluationResult(deltaId, evaluationRunId, outcome, metrics);
+        }
+
     /**
      * Appends a promotion result to a learning delta.
      *
@@ -191,4 +273,24 @@ public interface LearningDeltaRepository {
             @NotNull String promotionId,
             @NotNull String outcome,
             @Nullable String reason);
+
+        /**
+         * Appends a promotion result to a tenant-scoped learning delta.
+         *
+         * @param tenantId tenant identifier
+         * @param deltaId delta identifier
+         * @param promotionId promotion identifier
+         * @param outcome promotion outcome
+         * @param reason promotion reason or failure explanation
+         * @return promise of updated delta
+         */
+        @NotNull
+        default Promise<LearningDelta> appendPromotionResult(
+                        @NotNull String tenantId,
+                        @NotNull String deltaId,
+                        @NotNull String promotionId,
+                        @NotNull String outcome,
+                        @Nullable String reason) {
+                return appendPromotionResult(deltaId, promotionId, outcome, reason);
+        }
 }

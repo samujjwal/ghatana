@@ -1,8 +1,8 @@
-import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import {
   ConsoleExecutionLogger,
   ExecutionResultCollector,
+  KernelLifecycleService,
   ProductLifecycleExecutor,
   ProductLifecyclePlanner,
   ProductLifecycleStepRunner,
@@ -46,6 +46,7 @@ function parseArgs(argv) {
     workspace: undefined,
     project: undefined,
     releaseId: undefined,
+    explain: false,
   };
 
   const positional = [];
@@ -67,6 +68,10 @@ function parseArgs(argv) {
     }
     if (key === 'require-approval') {
       options.requireApproval = true;
+      continue;
+    }
+    if (key === 'explain') {
+      options.explain = true;
       continue;
     }
 
@@ -175,17 +180,6 @@ function assertApprovalSafety(plan, options) {
   }
 }
 
-function collectManifestPointers(outputDirectory, plan, result) {
-  return {
-    lifecyclePlan: join(outputDirectory, 'lifecycle-plan.json'),
-    ...(result ? { lifecycleResult: join(outputDirectory, 'lifecycle-result.json') } : {}),
-    ...(result?.manifestRefs ?? {}),
-    runId: plan.runId,
-    correlationId: plan.correlationId,
-    providerMode: plan.providerMode,
-  };
-}
-
 function createDryRunGateProviders(plan) {
   return Object.fromEntries(
     (plan.gates ?? []).map((gate) => [
@@ -209,11 +203,73 @@ function createDryRunGateProviders(plan) {
   );
 }
 
-async function writeLatestPointers(repoRoot, productId, phase, pointers) {
-  const latestDir = join(repoRoot, '.kernel', 'out', 'products', productId, phase, 'latest');
-  await mkdir(latestDir, { recursive: true });
-  await writeFile(join(latestDir, 'run-id.txt'), pointers.runId);
-  await writeFile(join(latestDir, 'manifest-pointers.json'), `${JSON.stringify(pointers, null, 2)}\n`);
+function collectManifestPointers(plan, result) {
+  return {
+    lifecyclePlan: join(plan.outputDirectory, 'lifecycle-plan.json'),
+    ...(result
+      ? {
+          lifecycleResult: result.manifestRefs?.lifecycleResult ?? join(plan.outputDirectory, 'lifecycle-result.json'),
+        }
+      : {}),
+    ...(result?.manifestRefs ?? {}),
+    runId: plan.runId,
+    correlationId: plan.correlationId,
+    providerMode: plan.providerMode,
+  };
+}
+
+function createLifecycleService({ repoRoot, providerContext, planner, executor, options }) {
+  return new KernelLifecycleService({
+    repoRoot,
+    providerContext,
+    planner,
+    executor,
+    logger: {
+      info: () => undefined,
+      warn: (message, meta) => {
+        if (!options.json) {
+          console.warn(`[kernel-product] ${message}`, meta ?? '');
+        }
+      },
+      error: (message, meta) => {
+        if (!options.json) {
+          console.error(`[kernel-product] ${message}`, meta ?? '');
+        }
+      },
+    },
+  });
+}
+
+function explainPlan(plan) {
+  return {
+    productId: plan.productId,
+    phase: plan.phase,
+    providerMode: plan.providerMode,
+    surfaces: plan.surfaces.map((surface) => ({
+      surfaceId: surface.surfaceId ?? surface.surface,
+      type: surface.type,
+      adapter: surface.adapter,
+    })),
+    adapters: [...new Set(plan.steps.map((step) => step.adapter).filter(Boolean))],
+    gates: plan.gates.map((gate) => ({
+      gateId: gate.gateId,
+      required: gate.required,
+      providerId: gate.providerId,
+    })),
+    approvals: plan.approvalRequirements.map((approval) => ({
+      approvalId: approval.approvalId,
+      action: approval.action,
+      required: approval.required,
+      riskLevel: approval.riskLevel,
+      requiredApprovers: approval.requiredApprovers ?? [],
+    })),
+    expectedArtifacts: plan.expectedArtifacts.map((artifact) => ({
+      artifactId: artifact.artifactId ?? artifact.semanticRef,
+      type: artifact.type,
+      surface: artifact.surface,
+      required: artifact.required,
+    })),
+  };
 }
 
 async function main() {
@@ -222,7 +278,13 @@ async function main() {
   const providerContext = createProviderContext(repoRoot, options);
 
   const planner = new ProductLifecyclePlanner(repoRoot, undefined, providerContext);
-  const plan = await planner.plan(productId, phase, {
+  const planningService = createLifecycleService({
+    repoRoot,
+    providerContext,
+    planner,
+    options,
+  });
+  const plan = await planningService.createLifecyclePlan(productId, phase, {
     surfaceSelector: options.surfaces.length > 0 ? options.surfaces : undefined,
     environment: options.env,
     sourceRef: options.sourceRef,
@@ -230,12 +292,6 @@ async function main() {
     correlationId: options.correlationId,
     providerMode: options.mode,
   });
-
-  const runId = plan.runId ?? `run-${Date.now()}`;
-  const outputDirectory = plan.outputDirectory
-    ?? join(repoRoot, '.kernel', 'out', 'products', productId, phase, runId);
-  await mkdir(outputDirectory, { recursive: true });
-  await writeFile(join(outputDirectory, 'lifecycle-plan.json'), `${JSON.stringify(plan, null, 2)}\n`);
 
   let result = null;
   if (commandMode !== 'plan') {
@@ -256,33 +312,45 @@ async function main() {
     const { bridge } = createDefaultToolchainAdapterRegistry({ repoRoot });
     const runner = new ProductLifecycleStepRunner(bridge);
     const executor = new ProductLifecycleExecutor(runner, collector);
-
-    result = await executor.executePlan(plan, {
-      dryRun: options.dryRun,
-      outputDirectory,
-      environment: options.env,
-      sourceRef: options.sourceRef,
-      logger,
+    const executionService = createLifecycleService({
+      repoRoot,
       providerContext: executionProviderContext,
+      planner,
+      executor,
+      options,
     });
 
-    await writeFile(join(outputDirectory, 'lifecycle-result.json'), `${JSON.stringify(result, null, 2)}\n`);
+    result = await executionService.executeLifecyclePlan(plan, {
+      dryRun: options.dryRun,
+      environment: options.env,
+      sourceRef: options.sourceRef,
+    });
   }
 
-  const manifestPointers = collectManifestPointers(outputDirectory, plan, result);
-  await writeLatestPointers(repoRoot, productId, phase, manifestPointers);
+  const manifestPointers = collectManifestPointers(plan, result);
 
   if (options.json) {
-    console.log(JSON.stringify(commandMode === 'plan' ? plan : { plan, result, manifests: manifestPointers }, null, 2));
+    const payload = commandMode === 'plan'
+      ? (options.explain ? { plan, explain: explainPlan(plan) } : plan)
+      : { plan, result, manifests: manifestPointers, ...(options.explain ? { explain: explainPlan(plan) } : {}) };
+    console.log(JSON.stringify(payload, null, 2));
   } else {
     const status = result ? result.status : 'planned';
     const stepCount = plan.steps?.length ?? 0;
     const durationMs = result?.durationMs ?? 0;
     console.log(`\n[kernel] ${productId} / ${phase} — ${status.toUpperCase()} (${stepCount} steps, ${durationMs}ms)`);
-    console.log(`  runId:         ${runId}`);
+    console.log(`  runId:         ${plan.runId}`);
     console.log(`  correlationId: ${plan.correlationId}`);
     console.log(`  providerMode:  ${plan.providerMode}`);
     console.log(`  manifests:     ${join(repoRoot, '.kernel', 'out', 'products', productId, phase, 'latest', 'manifest-pointers.json')}\n`);
+    if (options.explain) {
+      const explanation = explainPlan(plan);
+      console.log(`  surfaces:      ${explanation.surfaces.map((surface) => surface.surfaceId).join(', ') || 'none'}`);
+      console.log(`  adapters:      ${explanation.adapters.join(', ') || 'none'}`);
+      console.log(`  gates:         ${explanation.gates.map((gate) => gate.gateId).join(', ') || 'none'}`);
+      console.log(`  approvals:     ${explanation.approvals.map((approval) => approval.approvalId).join(', ') || 'none'}`);
+      console.log(`  artifacts:     ${explanation.expectedArtifacts.map((artifact) => artifact.artifactId).join(', ') || 'none'}\n`);
+    }
     if (result?.failure) {
       console.error(`  FAILURE: ${result.failure.message}`);
       if (result.failure.reasonCode) {

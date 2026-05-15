@@ -49,6 +49,34 @@ export interface AgentLifecycleActionRequest {
   readonly rollbackPlanRef: string;
 }
 
+export type AgentLifecycleActionRequestReasonCode =
+  | "raw-command-not-allowed"
+  | "missing-evidence"
+  | "missing-rollback-plan"
+  | "invalid-scope"
+  | "unsupported-action"
+  | "schema-invalid";
+
+export interface AgentLifecycleActionRequestValidationIssue {
+  readonly path: string;
+  readonly reasonCode: AgentLifecycleActionRequestReasonCode;
+  readonly message: string;
+}
+
+export class AgentLifecycleActionRequestValidationError extends Error {
+  readonly issues: readonly AgentLifecycleActionRequestValidationIssue[];
+
+  constructor(issues: readonly AgentLifecycleActionRequestValidationIssue[]) {
+    super(
+      issues.length > 0
+        ? `Invalid AgentLifecycleActionRequest: ${issues.map((issue) => issue.message).join("; ")}`
+        : "Invalid AgentLifecycleActionRequest"
+    );
+    this.name = "AgentLifecycleActionRequestValidationError";
+    this.issues = issues;
+  }
+}
+
 const REQUESTED_ACTIONS = [
   "create-lifecycle-plan",
   "execute-lifecycle-phase",
@@ -131,10 +159,50 @@ export const AgentLifecycleActionRequestSchema = z
     if (containsRawCommand(value)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
+        path: ["proposedPlanRef"],
         message: "AgentLifecycleActionRequest must not contain raw shell/tool commands",
       });
     }
   });
+
+function reasonCodeForAgentLifecycleActionRequestIssue(
+  issue: z.ZodIssue
+): AgentLifecycleActionRequestReasonCode {
+  const path = issue.path.join(".");
+  if (issue.message.includes("raw shell/tool commands")) {
+    return "raw-command-not-allowed";
+  }
+  if (path === "evidenceRefs") {
+    return "missing-evidence";
+  }
+  if (path === "rollbackPlanRef") {
+    return "missing-rollback-plan";
+  }
+  if (path.startsWith("scope")) {
+    return "invalid-scope";
+  }
+  if (path === "requestedAction") {
+    return "unsupported-action";
+  }
+  return "schema-invalid";
+}
+
+export function parseAgentLifecycleActionRequest(
+  value: unknown
+): AgentLifecycleActionRequest {
+  const parsed = AgentLifecycleActionRequestSchema.safeParse(value);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  throw new AgentLifecycleActionRequestValidationError(
+    parsed.error.issues.map((issue) => ({
+      path: issue.path.join("."),
+      reasonCode: reasonCodeForAgentLifecycleActionRequestIssue(issue),
+      message: issue.message,
+    }))
+  );
+}
 
 export function isAgentLifecycleActionRequest(
   value: unknown

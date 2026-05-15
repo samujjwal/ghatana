@@ -1,70 +1,87 @@
 import { describe, expect, it } from "vitest";
 import {
-  isKernelProviderMode,
-  requireLifecycleProvider,
-  type GateProvider,
   type KernelLifecycleProviderContext,
-  type LifecycleEventProvider,
+  type KernelProvider,
+  type LifecycleProviderWriteOptions,
+  requireLifecycleProviderSet,
+  validateKernelLifecycleProviderContext,
 } from "../LifecycleProviders";
 
-const eventProvider: LifecycleEventProvider = {
-  providerId: "file-events",
-  version: "1.0.0",
-  capabilities: ["lifecycle-events"],
-  appendEvent: async () => ({ success: true, ref: "lifecycle-events.json" }),
-  listEvents: async () => [],
-};
+function provider(providerId: string): KernelProvider {
+  return {
+    providerId,
+    version: "1.0.0",
+    capabilities: ["test"],
+  };
+}
 
-const gateProvider: GateProvider = {
-  providerId: "policy-gates",
-  version: "1.0.0",
-  capabilities: ["gates"],
-  evaluateGate: async () => ({
-    gateId: "security",
-    passed: true,
-    reason: "passed",
-    evidence: ["policy:security"],
-    evaluatedAt: "2026-05-14T00:00:00.000Z",
-    duration: 1,
-  }),
-  getGateConfig: async () => null,
-  listGates: async () => ["security"],
-};
+function bootstrapContext(): KernelLifecycleProviderContext {
+  return {
+    mode: "bootstrap",
+    events: provider("events") as KernelLifecycleProviderContext["events"],
+    artifacts: provider("artifacts") as KernelLifecycleProviderContext["artifacts"],
+    health: provider("health") as KernelLifecycleProviderContext["health"],
+    approvals: provider("approvals") as KernelLifecycleProviderContext["approvals"],
+    provenance: provider("provenance") as KernelLifecycleProviderContext["provenance"],
+    runtimeTruth: provider("runtimeTruth") as KernelLifecycleProviderContext["runtimeTruth"],
+  };
+}
 
 describe("LifecycleProviders", () => {
-  it("recognizes provider modes", () => {
-    expect(isKernelProviderMode("bootstrap")).toBe(true);
-    expect(isKernelProviderMode("platform")).toBe(true);
-    expect(isKernelProviderMode("local")).toBe(false);
+  it("bootstrap context passes with file-backed minimum providers", () => {
+    const result = validateKernelLifecycleProviderContext(bootstrapContext());
+
+    expect(result.valid).toBe(true);
+    expect(result.missingProviders).toEqual([]);
+    expect(result.mode).toBe("bootstrap");
   });
 
-  it("returns a required provider when present", () => {
+  it("platform context fails when memory provider is missing", () => {
     const context: KernelLifecycleProviderContext = {
-      mode: "bootstrap",
-      events: eventProvider,
-    };
-
-    expect(requireLifecycleProvider<LifecycleEventProvider>(context, "events")).toBe(eventProvider);
-  });
-
-  it("carries gate provider registry entries", () => {
-    const context: KernelLifecycleProviderContext = {
-      mode: "bootstrap",
-      gates: {
-        security: gateProvider,
-      },
-    };
-
-    expect(context.gates?.security).toBe(gateProvider);
-  });
-
-  it("fails closed when a required lifecycle provider is missing", () => {
-    const context: KernelLifecycleProviderContext = {
+      ...bootstrapContext(),
       mode: "platform",
     };
 
-    expect(() => requireLifecycleProvider(context, "runtimeTruth")).toThrow(
-      "Kernel platform mode requires lifecycle provider: runtimeTruth"
-    );
+    const result = validateKernelLifecycleProviderContext(context);
+
+    expect(result.valid).toBe(false);
+    expect(result.missingProviders).toContain("memory");
+  });
+
+  it("platform context fails when runtimeTruth provider is missing", () => {
+    const { runtimeTruth: _runtimeTruth, ...context } = {
+      ...bootstrapContext(),
+      mode: "platform" as const,
+      memory: provider("memory") as KernelLifecycleProviderContext["memory"],
+    };
+
+    const result = validateKernelLifecycleProviderContext(context);
+
+    expect(result.valid).toBe(false);
+    expect(result.missingProviders).toContain("runtimeTruth");
+  });
+
+  it("write options preserve correlation privacy and retention metadata", () => {
+    const options: LifecycleProviderWriteOptions = {
+      required: true,
+      correlationId: "corr-1",
+      privacyClassification: "confidential",
+      retention: {
+        policyId: "retention-365",
+        retentionDays: 365,
+      },
+    };
+
+    expect(options.privacyClassification).toBe("confidential");
+    expect(options.retention?.policyId).toBe("retention-365");
+  });
+
+  it("requireLifecycleProviderSet reports exact missing providers", () => {
+    expect(() =>
+      requireLifecycleProviderSet(
+        { mode: "bootstrap", events: provider("events") as KernelLifecycleProviderContext["events"] },
+        ["events", "artifacts", "health"]
+      )
+    ).toThrow(/artifacts, health/);
   });
 });

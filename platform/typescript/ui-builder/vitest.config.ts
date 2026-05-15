@@ -9,7 +9,7 @@ export default defineConfig({
   root: packageRoot,
   resolve: {
     preserveSymlinks: true,
-    extensions: ['.js', '.ts', '.tsx', '.json'],
+    extensions: ['.ts', '.tsx', '.js', '.json'],
     alias: [
       {
         find: '@ghatana/platform-events',

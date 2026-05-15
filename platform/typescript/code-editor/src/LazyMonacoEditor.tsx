@@ -113,16 +113,24 @@ const MonacoEditorLazy = lazy(() => import('@monaco-editor/react'));
  * Call this when user hovers over code editor area or opens code-related panels
  * @doc.purpose Preload editor before user interaction
  */
-export function preloadMonacoEditor(): void {
+let monacoPreloadPromise: Promise<unknown> | null = null;
+
+export function preloadMonacoEditor(): Promise<unknown> {
+  if (monacoPreloadPromise) {
+    return monacoPreloadPromise;
+  }
+
   // Start loading the chunk in background
   const preload = import('@monaco-editor/react');
   
   // Also preload common languages
-  Promise.all([
+  monacoPreloadPromise = Promise.all([
     preload,
     // Preload will trigger webpack to load these chunks
     new Promise(resolve => setTimeout(resolve, 100)),
   ]);
+
+  return monacoPreloadPromise;
 }
 
 // ============================================================================
@@ -219,17 +227,19 @@ export const LazyMonacoEditor: React.FC<LazyMonacoEditorProps> = ({
 export function useMonacoLoader() {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const loadMonaco = async () => {
     if (isReady || isLoading) return;
     
     setIsLoading(true);
+    setError(null);
     
     try {
-      await import('@monaco-editor/react');
+      await preloadMonacoEditor();
       setIsReady(true);
     } catch (error) {
-      console.error('[Monaco] Failed to load editor:', error);
+      setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -242,7 +252,9 @@ export function useMonacoLoader() {
 
   return {
     isReady,
+    isLoaded: isReady,
     isLoading,
+    error,
     loadMonaco,
     preloadMonaco,
   };
@@ -257,6 +269,11 @@ export function useMonacoLoader() {
  * @doc.purpose Document expected bundle sizes
  */
 export const MonacoBundleInfo = {
+  minSize: 800,
+  gzipSize: 250,
+  chunks: ['monaco-editor', 'monaco-language-workers'],
+  loadingHints: ['preload-on-hover', 'lazy-render-editor'],
+
   // Main editor chunk (~800KB gzipped)
   mainChunk: {
     name: 'monaco-editor',

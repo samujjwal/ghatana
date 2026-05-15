@@ -43,9 +43,50 @@ export {
 } from './gates/GateExecutor.js';
 export {
   requireLifecycleContextProvider,
+  requireBootstrapLifecycleContext,
+  requirePlatformLifecycleContext,
+  validateLifecycleProviderContext,
   type LifecycleProviderContext,
   type LifecycleProviderName,
 } from './providers/LifecycleProviderContext.js';
+
+export {
+  KernelLifecycleService,
+  type ApprovalResult,
+  type CreateLifecyclePlanOptions,
+  type ExecuteLifecyclePlanOptions,
+  type KernelLifecycleLogger,
+  type KernelLifecycleScopeQuery,
+  type KernelLifecycleServiceOptions,
+  type LifecycleRunQuery,
+  type LifecycleRunSummary,
+  type RunLifecyclePhaseOptions,
+} from './service/KernelLifecycleService.js';
+export {
+  ManifestPointerStore,
+  type ManifestPointerStoreOptions,
+  type ManifestPointers,
+} from './service/ManifestPointerStore.js';
+export {
+  ApprovalRequiredError,
+  ArtifactMissingError,
+  ExecutionFailedError,
+  GateFailedError,
+  KernelLifecycleError,
+  LifecycleNotEnabledError,
+  ManifestNotFoundError,
+  ProductUnitNotFoundError,
+  ProviderUnavailableError,
+  type KernelLifecycleErrorOptions,
+} from './service/KernelLifecycleErrors.js';
+export {
+  KernelLifecycleApiHandlers,
+  createKernelLifecycleApiHandlers,
+  type KernelLifecycleApiHandlersOptions,
+  type KernelLifecycleApiRequest,
+  type KernelLifecycleApiResponse,
+  type KernelLifecycleRouteMetadata,
+} from './api/KernelLifecycleApiHandlers.js';
 
 export { CanonicalRegistryLoader } from './io/CanonicalRegistryLoader.js';
 export { LifecycleProfileLoader } from './io/LifecycleProfileLoader.js';

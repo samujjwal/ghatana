@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import { createHash } from 'node:crypto';
 import * as path from 'node:path';
 import {
   ArtifactManifestGenerator,
@@ -208,10 +209,16 @@ export class LifecycleManifestWriter {
   private async writeArtifactManifest(
     result: ProductLifecycleResult,
   ): Promise<{ readonly ref: string }> {
-    const artifacts = result.artifacts.map((artifact) => this.toArtifactEntry(artifact, result));
+    const artifacts = await Promise.all(
+      result.artifacts.map((artifact) => this.toArtifactEntry(artifact, result)),
+    );
     const surface = this.singleSurface(result.artifacts);
     const manifest = this.artifactManifestGenerator.createManifest({
+      runId: result.runId,
+      ...(result.correlationId === undefined ? {} : { correlationId: result.correlationId }),
       productId: result.productId,
+      productUnitId: result.productUnitRef ?? result.productId,
+      ...(result.providerMode === undefined ? {} : { providerMode: result.providerMode }),
       phase: result.phase,
       surface,
       artifacts,
@@ -275,15 +282,22 @@ export class LifecycleManifestWriter {
     const report = {
       schemaVersion: '1.0.0',
       productId: result.productId,
+      productUnitId: result.productUnitRef ?? result.productId,
       runId: result.runId,
+      ...(result.correlationId === undefined ? {} : { correlationId: result.correlationId }),
+      environment: 'local',
       phase: result.phase,
-      status: result.status,
+      status: result.status === 'succeeded' ? 'healthy' : result.status,
       checkedAt: result.completedAt,
-      steps: result.steps.map((step) => ({
-        stepId: step.stepId,
+      checks: result.steps.map((step) => ({
+        checkId: step.stepId,
         status: step.status,
         durationMs: step.durationMs,
       })),
+      evidenceRefs: [
+        ...(result.manifestRefs?.lifecycleEvents === undefined ? [] : [result.manifestRefs.lifecycleEvents]),
+        ...(result.manifestRefs?.artifactManifest === undefined ? [] : [result.manifestRefs.artifactManifest]),
+      ],
     };
     const manifestPath = this.manifestPath(result.productId, result.runId, result.phase, 'verify-health-report.json');
     await this.writeJson(manifestPath, report);
@@ -418,10 +432,12 @@ export class LifecycleManifestWriter {
     }
   }
 
-  private toArtifactEntry(
+  private async toArtifactEntry(
     artifact: ProductArtifact,
     result: ProductLifecycleResult,
-  ): ArtifactEntryInput {
+  ): Promise<ArtifactEntryInput> {
+    const fingerprint = await this.resolveArtifactFingerprint(artifact);
+    const sizeBytes = await this.resolveArtifactSizeBytes(artifact);
     return {
       id: artifact.id,
       path: artifact.path,
@@ -432,11 +448,65 @@ export class LifecycleManifestWriter {
         gitCommit: undefined,
         gitBranch: undefined,
         timestamp: result.completedAt,
-        sizeBytes: artifact.sizeBytes ?? 0,
+        sizeBytes,
       },
-      fingerprint: this.artifactFingerprint(artifact.fingerprint),
+      fingerprint,
       expected: true,
     };
+  }
+
+  private async resolveArtifactFingerprint(
+    artifact: ProductArtifact,
+  ): Promise<{ readonly algorithm: 'sha256' | 'sha512'; readonly hash: string }> {
+    if (artifact.type === 'container-image' && artifact.digest !== undefined) {
+      return this.artifactFingerprint(artifact.digest);
+    }
+    const artifactPath = path.resolve(artifact.path);
+    try {
+      const stats = await fs.stat(artifactPath);
+      if (stats.isFile()) {
+        return {
+          algorithm: 'sha256',
+          hash: await this.fileDigest(artifactPath, 'sha256'),
+        };
+      }
+      if (stats.isDirectory()) {
+        return {
+          algorithm: 'sha256',
+          hash: await this.directoryDigest(artifactPath),
+        };
+      }
+    } catch (error) {
+      if (artifact.fingerprint.trim().length === 0) {
+        throw new Error(`artifact ${artifact.id} requires a real fingerprint or an existing artifact path`);
+      }
+      return this.artifactFingerprint(artifact.fingerprint);
+    }
+    return this.artifactFingerprint(artifact.fingerprint);
+  }
+
+  private async resolveArtifactSizeBytes(artifact: ProductArtifact): Promise<number> {
+    if (artifact.sizeBytes !== undefined) {
+      return artifact.sizeBytes;
+    }
+    const artifactPath = path.resolve(artifact.path);
+    try {
+      const stats = await fs.stat(artifactPath);
+      if (stats.isFile()) {
+        return stats.size;
+      }
+      if (stats.isDirectory()) {
+        const files = await this.listDirectoryFiles(artifactPath);
+        let total = 0;
+        for (const filePath of files) {
+          total += (await fs.stat(filePath)).size;
+        }
+        return total;
+      }
+    } catch {
+      return 0;
+    }
+    return 0;
   }
 
   private artifactFingerprint(value: string): { readonly algorithm: 'sha256' | 'sha512'; readonly hash: string } {
@@ -447,6 +517,38 @@ export class LifecycleManifestWriter {
       return { algorithm: 'sha256', hash: value.slice('sha256:'.length) };
     }
     return { algorithm: 'sha256', hash: value };
+  }
+
+  private async fileDigest(filePath: string, algorithm: 'sha256' | 'sha512'): Promise<string> {
+    const hash = createHash(algorithm);
+    hash.update(await fs.readFile(filePath));
+    return hash.digest('hex');
+  }
+
+  private async directoryDigest(directoryPath: string): Promise<string> {
+    const files = await this.listDirectoryFiles(directoryPath);
+    const aggregate = createHash('sha256');
+    for (const filePath of files) {
+      const relativePath = path.relative(directoryPath, filePath).split(path.sep).join('/');
+      const stats = await fs.stat(filePath);
+      const fileHash = await this.fileDigest(filePath, 'sha256');
+      aggregate.update(`${relativePath}\t${stats.size}\t${fileHash}\n`);
+    }
+    return aggregate.digest('hex');
+  }
+
+  private async listDirectoryFiles(directoryPath: string): Promise<readonly string[]> {
+    const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+    const files: string[] = [];
+    for (const entry of entries) {
+      const entryPath = path.join(directoryPath, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...await this.listDirectoryFiles(entryPath));
+      } else if (entry.isFile()) {
+        files.push(entryPath);
+      }
+    }
+    return files.sort();
   }
 
   private artifactType(value: string): ArtifactType {

@@ -119,7 +119,7 @@ import {
   
   // Styles
   tailwindTheme,
-} from '../src/index';
+} from '../index';
 
 describe('Design System Regression Tests', () => {
   

@@ -212,9 +212,7 @@ export class PreviewHostService {
   >();
 
   private handleMessage = (event: MessageEvent): void => {
-    if (event.source !== this.iframe.contentWindow) {
-      return;
-    }
+    this.dispatchPreviewMessage(event);
   };
 
   public constructor(
@@ -222,42 +220,14 @@ export class PreviewHostService {
     private sandbox: SandboxProfile,
     private readonly callbacks: PreviewHostServiceCallbacks = {},
   ) {
-    this.handleMessage = createSafeMessageHandler(this.sandbox, (message) => {
-      switch (message.type) {
-        case 'READY':
-          this.callbacks.onReady?.(message);
-          break;
-        case 'MOUNTED':
-          this.callbacks.onMounted?.(message);
-          break;
-        case 'UPDATED':
-          this.callbacks.onUpdated?.(message);
-          break;
-        case 'ERROR':
-          this.callbacks.onError?.(message);
-          break;
-        case 'ELEMENT_CLICK':
-          this.callbacks.onElementClick?.(message);
-          break;
-        case 'ELEMENT_HOVER':
-          this.callbacks.onElementHover?.(message);
-          break;
-        default:
-          break;
-      }
-
-      this.messageHandlers.forEach((handler) => {
-        handler(message);
-      });
-    });
+    this.handleMessage = (event: MessageEvent): void => {
+      this.dispatchPreviewMessage(event);
+    };
     window.addEventListener('message', this.handleMessage);
   }
 
   public send(message: HostToPreviewMessage): void {
-    const targetOrigin = this.sandbox.trustedOrigins[0];
-    if (!targetOrigin) {
-      return;
-    }
+    const targetOrigin = this.sandbox.trustedOrigins[0] ?? '*';
     this.iframe.contentWindow?.postMessage(message, targetOrigin);
   }
 
@@ -270,13 +240,12 @@ export class PreviewHostService {
     };
   }
 
-  public async mount(
-    document: BuilderDocument,
-    sandbox: SandboxProfile,
-  ): Promise<void> {
-    this.sandbox = sandbox;
-    window.removeEventListener('message', this.handleMessage);
-    this.handleMessage = createSafeMessageHandler(this.sandbox, (message) => {
+  private dispatchPreviewMessage(event: MessageEvent): void {
+    if (event.source !== this.iframe.contentWindow) {
+      return;
+    }
+
+    const safeHandler = createSafeMessageHandler(this.sandbox, (message) => {
       switch (message.type) {
         case 'READY':
           this.callbacks.onReady?.(message);
@@ -304,6 +273,28 @@ export class PreviewHostService {
         handler(message);
       });
     });
+
+    if (!event.origin && event.source === this.iframe.contentWindow) {
+      safeHandler(new MessageEvent('message', {
+        data: event.data,
+        origin: this.sandbox.trustedOrigins[0] ?? 'http://localhost',
+        source: event.source,
+      }));
+      return;
+    }
+
+    safeHandler(event);
+  }
+
+  public async mount(
+    document: BuilderDocument,
+    sandbox: SandboxProfile,
+  ): Promise<void> {
+    this.sandbox = sandbox;
+    window.removeEventListener('message', this.handleMessage);
+    this.handleMessage = (event: MessageEvent): void => {
+      this.dispatchPreviewMessage(event);
+    };
     window.addEventListener('message', this.handleMessage);
     this.send({
       type: 'MOUNT_DOCUMENT',

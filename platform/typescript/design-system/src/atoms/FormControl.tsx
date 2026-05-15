@@ -47,3 +47,29 @@ export const FormControl: React.FC<FormControlProps> = ({
         </Component>
     );
 };
+
+export interface FormLabelProps extends React.HTMLAttributes<HTMLElement> {
+    component?: React.ElementType;
+    sx?: SxProps;
+}
+
+export const FormLabel: React.FC<FormLabelProps> = ({
+    component: Component = 'label',
+    sx,
+    style,
+    children,
+    ...props
+}) => (
+    <Component
+        {...(props as React.HTMLAttributes<HTMLElement>)}
+        style={{
+            display: 'block',
+            fontWeight: tokens.typography.fontWeight.medium,
+            color: 'rgba(0, 0, 0, 0.87)',
+            ...sxToStyle(sx),
+            ...style,
+        }}
+    >
+        {children}
+    </Component>
+);

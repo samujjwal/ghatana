@@ -55,6 +55,28 @@ describe('Popup', () => {
             data: summary,
           };
         }
+        if (message.type === 'GET_DOMAIN_USAGE_TODAY') {
+          return {
+            success: true,
+            data: {
+              domain: 'example.com',
+              timeMinutes: 20,
+              visits: 4,
+            },
+          };
+        }
+        if (message.type === 'GET_LAST_BLOCKED_EVENT') {
+          return {
+            success: true,
+            data: null,
+          };
+        }
+        if (message.type === 'GET_STATE') {
+          return {
+            success: true,
+            data: summary.state,
+          };
+        }
         if (message.type === 'EVALUATE_POLICY') {
           return {
             success: true,
@@ -77,18 +99,18 @@ describe('Popup', () => {
 
     await waitFor(() => expect(screen.getByText('Guardian')).toBeInTheDocument());
     expect(screen.getByText('Monitoring Active')).toBeInTheDocument();
-    expect(screen.getByText('4 tracked')).toBeInTheDocument();
-    expect(screen.getByText('View Detailed Report')).toBeInTheDocument();
+    expect(screen.getByText('4 visits')).toBeInTheDocument();
+    expect(screen.getByText('View details')).toBeInTheDocument();
   });
 
   it('opens dashboard tab when button clicked', async () => {
     const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => undefined);
 
     render(<Popup />);
-    await waitFor(() => expect(screen.getByText('View Detailed Report')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('View Detailed Report'));
+    await waitFor(() => expect(screen.getByText('View details')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('View details'));
 
     expect(closeSpy).toHaveBeenCalled();
-    expect(browser.tabs.create).toHaveBeenCalledWith({ url: 'chrome-extension://dashboard/index.html' });
+    expect(browser.tabs.create).toHaveBeenCalledWith({ url: 'chrome-extension://dashboard/index.html?domain=example.com' });
   });
 });

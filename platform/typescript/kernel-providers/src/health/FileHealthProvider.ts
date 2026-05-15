@@ -70,6 +70,19 @@ const HEALTH_STATUSES = [
   "quarantined",
 ] as const satisfies readonly HealthStatus[];
 
+const HEALTH_REASON_CODES: Record<string, string> = {
+  healthy: "health-healthy",
+  degraded: "health-degraded",
+  blocked: "health-blocked",
+  failed: "health-failed",
+  skipped: "health-skipped",
+  unknown: "health-unknown",
+  "requires-approval": "health-requires-approval",
+  "requires-verification": "health-requires-verification",
+  obsolete: "health-obsolete",
+  quarantined: "health-quarantined",
+};
+
 export class FileHealthProvider implements LifecycleHealthProvider {
   readonly providerId = "file-health-snapshots";
   readonly version = "1.0.0";
@@ -96,6 +109,13 @@ export class FileHealthProvider implements LifecycleHealthProvider {
       runId: snapshot.runId,
       status: snapshot.status,
       snapshotPath,
+      snapshotAt: snapshot.snapshotAt,
+      correlationId: options.correlationId,
+      reasonCode: reasonCodeForStatus(snapshot.status),
+      ...(options.privacyClassification
+        ? { privacyClassification: options.privacyClassification }
+        : {}),
+      ...(options.retention ? { retention: options.retention } : {}),
     };
 
     try {
@@ -150,16 +170,17 @@ export class FileHealthProvider implements LifecycleHealthProvider {
     }
 
     try {
+      const snapshotWithWriteMetadata = enrichHealthSnapshotRef(snapshot, options);
       const stored = await this.readStoredRefs();
       const nextRefs = stored.snapshots.filter(
         (storedRef) =>
-          storedRef.productUnitId !== snapshot.productUnitId ||
-          storedRef.runId !== snapshot.runId ||
-          storedRef.snapshotPath !== snapshot.snapshotPath
+          storedRef.productUnitId !== snapshotWithWriteMetadata.productUnitId ||
+          storedRef.runId !== snapshotWithWriteMetadata.runId ||
+          storedRef.snapshotPath !== snapshotWithWriteMetadata.snapshotPath
       );
       await this.writeStoredRefs({
         schemaVersion: "1.0.0",
-        snapshots: [...nextRefs, snapshot],
+        snapshots: [...nextRefs, snapshotWithWriteMetadata],
       });
       return { success: true, ref: this.refsPath };
     } catch (error) {
@@ -174,7 +195,7 @@ export class FileHealthProvider implements LifecycleHealthProvider {
     const matches = stored.snapshots.filter(
       (snapshot) => snapshot.productUnitId === productUnitId
     );
-    return matches.at(-1) ?? null;
+    return selectLatestHealthSnapshot(matches);
   }
 
   private get refsPath(): string {
@@ -279,6 +300,58 @@ export class FileHealthProvider implements LifecycleHealthProvider {
     await fs.writeFile(tempPath, `${JSON.stringify(content, null, 2)}\n`, "utf-8");
     await fs.rename(tempPath, filePath);
   }
+}
+
+function enrichHealthSnapshotRef(
+  snapshot: LifecycleHealthSnapshotRef,
+  options: LifecycleProviderWriteOptions
+): LifecycleHealthSnapshotRef {
+  return {
+    ...snapshot,
+    correlationId: snapshot.correlationId ?? options.correlationId,
+    reasonCode: snapshot.reasonCode ?? reasonCodeForStatus(snapshot.status),
+    ...(snapshot.privacyClassification ?? options.privacyClassification
+      ? {
+          privacyClassification:
+            snapshot.privacyClassification ?? options.privacyClassification,
+        }
+      : {}),
+    ...(snapshot.retention ?? options.retention
+      ? { retention: snapshot.retention ?? options.retention }
+      : {}),
+  };
+}
+
+function selectLatestHealthSnapshot(
+  snapshots: readonly LifecycleHealthSnapshotRef[]
+): LifecycleHealthSnapshotRef | null {
+  if (snapshots.length === 0) {
+    return null;
+  }
+
+  return snapshots.reduce((latest, candidate) => {
+    const latestTime = timestampOrZero(latest.snapshotAt);
+    const candidateTime = timestampOrZero(candidate.snapshotAt);
+    if (candidateTime > latestTime) {
+      return candidate;
+    }
+    if (candidateTime === latestTime) {
+      return candidate;
+    }
+    return latest;
+  });
+}
+
+function timestampOrZero(value: string | undefined): number {
+  if (!value) {
+    return 0;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function reasonCodeForStatus(status: string): string {
+  return HEALTH_REASON_CODES[status] ?? "health-unknown";
 }
 
 function validateLifecycleHealthSnapshot(

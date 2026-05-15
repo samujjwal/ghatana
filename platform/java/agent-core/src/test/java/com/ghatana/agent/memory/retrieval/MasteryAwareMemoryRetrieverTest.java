@@ -5,9 +5,6 @@
 package com.ghatana.agent.memory.retrieval;
 
 import com.ghatana.agent.context.version.VersionContext;
-import com.ghatana.agent.framework.memory.Episode;
-import com.ghatana.agent.framework.memory.Fact;
-import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.memory.MemoryProjectionBridge;
 import com.ghatana.agent.mastery.ApplicabilityScope;
 import com.ghatana.agent.mastery.MasteryItem;
@@ -29,12 +26,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,6 +46,7 @@ import static org.mockito.Mockito.when;
  */
 @DisplayName("MasteryAwareMemoryRetriever Tests")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("deprecation")
 class MasteryAwareMemoryRetrieverTest extends EventloopTestBase {
 
     @Mock
@@ -54,6 +54,9 @@ class MasteryAwareMemoryRetrieverTest extends EventloopTestBase {
 
     @Mock
     private MemoryProjectionBridge memoryPlane;
+
+        @Mock
+        private AgentMemoryQueryPort memoryQueryPort;
 
     private VersionContext versionContext;
 
@@ -138,6 +141,36 @@ class MasteryAwareMemoryRetrieverTest extends EventloopTestBase {
         assertThat(bundle.selectedItems()).isEmpty();
         assertThat(bundle.rejectedItems()).isEmpty();
         assertThat(bundle.trace()).containsKey("reason");
+    }
+
+    @Test
+    @DisplayName("retrieve uses canonical memory query port when configured")
+    void retrieveUsesCanonicalMemoryQueryPortWhenConfigured() {
+        AtomicBoolean projectionUsed = new AtomicBoolean(false);
+        MemoryItem canonicalItem = memoryItem("memory-1", "skill-1");
+        when(memoryQueryPort.queryMemoryItems(anyString(), anyString(), anyString(), any(VersionContext.class), anyInt()))
+                .thenReturn(Promise.of(List.of(canonicalItem)));
+        when(masteryRegistry.query(any(MasteryQuery.class)))
+                .thenReturn(Promise.of(List.of(masteryItem("skill-1", MasteryState.MASTERED))));
+
+        MasteryAwareMemoryRetriever retriever =
+                new MasteryAwareMemoryRetriever(masteryRegistry, memoryQueryPort);
+
+        RetrievalBundle bundle = runPromise(() ->
+                retriever.retrieve("agent-1", "tenant-1", "skill-1", versionContext, 10));
+
+        assertThat(bundle.selectedItems()).hasSize(1);
+        assertThat(bundle.selectedItems().get(0).getId()).isEqualTo("memory-1");
+        assertThat(projectionUsed.get()).isFalse();
+    }
+
+    private static MemoryItem memoryItem(String memoryId, String skillId) {
+        MemoryItem item = mock(MemoryItem.class);
+        when(item.getId()).thenReturn(memoryId);
+        when(item.getType()).thenReturn(com.ghatana.agent.memory.model.MemoryItemType.FACT);
+        when(item.getSkillId()).thenReturn(skillId);
+        when(item.getCreatedAt()).thenReturn(Instant.now());
+        return item;
     }
 
     // Tests commented out - MemoryProjectionBridge has different API than MemoryPlane

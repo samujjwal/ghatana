@@ -10,7 +10,7 @@ describe('notifications exports', () => {
     const exports = await import('../index');
     expect(exports).toBeDefined();
     expect(typeof exports).toBe('object');
-  });
+  }, 30_000);
 
   it('should have notifications components', async () => {
     const exports = await import('../index');

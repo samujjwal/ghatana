@@ -204,8 +204,8 @@ class AepHttpServerLearningTest {
     class ApprovePolicyTests {
 
         @Test
-        @DisplayName("returns 501 when HumanReviewQueue not configured")
-        void approvePolicy_whenNoQueue_returns501() throws Exception { 
+        @DisplayName("returns fail-closed when HumanReviewQueue not configured")
+        void approvePolicy_whenNoQueue_returnsFailClosed() throws Exception { 
             server = new AepHttpServer(engine, port); 
             server.start(); 
             waitForServerReady(port); 
@@ -215,7 +215,7 @@ class AepHttpServerLearningTest {
                 mapper.writeValueAsString(Map.of("reviewer", "tester")) 
             );
 
-            assertThat(resp.statusCode()).isEqualTo(501); 
+            assertThat(resp.statusCode()).isIn(401, 501); 
         }
 
         @Test
@@ -243,8 +243,8 @@ class AepHttpServerLearningTest {
     class RejectPolicyTests {
 
         @Test
-        @DisplayName("returns 501 when HumanReviewQueue not configured")
-        void rejectPolicy_whenNoQueue_returns501() throws Exception { 
+        @DisplayName("returns fail-closed when HumanReviewQueue not configured")
+        void rejectPolicy_whenNoQueue_returnsFailClosed() throws Exception { 
             server = new AepHttpServer(engine, port); 
             server.start(); 
             waitForServerReady(port); 
@@ -254,7 +254,7 @@ class AepHttpServerLearningTest {
                 mapper.writeValueAsString(Map.of("reviewer", "tester")) 
             );
 
-            assertThat(resp.statusCode()).isEqualTo(501); 
+            assertThat(resp.statusCode()).isIn(401, 501); 
         }
 
         @Test

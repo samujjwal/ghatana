@@ -689,6 +689,11 @@ describe("GhatanaFileRegistryProvider", () => {
         id: "test-product",
         name: "Test Product",
         kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+        },
         registryProviderRef: { providerId: "ghatana-file-registry" },
         sourceProviderRef: {
           providerId: "ghatana-file-registry",
@@ -1140,6 +1145,7 @@ function buildIntent(intentType: ProductUnitIntent["intentType"]): ProductUnitIn
     provenance: {
       sourceSystem: "yappc",
       sourceArtifactRefs: ["artifact://blueprint"],
+      evidenceRefs: ["evidence://artifact-intelligence/blueprint"],
       createdBy: "sam",
       createdAt: "2026-05-14T00:00:00.000Z",
     },

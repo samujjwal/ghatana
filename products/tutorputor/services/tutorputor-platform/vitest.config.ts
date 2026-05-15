@@ -66,6 +66,22 @@ export default defineConfig({
         replacement: path.resolve(__dirname, "../../contracts/v1/index.ts"),
       },
       {
+        find: /^\/contracts\/(.+)$/,
+        replacement: path.resolve(__dirname, "../../contracts/$1"),
+      },
+      {
+        find: /^\/modules\/(.+)$/,
+        replacement: path.resolve(__dirname, "src/modules/$1"),
+      },
+      {
+        find: /^\/core\/(.+)$/,
+        replacement: path.resolve(__dirname, "src/core/$1"),
+      },
+      {
+        find: /^\/workers\/(.+)$/,
+        replacement: path.resolve(__dirname, "src/workers/$1"),
+      },
+      {
         find: "@tutorputor/core",
         replacement: path.resolve(
           __dirname,

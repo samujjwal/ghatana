@@ -198,6 +198,26 @@ describe('ComposeLocalAdapter', () => {
       expect(String(writePayload)).not.toContain('"ignored"');
     });
 
+    it('records run and correlation metadata in deployment manifests', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
+        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 5 },
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext({
+        phase: 'deploy',
+        runId: 'run-1',
+        correlationId: 'corr-1',
+      }));
+
+      expect(result.status).toBe('succeeded');
+      const writePayload = vi.mocked(fs.writeFile).mock.calls.at(-1)?.[1];
+      expect(String(writePayload)).toContain('"runId": "run-1"');
+      expect(String(writePayload)).toContain('"correlationId": "corr-1"');
+      expect(String(writePayload)).toContain('"productUnitId": "digital-marketing"');
+    });
+
     it('returns failed when docker compose exits non-zero', async () => {
       commandRunner = new FakeCommandRunner([
         { exitCode: 1, stdout: '', stderr: 'Error: network not found', durationMs: 50 },
@@ -387,6 +407,48 @@ services:
       expect(result.status).toBe('succeeded');
       expect(result.manifestRefs?.verifyHealthReport).toBe('.kernel/out/verify/verify-health-report.json');
       expect(result.evidenceRefs).toContain('manifest:.kernel/out/verify/verify-health-report.json');
+    });
+
+    it('resolves shell-style default variables in verify health URLs', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '[{"Name":"api","State":"running"}]', stderr: '', durationMs: 20 },
+        { exitCode: 0, stdout: 'ok', stderr: '', durationMs: 5 },
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext({
+        phase: 'verify',
+        surfaceConfig: {
+          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
+          healthChecks: {
+            readiness: { type: 'http', url: 'http://localhost:${DMOS_API_PORT:-8080}/health/ready', retries: 1 },
+          },
+        },
+      }));
+
+      expect(result.status).toBe('succeeded');
+      expect(commandRunner.invocations[1].args).toContain('http://localhost:8080/health/ready');
+      const writePayload = vi.mocked(fs.writeFile).mock.calls.at(-1)?.[1];
+      expect(String(writePayload)).toContain('http://localhost:8080/health/ready');
+    });
+
+    it('fails verify when an expected service is absent from compose ps', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '[{"Name":"api","State":"running"}]', stderr: '', durationMs: 20 },
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext({
+        phase: 'verify',
+        surfaceConfig: {
+          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
+          expectedServices: ['api', 'web'],
+        },
+      }));
+
+      expect(result.status).toBe('failed');
+      expect(result.failure?.message).toContain('expected service web is missing');
+      expect(result.manifestRefs?.verifyHealthReport).toBe('.kernel/out/verify/verify-health-report.json');
     });
 
     it('returns failed verify health report data on failed health check', async () => {

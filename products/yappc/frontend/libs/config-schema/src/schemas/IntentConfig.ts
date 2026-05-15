@@ -12,7 +12,7 @@ import { z } from 'zod';
  * IntentConfig schema - captures natural language intent with AI metadata
  */
 export const IntentConfigSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   version: z.string(),
 
   // Intent content
@@ -20,7 +20,7 @@ export const IntentConfigSchema = z.object({
   description: z.string().optional(),
 
   // Requirements linked to this intent
-  requirementIds: z.array(z.string()),
+  requirementIds: z.array(z.string().min(1)).min(1),
 
   // AI lineage tracking
   aiGenerated: z.boolean().default(false),

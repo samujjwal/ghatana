@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import fp from "fastify-plugin";
 import fastifyJwt from "@fastify/jwt";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
@@ -36,7 +37,7 @@ interface RedisHealthClient {
  * @doc.layer platform
  * @doc.pattern Plugin
  */
-export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
+const setupCorePluginsImpl: FastifyPluginAsync<CorePluginsOptions> = async (
   app,
   options,
 ) => {
@@ -122,28 +123,43 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
   });
 
   // 10. Setup Prometheus metrics registry
-  collectDefaultMetrics({ register: metricsRegistry });
+  if (!metricsRegistry.getSingleMetric("process_cpu_user_seconds_total")) {
+    collectDefaultMetrics({ register: metricsRegistry });
+  }
 
-  const httpRequestCounter = new Counter({
-    name: "http_requests_total",
-    help: "Total number of HTTP requests",
-    labelNames: ["method", "route", "status_code"],
-    registers: [metricsRegistry],
-  });
+  const existingHttpRequestCounter =
+    metricsRegistry.getSingleMetric("http_requests_total");
+  const httpRequestCounter =
+    existingHttpRequestCounter instanceof Counter
+      ? existingHttpRequestCounter
+      : new Counter({
+          name: "http_requests_total",
+          help: "Total number of HTTP requests",
+          labelNames: ["method", "route", "status_code"],
+          registers: [metricsRegistry],
+        });
 
-  const httpRequestDurationHistogram = new Histogram({
-    name: "http_request_duration_seconds",
-    help: "Duration of HTTP requests in seconds",
-    labelNames: ["method", "route", "status_code"],
-    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
-    registers: [metricsRegistry],
-  });
+  const existingHttpRequestDurationHistogram = metricsRegistry.getSingleMetric(
+    "http_request_duration_seconds",
+  );
+  const httpRequestDurationHistogram =
+    existingHttpRequestDurationHistogram instanceof Histogram
+      ? existingHttpRequestDurationHistogram
+      : new Histogram({
+          name: "http_request_duration_seconds",
+          help: "Duration of HTTP requests in seconds",
+          labelNames: ["method", "route", "status_code"],
+          buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+          registers: [metricsRegistry],
+        });
 
   app.addHook("onResponse", async (request, reply) => {
     const route = request.routeOptions.url ?? "unknown";
     const labels = { method: request.method, route, status_code: String(reply.statusCode) };
+    const elapsedSeconds =
+      typeof reply.elapsedTime === "number" ? reply.elapsedTime / 1000 : 0;
     httpRequestCounter.inc(labels);
-    httpRequestDurationHistogram.observe(labels, reply.elapsedTime / 1000);
+    httpRequestDurationHistogram.observe(labels, elapsedSeconds);
   });
 
   app.get("/metrics", async (request, reply) => {
@@ -164,3 +180,7 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
 
   app.log.info("✅ Core plugins registered");
 };
+
+export const setupCorePlugins = fp(setupCorePluginsImpl, {
+  name: "tutorputor-core-plugins",
+});

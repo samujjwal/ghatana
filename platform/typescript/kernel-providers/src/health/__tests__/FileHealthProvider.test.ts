@@ -56,12 +56,15 @@ describe("FileHealthProvider", () => {
       snapshotPath: expectedPath,
     });
     await expect(provider.getLatestHealthSnapshot("digital-marketing")).resolves.toEqual(
-      {
+      expect.objectContaining({
         productUnitId: "digital-marketing",
         runId: "run-1",
         status: "healthy",
         snapshotPath: expectedPath,
-      }
+        snapshotAt: "2026-05-14T00:00:01.000Z",
+        correlationId: "corr-1",
+        reasonCode: "health-healthy",
+      })
     );
   });
 
@@ -92,9 +95,61 @@ describe("FileHealthProvider", () => {
     });
 
     await expect(provider.getLatestHealthSnapshot("digital-marketing")).resolves.toEqual(
-      secondRef
+      expect.objectContaining({
+        ...secondRef,
+        correlationId: "corr-1",
+        reasonCode: "health-degraded",
+      })
     );
     await expect(provider.getLatestHealthSnapshot("finance")).resolves.toBeNull();
+  });
+
+  it("uses snapshotAt, privacy, and retention metadata when selecting latest health", async () => {
+    await provider.recordHealthSnapshot(
+      {
+        productUnitId: "digital-marketing",
+        runId: "run-older",
+        status: "failed",
+        snapshotPath: "run-older.json",
+        snapshotAt: "2026-05-14T00:00:02.000Z",
+      },
+      { required: true, correlationId: "corr-older" }
+    );
+    await provider.recordHealthSnapshot(
+      {
+        productUnitId: "digital-marketing",
+        runId: "run-newer",
+        status: "blocked",
+        snapshotPath: "run-newer.json",
+        snapshotAt: "2026-05-14T00:00:05.000Z",
+      },
+      {
+        required: true,
+        correlationId: "corr-newer",
+        privacyClassification: "confidential",
+        retention: { policyId: "lifecycle-evidence", retentionDays: 30 },
+      }
+    );
+    await provider.recordHealthSnapshot(
+      {
+        productUnitId: "digital-marketing",
+        runId: "run-middle",
+        status: "healthy",
+        snapshotPath: "run-middle.json",
+        snapshotAt: "2026-05-14T00:00:03.000Z",
+      },
+      { required: true, correlationId: "corr-middle" }
+    );
+
+    await expect(provider.getLatestHealthSnapshot("digital-marketing")).resolves.toEqual(
+      expect.objectContaining({
+        runId: "run-newer",
+        reasonCode: "health-blocked",
+        correlationId: "corr-newer",
+        privacyClassification: "confidential",
+        retention: { policyId: "lifecycle-evidence", retentionDays: 30 },
+      })
+    );
   });
 
   it("rejects invalid lifecycle snapshots before writing", async () => {

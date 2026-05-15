@@ -16,6 +16,7 @@ dependencies {
     // Platform modules
     implementation(project(":products:data-cloud:delivery:runtime-composition"))
     implementation(project(":products:data-cloud:delivery:api"))
+    implementation(project(":products:data-cloud:extensions:agent-registry"))
     implementation(project(":products:data-cloud:extensions:plugins"))
 
     // Core platform dependencies

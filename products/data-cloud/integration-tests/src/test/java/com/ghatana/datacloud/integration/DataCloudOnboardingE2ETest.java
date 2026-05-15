@@ -226,7 +226,8 @@ class DataCloudOnboardingE2ETest {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isIn(200, 503); // 503 if analytics not configured
+        // 401 is valid when analytics query auth is enforced; 503 means analytics is not configured.
+        assertThat(response.statusCode()).isIn(200, 401, 503);
         if (response.statusCode() == 200) {
             Map<String, Object> responseBody = parseBodyData(response.body());
             assertThat(responseBody).containsKey("rows");

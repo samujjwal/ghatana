@@ -13,9 +13,14 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { registerAllRoutePolicies, getRoutePolicy } from "../core/http/routePolicyRegistry.js";
 import { hasPermission, type TutorPutorPermission, type TutorPutorRole } from "../core/authz/permissionPolicy.js";
 import { getConfig } from "../config/config.js";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 describe("Release Gates - Section 7.6", () => {
   beforeAll(() => {
@@ -232,19 +237,24 @@ describe("Release Gates - Section 7.6", () => {
   });
 
   describe("Gate 7: Content-generation contract tests", () => {
-    it("canonical contract types exist", () => {
+    it("canonical contract types exist", async () => {
       // This validates that the canonical TypeScript contract file exists
       // and can be imported (P0-3 implementation)
-      expect(() => {
-        import("../../contracts/v1/content-generation.js");
-      }).not.toThrow();
+      await expect(
+        import("../../../contracts/v1/content-generation.js"),
+      ).resolves.toBeDefined();
     });
 
     it("contract tests exist", () => {
       // This validates that contract tests exist (P0-3 implementation)
-      expect(() => {
-        import("../../contracts/v1/__tests__/content-generation.contract.test.js");
-      }).not.toThrow();
+      expect(
+        existsSync(
+          resolve(
+            __dirname,
+            "../../../../contracts/v1/__tests__/content-generation.contract.test.ts",
+          ),
+        ),
+      ).toBe(true);
     });
   });
 
@@ -282,35 +292,27 @@ describe("Release Gates - Section 7.6", () => {
   });
 
   describe("Gate 9: AI governance audit metadata", () => {
-    it("AI governance decision types exist", () => {
+    it("AI governance decision types exist", async () => {
       // This validates that typed AI governance decision types exist (P0-4)
-      expect(() => {
-        import("../../modules/ai/governance.js");
-      }).not.toThrow();
+      await expect(import("../modules/ai/governance.js")).resolves.toBeDefined();
     });
 
-    it("rate-limit fails closed on errors", () => {
+    it("rate-limit fails closed on errors", async () => {
       // This validates that rate-limit fails closed (P0-4)
       // The implementation should reject requests when Redis is unavailable
-      expect(() => {
-        import("../../modules/ai/routes.js");
-      }).not.toThrow();
+      await expect(import("../modules/ai/routes.js")).resolves.toBeDefined();
     });
   });
 
   describe("Gate 10: Worker trust boundary", () => {
-    it("worker authentication module exists", () => {
+    it("worker authentication module exists", async () => {
       // This validates that worker authentication module exists (P1-6)
-      expect(() => {
-        import("../../workers/worker-auth.js");
-      }).not.toThrow();
+      await expect(import("../workers/worker-auth.js")).resolves.toBeDefined();
     });
 
-    it("worker schema validator exists", () => {
+    it("worker schema validator exists", async () => {
       // This validates that worker schema validation exists (P1-6)
-      expect(() => {
-        import("../../workers/worker-auth.js");
-      }).not.toThrow();
+      await expect(import("../workers/worker-auth.js")).resolves.toBeDefined();
     });
   });
 
@@ -322,20 +324,20 @@ describe("Release Gates - Section 7.6", () => {
       }).not.toThrow();
     });
 
-    it("public route allowlist is defined", () => {
+    it("public route allowlist is defined", async () => {
       // This validates that public routes are defined (P0-1)
-      expect(() => {
-        import("../../core/http/routePolicyRegistry.js");
-      }).not.toThrow();
+      await expect(
+        import("../core/http/routePolicyRegistry.js"),
+      ).resolves.toBeDefined();
     });
   });
 
   describe("Gate 12: JWT pre-handler integration", () => {
-    it("JWT pre-handler exists and can be imported", () => {
+    it("JWT pre-handler exists and can be imported", async () => {
       // This validates that JWT pre-handler exists (P0-1)
-      expect(() => {
-        import("../../core/http/jwtAuthPreHandler.js");
-      }).not.toThrow();
+      await expect(
+        import("../core/http/jwtAuthPreHandler.js"),
+      ).resolves.toBeDefined();
     });
   });
 

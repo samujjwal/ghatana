@@ -180,13 +180,14 @@ describe("Error Boundary Testing", () => {
   });
 
   describe("Async Error Handling", () => {
-    it("should handle promise rejections", () => {
+    it("should handle promise rejections", async () => {
       const asyncError = {
-        promise: Promise.reject(new Error("Async failed")),
+        promise: Promise.reject(new Error("Async failed")).catch((error) => error),
         caught: true,
         handled: true,
       };
 
+      await expect(asyncError.promise).resolves.toBeInstanceOf(Error);
       expect(asyncError.caught).toBe(true);
     });
 

@@ -1,6 +1,6 @@
 module.exports = {
   preset: "@react-native/jest-preset",
-  testEnvironment: "jest-environment-jsdom",
+  testEnvironment: "node",
   setupFiles: [
     "<rootDir>/src/__tests__/setup-pre.ts",
     "@testing-library/react-native/dont-cleanup-after-each",
@@ -34,7 +34,15 @@ module.exports = {
     // to a lightweight mock so tests can run.
     "^react-native-gesture-handler/jestSetup$":
       "<rootDir>/jest-mocks/rngh-jest-setup-mock.js",
+    "^react-native/Libraries/Animated/NativeAnimatedHelper$":
+      "<rootDir>/jest-mocks/native-animated-helper-mock.js",
+    "^@react-native-async-storage/async-storage/jest/async-storage-mock$":
+      "<rootDir>/jest-mocks/async-storage-mock.js",
     "^@notifee/react-native$": "<rootDir>/jest-mocks/notifee-mock.js",
+    "^react-test-renderer$":
+      "<rootDir>/../../../../node_modules/.pnpm/react-test-renderer@19.2.4_react@19.2.4/node_modules/react-test-renderer",
+    "^react-test-renderer/(.*)$":
+      "<rootDir>/../../../../node_modules/.pnpm/react-test-renderer@19.2.4_react@19.2.4/node_modules/react-test-renderer/$1",
     // NOTE: previously we forced a proxy for react-test-renderer to avoid
     // mixed versions; that can itself cause resolution surprises (older
     // package.json resolution). Removing the explicit mapping lets Node's

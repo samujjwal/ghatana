@@ -57,12 +57,15 @@ export interface ProductUnitIntentExportOptions {
   readonly dataCloudEvidenceEndpoint?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => string;
+  readonly confidenceThreshold?: number;
 }
 
 export interface ProductUnitIntentExportResponse {
   readonly intentId: string;
-  readonly status: 'accepted' | 'queued';
+  readonly status: 'accepted' | 'queued' | 'blocked' | 'failed';
   readonly evidenceRef?: string;
+  readonly previewRef?: string;
+  readonly blockedReasons?: readonly string[];
 }
 
 export interface YappcArtifactIntelligenceEvidenceBundle {
@@ -71,6 +74,28 @@ export interface YappcArtifactIntelligenceEvidenceBundle {
   readonly residualIslandReports: readonly ResidualIslandReport[];
   readonly riskHotspotReports: readonly RiskHotspotReport[];
   readonly generatedChangeSets: readonly GeneratedChangeSetSummary[];
+}
+
+interface ProductUnitIntentExportPolicy {
+  readonly mode: 'preview' | 'apply';
+  readonly confidence: number;
+  readonly residualIslandCount: number;
+  readonly highestRiskLevel: 'low' | 'medium' | 'high' | 'critical';
+  readonly blockedReasons: readonly string[];
+}
+
+interface EvidencePrivacyMetadata {
+  readonly semanticArtifacts: 'internal';
+  readonly graphSummaries: 'internal';
+  readonly residualIslandReports: 'confidential';
+  readonly riskHotspotReports: 'confidential';
+  readonly generatedChangeSets: 'internal';
+  readonly retentionDays?: number;
+}
+
+interface DataCloudEvidencePersistenceResponse {
+  readonly evidenceRef?: string;
+  readonly evidenceRefs?: readonly string[];
 }
 
 const DEFAULT_INTENT_ENDPOINT = '/api/v1/yappc/product-unit-intents';
@@ -260,6 +285,8 @@ export function buildProductUnitIntentFromYappcArtifacts(
   if (!artifact) {
     throw new Error('ProductUnitIntent export requires at least one page artifact');
   }
+  const policy = evaluateExportPolicy(request);
+  const sourceArtifactRefs = request.artifacts.map((pageArtifact) => `yappc:artifact:${pageArtifact.artifactId}`);
 
   return ProductUnitIntentSchema.parse({
     schemaVersion: '1.0.0',
@@ -278,6 +305,15 @@ export function buildProductUnitIntentFromYappcArtifacts(
     target: {
       registryProvider: requireNonEmpty(request.registryProvider, 'registryProvider'),
       sourceProvider: requireNonEmpty(request.sourceProvider, 'sourceProvider'),
+    },
+    governanceHints: {
+      privacyLevel: 'internal',
+      evidencePrivacyClassification: policy.highestRiskLevel === 'high' || policy.highestRiskLevel === 'critical'
+        ? 'confidential'
+        : 'internal',
+      evidenceRequired: true,
+      requiresHumanApproval: policy.mode === 'preview' || policy.highestRiskLevel === 'high' || policy.highestRiskLevel === 'critical',
+      retentionDays: 365,
     },
     productUnit: {
       id: productUnitId,
@@ -306,9 +342,13 @@ export function buildProductUnitIntentFromYappcArtifacts(
     },
     provenance: {
       sourceSystem: 'yappc',
-      sourceArtifactRefs: request.artifacts.map((pageArtifact) => `yappc:artifact:${pageArtifact.artifactId}`),
+      sourceArtifactRefs,
       createdBy: request.createdBy,
       createdAt: new Date().toISOString(),
+      evidenceRefs: [
+        ...sourceArtifactRefs,
+        `yappc:evidence:artifact-intelligence:${productUnitId}:${request.correlationId}`,
+      ],
     },
   });
 }
@@ -320,22 +360,87 @@ function isExportResponse(value: unknown): value is ProductUnitIntentExportRespo
   const record = value as Record<string, unknown>;
   return (
     typeof record['intentId'] === 'string' &&
-    (record['status'] === 'accepted' || record['status'] === 'queued') &&
-    (record['evidenceRef'] === undefined || typeof record['evidenceRef'] === 'string')
+    (record['status'] === 'accepted' ||
+      record['status'] === 'queued' ||
+      record['status'] === 'blocked' ||
+      record['status'] === 'failed') &&
+    (record['evidenceRef'] === undefined || typeof record['evidenceRef'] === 'string') &&
+    (record['previewRef'] === undefined || typeof record['previewRef'] === 'string') &&
+    (record['blockedReasons'] === undefined ||
+      (Array.isArray(record['blockedReasons']) &&
+        record['blockedReasons'].every((reason) => typeof reason === 'string')))
   );
+}
+
+function parseDataCloudEvidencePersistenceResponse(value: unknown): readonly string[] {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error('Data Cloud evidence persistence response had an unexpected shape');
+  }
+  const record = value as DataCloudEvidencePersistenceResponse;
+  const evidenceRefs = [
+    ...(typeof record.evidenceRef === 'string' ? [record.evidenceRef] : []),
+    ...(Array.isArray(record.evidenceRefs)
+      ? record.evidenceRefs.filter((ref): ref is string => typeof ref === 'string' && ref.trim().length > 0)
+      : []),
+  ];
+  if (evidenceRefs.length === 0) {
+    throw new Error('Data Cloud evidence persistence response did not include evidence refs');
+  }
+  return [...new Set(evidenceRefs)];
 }
 
 async function postJson(
   fetchImpl: typeof fetch,
   endpoint: string,
   body: unknown,
+  request: ProductUnitIntentExportRequest,
 ): Promise<Response> {
   return fetchImpl(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Correlation-Id': request.correlationId,
+      'X-Ghatana-Tenant-Id': request.scope.tenantId,
+      'X-Ghatana-Workspace-Id': request.scope.workspaceId,
+      'X-Ghatana-Project-Id': request.scope.projectId,
+    },
     credentials: 'include',
     body: JSON.stringify(body),
   });
+}
+
+function evaluateExportPolicy(
+  request: ProductUnitIntentExportRequest,
+  confidenceThreshold = 0.75,
+): ProductUnitIntentExportPolicy {
+  const graphConfidence = firstGraph(request.artifacts)?.provenance.confidence ?? 0.9;
+  const residualIslandCount = request.artifacts.reduce(
+    (count, artifact) => count + (artifact.residualIslandIds?.length ?? 0),
+    0,
+  );
+  const highestRiskLevel = residualIslandCount > 0 || graphConfidence < confidenceThreshold ? 'high' : 'low';
+  const blockedReasons = [
+    ...(graphConfidence < confidenceThreshold ? ['artifact-confidence-below-threshold'] : []),
+    ...(residualIslandCount > 0 ? ['residual-island-review-required'] : []),
+  ];
+  return {
+    mode: blockedReasons.length > 0 ? 'preview' : 'apply',
+    confidence: graphConfidence,
+    residualIslandCount,
+    highestRiskLevel,
+    blockedReasons,
+  };
+}
+
+function evidencePrivacyMetadata(policy: ProductUnitIntentExportPolicy): EvidencePrivacyMetadata {
+  return {
+    semanticArtifacts: 'internal',
+    graphSummaries: 'internal',
+    residualIslandReports: 'confidential',
+    riskHotspotReports: 'confidential',
+    generatedChangeSets: 'internal',
+    ...(policy.highestRiskLevel === 'high' || policy.highestRiskLevel === 'critical' ? { retentionDays: 365 } : {}),
+  };
 }
 
 export async function exportProductUnitIntentFromYappcArtifacts(
@@ -343,24 +448,41 @@ export async function exportProductUnitIntentFromYappcArtifacts(
   options: ProductUnitIntentExportOptions = {},
 ): Promise<ProductUnitIntentExportResponse> {
   const fetchImpl = options.fetchImpl ?? fetch;
+  const policy = evaluateExportPolicy(request, options.confidenceThreshold);
   const intent = buildProductUnitIntentFromYappcArtifacts(request);
   const evidence = buildYappcArtifactIntelligenceEvidence(request, options);
+  let persistedEvidenceRefs: readonly string[] = [];
 
   if (request.providerMode === 'platform') {
     if (!options.dataCloudEvidenceEndpoint) {
       throw new Error('Platform-mode ProductUnitIntent export requires a Data Cloud evidence endpoint');
     }
-    const evidenceResponse = await postJson(fetchImpl, options.dataCloudEvidenceEndpoint, evidence);
+    const evidenceResponse = await postJson(fetchImpl, options.dataCloudEvidenceEndpoint, {
+      evidence,
+      evidenceMetadata: evidencePrivacyMetadata(policy),
+      correlationId: request.correlationId,
+      scope: request.scope,
+    }, request);
     if (!evidenceResponse.ok) {
       const body = await evidenceResponse.text().catch(() => '');
       throw new Error(`Data Cloud evidence persistence failed (HTTP ${evidenceResponse.status}): ${body}`);
     }
+    persistedEvidenceRefs = parseDataCloudEvidencePersistenceResponse(await evidenceResponse.json());
   }
 
-  const response = await postJson(fetchImpl, options.endpoint ?? DEFAULT_INTENT_ENDPOINT, {
+  const handoffBody = {
+    mode: policy.mode,
+    providerMode: request.providerMode,
     intent,
-    evidence,
-  });
+    evidence:
+      persistedEvidenceRefs.length > 0
+        ? { evidenceRefs: persistedEvidenceRefs }
+        : evidence,
+    evidenceMetadata: evidencePrivacyMetadata(policy),
+    blockedReasons: policy.blockedReasons,
+  };
+
+  const response = await postJson(fetchImpl, options.endpoint ?? DEFAULT_INTENT_ENDPOINT, handoffBody, request);
   if (!response.ok) {
     const body = await response.text().catch(() => '');
     throw new Error(`ProductUnitIntent export failed (HTTP ${response.status}): ${body}`);

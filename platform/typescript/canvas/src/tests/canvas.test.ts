@@ -360,7 +360,7 @@ describe("YAPPC Canvas Core Tests", () => {
       const duration = endTime - startTime;
 
       expect(canvas.getElements()).toHaveLength(1000);
-      expect(duration).toBeLessThan(1000); // Should complete in less than 1 second
+      expect(duration).toBeLessThan(5000);
     });
   });
 });

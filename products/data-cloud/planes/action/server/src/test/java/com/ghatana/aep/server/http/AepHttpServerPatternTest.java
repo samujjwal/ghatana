@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -43,11 +42,10 @@ class AepHttpServerPatternTest {
     @BeforeEach
     void setUp() throws Exception { 
         engine = Aep.forTesting(); 
-        port = findFreePort(); 
-        httpClient = HttpClient.newBuilder().build(); 
-        server = new AepHttpServer(engine, port); 
-        server.start(); 
-        waitForServerReady(port); 
+        httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build(); 
+        startServerWithRetries();
     }
 
     @AfterEach
@@ -250,22 +248,52 @@ class AepHttpServerPatternTest {
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { 
-        try (ServerSocket ss = new ServerSocket(0)) { 
-            return ss.getLocalPort(); 
+    private void startServerWithRetries() throws Exception {
+        Exception lastFailure = null;
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            int candidatePort = findFreePort();
+            AepHttpServer candidate = new AepHttpServer(engine, candidatePort);
+            try {
+                candidate.start();
+                waitForServerReady(candidatePort, httpClient);
+                server = candidate;
+                port = candidatePort;
+                return;
+            } catch (Exception e) {
+                lastFailure = e;
+                try {
+                    candidate.stop();
+                } catch (Exception ignored) {
+                    // best-effort cleanup before retrying on a new port
+                }
+            }
+        }
+        throw new AssertionError("Server did not start after 5 attempts", lastFailure);
+    }
+
+    private static int findFreePort() throws IOException {
+        try (ServerSocket ss = new ServerSocket(0)) {
+            return ss.getLocalPort();
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { 
-        long deadline = System.currentTimeMillis() + 5_000; 
+    private static void waitForServerReady(int port, HttpClient httpClient) throws Exception {
+        long deadline = System.currentTimeMillis() + 5_000;
         while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); 
-                return;
-            } catch (IOException ignored) { 
-                Thread.sleep(50); 
+                HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/health"))
+                    .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    return;
+                }
+            } catch (IOException ignored) {
+                // Server may still be binding.
             }
+            Thread.sleep(50);
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s"); 
+        throw new AssertionError("Server did not become ready on port " + port + " within 5 s");
     }
 }

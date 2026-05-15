@@ -25,9 +25,9 @@ describe('Wizard', () => {
   describe('rendering', () => {
     it('renders a navigation list with all step titles', () => {
       render(<Wizard steps={STEPS} renderStep={makeRenderStep()} />);
-      expect(screen.getByText('Basic Info')).toBeInTheDocument();
-      expect(screen.getByText('Choose Plan')).toBeInTheDocument();
-      expect(screen.getByText('Confirm')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Basic Info/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Choose Plan/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Confirm/ })).toBeInTheDocument();
     });
 
     it('calls renderStep with the current step id and index', () => {
@@ -71,7 +71,7 @@ describe('Wizard', () => {
       render(<Wizard steps={STEPS} renderStep={renderStep} />);
       await user.click(screen.getByRole('button', { name: /next/i }));
       expect(renderStep).toHaveBeenLastCalledWith('plan', 1);
-      expect(screen.getByText('Choose Plan')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Choose Plan' })).toBeInTheDocument();
     });
 
     it('shows Finish button on the last step', async () => {

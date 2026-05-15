@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isProductUnitIntent,
   validateProductUnitIntent,
+  validateProductUnitIntentDetailed,
   type ProductUnitIntent,
 } from "../ProductUnitIntent";
 
@@ -50,6 +51,7 @@ const baseIntent: ProductUnitIntent = {
     dataSensitivity: "moderate",
     retentionPolicyId: "marketing-evidence-365",
     retentionDays: 365,
+    evidenceRequired: true,
   },
   provenance: {
     sourceSystem: "yappc",
@@ -263,6 +265,44 @@ describe("ProductUnitIntent", () => {
 
     expect(validateProductUnitIntent(intent).errors).toContain(
       "ProductUnitIntent must not include raw secret-like fields"
+    );
+  });
+
+  it("accepts YAPPC promote-candidate with evidenceRefs", () => {
+    expect(isProductUnitIntent(baseIntent)).toBe(true);
+  });
+
+  it("rejects promote-candidate without sourceArtifactRefs", () => {
+    const intent = {
+      ...baseIntent,
+      intentType: "promote-candidate",
+      provenance: {
+        ...baseIntent.provenance,
+        sourceArtifactRefs: [],
+      },
+    };
+
+    const result = validateProductUnitIntentDetailed(intent);
+
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.reasonCode)).toContain(
+      "missing-source-artifact-refs"
+    );
+  });
+
+  it("rejects promote-candidate without evidenceRefs", () => {
+    const { evidenceRefs: _evidenceRefs, ...provenance } = baseIntent.provenance;
+    const intent = {
+      ...baseIntent,
+      intentType: "promote-candidate",
+      provenance,
+    };
+
+    const result = validateProductUnitIntentDetailed(intent);
+
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.reasonCode)).toContain(
+      "missing-evidence"
     );
   });
 

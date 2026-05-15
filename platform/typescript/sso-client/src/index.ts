@@ -223,7 +223,7 @@ export class SsoClient {
     const loginUrl = new URL(`${this.config.authServiceBaseUrl}/auth/login`);
     loginUrl.searchParams.set('redirect_uri', redirect);
     loginUrl.searchParams.set('product_id',  this.config.productId);
-    window.location.assign(loginUrl.toString());
+    this.navigate(loginUrl.toString());
   }
 
   /**
@@ -249,7 +249,7 @@ export class SsoClient {
     }
     this.clearLocalState();
     const target = postLogoutUrl ?? window.location.origin;
-    window.location.assign(target);
+    this.navigate(target);
   }
 
   /**
@@ -273,11 +273,47 @@ export class SsoClient {
         },
       });
       if (!response.ok) return null;
-      const data = await response.json() as { platformToken?: string };
-      return data.platformToken ?? null;
+      const data = await response.json() as { platformToken?: string; platform_token?: string };
+      return data.platformToken ?? data.platform_token ?? null;
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Exchanges a product-scoped JWT for a platform token and applies it locally.
+   *
+   * @doc.type method
+   * @doc.purpose Token exchange boundary for product-provider integration tests
+   * @doc.layer platform
+   */
+  async exchangeForProductToken(productJwt: string): Promise<string> {
+    const response = await fetch(`${this.config.authGatewayBaseUrl}/auth/exchange`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${productJwt}`,
+      },
+      body: JSON.stringify({
+        productToken: productJwt,
+        productId: this.config.productId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed with status ${response.status}`);
+    }
+
+    const data = await response.json() as { platformToken?: string; platform_token?: string };
+    const platformToken = data.platformToken ?? data.platform_token;
+    if (!platformToken) {
+      throw new Error('Token exchange response did not include a platform token');
+    }
+
+    sessionStorage.setItem(this.config.storageKey, platformToken);
+    this.applyToken(platformToken);
+    this.scheduleRefresh();
+    return platformToken;
   }
 
   /**
@@ -366,6 +402,10 @@ export class SsoClient {
     sessionStorage.removeItem(this.config.storageKey);
     this.rawToken = null;
     this.claims   = null;
+  }
+
+  protected navigate(url: string): void {
+    window.location.assign(url);
   }
 }
 

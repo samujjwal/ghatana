@@ -242,7 +242,10 @@ if (!process.env.JEST_SKIP_CUSTOM_SETUP) {
     return { createBottomTabNavigator };
   });
 
-  jest.mock('@/services/api', () => require('./mocks/api.mock'));
+  jest.mock('@/services/api', () => require('./mocks/api.mock'), { virtual: true });
+  jest.mock('@dcmaar/dashboard-core', () => ({
+    useCanSeeSections: jest.fn(() => true),
+  }));
 
   beforeEach(() => {
     (global.fetch as jest.Mock).mockClear();

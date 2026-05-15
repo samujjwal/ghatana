@@ -11,10 +11,14 @@ import com.ghatana.agent.promotion.PromotionEngine;
 import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryTransition;
-import com.ghatana.agent.mastery.MasteryTransitionResult;
 import com.ghatana.agent.obsolescence.ObsolescenceDetector;
+import com.ghatana.agent.obsolescence.ObsolescenceEvent;
+import com.ghatana.agent.obsolescence.ObsolescenceTransitionService;
+import com.ghatana.agent.obsolescence.DefaultObsolescenceTransitionService;
 import com.ghatana.datacloud.governance.approval.ApprovalService;
 import com.ghatana.platform.http.server.JsonServlet;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -24,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * ActiveJ servlet for mastery operations.
@@ -35,11 +41,19 @@ import java.util.Optional;
  * @doc.layer data-cloud
  * @doc.pattern Servlet
  */
-public class MasteryController extends JsonServlet {
+public class MasteryController extends JsonServlet implements AsyncServlet {
+
+    private static final Pattern MASTERY_ITEM_PATH = Pattern.compile(
+        "^/api/v1/mastery/([^/]+)(?:/(?:evidence|transitions|version-compatibility|promotion-history))?$");
+    private static final Pattern SKILL_EVAL_PATH = Pattern.compile(
+        "^/api/v1/mastery/skills/([^/]+)/evaluation-status$");
+    private static final Pattern LEARNING_DELTA_PATH = Pattern.compile(
+        "^/api/v1/mastery/learning-deltas/([^/]+)/(?:evaluate|promote|dry-run-promotion)$");
 
     private final com.ghatana.agent.mastery.MasteryRegistry masteryRegistry;
     private final ApprovalService approvalService;
     private final ObsolescenceDetector obsolescenceDetector;
+    private final ObsolescenceTransitionService obsolescenceTransitionService;
     private final LearningDeltaRepository learningDeltaRepository;
     private final PromotionEngine promotionEngine;
 
@@ -53,6 +67,98 @@ public class MasteryController extends JsonServlet {
         this.masteryRegistry = masteryRegistry;
         this.approvalService = approvalService != null ? approvalService : ApprovalService.getInstance();
         this.obsolescenceDetector = obsolescenceDetector;
+        this.obsolescenceTransitionService = new DefaultObsolescenceTransitionService(masteryRegistry);
+        this.learningDeltaRepository = learningDeltaRepository;
+        this.promotionEngine = promotionEngine;
+    }
+
+    @Override
+    public Promise<HttpResponse> serve(@NotNull HttpRequest request) {
+        HttpMethod method = request.getMethod();
+        String path = request.getPath();
+
+        if (method == HttpMethod.GET && "/api/v1/mastery".equals(path)) {
+            return queryMastery(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/stale".equals(path)) {
+            return findStale(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/obsolete".equals(path)) {
+            return findObsoleteOrQuarantined(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/distribution".equals(path)) {
+            return getStateDistribution(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/mode-explanation".equals(path)) {
+            return getModeExplanation(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/preview/decision".equals(path)) {
+            return previewDecision(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/preview/retrieval".equals(path)) {
+            return previewRetrieval(request);
+        }
+        if (method == HttpMethod.GET && "/api/v1/mastery/learning-deltas".equals(path)) {
+            return listLearningDeltas(request);
+        }
+        if (method == HttpMethod.POST && "/api/v1/mastery".equals(path)) {
+            return saveMastery(request);
+        }
+        if (method == HttpMethod.POST && "/api/v1/mastery/obsolescence/scan".equals(path)) {
+            return scanObsolescence(request);
+        }
+        if (method == HttpMethod.POST && "/api/v1/mastery/obsolescence-events/process".equals(path)) {
+            return processObsolescenceEvent(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/skills/[^/]+/evaluation-status$")) {
+            return getSkillEvalStatus(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/learning-deltas/[^/]+/evaluate$")) {
+            return evaluateLearningDelta(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/learning-deltas/[^/]+/promote$")) {
+            return promoteLearningDelta(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/learning-deltas/[^/]+/dry-run-promotion$")) {
+            return dryRunPromotion(request);
+        }
+        if (path.matches("^/api/v1/mastery/[^/]+/transition$") && method == HttpMethod.POST) {
+            return transition(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+/evidence$")) {
+            return listEvidence(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+/transitions$")) {
+            return listTransitions(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+/version-compatibility$")) {
+            return getVersionCompatibility(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+/promotion-history$")) {
+            return getPromotionHistory(request);
+        }
+        if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+$")) {
+            return getMastery(request);
+        }
+
+        return Promise.of(notFound("Endpoint not found"));
+    }
+
+    /**
+     * Creates a mastery controller with explicit obsolescence transition service wiring.
+     */
+    public MasteryController(
+            @NotNull com.ghatana.agent.mastery.MasteryRegistry masteryRegistry,
+            @NotNull ApprovalService approvalService,
+            @NotNull ObsolescenceDetector obsolescenceDetector,
+            @NotNull ObsolescenceTransitionService obsolescenceTransitionService,
+            @NotNull LearningDeltaRepository learningDeltaRepository,
+            @NotNull PromotionEngine promotionEngine
+    ) {
+        this.masteryRegistry = masteryRegistry;
+        this.approvalService = approvalService != null ? approvalService : ApprovalService.getInstance();
+        this.obsolescenceDetector = obsolescenceDetector;
+        this.obsolescenceTransitionService = obsolescenceTransitionService;
         this.learningDeltaRepository = learningDeltaRepository;
         this.promotionEngine = promotionEngine;
     }
@@ -122,7 +228,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String masteryId = request.getPathParameter("masteryId");
+        String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
             return Promise.of(badRequest("masteryId is required"));
         }
@@ -156,11 +262,16 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
+        if (!isBreakGlassRequest(request)) {
+            return Promise.of(forbidden(
+                    "Direct mastery mutation is disabled. Use LearningDelta + Promotion workflow."));
+        }
+
         // Governance check: tenant must have approval to write mastery data
-        return approvalService.checkAccess(tenantId, "mastery:write")
+        return approvalService.checkAccess(tenantId, "mastery:breakglass")
                 .then(hasAccess -> {
                     if (!hasAccess) {
-                        return Promise.of(forbidden("Access denied to write mastery data"));
+                        return Promise.of(forbidden("Break-glass access denied for direct mastery mutation"));
                     }
 
                     return parseBodyAsync(request, MasteryItem.class)
@@ -190,11 +301,16 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
+        if (!isBreakGlassRequest(request)) {
+            return Promise.of(forbidden(
+                    "Direct mastery transition is disabled. Use governed promotion/obsolescence workflows."));
+        }
+
         // Governance check: tenant must have approval to transition mastery states
-        return approvalService.checkAccess(tenantId, "mastery:transition")
+        return approvalService.checkAccess(tenantId, "mastery:breakglass")
                 .then(hasAccess -> {
                     if (!hasAccess) {
-                        return Promise.of(forbidden("Access denied to transition mastery"));
+                        return Promise.of(forbidden("Break-glass access denied for direct mastery transition"));
                     }
 
                     return parseBodyAsync(request, MasteryTransition.class)
@@ -276,7 +392,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String masteryId = request.getPathParameter("masteryId");
+        String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
             return Promise.of(badRequest("masteryId is required"));
         }
@@ -309,7 +425,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String masteryId = request.getPathParameter("masteryId");
+        String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
             return Promise.of(badRequest("masteryId is required"));
         }
@@ -371,7 +487,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String masteryId = request.getPathParameter("masteryId");
+        String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
             return Promise.of(badRequest("masteryId is required"));
         }
@@ -404,7 +520,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String masteryId = request.getPathParameter("masteryId");
+        String masteryId = masteryId(request);
         if (masteryId == null || masteryId.isBlank()) {
             return Promise.of(badRequest("masteryId is required"));
         }
@@ -437,7 +553,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String skillId = request.getPathParameter("skillId");
+        String skillId = skillId(request);
         if (skillId == null || skillId.isBlank()) {
             return Promise.of(badRequest("skillId is required"));
         }
@@ -607,6 +723,187 @@ public class MasteryController extends JsonServlet {
     }
 
     /**
+     * Preview mastery decision for a given tenant/agent/skill/version context.
+     */
+    public Promise<HttpResponse> previewDecision(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String agentId = request.getQueryParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(badRequest("agentId is required"));
+        }
+
+        String skillId = request.getQueryParameter("skillId");
+        if (skillId == null || skillId.isBlank()) {
+            return Promise.of(badRequest("skillId is required"));
+        }
+
+        String versionContext = request.getQueryParameter("versionContext");
+
+        return approvalService.checkAccess(tenantId, "mastery:read")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to mastery decision preview"));
+                    }
+
+                    MasteryQuery query = MasteryQuery.bySkill(skillId)
+                            .withAgentId(agentId)
+                            .withTenantId(tenantId);
+                    if (versionContext != null && !versionContext.isBlank()) {
+                        query = query.withVersionContext(versionContext);
+                    }
+
+                    return masteryRegistry.decide(query)
+                            .map(decision -> ok(Map.of(
+                                    "tenantId", tenantId,
+                                    "agentId", agentId,
+                                    "skillId", skillId,
+                                    "versionContext", versionContext == null ? "" : versionContext,
+                                    "state", decision.state(),
+                                    "confidence", decision.confidence(),
+                                    "executable", decision.executable(),
+                                    "requiresApproval", decision.requiresHumanApproval(),
+                                    "requiresVerification", decision.requiresVerification(),
+                                    "reason", decision.reason()
+                            )))
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Preview mastery retrieval candidates for a tenant/agent/skill tuple.
+     */
+    public Promise<HttpResponse> previewRetrieval(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String agentId = request.getQueryParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(badRequest("agentId is required"));
+        }
+
+        String skillId = request.getQueryParameter("skillId");
+        if (skillId == null || skillId.isBlank()) {
+            return Promise.of(badRequest("skillId is required"));
+        }
+
+        String limitStr = request.getQueryParameter("limit");
+        int limit = limitStr != null ? Integer.parseInt(limitStr) : 20;
+
+        return approvalService.checkAccess(tenantId, "mastery:read")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to mastery retrieval preview"));
+                    }
+
+                    MasteryQuery query = MasteryQuery.bySkill(skillId)
+                            .withTenantId(tenantId)
+                            .withAgentId(agentId)
+                            .withLimit(limit);
+
+                    return masteryRegistry.query(query)
+                            .map(items -> ok(Map.of(
+                                    "tenantId", tenantId,
+                                    "agentId", agentId,
+                                    "skillId", skillId,
+                                    "count", items.size(),
+                                    "items", items.stream().map(item -> Map.of(
+                                            "masteryId", item.masteryId(),
+                                            "state", item.state(),
+                                            "confidence", item.confidence(),
+                                            "versionScope", item.versionScope(),
+                                            "staleAfter", item.staleAfter()
+                                    )).toList()
+                            )))
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Dry-run promotion by running evaluation only and returning promotability diagnostics.
+     */
+    public Promise<HttpResponse> dryRunPromotion(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String deltaId = deltaId(request);
+        if (deltaId == null || deltaId.isBlank()) {
+            return Promise.of(badRequest("deltaId is required"));
+        }
+
+        return approvalService.checkAccess(tenantId, "learning:evaluate")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to dry-run promotion"));
+                    }
+
+                    return learningDeltaRepository.findById(tenantId, deltaId)
+                            .then(deltaOpt -> {
+                                if (deltaOpt.isEmpty()) {
+                                    return Promise.of(notFound("Learning delta not found"));
+                                }
+                                LearningDelta delta = deltaOpt.get();
+                                if (!delta.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot evaluate learning delta from another tenant"));
+                                }
+
+                                return promotionEngine.evaluate(delta)
+                                        .map(result -> ok(Map.of(
+                                                "deltaId", deltaId,
+                                                "dryRun", true,
+                                                "wouldPromote", result.allPassed(),
+                                                "passRate", result.passRate(),
+                                                "failedTests", result.failedTests(),
+                                                "evaluationResult", result
+                                        )));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Process a single obsolescence event through the governed transition service.
+     */
+    public Promise<HttpResponse> processObsolescenceEvent(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        return approvalService.checkAccess(tenantId, "mastery:transition")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to process obsolescence events"));
+                    }
+
+                    return parseBodyAsync(request, ObsolescenceEvent.class)
+                            .then(event -> {
+                                if (!tenantId.equals(event.tenantId())) {
+                                    return Promise.of(forbidden("Cannot process obsolescence event for another tenant"));
+                                }
+
+                                return obsolescenceTransitionService.processObsolescenceEvent(event)
+                                    .map(result -> ok(Map.of(
+                                        "masteryId", result.masteryId(),
+                                        "previousState", result.previousState(),
+                                        "newState", result.newState(),
+                                        "success", result.success(),
+                                        "transitionId", result.transitionId(),
+                                        "errorMessage", result.errorMessage().orElse("")
+                                    )));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
      * List learning deltas with governance check.
      * Phase 7.2: GET /tenants/{tenantId}/learning-deltas
      */
@@ -623,7 +920,6 @@ public class MasteryController extends JsonServlet {
                         return Promise.of(forbidden("Access denied to learning data"));
                     }
 
-                    String skillId = request.getQueryParameter("skillId");
                     String agentId = request.getQueryParameter("agentId");
                     String limitStr = request.getQueryParameter("limit");
                     String offsetStr = request.getQueryParameter("offset");
@@ -648,7 +944,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String deltaId = request.getPathParameter("deltaId");
+        String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
             return Promise.of(badRequest("deltaId is required"));
         }
@@ -660,7 +956,7 @@ public class MasteryController extends JsonServlet {
                         return Promise.of(forbidden("Access denied to evaluate learning"));
                     }
 
-                    return learningDeltaRepository.findById(deltaId)
+                    return learningDeltaRepository.findById(tenantId, deltaId)
                             .then(deltaOpt -> {
                                 if (deltaOpt.isEmpty()) {
                                     return Promise.of(notFound("Learning delta not found"));
@@ -694,7 +990,7 @@ public class MasteryController extends JsonServlet {
             return Promise.of(badRequest("tenantId is required"));
         }
 
-        String deltaId = request.getPathParameter("deltaId");
+        String deltaId = deltaId(request);
         if (deltaId == null || deltaId.isBlank()) {
             return Promise.of(badRequest("deltaId is required"));
         }
@@ -706,7 +1002,7 @@ public class MasteryController extends JsonServlet {
                         return Promise.of(forbidden("Access denied to promote learning - requires governance role"));
                     }
 
-                    return learningDeltaRepository.findById(deltaId)
+                    return learningDeltaRepository.findById(tenantId, deltaId)
                             .then(deltaOpt -> {
                                 if (deltaOpt.isEmpty()) {
                                     return Promise.of(notFound("Learning delta not found"));
@@ -740,5 +1036,42 @@ public class MasteryController extends JsonServlet {
                             })
                             .whenException(e -> Promise.of(internalError(e)));
                 });
+    }
+
+    private static boolean isBreakGlassRequest(@NotNull HttpRequest request) {
+        String flag = request.getQueryParameter("breakGlass");
+        return flag != null && Boolean.parseBoolean(flag);
+    }
+
+    private static String masteryId(@NotNull HttpRequest request) {
+        return firstNonBlank(pathParameter(request, "masteryId"), extractGroup(request.getPath(), MASTERY_ITEM_PATH));
+    }
+
+    private static String skillId(@NotNull HttpRequest request) {
+        return firstNonBlank(pathParameter(request, "skillId"), extractGroup(request.getPath(), SKILL_EVAL_PATH));
+    }
+
+    private static String deltaId(@NotNull HttpRequest request) {
+        return firstNonBlank(pathParameter(request, "deltaId"), extractGroup(request.getPath(), LEARNING_DELTA_PATH));
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second;
+    }
+
+    private static String extractGroup(String path, Pattern pattern) {
+        Matcher matcher = pattern.matcher(path);
+        return matcher.matches() ? matcher.group(1) : null;
+    }
+
+    private static String pathParameter(@NotNull HttpRequest request, @NotNull String name) {
+        try {
+            return request.getPathParameter(name);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 }

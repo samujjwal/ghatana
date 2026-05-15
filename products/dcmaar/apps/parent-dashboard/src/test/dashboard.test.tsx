@@ -6,6 +6,8 @@ import { Dashboard } from '../pages/Dashboard';
 import { authService } from '../services/auth.service';
 import { websocketService } from '../services/websocket.service';
 import { renderWithDashboardProviders } from './utils/renderWithProviders';
+import { isAuthenticatedAtom, userAtom } from '../stores/authStore';
+import { wsConnectedAtom } from '../stores/eventsStore';
 
 /**
  * Tests for Dashboard component.
@@ -85,7 +87,16 @@ function renderDashboard(initialEntries = ['/dashboard']) {
     {
       routerProps: {
         initialEntries
-      }
+      },
+      initializeStore: (store) => {
+        store.set(isAuthenticatedAtom, true);
+        store.set(userAtom, {
+          id: 'user-123',
+          email: 'parent@example.com',
+          role: 'parent',
+        });
+        store.set(wsConnectedAtom, true);
+      },
     }
   );
 }
@@ -120,8 +131,9 @@ describe('Dashboard Component', () => {
     it('should render dashboard with navigation', async () => {
       renderDashboard();
 
-      expect(screen.getByText('Guardian Dashboard')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
+      expect(screen.getAllByText('Guardian')[0]).toBeInTheDocument();
+      expect(screen.getByText('Parent Dashboard')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /open user menu/i })).toBeInTheDocument();
     });
 
     /**
@@ -188,7 +200,8 @@ describe('Dashboard Component', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('User Role')).toBeInTheDocument();
+        expect(screen.getByText('Platform')).toBeInTheDocument();
+        expect(screen.getByText('Status')).toBeInTheDocument();
       });
     });
   });
@@ -206,7 +219,7 @@ describe('Dashboard Component', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Guardian Dashboard')).toBeInTheDocument();
+        expect(screen.getAllByText('Guardian')[0]).toBeInTheDocument();
       });
       
       // Verify websocketService is defined
@@ -225,7 +238,8 @@ describe('Dashboard Component', () => {
       const user = userEvent.setup();
       renderDashboard();
 
-      const logoutButton = screen.getByRole('button', { name: /logout/i });
+      await user.click(screen.getByRole('button', { name: /open user menu/i }));
+      const logoutButton = screen.getByRole('menuitem', { name: /logout/i });
       await user.click(logoutButton);
 
       await waitFor(() => {
@@ -248,7 +262,8 @@ describe('Dashboard Component', () => {
 
       renderDashboard();
 
-      const logoutButton = screen.getByRole('button', { name: /logout/i });
+      await user.click(screen.getByRole('button', { name: /open user menu/i }));
+      const logoutButton = screen.getByRole('menuitem', { name: /logout/i });
       await user.click(logoutButton);
 
       await waitFor(() => {
@@ -267,9 +282,8 @@ describe('Dashboard Component', () => {
     it('should have accessible logout button', () => {
       renderDashboard();
 
-      const logoutButton = screen.getByRole('button', { name: /logout/i });
-      expect(logoutButton).toHaveAccessibleName();
-      expect(logoutButton).toHaveClass('bg-indigo-600');
+      const userMenuButton = screen.getByRole('button', { name: /open user menu/i });
+      expect(userMenuButton).toHaveAccessibleName();
     });
   });
 
@@ -303,7 +317,7 @@ describe('Dashboard Component', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Guardian Dashboard')).toBeInTheDocument();
+        expect(screen.getAllByText('Guardian')[0]).toBeInTheDocument();
       });
     });
   });
@@ -320,13 +334,12 @@ describe('Dashboard Component', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Week 3 Progress')).toBeInTheDocument();
-        expect(screen.getByText(/Day 1: Authentication/)).toBeInTheDocument();
-        expect(screen.getByText(/Day 2: Real-time Usage/)).toBeInTheDocument();
-        expect(screen.getByText(/Day 3: Block Event/)).toBeInTheDocument();
-        expect(screen.getByText(/Day 4: Policy Management/)).toBeInTheDocument();
-        expect(screen.getByText(/Day 5: Device Management/)).toBeInTheDocument();
-        expect(screen.getByText(/Day 6: Analytics/)).toBeInTheDocument();
+        expect(screen.getByText('Component Migration Progress')).toBeInTheDocument();
+        expect(screen.getByText(/Batch 1: DynamicForm/)).toBeInTheDocument();
+        expect(screen.getByText(/Batch 2: ActivityFeed/)).toBeInTheDocument();
+        expect(screen.getByText(/Batch 3: StatsDashboard/)).toBeInTheDocument();
+        expect(screen.getByText(/Batch 4: DashboardLayout/)).toBeInTheDocument();
+        expect(screen.getByText(/Migration Complete: 100%/)).toBeInTheDocument();
       });
     });
   });
@@ -361,7 +374,7 @@ describe('Dashboard Component', () => {
       const nav = screen.getByRole('navigation');
       expect(nav).toBeInTheDocument();
       // Verify navigation container exists
-      const heading = within(nav).getByText('Guardian Dashboard');
+      const heading = within(nav).getByText('Dashboard');
       expect(heading).toBeInTheDocument();
     });
   });
@@ -379,7 +392,7 @@ describe('Dashboard Component', () => {
 
       expect(screen.getByRole('navigation')).toBeInTheDocument();
       expect(screen.getByRole('main')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /open user menu/i })).toBeInTheDocument();
     });
 
     /**
@@ -392,7 +405,7 @@ describe('Dashboard Component', () => {
     it('should have proper heading hierarchy', async () => {
       renderDashboard();
 
-      const h1 = screen.getByText('Guardian Dashboard');
+      const h1 = screen.getByRole('heading', { name: 'Guardian' });
       expect(h1.tagName).toBe('H1');
 
       await waitFor(() => {
@@ -411,8 +424,8 @@ describe('Dashboard Component', () => {
     it('should have accessible logout button', () => {
       renderDashboard();
 
-      const logoutButton = screen.getByRole('button', { name: /logout/i });
-      expect(logoutButton).toHaveAccessibleName();
+      const userMenuButton = screen.getByRole('button', { name: /open user menu/i });
+      expect(userMenuButton).toHaveAccessibleName();
     });
   });
 });

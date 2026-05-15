@@ -39,15 +39,15 @@ function appendedEvents(provider: LifecycleEventProvider): KernelLifecycleEvent[
 }
 
 describe('KernelLifecycleEventEmitter', () => {
-  it('emits canonical phase events to telemetry with explicit correlation ids', () => {
+  it('emits canonical phase events to telemetry with explicit correlation ids', async () => {
     const provider = createTelemetryProvider();
     const emitter = new KernelLifecycleEventEmitter({
       telemetryProvider: provider,
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build', 'corr-1');
-    emitter.emitLifecyclePhaseComplete('product-1', 'run-1', 'build', 'succeeded', 12, 'corr-1');
+    await emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build', 'corr-1');
+    await emitter.emitLifecyclePhaseComplete('product-1', 'run-1', 'build', 'succeeded', 12, 'corr-1');
 
     expect(emittedEvents(provider)).toMatchObject([
       {
@@ -70,15 +70,15 @@ describe('KernelLifecycleEventEmitter', () => {
     ]);
   });
 
-  it('maps legacy helper methods to canonical lifecycle event payloads', () => {
+  it('maps legacy helper methods to canonical lifecycle event payloads', async () => {
     const provider = createTelemetryProvider();
     const emitter = new KernelLifecycleEventEmitter({
       telemetryProvider: provider,
       enableConsoleLogging: false,
     });
 
-    emitter.emitGateEvaluated('product-1', 'run-1', 'validate', 'typecheck', true, 'passed', ['log:typecheck'], 5);
-    emitter.emitArtifactProduced(
+    await emitter.emitGateEvaluated('product-1', 'run-1', 'validate', 'typecheck', true, 'passed', ['log:typecheck'], 5);
+    await emitter.emitArtifactProduced(
       'product-1',
       'run-1',
       'package',
@@ -90,7 +90,7 @@ describe('KernelLifecycleEventEmitter', () => {
       'sha256:abc',
       'studio'
     );
-    emitter.emitDeploymentComplete(
+    await emitter.emitDeploymentComplete(
       'product-1',
       'run-1',
       'deploy',
@@ -101,7 +101,7 @@ describe('KernelLifecycleEventEmitter', () => {
       ['https://example.test'],
       42
     );
-    emitter.emitHealthCheckResult(
+    await emitter.emitHealthCheckResult(
       'product-1',
       'run-1',
       'verify',
@@ -113,7 +113,7 @@ describe('KernelLifecycleEventEmitter', () => {
       'deployment-1',
       'staging'
     );
-    emitter.emitAgentGovernanceEvent(
+    await emitter.emitAgentGovernanceEvent(
       'product-1',
       'run-1',
       'dev',
@@ -187,7 +187,7 @@ describe('KernelLifecycleEventEmitter', () => {
     ]);
   });
 
-  it('emits canonical step events to telemetry and durable lifecycle providers', () => {
+  it('emits canonical step events to telemetry and durable lifecycle providers', async () => {
     const telemetryProvider = createTelemetryProvider();
     const lifecycleEventProvider = createLifecycleEventProvider();
     const emitter = new KernelLifecycleEventEmitter({
@@ -196,7 +196,7 @@ describe('KernelLifecycleEventEmitter', () => {
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecycleStepStart(
+    await emitter.emitLifecycleStepStart(
       'product-1',
       'run-1',
       'build',
@@ -206,7 +206,7 @@ describe('KernelLifecycleEventEmitter', () => {
       'pnpm-vite-react',
       'corr-1'
     );
-    emitter.emitLifecycleStepComplete(
+    await emitter.emitLifecycleStepComplete(
       'product-1',
       'run-1',
       'build',
@@ -266,8 +266,7 @@ describe('KernelLifecycleEventEmitter', () => {
     });
   });
 
-  it('logs lifecycle event provider write failures without hiding telemetry events', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('throws when required lifecycle event provider writes fail without hiding telemetry events', async () => {
     const telemetryProvider = createTelemetryProvider();
     const lifecycleEventProvider: LifecycleEventProvider = {
       ...createLifecycleEventProvider(),
@@ -279,29 +278,26 @@ describe('KernelLifecycleEventEmitter', () => {
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecycleStepComplete(
-      'product-1',
-      'run-1',
-      'build',
-      'build-web',
-      'surface',
-      'web',
-      'pnpm-vite-react',
-      'failed',
-      10,
-      [],
-      'corr-1'
-    );
-    await Promise.resolve();
+    await expect(
+      emitter.emitLifecycleStepComplete(
+        'product-1',
+        'run-1',
+        'build',
+        'build-web',
+        'surface',
+        'web',
+        'pnpm-vite-react',
+        'failed',
+        10,
+        [],
+        'corr-1'
+      )
+    ).rejects.toThrow('Required lifecycle event provider write failed: disk full');
 
     expect(emittedEvents(telemetryProvider)[0]?.eventType).toBe('lifecycle.step.completed');
-    expect(consoleError).toHaveBeenCalledWith('Failed to append lifecycle event:', 'disk full');
-
-    consoleError.mockRestore();
   });
 
-  it('logs unknown lifecycle event provider write failures when providers omit an error', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('throws unknown lifecycle event provider write failures when providers omit an error', async () => {
     const lifecycleEventProvider: LifecycleEventProvider = {
       ...createLifecycleEventProvider(),
       appendEvent: vi.fn().mockResolvedValue({ success: false }),
@@ -311,28 +307,24 @@ describe('KernelLifecycleEventEmitter', () => {
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecycleStepComplete(
-      'product-1',
-      'run-1',
-      'build',
-      'build-web',
-      'surface',
-      'web',
-      'pnpm-vite-react',
-      'failed',
-      10,
-      [],
-      'corr-1'
-    );
-    await Promise.resolve();
-
-    expect(consoleError).toHaveBeenCalledWith('Failed to append lifecycle event:', 'unknown provider error');
-
-    consoleError.mockRestore();
+    await expect(
+      emitter.emitLifecycleStepComplete(
+        'product-1',
+        'run-1',
+        'build',
+        'build-web',
+        'surface',
+        'web',
+        'pnpm-vite-react',
+        'failed',
+        10,
+        [],
+        'corr-1'
+      )
+    ).rejects.toThrow('Required lifecycle event provider write failed: unknown provider error');
   });
 
-  it('logs lifecycle event provider rejection failures', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('throws lifecycle event provider rejection failures when writes are required', async () => {
     const lifecycleEventProvider: LifecycleEventProvider = {
       ...createLifecycleEventProvider(),
       appendEvent: vi.fn().mockRejectedValue(new Error('provider offline')),
@@ -342,29 +334,59 @@ describe('KernelLifecycleEventEmitter', () => {
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecycleStepStart(
-      'product-1',
-      'run-1',
-      'build',
-      'build-web',
-      'surface',
-      'web',
-      'pnpm-vite-react',
-      'corr-1'
-    );
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(consoleError).toHaveBeenCalledWith('Failed to append lifecycle event:', expect.any(Error));
-
-    consoleError.mockRestore();
+    await expect(
+      emitter.emitLifecycleStepStart(
+        'product-1',
+        'run-1',
+        'build',
+        'build-web',
+        'surface',
+        'web',
+        'pnpm-vite-react',
+        'corr-1'
+      )
+    ).rejects.toThrow('provider offline');
   });
 
-  it('logs events when telemetry is not configured', () => {
+  it('continues and logs a structured warning when optional provider writes fail', async () => {
+    const logger = {
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const lifecycleEventProvider: LifecycleEventProvider = {
+      ...createLifecycleEventProvider(),
+      appendEvent: vi.fn().mockResolvedValue({ success: false, error: 'disk full' }),
+    };
+    const emitter = new KernelLifecycleEventEmitter({
+      lifecycleEventProvider,
+      lifecycleEventWritesRequired: false,
+      enableConsoleLogging: false,
+      logger,
+    });
+
+    await expect(
+      emitter.emitLifecycleStepStart(
+        'product-1',
+        'run-1',
+        'build',
+        'build-web',
+        'surface',
+        'web',
+        'pnpm-vite-react',
+        'corr-1'
+      )
+    ).resolves.toEqual([{ success: false, error: 'disk full' }]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Optional lifecycle event provider write failed',
+      expect.objectContaining({ correlationId: 'corr-1', error: 'disk full' })
+    );
+  });
+
+  it('logs events when telemetry is not configured', async () => {
     const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const emitter = new KernelLifecycleEventEmitter();
 
-    emitter.emitGateEvaluated('product-1', 'run-1', 'validate', 'lint', false, 'lint failed', [], 1);
+    await emitter.emitGateEvaluated('product-1', 'run-1', 'validate', 'lint', false, 'lint failed', [], 1);
 
     expect(consoleLog).toHaveBeenCalledTimes(1);
     expect(consoleLog.mock.calls[0]?.[0]).toContain('"eventType": "lifecycle.gate.evaluated"');
@@ -372,28 +394,26 @@ describe('KernelLifecycleEventEmitter', () => {
     consoleLog.mockRestore();
   });
 
-  it('falls back to console logging when telemetry emission fails', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  it('logs a structured warning when telemetry emission fails', async () => {
+    const logger = {
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
     const provider = createTelemetryProvider({
       emitEvent: vi.fn().mockRejectedValue(new Error('telemetry unavailable')),
     });
-    const emitter = new KernelLifecycleEventEmitter({ telemetryProvider: provider });
+    const emitter = new KernelLifecycleEventEmitter({ telemetryProvider: provider, logger });
 
-    emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
+    await emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
     await Promise.resolve();
 
-    expect(consoleError).toHaveBeenCalledWith(
-      'Failed to emit event via telemetry provider:',
-      expect.any(Error)
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to emit event via telemetry provider',
+      expect.objectContaining({ error: 'telemetry unavailable' })
     );
-    expect(consoleLog.mock.calls[0]?.[0]).toContain('"eventType": "lifecycle.phase.started"');
-
-    consoleError.mockRestore();
-    consoleLog.mockRestore();
   });
 
-  it('suppresses fallback logging when console logging is disabled', async () => {
+  it('suppresses console fallback logging when console logging is disabled', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const provider = createTelemetryProvider({
@@ -404,36 +424,36 @@ describe('KernelLifecycleEventEmitter', () => {
       enableConsoleLogging: false,
     });
 
-    emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
+    await emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
     await Promise.resolve();
 
-    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError).not.toHaveBeenCalled();
     expect(consoleLog).not.toHaveBeenCalled();
 
     consoleError.mockRestore();
     consoleLog.mockRestore();
   });
 
-  it('does not log when telemetry and console logging are both disabled', () => {
+  it('does not log when telemetry and console logging are both disabled', async () => {
     const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const emitter = new KernelLifecycleEventEmitter({ enableConsoleLogging: false });
 
-    emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
+    await emitter.emitLifecyclePhaseStart('product-1', 'run-1', 'build');
 
     expect(consoleLog).not.toHaveBeenCalled();
 
     consoleLog.mockRestore();
   });
 
-  it('omits optional health and agent metadata when not supplied', () => {
+  it('omits optional health and agent metadata when not supplied', async () => {
     const provider = createTelemetryProvider();
     const emitter = new KernelLifecycleEventEmitter({
       telemetryProvider: provider,
       enableConsoleLogging: false,
     });
 
-    emitter.emitHealthCheckResult('product-1', 'run-1', 'verify', 'smoke', 'Smoke test', 'unknown', 'pending', 7);
-    emitter.emitAgentGovernanceEvent(
+    await emitter.emitHealthCheckResult('product-1', 'run-1', 'verify', 'smoke', 'Smoke test', 'unknown', 'pending', 7);
+    await emitter.emitAgentGovernanceEvent(
       'product-1',
       'run-1',
       'dev',

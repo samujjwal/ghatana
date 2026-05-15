@@ -87,7 +87,9 @@ export async function setupPlatform(
     businessModulesOptions.learnerProfileGrpcAddress =
       options.learnerProfileGrpcAddress;
   }
-  if (app.prisma) {
+  if (options.prisma !== undefined) {
+    businessModulesOptions.prisma = options.prisma;
+  } else if (app.prisma) {
     businessModulesOptions.prisma = app.prisma;
   }
   await app.register(setupBusinessModules, businessModulesOptions);
@@ -135,4 +137,3 @@ export async function createServer(
   await setupPlatform(app, options);
   return app;
 }
-

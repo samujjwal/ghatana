@@ -60,8 +60,8 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   private readonly fingerprintCalculator = new ArtifactFingerprintCalculator();
 
   constructor(options: FileArtifactProviderOptions) {
-    this.outputDirectory = options.outputDirectory;
-    this.artifactRootDirectory = options.artifactRootDirectory ?? process.cwd();
+    this.outputDirectory = path.resolve(options.outputDirectory);
+    this.artifactRootDirectory = path.resolve(options.artifactRootDirectory ?? process.cwd());
   }
 
   async writeArtifactManifest(
@@ -79,6 +79,8 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
       runId: options.runId,
       manifestPath,
       artifactCount: manifest.artifacts.length,
+      correlationId: options.correlationId,
+      digestStatus: resolveDigestStatus(manifest),
     };
 
     try {
@@ -100,6 +102,9 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   ): Promise<LifecycleProviderResult> {
     if (options.correlationId.trim().length === 0) {
       return fail("artifact manifest write requires correlationId", options.required);
+    }
+    if (!this.isInsideOutputDirectory(manifest.manifestPath)) {
+      return fail(`artifact manifest path escapes output root: ${manifest.manifestPath}`, options.required);
     }
 
     try {
@@ -131,6 +136,12 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
       if (query.runId !== undefined && manifest.runId !== query.runId) {
         return false;
       }
+      if (
+        query.correlationId !== undefined &&
+        manifest.correlationId !== query.correlationId
+      ) {
+        return false;
+      }
       return true;
     });
   }
@@ -145,10 +156,10 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   ): string {
     return path.join(
       this.outputDirectory,
-      manifest.productId,
-      runId,
-      manifest.phase,
-      this.resolveManifestSurface(manifest),
+      encodePathSegment(manifest.productId),
+      encodePathSegment(runId),
+      encodePathSegment(manifest.phase),
+      encodePathSegment(this.resolveManifestSurface(manifest)),
       "artifact-manifest.json"
     );
   }
@@ -156,10 +167,10 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   private getLatestPointerPath(manifest: ArtifactManifest): string {
     return path.join(
       this.outputDirectory,
-      manifest.productId,
+      encodePathSegment(manifest.productId),
       "latest",
-      manifest.phase,
-      this.resolveManifestSurface(manifest),
+      encodePathSegment(manifest.phase),
+      encodePathSegment(this.resolveManifestSurface(manifest)),
       "artifact-manifest.pointer.json"
     );
   }
@@ -185,6 +196,9 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
     }
 
     const artifactPath = this.resolveArtifactPath(artifact.path);
+    if (!this.isInsideArtifactRoot(artifactPath)) {
+      return [`artifact path escapes artifact root: ${artifact.path}`];
+    }
     try {
       await fs.access(artifactPath);
     } catch (error) {
@@ -221,9 +235,9 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   }
 
   private resolveArtifactPath(artifactPath: string): string {
-    return path.isAbsolute(artifactPath)
+    return path.resolve(path.isAbsolute(artifactPath)
       ? artifactPath
-      : path.join(this.artifactRootDirectory, artifactPath);
+      : path.join(this.artifactRootDirectory, artifactPath));
   }
 
   private async readStoredRefs(): Promise<StoredArtifactManifestRefs> {
@@ -271,10 +285,21 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
   }
 
   private async writeJsonFile(filePath: string, content: unknown): Promise<void> {
+    if (!this.isInsideOutputDirectory(filePath)) {
+      throw new Error(`artifact provider write path escapes output root: ${filePath}`);
+    }
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
     await fs.writeFile(tempPath, `${JSON.stringify(content, null, 2)}\n`, "utf-8");
     await fs.rename(tempPath, filePath);
+  }
+
+  private isInsideOutputDirectory(candidatePath: string): boolean {
+    return isSamePathOrChild(path.resolve(candidatePath), this.outputDirectory);
+  }
+
+  private isInsideArtifactRoot(candidatePath: string): boolean {
+    return isSamePathOrChild(path.resolve(candidatePath), this.artifactRootDirectory);
   }
 }
 
@@ -292,4 +317,27 @@ function isFileNotFound(error: unknown): boolean {
     "code" in error &&
     (error as { readonly code?: unknown }).code === "ENOENT"
   );
+}
+
+function isSamePathOrChild(candidate: string, root: string): boolean {
+  const relative = path.relative(root, candidate);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function encodePathSegment(segment: string): string {
+  return encodeURIComponent(segment.trim()).replace(/\./g, "%2E");
+}
+
+function resolveDigestStatus(manifest: ArtifactManifest): "complete" | "partial" | "missing" {
+  if (manifest.artifacts.length === 0) {
+    return "missing";
+  }
+  const fingerprinted = manifest.artifacts.filter((artifact) =>
+    artifact.fingerprint.hash.trim().length > 0 &&
+    artifact.fingerprint.algorithm.trim().length > 0
+  ).length;
+  if (fingerprinted === manifest.artifacts.length) {
+    return "complete";
+  }
+  return fingerprinted === 0 ? "missing" : "partial";
 }

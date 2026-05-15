@@ -32,7 +32,11 @@ describe('PnpmViteReactAdapter - static artifact generation', () => {
     await fs.writeFile(path.join(packageDir, 'Dockerfile'), 'FROM node:22');
     
     // Create required package.json and dist
-    await fs.writeFile(path.join(packageDir, 'package.json'), '{}');
+    await fs.writeFile(path.join(packageDir, 'package.json'), JSON.stringify({
+      scripts: {
+        build: 'vite build',
+      },
+    }));
     await fs.mkdir(path.join(packageDir, 'dist'), { recursive: true });
     await fs.writeFile(path.join(packageDir, 'dist', 'index.html'), '<html></html>');
     
@@ -94,7 +98,11 @@ describe('PnpmViteReactAdapter - static artifact generation', () => {
     await fs.mkdir(packageDir, { recursive: true });
     
     // Create required package.json and dist (no Dockerfile)
-    await fs.writeFile(path.join(packageDir, 'package.json'), '{}');
+    await fs.writeFile(path.join(packageDir, 'package.json'), JSON.stringify({
+      scripts: {
+        build: 'vite build',
+      },
+    }));
     await fs.mkdir(path.join(packageDir, 'dist'), { recursive: true });
     await fs.writeFile(path.join(packageDir, 'dist', 'index.html'), '<html></html>');
     

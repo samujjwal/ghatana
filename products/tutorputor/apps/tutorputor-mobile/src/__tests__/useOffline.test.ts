@@ -62,9 +62,10 @@ describe('useNetworkStatus', () => {
     const { result } = renderHook(() => useNetworkStatus());
 
     await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
+      expect(result.current.connectionType).toBe('wifi');
     });
 
+    expect(result.current.isConnected).toBe(true);
     expect(result.current.connectionType).toBe('wifi');
   });
 

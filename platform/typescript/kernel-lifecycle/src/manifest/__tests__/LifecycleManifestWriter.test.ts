@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import type {
@@ -300,6 +301,131 @@ describe('LifecycleManifestWriter', () => {
       await readFile(write.manifestRefs.deploymentManifest ?? '', 'utf-8'),
     ) as { environment: string };
     expect(deploymentManifest.environment).toBe('local');
+
+    await rm(outputDirectory, { recursive: true, force: true });
+  });
+
+  it('computes sha256 for file artifacts and includes run metadata', async () => {
+    const outputDirectory = await mkdtemp(path.join(os.tmpdir(), 'manifest-writer-'));
+    const artifactFile = path.join(outputDirectory, 'web-dist.tar');
+    await writeFile(artifactFile, 'compiled-web', 'utf-8');
+    const writer = new LifecycleManifestWriter({ outputDirectory });
+
+    const write = await writer.writeRequiredManifests({
+      result: makeResult({
+        artifacts: [
+          {
+            id: 'web-dist',
+            surface: 'web',
+            type: 'static-web-bundle',
+            path: artifactFile,
+            fingerprint: 'stale-fallback',
+            producedBy: 'vite',
+          },
+        ],
+      }),
+      requiredManifests: ['artifact-manifest'],
+    });
+
+    const artifactManifest = JSON.parse(
+      await readFile(write.manifestRefs.artifactManifest ?? '', 'utf-8'),
+    ) as {
+      runId: string;
+      correlationId: string;
+      productUnitId: string;
+      providerMode: string;
+      artifacts: Array<{ fingerprint: { algorithm: string; hash: string }; metadata: { sizeBytes: number } }>;
+    };
+    expect(artifactManifest).toMatchObject({
+      runId: 'run-001',
+      correlationId: 'corr-001',
+      productUnitId: 'digital-marketing',
+      providerMode: 'bootstrap',
+    });
+    expect(artifactManifest.artifacts[0].fingerprint).toEqual({
+      algorithm: 'sha256',
+      hash: createHash('sha256').update('compiled-web').digest('hex'),
+    });
+    expect(artifactManifest.artifacts[0].metadata.sizeBytes).toBe(12);
+
+    await rm(outputDirectory, { recursive: true, force: true });
+  });
+
+  it('computes deterministic directory digests from sorted file path, size, and hash', async () => {
+    const outputDirectory = await mkdtemp(path.join(os.tmpdir(), 'manifest-writer-'));
+    const artifactDirectory = path.join(outputDirectory, 'dist');
+    await mkdir(path.join(artifactDirectory, 'assets'), { recursive: true });
+    await writeFile(path.join(artifactDirectory, 'index.html'), '<main></main>', 'utf-8');
+    await writeFile(path.join(artifactDirectory, 'assets', 'app.js'), 'console.log("ok");', 'utf-8');
+    const writer = new LifecycleManifestWriter({ outputDirectory });
+
+    const writeOne = await writer.writeRequiredManifests({
+      result: makeResult({
+        runId: 'run-001',
+        artifacts: [
+          {
+            id: 'web-dist',
+            surface: 'web',
+            type: 'static-web-bundle',
+            path: artifactDirectory,
+            fingerprint: 'stale-fallback',
+            producedBy: 'vite',
+          },
+        ],
+      }),
+      requiredManifests: ['artifact-manifest'],
+    });
+    const writeTwo = await writer.writeRequiredManifests({
+      result: makeResult({
+        runId: 'run-002',
+        artifacts: [
+          {
+            id: 'web-dist',
+            surface: 'web',
+            type: 'static-web-bundle',
+            path: artifactDirectory,
+            fingerprint: 'another-fallback',
+            producedBy: 'vite',
+          },
+        ],
+      }),
+      requiredManifests: ['artifact-manifest'],
+    });
+
+    const firstManifest = JSON.parse(
+      await readFile(writeOne.manifestRefs.artifactManifest ?? '', 'utf-8'),
+    ) as { artifacts: Array<{ fingerprint: { hash: string }; metadata: { sizeBytes: number } }> };
+    const secondManifest = JSON.parse(
+      await readFile(writeTwo.manifestRefs.artifactManifest ?? '', 'utf-8'),
+    ) as { artifacts: Array<{ fingerprint: { hash: string }; metadata: { sizeBytes: number } }> };
+    expect(firstManifest.artifacts[0].fingerprint.hash).toBe(secondManifest.artifacts[0].fingerprint.hash);
+    expect(firstManifest.artifacts[0].metadata.sizeBytes).toBe(31);
+
+    await rm(outputDirectory, { recursive: true, force: true });
+  });
+
+  it('fails required artifact manifest when artifact path is missing and no fingerprint exists', async () => {
+    const outputDirectory = await mkdtemp(path.join(os.tmpdir(), 'manifest-writer-'));
+    const writer = new LifecycleManifestWriter({ outputDirectory });
+
+    const write = await writer.writeRequiredManifests({
+      result: makeResult({
+        artifacts: [
+          {
+            id: 'missing-artifact',
+            surface: 'web',
+            type: 'static-web-bundle',
+            path: path.join(outputDirectory, 'missing'),
+            fingerprint: '',
+            producedBy: 'vite',
+          },
+        ],
+      }),
+      requiredManifests: ['artifact-manifest'],
+    });
+
+    expect(write.result.status).toBe('failed');
+    expect(write.result.failure?.message).toContain('requires a real fingerprint');
 
     await rm(outputDirectory, { recursive: true, force: true });
   });

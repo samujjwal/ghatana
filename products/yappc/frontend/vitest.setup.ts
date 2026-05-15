@@ -2,6 +2,76 @@ import '@testing-library/jest-dom/vitest';
 import { server } from './web/src/test-utils/msw-handlers';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
+const testTranslations: Readonly<Record<string, string>> = {
+  'canvas.pageDesignerNode.collapse': 'Collapse page designer',
+  'canvas.pageDesignerNode.expand': 'Expand page designer',
+  'canvas.pageDesignerNode.open': 'Open page designer',
+  'canvas.pageDesignerNode.overwriteAuditReasonAria': 'Overwrite audit reason',
+  'canvas.pageDesignerNode.overwriteAuditReasonPlaceholder': 'Explain why this remote version should be overwritten.',
+};
+
+vi.mock('@ghatana/i18n', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ghatana/i18n')>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => testTranslations[key] ?? key,
+      i18n: {
+        language: 'en',
+        changeLanguage: vi.fn(),
+      },
+    }),
+  };
+});
+
+function installStorageMock(storageName: 'localStorage' | 'sessionStorage'): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const candidate = window[storageName];
+  if (
+    candidate &&
+    typeof candidate.getItem === 'function' &&
+    typeof candidate.setItem === 'function' &&
+    typeof candidate.removeItem === 'function' &&
+    typeof candidate.clear === 'function' &&
+    typeof candidate.key === 'function'
+  ) {
+    return;
+  }
+
+  const store = new Map<string, string>();
+  const storage: Storage = {
+    get length(): number {
+      return store.size;
+    },
+    clear: vi.fn((): void => {
+      store.clear();
+    }),
+    getItem: vi.fn((key: string): string | null => store.get(key) ?? null),
+    key: vi.fn((index: number): string | null => Array.from(store.keys())[index] ?? null),
+    removeItem: vi.fn((key: string): void => {
+      store.delete(key);
+    }),
+    setItem: vi.fn((key: string, value: string): void => {
+      store.set(key, value);
+    }),
+  };
+
+  Object.defineProperty(window, storageName, {
+    configurable: true,
+    value: storage,
+  });
+  Object.defineProperty(globalThis, storageName, {
+    configurable: true,
+    value: storage,
+  });
+}
+
+installStorageMock('localStorage');
+installStorageMock('sessionStorage');
+
 // Establish API mocking before all tests
 beforeAll(() => {
   // Enable the MSW Node server

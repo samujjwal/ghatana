@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { vi } from "vitest";
 import type { KernelLifecycleEvent } from "@ghatana/kernel-product-contracts";
 import { FileLifecycleEventProvider } from "../FileLifecycleEventProvider";
 
@@ -28,7 +29,7 @@ describe("FileLifecycleEventProvider", () => {
 
     expect(result).toEqual({
       success: true,
-      ref: path.join(tempDir, "lifecycle-events.json"),
+      ref: "lifecycle-events.json",
     });
     await expect(readEventsFile(tempDir)).resolves.toMatchObject({
       schemaVersion: "1.0.0",
@@ -57,6 +58,92 @@ describe("FileLifecycleEventProvider", () => {
         correlationId: "corr-3",
       })
     ).resolves.toEqual([]);
+  });
+
+  it("stores scoped events under tenant workspace project partitions", async () => {
+    provider = new FileLifecycleEventProvider({
+      outputDirectory: tempDir,
+      scope: {
+        tenantId: "tenant-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+      },
+    });
+
+    const event = buildEvent("event-1", "run-1", "corr-1");
+    const result = await provider.appendEvent(event, {
+      required: true,
+      correlationId: "corr-1",
+    });
+
+    expect(result).toEqual({
+      success: true,
+      ref: path.join("tenant-1", "workspace-1", "project-1", "events", "lifecycle-events.json"),
+    });
+    await expect(
+      readEventsFile(path.join(tempDir, "tenant-1", "workspace-1", "project-1", "events"))
+    ).resolves.toMatchObject({
+      events: [event],
+    });
+  });
+
+  it("paginates listed events by cursor and limit", async () => {
+    const first = buildEvent("event-1", "run-1", "corr-1");
+    const second = buildEvent("event-2", "run-1", "corr-2");
+    const third = buildEvent("event-3", "run-1", "corr-3");
+    await Promise.all([
+      provider.appendEvent(first, { required: true, correlationId: "corr-1" }),
+      provider.appendEvent(second, { required: true, correlationId: "corr-2" }),
+      provider.appendEvent(third, { required: true, correlationId: "corr-3" }),
+    ]);
+
+    await expect(
+      provider.listEvents({
+        productUnitId: "digital-marketing",
+        limit: 1,
+        cursor: "1",
+      })
+    ).resolves.toEqual([second]);
+  });
+
+  it("serializes concurrent appends without clobbering events", async () => {
+    const writes = Array.from({ length: 8 }, (_, index) =>
+      provider.appendEvent(buildEvent(`event-${index}`, "run-1", `corr-${index}`), {
+        required: true,
+        correlationId: `corr-${index}`,
+      })
+    );
+
+    await expect(Promise.all(writes)).resolves.toHaveLength(8);
+    const stored = await readEventsFile(tempDir);
+    expect((stored as { readonly events: readonly unknown[] }).events).toHaveLength(8);
+  });
+
+  it("warns when event count exceeds the configured threshold", async () => {
+    const warn = vi.fn();
+    provider = new FileLifecycleEventProvider({
+      outputDirectory: tempDir,
+      eventCountWarningThreshold: 1,
+      logger: { warn },
+    });
+
+    await provider.appendEvent(buildEvent("event-1", "run-1", "corr-1"), {
+      required: true,
+      correlationId: "corr-1",
+    });
+    await provider.appendEvent(buildEvent("event-2", "run-1", "corr-2"), {
+      required: true,
+      correlationId: "corr-2",
+    });
+
+    expect(warn).toHaveBeenCalledWith(
+      "File lifecycle event store exceeded warning threshold",
+      expect.objectContaining({
+        eventCount: 2,
+        threshold: 1,
+        ref: "lifecycle-events.json",
+      })
+    );
   });
 
   it("rejects invalid events without writing", async () => {

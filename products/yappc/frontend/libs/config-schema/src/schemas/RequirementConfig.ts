@@ -12,7 +12,7 @@ import { z } from 'zod';
  * AcceptanceCriteria schema
  */
 export const AcceptanceCriteriaSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   criteria: z.string().min(1),
   priority: z.enum(['must', 'should', 'could']),
   status: z.enum(['pending', 'in-progress', 'completed', 'blocked']),
@@ -35,7 +35,7 @@ export const RequirementConfigSchema = z.object({
   status: z.enum(['draft', 'proposed', 'approved', 'in-progress', 'completed', 'rejected']),
 
   // Acceptance criteria
-  acceptanceCriteria: z.array(AcceptanceCriteriaSchema),
+  acceptanceCriteria: z.array(AcceptanceCriteriaSchema).min(1),
 
   // Intent linkage
   intentId: z.string().optional(),

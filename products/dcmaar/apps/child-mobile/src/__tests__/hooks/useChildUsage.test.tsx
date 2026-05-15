@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react-hooks';
+import { act, renderHook } from '@testing-library/react-hooks';
 import type { Device, Alert } from '@/types';
 import { useChildUsage, useChildBlocks } from '@/hooks/useChildUsage';
 import { useChildUsageStats } from '@/hooks/useChildUsageStats';
@@ -88,8 +88,10 @@ describe('useChildUsageStats', () => {
             deviceIds: ['device1', 'device2'],
         });
 
-        const { result, waitFor } = renderHook(() => useChildUsageStats());
-        await waitFor(() => !result.current.isLoading);
+        const { result } = renderHook(() => useChildUsageStats());
+        await act(async () => {
+            await Promise.resolve();
+        });
 
         expect(result.current.totalScreenTimeSeconds).toBe(3600);
         expect(result.current.deviceCount).toBe(2);
@@ -99,8 +101,10 @@ describe('useChildUsageStats', () => {
     it('returns error state on failure', async () => {
         mockedGetTodayUsageStats.mockRejectedValueOnce(new Error('fail'));
 
-        const { result, waitFor } = renderHook(() => useChildUsageStats());
-        await waitFor(() => !result.current.isLoading);
+        const { result } = renderHook(() => useChildUsageStats());
+        await act(async () => {
+            await Promise.resolve();
+        });
 
         expect(result.current.error).toBeInstanceOf(Error);
         expect(result.current.stats).toBeNull();

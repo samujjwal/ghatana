@@ -58,6 +58,10 @@ export function getContrastRatio(color1: string, color2: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+export function colorContrast(color1: string, color2: string): number {
+  return getContrastRatio(color1, color2);
+}
+
 /**
  * WCAG 2.1 Level AA contrast requirements
  */

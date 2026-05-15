@@ -318,7 +318,14 @@ export function DynamicForm<T extends Record<string, unknown>>({
       }
     });
 
-    setState((prev) => ({ ...prev, errors: newErrors }));
+    const touched = fields.reduce<Partial<Record<keyof T, boolean>>>((acc, field) => {
+      if (!field.visible || field.visible(state.data)) {
+        acc[field.name] = true;
+      }
+      return acc;
+    }, {});
+
+    setState((prev) => ({ ...prev, errors: newErrors, touched: { ...prev.touched, ...touched } }));
     return Object.keys(newErrors).length === 0;
   }, [fields, validateField, state.data]);
 

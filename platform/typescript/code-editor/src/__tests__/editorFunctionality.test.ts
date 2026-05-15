@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { preloadMonacoEditor, MonacoBundleInfo } from "../index";
+import { LazyMonacoEditor, preloadMonacoEditor, MonacoBundleInfo } from "../index";
 import type { LazyMonacoEditorProps } from "../index";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -57,7 +57,6 @@ describe("LazyMonacoEditor", () => {
 
   describe("Initialization", () => {
     it("renders the skeleton fallback during lazy load (sync render)", () => {
-      const { LazyMonacoEditor } = require("../index");
       const { container } = render(
         React.createElement(LazyMonacoEditor, makeProps()),
       );
@@ -66,7 +65,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("accepts value prop", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -78,7 +76,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("accepts empty string value", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(React.createElement(LazyMonacoEditor, makeProps({ value: "" }))),
       ).not.toThrow();
@@ -88,14 +85,12 @@ describe("LazyMonacoEditor", () => {
   describe("Text insertion and change handling", () => {
     it("calls onChange when provided", async () => {
       const onChange = vi.fn();
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(React.createElement(LazyMonacoEditor, makeProps({ onChange }))),
       ).not.toThrow();
     });
 
     it("does not throw when onChange is omitted", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -109,14 +104,12 @@ describe("LazyMonacoEditor", () => {
 
   describe("Language selection", () => {
     it("defaults to typescript language", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(React.createElement(LazyMonacoEditor, { value: "x" })),
       ).not.toThrow();
     });
 
     it("accepts javascript language", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -128,7 +121,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("accepts python language", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -140,7 +132,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("accepts java language", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -152,7 +143,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("accepts sql language", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(LazyMonacoEditor, makeProps({ language: "sql" })),
@@ -163,14 +153,12 @@ describe("LazyMonacoEditor", () => {
 
   describe("Theme", () => {
     it("defaults to vs-dark theme", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(React.createElement(LazyMonacoEditor, makeProps())),
       ).not.toThrow();
     });
 
     it("accepts vs-light theme", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -184,7 +172,6 @@ describe("LazyMonacoEditor", () => {
 
   describe("Undo/redo and options", () => {
     it("passes options without crashing", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(
@@ -198,7 +185,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("passes custom height", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(LazyMonacoEditor, makeProps({ height: "600px" })),
@@ -207,7 +193,6 @@ describe("LazyMonacoEditor", () => {
     });
 
     it("passes numeric height", () => {
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(
           React.createElement(LazyMonacoEditor, makeProps({ height: 500 })),
@@ -219,7 +204,6 @@ describe("LazyMonacoEditor", () => {
   describe("onMount callback", () => {
     it("accepts onMount prop without crashing", () => {
       const onMount = vi.fn();
-      const { LazyMonacoEditor } = require("../index");
       expect(() =>
         render(React.createElement(LazyMonacoEditor, makeProps({ onMount }))),
       ).not.toThrow();
@@ -232,9 +216,9 @@ describe("preloadMonacoEditor", () => {
     expect(() => preloadMonacoEditor()).not.toThrow();
   });
 
-  it("returns void", () => {
+  it("returns a preload promise", () => {
     const result = preloadMonacoEditor();
-    expect(result).toBeUndefined();
+    expect(result).toBeDefined();
   });
 });
 

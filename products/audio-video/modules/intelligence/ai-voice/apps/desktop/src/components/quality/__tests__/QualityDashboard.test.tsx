@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { QualityDashboard } from '../QualityDashboard';
 import {
   createTauriInvokeMock,
@@ -20,7 +21,6 @@ import {
   mockAlert,
   cleanupMocks,
   cleanupAllMocks,
-  render,
   screen,
   waitFor,
   fireEvent,
@@ -46,7 +46,7 @@ describe('QualityDashboard', () => {
 
       expect(screen.getByText('Quality Assessment')).toBeInTheDocument();
       expect(screen.getByText(/analyze audio quality/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /browse/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /browse audio file/i })).toBeInTheDocument();
     });
 
     it('should have disabled assess button initially', () => {
@@ -71,7 +71,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
 
       await waitFor(() => {
         expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({
@@ -95,7 +95,7 @@ describe('QualityDashboard', () => {
       expect(assessButton).toBeDisabled();
 
       // Select file
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
 
       // Should be enabled
       await waitFor(() => {
@@ -108,8 +108,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      const browseButtons = screen.getAllByRole('button', { name: /browse/i });
-      fireEvent.click(browseButtons[1]); // Second browse button
+      fireEvent.click(screen.getByRole('button', { name: /browse reference audio/i }));
 
       await waitFor(() => {
         expect(mockOpen).toHaveBeenCalled();
@@ -121,7 +120,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
 
       const assessButton = screen.getByRole('button', { name: /assess quality/i });
       expect(assessButton).toBeDisabled();
@@ -137,7 +136,7 @@ describe('QualityDashboard', () => {
       render(<QualityDashboard />);
 
       // Select file
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
 
       // Click assess
       await waitFor(() => {
@@ -162,7 +161,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       // Should show loading
@@ -184,7 +183,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       // Wait for metrics to display
@@ -203,7 +202,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -217,7 +216,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
 
       // Type reference text
       const textArea = screen.getByPlaceholderText(/enter the expected transcript/i);
@@ -245,7 +244,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -263,11 +262,11 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
-        expect(screen.getByText(/speaker similarity/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/speaker similarity/i).length).toBeGreaterThan(0);
         expect(screen.getByText('85')).toBeInTheDocument(); // 0.85 * 100
       });
     });
@@ -281,7 +280,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -302,7 +301,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -320,7 +319,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -337,7 +336,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -354,7 +353,7 @@ describe('QualityDashboard', () => {
 
       render(<QualityDashboard />);
 
-      await clickButton(/browse/i);
+      await clickButton(/browse audio file/i);
       await clickButton(/assess quality/i);
 
       await waitFor(() => {
@@ -395,4 +394,3 @@ describe('QualityDashboard', () => {
     });
   });
 });
-

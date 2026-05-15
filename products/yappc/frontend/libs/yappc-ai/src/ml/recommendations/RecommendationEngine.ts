@@ -364,9 +364,32 @@ export class RecommendationEngine {
       );
     });
 
-    // Sort by popularity
+    const maxPopularity = Math.max(
+      0,
+      ...Array.from(this.items.values()).map((item) => item.popularity ?? 0)
+    );
+
     const popular: Recommendation[] = [];
 
+    if (itemCounts.size === 0 && maxPopularity > 0) {
+      this.items.forEach((item) => {
+        if (!userMatrix.has(item.id) && item.popularity && item.popularity > 0) {
+          popular.push({
+            item,
+            score: item.popularity / maxPopularity,
+            reason: `Popular item with popularity score ${item.popularity}`,
+            confidence: 0.7,
+            source: 'popular',
+          });
+        }
+      });
+
+      return popular
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    }
+
+    // Sort by interaction-derived popularity
     Array.from(itemCounts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit * 2) // Get more to filter out already seen

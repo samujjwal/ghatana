@@ -1,19 +1,18 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react()],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      'monaco-editor': resolve(__dirname, './src/test/monaco-editor-mock.ts'),
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [],
+    setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

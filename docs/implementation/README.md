@@ -1,1425 +1,1239 @@
-Below is a repo-grounded implementation plan based on scanning `samujjwal/ghatana` at commit `2f366d0fef70e0ccc55f6615c2221e5f1f4f6761`.
+## Static scan scope
 
-I did not run the repo locally; this is based on the GitHub snapshot and file-level code inspection.
+I scanned the `samujjwal/ghatana` repo at target commit:
 
-# 1. Current state at target commit
+`b6fb8fd5ebd9b760db9e89fa6b88f6bf7d341d10`
 
-The commit already contains a meaningful first implementation of the GAA mastery/self-learning direction. It is not just conceptual anymore.
+The commit exists and is titled **“agent refactor 5-14-1.”** 
 
-## What already exists
+I focused on the code paths needed for your GAA goal:
 
-### 1. Agent definition is becoming mastery-aware
+```text
+Agent definition
+→ Agent release
+→ Learning contract
+→ Mastery registry
+→ Version-aware mode selection
+→ Memory retrieval
+→ Governed runtime dispatch
+→ Learning deltas
+→ Evaluation/promotion
+→ Obsolescence detection
+→ Data Cloud API/admin surface
+```
 
-`AgentDefinition` is an immutable versioned blueprint. At this commit it already includes:
-
-* `learningLevel`
-* `memoryBindings`
-* `policyRefs`
-* `evaluationRefs`
-* `securityContract`
-* `observabilityContract`
-* `masteryBindings`
-* `skillRefs`
-* `masteryPolicyRefs`
-* `toLearningContract()`
-* `toMasteryBindings()`
-* freshness/version compatibility policy materialization
-* learning-level consistency validation
-
-That is the right foundation for “agent as governed release contract,” not “agent as prompt.” 
-
-### 2. Release governance is stronger
-
-`AgentRelease` now requires tenant ownership and governance artifacts. Response-serving releases must declare `evaluationPackId`, `memoryContractId`, `masteryPolicyPackId`, and `learningContractId`. It also includes version/freshness policy IDs and a `releaseDigest()` over governance-critical fields. 
-
-This is good. It means an active/canary agent release cannot serve traffic without explicit mastery and learning contracts.
-
-### 3. Mastery registry exists
-
-`MasteryRegistry` is already the correct abstraction: tenant-scoped lookup, best-match selection, queries, decisions, saving, state transitions, stale detection, and `getById`. Its transition docs already encode the lifecycle you described: `UNKNOWN → OBSERVED → PRACTICED → COMPETENT → MASTERED → MAINTENANCE_ONLY → OBSOLETE → RETIRED`, with quarantine support. 
-
-`MasteryItem` already stores the right core fields: tenant, skill, domain, agent/release, state, version scope, applicability scope, score vector, procedures, semantic facts, negative knowledge, evidence refs, evaluation refs, failure modes, history, verification/staleness timestamps, labels, and confidence. 
-
-`MasteryState` explicitly distinguishes mastery lifecycle from normal self-learning and defines execution/retrieval semantics. 
-
-### 4. Mastery score is multi-dimensional
-
-`MasteryScore` already models correctness, freshness, applicability, safety, transferability, evidence strength, and regression stability. It computes execution score as a product of key dimensions. 
-
-That matches the desired design: mastery should not be one flat confidence number.
-
-### 5. Version-aware mastery exists
-
-`VersionScope` already separates active, maintenance, and obsolete version constraints, and classifies a `VersionContext` into `ACTIVE`, `MAINTENANCE`, `OBSOLETE`, or `UNKNOWN`. 
-
-This is central to your goal: old mastery is not deleted; it becomes maintenance-only or obsolete depending on version context.
-
-### 6. Data Cloud mastery persistence exists
-
-`DataCloudMasteryRegistry` persists mastery items, transitions, and evidence through Data Cloud collections and implements `findBest`, `query`, `decide`, `save`, `transition`, stale scanning, and tenant-scoped lookup. 
-
-This is a strong start, but needs hardening around version context parsing, ranking semantics, real evidence, and transition consistency.
-
-### 7. Runtime dispatch is mastery-aware
-
-`GovernedAgentDispatcher` now wraps dispatch with:
-
-* release guard
-* manifest capability guard
-* mastery-bound `skillId` requirement
-* version context resolution
-* version compatibility check
-* mastery decision
-* approval proof check
-* verification proof check
-* mode selection
-* invariant evaluation
-* trace ledger events
-* OTel spans
-
-This is the right enforcement point. 
-
-### 8. Mode selection exists
-
-`MasteryAwareModeSelector` queries mastery, classifies tasks, applies mode policy, and emits trace metadata. 
-
-`DefaultModeSelectionPolicy` maps mastery/version/risk to execution mode:
-
-* `MASTERED + ACTIVE → DETERMINISTIC_EXECUTION`
-* `COMPETENT → BOUNDED_PROBABILISTIC_REASONING + verification`
-* `PRACTICED → EXPLORATORY_FAST_LEARNING + approval`
-* `OBSERVED → VERIFICATION_FIRST + approval`
-* `MAINTENANCE_ONLY → MAINTENANCE_ONLY + approval`
-* obsolete/terminal/stale → blocked
-
-This is very close to the target lifecycle. 
-
-### 9. Learning delta pipeline exists, but is incomplete
-
-`LearningDelta` is the right artifact: proposed change type, target, state, agent/release/skill/tenant, procedure/fact/negative IDs, proposed content, evidence/eval refs, rollback ref, confidence before/after, review requirement, timestamps, labels, rejection reason. 
-
-`DefaultLearningDeltaEvaluator` has target-specific validation for episodic memory, semantic fact, procedural skill, negative knowledge, retrieval policy, thresholds, routing policy, prompt template, planner policy, model adapter, and mastery-state transitions. 
-
-But `LearningDeltaService` is only an interface with `propose()` and `evaluate()`; I did not find a concrete implementation. 
-
-### 10. Evaluation and promotion exist, but are not production-grade yet
-
-`EvaluationHarness` defines the right interface and pack creation methods for procedural skills, semantic facts, and mastered promotion. 
-
-But `DefaultEvaluationHarness` currently returns passing mock test results from `runTestCase()`. That cannot support real mastery promotion yet. 
-
-`DefaultPromotionEngine` wires learning deltas to mastery transitions, updates deltas to `PROMOTED`, bootstraps mastery items when needed, and maps evidence. But its internal `evaluate()` is simplistic and not integrated with the real `EvaluationHarness` / `DefaultLearningDeltaEvaluator` pipeline. 
-
-### 11. Obsolescence exists
-
-`DefaultObsolescenceDetector` detects version mismatches, API deprecations/diffs, runtime incompatibility, repeated failures, security vulnerabilities, and documentation contradictions. It can scan all tenant mastery items. 
-
-But a lot of detection still depends on labels and string patterns inside evidence/evaluation refs. It needs real evidence adapters.
-
-### 12. Mastery-aware memory retrieval exists
-
-`MasteryAwareMemoryRetriever` filters memory by mastery state and version applicability, excludes obsolete/retired/quarantined items, blocks unknown by default, allows maintenance-only only for maintenance version context, and prioritizes negative knowledge, facts, procedures, episodes, etc. 
-
-However, it mostly filters already-provided query items; it is not yet a complete retrieval pipeline that calls `MemoryPlane` and joins memory with mastery items end-to-end.
-
-### 13. Trace vocabulary is ready
-
-`TraceEventType` already includes mastery, learning, evaluation, obsolescence, version context, mode selection, approval, verification, and dispatch-allowed events. 
-
-This is excellent. The audit/evidence plane has the vocabulary needed for mastery governance.
-
-### 14. API surface exists
-
-`MasteryController` exposes query/get/save/transition/stale/obsolete/evidence/transitions/state distribution/version compatibility/promotion history/eval status/obsolescence scan/mode explanation/learning delta list/evaluate/promote endpoints with basic governance checks. 
-
-The controller is useful, but it should be hardened around route design, tenant derivation, query validation, and promotion workflow correctness.
+I did **not** run the build or tests locally; this is a static code and architecture scan from the target commit snapshot.
 
 ---
 
-# 2. Main gaps blocking the goal
+# Implementation progress (live)
 
-## P0 gaps
+Last updated: 2026-05-15
 
-### Gap 1 — Learning delta pipeline is not fully wired
+## Completed in this implementation pass
 
-The code has `LearningDelta`, evaluator, repository concepts, API endpoints, and promotion engine, but no concrete `LearningDeltaService` implementation was found. The learning path should be:
+- [x] P0 tenant-safe canonical memory retrieval: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java) now supports tenant-explicit `queryMemoryItemsMasteryAware(...)` so governed dispatch memory reads preserve request tenant isolation.
+- [x] P0 orchestrator memory port fix: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java) now forwards dispatch `tenantId` into canonical memory retrieval instead of relying on client-default tenant fallback.
+- [x] P2/P10 conformance hardening: [scripts/check-agent-conformance.sh](scripts/check-agent-conformance.sh) now fails on deprecated direct mastery mutation route registration, deprecated mastery-registry API usage in production code, and runtime/product `MemoryProjectionBridge` drift.
+- [x] Tenant-routing regression coverage: [products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java](products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java) now verifies canonical memory query APIs preserve explicit request tenant.
+- [x] P0 dispatcher wiring: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java) now wires full `GovernedAgentDispatcher` constructor inputs (release repo, capability manifest, mastery registry, version resolver, task classifier, mode selector, memory retriever).
+- [x] P0 safe startup checks: production profile now fails fast when required governed-dispatch dependencies are missing.
+- [x] P0 memory retriever path: replaced no-op memory retriever binding with `MasteryAwareMemoryRetriever` adapter and made `MasteryAwareMemoryRetriever` implement `MemoryRetriever`.
+- [x] P0 direct mutation hardening: [products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MasteryController.java](products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MasteryController.java) now blocks direct mastery mutation endpoints by default; they require explicit break-glass + `mastery:breakglass` permission.
+- [x] P1 learning delta durability: [products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepository.java](products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepository.java) now has tenant-scoped lookup/update/eval/promotion methods and durable lookup fallback that no longer relies solely on volatile reverse indexes.
+- [x] P1 learning delta lifecycle trace: repository now appends `lifecycleEvents` metadata entries for state changes, evaluations, and promotions.
+- [x] P1 API contract extension: [platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningDeltaRepository.java](platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningDeltaRepository.java) now includes tenant-scoped default overloads for delta operations.
+- [x] P1 repository regression tests: added tenant-scoped delta lookup/update coverage in [products/data-cloud/extensions/agent-registry/src/test/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepositoryTest.java](products/data-cloud/extensions/agent-registry/src/test/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepositoryTest.java).
+- [x] Focused validation: `DataCloudLearningDeltaRepositoryTest` passed (`15 passed, 0 failed`).
+- [x] P1 promotion hardening: [platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/PromotionEvidenceMapper.java](platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/PromotionEvidenceMapper.java) now requires explicit category metadata or category-scoped cases for `regression/safety/recovery/compatibility` evidence.
+- [x] Promotion mapper regression tests added: [platform/java/agent-core/src/test/java/com/ghatana/agent/promotion/PromotionEvidenceMapperTest.java](platform/java/agent-core/src/test/java/com/ghatana/agent/promotion/PromotionEvidenceMapperTest.java).
+- [x] P1 obsolescence evidence normalization: added [platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/ObsolescenceEvidenceMapper.java](platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/ObsolescenceEvidenceMapper.java) and integrated it into [platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/DefaultObsolescenceTransitionService.java](platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/DefaultObsolescenceTransitionService.java) with routed policy-safe target transitions.
+- [x] Obsolescence mapper regression tests added: [platform/java/agent-core/src/test/java/com/ghatana/agent/obsolescence/ObsolescenceEvidenceMapperTest.java](platform/java/agent-core/src/test/java/com/ghatana/agent/obsolescence/ObsolescenceEvidenceMapperTest.java).
+- [x] Mastery route dispatch coverage: added [products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudMasteryRouteDispatchTest.java](products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudMasteryRouteDispatchTest.java) to verify request-level dispatch for the new mastery preview/dry-run/obsolescence launcher routes.
+- [x] Mastery server startup coverage: added [products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServerMasteryTest.java](products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServerMasteryTest.java) to verify the same mastery routes are reachable through real `DataCloudHttpServer` startup wiring.
+- [x] Focused validation update: `PromotionEvidenceMapperTest` + `ObsolescenceEvidenceMapperTest` + `DataCloudLearningDeltaRepositoryTest` passed (`23 passed, 0 failed`).
 
-```text
-Agent trace / reflection
-→ LearningDeltaFactory
-→ LearningContract validation
-→ LearningDeltaService.propose()
-→ repository save
-→ evaluator
-→ evaluation harness
-→ approval queue if needed
-→ promotion engine
-→ mastery transition
-→ trace events
-```
+## In progress / next slices
 
-Today that path appears partially implemented but not end-to-end.
-
-### Gap 2 — Evaluation harness is placeholder
-
-`DefaultEvaluationHarness.runTestCase()` currently assumes pass. That makes `COMPETENT` and `MASTERED` promotion unsafe. 
-
-Real mastery requires real test execution, trace grading, compatibility checks, safety checks, and regression checks.
-
-### Gap 3 — Version context serialization is inconsistent
-
-`MasteryAwareModeSelector` formats version context as `component=version,component=version`. 
-
-`DataCloudMasteryRegistry` parses version context in that same string format. 
-
-But `GovernedAgentDispatcher` appears to pass `versionContext.toString()` into `MasteryQuery` in at least one path. 
-
-This is risky. Version context should be typed or serialized through one canonical codec.
-
-### Gap 4 — Runtime mode selection receives weak task input
-
-`GovernedAgentDispatcher` currently calls mode selection with `agentId + " task"` and empty context in the shown path. 
-
-That means task risk/novelty classification may not reflect the real user task. Mode selection should use actual task description, tool/action intent, environment, and side-effect risk.
-
-### Gap 5 — Promotion engine bypasses the richer evaluator/harness
-
-`DefaultPromotionEngine.evaluate()` computes simple confidence-gain/evidence-count results. 
-
-Promotion should not be based on confidence gain alone. It must use:
-
-* `DefaultLearningDeltaEvaluator`
-* `EvaluationHarness`
-* evaluation pack registry
-* safety policy
-* compatibility tests
-* regression tests
-* approval workflow
-
-### Gap 6 — Obsolescence detection is too heuristic
-
-`DefaultObsolescenceDetector` supports the right reason categories, but many detectors inspect labels and string refs such as `"signature-change"`, `"test-failure"`, `"cve"`, etc. 
-
-This should be connected to real inputs: dependency lockfiles, SBOM/security advisories, API diff reports, test results, docs snapshots, runtime fingerprints, and repeated trace failures.
-
-### Gap 7 — Mastery-aware memory retriever is not fully integrated with MemoryPlane
-
-`MasteryAwareMemoryRetriever` has a `MemoryPlane` field, but the visible method filters `query.items()` rather than executing a full memory query and re-ranking result sets from memory tiers. 
-
-To reach the goal, retrieval must become:
-
-```text
-Task + version + skill + mode
-→ query MemoryPlane
-→ join MasteryRegistry
-→ include negative knowledge first
-→ filter obsolete/retired/quarantined
-→ allow maintenance-only only in legacy context
-→ return ranked memory bundle with reasons
-```
-
-### Gap 8 — API uses query-param tenant too much
-
-`MasteryController` takes `tenantId` from query parameters. 
-
-For production, tenant must come from authenticated principal/session/context, not user-controlled query string. Query param can be accepted only if it is validated against the principal’s tenant scope.
-
-### Gap 9 — Release skill-level pack refs are placeholders
-
-`AgentRelease.skillEvaluationPackRefs()` and `masteryPolicyPackRefs()` return empty maps with comments saying full implementation later. 
-
-For real skill mastery, release must carry skill-level evaluation and mastery policy bindings.
-
-### Gap 10 — Active vs maintenance state semantics need tightening
-
-The current policy blocks maintenance version applicability unless the mastery state itself is `MAINTENANCE_ONLY`. 
-
-That is safe, but the registry must guarantee that when active versions evolve, older mastery items are explicitly transitioned to `MAINTENANCE_ONLY`. Otherwise valid legacy knowledge may be blocked unexpectedly.
+- [x] Canonical memory plane migration (phase-1): introduced `AgentMemoryQueryPort` in agent-core and wired `MasteryAwareMemoryRetriever` to prefer `AgentMemoryPlaneClient` canonical query path (legacy `MemoryProjectionBridge` retained as fallback adapter).
+- [x] Promotion hardening: require explicit category evidence (`regression`, `safety`, `recovery`, `compatibility`) before `COMPETENT -> MASTERED`.
+- [x] Obsolescence evidence normalization: map detector reasons into transition-policy keys via dedicated mapper.
+- [x] Mastery API expansion: added `previewDecision`, `previewRetrieval`, `dryRunPromotion`, and `processObsolescenceEvent` controller endpoints with governance checks.
+- [x] Mastery launcher/OpenAPI reachability: composed launcher-side mastery persistence from the canonical Data Cloud `EntityStore`, registered the four new mastery endpoints on `DataCloudRouterBuilder`, and added matching OpenAPI paths.
+- [x] Mastery launcher dispatch verification: `DataCloudRouterBuilderIntegrationTest` + `DataCloudMasteryRouteDispatchTest` passed (`11 passed, 0 failed`) and `checkDataCloudOpenApiSync` reported `232 paths, 0 drift`.
+- [x] Mastery launcher startup verification: `DataCloudHttpServerMasteryTest` passed (`4 passed, 0 failed`) via Gradle module test run.
+- [x] Mastery launcher verification rerun: forced fresh execution with `--rerun-tasks` for `DataCloudRouterBuilderIntegrationTest`, `DataCloudMasteryRouteDispatchTest`, and `DataCloudHttpServerMasteryTest` passed with `BUILD SUCCESSFUL`; separate launcher `compileJava` + `checkDataCloudOpenApiSync` run also passed (`232 paths, 0 drift`).
+- [x] Launcher regression sweep: full `:products:data-cloud:delivery:launcher:test` module run remained green (`BUILD SUCCESSFUL`, configuration cache reused, no new failures).
+- [x] Trace contract completion (phase-1): added `DISPATCH_REQUESTED` and `RELEASE_CHECKED` events, added `MEMORY_RETRIEVAL_STARTED` emission, expanded dispatcher sequence tests, and added CI conformance gate checks in `scripts/check-agent-conformance.sh`.
+- [x] Focused validation update (tenant-aware memory wiring): `:products:data-cloud:planes:action:orchestrator:compileJava` + `:products:data-cloud:planes:action:orchestrator:test` passed (`BUILD SUCCESSFUL`).
+- [x] Conformance validation update: `bash scripts/check-agent-conformance.sh` now reports mastery conformance gates green (`Mastery conformance: 0`) and no canonical type-alias violations; overall script still fails due pre-existing repository-wide compatibility markers outside this slice.
+- [x] Action server pattern endpoint test stabilization: [products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/http/AepHttpServerPatternTest.java](products/data-cloud/planes/action/server/src/test/java/com/ghatana/aep/server/http/AepHttpServerPatternTest.java) now uses startup retries with HTTP health readiness checks to remove free-port race failures that produced intermittent protocol parse errors.
+- [x] Pattern endpoint regression validation: `:products:data-cloud:planes:action:server:test --tests 'com.ghatana.aep.server.http.AepHttpServerPatternTest'` passed (`9 passed, 0 failed`).
 
 ---
 
-# 3. Target architecture
+# Executive summary
 
-The target GAA system should be built around these pipelines:
+The repo is much closer to the desired **Generic Adaptive Agent (GAA)** vision than a greenfield implementation. The code already contains many of the correct primitives:
 
-## Runtime pipeline
+| Capability                 | Current status                                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Immutable agent blueprint  | `AgentDefinition` already includes identity, type, determinism, learning level, memory bindings, skill refs, mastery policy refs, evaluation refs, security, and observability contracts.                                                              |
+| Governed deployable unit   | `AgentRelease` now carries tenant ID, policy/evaluation/memory/mastery/learning/freshness/version-compatibility contracts, and skill-specific evaluation/mastery policy refs.                                                                          |
+| Learning authority model   | `LearningLevel` cleanly defines L0–L5 and makes `MASTERY_STATE` L5-only/offline-governance scoped.                                                                                                                                                     |
+| Learning boundary contract | `LearningContract` distinguishes normal agents from governance workflows and blocks normal agents from proposing mastery-state changes.                                                                                                                |
+| Mastery lifecycle          | `MasteryState` already models `UNKNOWN → OBSERVED → PRACTICED → COMPETENT → MASTERED → MAINTENANCE_ONLY → OBSOLETE → RETIRED`, plus `QUARANTINED`.                                                                                                     |
+| Mastery ledger item        | `MasteryItem` tracks skill/domain/agent/release/state/version scope/applicability/score/procedures/facts/negative knowledge/evidence/evals/failures/freshness/confidence.                                                                              |
+| Mastery registry           | `MasteryRegistry` exposes tenant-scoped `findBest`, `query`, `decide`, `save`, `transition`, `findStale`, and `getById`.                                                                                                                               |
+| Data Cloud persistence     | `DataCloudMasteryRegistry` persists mastery items/transitions/evidence with tenant isolation and version-aware decisions.                                                                                                                              |
+| Runtime dispatch           | `GovernedAgentDispatcher` contains release guard, capability guard, skill requirement, version context resolution, mastery decision, approval/verification checks, mode selection, memory retrieval hook, invariant checks, trace ledger integration.  |
+| Memory hierarchy           | Data Cloud runtime `MemoryPlane` supports episodic, semantic, procedural, typed artifacts, cross-tier query, semantic search, working memory, task-state, checkpointing, and stats.                                                                    |
+| Promotion                  | `DefaultPromotionEngine`, `PromotionEvidenceMapper`, `DefaultPromotionPolicy`, and `DefaultMasteryTransitionPolicy` implement evaluation-backed skill promotion.                                                                                       |
+| Obsolescence               | `DefaultObsolescenceDetector` and `DefaultObsolescenceTransitionService` exist and route stale/version/API/runtime/failure/security/doc contradiction signals into mastery transitions.                                                                |
+| API/admin surface          | `MasteryController` exposes mastery query, stale/obsolete views, mode explanation, learning delta listing/evaluation/promotion, and deprecated direct mutation endpoints.                                                                              |
+
+The main implementation goal is no longer “create the GAA architecture.” It is:
+
+> **Stabilize, wire, harden, test, and productionize the existing GAA/mastery system end to end.**
+
+The biggest issue I found: many core contracts exist, but some runtime wiring still does not connect them fully. For example, `AepOrchestrationModule` provides a fail-closed `MasteryRegistry`, default mode selection, no-op memory retriever, learning delta repository, promotion engine, and obsolescence detector, but its `governedAgentDispatcher(...)` provider only passes the `MasteryAwareModeSelector` into the dispatcher constructor and does **not** pass the release repository, mastery registry, version context resolver, task classifier, capability manifest, or memory retriever into the full dispatcher path. 
+
+That should be the first fix.
+
+---
+
+# Target architecture
+
+The final GAA implementation should behave like this:
 
 ```text
 AgentDefinition
 → AgentRelease
-→ AgentInstance/tenant config
-→ GovernedAgentDispatcher
+→ AgentInstance/runtime context
+→ Release guard
 → VersionContextResolver
+→ TaskClassifier
 → MasteryRegistry.decide()
 → MasteryAwareModeSelector
 → MasteryAwareMemoryRetriever
-→ Agent execution
-→ TraceLedger
+→ GovernedAgentDispatcher
+→ Trace capture
 → MemoryPlane capture
-```
-
-## Learning pipeline
-
-```text
-TraceLedger + MemoryPlane episodes
-→ Reflection/LearningEngine
-→ LearningDeltaFactory
-→ LearningDeltaService.propose()
-→ LearningDeltaEvaluator
-→ EvaluationHarness
-→ Approval workflow if needed
+→ LearningDelta creation
+→ LearningDelta evaluation
 → PromotionEngine
 → MasteryRegistry.transition()
-→ TraceLedger learning events
+→ Obsolescence detection
+→ Mastery refresh / maintenance / quarantine / retirement
 ```
 
-## Mastery lifecycle pipeline
+Core invariant:
+
+> **Agents may observe freely, propose cautiously, and act only within governed mastery.**
+
+This means:
 
 ```text
-UNKNOWN
-→ OBSERVED
-→ PRACTICED
-→ COMPETENT
-→ MASTERED
-→ MAINTENANCE_ONLY
-→ OBSOLETE
-→ RETIRED
-      ↘
-       QUARANTINED
-```
-
-## Obsolescence pipeline
-
-```text
-Dependency/runtime/doc/security/test/trace change
-→ EnvironmentFingerprint
-→ ObsolescenceDetector.scanAll()
-→ ObsolescenceEvent
-→ ObsolescenceRouter / TransitionService
-→ MasteryRegistry.transition()
-→ TraceLedger event
-→ UI review queue
+Online agent execution may create traces and learning deltas.
+Only promotion/governance workflows may mutate mastery state.
+Only evaluated/promoted mastery may affect autonomous behavior.
+Only version-compatible, fresh, non-obsolete knowledge may be retrieved for execution.
 ```
 
 ---
 
-# 4. Implementation plan by independent workstream
+# Critical findings
 
-## Workstream A — Stabilize contracts and schema
+## Status note (2026-05-15)
+
+This section is retained as historical scan context. The P0/P1 items listed here have been implemented and verified in the completed slices above (governed dispatcher wiring, memory-plane migration phase-1, promotion/obsolescence hardening, mastery API/router/OpenAPI wiring, and mastery route startup verification).
+
+## P0 — Dispatcher wiring is incomplete
+
+`GovernedAgentDispatcher` supports the right runtime chain: release guard, mastery check, version context, approval/verification checks, mode selection, memory retrieval, invariant monitoring, and trace recording. 
+
+But `AepOrchestrationModule` wires the dispatcher with only:
+
+```java
+new GovernedAgentDispatcher(
+    catalogAgentDispatcher,
+    invariantMonitor,
+    traceLedger,
+    masteryAwareModeSelector
+)
+```
+
+That constructor does **not** pass the release repository, mastery registry, version resolver, task classifier, capability manifest, or memory retriever. 
+
+### Impact
+
+The code has a strong governed dispatcher, but AEP may run with only partial governance enabled. Release guard, direct mastery decision path, version context resolver, and memory retrieval may not execute unless separately wired elsewhere.
+
+### Fix first
+
+Wire the full constructor and provide real bindings.
+
+---
+
+## P0 — Memory retrieval still uses a bridge, not the canonical Data Cloud runtime `MemoryPlane`
+
+`MasteryAwareMemoryRetriever` currently depends on `MemoryProjectionBridge`, which projects legacy framework memory snapshots into memory items. 
+
+But the richer canonical memory API is the Data Cloud runtime `MemoryPlane`, which directly supports typed episodic, semantic, procedural, artifact, working, task-state, semantic search, and cross-tier query operations. 
+
+### Impact
+
+The GAA may develop two parallel memory paths:
+
+1. legacy projection memory path;
+2. richer Data Cloud runtime memory path.
+
+That creates split-brain retrieval, inconsistent observability, and duplicated logic.
+
+### Fix
+
+Make Data Cloud runtime `MemoryPlane` canonical. Keep `MemoryProjectionBridge` only as a migration adapter.
+
+---
+
+## P0 — Fail-closed registry is safe but not useful for real runtime
+
+`AepOrchestrationModule.masteryRegistry()` returns a fail-closed no-op registry that blocks execution by default. This is safer than permissive defaults. 
+
+### Impact
+
+Safe, but unless replaced by `DataCloudMasteryRegistry`, real agents cannot demonstrate learning/mastery behavior in AEP.
+
+### Fix
+
+Provide a production Data Cloud registry binding and keep the fail-closed registry only for tests/local degraded mode.
+
+---
+
+## P0 — Direct mutation endpoints still exist
+
+`MasteryController.saveMastery()` and `MasteryController.transition()` are marked deprecated and explain that they bypass the LearningDelta + PromotionEngine or ObsolescenceTransitionService workflow. 
+
+### Impact
+
+Even if deprecated, if routes remain exposed, a caller with broad `mastery:write` or `mastery:transition` access can bypass the desired promotion workflow.
+
+### Fix
+
+Disable by default, move behind break-glass/admin-only approval, or remove from public route registration.
+
+---
+
+## P1 — Learning delta repository relies on volatile reverse indexes
+
+`DataCloudLearningDeltaRepository` stores learning deltas durably, but `findById` and `updateState` depend on in-memory maps from `deltaId → tenantId/entityId`; the comments state the reverse index is volatile and rebuilt by `save()` calls. 
+
+### Impact
+
+After process restart, `findById(deltaId)` may return empty even though the delta exists in Data Cloud.
+
+### Fix
+
+Use a persistent query path by `deltaId` and tenant ID, or require tenant ID for all delta lookup/update APIs.
+
+---
+
+## P1 — Promotion-to-mastered may be overly broad
+
+`PromotionEvidenceMapper.deriveEvalResult(...)` returns true for a category if all tests passed and there is at least one case result, even when category-specific metadata is absent. 
+
+`DefaultMasteryTransitionPolicy` requires explicit `regression_passed`, `safety_passed`, `recovery_passed`, and `compatibility_passed` for `COMPETENT → MASTERED`. 
+
+### Impact
+
+A non-category-specific passing evaluation could accidentally generate all four “passed” evidence values and allow `MASTERED`.
+
+### Fix
+
+Require explicit category tests or metadata for regression, safety, recovery, and compatibility.
+
+---
+
+## P1 — Obsolescence evidence keys may not satisfy transition policy
+
+`DefaultObsolescenceTransitionService` copies event metadata and adds generic `evidence_0`, `evidence_1`, etc. 
+
+`DefaultMasteryTransitionPolicy` requires keys like `new_active_version_id`, `end_of_life`, `replaced_by_newer`, `safety_violation`, `unsafe_behavior`, `contradiction`, `repeated_failures`, `security_advisory`, `api_break`, and `no_active_use_case`. 
+
+### Impact
+
+Obsolescence detection may correctly detect a problem but fail to transition mastery state because evidence keys do not match policy requirements.
+
+### Fix
+
+Add `ObsolescenceEvidenceMapper` that converts each `ObsolescenceReason` into transition-policy-compatible evidence.
+
+---
+
+## P1 — Release contract is strong, but runtime enforcement must be end-to-end
+
+`AgentRelease` now requires tenant ID, evaluation pack, memory contract, and response-serving releases require mastery policy pack and learning contract. It also carries skill-specific evaluation and mastery policy maps and includes them in the release digest. 
+
+### Impact
+
+Good contract, but it must be enforced at registration, release transition, dispatch, and promotion time.
+
+### Fix
+
+All response-serving dispatch must validate:
+
+```text
+release.isResponseServing()
+tenant matches
+policy/eval/memory/mastery/learning contracts exist
+skill-specific eval pack exists for skillId
+mastery policy pack exists for skillId
+release digest matches registered spec digest
+```
+
+---
+
+# Detailed implementation plan
+
+## Phase 0 — Establish the target commit baseline
 
 ### Goal
 
-Make agent definition, release, learning, mastery, and version contracts canonical and machine-validatable.
+Make the current target commit compile and produce a reliable baseline before adding features.
 
-### Files to update
+### Files / modules
 
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/config/AgentDefinition.java`
+```text
+platform/java/agent-core
+products/data-cloud/extensions/agent-registry
+products/data-cloud/planes/action/agent-runtime
+products/data-cloud/planes/action/orchestrator
+products/data-cloud/delivery/api
+.github/workflows/*
+```
 
-Actions:
+### Tasks
 
-1. Keep `toLearningContract()` as canonical materializer.
-2. Make `learningLevel` typed in DTO/materializer path; avoid storing only as `String`.
-3. Add validation that `adaptationTargets` are allowed by `LearningLevel`.
-4. Require `skillRefs` when `masteryBindings` exists.
-5. Require `masteryPolicyRefs` and `evaluationRefs` for `learningLevel >= L3`; code already validates this, but ensure validator calls it.
-6. Extend `toReleaseDraft()` to copy tenant, memory contract, eval refs, mastery policy refs, learning contract digest, version/freshness policy refs when available.
+1. Run compile/test for the mastery-related modules.
+2. Add a focused `agent-mastery-smoke` Gradle task that compiles:
 
-Why: `AgentDefinition` already has most fields and consistency logic. The missing part is enforcing it at materialization/validation/release creation. 
+   * learning contracts;
+   * mastery registry interfaces;
+   * promotion engine;
+   * obsolescence detector;
+   * governed dispatcher;
+   * Data Cloud registry implementation;
+   * Mastery API.
+3. Add dependency boundary checks:
 
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/config/AgentDefinitionValidator.java`
+   * `agent-core` must not depend on Data Cloud.
+   * Data Cloud may depend on `agent-core`.
+   * product modules must not bypass public SPI/contracts.
+4. Create a small integration test:
 
-Actions:
-
-1. Call `validateLearningLevelConsistency()`.
-2. Validate `toLearningContract()` does not throw.
-3. Validate every `skillRef` has corresponding mastery/eval policy coverage.
-4. Validate `masteryBindings.registryRef` and namespace.
-5. Validate no `MASTERY_STATE` adaptation target unless governance workflow is explicitly enabled.
-6. Add tests for invalid learning level, missing skill refs, L3+ without eval/mastery refs, and mismatched metadata learning level.
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentRelease.java`
-
-Actions:
-
-1. Replace placeholder `skillEvaluationPackRefs()` and `masteryPolicyPackRefs()` with real record fields or structured metadata.
-2. Include those fields in `releaseDigest()`.
-3. Enforce response-serving releases include skill-level evaluation coverage for all mastered/competent skills.
-4. Add `learningContractDigest` instead of only `learningContractId`.
-5. Add `masteryContractDigest` or `masteryPolicyPackDigest`.
-
-Why: release already enforces global eval/memory/mastery/learning contracts for response serving, but skill-level pack refs are placeholders. 
+   * create `MasteryItem`;
+   * save through `DataCloudMasteryRegistry`;
+   * query by tenant/skill;
+   * call `decide`;
+   * verify expected decision.
+5. Ensure deprecated APIs are still compiled but flagged.
 
 ### Acceptance criteria
 
-* Agent definition cannot be registered if mastery/learning config is inconsistent.
-* Active/canary releases cannot be built without all governance artifacts.
-* Release digest changes when skill-level eval/mastery policy refs change.
-* Tests prove L3+ agents require promotion/eval governance.
+* All mastery modules compile.
+* No circular dependencies.
+* Baseline tests show known gaps explicitly.
+* No product code imports Data Cloud internals except Data Cloud modules.
 
 ---
 
-## Workstream B — Fix version context end-to-end
+## Phase 1 — Fix AEP runtime wiring
 
 ### Goal
 
-Make version-aware mastery deterministic, typed, and consistent.
+Ensure AEP actually uses release guard, mastery registry, version context, task classifier, mode selection, memory retrieval, invariants, and trace ledger.
 
-### Files to add
+### File
 
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/context/version/VersionContextCodec.java`
-
-Responsibilities:
-
-```java
-String encode(VersionContext context);
-VersionContext decode(String encoded);
-Map<String, String> dependencies(VersionContext context);
+```text
+products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java
 ```
 
-Use one canonical format:
+### Current issue
 
-```json
-{
-  "dependencies": {"react-router": "7.2.0"},
-  "runtimes": {"node": "22.0.0"},
-  "tools": {"vite": "6.0.0"},
-  "repoConventions": {"routerMode": "framework"},
-  "environment": "production"
+The module provides several governance components but constructs `GovernedAgentDispatcher` using the simplified constructor with only `MasteryAwareModeSelector`, so several important dependencies are not passed into the dispatcher. 
+
+### Tasks
+
+1. Add provider for `AgentReleaseRepository`.
+2. Add provider for real `DataCloudMasteryRegistry`.
+3. Add provider for `VersionContextResolver`.
+4. Add provider for `AgentCapabilityManifest`.
+5. Replace no-op `MemoryRetriever` with a `MasteryAwareMemoryRetriever` adapter.
+6. Wire full dispatcher constructor:
+
+```java
+return new GovernedAgentDispatcher(
+    catalogAgentDispatcher,
+    invariantMonitor,
+    traceLedger,
+    releaseRepository,
+    agentRunTracer,
+    capabilityManifest,
+    masteryRegistry,
+    versionContextResolver,
+    taskClassifier,
+    masteryAwareModeSelector,
+    memoryRetriever
+);
+```
+
+7. Keep fail-closed fallback registry only under explicit `local/dev/no-registry` profile.
+8. Add startup validation:
+
+   * if environment is production and no real `MasteryRegistry` exists, fail startup;
+   * if production and no `AgentReleaseRepository` exists, fail startup;
+   * if production and no `TraceLedger` exists, fail startup.
+
+### Tests
+
+Add tests under:
+
+```text
+products/data-cloud/planes/action/orchestrator/src/test/java/...
+```
+
+Test cases:
+
+1. Missing mastery registry in production fails startup.
+2. Dispatcher denies when release is not response-serving.
+3. Dispatcher denies mastery-bound agent when no `skillId` can be derived.
+4. Dispatcher passes real version context to mastery query.
+5. Dispatcher invokes memory retrieval before delegate dispatch.
+6. Dispatcher records trace events for release, mastery, mode, memory, and denial.
+
+### Acceptance criteria
+
+* AEP dispatch uses the full governed path.
+* No response-serving dispatch bypasses release/mastery/mode gates.
+* Missing dependencies fail closed.
+
+---
+
+## Phase 2 — Canonicalize the memory plane
+
+### Goal
+
+Use one canonical memory API for GAA: the Data Cloud runtime `MemoryPlane`.
+
+### Files
+
+```text
+products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/store/MemoryPlane.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/memory/retrieval/MasteryAwareMemoryRetriever.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/framework/memory/MemoryProjectionBridge.java
+```
+
+### Current state
+
+Data Cloud runtime `MemoryPlane` is the richer SPI and supports all target memory tiers. 
+`MasteryAwareMemoryRetriever` currently relies on `MemoryProjectionBridge`. 
+
+### Tasks
+
+1. Introduce an agent-core neutral memory SPI if needed:
+
+```java
+interface AgentMemoryQueryPort {
+    Promise<List<MemoryItem>> query(MemoryQuery query);
+    Promise<List<ScoredMemoryItem>> searchSemantic(...);
 }
 ```
 
-Do not rely on `toString()`.
+2. Make Data Cloud `MemoryPlane` implement or adapt to that port.
+3. Change `MasteryAwareMemoryRetriever` to use the canonical memory query port.
+4. Keep `MemoryProjectionBridge` as:
 
-### Files to update
+   * deprecated;
+   * compatibility-only;
+   * not the default runtime path.
+5. Ensure retrieval pulls from:
 
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/mode/MasteryAwareModeSelector.java`
+   * negative knowledge;
+   * procedures;
+   * semantic facts;
+   * episodes;
+   * task-state;
+   * working memory only when explicitly allowed.
+6. Ensure retrieval filters by:
 
-Actions:
+   * tenant;
+   * agent ID;
+   * skill ID;
+   * version context;
+   * mastery state;
+   * freshness;
+   * risk level;
+   * data class / privacy policy.
+7. Ensure retrieval never returns:
 
-1. Replace `formatVersionContext()` with `VersionContextCodec.encode()`.
-2. Remove ad hoc `component=version` string generation.
-3. Add `versionContextDigest` to trace metadata.
-4. Add tests that version context round-trips exactly.
+   * `OBSOLETE`;
+   * `RETIRED`;
+   * `QUARANTINED`;
+   * `UNKNOWN`, unless explicit fast-learning mode asks for candidate memory.
 
-Current selector serializes dependencies manually. 
+### Tests
 
-#### `products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/DataCloudMasteryRegistry.java`
+Add tests for `MasteryAwareMemoryRetriever`:
 
-Actions:
-
-1. Replace string parsing with `VersionContextCodec.decode()`.
-2. Add typed `VersionContext` support to `MasteryQuery`, or add `versionContextJson`.
-3. In `findBest`, exclude `OBSOLETE` applicability unless query explicitly includes obsolete.
-4. In `query`, sort by actual version applicability, not only state.
-5. Add tests for:
-
-   * active match beats maintenance
-   * maintenance allowed only in legacy contexts
-   * obsolete never chosen by default
-   * malformed version context fails closed
-
-Current registry parses comma-separated strings and ranks some paths by state. 
-
-#### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java`
-
-Actions:
-
-1. Stop using `versionContext.toString()` for mastery query.
-2. Use codec.
-3. Build `EnvironmentSnapshot` from real agent context/input, not empty snapshots.
-4. Store `versionContext` and `versionContextDigest` in trace payload.
-
-Current dispatcher resolves version context and uses it in governance, but the snapshot and serialization path need hardening. 
-
-### Acceptance criteria
-
-* No code path uses `VersionContext.toString()` as a machine protocol.
-* Every mastery decision stores exact version context used.
-* Version compatibility tests cover active, maintenance, obsolete, unknown, and malformed contexts.
-
----
-
-## Workstream C — Harden MasteryRegistry and transitions
-
-### Goal
-
-Make mastery state transitions safe, tenant-isolated, evidence-backed, and idempotent.
-
-### Files to update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/MasteryRegistry.java`
-
-Actions:
-
-1. Keep tenant-scoped APIs as canonical.
-2. Remove or fully deprecate non-tenant APIs.
-3. Add `decide(MasteryDecisionRequest)` typed request instead of only `MasteryQuery`.
-4. Add explicit `explainDecision()` method returning reasons, matched versions, stale check, evidence, and policy gates.
-5. Add `recordEvidence()` and `recordEvaluation()` convenience APIs.
-
-Current interface is strong but still query-centric. 
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/MasteryDecision.java`
-
-Actions:
-
-1. Ensure factory methods preserve `versionApplicability` and evidence refs.
-2. Add `blockedReasonCode` enum for easier UI and automation.
-3. Add `requiresRefresh` separate from `stale`.
-4. Add `legacyOnly` flag for maintenance mode.
-5. Add `DecisionPolicyRef`.
-
-Current decision has state, score, applicability, stale/terminal/executable, approval/verification flags, reason, evidence refs. 
-
-#### `products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/DataCloudMasteryRegistry.java`
-
-Actions:
-
-1. Fix `findBest()` to use consistent filter+rank:
-
-   * reject terminal by default
-   * reject stale if freshness required
-   * reject obsolete applicability by default
-   * rank active > maintenance > unknown
-   * rank mastered > competent > practiced > observed
-   * rank execution score
-2. Ensure `decide()` carries computed `VersionApplicability` into `MasteryDecision.allow()/requireApproval()/requireVerification()`. Current code often uses factory overloads that default applicability to `UNKNOWN`.
-3. Ensure `MAINTENANCE_ONLY` decisions use `MasteryDecision.maintenanceOnly()`.
-4. Enforce transition idempotency by transition ID.
-5. Make item update and transition append atomic at the Data Cloud level or explicitly compensating.
-6. Ensure `save()` uses `item.tenantId()` as source of truth and validates applicability tenant.
-7. Add query indexes for tenant, skill, agent, release, state, staleAfter, domain.
-
-Current Data Cloud implementation has good structure but needs these production hardening steps. 
+1. Negative knowledge ranks before positive procedure.
+2. `MAINTENANCE_ONLY` appears only for maintenance version context.
+3. Obsolete version is excluded.
+4. Unknown mastery is excluded by default.
+5. Fresh mastered item outranks stale mastered item.
+6. Tenant A cannot retrieve tenant B memory.
+7. High-risk task excludes unverified memory.
 
 ### Acceptance criteria
 
-* No cross-tenant mastery read/write is possible.
-* `decide()` output includes accurate applicability and score.
-* Replaying the same transition ID is idempotent.
-* Obsolete/quarantined/retired states are never executable.
-* Stale mastery blocks or routes to verification/refresh exactly as policy says.
+* No split-brain memory paths for GAA.
+* Retrieval is version-aware, mastery-aware, freshness-aware, and tenant-scoped.
+* Deprecated projection bridge has no new call sites.
 
 ---
 
-## Workstream D — Complete LearningDeltaService
+## Phase 3 — Harden Mastery Registry persistence and decision logic
 
 ### Goal
 
-Make self-learning use controlled deltas, not direct mutation.
+Make the Mastery Registry a durable, authoritative, tenant-isolated source of execution permission.
 
-### Files to add
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/learning/DefaultLearningDeltaService.java`
-
-Responsibilities:
-
-1. Validate `LearningContract.permits(delta.target())`.
-2. Enforce `provenanceRequired`.
-3. Enforce `promotionRequired`.
-4. Persist delta in `PENDING_EVALUATION`.
-5. Append `LEARNING_DELTA_PROPOSED` trace event.
-6. Run `DefaultLearningDeltaEvaluator`.
-7. Move state to:
-
-   * `EVALUATED`
-   * `REJECTED`
-   * `PENDING_HUMAN_REVIEW`
-8. Optionally route to approval queue.
-9. Never directly update mastery or memory unless target is low-risk and contract permits.
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningDeltaService.java`
-
-Actions:
-
-1. Change `evaluate(deltaId)` return type from `Promise<Boolean>` to `Promise<EvaluationResult>` or `Promise<LearningDelta>`.
-2. Add:
-
-   * `approve(deltaId, approvalProof)`
-   * `reject(deltaId, reason)`
-   * `promote(deltaId)`
-   * `listPending(tenantId, filters)`
-
-Current interface is too small for the workflow. 
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/learning/DefaultLearningDeltaEvaluator.java`
-
-Actions:
-
-1. Keep current target-specific validation.
-2. Add external policy hooks:
-
-   * safety policy
-   * data policy
-   * tool policy
-   * version compatibility policy
-3. Require rollback ref for all execution-affecting targets.
-4. Require evaluation refs for:
-
-   * procedural skill
-   * retrieval policy
-   * routing policy
-   * prompt template
-   * planner policy
-   * model adapter
-   * mastery state
-5. For `MASTERY_STATE`, require transition policy validation, not just valid enum name.
-
-The evaluator already has useful target-specific checks, but mastery-state validation needs transition-aware policy integration. 
-
-### Acceptance criteria
-
-* No learning delta can be promoted without passing `LearningContract`.
-* `MASTERY_STATE` deltas require governance workflow and valid transition evidence.
-* Procedural skills below threshold become human-review items, not active behavior.
-* Model adapter deltas are offline-only and cannot auto-promote.
-
----
-
-## Workstream E — Replace mock EvaluationHarness with real execution
-
-### Goal
-
-Make `COMPETENT` and `MASTERED` states meaningful.
-
-### Files to update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/DefaultEvaluationHarness.java`
-
-Current `runTestCase()` returns `true` for every test. 
-
-Replace with test executors by `EvaluationType`:
-
-| Evaluation type   | Executor                             |
-| ----------------- | ------------------------------------ |
-| `SKILL_UNIT`      | deterministic function/unit executor |
-| `INTEGRATION`     | sandboxed integration executor       |
-| `REGRESSION`      | historical trace replay              |
-| `SAFETY`          | policy/safety checks                 |
-| `RECOVERY`        | failure/rollback simulation          |
-| `COMPATIBILITY`   | version matrix runner                |
-| `TRACE_GRADE`     | trace completeness/scoring           |
-| `OUTPUT_CONTRACT` | schema validation                    |
-
-### Files to add
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/EvaluationExecutor.java`
-
-```java
-interface EvaluationExecutor {
-    boolean supports(EvaluationType type);
-    Promise<EvaluationResult.TestCaseResult> execute(EvaluationTestCase test, EvaluationContext context);
-}
-```
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/TraceReplayEvaluationExecutor.java`
-
-Replays past traces against candidate procedure/policy.
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/VersionCompatibilityEvaluationExecutor.java`
-
-Runs skill/procedure against version matrix.
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/SafetyEvaluationExecutor.java`
-
-Checks unsafe tools, forbidden actions, policy violations, prompt-injection exposure, and side effects.
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/OutputContractEvaluationExecutor.java`
-
-Validates output schema and invariants.
-
-### Acceptance criteria
-
-* Default harness no longer has mock pass behavior.
-* `MASTERED` promotion requires all of: regression, safety, recovery, compatibility, trace-grade, output-contract.
-* Eval results become durable evidence refs.
-* Eval failures can produce negative knowledge or obsolescence events.
-
----
-
-## Workstream F — Fix PromotionEngine to use real evaluation and policy
-
-### Goal
-
-Promotion must be based on verified evaluation, not confidence gain alone.
-
-### Files to update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/DefaultPromotionEngine.java`
-
-Actions:
-
-1. Remove or demote the current simple `evaluate()` method.
-2. Inject:
-
-   * `LearningDeltaEvaluator`
-   * `EvaluationHarness`
-   * `EvaluationPackRegistry`
-   * `PromotionPolicy`
-   * `AgentTraceLedger`
-3. Promotion flow should be:
+### Files
 
 ```text
-delta
-→ check state is EVALUATED or APPROVED
-→ check evaluator result
-→ run/evaluate eval pack if missing
-→ check promotion policy
-→ transition mastery
-→ update mastery item with IDs/scores/version scope/eval refs
-→ set delta PROMOTED
-→ trace LEARNING_DELTA_PROMOTED
+platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/MasteryRegistry.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/MasteryItem.java
+products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/DataCloudMasteryRegistry.java
+products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/MasteryItemMapper.java
 ```
 
-Current engine already updates mastery items and transitions, which is good. It needs stronger evaluation source and policy integration. 
+### Current state
 
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/DefaultPromotionPolicy.java`
+`MasteryRegistry` already defines the correct operations, including tenant-scoped `findBest`, `decide`, `transition`, `findStale`, and `getById`. 
+`DataCloudMasteryRegistry` implements tenant-scoped persistence, `findBest`, `decide`, transitions, and stale scans. 
 
-Actions:
+### Tasks
 
-1. Define target-state mapping:
+1. Replace all deprecated `findBySkill(skillId, env)` call sites with `findBest(MasteryQuery)`.
+2. Replace all deprecated `findStale(Instant)` call sites with tenant-scoped `findStale(tenantId, now)`.
+3. Add persistent indexes:
 
-   * `EPISODIC_MEMORY → OBSERVED`
-   * `SEMANTIC_FACT → OBSERVED/PRACTICED`
-   * `PROCEDURAL_SKILL → PRACTICED/COMPETENT`
-   * high-scoring procedural + mastered pack → `MASTERED`
-   * negative knowledge → directly active but scoped
-2. Enforce minimum eval score per target.
-3. Enforce rollback ref for execution-impacting targets.
-4. Enforce human review for high-risk targets.
+   * `(tenantId, masteryId)`
+   * `(tenantId, skillId)`
+   * `(tenantId, agentId)`
+   * `(tenantId, agentReleaseId)`
+   * `(tenantId, domain)`
+   * `(tenantId, state)`
+   * `(tenantId, staleAfter)`
+4. Fix `validateMasteryItem()` to validate `item.tenantId()` directly in addition to `item.applicability().tenantId()`.
+5. Make `findBest()` and `decide()` use exactly one shared ranking function:
+
+   * active version match;
+   * mastered/competent/practiced/observed ranking;
+   * execution score;
+   * freshness;
+   * evidence strength;
+   * safety score.
+6. Add explicit `VersionApplicability` into `MasteryDecision`.
+7. Add `decisionReasonCode`, not only reason string:
+
+   * `NO_MASTERY`
+   * `STALE`
+   * `VERSION_OBSOLETE`
+   * `VERSION_MAINTENANCE_MISMATCH`
+   * `TERMINAL_STATE`
+   * `REQUIRES_APPROVAL`
+   * `REQUIRES_VERIFICATION`
+   * `ALLOWED_MASTERED`
+8. Add optimistic locking tests for concurrent `save()` and `transition()`.
+9. Ensure transition update preserves:
+
+   * previous state history;
+   * existing score vector;
+   * existing version scope;
+   * procedure/fact/negative/eval refs.
+
+### Tests
+
+1. `MASTERED + ACTIVE + fresh` → allow.
+2. `COMPETENT + ACTIVE` → requires verification.
+3. `PRACTICED + ACTIVE` → requires approval.
+4. `OBSERVED` → requires approval / verification-first.
+5. `MAINTENANCE_ONLY + maintenance version` → maintenance mode.
+6. `MAINTENANCE_ONLY + active version` → block.
+7. `MASTERED + maintenance version` → block or require migration depending policy.
+8. `OBSOLETE`, `RETIRED`, `QUARANTINED` → block.
+9. stale item → block and request refresh.
+10. no item → block / fast-learning gated, depending runtime policy.
 
 ### Acceptance criteria
 
-* Promotion fails if evaluation refs are absent for policy/procedure/prompt/planner/model targets.
-* Promotion writes state transition and updates mastery item in the right order.
-* Promotion is idempotent.
-* Promotion emits trace events.
+* `decide()` becomes the single source of truth for execution permission.
+* All decisions are tenant-scoped and version-aware.
+* No deprecated registry API is used in runtime paths.
 
 ---
 
-## Workstream G — Complete runtime execution-mode enforcement
+## Phase 4 — Harden learning delta lifecycle
 
 ### Goal
 
-Mode selection must control actual runtime behavior, not only metadata.
+Ensure agents learn only by creating governed, evaluable `LearningDelta` artifacts.
 
-### Files to update
-
-#### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java`
-
-Actions:
-
-1. Extract task description from:
-
-   * context `taskDescription`
-   * typed input if it implements a task interface
-   * action metadata
-2. Extract side-effect classification:
-
-   * read-only
-   * write
-   * irreversible
-   * production-impacting
-   * regulated-data
-3. Pass real task and context to `modeSelector`.
-4. If `ExecutionStrategy.BLOCKED`, deny before delegate.
-5. If `VERIFICATION_FIRST`, run verification/preflight before delegate.
-6. If `MAINTENANCE_ONLY`, enforce legacy-context proof and minimal-change policy.
-7. If `EXPLORATORY_FAST_LEARNING`, enforce sandbox/no production side effects.
-8. If `DETERMINISTIC_EXECUTION`, ensure selected procedure is exact-version compatible.
-9. Add `executionStrategy` and `supervisionMode` to trace and OTel span.
-
-Dispatcher already handles release/mastery/approval/verification gates, but must make strategy operational. 
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/mode/DefaultModeSelectionPolicy.java`
-
-Actions:
-
-1. Keep conservative defaults.
-2. Change maintenance applicability logic so valid legacy mastery is routed intentionally:
-
-   * active version + active/mastered skill → deterministic/supervised
-   * maintenance version + maintenance-only skill → maintenance-only
-   * maintenance version + active skill → block with “transition required” or route to refresh
-3. Add task-risk escalation:
-
-   * high risk → at least supervised
-   * critical → human gated
-4. Add novelty handling:
-
-   * unknown novelty → fast-learning + human-gated
-   * changed docs/runtime → verification-first
-5. Add explicit reason codes, not only strings.
-
-Current mapping is close to desired behavior. 
-
-### Acceptance criteria
-
-* A `MASTERED` skill in active version can execute deterministically.
-* A `COMPETENT` skill requires verification proof.
-* A `PRACTICED` skill requires approval.
-* `MAINTENANCE_ONLY` can run only in matching legacy version context.
-* Obsolete/quarantined/stale blocks execution.
-* High-risk tasks escalate supervision.
-
----
-
-## Workstream H — Integrate MasteryAwareMemoryRetriever with MemoryPlane
-
-### Goal
-
-Retrieval must return applicable, fresh, version-compatible, safe memory.
-
-### Files to update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/memory/retrieval/MasteryAwareMemoryRetriever.java`
-
-Actions:
-
-1. Make `MemoryPlane` mandatory for full retrieval mode.
-2. Add method:
-
-```java
-Promise<RetrievedMemoryBundle> retrieve(MasteryAwareMemoryQuery query);
-```
-
-3. Query memory tiers:
-
-   * negative knowledge
-   * procedures
-   * semantic facts
-   * episodic traces
-   * task-state
-4. Join every item to mastery state and version applicability.
-5. Return rejection reasons for filtered items.
-6. Prioritize:
-
-   * negative knowledge first
-   * active mastered/competent procedures
-   * semantic facts
-   * recent successful episodes
-   * known failures
-   * maintenance-only only if legacy context
-7. Emit trace events:
-
-   * `MEMORY_RETRIEVAL_STARTED`
-   * `MEMORY_ITEM_REJECTED`
-   * `MEMORY_RETRIEVAL_COMPLETED`
-
-Current retriever has the right filtering and ordering rules, but it needs to drive memory access itself rather than depend on preloaded query items. 
-
-#### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/memory/store/MemoryPlane.java`
-
-Actions:
-
-1. Add mastery-aware query hooks or metadata fields for:
-
-   * skillId
-   * masteryId
-   * versionContextDigest
-   * evidenceRef
-   * trust level
-   * source class
-2. Add retrieval result type with provenance and reject reasons.
-
-### Acceptance criteria
-
-* Obsolete memory is not returned by default.
-* Maintenance-only memory is returned only for matching legacy context.
-* Negative knowledge appears before positive procedures.
-* Retrieval trace explains why each selected/rejected memory item was handled.
-
----
-
-## Workstream I — Make obsolescence evidence real
-
-### Goal
-
-Move from label/string heuristics to real evidence sources.
-
-### Files to update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/DefaultObsolescenceDetector.java`
-
-Current detector supports the right categories but many paths use labels and string refs. 
-
-Actions:
-
-1. Add evidence adapters:
-
-   * `DependencyChangeEvidenceProvider`
-   * `ApiDiffEvidenceProvider`
-   * `SecurityAdvisoryEvidenceProvider`
-   * `DocumentationSnapshotEvidenceProvider`
-   * `TestFailureEvidenceProvider`
-   * `TraceFailureEvidenceProvider`
-   * `RuntimeFingerprintEvidenceProvider`
-2. Replace label-based checks with provider results.
-3. Keep labels only as override/manual signal.
-4. Emit structured `ObsolescenceEvent` with evidence refs and recommended transition.
-5. Route events through transition policy:
-
-   * stale/version drift → `MAINTENANCE_ONLY`
-   * security issue → `QUARANTINED`
-   * docs/API contradiction → `OBSERVED` or `MAINTENANCE_ONLY`
-   * repeated failures → `QUARANTINED`
-   * no usage + obsolete → `RETIRED`
-
-### Files to add/update
-
-#### `platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/ObsolescenceTransitionService.java`
-
-Actions:
-
-1. Consume `ObsolescenceEvent`.
-2. Validate transition.
-3. Append trace event.
-4. Call `MasteryRegistry.transition()`.
-5. Open review ticket for human-gated cases.
-
-### Acceptance criteria
-
-* Dependency version change creates a real obsolescence event.
-* Security advisory quarantines impacted mastery items.
-* Repeated trace/eval failures demote or quarantine.
-* Every obsolescence transition is traceable.
-
----
-
-## Workstream J — Harden Data Cloud APIs and UI
-
-### Goal
-
-Give users/operators visibility into mastery, learning, promotion, obsolescence, and runtime mode decisions.
-
-### Files to update
-
-#### `products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MasteryController.java`
-
-Actions:
-
-1. Derive `tenantId` from authenticated principal, not query string.
-2. Keep query string tenant only as optional filter validated against principal.
-3. Split endpoints:
-
-   * `/mastery/items`
-   * `/mastery/items/{id}`
-   * `/mastery/items/{id}/transitions`
-   * `/mastery/items/{id}/evidence`
-   * `/mastery/items/{id}/version-compatibility`
-   * `/mastery/skills/{skillId}/evaluation-status`
-   * `/learning-deltas`
-   * `/learning-deltas/{id}/evaluate`
-   * `/learning-deltas/{id}/approve`
-   * `/learning-deltas/{id}/promote`
-   * `/obsolescence/scan`
-   * `/mode/explain`
-4. Validate `limit`, `offset`, and enum params safely.
-5. Add explicit DTOs; avoid exposing internal records directly.
-6. Ensure promote endpoint requires approval/governance role and proof.
-7. Return reason codes and trace IDs.
-
-Current controller exposes most needed operations, but needs production-grade auth/context/DTO hardening. 
-
-#### `products/data-cloud/delivery/ui/src/pages/MasteryPage.tsx`
-
-Actions:
-
-1. Show:
-
-   * mastery state distribution
-   * stale skills
-   * obsolete/quarantined queue
-   * learning deltas pending review
-   * active vs maintenance version scopes
-   * skill evidence/eval refs
-   * “why this mode?” explanation
-2. Add filters:
-
-   * tenant
-   * agent
-   * skill
-   * state
-   * domain
-   * version applicability
-3. Add actions:
-
-   * approve delta
-   * reject delta
-   * promote delta
-   * transition mastery
-   * scan obsolescence
-   * inspect evidence
-4. Add safety copy around maintenance-only and obsolete states.
-
-#### `products/data-cloud/delivery/ui/src/api/mastery.service.ts`
-
-Actions:
-
-1. Use typed DTOs matching backend.
-2. Include trace IDs in responses.
-3. Add methods for all endpoints.
-4. Use proper error handling and display governance denial reasons.
-
-### Acceptance criteria
-
-* Operator can see every learning delta before promotion.
-* Operator can see why an agent was blocked/gated/allowed.
-* Operator can review obsolete/quarantined/stale mastery.
-* UI never promotes a delta without explicit proof/role.
-
----
-
-## Workstream K — Complete observability and trace evidence
-
-### Goal
-
-Every important decision must be auditable and replayable.
-
-### Files to update
-
-#### `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/audit/TraceEventType.java`
-
-Already has the needed event vocabulary. 
-
-Actions:
-
-1. Ensure all events are emitted in real flows:
-
-   * `MASTERY_DECISION_MADE`
-   * `MODE_SELECTED`
-   * `VERSION_CONTEXT_RESOLVED`
-   * `APPROVAL_CHECKED`
-   * `VERIFICATION_CHECKED`
-   * `MEMORY_ITEM_REJECTED`
-   * `LEARNING_DELTA_PROPOSED`
-   * `LEARNING_DELTA_EVALUATED`
-   * `LEARNING_DELTA_PROMOTED`
-   * `OBSOLESCENCE_DETECTED`
-   * `OBSOLESCENCE_ROUTED`
-2. Add trace IDs to API responses.
-3. Add dashboards:
-
-   * blocked by reason
-   * stale mastery count
-   * promotion success/failure
-   * eval pass/fail by pack
-   * obsolete/quarantine trends
-   * memory item rejection reasons
-   * mode selection distribution
-
-### Acceptance criteria
-
-* For any agent output, we can answer:
-
-  * what skill was used
-  * which version context applied
-  * which mastery decision was made
-  * what memory was retrieved/rejected
-  * what mode was selected
-  * what approvals/verifications were checked
-  * what release served the response
-  * what learning delta was proposed later
-
----
-
-# 5. Concrete implementation sequence
-
-## Phase 1 — Contract correctness and compile-safety
-
-1. Add `VersionContextCodec`.
-2. Replace ad hoc version serialization everywhere.
-3. Make `LearningContract` materialization mandatory in agent definition validation.
-4. Add typed fields for release skill-level eval/mastery policy refs.
-5. Fix `AgentReleaseBuilder` to populate tenant and governance artifacts consistently.
-6. Add tests for invalid release/definition configs.
-
-## Phase 2 — MasteryRegistry hardening
-
-1. Fix `DataCloudMasteryRegistry.findBest()` and `decide()` applicability propagation.
-2. Add reason codes to `MasteryDecision`.
-3. Add transition idempotency tests.
-4. Add tenant isolation tests.
-5. Add maintenance-only transition and retrieval tests.
-6. Add stale decision tests.
-
-## Phase 3 — LearningDeltaService implementation
-
-1. Implement `DefaultLearningDeltaService`.
-2. Wire `LearningDeltaEvaluator`.
-3. Persist evaluation outcome and state transitions.
-4. Add approval/rejection/promote methods.
-5. Emit trace events.
-6. Add controller endpoints for approve/reject.
-
-## Phase 4 — Real evaluation harness
-
-1. Replace mock pass behavior.
-2. Add executor SPI.
-3. Implement contract/safety/trace/replay/compatibility executors.
-4. Make mastered pack non-trivial.
-5. Persist evaluation result as evidence.
-
-## Phase 5 — Promotion pipeline
-
-1. Inject evaluator/harness into promotion engine.
-2. Require evaluation result, not confidence gain.
-3. Update mastery item with procedure/fact/negative/eval refs.
-4. Mark delta `PROMOTED`.
-5. Add rollback-safe idempotency.
-
-## Phase 6 — Runtime enforcement
-
-1. Pass real task description/context to mode selector.
-2. Enforce execution strategies in dispatcher.
-3. Integrate mastery-aware retrieval before execution.
-4. Add approval/verification proof checks for mode and mastery consistently.
-5. Add high-risk escalation.
-
-## Phase 7 — Obsolescence and maintenance mode
-
-1. Add real evidence providers.
-2. Wire obsolescence scan to transition service.
-3. Add maintenance-only retrieval/execution tests.
-4. Add security advisory quarantine test.
-5. Add stale refresh workflow.
-
-## Phase 8 — UI and operator workflow
-
-1. Harden APIs.
-2. Build mastery dashboard.
-3. Build learning-delta review queue.
-4. Build mode explanation panel.
-5. Build obsolescence queue.
-6. Add audit/evidence drilldown.
-
----
-
-# 6. File-by-file task list
-
-## `platform/java/agent-core`
-
-### Agent definition and release
-
-* `framework/config/AgentDefinition.java`
-
-  * Keep current mastery/learning fields.
-  * Ensure validator uses all consistency methods.
-  * Make release draft carry governance refs.
-  * Add tests for `toLearningContract`, `toMasteryBindings`, `toFreshnessPolicy`, `toVersionCompatibilityPolicy`.
-
-* `framework/config/AgentDefinitionValidator.java`
-
-  * Add learning/mastery validations.
-  * Reject L3+ without eval/mastery refs.
-  * Reject mastery bindings without skill refs.
-
-* `release/AgentRelease.java`
-
-  * Replace placeholder skill-eval/mastery maps.
-  * Add digests.
-  * Include refs in `releaseDigest()`.
-
-* `release/AgentReleaseBuilder.java`
-
-  * Add required builder fields for tenant, mastery, learning, freshness, version policy refs.
-  * Validate response-serving release invariants.
-
-### Mastery
-
-* `mastery/MasteryRegistry.java`
-
-  * Add typed decision request and explanation API.
-  * Keep tenant-scoped APIs canonical.
-
-* `mastery/MasteryItem.java`
-
-  * Add optional `versionContextDigest`, `sourceReleaseDigest`, and `lastDecisionAt` if needed.
-  * Consider replacing scalar `confidence` with derived score or mark deprecated.
-
-* `mastery/MasteryDecision.java`
-
-  * Add reason codes.
-  * Ensure all factories preserve version applicability when known.
-
-* `mastery/MasteryState.java`
-
-  * Keep current lifecycle.
-  * Review `isActiveForRetrieval()` because `OBSERVED` may be too permissive for default retrieval; likely okay only with mode-aware filtering.
-
-* `mastery/VersionScope.java`
-
-  * Use stronger semver/range evaluator.
-  * Add tests for npm, Maven, Gradle, Python package ranges.
-
-* `mastery/VersionRangeEvaluator.java`
-
-  * Harden range syntax.
-  * Add invalid range behavior: fail closed.
-
-* `mastery/transition/MasteryTransitionPolicy.java`
-
-  * Ensure transitions require evidence/evals:
-
-    * `COMPETENT → MASTERED` requires mastered pack.
-    * any → `QUARANTINED` requires safety/evidence.
-    * `OBSOLETE → RETIRED` requires no active usage.
-
-### Learning
-
-* `learning/LearningDelta.java`
-
-  * Keep as canonical proposed-change artifact.
-  * Add optional `versionContextDigest` and `riskClass`.
-
-* `learning/LearningDeltaService.java`
-
-  * Expand interface.
-
-* Add `learning/DefaultLearningDeltaService.java`
-
-  * Implement propose/evaluate/approve/reject/promote.
-
-* `learning/DefaultLearningDeltaEvaluator.java`
-
-  * Add real policy hooks.
-  * Add transition-policy validation for `MASTERY_STATE`.
-
-* `learning/LearningDeltaFactory.java`
-
-  * Ensure generated deltas include rollback refs for execution targets.
-  * Ensure evidence refs are not optional for L2+.
-
-### Evaluation
-
-* `evaluation/EvaluationHarness.java`
-
-  * Keep SPI.
-
-* `evaluation/DefaultEvaluationHarness.java`
-
-  * Replace mock pass.
-  * Delegate to executor registry.
-
-* Add:
-
-  * `evaluation/EvaluationExecutor.java`
-  * `evaluation/SafetyEvaluationExecutor.java`
-  * `evaluation/TraceReplayEvaluationExecutor.java`
-  * `evaluation/VersionCompatibilityEvaluationExecutor.java`
-  * `evaluation/OutputContractEvaluationExecutor.java`
-
-### Promotion
-
-* `promotion/DefaultPromotionEngine.java`
-
-  * Remove simplistic confidence-gain evaluation.
-  * Use evaluator + harness.
-  * Persist evaluation refs before transition.
-  * Emit trace events.
-
-* `promotion/DefaultPromotionPolicy.java`
-
-  * Define strict per-target promotion thresholds.
-
-### Obsolescence
-
-* `obsolescence/DefaultObsolescenceDetector.java`
-
-  * Replace string/label heuristics with evidence providers.
-  * Keep labels only as manual overrides.
-
-* Add:
-
-  * `obsolescence/evidence/DependencyChangeEvidenceProvider.java`
-  * `obsolescence/evidence/SecurityAdvisoryEvidenceProvider.java`
-  * `obsolescence/evidence/ApiDiffEvidenceProvider.java`
-  * `obsolescence/evidence/TestFailureEvidenceProvider.java`
-  * `obsolescence/evidence/TraceFailureEvidenceProvider.java`
-
-### Runtime mode
-
-* `runtime/mode/MasteryAwareModeSelector.java`
-
-  * Use `VersionContextCodec`.
-  * Include real task info.
-  * Return reason codes.
-
-* `runtime/mode/DefaultModeSelectionPolicy.java`
-
-  * Tighten maintenance semantics.
-  * Add novelty/risk escalation.
-  * Add tests for every matrix case.
-
-### Memory retrieval
-
-* `memory/retrieval/MasteryAwareMemoryRetriever.java`
-
-  * Make it a real query pipeline over `MemoryPlane`.
-  * Emit selected/rejected memory reasons.
-  * Always prioritize negative knowledge.
-
----
-
-## `products/data-cloud`
-
-### Runtime
-
-* `planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java`
-
-  * Use real version context snapshot.
-  * Use codec.
-  * Pass real task description/context.
-  * Enforce strategies.
-  * Wire memory retriever.
-  * Ensure all trace events are emitted.
-
-* `planes/action/agent-runtime/src/main/java/com/ghatana/agent/audit/TraceEventType.java`
-
-  * Keep current event list.
-  * Add event payload contracts/tests.
-
-### Data Cloud mastery persistence
-
-* `extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/DataCloudMasteryRegistry.java`
-
-  * Fix applicability propagation.
-  * Fix ranking.
-  * Add atomic/idempotent transitions.
-  * Add indexes/queries.
-  * Add tenant isolation hardening.
-
-* `extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/mastery/DataCloudMasteryTransitionRepository.java`
-
-  * Ensure append-only idempotent transition log.
-  * Enforce tenant ID.
-
-* `extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepository.java`
-
-  * Ensure state transition updates are idempotent.
-  * Add query by state, skill, agent, tenant.
-  * Add optimistic locking.
-
-### API
-
-* `delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MasteryController.java`
-
-  * Replace query-param tenant trust with principal-derived tenant.
-  * Add DTOs.
-  * Add approve/reject endpoints.
-  * Add mode explanation with real `ModeSelectionResult`, not only mastery state.
-  * Validate params safely.
-
-* `delivery/api/src/main/java/com/ghatana/datacloud/api/controller/LearningDeltaController.java`
-
-  * Consolidate with or separate from `MasteryController` cleanly.
-  * Ensure no duplicate responsibilities.
-
-### UI
-
-* `delivery/ui/src/api/mastery.service.ts`
-
-  * Add typed client methods.
-  * Include trace IDs and reason codes.
-  * Handle governance denial.
-
-* `delivery/ui/src/pages/MasteryPage.tsx`
-
-  * Add mastery dashboard, learning queue, obsolescence queue, mode explanation, evidence drilldown.
-
----
-
-# 7. Required test plan
-
-## Unit tests
-
-Add/extend:
-
-* `MasteryStateTest`
-* `MasteryDecisionTest`
-* `VersionScopeTest`
-* `VersionContextCodecTest`
-* `DefaultModeSelectionPolicyTest`
-* `DefaultLearningDeltaEvaluatorTest`
-* `DefaultLearningDeltaServiceTest`
-* `DefaultPromotionPolicyTest`
-* `DefaultPromotionEngineTest`
-* `DefaultObsolescenceDetectorTest`
-* `MasteryAwareMemoryRetrieverTest`
-
-## Integration tests
-
-Add:
-
-* `DataCloudMasteryRegistryTenantIsolationTest`
-* `DataCloudLearningDeltaRepositoryTest`
-* `GovernedAgentDispatcherMasteryIT`
-* `LearningDeltaPromotionFlowIT`
-* `ObsolescenceTransitionFlowIT`
-* `MasteryAwareRetrievalIT`
-
-## E2E tests
-
-Existing `GaaMasteryLifecycleE2ETest` should be expanded to cover:
+### Files
 
 ```text
-UNKNOWN → OBSERVED
-OBSERVED → PRACTICED
-PRACTICED → approval-gated execution
-PRACTICED → COMPETENT after eval
-COMPETENT → verification-gated execution
-COMPETENT → MASTERED after mastered pack
-MASTERED → deterministic execution
-MASTERED → MAINTENANCE_ONLY after version drift
-MAINTENANCE_ONLY → legacy-only execution
-OBSOLETE → blocked
-QUARANTINED → blocked
+platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningDelta.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningContract.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningLevel.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/learning/LearningTarget.java
+products/data-cloud/extensions/agent-registry/src/main/java/com/ghatana/datacloud/agent/learning/delta/DataCloudLearningDeltaRepository.java
 ```
 
-Also add:
+### Current state
+
+`LearningDelta` already includes target, state, agent/release/skill/tenant, procedure/fact/negative IDs, content digest, proposed content, evidence refs, evaluation refs, source episode IDs, rollback ref, confidence before/after, human review flag, approval proof ref, and version/environment fingerprints. 
+
+`LearningContract` correctly blocks normal agents from mastery-state mutation and allows governance workflows at L5. 
+
+### Tasks
+
+1. Add `tenantId` to all `LearningDeltaRepository` lookup/update methods or add tenant-scoped variants:
+
+   * `findById(tenantId, deltaId)`
+   * `updateState(tenantId, deltaId, state)`
+   * `appendEvaluationResult(tenantId, deltaId, ...)`
+   * `appendPromotionResult(tenantId, deltaId, ...)`
+2. Remove reliance on in-memory reverse index as the only lookup path.
+3. Persist `LearningDeltaEvent` append-only history:
+
+   * proposed;
+   * evaluated;
+   * approved;
+   * promoted;
+   * rejected;
+   * quarantined;
+   * superseded.
+4. Validate `LearningContract.permits(delta.target())` before saving a delta.
+5. For `L3+`, require:
+
+   * provenance;
+   * source episodes or evidence refs;
+   * rollback ref for behavioral changes;
+   * evaluation refs before promotion.
+6. For high-risk targets, require `approvalProofRef`:
+
+   * prompt template;
+   * planner policy;
+   * routing policy;
+   * model adapter;
+   * mastery state.
+7. Add `versionContextDigest` as required for procedural/policy deltas.
+8. Add `proposedContent` schema validation by target type.
+
+### Tests
+
+1. Normal agent cannot create `MASTERY_STATE` delta.
+2. Governance workflow can create `MASTERY_STATE` delta only with L5 contract.
+3. L3 procedural skill delta without provenance is rejected.
+4. Planner policy delta without approval proof cannot promote.
+5. Delta lookup works after repository restart.
+6. Cross-tenant lookup is impossible.
+
+### Acceptance criteria
+
+* Learning deltas are durable and tenant-scoped.
+* No agent can directly mutate mastery.
+* Promotion consumes deltas; runtime execution never consumes unpromoted deltas.
+
+---
+
+## Phase 5 — Correct and strengthen promotion
+
+### Goal
+
+Make promotion the only normal path from learned evidence to active mastery.
+
+### Files
 
 ```text
-LearningDelta proposed
-→ evaluated
-→ approved
-→ promoted
-→ mastery updated
-→ trace events emitted
+platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/DefaultPromotionEngine.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/DefaultPromotionPolicy.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/promotion/PromotionEvidenceMapper.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/transition/DefaultMasteryTransitionPolicy.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/evaluation/*
+```
+
+### Current state
+
+Promotion now evaluates a delta, maps evidence, transitions mastery, reloads the item, updates it with procedure/fact/negative/eval refs, and marks delta promoted. 
+Evidence mapping now produces transition-policy-compatible keys for normal transitions. 
+Transition policy has explicit gated transitions. 
+
+### Tasks
+
+1. Require explicit category evidence for `COMPETENT → MASTERED`:
+
+   * regression;
+   * safety;
+   * recovery;
+   * compatibility.
+2. Update `PromotionEvidenceMapper.deriveEvalResult(...)`:
+
+   * return true only if category-specific metadata exists or category-specific case exists and passes.
+3. Add `EvaluationResult.categoryPassed(category)` helper.
+4. Change `DefaultPromotionPolicy.passesPlannerPolicyChecks()` to require `approvalProofRef`, not `requiresHumanReview`.
+
+   * The target-state method already checks `approvalProofRef`, but the target-specific check still uses `requiresHumanReview`. 
+5. Ensure `PROCEDURAL_SKILL` promotion requires:
+
+   * at least 3 evidence refs or source episodes;
+   * rollback ref;
+   * procedure ID;
+   * regression + safety pass;
+   * compatibility for versioned skills.
+6. Ensure `NEGATIVE_KNOWLEDGE` promotion requires:
+
+   * failure mode;
+   * safety validation;
+   * applicable version/context;
+   * counterexample/evidence.
+7. Ensure `SEMANTIC_FACT` promotion requires:
+
+   * source;
+   * consistency check;
+   * confidence;
+   * provenance.
+8. Add promotion idempotency:
+
+   * same delta promoted twice returns same result;
+   * no duplicate transitions;
+   * no duplicate procedure/eval refs on mastery item.
+9. Add “promotion dry-run” API:
+
+   * returns missing evidence;
+   * target state;
+   * policy decision;
+   * required approval/eval categories.
+
+### Tests
+
+1. `UNKNOWN → OBSERVED` succeeds with `trace_id`.
+2. Direct `UNKNOWN → MASTERED` fails.
+3. `PRACTICED → COMPETENT` requires `procedure_id` and `basic_eval_passed=true`.
+4. `COMPETENT → MASTERED` fails if compatibility test missing.
+5. `COMPETENT → MASTERED` fails if safety category missing.
+6. `PLANNER_POLICY` without approval proof cannot promote.
+7. Re-promoting same delta does not duplicate state history.
+8. Promotion updates procedure/fact/negative/eval refs on `MasteryItem`.
+
+### Acceptance criteria
+
+* `MASTERED` means truly evaluated, not just “all generic tests passed.”
+* Promotion is idempotent, evidence-backed, and auditable.
+* Promotion is the sole path to behavior-changing mastery.
+
+---
+
+## Phase 6 — Fix obsolescence-to-transition evidence
+
+### Goal
+
+Make obsolescence detection produce valid mastery transitions.
+
+### Files
+
+```text
+platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/DefaultObsolescenceDetector.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/DefaultObsolescenceTransitionService.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/ObsolescenceEvent.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/obsolescence/ObsolescenceScanner.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/mastery/transition/DefaultMasteryTransitionPolicy.java
+```
+
+### Current state
+
+`DefaultObsolescenceDetector` detects staleness, dependency version mismatch, API changes, runtime incompatibility, repeated failures, security vulnerabilities, and documentation contradictions. 
+
+`DefaultObsolescenceTransitionService` now correctly loads the exact item by tenant/mastery ID and uses actual item state/skill/agent/release metadata. 
+
+### Remaining gap
+
+Transition evidence still needs to map reason → policy-required key.
+
+### Tasks
+
+1. Add `ObsolescenceEvidenceMapper`.
+2. Map:
+
+| Reason                        | Transition evidence                                           |
+| ----------------------------- | ------------------------------------------------------------- |
+| `VERSION_MISMATCH`            | `new_active_version_id` or `end_of_life` depending transition |
+| `API_CHANGE`                  | `api_break`                                                   |
+| `RUNTIME_INCOMPATIBILITY`     | `api_break` or `contradiction`                                |
+| `REPEATED_FAILURES`           | `repeated_failures`                                           |
+| `SECURITY_VULNERABILITY`      | `security_advisory` or `safety_violation`                     |
+| `DOCUMENTATION_CONTRADICTION` | `contradiction`                                               |
+| retirement scan               | `no_active_use_case`                                          |
+
+3. Prevent `MASTERED → OBSOLETE` direct transition unless policy explicitly allows it. Current transition policy requires `MASTERED → MAINTENANCE_ONLY → OBSOLETE`. 
+4. If detector recommends invalid transition, route through nearest valid transition:
+
+   * `MASTERED + version change` → `MAINTENANCE_ONLY`
+   * `MAINTENANCE_ONLY + EOL` → `OBSOLETE`
+   * `OBSOLETE + no active use` → `RETIRED`
+   * any state + unsafe behavior → `QUARANTINED`
+5. Add scheduled tenant-scoped scanner.
+6. Add event-triggered scanner for:
+
+   * dependency change;
+   * security advisory;
+   * API contract change;
+   * repeated failed executions;
+   * failed eval pack;
+   * docs contradiction.
+
+### Tests
+
+1. Stale item creates maintenance transition evidence.
+2. Security issue routes to quarantine with `safety_violation`.
+3. API break creates valid `api_break` evidence.
+4. `MASTERED → OBSOLETE` is not attempted directly.
+5. `OBSOLETE → RETIRED` requires `no_active_use_case`.
+6. Tenant A scanner never scans tenant B.
+
+### Acceptance criteria
+
+* Obsolescence events always create valid policy-compatible transitions.
+* No unsafe direct retirement/deletion path.
+* Security failures quarantine immediately.
+
+---
+
+## Phase 7 — Enforce agent definition and release contracts
+
+### Goal
+
+Make `AgentDefinition` and `AgentRelease` authoritative gates, not just metadata.
+
+### Files
+
+```text
+platform/java/agent-core/src/main/java/com/ghatana/agent/framework/config/AgentDefinition.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/framework/config/AgentDefinitionValidator.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/framework/config/materializer/*
+platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentRelease.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentReleaseBuilder.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentReleaseRepository.java
+```
+
+### Current state
+
+`AgentDefinition` now materializes learning contract, mastery binding, freshness policy, version compatibility policy, release draft, and validates learning/mastery consistency. 
+
+`AgentRelease` requires governance artifacts and includes skill-level evaluation/mastery policy maps in the digest. 
+
+### Tasks
+
+1. Enforce `skillRefs` when mastery binding exists.
+2. Enforce `masteryPolicyRefs` and `evaluationRefs` for `L3+`.
+3. Enforce `learningLevel != L5` for response-serving agent definitions unless it is a governance workflow.
+4. Validate `masteryBindings` schema:
+
+   * registry ID;
+   * default skill mapping;
+   * freshness policy ID;
+   * version compatibility policy ID.
+5. Validate every `skillRef` has:
+
+   * evaluation pack ref;
+   * mastery policy ref;
+   * memory contract ref.
+6. Validate `AgentRelease` transition:
+
+   * `DRAFT → VALIDATED` requires static validation;
+   * `VALIDATED → SHADOW` requires eval pack present;
+   * `SHADOW → CANARY` requires trace/eval pass;
+   * `CANARY → ACTIVE` requires no blocking safety/memory/mastery issues.
+7. Validate `releaseDigest()` on dispatch against persisted release record.
+8. Add release registration tests.
+
+### Acceptance criteria
+
+* A mastery-enabled agent cannot be released without skill policy/eval contracts.
+* A response-serving L5 normal agent is invalid.
+* Release digest changes when skill-specific policy/eval refs change.
+
+---
+
+## Phase 8 — Harden Mastery API and admin surface
+
+### Goal
+
+Make external mastery operations safe, explainable, and governance-first.
+
+### File
+
+```text
+products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/api/controller/MasteryController.java
+```
+
+### Current state
+
+`MasteryController` exposes read APIs, stale/obsolete views, mode explanation, learning delta list/evaluate/promote, and deprecated direct save/transition operations. 
+
+### Tasks
+
+1. Remove route registration for deprecated `saveMastery()` and `transition()` in production.
+2. Add break-glass endpoint only if needed:
+
+   * requires `mastery:breakglass`;
+   * requires approval proof;
+   * requires reason;
+   * requires evidence bundle;
+   * emits trace event.
+3. Add `GET /mastery/{id}/decision?versionContext=...`.
+4. Add `GET /mastery/{id}/retrieval-preview`.
+5. Add `POST /learning-deltas/{id}/dry-run-promotion`.
+6. Add `POST /obsolescence-events/{id}/process`.
+7. Add better `getModeExplanation()`:
+
+   * include version context;
+   * selected mode;
+   * mastery state;
+   * confidence vector;
+   * approval/verification requirement;
+   * missing evidence;
+   * freshness status;
+   * obsolete/maintenance reason.
+8. Add pagination and sorting to all list endpoints.
+9. Add tenant and role-based tests.
+
+### Acceptance criteria
+
+* No normal API path can directly mutate mastery state.
+* Admin can explain “why this mode?” and “why this skill was blocked?”
+* Promotion and obsolescence workflows are transparent.
+
+---
+
+## Phase 9 — Observability, audit, and trace ledger
+
+### Goal
+
+Every agent action and learning change must be reconstructable.
+
+### Files
+
+```text
+products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java
+platform/java/agent-core/src/main/java/com/ghatana/agent/audit/*
+products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java
+```
+
+### Current state
+
+`GovernedAgentDispatcher` appends trace events for denials, version context, mastery decisions, approval checks, verification checks, mode selection, and memory retrieval. 
+
+`AepOrchestrationModule` provides `DataCloudAgentTraceLedger` using Data Cloud event log store. 
+
+### Tasks
+
+1. Standardize trace event sequence:
+
+```text
+DISPATCH_REQUESTED
+RELEASE_CHECKED
+VERSION_CONTEXT_RESOLVED
+TASK_CLASSIFIED
+MASTERY_DECISION_MADE
+APPROVAL_CHECKED
+VERIFICATION_CHECKED
+MODE_SELECTED
+MEMORY_RETRIEVAL_COMPLETED
+INVARIANTS_CHECKED
+AGENT_DISPATCHED
+AGENT_RESULT_CAPTURED
+LEARNING_DELTA_PROPOSED
+```
+
+2. Add missing trace event types if absent.
+3. Ensure every denial includes:
+
+   * reason code;
+   * agent ID;
+   * release ID;
+   * skill ID;
+   * tenant ID;
+   * version context digest.
+4. Ensure every promotion includes:
+
+   * delta ID;
+   * evaluation result;
+   * transition ID;
+   * previous/target mastery state.
+5. Ensure every obsolescence transition includes:
+
+   * event ID;
+   * detector reason;
+   * evidence refs;
+   * previous/target state.
+6. Add hash-chain verification job.
+7. Add OpenTelemetry spans around:
+
+   * mastery decision;
+   * memory retrieval;
+   * evaluation;
+   * promotion;
+   * obsolescence scan.
+
+### Acceptance criteria
+
+* A production incident can be reconstructed from trace ledger.
+* Every learning behavior has provenance.
+* Every mastery transition is auditable.
+
+---
+
+## Phase 10 — Testing and CI gates
+
+### Goal
+
+Make regressions impossible to hide.
+
+### Files / locations
+
+```text
+platform/java/agent-core/src/test/java/com/ghatana/agent/mastery/*
+platform/java/agent-core/src/test/java/com/ghatana/agent/promotion/*
+platform/java/agent-core/src/test/java/com/ghatana/agent/learning/*
+platform/java/agent-core/src/test/java/com/ghatana/agent/obsolescence/*
+products/data-cloud/extensions/agent-registry/src/test/java/com/ghatana/datacloud/agent/mastery/*
+products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/*
+products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/api/controller/*
+.github/workflows/agent-mastery-conformance.yml
+```
+
+### Required test suites
+
+1. **Learning authority tests**
+
+   * L0–L5 target permissions.
+   * Normal agents blocked from `MASTERY_STATE`.
+   * Governance workflow allowed only at L5.
+
+2. **Mastery lifecycle tests**
+
+   * every valid transition;
+   * every invalid transition;
+   * evidence requirements;
+   * quarantine exit requirements.
+
+3. **Version-aware decision tests**
+
+   * active;
+   * maintenance;
+   * obsolete;
+   * unknown;
+   * stale.
+
+4. **Mode-selection tests**
+
+   * mastered active → deterministic autonomous;
+   * competent active → supervised bounded reasoning;
+   * practiced active → human-gated fast-learning;
+   * maintenance-only → maintenance mode;
+   * obsolete/quarantined/retired → blocked.
+
+5. **Memory retrieval tests**
+
+   * negative knowledge first;
+   * obsolete excluded;
+   * maintenance-only only in legacy context;
+   * tenant isolation;
+   * freshness filter.
+
+6. **Promotion tests**
+
+   * procedural skill promotion;
+   * semantic fact promotion;
+   * negative knowledge promotion;
+   * planner/prompt approval proof;
+   * missing category eval blocks master promotion.
+
+7. **Obsolescence tests**
+
+   * security issue → quarantine;
+   * version change → maintenance;
+   * EOL → obsolete;
+   * no active use → retired.
+
+8. **Dispatcher integration tests**
+
+   * release blocked;
+   * no skill ID blocked for mastery-bound release;
+   * missing approval blocked;
+   * missing verification blocked;
+   * memory retrieval invoked;
+   * trace events emitted in order.
+
+9. **API tests**
+
+   * read access;
+   * promote access;
+   * direct mutation disabled;
+   * tenant isolation.
+
+### CI gates
+
+Add a CI job that fails if:
+
+* deprecated direct mutation routes are registered;
+* `findBySkill(skillId, env)` is used outside tests/adapters;
+* `findStale(Instant)` is used outside compatibility tests;
+* response-serving release lacks learning/mastery/eval/memory contracts;
+* L5 normal agent is response-serving;
+* `MemoryProjectionBridge` is used in new runtime code.
+
+---
+
+# Recommended rollout plan
+
+## Milestone 1 — Safe wiring
+
+Deliverables:
+
+* full `GovernedAgentDispatcher` wiring;
+* real `DataCloudMasteryRegistry` binding;
+* release repository binding;
+* version resolver binding;
+* memory retriever binding;
+* no production no-op registry.
+
+Outcome:
+
+```text
+AEP dispatch is actually governed end to end.
+```
+
+## Milestone 2 — Durable learning deltas
+
+Deliverables:
+
+* tenant-scoped delta repository;
+* persistent delta lookup;
+* append-only delta events;
+* no volatile reverse-index dependency;
+* learning contract enforcement.
+
+Outcome:
+
+```text
+Agents can propose learning safely and durably.
+```
+
+## Milestone 3 — Promotion and mastery correctness
+
+Deliverables:
+
+* explicit category evaluation evidence;
+* idempotent promotion;
+* transition-policy-compatible evidence;
+* real approval proof checks;
+* mastery item updates after transition.
+
+Outcome:
+
+```text
+Mastery state becomes evidence-backed and trustworthy.
+```
+
+## Milestone 4 — Canonical memory retrieval
+
+Deliverables:
+
+* canonical Data Cloud memory query port;
+* `MasteryAwareMemoryRetriever` uses canonical memory;
+* version/freshness/tenant/mastery filters;
+* negative knowledge priority.
+
+Outcome:
+
+```text
+Runtime context is populated with safe, applicable memory.
+```
+
+## Milestone 5 — Obsolescence and maintenance mode
+
+Deliverables:
+
+* obsolescence evidence mapper;
+* valid transition routing;
+* scheduled and event-triggered scans;
+* maintenance/obsolete/retired lifecycle tests.
+
+Outcome:
+
+```text
+Agents stop using stale mastery and preserve old knowledge only for matching legacy contexts.
+```
+
+## Milestone 6 — API, observability, and CI
+
+Deliverables:
+
+* safe Mastery API;
+* direct mutation disabled;
+* mode explanation endpoints;
+* trace sequence checks;
+* CI conformance gates.
+
+Outcome:
+
+```text
+The GAA system is operable, explainable, testable, and safe to extend.
 ```
 
 ---
 
-# 8. Definition of done
+# Final target behavior
 
-The goal is reached when all of these are true:
+When complete, the GAA should follow this strict runtime rule:
 
-1. Every active/canary agent release has learning, memory, mastery, evaluation, policy, freshness, and version compatibility contracts.
-2. Every dispatch resolves version context and mastery decision.
-3. Every skill execution has mode selection: deterministic, bounded, verification-first, fast-learning, maintenance-only, human-gated, or blocked.
-4. Every learning update is a `LearningDelta`.
-5. No learning delta mutates active behavior without evaluation and promotion.
-6. `COMPETENT` and `MASTERED` require real evaluation results, not mock passes.
-7. Maintenance-only knowledge is retrieved only for matching legacy context.
-8. Obsolete/quarantined/retired knowledge is excluded from active retrieval and execution.
-9. Negative knowledge is retrieved before positive procedures.
-10. Obsolescence events can demote, quarantine, or retire mastery items.
-11. UI/API allow operators to inspect, approve, reject, promote, and explain every learning/mastery decision.
-12. Trace ledger can reconstruct why an agent acted, learned, promoted, blocked, or became stale.
+```text
+If skill is MASTERED + version ACTIVE + fresh + low/medium risk:
+    deterministic execution allowed.
 
----
+If skill is COMPETENT:
+    execute with verification.
 
-# 9. Highest-priority next implementation batch
+If skill is PRACTICED or OBSERVED:
+    human-gated fast-learning / verification-first.
 
-I would start with this exact batch:
+If skill is MAINTENANCE_ONLY:
+    retrieve only for matching legacy version context.
 
-1. **Add `VersionContextCodec` and remove all `toString()`/manual version context parsing.**
-2. **Implement `DefaultLearningDeltaService`.**
-3. **Replace `DefaultEvaluationHarness.runTestCase()` mock pass behavior.**
-4. **Update `DefaultPromotionEngine` to use evaluator + harness + policy.**
-5. **Fix `DataCloudMasteryRegistry.decide()` to preserve computed version applicability in `MasteryDecision`.**
-6. **Make `GovernedAgentDispatcher` pass real task description/context into mode selection.**
-7. **Make `MasteryAwareMemoryRetriever` call `MemoryPlane` and emit rejection reasons.**
-8. **Harden `MasteryController` tenant/auth behavior.**
-9. **Add E2E tests for the full learning-delta → eval → promotion → mastery transition → governed dispatch loop.**
+If skill is OBSOLETE / RETIRED / QUARANTINED:
+    block execution and explain why.
 
-That batch turns the current partial implementation into a usable governed self-learning loop.
+If no mastery exists:
+    fast-learning only, gated, with no autonomous side effects.
+
+If learned evidence emerges:
+    create LearningDelta.
+    evaluate.
+    promote only through governance.
+    update MasteryRegistry only after policy-valid transition.
+```
+
+The repo already contains the main pieces. The next work is to make those pieces **one coherent production path**: no no-op bypasses, no split memory plane, no direct mastery mutation, no promotion without explicit evidence, and no execution outside version-aware governed mastery.

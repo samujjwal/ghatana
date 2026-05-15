@@ -10,6 +10,10 @@ module.exports = {
     // Allow virtual mocks for native modules not yet installed
     "^react-native-keychain$":
       "<rootDir>/src/__mocks__/react-native-keychain.ts",
+    "^react-test-renderer$":
+      "<rootDir>/../../../../node_modules/.pnpm/react-test-renderer@19.2.4_react@19.2.4/node_modules/react-test-renderer",
+    "^react-test-renderer/(.*)$":
+      "<rootDir>/../../../../node_modules/.pnpm/react-test-renderer@19.2.4_react@19.2.4/node_modules/react-test-renderer/$1",
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   testMatch: ["**/__tests__/**/*.test.ts?(x)"],

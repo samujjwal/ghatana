@@ -372,6 +372,19 @@ function computeChecksum(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex');
 }
 
+function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '(?:.*/)?')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*');
+  return new RegExp(`^${escaped}$`);
+}
+
+function matchesAnyGlob(relativePath: string, patterns: readonly string[]): boolean {
+  return patterns.some(pattern => globToRegExp(pattern).test(relativePath));
+}
+
 // ============================================================================
 // File Walker
 // ============================================================================
@@ -389,17 +402,14 @@ async function* walkDirectory(
 
     if (entry.isDirectory()) {
       // Check exclusion patterns
-      const isExcluded = config.excludeGlobs.some(pattern =>
-        new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\//g, '\\/')).test(relativePath)
-      );
+      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs);
       if (isExcluded) continue;
 
       yield* walkDirectory(absolutePath, root, config);
     } else if (entry.isFile() || (entry.isSymbolicLink() && config.followSymlinks)) {
-      const isExcluded = config.excludeGlobs.some(pattern =>
-        new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\//g, '\\/')).test(relativePath)
-      );
-      if (!isExcluded) {
+      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs);
+      const isIncluded = matchesAnyGlob(relativePath, config.includeGlobs);
+      if (!isExcluded && isIncluded) {
         yield { relativePath, absolutePath };
       }
     }
@@ -491,4 +501,3 @@ export async function scanRepository(
     },
   };
 }
-

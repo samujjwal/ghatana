@@ -16,6 +16,7 @@ export interface GateExecutorOptions {
 export interface GateExecutionRequest {
   readonly productId: string;
   readonly runId: string;
+  readonly correlationId?: string;
   readonly phase: ProductLifecyclePhase;
   readonly gates: readonly ProductGatePlan[];
   readonly artifacts: readonly ProductArtifact[];
@@ -23,11 +24,26 @@ export interface GateExecutionRequest {
   readonly productUnit?: unknown;
   readonly deployment?: unknown;
   readonly providerMode?: string;
+  readonly scope?: {
+    readonly tenantId?: string;
+    readonly workspaceId?: string;
+    readonly projectId?: string;
+  };
+  readonly policyPacks?: readonly string[];
+  readonly privacyClassification?: string;
+  readonly evidenceRefs?: readonly string[];
 }
 
 export interface GateExecutionResult {
   readonly gates: readonly ProductGateResult[];
   readonly failedRequiredGate?: ProductGateResult;
+  readonly summary: GateExecutionSummary;
+}
+
+export interface GateExecutionSummary {
+  readonly passedCount: number;
+  readonly failedRequiredCount: number;
+  readonly skippedOptionalCount: number;
 }
 
 export class GateExecutor {
@@ -47,11 +63,12 @@ export class GateExecutor {
         return {
           gates,
           failedRequiredGate: result,
+          summary: summarizeGateResults(gates, request.gates),
         };
       }
     }
 
-    return { gates };
+    return { gates, summary: summarizeGateResults(gates, request.gates) };
   }
 
   private async executeGate(
@@ -71,6 +88,23 @@ export class GateExecutor {
         phase: request.phase,
         context: this.buildGateContext(request),
       });
+      const evidenceRefs = evaluation.evidence.filter((ref) => ref.trim().length > 0);
+      if (gate.required && evaluation.passed && evidenceRefs.length === 0) {
+        return {
+          gateId: gate.gateId,
+          gateName: gate.gateName,
+          status: 'failed',
+          checkedAt: evaluation.evaluatedAt,
+          details: 'Required gate passed without evidence refs',
+          evidenceRefs: [],
+          durationMs: evaluation.duration,
+          providerId: provider.providerId,
+          reasonCode: 'required-gate-missing-evidence',
+          ...(request.privacyClassification !== undefined
+            ? { privacyClassification: request.privacyClassification }
+            : {}),
+        };
+      }
 
       return {
         gateId: gate.gateId,
@@ -78,9 +112,13 @@ export class GateExecutor {
         status: evaluation.passed ? 'passed' : 'failed',
         checkedAt: evaluation.evaluatedAt,
         details: evaluation.reason,
-        evidenceRefs: evaluation.evidence,
+        evidenceRefs,
         durationMs: evaluation.duration,
         providerId: provider.providerId,
+        ...(evaluation.passed ? {} : { reasonCode: 'gate-evaluation-failed' }),
+        ...(request.privacyClassification !== undefined
+          ? { privacyClassification: request.privacyClassification }
+          : {}),
       };
     } catch (error) {
       return {
@@ -92,6 +130,10 @@ export class GateExecutor {
         evidenceRefs: [],
         durationMs: Date.now() - startedAt,
         providerId: provider.providerId,
+        reasonCode: 'gate-provider-failed',
+        ...(request.privacyClassification !== undefined
+          ? { privacyClassification: request.privacyClassification }
+          : {}),
       };
     }
   }
@@ -117,14 +159,22 @@ export class GateExecutor {
         ? `Required gate provider missing: ${gate.providerId ?? gate.gateId}`
         : `Optional gate provider missing: ${gate.providerId ?? gate.gateId}`,
       evidenceRefs: [],
+      reasonCode: gate.required ? 'required-gate-provider-missing' : 'optional-gate-provider-missing',
     };
   }
 
   private buildGateContext(request: GateExecutionRequest): Record<string, unknown> {
     return {
       runId: request.runId,
+      ...(request.correlationId !== undefined ? { correlationId: request.correlationId } : {}),
       phase: request.phase,
       artifacts: request.artifacts,
+      ...(request.scope !== undefined ? { scope: request.scope } : {}),
+      ...(request.policyPacks !== undefined ? { policyPacks: request.policyPacks } : {}),
+      ...(request.privacyClassification !== undefined
+        ? { privacyClassification: request.privacyClassification }
+        : {}),
+      ...(request.evidenceRefs !== undefined ? { evidenceRefs: request.evidenceRefs } : {}),
       ...(request.environment !== undefined ? { environment: request.environment } : {}),
       ...(request.productUnit !== undefined ? { productUnit: request.productUnit } : {}),
       ...(request.deployment !== undefined ? { deployment: request.deployment } : {}),
@@ -135,4 +185,24 @@ export class GateExecutor {
 
 function stringifyError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function summarizeGateResults(
+  gates: readonly ProductGateResult[],
+  plans: readonly ProductGatePlan[],
+): GateExecutionSummary {
+  return gates.reduce<GateExecutionSummary>(
+    (summary, gate, index) => ({
+      passedCount: summary.passedCount + (gate.status === 'passed' ? 1 : 0),
+      failedRequiredCount:
+        summary.failedRequiredCount +
+        (gate.status === 'failed' && plans[index]?.required === true ? 1 : 0),
+      skippedOptionalCount: summary.skippedOptionalCount + (gate.status === 'skipped' ? 1 : 0),
+    }),
+    {
+      passedCount: 0,
+      failedRequiredCount: 0,
+      skippedOptionalCount: 0,
+    },
+  );
 }

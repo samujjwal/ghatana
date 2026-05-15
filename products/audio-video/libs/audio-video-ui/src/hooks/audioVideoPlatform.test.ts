@@ -24,6 +24,12 @@ function readFixture(): {
     retryable: boolean;
     message: string;
   };
+  errorCodes?: Array<{
+    code: string;
+    category: string;
+    retryable: boolean;
+    message: string;
+  }>;
 } {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const fixturePath = join(currentDir, '../../../../test-fixtures/media-contract-fixtures.json');
@@ -40,6 +46,12 @@ function readFixture(): {
       retryable: boolean;
       message: string;
     };
+    errorCodes?: Array<{
+      code: string;
+      category: string;
+      retryable: boolean;
+      message: string;
+    }>;
   };
 }
 
@@ -79,12 +91,16 @@ describe('audioVideoPlatform', () => {
 
   it('matches the shared media contract fixture', () => {
     const fixture = readFixture();
+    const fixtureError = fixture.error ?? fixture.errorCodes?.[0];
+    if (!fixtureError || !['validation', 'runtime'].includes(fixtureError.category)) {
+      throw new Error('media contract fixture must include a validation/runtime platform error');
+    }
     const config = normalizeAudioVideoRuntimeConfig(fixture.runtimeConfig);
     const error = createPlatformError(
-      fixture.error.code,
-      fixture.error.category,
-      fixture.error.retryable,
-      fixture.error.message,
+      fixtureError.code,
+      fixtureError.category as 'validation' | 'runtime',
+      fixtureError.retryable,
+      fixtureError.message,
     );
 
     expect(config.languageTag).toBe('en-GB');

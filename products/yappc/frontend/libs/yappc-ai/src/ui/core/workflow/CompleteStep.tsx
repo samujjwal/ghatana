@@ -12,7 +12,7 @@
 
 import {
   CheckCircle as CompleteIcon,
-  Celebration as CelebrationIcon,
+  PartyPopper as CelebrationIcon,
   Code as CodeIcon,
   Bug as TestIcon,
   CloudCheck as DeployIcon,

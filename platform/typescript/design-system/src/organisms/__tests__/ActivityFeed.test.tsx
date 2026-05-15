@@ -130,7 +130,7 @@ describe('ActivityFeed Component', () => {
   it('should render activity items', () => {
     render(<ActivityFeed items={mockActivities} columns={columns} />);
 
-    expect(screen.getByText('User logged in')).toBeInTheDocument();
+    expect(screen.getAllByText('User logged in')[0]).toBeInTheDocument();
     expect(screen.getByText('Failed login attempt')).toBeInTheDocument();
     expect(screen.getByText('System error occurred')).toBeInTheDocument();
   });
@@ -225,7 +225,7 @@ describe('ActivityFeed Component', () => {
     );
 
     // Initially all items visible
-    expect(screen.getByText('User logged in')).toBeInTheDocument();
+    expect(screen.getAllByText('User logged in')[0]).toBeInTheDocument();
     expect(screen.getByText('Failed login attempt')).toBeInTheDocument();
 
     // Filter by user
@@ -233,7 +233,7 @@ describe('ActivityFeed Component', () => {
     await userEvent.type(filterInput, 'john');
 
     // Only john's activity should be visible
-    expect(screen.getByText('User logged in')).toBeInTheDocument();
+    expect(screen.getAllByText('User logged in')[0]).toBeInTheDocument();
     expect(screen.queryByText('Failed login attempt')).not.toBeInTheDocument();
   });
 
@@ -305,7 +305,7 @@ describe('ActivityFeed Component', () => {
     );
 
     expect(screen.getByText('New Activity')).toBeInTheDocument();
-    expect(screen.getByText('User logged in')).toBeInTheDocument();
+    expect(screen.getAllByText('User logged in')[0]).toBeInTheDocument();
   });
 
   /**

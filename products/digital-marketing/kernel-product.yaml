@@ -132,31 +132,31 @@ phases:
   rollback:
     defaultEnvironment: local
 
-approval:
+approvals:
   deploy:
-    required: true
-    approverRoles:
-      - product-owner
-      - release-captain
-    evidenceRefs:
-      - deployment-manifest
-      - lifecycle-health-snapshot
+    - action: deploy:local
+      riskLevel: high
+      required: true
+      requiredApprovers:
+        - product-owner
+        - release-captain
+      source: kernel-product.approvals.deploy
   promote:
-    required: true
-    approverRoles:
-      - product-owner
-      - release-captain
-    evidenceRefs:
-      - verify-health-report
-      - lifecycle-health-snapshot
+    - action: promote:local
+      riskLevel: critical
+      required: true
+      requiredApprovers:
+        - product-owner
+        - release-captain
+      source: kernel-product.approvals.promote
   rollback:
-    required: true
-    approverRoles:
-      - incident-commander
-      - release-captain
-    evidenceRefs:
-      - rollback-plan
-      - lifecycle-events
+    - action: rollback:local
+      riskLevel: critical
+      required: true
+      requiredApprovers:
+        - incident-commander
+        - release-captain
+      source: kernel-product.approvals.rollback
 
 artifacts:
   build:

@@ -316,6 +316,46 @@ class DataCloudLearningDeltaRepositoryTest extends EventloopTestBase {
         assertThat(foundB).isPresent().get().extracting(LearningDelta::tenantId).isEqualTo("tenant-b");
     }
 
+    @Test
+    @DisplayName("Tenant-scoped findById should resolve correct delta without reverse index")
+    void shouldFindByTenantAndDeltaId() {
+        InMemoryEntityRepository sharedRepo = new InMemoryEntityRepository();
+        DataCloudLearningDeltaRepository repository = new DataCloudLearningDeltaRepository(sharedRepo);
+
+        LearningDelta deltaA = proposeDeltaForTenant("agent-123", "skill-123", "tenant-a");
+        LearningDelta deltaB = proposeDeltaForTenant("agent-456", "skill-456", "tenant-b");
+
+        runPromise(() -> repository.save(deltaA));
+        runPromise(() -> repository.save(deltaB));
+
+        Optional<LearningDelta> foundInTenantA = runPromise(() -> repository.findById("tenant-a", deltaA.deltaId()));
+        Optional<LearningDelta> absentFromTenantB = runPromise(() -> repository.findById("tenant-b", deltaA.deltaId()));
+
+        assertThat(foundInTenantA).isPresent();
+        assertThat(foundInTenantA.get().tenantId()).isEqualTo("tenant-a");
+        assertThat(absentFromTenantB).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Tenant-scoped updateState should mutate only target tenant delta")
+    void shouldUpdateStateWithTenantScope() {
+        InMemoryEntityRepository sharedRepo = new InMemoryEntityRepository();
+        DataCloudLearningDeltaRepository repository = new DataCloudLearningDeltaRepository(sharedRepo);
+
+        LearningDelta deltaA = proposeDeltaForTenant("agent-123", "skill-123", "tenant-a");
+        LearningDelta deltaB = proposeDeltaForTenant("agent-456", "skill-456", "tenant-b");
+
+        runPromise(() -> repository.save(deltaA));
+        runPromise(() -> repository.save(deltaB));
+
+        LearningDelta updatedA = runPromise(() -> repository.updateState("tenant-a", deltaA.deltaId(), LearningDeltaState.EVALUATED));
+        Optional<LearningDelta> unchangedB = runPromise(() -> repository.findById("tenant-b", deltaB.deltaId()));
+
+        assertThat(updatedA.state()).isEqualTo(LearningDeltaState.EVALUATED);
+        assertThat(unchangedB).isPresent();
+        assertThat(unchangedB.get().state()).isEqualTo(LearningDeltaState.PROPOSED);
+    }
+
     // -------------------------------------------------------------------------
     // Local InMemoryEntityRepository for testing
     // -------------------------------------------------------------------------

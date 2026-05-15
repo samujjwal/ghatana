@@ -10,10 +10,35 @@
  * @doc.pattern TestUtility
  */
 
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import {
+  render as testingLibraryRender,
+  screen as testingLibraryScreen,
+  waitFor as testingLibraryWaitFor,
+  fireEvent as testingLibraryFireEvent,
+} from '@testing-library/react';
 import { vi } from 'vitest';
 import type { RenderOptions, RenderResult } from '@testing-library/react';
 import type { ReactElement } from 'react';
+
+const render = testingLibraryRender;
+const screen = testingLibraryScreen;
+const waitFor = testingLibraryWaitFor;
+const fireEvent = testingLibraryFireEvent;
+
+type TauriTestMocks = {
+  invoke: ReturnType<typeof vi.fn>;
+  open: ReturnType<typeof vi.fn>;
+  save: ReturnType<typeof vi.fn>;
+};
+
+const tauriMocks =
+  (globalThis as typeof globalThis & { __aiVoiceTauriMocks?: TauriTestMocks })
+    .__aiVoiceTauriMocks ??
+  {
+    invoke: vi.fn(),
+    open: vi.fn(),
+    save: vi.fn(),
+  };
 
 // ============================================================================
 // Tauri Mock Utilities
@@ -24,13 +49,8 @@ import type { ReactElement } from 'react';
  * Reusable across all component tests
  */
 export function createTauriInvokeMock() {
-  const mockInvoke = vi.fn();
-
-  vi.mock('@tauri-apps/api/core', () => ({
-    invoke: (...args: any[]) => mockInvoke(...args),
-  }));
-
-  return mockInvoke;
+  tauriMocks.invoke.mockReset();
+  return tauriMocks.invoke;
 }
 
 /**
@@ -38,15 +58,9 @@ export function createTauriInvokeMock() {
  * Reusable for file selection tests
  */
 export function createTauriDialogMocks() {
-  const mockOpen = vi.fn();
-  const mockSave = vi.fn();
-
-  vi.mock('@tauri-apps/plugin-dialog', () => ({
-    open: (...args: any[]) => mockOpen(...args),
-    save: (...args: any[]) => mockSave(...args),
-  }));
-
-  return { mockOpen, mockSave };
+  tauriMocks.open.mockReset();
+  tauriMocks.save.mockReset();
+  return { mockOpen: tauriMocks.open, mockSave: tauriMocks.save };
 }
 
 // ============================================================================
@@ -129,6 +143,9 @@ export async function waitForLoadingToComplete() {
  */
 export async function clickButton(buttonText: string | RegExp) {
   const button = await screen.findByRole('button', { name: buttonText });
+  await waitFor(() => {
+    expect(button).not.toBeDisabled();
+  });
   fireEvent.click(button);
   return button;
 }
@@ -332,13 +349,7 @@ export function cleanupAllMocks() {
 // Export all utilities
 // ============================================================================
 
-export {
-  render,
-  screen,
-  waitFor,
-  fireEvent,
-};
+export { render, screen, waitFor, fireEvent };
 
 // Re-export types for convenience
 export type { RenderOptions, RenderResult };
-

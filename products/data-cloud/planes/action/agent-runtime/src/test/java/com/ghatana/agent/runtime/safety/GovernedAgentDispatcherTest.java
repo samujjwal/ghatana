@@ -44,13 +44,11 @@ import com.ghatana.agent.audit.TraceEventType;
 import com.ghatana.agent.context.version.VersionContext;
 import com.ghatana.agent.context.version.VersionContextResolver;
 import com.ghatana.agent.mastery.MasteryDecision;
-import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionApplicability;
 import com.ghatana.agent.mastery.VersionScope;
-import com.ghatana.agent.runtime.mode.SupervisionMode;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -270,7 +268,6 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("enriches context with agentReleaseId when release is found")
-        @SuppressWarnings("unchecked")
         void enrichesContextWithAgentReleaseId() { 
             AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); 
 
@@ -297,7 +294,6 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("does not add agentReleaseId to context when no release found")
-        @SuppressWarnings("unchecked")
         void doesNotAddReleaseIdWhenNoReleaseFound() { 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
                     .thenReturn(Promise.of(Optional.empty())); 
@@ -538,6 +534,30 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("dispatch sequence includes DISPATCH_REQUESTED and RELEASE_CHECKED")
+        void dispatchSequenceIncludesReleaseChecks() {
+            AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE);
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x"))
+                    .thenReturn(Promise.of(Optional.of(activeRelease)));
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                    delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
+
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            List<TraceEventType> types = capturedEvents.stream()
+                    .map(TraceEvent::eventType)
+                    .toList();
+            int dispatchRequestedIdx = types.indexOf(TraceEventType.DISPATCH_REQUESTED);
+            int releaseCheckedIdx = types.indexOf(TraceEventType.RELEASE_CHECKED);
+            int turnStartedIdx = types.indexOf(TraceEventType.TURN_STARTED);
+
+            assertThat(dispatchRequestedIdx).isNotNegative();
+            assertThat(releaseCheckedIdx).isGreaterThan(dispatchRequestedIdx);
+            assertThat(turnStartedIdx).isGreaterThan(releaseCheckedIdx);
+        }
+
+        @Test
         @DisplayName("POLICY_EVALUATED (ALLOW) payload includes policyPackId when release is present")
         void policyEvaluatedAllowIncludesPolicyPackId() {
             AgentRelease rel = new AgentReleaseBuilder()
@@ -619,10 +639,6 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     delegate, invariantMonitor, ledger, modeSelector, repo);
 
             runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
-
-            String traceId = ctx.getConfig("__traceId") != null
-                    ? ctx.getConfig("__traceId").toString()
-                    : null;
             // Fetch all events from ledger
             List<TraceEvent> events = runPromise(() -> 
                     ledger.getByAgent("test-agent", "tenant-x", null, null, 100)); 
@@ -630,6 +646,8 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             assertThat(events).isNotEmpty(); 
             List<TraceEventType> types = events.stream().map(TraceEvent::eventType).toList(); 
             assertThat(types).contains( 
+                    TraceEventType.DISPATCH_REQUESTED,
+                    TraceEventType.RELEASE_CHECKED,
                     TraceEventType.TURN_STARTED,
                     TraceEventType.POLICY_EVALUATED,
                     TraceEventType.ACTION_EXECUTED);

@@ -8,32 +8,41 @@ import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.dispatch.CatalogAgentDispatcher;
 import com.ghatana.agent.runtime.safety.GovernedAgentDispatcher;
+import com.ghatana.agent.runtime.safety.DefaultInvariantMonitor;
 import com.ghatana.agent.runtime.mode.MasteryAwareModeSelector;
 import com.ghatana.agent.runtime.mode.ModeSelectionPolicy;
 import com.ghatana.agent.runtime.mode.TaskClassifier;
+import com.ghatana.agent.context.version.DefaultVersionContextResolver;
+import com.ghatana.agent.context.version.VersionContextResolver;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryQuery;
 import com.ghatana.agent.mastery.MasteryDecision;
-import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.MasteryEvidenceRepository;
+import com.ghatana.agent.mastery.MasteryTransitionRepository;
 import com.ghatana.agent.runtime.mode.TaskClassification;
 import com.ghatana.agent.runtime.mode.TaskRiskLevel;
 import com.ghatana.agent.runtime.mode.TaskNovelty;
-import com.ghatana.agent.runtime.mode.ExecutionMode;
-import com.ghatana.agent.mastery.MasteryState;
-import com.ghatana.agent.mastery.ApplicabilityScope;
-import com.ghatana.agent.mastery.MasteryScore;
-import com.ghatana.agent.context.version.VersionContext;
+import com.ghatana.agent.mastery.transition.DefaultMasteryTransitionPolicy;
+import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
 import com.ghatana.agent.memory.MemoryRetriever;
+import com.ghatana.agent.memory.retrieval.AgentMemoryQueryPort;
+import com.ghatana.agent.memory.retrieval.MasteryAwareMemoryRetriever;
+import com.ghatana.aep.engine.registry.AgentMemoryPlaneClient;
+import com.ghatana.agent.pluggability.AgentCapabilityManifest;
+import com.ghatana.agent.pluggability.HandoffCapability;
+import com.ghatana.agent.pluggability.InteractionMode;
+import com.ghatana.agent.pluggability.SupervisionRole;
 import com.ghatana.agent.promotion.DefaultPromotionEngine;
 import com.ghatana.agent.promotion.PromotionEngine;
 import com.ghatana.agent.learning.DefaultLearningDeltaEvaluator;
 import com.ghatana.agent.learning.LearningDeltaEvaluator;
 import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.release.AgentReleaseRepository;
+import com.ghatana.agent.release.InMemoryAgentReleaseRepository;
 import com.ghatana.agent.obsolescence.ObsolescenceDetector;
 import com.ghatana.agent.obsolescence.DefaultObsolescenceDetector;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -43,11 +52,13 @@ import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
 import com.ghatana.agent.runtime.safety.InvariantMonitor;
-import com.ghatana.agent.runtime.safety.DefaultInvariantMonitor;
 import com.ghatana.agent.audit.AgentTraceLedger;
 import com.ghatana.agent.audit.DataCloudAgentTraceLedger;
 import com.ghatana.agent.runtime.mode.DefaultModeSelectionPolicy;
 import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryTransitionRepository;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
@@ -398,16 +409,56 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides a fail-closed mastery registry for the orchestrator.
-     * When no real mastery registry is configured, this blocks execution by default
-     * to prevent unsafe autonomous execution without mastery tracking.
+     * Provides the mastery transition policy.
      */
     @Provides
-    MasteryRegistry masteryRegistry() {
+    MasteryTransitionPolicy masteryTransitionPolicy() {
+        return new DefaultMasteryTransitionPolicy();
+    }
+
+    /**
+     * Provides Data Cloud mastery transition repository.
+     */
+    @Provides
+    MasteryTransitionRepository masteryTransitionRepository(EntityRepository entityRepository) {
+        return new DataCloudMasteryTransitionRepository(entityRepository);
+    }
+
+    /**
+     * Provides Data Cloud mastery evidence repository.
+     */
+    @Provides
+    MasteryEvidenceRepository masteryEvidenceRepository(EntityRepository entityRepository) {
+        return new DataCloudMasteryEvidenceRepository(entityRepository);
+    }
+
+    /**
+     * Provides mastery registry.
+     *
+     * <p>Production profile requires a real Data Cloud-backed registry. Local/dev profiles may
+     * use fail-closed fallback to preserve safety when persistence infrastructure is unavailable.
+     */
+    @Provides
+    MasteryRegistry masteryRegistry(
+            EntityRepository entityRepository,
+            MasteryTransitionRepository transitionRepository,
+            MasteryEvidenceRepository evidenceRepository,
+            MasteryTransitionPolicy transitionPolicy) {
+        if (!isProductionProfile()) {
+            return failClosedMasteryRegistry();
+        }
+        return new DataCloudMasteryRegistry(
+                entityRepository,
+                transitionRepository,
+                evidenceRepository,
+                transitionPolicy);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static MasteryRegistry failClosedMasteryRegistry() {
         return new MasteryRegistry() {
             @Override
             @NotNull
-            @SuppressWarnings("deprecation")
             public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
                     @NotNull String skillId,
                     @NotNull com.ghatana.agent.environment.EnvironmentFingerprint env) {
@@ -483,6 +534,46 @@ public class AepOrchestrationModule extends AbstractModule {
                 return Promise.of(Optional.empty());
             }
         };
+    }
+
+    /**
+     * Provides release repository used by governed dispatch release guard.
+     *
+     * <p>Production profile must bind a non-ephemeral repository in the composition root.
+     */
+    @Provides
+    AgentReleaseRepository agentReleaseRepository() {
+        if (isProductionProfile()) {
+            throw new IllegalStateException(
+                    "AgentReleaseRepository is required in production profile. "
+                            + "Bind a durable repository in the composition root.");
+        }
+        return new InMemoryAgentReleaseRepository();
+    }
+
+    /**
+     * Provides version context resolver for version-aware mastery decisions.
+     */
+    @Provides
+    VersionContextResolver versionContextResolver() {
+        return DefaultVersionContextResolver.getInstance();
+    }
+
+    /**
+     * Provides a permissive default capability manifest for governed dispatch.
+     */
+    @Provides
+    AgentCapabilityManifest agentCapabilityManifest() {
+        return new AgentCapabilityManifest(
+                "aep-governed-dispatcher",
+                "1.0.0",
+                "system",
+                List.of(InteractionMode.AUTONOMOUS, InteractionMode.SUPERVISED),
+                SupervisionRole.STANDALONE,
+                HandoffCapability.NONE,
+                List.of(),
+                List.of(),
+                Map.of("source", "AepOrchestrationModule"));
     }
 
     /**
@@ -577,50 +668,62 @@ public class AepOrchestrationModule extends AbstractModule {
     /**
      * Provides a governed agent dispatcher wrapping the catalog dispatcher.
      *
-     * <p>This uses real implementations for governance components to ensure
-     * safe dispatch with proper invariant monitoring and trace recording.
-     *
-     * @param catalogAgentDispatcher the base catalog dispatcher to wrap
-     * @param invariantMonitor the invariant monitor for pre-dispatch checks
-     * @param traceLedger the trace ledger for evidence recording
-     * @param masteryAwareModeSelector the mode selector
-     * @return governed agent dispatcher
+     * <p>This wires the full governance path: release guard, mastery decision, version
+     * context resolution, mode selection, memory retrieval, invariant checks, and trace ledger.
      */
     @Provides
     GovernedAgentDispatcher governedAgentDispatcher(
             CatalogAgentDispatcher catalogAgentDispatcher,
             InvariantMonitor invariantMonitor,
             AgentTraceLedger traceLedger,
-            MasteryAwareModeSelector masteryAwareModeSelector) {
+            AgentReleaseRepository releaseRepository,
+            AgentCapabilityManifest capabilityManifest,
+            MasteryRegistry masteryRegistry,
+            VersionContextResolver versionContextResolver,
+            TaskClassifier taskClassifier,
+            MasteryAwareModeSelector masteryAwareModeSelector,
+            MemoryRetriever memoryRetriever) {
+        if (isProductionProfile()) {
+            if (releaseRepository == null) {
+                throw new IllegalStateException("Production profile requires AgentReleaseRepository");
+            }
+            if (masteryRegistry == null) {
+                throw new IllegalStateException("Production profile requires MasteryRegistry");
+            }
+            if (traceLedger == null) {
+                throw new IllegalStateException("Production profile requires AgentTraceLedger");
+            }
+        }
         return new GovernedAgentDispatcher(
                 catalogAgentDispatcher,
                 invariantMonitor,
                 traceLedger,
-                masteryAwareModeSelector
+                releaseRepository,
+                null,
+                capabilityManifest,
+                masteryRegistry,
+                versionContextResolver,
+                taskClassifier,
+                masteryAwareModeSelector,
+                memoryRetriever
         );
     }
 
     /**
-     * Provides a no-op memory retriever for the orchestrator.
+     * Provides mastery-aware memory retriever adapter.
      */
     @Provides
-    MemoryRetriever memoryRetriever() {
-        return new MemoryRetriever() {
-            @Override
-            @NotNull
-            public Promise<List<Object>> retrieve(@NotNull String query, @NotNull String context) {
-                return Promise.of(List.of());
-            }
-
-            @Override
-            @NotNull
-            public Promise<List<Object>> retrieve(
-                    @NotNull String query,
-                    @NotNull String context,
-                    @NotNull java.util.Map<String, String> options) {
-                return Promise.of(List.of());
-            }
-        };
+    MemoryRetriever memoryRetriever(MasteryRegistry masteryRegistry, AgentMemoryPlaneClient memoryPlaneClient) {
+        AgentMemoryQueryPort queryPort = (agentId, tenantId, skillId, versionContext, limit) ->
+                memoryPlaneClient.queryMemoryItemsMasteryAware(
+                tenantId,
+                        agentId,
+                        skillId,
+                        Math.max(limit * 3, 30),
+                        false,
+                        false,
+                        true);
+        return new MasteryAwareMemoryRetriever(masteryRegistry, queryPort);
     }
 
     /**
@@ -670,5 +773,16 @@ public class AepOrchestrationModule extends AbstractModule {
     @Provides
     AgentDispatcher agentDispatcher(GovernedAgentDispatcher governedDispatcher) {
         return governedDispatcher;
+    }
+
+    private static boolean isProductionProfile() {
+        String env = System.getenv("AEP_ENVIRONMENT");
+        if (env == null || env.isBlank()) {
+            env = System.getenv("ENVIRONMENT");
+        }
+        if (env == null || env.isBlank()) {
+            env = System.getenv("NODE_ENV");
+        }
+        return env != null && env.equalsIgnoreCase("production");
     }
 }

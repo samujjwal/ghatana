@@ -18,6 +18,7 @@ export default defineConfig({
     },
   },
   resolve: {
+    extensions: ['.ts', '.tsx', '.mjs', '.js', '.json'],
     alias: {
       'yappc-core': path.resolve(__dirname, '../yappc-core/src'),
     },

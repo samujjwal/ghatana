@@ -18,12 +18,21 @@ if (!process.env.DATABASE_URL) {
     "postgresql://test:test@localhost:5432/tutorputor_test";
 }
 
+if (!process.env.TUTORPUTOR_DATABASE_URL) {
+  process.env.TUTORPUTOR_DATABASE_URL =
+    "postgresql://test:test@localhost:5432/tutorputor_test";
+}
+
 if (!process.env.REDIS_URL) {
   process.env.REDIS_URL = "redis://localhost:6379/1"; // Use DB 1 for tests
 }
 
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = "test-jwt-secret-32-chars-minimum-abc123xyz789"; // 32+ chars
+}
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  process.env.STRIPE_SECRET_KEY = "stripe_test_placeholder_secret";
 }
 
 if (!process.env.NODE_ENV) {

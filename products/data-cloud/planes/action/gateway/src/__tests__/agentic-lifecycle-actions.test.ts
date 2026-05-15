@@ -19,29 +19,26 @@ function validToken(payload: Record<string, unknown> = {}): string {
 }
 
 const lifecycleActionRequest = {
-  schemaVersion: 'agent.lifecycle.action.request.v1',
+  schemaVersion: '1.0.0',
   requestId: 'action-req-1',
   correlationId: 'corr-agentic-1',
   productUnitId: 'digital-marketing',
   scope: {
     tenantId: 'tenant-1',
-    environment: 'staging',
+    workspaceId: 'workspace-1',
+    projectId: 'project-1',
   },
-  requestedByAgent: {
-    agentId: 'aep-planner',
-    agentType: 'planner',
-    agentVersion: '2026.05.14',
-  },
-  requestedAction: 'plan',
-  lifecyclePhase: 'plan',
+  requestedByAgent: 'aep-planner',
+  requestedAction: 'create-lifecycle-plan',
+  lifecyclePhase: 'build',
   proposedPlanRef: 'datacloud://plans/plan-1',
   riskLevel: 'medium',
   requiredApprovals: [],
   requiredVerification: [
     {
       verificationId: 'verify-1',
-      verifier: 'kernel-lifecycle',
-      evidenceRef: 'datacloud://evidence/verify-1',
+      kind: 'policy',
+      required: true,
     },
   ],
   evidenceRefs: ['datacloud://evidence/intent-1'],
@@ -77,7 +74,7 @@ describe('POST /api/v1/agentic/lifecycle-actions', () => {
     });
     const backendUrl = `http://127.0.0.1:${(backend.address() as AddressInfo).port}`;
     const handle = vi.fn().mockResolvedValue({
-      schemaVersion: 'agent.lifecycle.action.result.v1',
+      schemaVersion: '1.0.0',
       resultId: 'action-result-1',
       requestId: lifecycleActionRequest.requestId,
       correlationId: lifecycleActionRequest.correlationId,

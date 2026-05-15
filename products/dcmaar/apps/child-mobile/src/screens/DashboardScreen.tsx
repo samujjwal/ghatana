@@ -10,7 +10,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useDevices, useAlerts } from '@dcmaar/mobile-shared';
+import { useDevices, useAlerts } from '@/hooks/useApi';
 import { formatDuration } from '@/utils/format';
 import { useCanSeeSections } from '@dcmaar/dashboard-core';
 import { useChildUsageStats } from '@/hooks/useChildUsageStats';
@@ -21,7 +21,6 @@ const DashboardScreen: React.FC = () => {
   const {
     totalScreenTimeMinutes,
     deviceCount,
-    isLoading: usageStatsLoading,
   } = useChildUsageStats();
 
   const [refreshing, setRefreshing] = React.useState(false);
@@ -36,7 +35,7 @@ const DashboardScreen: React.FC = () => {
     setRefreshing(false);
   }, [refetchDevices, refetchAlerts]);
 
-  if (devicesLoading || alertsLoading || usageStatsLoading) {
+  if (devicesLoading || alertsLoading) {
     return (
       <View style={styles.centered}>
         <Text style={styles.loadingText}>Loading...</Text>

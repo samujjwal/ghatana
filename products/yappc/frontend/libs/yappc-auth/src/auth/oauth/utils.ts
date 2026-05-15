@@ -16,6 +16,14 @@ async function parseJsonResponse<T>(
   response: Response,
   context: string
 ): Promise<T> {
+  if (typeof response.text !== 'function') {
+    if (typeof response.json === 'function') {
+      return (await response.json()) as T;
+    }
+
+    throw new Error(`${context} returned an unreadable response`);
+  }
+
   const raw = await response.text();
 
   if (!raw) {
@@ -34,6 +42,10 @@ async function readErrorMessage(
   response: Response,
   fallback: string
 ): Promise<string> {
+  if (typeof response.text !== 'function') {
+    return fallback;
+  }
+
   const raw = await response.text();
 
   if (!raw) {

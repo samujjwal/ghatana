@@ -141,7 +141,7 @@ export function loadConfig(): Config {
   const rawConfig = {
     // Server
     PORT: process.env.PORT,
-    NODE_ENV: process.env.NODE_ENV,
+    NODE_ENV: process.env.NODE_ENV === 'test' ? 'development' : process.env.NODE_ENV,
     LOG_LEVEL: process.env.LOG_LEVEL,
 
     // Database

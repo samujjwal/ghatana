@@ -4,36 +4,56 @@ on:
   pull_request:
     paths:
       # Kernel platform changes
-      - 'platform/typescript/kernel-*/**'
-      - 'platform/typescript/kernel-product-contracts/**'
-      - 'config/toolchain-adapter-registry.json'
-      - 'config/product-lifecycle-profiles.json'
-      - 'config/canonical-product-registry.json'
-      - 'config/canonical-product-registry-schema.json'
-      - 'config/kernel-lifecycle-exclusions.json'
-      - 'scripts/check-*lifecycle*.mjs'
-      - 'scripts/check-*adapter*.mjs'
-      - 'scripts/check-digital-marketing*.mjs'
-      - 'scripts/kernel-product.mjs'
+      - "platform/typescript/kernel-*/**"
+      - "platform/typescript/kernel-product-contracts/**"
+      - "config/toolchain-adapter-registry.json"
+      - "config/product-lifecycle-profiles.json"
+      - "config/canonical-product-registry.json"
+      - "config/canonical-product-registry-schema.json"
+      - "config/generated/product-shape-capability-matrix.json"
+      - "config/kernel-lifecycle-exclusions.json"
+      - "scripts/check-*lifecycle*.mjs"
+      - "scripts/check-*adapter*.mjs"
+      - "scripts/check-digital-marketing*.mjs"
+      - "scripts/check-agentic-lifecycle-action-contracts.mjs"
+      - "scripts/check-kernel-provider-mode.mjs"
+      - "scripts/check-product-shape-capability-matrix.mjs"
+      - "scripts/check-yappc-product-unit-intent-handoff.mjs"
+      - "scripts/generate-product-shape-capability-matrix.mjs"
+      - "scripts/kernel-product.mjs"
+      # Studio, gateway, YAPPC, and Data Cloud bridge lifecycle consumers
+      - "platform/typescript/ghatana-studio/**"
+      - "products/data-cloud/planes/action/gateway/**"
+      - "products/data-cloud/libs/kernel-bridge-providers/**"
+      - "products/yappc/frontend/web/src/services/canvas/commands/**"
+      - "products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts"
+      - "products/yappc/frontend/apps/api/src/__tests__/product-unit-intents.test.ts"
       # Digital Marketing product changes
-      - 'products/digital-marketing/**'
+      - "products/digital-marketing/**"
   push:
     branches:
       - main
     paths:
-      - 'platform/typescript/kernel-*/**'
-      - 'config/toolchain-adapter-registry.json'
-      - 'config/product-lifecycle-profiles.json'
-      - 'config/canonical-product-registry.json'
-      - 'products/digital-marketing/**'
+      - "platform/typescript/kernel-*/**"
+      - "config/toolchain-adapter-registry.json"
+      - "config/product-lifecycle-profiles.json"
+      - "config/canonical-product-registry.json"
+      - "config/generated/product-shape-capability-matrix.json"
+      - "platform/typescript/ghatana-studio/**"
+      - "products/data-cloud/planes/action/gateway/**"
+      - "products/data-cloud/libs/kernel-bridge-providers/**"
+      - "products/yappc/frontend/web/src/services/canvas/commands/**"
+      - "products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts"
+      - "products/yappc/frontend/apps/api/src/__tests__/product-unit-intents.test.ts"
+      - "products/digital-marketing/**"
 
 concurrency:
   group: product-lifecycle-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   install:
@@ -126,6 +146,13 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "gradle"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -143,11 +170,9 @@ jobs:
 
       - name: Test kernel-lifecycle
         run: pnpm --filter @ghatana/kernel-lifecycle test --run
-        continue-on-error: true
 
       - name: Test kernel-artifacts
         run: pnpm --filter @ghatana/kernel-artifacts test --run
-        continue-on-error: true
 
   check-contracts:
     name: Check Lifecycle Contracts
@@ -166,6 +191,13 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "gradle"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -200,6 +232,33 @@ jobs:
       - name: Check lifecycle registry/config drift
         run: node ./scripts/check-lifecycle-registry-config-drift.mjs
 
+      - name: Check kernel platform lifecycle guardrail
+        run: pnpm check:kernel-platform-lifecycle
+
+      - name: Check Kernel API contracts
+        run: pnpm check:kernel-api-contracts
+
+      - name: Check Studio Kernel API contract
+        run: pnpm check:studio-kernel-api
+
+      - name: Check agentic lifecycle contracts
+        run: pnpm check:agentic-lifecycle-action-contracts
+
+      - name: Check YAPPC ProductUnitIntent handoff
+        run: pnpm check:yappc-product-unit-intent-handoff
+
+      - name: Check Data Cloud platform providers
+        run: pnpm check:data-cloud-platform-providers
+
+      - name: Check product-shape capability matrix
+        run: pnpm check:product-shape-capability-matrix
+
+      - name: Check production readiness
+        run: pnpm check:production-readiness
+
+      - name: Gradle check
+        run: ./gradlew check --no-daemon --stacktrace
+
   check-digital-marketing:
     name: Check Digital Marketing Lifecycle Pilot
     needs: build-kernel
@@ -230,6 +289,9 @@ jobs:
       - name: Check Digital Marketing lifecycle pilot
         run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs
 
+      - name: Smoke Digital Marketing lifecycle pilot
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+
       - name: Validate build phase plan
         run: node ./scripts/kernel-product.mjs product plan digital-marketing build --json
 
@@ -244,6 +306,70 @@ jobs:
 
       - name: Validate verify phase plan
         run: node ./scripts/kernel-product.mjs product plan digital-marketing verify --env local --json
+
+      - name: Upload lifecycle smoke manifests and matrix
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-smoke-and-product-matrix
+          path: |
+            .kernel/out/**
+            config/generated/product-shape-capability-matrix.json
+            docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md
+            **/test-results/**
+            **/coverage/**
+          retention-days: 7
+
+  guardrail-scan:
+    name: Lifecycle Guardrail Scan
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail on disabled lifecycle tests without issue references
+        run: |
+          set -euo pipefail
+          MATCHES="$(rg -n "(describe|it|test)\\.skip\\(" \
+            platform/typescript/kernel-product-contracts \
+            platform/typescript/kernel-lifecycle \
+            platform/typescript/kernel-providers \
+            platform/typescript/kernel-toolchains \
+            platform/typescript/ghatana-studio \
+            products/data-cloud/planes/action/gateway \
+            products/data-cloud/libs/kernel-bridge-providers \
+            products/yappc/frontend \
+            products/digital-marketing || true)"
+          if [ -n "$MATCHES" ] && ! printf '%s\n' "$MATCHES" | rg -q "GH-|#[0-9]+"; then
+            printf '%s\n' "$MATCHES"
+            echo "Disabled lifecycle tests require an issue reference."
+            exit 1
+          fi
+
+      - name: Fail on TODO/FIXME in lifecycle production code
+        run: |
+          set -euo pipefail
+          if rg -n "\\b(TODO|FIXME)\\b" \
+            platform/typescript/kernel-product-contracts/src \
+            platform/typescript/kernel-lifecycle/src \
+            platform/typescript/kernel-providers/src \
+            platform/typescript/kernel-toolchains/src \
+            platform/typescript/ghatana-studio/src \
+            products/data-cloud/libs/kernel-bridge-providers/src \
+            products/data-cloud/planes/action/gateway/src \
+            products/yappc/frontend/web/src/services/canvas/commands \
+            products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts \
+            products/digital-marketing \
+            --glob '!**/__tests__/**' \
+            --glob '!**/src/test/**' \
+            --glob '!**/docs/**' \
+            --glob '!**/archive/**'; then
+            echo "TODO/FIXME markers are not allowed in lifecycle production code."
+            exit 1
+          fi
 
   # NOTE: deploy jobs are intentionally NOT included in PR workflows.
   # Deployment only happens on main branch via separate deployment workflows.

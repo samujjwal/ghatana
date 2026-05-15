@@ -64,9 +64,9 @@ describe("JobDeduplicator", () => {
       expect(redis.set).toHaveBeenCalledWith(
         expect.stringContaining(FINGERPRINT),
         "1",
-        "NX",
         "EX",
         expect.any(Number),
+        "NX",
       );
     });
 

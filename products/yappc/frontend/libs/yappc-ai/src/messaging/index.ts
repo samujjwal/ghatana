@@ -17,7 +17,7 @@ export type {
 } from './chat/index';
 export { ChatPanel } from './chat/index';
 export type { ChatPanelProps } from './chat/index';
-export { ChatMessage as ChatMessageComponent } from './chat/index';
+export { ChatMessageComponent } from './chat/index';
 export type { ChatMessageProps } from './chat/index';
 
 // Notifications

@@ -81,6 +81,8 @@ describe("FileArtifactProvider", () => {
         runId: "run-1",
         manifestPath: expectedManifestPath,
         artifactCount: 1,
+        correlationId: "corr-1",
+        digestStatus: "complete",
       },
     ]);
     await expect(
@@ -111,7 +113,7 @@ describe("FileArtifactProvider", () => {
     });
   });
 
-  it("validates absolute artifact paths without joining the artifact root", async () => {
+  it("rejects absolute artifact paths outside the artifact root", async () => {
     const absoluteArtifactPath = path.join(tempDir, "absolute", "index.html");
     await fs.mkdir(path.dirname(absoluteArtifactPath), { recursive: true });
     await fs.writeFile(absoluteArtifactPath, "<html></html>", "utf-8");
@@ -125,7 +127,10 @@ describe("FileArtifactProvider", () => {
       { required: true, correlationId: "corr-1", runId: "run-1" }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toEqual({
+      success: false,
+      error: `artifact path escapes artifact root: ${absoluteArtifactPath}`,
+    });
   });
 
   it("deduplicates recorded manifest refs by product, run, and path", async () => {
@@ -134,6 +139,8 @@ describe("FileArtifactProvider", () => {
       runId: "run-1",
       manifestPath: path.join(outputDir, "manifest.json"),
       artifactCount: 1,
+      correlationId: "corr-1",
+      digestStatus: "complete" as const,
     };
 
     await provider.recordArtifactManifest(ref, {
@@ -148,6 +155,49 @@ describe("FileArtifactProvider", () => {
     await expect(
       provider.listArtifactManifests({ productUnitId: "digital-marketing" })
     ).resolves.toEqual([{ ...ref, artifactCount: 2 }]);
+    await expect(
+      provider.listArtifactManifests({
+        productUnitId: "digital-marketing",
+        correlationId: "corr-missing",
+      })
+    ).resolves.toEqual([]);
+  });
+
+  it("rejects artifact manifest refs outside the output root", async () => {
+    const result = await provider.recordArtifactManifest(
+      {
+        productUnitId: "digital-marketing",
+        runId: "run-1",
+        manifestPath: path.join(tempDir, "outside.json"),
+        artifactCount: 1,
+      },
+      { required: true, correlationId: "corr-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: `artifact manifest path escapes output root: ${path.join(tempDir, "outside.json")}`,
+    });
+  });
+
+  it("rejects artifact paths outside the artifact root", async () => {
+    const outsideArtifactPath = path.join(tempDir, "outside", "index.html");
+    await fs.mkdir(path.dirname(outsideArtifactPath), { recursive: true });
+    await fs.writeFile(outsideArtifactPath, "<html></html>", "utf-8");
+
+    const result = await provider.writeArtifactManifest(
+      buildManifest({
+        artifactPath: outsideArtifactPath,
+        hash: hash("<html></html>"),
+        sizeBytes: Buffer.byteLength("<html></html>"),
+      }),
+      { required: true, correlationId: "corr-1", runId: "run-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: `artifact path escapes artifact root: ${outsideArtifactPath}`,
+    });
   });
 
   it("rejects invalid manifest schema before writing", async () => {
@@ -269,7 +319,7 @@ describe("FileArtifactProvider", () => {
       {
         productUnitId: "digital-marketing",
         runId: "run-1",
-        manifestPath: "artifact-manifest.json",
+        manifestPath: path.join(outputDir, "artifact-manifest.json"),
         artifactCount: 1,
       },
       { required: false, correlationId: " " }
@@ -294,7 +344,7 @@ describe("FileArtifactProvider", () => {
       {
         productUnitId: "digital-marketing",
         runId: "run-1",
-        manifestPath: "artifact-manifest.json",
+        manifestPath: path.join(outputDir, "artifact-manifest.json"),
         artifactCount: 1,
       },
       { required: true, correlationId: "corr-1" }

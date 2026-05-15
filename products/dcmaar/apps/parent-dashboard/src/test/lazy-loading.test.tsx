@@ -51,15 +51,16 @@ describe('Performance: Lazy Loading', () => {
     await renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('Guardian Dashboard')).toBeInTheDocument();
+      expect(screen.getAllByText('Guardian').length).toBeGreaterThan(0);
+      expect(screen.getByText('Parent Dashboard')).toBeInTheDocument();
     });
-  });
+  }, 30_000);
 
   it('should have loading skeleton component defined', async () => {
     const result = await renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText(/Usage Monitor/i)).toBeInTheDocument();
+      expect(screen.getByText('UsageMonitor Component')).toBeInTheDocument();
     });
 
     expect(result.container).toBeTruthy();
@@ -74,7 +75,7 @@ describe('Performance: Lazy Loading', () => {
       expect(screen.getByText('PolicyManagement Component')).toBeInTheDocument();
       expect(screen.getByText('DeviceManagement Component')).toBeInTheDocument();
       expect(screen.getByText('Analytics Component')).toBeInTheDocument();
-    }, { timeout: 3000 });
+    }, { timeout: 10_000 });
   });
 
   it('should lazy load Login page', async () => {

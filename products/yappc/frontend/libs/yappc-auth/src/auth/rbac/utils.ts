@@ -11,6 +11,8 @@ import type {
   AccessControlList,
 } from './types';
 
+let generatedRoleCounter = 0;
+
 /**
  * RBAC utilities class
  * Static methods for RBAC operations
@@ -101,8 +103,14 @@ export class RBACUtils {
     description: string,
     permissions: Permission[]
   ): Role {
+    generatedRoleCounter += 1;
+    const randomSuffix =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${generatedRoleCounter}`;
+
     return {
-      id: `role-${Date.now()}`,
+      id: `role-${randomSuffix}`,
       name,
       description,
       permissions,

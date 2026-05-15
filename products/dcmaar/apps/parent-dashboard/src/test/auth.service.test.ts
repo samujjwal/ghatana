@@ -26,6 +26,9 @@ Object.defineProperty(globalThis, 'localStorage', {
 vi.mock('../lib/api', () => ({
   apiClient: {
     post: vi.fn(),
+    setToken: vi.fn((token: string) => localStorage.setItem('guardian_token', token)),
+    getToken: vi.fn(() => localStorage.getItem('guardian_token')),
+    clearToken: vi.fn(() => localStorage.removeItem('guardian_token')),
   },
 }));
 

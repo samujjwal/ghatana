@@ -78,11 +78,56 @@ function createService(overrides: Partial<ConstructorParameters<typeof AgentLife
     outputDirectory: '.kernel/out',
     now: () => '2026-05-14T00:00:00.000Z',
     ...overrides,
+    checks: {
+      policy: () => 'allowed',
+      mastery: () => 'allowed',
+      ...overrides.checks,
+    },
   });
   return { service, planner, executor };
 }
 
 describe('AgentLifecycleActionService', () => {
+  it('fails closed by default before planning when no policy or mastery checks are configured', async () => {
+    const planner = { plan: vi.fn(async () => plan()) };
+    const executor = { executePlan: vi.fn(async () => lifecycleResult()) };
+    const service = new AgentLifecycleActionService({
+      planner,
+      executor,
+      outputDirectory: '.kernel/out',
+      now: () => '2026-05-14T00:00:00.000Z',
+    });
+
+    const result = await service.handle(request);
+
+    expect(result.policyDecision).toBe('denied');
+    expect(result.failure?.reasonCode).toBe('policy-denied');
+    expect(planner.plan).not.toHaveBeenCalled();
+    expect(executor.executePlan).not.toHaveBeenCalled();
+  });
+
+  it('allows low-risk bootstrap plan creation only when bootstrap dev defaults are explicit', async () => {
+    const planner = { plan: vi.fn(async () => plan()) };
+    const executor = { executePlan: vi.fn(async () => lifecycleResult()) };
+    const service = new AgentLifecycleActionService({
+      planner,
+      executor,
+      outputDirectory: '.kernel/out',
+      allowBootstrapDevDefaults: true,
+      now: () => '2026-05-14T00:00:00.000Z',
+      checks: { mastery: () => 'allowed' },
+    });
+
+    const result = await service.handle({
+      ...request,
+      requestedAction: 'create-lifecycle-plan',
+      riskLevel: 'low',
+    });
+
+    expect(result.lifecycleRunRef).toBe('lifecycle-plan:run-1');
+    expect(executor.executePlan).not.toHaveBeenCalled();
+  });
+
   it('returns denied result without planning when policy denies', async () => {
     const { service, planner, executor } = createService({
       checks: { policy: () => 'denied' },
@@ -157,7 +202,7 @@ describe('AgentLifecycleActionService', () => {
     );
     expect(recordProvenance).toHaveBeenCalledWith(
       expect.objectContaining({ provenanceId: 'agent-lifecycle:agent-request-1' }),
-      { required: false, correlationId: 'corr-agent-1' }
+      { required: true, correlationId: 'corr-agent-1' }
     );
   });
 
@@ -197,6 +242,8 @@ describe('AgentLifecycleActionService', () => {
       executor,
       outputDirectory: '.kernel/out',
       checks: {
+        policy: () => 'allowed',
+        mastery: () => 'allowed',
         approval: () => 'not-required',
         verification: () => true,
       },

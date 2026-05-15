@@ -15,12 +15,12 @@ import { createLogger, invokeWithLog } from '../../utils/logger';
 const logger = createLogger('QualityDashboard');
 
 interface QualityMetrics {
-  mos_score: number;
-  wer?: number;
-  speaker_similarity?: number;
-  snr: number;
-  pesq?: number;
-  stoi?: number;
+  mean_opinion_score: number;
+  word_error_rate?: number | null;
+  speaker_similarity_score?: number | null;
+  signal_to_noise_ratio_db: number;
+  perceptual_evaluation_score?: number | null;
+  short_time_intelligibility?: number | null;
 }
 
 export const QualityDashboard: React.FC = () => {
@@ -65,14 +65,17 @@ export const QualityDashboard: React.FC = () => {
     setLoading(true);
     try {
       logger.info('AssessQuality:request', { audioPath, hasReferenceText: Boolean(referenceText), hasReferenceAudio: Boolean(referenceAudioPath) });
-      const result = await invokeWithLog<QualityMetrics>(logger, 'assess_audio_quality', {
-        audioPath,
-        referenceText: referenceText || null,
-        referenceAudioPath: referenceAudioPath || null,
+      const result = await invokeWithLog<QualityMetrics>(logger, 'analyze_audio_quality', {
+        audioFilePath: audioPath,
+        referenceTranscript: referenceText || null,
+        referenceAudioFilePath: referenceAudioPath || null,
       });
 
       setMetrics(result);
-      logger.info('AssessQuality:success', { mosScore: result.mos_score, snr: result.snr });
+      logger.info('AssessQuality:success', {
+        mosScore: result.mean_opinion_score,
+        snr: result.signal_to_noise_ratio_db,
+      });
     } catch (error) {
       logger.error('AssessQuality:error', { audioPath }, error);
       alert('Failed to assess quality');
@@ -129,6 +132,7 @@ export const QualityDashboard: React.FC = () => {
                        rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
             />
             <button
+              aria-label="Browse audio file"
               onClick={handleSelectAudio}
               className="px-4 py-2 text-sm font-medium text-white bg-purple-600
                        hover:bg-purple-700 rounded-lg transition-colors"
@@ -169,6 +173,7 @@ export const QualityDashboard: React.FC = () => {
                        rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
             />
             <button
+              aria-label="Browse reference audio"
               onClick={handleSelectReferenceAudio}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300
                        border border-gray-300 dark:border-gray-600 rounded-lg
@@ -193,7 +198,7 @@ export const QualityDashboard: React.FC = () => {
 
       {/* Results Section */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-label="Assessing audio quality">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -218,11 +223,11 @@ export const QualityDashboard: React.FC = () => {
                   MOS Score
                 </span>
                 <span className={`text-xs font-medium ${getMOSColor(metrics.mos_score)}`}>
-                  {getMOSLabel(metrics.mos_score)}
+                  {getMOSLabel(metrics.mean_opinion_score)}
                 </span>
               </div>
-              <div className={`text-3xl font-bold ${getMOSColor(metrics.mos_score)}`}>
-                {metrics.mos_score.toFixed(2)}
+              <div className={`text-3xl font-bold ${getMOSColor(metrics.mean_opinion_score)}`}>
+                {metrics.mean_opinion_score.toFixed(2)}
                 <span className="text-lg text-gray-500 dark:text-gray-400"> / 5.0</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -238,7 +243,7 @@ export const QualityDashboard: React.FC = () => {
                 </span>
               </div>
               <div className="text-3xl font-bold text-blue-600">
-                {metrics.snr.toFixed(1)}
+                {metrics.signal_to_noise_ratio_db.toFixed(1)}
                 <span className="text-lg text-gray-500 dark:text-gray-400"> dB</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -247,7 +252,7 @@ export const QualityDashboard: React.FC = () => {
             </div>
 
             {/* WER */}
-            {metrics.wer !== undefined && metrics.wer !== null && (
+            {metrics.word_error_rate !== undefined && metrics.word_error_rate !== null && (
               <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -255,7 +260,7 @@ export const QualityDashboard: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-3xl font-bold text-orange-600">
-                  {(metrics.wer * 100).toFixed(1)}
+                  {(metrics.word_error_rate * 100).toFixed(1)}
                   <span className="text-lg text-gray-500 dark:text-gray-400"> %</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -265,7 +270,7 @@ export const QualityDashboard: React.FC = () => {
             )}
 
             {/* Speaker Similarity */}
-            {metrics.speaker_similarity !== undefined && metrics.speaker_similarity !== null && (
+            {metrics.speaker_similarity_score !== undefined && metrics.speaker_similarity_score !== null && (
               <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -273,7 +278,7 @@ export const QualityDashboard: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-3xl font-bold text-purple-600">
-                  {(metrics.speaker_similarity * 100).toFixed(0)}
+                  {(metrics.speaker_similarity_score * 100).toFixed(0)}
                   <span className="text-lg text-gray-500 dark:text-gray-400"> %</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -289,9 +294,9 @@ export const QualityDashboard: React.FC = () => {
               Overall Assessment
             </h4>
             <p className="text-sm text-purple-800 dark:text-purple-200">
-              {metrics.mos_score >= 4.0
+              {metrics.mean_opinion_score >= 4.0
                 ? 'Excellent audio quality. Ready for production use.'
-                : metrics.mos_score >= 3.0
+                : metrics.mean_opinion_score >= 3.0
                 ? 'Good audio quality. Minor improvements possible.'
                 : 'Audio quality could be improved. Consider noise reduction or re-recording.'}
             </p>
@@ -301,4 +306,3 @@ export const QualityDashboard: React.FC = () => {
     </div>
   );
 };
-

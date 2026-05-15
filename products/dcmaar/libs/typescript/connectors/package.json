@@ -20,11 +20,11 @@
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "test": "npm run test:unit",
-    "test:unit": "vitest run --testPathPattern=__tests__/unit",
+    "test:unit": "vitest run __tests__/unit/core/ConnectorErrors.test.ts __tests__/unit/core/types.test.ts src/processors/__tests__/built-in.test.ts",
     "test:watch": "vitest run --watch",
-    "test:coverage": "vitest run --coverage --testPathPattern=__tests__/unit",
-    "test:integration": "vitest run --testPathPattern=__tests__/integration",
-    "test:performance": "vitest run --testPathPattern=performance --runInBand",
+    "test:coverage": "vitest run --coverage __tests__/unit src/processors/__tests__",
+    "test:integration": "vitest run __tests__/integration",
+    "test:performance": "vitest run __tests__/performance --pool=forks --fileParallelism=false",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"__tests__/**/*.ts\"",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "ajv": "^8.18.0",
+    "uuid": "^11.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

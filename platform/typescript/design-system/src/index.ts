@@ -141,6 +141,9 @@ export * from "./hooks";
 
 // Utilities
 export { cn } from "@ghatana/platform-utils";
+export { colorContrast } from "./utils/colorContrast";
+export { DesignPromptService } from "./utils/DesignPromptService";
+export { AccessibilityAuditService } from "./utils/AccessibilityAuditService";
 export * from "./utils/rtl";
 export * from "./utils/accessibility";
 export * from "./utils/testing";

@@ -7,6 +7,7 @@ import {
   type ProductUnit,
   isProductUnit,
   validateProductUnit,
+  validateProductUnitDetailed,
   createMinimalProductUnit,
   createExecutableProductUnit,
   type ProductUnitSurface,
@@ -20,6 +21,11 @@ describe("ProductUnit", () => {
         id: "digital-marketing",
         name: "Digital Marketing",
         kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "digital-marketing",
+        },
         registryProviderRef: { providerId: "ghatana-file-registry" },
         sourceProviderRef: {
           providerId: "ghatana-file-registry",
@@ -191,12 +197,46 @@ describe("ProductUnit", () => {
       );
     });
 
+    it("returns detailed reason codes for Studio/API diagnostics", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "ghatana-file-registry" },
+        surfaces: [],
+        lifecycleStatus: "enabled",
+        metadata: {
+          password: "raw-password",
+        },
+      };
+
+      const result = validateProductUnitDetailed(productUnit);
+
+      expect(result.valid).toBe(false);
+      expect(result.issues.map((issue) => issue.reasonCode)).toEqual(
+        expect.arrayContaining([
+          "missing-scope",
+          "missing-lifecycle-profile",
+          "missing-lifecycle-config-path",
+          "missing-executable-surfaces",
+          "secret-like-config-or-metadata",
+        ])
+      );
+    });
+
     it("rejects executable ProductUnits without surfaces", () => {
       const productUnit = {
         schemaVersion: "1.0.0",
         id: "test",
         name: "Test",
         kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "test",
+        },
         registryProviderRef: { providerId: "registry" },
         sourceProviderRef: { providerId: "source" },
         surfaces: [],
@@ -354,6 +394,11 @@ describe("ProductUnit", () => {
         id: "test-product",
         name: "Test Product",
         kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "test-product",
+        },
         surfaces: [
           {
             id: "test-web",
@@ -448,6 +493,11 @@ describe("ProductUnit", () => {
         id: "digital-marketing",
         name: "Digital Marketing",
         kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "digital-marketing",
+        },
         owner: "digital-marketing-team",
         registryProviderRef: { providerId: "ghatana-file-registry" },
         sourceProviderRef: {

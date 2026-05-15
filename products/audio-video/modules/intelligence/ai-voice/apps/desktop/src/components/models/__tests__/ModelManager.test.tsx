@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { ModelManager } from '../ModelManager';
 import {
   createTauriInvokeMock,
@@ -147,12 +148,15 @@ describe('ModelManager', () => {
     });
 
     it('should show download progress', async () => {
+      let resolveDownload: (() => void) | undefined;
       mockInvoke.mockImplementation((cmd: string) => {
         if (cmd === 'list_available_models') return Promise.resolve(['model-test']);
         if (cmd === 'list_downloaded_models') return Promise.resolve([]);
         if (cmd === 'get_model_cache_size') return Promise.resolve(0);
         if (cmd === 'download_model') {
-          return new Promise((resolve) => setTimeout(resolve, 100));
+          return new Promise((resolve) => {
+            resolveDownload = () => resolve(undefined);
+          });
         }
         return Promise.resolve([]);
       });
@@ -166,8 +170,10 @@ describe('ModelManager', () => {
       fireEvent.click(screen.getByRole('button', { name: /download/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/downloading/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/downloading/i).length).toBeGreaterThan(0);
       });
+
+      resolveDownload?.();
     });
 
     it('should disable download button while downloading', async () => {
@@ -216,8 +222,11 @@ describe('ModelManager', () => {
 
       await waitFor(() => {
         expect(consoleError).toHaveBeenCalledWith(
-          expect.stringContaining('Failed to download'),
-          expect.any(Error)
+          expect.stringContaining('[ai-voice][ModelManager] DownloadModel:error'),
+          expect.objectContaining({
+            error: expect.objectContaining({ message: 'Network error' }),
+            modelId: 'model-test',
+          })
         );
       });
 
@@ -351,7 +360,7 @@ describe('ModelManager', () => {
       render(<ModelManager />);
 
       await waitFor(() => {
-        expect(screen.getByText(/0 MB/i)).toBeInTheDocument();
+        expect(screen.getByText(/Cache:\s*0\.0\s*MB/i)).toBeInTheDocument();
       });
     });
   });
@@ -382,10 +391,10 @@ describe('ModelManager', () => {
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
       });
 
-      rerender(<ModelManager />);
+      rerender(<ModelManager key="retry" />);
 
       await waitFor(() => {
-        expect(mockInvoke).toHaveBeenCalledTimes(2);
+        expect(mockInvoke.mock.calls.length).toBeGreaterThanOrEqual(4);
       });
     });
   });
@@ -423,4 +432,3 @@ describe('ModelManager', () => {
     });
   });
 });
-

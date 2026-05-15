@@ -12,8 +12,8 @@
 
 import {
   Eye as PreviewIcon,
-  DesktopWindows as DesktopIcon,
-  TabletMac as TabletIcon,
+  Monitor as DesktopIcon,
+  Tablet as TabletIcon,
   Smartphone as PhoneIcon,
   RefreshCw as RefreshIcon,
   ExternalLink as OpenInNewIcon,

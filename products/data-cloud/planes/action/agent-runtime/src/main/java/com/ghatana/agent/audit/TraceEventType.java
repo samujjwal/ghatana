@@ -108,6 +108,12 @@ public enum TraceEventType {
 
     // ── Governance Dispatch Events ────────────────────────────────────────
 
+    /** Dispatch request was received by the governed dispatcher. */
+    DISPATCH_REQUESTED,
+
+    /** Release guard was checked for this dispatch. */
+    RELEASE_CHECKED,
+
     /** Version context was resolved for this dispatch. */
     VERSION_CONTEXT_RESOLVED,
 

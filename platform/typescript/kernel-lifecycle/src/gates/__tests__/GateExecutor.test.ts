@@ -56,6 +56,7 @@ describe('GateExecutor', () => {
     const result = await executor.execute({
       productId: 'digital-marketing',
       runId: 'run-1',
+      correlationId: 'corr-1',
       phase: 'build',
       gates: [gatePlan({ providerId: 'policy-gates' })],
       artifacts: [
@@ -72,9 +73,22 @@ describe('GateExecutor', () => {
       productUnit: { id: 'digital-marketing' },
       deployment: { id: 'deployment-1' },
       providerMode: 'bootstrap',
+      scope: {
+        tenantId: 'tenant-1',
+        workspaceId: 'workspace-1',
+        projectId: 'project-1',
+      },
+      policyPacks: ['kernel://policy-packs/web-api-security-baseline'],
+      privacyClassification: 'internal',
+      evidenceRefs: ['artifact:source'],
     });
 
     expect(result.failedRequiredGate).toBeUndefined();
+    expect(result.summary).toEqual({
+      passedCount: 1,
+      failedRequiredCount: 0,
+      skippedOptionalCount: 0,
+    });
     expect(result.gates).toEqual([
       {
         gateId: 'security',
@@ -85,6 +99,7 @@ describe('GateExecutor', () => {
         evidenceRefs: ['policy:security'],
         durationMs: 12,
         providerId: 'policy-gates',
+        privacyClassification: 'internal',
       },
     ]);
     expect(vi.mocked(provider.evaluateGate).mock.calls[0]?.[0]).toMatchObject({
@@ -93,8 +108,12 @@ describe('GateExecutor', () => {
       phase: 'build',
       context: {
         runId: 'run-1',
+        correlationId: 'corr-1',
         environment: 'staging',
         providerMode: 'bootstrap',
+        policyPacks: ['kernel://policy-packs/web-api-security-baseline'],
+        privacyClassification: 'internal',
+        evidenceRefs: ['artifact:source'],
       },
     } satisfies Partial<GateEvaluationRequest>);
   });
@@ -115,7 +134,9 @@ describe('GateExecutor', () => {
       status: 'failed',
       details: 'Required gate provider missing: security',
       evidenceRefs: [],
+      reasonCode: 'required-gate-provider-missing',
     });
+    expect(result.summary.failedRequiredCount).toBe(1);
   });
 
   it('skips optional gates when providers are missing', async () => {
@@ -133,7 +154,9 @@ describe('GateExecutor', () => {
     expect(result.gates[0]).toMatchObject({
       status: 'skipped',
       details: 'Optional gate provider missing: security',
+      reasonCode: 'optional-gate-provider-missing',
     });
+    expect(result.summary.skippedOptionalCount).toBe(1);
   });
 
   it('fails required gates when providers reject and skips optional provider errors', async () => {
@@ -162,10 +185,12 @@ describe('GateExecutor', () => {
       status: 'failed',
       details: 'Gate provider policy-gates failed: policy engine offline',
       providerId: 'policy-gates',
+      reasonCode: 'gate-provider-failed',
     });
     expect(optional.gates[0]).toMatchObject({
       status: 'skipped',
       details: 'Gate provider policy-gates failed: policy engine offline',
+      reasonCode: 'gate-provider-failed',
     });
   });
 
@@ -214,6 +239,64 @@ describe('GateExecutor', () => {
       gateId: 'security',
       status: 'failed',
       evidenceRefs: ['policy:deny'],
+      reasonCode: 'gate-evaluation-failed',
+    });
+  });
+
+  it('fails a passed required gate without evidence refs', async () => {
+    const provider = gateProvider({
+      evaluateGate: vi.fn().mockResolvedValue({
+        gateId: 'security',
+        passed: true,
+        reason: 'policy passed',
+        evidence: [],
+        evaluatedAt: '2026-05-14T00:00:00.000Z',
+        duration: 5,
+      }),
+    });
+    const executor = new GateExecutor({ providerContext: context(provider) });
+
+    const result = await executor.execute({
+      productId: 'digital-marketing',
+      runId: 'run-1',
+      phase: 'build',
+      gates: [gatePlan()],
+      artifacts: [],
+    });
+
+    expect(result.failedRequiredGate).toMatchObject({
+      gateId: 'security',
+      status: 'failed',
+      details: 'Required gate passed without evidence refs',
+      reasonCode: 'required-gate-missing-evidence',
+      evidenceRefs: [],
+    });
+    expect(result.summary).toEqual({
+      passedCount: 0,
+      failedRequiredCount: 1,
+      skippedOptionalCount: 0,
+    });
+  });
+
+  it('summarizes passed, failed required, and skipped optional gates', async () => {
+    const provider = gateProvider();
+    const executor = new GateExecutor({ providerContext: context(provider) });
+
+    const result = await executor.execute({
+      productId: 'digital-marketing',
+      runId: 'run-1',
+      phase: 'build',
+      gates: [
+        gatePlan({ gateId: 'security' }),
+        gatePlan({ gateId: 'missing-optional', gateName: 'Missing optional', required: false }),
+      ],
+      artifacts: [],
+    });
+
+    expect(result.summary).toEqual({
+      passedCount: 1,
+      failedRequiredCount: 0,
+      skippedOptionalCount: 1,
     });
   });
 });

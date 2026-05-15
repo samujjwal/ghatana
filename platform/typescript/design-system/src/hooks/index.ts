@@ -11,6 +11,8 @@ export { useFocusTrap, FOCUSABLE_SELECTOR, getFocusableElements } from './useFoc
 export type { UseFocusTrapOptions } from './useFocusTrap';
 export { useId } from './useId';
 export { usePrefersReducedMotion } from './usePrefersReducedMotion';
+export { useTheme } from './useTheme';
+export type { Theme, ResolvedTheme, ThemeOptions } from './useTheme';
 
 // Keyboard navigation hooks
 export {
@@ -82,4 +84,3 @@ export { useAccessibleId } from './useAccessibleId';
 // Media query hook (migrated from @ghatana/design-system)
 export { useMediaQuery } from './useMediaQuery';
 export type { Breakpoint } from './useMediaQuery';
-

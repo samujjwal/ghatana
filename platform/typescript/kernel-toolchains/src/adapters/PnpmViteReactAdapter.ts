@@ -40,8 +40,13 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       throw new Error('packagePath is required for PnpmViteReactAdapter');
     }
 
-    const script = this.mapPhaseToScript(context.phase, context.surfaceConfig);
+    this.mapPhaseToScript(context.phase, context.surfaceConfig, undefined);
     const packageDirectory = this.resolvePackageDirectory(packagePath);
+    const packageJson = await this.readPackageJson(packageDirectory);
+    const script = this.mapPhaseToScript(context.phase, context.surfaceConfig, packageJson);
+    if (!hasPackageScript(packageJson, script)) {
+      throw new Error(`script-not-found: package "${packageDirectory}" does not define script "${script}"`);
+    }
 
     return [
       {
@@ -303,7 +308,7 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       stepId,
       durationMs,
       packageDirectory,
-      script: this.mapPhaseToScript('dev', context.surfaceConfig),
+      script: this.mapPhaseToScript('dev', context.surfaceConfig, undefined),
       note: 'Vite dev server completes when terminated. PID not captured in batch mode.',
     };
 
@@ -314,12 +319,19 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     );
   }
 
-  private mapPhaseToScript(phase: ProductLifecyclePhase, surfaceConfig: Record<string, unknown>): string {
+  private mapPhaseToScript(
+    phase: ProductLifecyclePhase,
+    surfaceConfig: Record<string, unknown>,
+    packageJson: PackageJson | undefined,
+  ): string {
     switch (phase) {
       case 'dev':
         return String(surfaceConfig.devScript ?? 'dev');
       case 'validate':
-        return String(surfaceConfig.validateScript ?? 'lint');
+        if (surfaceConfig.validateScript !== undefined) {
+          return String(surfaceConfig.validateScript);
+        }
+        return hasPackageScript(packageJson, 'typecheck') ? 'typecheck' : 'lint';
       case 'test':
         return String(surfaceConfig.testScript ?? 'test');
       case 'build':
@@ -386,6 +398,27 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     return packagePath.endsWith('package.json') ? path.dirname(packagePath) : packagePath;
   }
 
+  private async readPackageJson(packageDirectory: string): Promise<PackageJson> {
+    const absoluteDirectory = path.isAbsolute(packageDirectory)
+      ? packageDirectory
+      : path.join(this.repoRoot, packageDirectory);
+    const packageJsonPath = path.join(absoluteDirectory, 'package.json');
+    let content: string;
+    try {
+      content = await fs.readFile(packageJsonPath, 'utf-8');
+    } catch (error) {
+      if (isNodeFileNotFound(error)) {
+        throw new Error(`package-path-not-found: ${packageJsonPath}`);
+      }
+      throw error;
+    }
+    const parsed: unknown = JSON.parse(content);
+    if (!isPackageJson(parsed)) {
+      throw new Error(`invalid-package-json: ${packageJsonPath}`);
+    }
+    return parsed;
+  }
+
   private async exists(targetPath: string): Promise<boolean> {
     try {
       await fs.access(targetPath);
@@ -394,4 +427,25 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       return false;
     }
   }
+}
+
+interface PackageJson {
+  readonly scripts?: Record<string, string>;
+}
+
+function isPackageJson(value: unknown): value is PackageJson {
+  return typeof value === 'object' && value !== null;
+}
+
+function hasPackageScript(packageJson: PackageJson | undefined, script: string): boolean {
+  return typeof packageJson?.scripts?.[script] === 'string' && packageJson.scripts[script].trim().length > 0;
+}
+
+function isNodeFileNotFound(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { readonly code?: unknown }).code === 'ENOENT'
+  );
 }

@@ -325,6 +325,43 @@ export class AccessibilityAuditor {
   }
 
   /**
+   * Run an audit and return the legacy axe-style report shape.
+   *
+   * @doc.type method
+   * @doc.purpose Preserve compatibility for older accessibility consumers
+   * @doc.layer platform
+   */
+  public async legacyAudit(
+    context?: Element | Document | string,
+    options: RunOptions = {},
+  ): Promise<{
+    violations: AccessibilityViolation[];
+    passes: AxeResult[];
+    incomplete: AxeResult[];
+    inapplicable: AxeResult[];
+    url: string;
+    timestamp: string;
+  }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    if (!this.axeCore) {
+      throw new Error("axe-core failed to load");
+    }
+
+    const axeResults = await this.axeCore.run(context || document, options);
+    return {
+      violations: this.convertToLegacyViolations(axeResults.violations),
+      passes: axeResults.passes,
+      incomplete: axeResults.incomplete,
+      inapplicable: axeResults.inapplicable,
+      url: axeResults.url,
+      timestamp: axeResults.timestamp,
+    };
+  }
+
+  /**
    * Export accessibility report to various formats
    *
    * Converts the AccessibilityReport to different output formats suitable for

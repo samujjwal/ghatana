@@ -17,6 +17,15 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
+const requiredReadinessDimensions = [
+  'apiReadiness',
+  'uiReadiness',
+  'providerReadiness',
+  'runtimeTruthReadiness',
+  'approvalReadiness',
+  'privacySecurityGateReadiness',
+  'artifactDeploymentManifestReadiness',
+];
 
 function loadRegistry() {
   const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
@@ -104,6 +113,24 @@ async function main() {
     if (!Array.isArray(row.gatesNeeded)) {
       errors.push(`Matrix row "${row.productId}" is missing gatesNeeded`);
     }
+    if (!isReadinessDimensions(row.readinessDimensions)) {
+      errors.push(`Matrix row "${row.productId}" is missing structured readinessDimensions`);
+    } else {
+      for (const dimensionName of requiredReadinessDimensions) {
+        if (!row.readinessDimensions[dimensionName]) {
+          errors.push(`Matrix row "${row.productId}" is missing readiness dimension "${dimensionName}"`);
+        }
+      }
+    }
+    if (typeof row.minimumReleaseToEnable !== 'string' || row.minimumReleaseToEnable.length === 0) {
+      errors.push(`Matrix row "${row.productId}" is missing minimumReleaseToEnable`);
+    }
+    if (!Array.isArray(row.blockingGaps)) {
+      errors.push(`Matrix row "${row.productId}" is missing blockingGaps`);
+    }
+    if (typeof row.nextValidationCommand !== 'string' || row.nextValidationCommand.length === 0) {
+      errors.push(`Matrix row "${row.productId}" is missing nextValidationCommand`);
+    }
     const registryProduct = registry[row.productId];
     const lifecycleReadiness = registryProduct?.lifecycleReadiness;
     if (lifecycleReadiness) {
@@ -153,6 +180,24 @@ async function main() {
     }
     if (row.lifecycleStatus === 'enabled' && row.capabilityGaps?.length > 0) {
       errors.push(`Enabled product "${row.productId}" has capability gaps: ${row.capabilityGaps.join(', ')}`);
+    }
+    if (row.lifecycleStatus === 'enabled') {
+      const nonPlatformBlockingGaps = (row.blockingGaps ?? []).filter(gap => !gap.startsWith('missing-provider:platform-'));
+      if (nonPlatformBlockingGaps.length > 0) {
+        errors.push(`Enabled product "${row.productId}" has blocking gaps: ${nonPlatformBlockingGaps.join(', ')}`);
+      }
+      if (row.executionReadiness !== 'executable') {
+        errors.push(`Enabled product "${row.productId}" is not marked executable`);
+      }
+      if (row.readinessDimensions?.adapterExecutionReadiness?.status !== 'execution-ready') {
+        errors.push(`Enabled product "${row.productId}" does not have execution-ready adapters`);
+      }
+      if (!['ready', 'bootstrap-ready-platform-planned'].includes(row.readinessDimensions?.providerReadiness?.status)) {
+        errors.push(`Enabled product "${row.productId}" does not have valid bootstrap/platform provider readiness`);
+      }
+      if (row.readinessDimensions?.artifactDeploymentManifestReadiness?.status !== 'ready') {
+        errors.push(`Enabled product "${row.productId}" is missing artifact/deployment manifest readiness`);
+      }
     }
   }
 
@@ -229,6 +274,20 @@ function reportAndExit(errors, warnings) {
   }
 
   console.log('Product shape capability matrix check passed');
+}
+
+function isReadinessDimensions(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value).every((dimension) =>
+    dimension &&
+    typeof dimension === 'object' &&
+    !Array.isArray(dimension) &&
+    typeof dimension.status === 'string' &&
+    Array.isArray(dimension.reasonCodes) &&
+    Array.isArray(dimension.evidenceRefs)
+  );
 }
 
 try {

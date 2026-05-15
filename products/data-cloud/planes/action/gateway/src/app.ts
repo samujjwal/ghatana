@@ -6,6 +6,11 @@ import { randomUUID } from 'node:crypto';
 import { verifyJwt, extractBearerToken } from './jwt.js';
 import type { JwtPayload } from './jwt.js';
 import { GatewayMetrics } from './metrics.js';
+import type {
+  KernelLifecycleApiHandlers,
+  KernelLifecycleApiRequest,
+  KernelLifecycleApiResponse,
+} from '@ghatana/kernel-lifecycle';
 export type { GatewayMetricsSnapshot } from './metrics.js';
 export { GatewayMetrics } from './metrics.js';
 
@@ -80,6 +85,22 @@ export interface AgentLifecycleActionServicePort {
   handle(request: unknown): Promise<unknown>;
 }
 
+export type KernelLifecycleApiPort = Pick<
+  KernelLifecycleApiHandlers,
+  | 'listProductUnits'
+  | 'getProductUnit'
+  | 'createLifecyclePlan'
+  | 'executeLifecyclePhase'
+  | 'listLifecycleRuns'
+  | 'getLifecycleRun'
+  | 'getGateResultManifest'
+  | 'getArtifactManifest'
+  | 'getDeploymentManifest'
+  | 'getVerifyHealthReport'
+  | 'requestApproval'
+  | 'submitApprovalDecision'
+>;
+
 function extractHeaderTenantId(value: string | string[] | undefined): string | null {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim();
@@ -88,6 +109,10 @@ function extractHeaderTenantId(value: string | string[] | undefined): string | n
     return value[0].trim();
   }
   return null;
+}
+
+function resolveHeaderTenantId(headers: FastifyRequest['headers']): string | null {
+  return extractHeaderTenantId(headers['x-tenant-id']) ?? extractHeaderTenantId(headers['x-ghatana-tenant-id']);
 }
 
 function extractPayloadTenantId(payload: JwtPayload): string | null {
@@ -217,6 +242,11 @@ export interface GatewayConfig {
    * When absent, agentic lifecycle routes fail closed instead of proxying to raw tools.
    */
   agentLifecycleActionService?: AgentLifecycleActionServicePort;
+  /**
+   * Product-neutral Kernel lifecycle API handlers for Studio/product clients.
+   * When absent, /api/kernel routes fail closed instead of proxying to backendUrl.
+   */
+  kernelLifecycleApi?: KernelLifecycleApiPort;
 }
 
 export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> {
@@ -244,7 +274,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   const breakerState: { failures: number; openUntilMs: number } = { failures: 0, openUntilMs: 0 };
 
   function rateLimitKey(request: FastifyRequest): string {
-    const tenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
+    const tenantId = resolveHeaderTenantId(request.headers);
     if (tenantId) {
       return `tenant:${tenantId}`;
     }
@@ -394,7 +424,15 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   await fastify.register(fastifyCors, {
     origin: config.allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-Correlation-ID'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Tenant-Id',
+      'X-Correlation-ID',
+      'X-Ghatana-Tenant-Id',
+      'X-Ghatana-Workspace-Id',
+      'X-Ghatana-Project-Id',
+    ],
     credentials: true,
   });
 
@@ -414,7 +452,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     try {
       const payload = verifyJwt(token, config.jwtSecret);
-      const headerTenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
+      const headerTenantId = resolveHeaderTenantId(request.headers);
       const payloadTenantId = extractPayloadTenantId(payload);
       if (headerTenantId && payloadTenantId && headerTenantId !== payloadTenantId) {
         metrics.recordTenantMismatch();
@@ -517,6 +555,90 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
   });
 
+  async function dispatchKernelLifecycleApi(
+    operation: keyof KernelLifecycleApiPort,
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<FastifyReply> {
+    const correlationId =
+      (request as FastifyRequest & { correlationId?: string }).correlationId ??
+      resolveCorrelationId(request);
+    reply.header(CORRELATION_ID_HEADER, correlationId);
+
+    const kernelLifecycleApi = config.kernelLifecycleApi;
+    if (kernelLifecycleApi === undefined) {
+      metrics.recordKernelLifecycleRequest(String(operation), 503);
+      fastify.log.error(
+        { correlationId, operation },
+        'Kernel lifecycle API is not configured; refusing backend proxy fallback',
+      );
+      return reply.status(503).send({
+        error: 'Service Unavailable',
+        message: 'Kernel lifecycle API requires an injected KernelLifecycleApiHandlers instance',
+        correlationId,
+      });
+    }
+
+    try {
+      const apiRequest = toKernelLifecycleApiRequest(request);
+      const response = await kernelLifecycleApi[operation](apiRequest);
+      metrics.recordKernelLifecycleRequest(String(operation), response.statusCode);
+      return sendKernelLifecycleApiResponse(reply, response);
+    } catch (err: unknown) {
+      metrics.recordKernelLifecycleRequest(String(operation), 500);
+      fastify.log.error({ correlationId, operation, err }, 'Kernel lifecycle API handler failed');
+      return reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Kernel lifecycle API handler failed',
+        correlationId,
+      });
+    }
+  }
+
+  function toKernelLifecycleApiRequest(request: FastifyRequest): KernelLifecycleApiRequest {
+    return {
+      params: request.params as Record<string, string | undefined>,
+      query: request.query as Record<string, string | number | boolean | undefined>,
+      body: request.body,
+      headers: request.headers,
+    };
+  }
+
+  function sendKernelLifecycleApiResponse(
+    reply: FastifyReply,
+    response: KernelLifecycleApiResponse,
+  ): FastifyReply {
+    for (const [header, value] of Object.entries(response.headers)) {
+      reply.header(header, value);
+    }
+    return reply.status(response.statusCode).send(response.body);
+  }
+
+  fastify.get('/api/kernel/product-units', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('listProductUnits', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getProductUnit', request, reply));
+  fastify.post('/api/kernel/product-units/:productUnitId/lifecycle/plans', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('createLifecyclePlan', request, reply));
+  fastify.post('/api/kernel/product-units/:productUnitId/lifecycle/execute', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('executeLifecyclePhase', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('listLifecycleRuns', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getLifecycleRun', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/gate-result-manifest', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getGateResultManifest', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/artifact-manifest', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getArtifactManifest', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/deployment-manifest', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getDeploymentManifest', request, reply));
+  fastify.get('/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/verify-health-report', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('getVerifyHealthReport', request, reply));
+  fastify.post('/api/kernel/approvals', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('requestApproval', request, reply));
+  fastify.post('/api/kernel/approvals/:approvalId/decisions', { preHandler: [authenticate] }, async (request, reply) =>
+    dispatchKernelLifecycleApi('submitApprovalDecision', request, reply));
+
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────
   // T-17: Gateway is the sole external edge; backend auth becomes trust-internal-only
   fastify.all('/api/*', { preHandler: [authenticate] }, async (request, reply) => {
@@ -536,7 +658,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       proxyHeaders['authorization'] = request.headers.authorization;
     }
     const payloadTenantId = extractPayloadTenantId((request as FastifyRequest & { user: JwtPayload }).user);
-    const headerTenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
+    const headerTenantId = resolveHeaderTenantId(request.headers);
     const effectiveTenantId = payloadTenantId ?? headerTenantId;
     if (effectiveTenantId) {
       proxyHeaders['x-tenant-id'] = effectiveTenantId;
@@ -716,6 +838,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
         return;
       }
       metrics.recordWsAccepted();
+      let wsCloseRecorded = false;
+      function recordWsClosedOnce(): void {
+        if (!wsCloseRecorded) {
+          wsCloseRecorded = true;
+          metrics.recordWsClosed();
+        }
+      }
 
       const tenantId = extractPayloadTenantId(payload) ?? extractHeaderTenantId(req.headers['x-tenant-id']);
 
@@ -814,12 +943,14 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
         cleanup();
         metrics.recordBackendUnreachable();
         scopedFastify.log.error({ err, correlationId }, 'WS /tail/events backend error; closing client (1011)');
+        recordWsClosedOnce();
         clientSocket.close(1011, 'Backend connection failed');
       });
       backendWs.on('close', () => {
         cleanup();
         if (clientSocket.readyState === WebSocket.OPEN) {
           scopedFastify.log.info({ correlationId }, 'WS /tail/events backend closed; closing client (1000)');
+          recordWsClosedOnce();
           clientSocket.close(1000, 'Backend closed connection');
         }
       });
@@ -846,7 +977,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       });
       clientSocket.on('close', () => {
         cleanup();
-        metrics.recordWsClosed();
+        recordWsClosedOnce();
         if (backendWs.readyState !== WebSocket.CLOSED) {
           backendWs.close();
         }

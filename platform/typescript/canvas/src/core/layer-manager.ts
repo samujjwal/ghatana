@@ -73,6 +73,10 @@ export class LayerManager {
     w: number;
     h: number;
   }): CanvasElement[] {
+    if (viewportBounds.w <= 0 || viewportBounds.h <= 0) {
+      return [];
+    }
+
     const visibleElements: CanvasElement[] = [];
 
     for (const layerId of this.layerOrder) {
@@ -94,6 +98,10 @@ export class LayerManager {
     bound1: { x: number; y: number; w: number; h: number },
     bound2: { x: number; y: number; w: number; h: number },
   ): boolean {
+    if (bound1.w <= 0 || bound1.h <= 0 || bound2.w <= 0 || bound2.h <= 0) {
+      return false;
+    }
+
     return !(
       bound1.x + bound1.w < bound2.x ||
       bound2.x + bound2.w < bound1.x ||

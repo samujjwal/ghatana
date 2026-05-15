@@ -10,7 +10,11 @@
  * @doc.pattern Service
  */
 
-import type { LifecycleEventProvider, TelemetryProvider } from "@ghatana/kernel-product-contracts";
+import type {
+  LifecycleEventProvider,
+  LifecycleProviderResult,
+  TelemetryProvider,
+} from "@ghatana/kernel-product-contracts";
 import type {
   KernelEventMetadata,
   KernelLifecycleEvent,
@@ -41,6 +45,12 @@ export interface EventEmitterOptions {
    * Whether provider writes are required by this emitter.
    */
   readonly lifecycleEventWritesRequired?: boolean;
+
+  readonly logger?: {
+    warn(message: string, meta?: Record<string, unknown>): void;
+    error(message: string, meta?: Record<string, unknown>): void;
+    info?(message: string, meta?: Record<string, unknown>): void;
+  };
 }
 
 /**
@@ -51,12 +61,25 @@ export class KernelLifecycleEventEmitter {
   private readonly lifecycleEventProvider: LifecycleEventProvider | undefined;
   private readonly enableConsoleLogging: boolean;
   private readonly lifecycleEventWritesRequired: boolean;
+  private readonly logger: NonNullable<EventEmitterOptions["logger"]>;
 
   constructor(options: EventEmitterOptions = {}) {
     this.telemetryProvider = options.telemetryProvider;
     this.lifecycleEventProvider = options.lifecycleEventProvider;
     this.enableConsoleLogging = options.enableConsoleLogging ?? true;
     this.lifecycleEventWritesRequired = options.lifecycleEventWritesRequired ?? true;
+    this.logger = options.logger ?? {
+      warn: (message, meta) => {
+        if (this.enableConsoleLogging) {
+          console.warn(message, meta);
+        }
+      },
+      error: (message, meta) => {
+        if (this.enableConsoleLogging) {
+          console.error(message, meta);
+        }
+      },
+    };
   }
 
   private createMetadata(
@@ -87,23 +110,43 @@ export class KernelLifecycleEventEmitter {
     return `corr-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  private emitEvent(event: KernelLifecycleEvent): void {
+  private async emitEvent(event: KernelLifecycleEvent): Promise<LifecycleProviderResult[]> {
+    const telemetryPromise = this.emitTelemetryEvent(event);
+    const providerResults: LifecycleProviderResult[] = [];
     if (this.lifecycleEventProvider) {
-      this.lifecycleEventProvider
-        .appendEvent(event, {
+      try {
+        const result = await this.lifecycleEventProvider.appendEvent(event, {
           required: this.lifecycleEventWritesRequired,
           correlationId: event.metadata.correlationId,
-        })
-        .then((result) => {
-          if (!result.success) {
-            console.error("Failed to append lifecycle event:", result.error ?? "unknown provider error");
-          }
-        })
-        .catch((error: unknown) => {
-          console.error("Failed to append lifecycle event:", error);
         });
+        providerResults.push(result);
+        if (!result.success) {
+          const errorMessage = result.error ?? "unknown provider error";
+          if (this.lifecycleEventWritesRequired) {
+            throw new Error(`Required lifecycle event provider write failed: ${errorMessage}`);
+          }
+          this.logger.warn("Optional lifecycle event provider write failed", {
+            correlationId: event.metadata.correlationId,
+            eventId: event.metadata.eventId,
+            error: errorMessage,
+          });
+        }
+      } catch (error: unknown) {
+        if (this.lifecycleEventWritesRequired) {
+          throw error;
+        }
+        this.logger.warn("Optional lifecycle event provider write rejected", {
+          correlationId: event.metadata.correlationId,
+          eventId: event.metadata.eventId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
+    await telemetryPromise;
+    return providerResults;
+  }
 
+  private async emitTelemetryEvent(event: KernelLifecycleEvent): Promise<void> {
     if (this.telemetryProvider) {
       // Map KernelLifecycleEvent to TelemetryEvent
       const telemetryEvent = {
@@ -114,11 +157,10 @@ export class KernelLifecycleEventEmitter {
         payload: event.payload as unknown as Record<string, unknown>,
       };
       this.telemetryProvider.emitEvent(telemetryEvent).catch((error: unknown) => {
-        console.error("Failed to emit event via telemetry provider:", error);
-        // Fallback to console logging if provider fails
-        if (this.enableConsoleLogging) {
-          console.log(JSON.stringify(event, null, 2));
-        }
+        this.logger.warn("Failed to emit event via telemetry provider", {
+          eventId: event.metadata.eventId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       });
     } else if (this.enableConsoleLogging) {
       console.log(JSON.stringify(event, null, 2));
@@ -133,7 +175,7 @@ export class KernelLifecycleEventEmitter {
     runId: string,
     phase: ProductLifecyclePhase,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.phase.started",
       productUnitId,
@@ -151,7 +193,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -164,7 +206,7 @@ export class KernelLifecycleEventEmitter {
     status: "succeeded" | "failed" | "skipped",
     duration: number,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.phase.completed",
       productUnitId,
@@ -183,7 +225,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -198,7 +240,7 @@ export class KernelLifecycleEventEmitter {
     surface: string,
     adapter: string,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.step.started",
       productUnitId,
@@ -219,7 +261,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -238,7 +280,7 @@ export class KernelLifecycleEventEmitter {
     evidenceRefs: readonly string[],
     correlationId?: string,
     exitCode?: number
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.step.completed",
       productUnitId,
@@ -262,7 +304,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -278,7 +320,7 @@ export class KernelLifecycleEventEmitter {
     evidence: readonly string[],
     duration: number,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.gate.evaluated",
       productUnitId,
@@ -299,7 +341,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -317,7 +359,7 @@ export class KernelLifecycleEventEmitter {
     checksum: string,
     surfaceId: string,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.artifact.recorded",
       productUnitId,
@@ -338,7 +380,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -355,7 +397,7 @@ export class KernelLifecycleEventEmitter {
     endpoints: readonly string[],
     duration: number,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.deployment.completed",
       productUnitId,
@@ -376,7 +418,7 @@ export class KernelLifecycleEventEmitter {
       },
     };
 
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -394,7 +436,7 @@ export class KernelLifecycleEventEmitter {
     deploymentId?: string,
     environment?: string,
     correlationId?: string
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.health.checked",
       productUnitId,
@@ -415,7 +457,7 @@ export class KernelLifecycleEventEmitter {
         ...(environment !== undefined ? { environment } : {}),
       },
     };
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 
   /**
@@ -433,7 +475,7 @@ export class KernelLifecycleEventEmitter {
     masteryState?: string,
     executionMode?: string,
     evidenceRefs?: readonly string[]
-  ): void {
+  ): Promise<LifecycleProviderResult[]> {
     const metadata = this.createMetadata(
       "lifecycle.agent.governance.evaluated",
       productUnitId,
@@ -454,6 +496,6 @@ export class KernelLifecycleEventEmitter {
         evidenceRefs: evidenceRefs ?? [],
       },
     };
-    this.emitEvent(event);
+    return this.emitEvent(event);
   }
 }

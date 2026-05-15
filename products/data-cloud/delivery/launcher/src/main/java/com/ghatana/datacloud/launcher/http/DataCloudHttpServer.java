@@ -1,7 +1,22 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.agent.learning.LearningDeltaRepository;
+import com.ghatana.agent.mastery.MasteryEvidenceRepository;
+import com.ghatana.agent.mastery.MasteryRegistry;
+import com.ghatana.agent.mastery.MasteryTransitionRepository;
+import com.ghatana.agent.mastery.transition.DefaultMasteryTransitionPolicy;
+import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
+import com.ghatana.agent.obsolescence.DefaultObsolescenceDetector;
+import com.ghatana.agent.obsolescence.ObsolescenceDetector;
+import com.ghatana.agent.promotion.DefaultPromotionEngine;
+import com.ghatana.agent.promotion.PromotionEngine;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
+import com.ghatana.datacloud.api.controller.MasteryController;
+import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryEvidenceRepository;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryRegistry;
+import com.ghatana.datacloud.agent.mastery.DataCloudMasteryTransitionRepository;
 import com.ghatana.datacloud.brain.DataCloudBrain;
 import com.ghatana.platform.config.ConfigManager;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
@@ -54,6 +69,7 @@ import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.datacloud.governance.TenantQuotaService;
+import com.ghatana.datacloud.governance.approval.ApprovalService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.http.security.filter.RateLimitFilter;
@@ -1638,6 +1654,8 @@ public class DataCloudHttpServer {
 
         log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
 
+        MasteryController masteryController = buildMasteryController();
+
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
             .withEntityRoutes(entityHandler, sseHandler, semanticSearchHandler, exportHandler, anomalyHandler, validationHandler)
@@ -1649,6 +1667,7 @@ public class DataCloudHttpServer {
             .withMemoryRoutes(memoryHandler)
             .withBrainRoutes(brainHandler, sseHandler)
             .withLearningRoutes(learningHandler)
+            .withMasteryRoutes(masteryController)
             .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
             .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
             .withExecutionRoutes(workflowExecutionHandler)
@@ -1758,6 +1777,31 @@ public class DataCloudHttpServer {
         if (startupFailure.get() != null) {
             throw startupFailure.get();
         }
+    }
+
+    private MasteryController buildMasteryController() {
+        if (client == null) {
+            return null;
+        }
+
+        DataCloudEntityRepositoryAdapter entityRepository = new DataCloudEntityRepositoryAdapter(client.entityStore());
+        MasteryTransitionPolicy transitionPolicy = new DefaultMasteryTransitionPolicy();
+        MasteryTransitionRepository transitionRepository = new DataCloudMasteryTransitionRepository(entityRepository);
+        MasteryEvidenceRepository evidenceRepository = new DataCloudMasteryEvidenceRepository(entityRepository);
+        MasteryRegistry masteryRegistry = new DataCloudMasteryRegistry(
+            entityRepository,
+            transitionRepository,
+            evidenceRepository,
+            transitionPolicy);
+        LearningDeltaRepository learningDeltaRepository = new DataCloudLearningDeltaRepository(entityRepository);
+        PromotionEngine promotionEngine = new DefaultPromotionEngine(masteryRegistry, learningDeltaRepository);
+        ObsolescenceDetector obsolescenceDetector = new DefaultObsolescenceDetector(masteryRegistry);
+        return new MasteryController(
+            masteryRegistry,
+            ApprovalService.getInstance(),
+            obsolescenceDetector,
+            learningDeltaRepository,
+            promotionEngine);
     }
 
     /**
@@ -1948,7 +1992,6 @@ public class DataCloudHttpServer {
     }
 
     private java.util.List<SurfaceRecord> buildTypedSurfaceSnapshot() {
-        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
         boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
         boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
 

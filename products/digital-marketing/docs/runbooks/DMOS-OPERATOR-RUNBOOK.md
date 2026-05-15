@@ -201,6 +201,34 @@ pg_restore -d dmos_staging dmos_$(date +%Y%m%d).dump
 
 ## Build and Deployment
 
+### Kernel lifecycle pilot
+
+Run these commands from the repository root. Bootstrap mode is file-backed and does not require Data Cloud platform providers.
+
+```bash
+node scripts/kernel-product.mjs product plan digital-marketing build --json
+node scripts/kernel-product.mjs product validate digital-marketing --dry-run --json
+node scripts/kernel-product.mjs product test digital-marketing --dry-run --json
+node scripts/kernel-product.mjs product build digital-marketing --dry-run --json
+node scripts/kernel-product.mjs product package digital-marketing --dry-run --json
+node scripts/kernel-product.mjs product deploy digital-marketing --env local --dry-run --json
+node scripts/kernel-product.mjs product verify digital-marketing --env local --dry-run --json
+```
+
+For a local deploy, copy `products/digital-marketing/deploy/local.env.example`, set a local `DATABASE_PASSWORD`, and keep the deploy profile Postgres-backed. Do not replace the placeholder with a shared or production secret.
+
+Lifecycle manifests are written under `.kernel/out/products/digital-marketing/<phase>/<runId>/`. Latest bootstrap pointers are stored under the product/phase output directory. Use the lifecycle result first, then inspect gate, artifact, deployment, verify health, and lifecycle event manifests referenced from that result.
+
+When a lifecycle phase fails, start with the safe `reasonCode`, `correlationId`, affected step, and manifest refs in the lifecycle result. Required truth/provider write failures are intentionally fail-closed and should be fixed before retrying the phase.
+
+Rollback is Kernel-managed through the rollback lifecycle phase:
+
+```bash
+node scripts/kernel-product.mjs product rollback digital-marketing --env local --dry-run --json
+```
+
+Use non-dry-run rollback only after the approval evidence required by the lifecycle plan is available.
+
 **Build all DMOS modules:**
 ```bash
 ./gradlew :products:digital-marketing:dm-domain:build \

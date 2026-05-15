@@ -643,6 +643,13 @@ export class SimulationCorrectnessHarness {
   }
 
   private universalChecks(manifest: SimulationManifest): CorrectnessCheckResult[] {
+    const accessibility = manifest.accessibility ?? {
+      keyboardNavigable: false,
+      screenReaderCompatible: false,
+      colorContrastCompliant: false,
+      reducedMotionSupport: false,
+    };
+
     return [
       {
         check: "has_title",
@@ -697,33 +704,33 @@ export class SimulationCorrectnessHarness {
       // Accessibility validation
       {
         check: "keyboard_navigable",
-        passed: manifest.accessibility.keyboardNavigable,
+        passed: accessibility.keyboardNavigable,
         severity: "ERROR",
-        detail: manifest.accessibility.keyboardNavigable
+        detail: accessibility.keyboardNavigable
           ? "Keyboard navigation supported ✓"
           : "Keyboard navigation must be supported for accessibility",
       },
       {
         check: "screen_reader_compatible",
-        passed: manifest.accessibility.screenReaderCompatible,
+        passed: accessibility.screenReaderCompatible,
         severity: "ERROR",
-        detail: manifest.accessibility.screenReaderCompatible
+        detail: accessibility.screenReaderCompatible
           ? "Screen reader compatibility declared ✓"
           : "Screen reader compatibility must be declared",
       },
       {
         check: "color_contrast_compliant",
-        passed: manifest.accessibility.colorContrastCompliant,
+        passed: accessibility.colorContrastCompliant,
         severity: "ERROR",
-        detail: manifest.accessibility.colorContrastCompliant
+        detail: accessibility.colorContrastCompliant
           ? "Color contrast compliance declared ✓"
           : "Color contrast compliance must be declared",
       },
       {
         check: "reduced_motion_support",
-        passed: manifest.accessibility.reducedMotionSupport,
+        passed: accessibility.reducedMotionSupport,
         severity: "WARNING",
-        detail: manifest.accessibility.reducedMotionSupport
+        detail: accessibility.reducedMotionSupport
           ? "Reduced motion support declared ✓"
           : "Reduced motion support should be declared for accessibility",
       },

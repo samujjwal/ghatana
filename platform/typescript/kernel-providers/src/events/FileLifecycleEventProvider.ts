@@ -21,6 +21,17 @@ import { validateKernelLifecycleEvent } from "@ghatana/kernel-product-contracts"
 export interface FileLifecycleEventProviderOptions {
   readonly outputDirectory: string;
   readonly fileName?: string;
+  readonly scope?: FileLifecycleEventProviderScope;
+  readonly eventCountWarningThreshold?: number;
+  readonly logger?: {
+    readonly warn: (message: string, metadata?: Record<string, unknown>) => void;
+  };
+}
+
+export interface FileLifecycleEventProviderScope {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
 }
 
 interface StoredLifecycleEvents {
@@ -35,14 +46,42 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
 
   private readonly outputDirectory: string;
   private readonly fileName: string;
+  private readonly scope: FileLifecycleEventProviderScope | undefined;
+  private readonly eventCountWarningThreshold: number;
+  private readonly logger:
+    | {
+        readonly warn: (message: string, metadata?: Record<string, unknown>) => void;
+      }
+    | undefined;
+  private appendQueue: Promise<void> = Promise.resolve();
 
   constructor(options: FileLifecycleEventProviderOptions) {
-    this.outputDirectory = options.outputDirectory;
+    this.outputDirectory = path.resolve(options.outputDirectory);
     this.fileName = options.fileName ?? "lifecycle-events.json";
+    this.scope = options.scope;
+    this.eventCountWarningThreshold = options.eventCountWarningThreshold ?? 10_000;
+    this.logger = options.logger;
+  }
+
+  private get eventsDirectory(): string {
+    if (this.scope === undefined) {
+      return this.outputDirectory;
+    }
+    return path.join(
+      this.outputDirectory,
+      encodePathSegment(this.scope.tenantId),
+      encodePathSegment(this.scope.workspaceId),
+      encodePathSegment(this.scope.projectId),
+      "events"
+    );
   }
 
   private get eventsPath(): string {
-    return path.join(this.outputDirectory, this.fileName);
+    return path.join(this.eventsDirectory, this.fileName);
+  }
+
+  private get eventsRef(): string {
+    return path.relative(this.outputDirectory, this.eventsPath);
   }
 
   private async readStoredEvents(): Promise<StoredLifecycleEvents> {
@@ -73,7 +112,7 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
   }
 
   private async writeStoredEvents(events: StoredLifecycleEvents): Promise<void> {
-    await fs.mkdir(this.outputDirectory, { recursive: true });
+    await fs.mkdir(this.eventsDirectory, { recursive: true });
     const tempPath = `${this.eventsPath}.${process.pid}.${Date.now()}.tmp`;
     await fs.writeFile(tempPath, `${JSON.stringify(events, null, 2)}\n`, "utf-8");
     await fs.rename(tempPath, this.eventsPath);
@@ -97,23 +136,29 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
       );
     }
 
-    try {
+    return this.enqueueAppend(async () => {
       const storedEvents = await this.readStoredEvents();
+      if (storedEvents.events.length + 1 > this.eventCountWarningThreshold) {
+        this.logger?.warn("File lifecycle event store exceeded warning threshold", {
+          providerId: this.providerId,
+          eventCount: storedEvents.events.length + 1,
+          threshold: this.eventCountWarningThreshold,
+          ref: this.eventsRef,
+        });
+      }
       await this.writeStoredEvents({
         schemaVersion: "1.0.0",
         events: [...storedEvents.events, event],
       });
-      return { success: true, ref: this.eventsPath };
-    } catch (error) {
-      return fail(String(error).replace(/^Error: /, ""), options.required);
-    }
+      return { success: true, ref: this.eventsRef };
+    }, options.required);
   }
 
   async listEvents(
     query: LifecycleProviderQuery
   ): Promise<readonly KernelLifecycleEvent[]> {
     const storedEvents = await this.readStoredEvents();
-    return storedEvents.events.filter((event: KernelLifecycleEvent) => {
+    const filteredEvents = storedEvents.events.filter((event: KernelLifecycleEvent) => {
       if (event.metadata.productUnitId !== query.productUnitId) {
         return false;
       }
@@ -128,6 +173,35 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
       }
       return true;
     });
+    const startIndex = parseCursor(query.cursor);
+    const limitedEvents =
+      query.limit === undefined
+        ? filteredEvents.slice(startIndex)
+        : filteredEvents.slice(startIndex, startIndex + Math.max(0, query.limit));
+    return limitedEvents;
+  }
+
+  async cleanupRetainedEvents(): Promise<LifecycleProviderResult> {
+    return {
+      success: true,
+      ref: this.eventsRef,
+    };
+  }
+
+  private async enqueueAppend(
+    operation: () => Promise<LifecycleProviderResult>,
+    required: boolean
+  ): Promise<LifecycleProviderResult> {
+    const run = this.appendQueue.then(operation, operation);
+    this.appendQueue = run.then(
+      () => undefined,
+      () => undefined
+    );
+    try {
+      return await run;
+    } catch (error) {
+      return fail(String(error).replace(/^Error: /, ""), required);
+    }
   }
 }
 
@@ -145,4 +219,16 @@ function isFileNotFound(error: unknown): boolean {
     "code" in error &&
     (error as { readonly code?: unknown }).code === "ENOENT"
   );
+}
+
+function encodePathSegment(segment: string): string {
+  return encodeURIComponent(segment.trim()).replace(/\./g, "%2E");
+}
+
+function parseCursor(cursor: string | undefined): number {
+  if (cursor === undefined) {
+    return 0;
+  }
+  const parsed = Number.parseInt(cursor, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }

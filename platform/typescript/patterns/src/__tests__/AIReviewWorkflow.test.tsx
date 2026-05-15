@@ -69,7 +69,7 @@ describe('AIReviewWorkflow', () => {
           content
         </AIReviewWorkflow>,
       );
-      expect(screen.getByText('Refactoring imports')).toBeInTheDocument();
+      expect(screen.getByText(/Refactoring imports/)).toBeInTheDocument();
     });
 
     it('displays the confidence band values', () => {

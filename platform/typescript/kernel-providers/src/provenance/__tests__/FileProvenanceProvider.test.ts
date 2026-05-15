@@ -34,7 +34,7 @@ describe("FileProvenanceProvider", () => {
 
     await expect(
       provider.listProvenance({ productUnitId: "digital-marketing", runId: "run-1" })
-    ).resolves.toEqual([replacement]);
+    ).resolves.toEqual([expect.objectContaining({ ...replacement, correlationId: "corr-1" })]);
     expect(replacement.privacyClassification).toBe("confidential");
     expect(replacement.retention?.policyId).toBe("marketing-evidence-365");
     await expect(
@@ -42,7 +42,52 @@ describe("FileProvenanceProvider", () => {
     ).resolves.toEqual([]);
     await expect(
       provider.listProvenance({ productUnitId: "finance" })
-    ).resolves.toEqual([third]);
+    ).resolves.toEqual([expect.objectContaining({ ...third, correlationId: "corr-1" })]);
+    await expect(
+      readJson(
+        path.join(
+          tempDir,
+          "products",
+          "digital-marketing",
+          "runs",
+          "run-1",
+          "provenance-records.json"
+        )
+      )
+    ).resolves.toMatchObject({
+      records: [{ provenanceId: "prov-1", source: "replacement" }],
+    });
+  });
+
+  it("lists provenance by correlation id and applies write metadata", async () => {
+    await provider.recordProvenance(
+      buildRecordWithoutMetadata("prov-no-metadata", "run-1"),
+      {
+        required: true,
+        correlationId: "corr-target",
+        privacyClassification: "restricted",
+        retention: { policyId: "runtime-evidence", retentionDays: 90 },
+      }
+    );
+    await provider.recordProvenance(buildRecord("prov-other", "run-1"), {
+      required: true,
+      correlationId: "corr-other",
+    });
+
+    await expect(
+      provider.listProvenance({
+        productUnitId: "digital-marketing",
+        runId: "run-1",
+        correlationId: "corr-target",
+      })
+    ).resolves.toEqual([
+      expect.objectContaining({
+        provenanceId: "prov-no-metadata",
+        correlationId: "corr-target",
+        privacyClassification: "restricted",
+        retention: { policyId: "runtime-evidence", retentionDays: 90 },
+      }),
+    ]);
   });
 
   it("rejects invalid privacy and retention metadata before writing", async () => {
@@ -121,6 +166,24 @@ describe("FileProvenanceProvider", () => {
     });
   });
 });
+
+async function readJson(filePath: string): Promise<unknown> {
+  return JSON.parse(await fs.readFile(filePath, "utf-8"));
+}
+
+function buildRecordWithoutMetadata(
+  provenanceId: string,
+  runId: string
+): LifecycleProvenanceRecord {
+  return {
+    provenanceId,
+    productUnitId: "digital-marketing",
+    runId,
+    source: "test",
+    evidenceRefs: ["evidence://blueprint"],
+    recordedAt: "2026-05-14T00:00:00.000Z",
+  };
+}
 
 function buildRecord(
   provenanceId: string,

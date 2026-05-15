@@ -14,7 +14,7 @@ import {
 } from '@ghatana/ds-registry';
 import { validateDTCGTokenFile } from '@ghatana/ds-schema';
 import { tokens } from '../registry';
-import { validateTokenRegistryDTCG } from '../validation';
+import { toDTCGTokenFile, validateTokenRegistryDTCG } from '../validation';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,11 +25,7 @@ import { validateTokenRegistryDTCG } from '../validation';
  * structure so it can be ingested by the registry store.
  */
 function wrapAsDTCGTokenFile(registry: Record<string, unknown>): Record<string, unknown> {
-  return {
-    $schema: 'https://design-tokens.org/schema',
-    $version: '1.0.0',
-    ...registry,
-  };
+  return toDTCGTokenFile(registry);
 }
 
 // ---------------------------------------------------------------------------

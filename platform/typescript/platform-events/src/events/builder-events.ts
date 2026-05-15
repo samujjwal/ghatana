@@ -7,7 +7,7 @@
  * - builder.pattern.applied
  * - builder.preview.started, builder.preview.updated, builder.preview.failed
  * - builder.codegen.completed, builder.codegen.failed
- * - builder.import.started, builder.import.completed, builder.import.review_required
+ * - builder.import.started, builder.import.completed, builder.import.review.required
  * - builder.ai.suggestion.shown, builder.ai.suggestion.accepted, builder.ai.suggestion.rejected
  * - builder.ai.action.applied
  * - builder.review.requested, builder.review.completed
@@ -177,7 +177,7 @@ export interface BuilderEventPayloads {
   'builder.codegen.failed': CodegenPayload;
   'builder.import.started': ImportPayload;
   'builder.import.completed': ImportPayload;
-  'builder.import.review_required': ImportPayload;
+  'builder.import.review.required': ImportPayload;
   'builder.import.losspoint.detected': LossPointPayload;
   'builder.export.losspoint.detected': LossPointPayload;
   'builder.ai.suggestion.shown': BuilderAISuggestionPayload;
@@ -214,7 +214,7 @@ export const BuilderEvents = {
   CODEGEN_FAILED: 'builder.codegen.failed',
   IMPORT_STARTED: 'builder.import.started',
   IMPORT_COMPLETED: 'builder.import.completed',
-  IMPORT_REVIEW_REQUIRED: 'builder.import.review_required',
+  IMPORT_REVIEW_REQUIRED: 'builder.import.review.required',
   IMPORT_LOSSPOINT_DETECTED: 'builder.import.losspoint.detected',
   EXPORT_LOSSPOINT_DETECTED: 'builder.export.losspoint.detected',
   AI_SUGGESTION_SHOWN: 'builder.ai.suggestion.shown',

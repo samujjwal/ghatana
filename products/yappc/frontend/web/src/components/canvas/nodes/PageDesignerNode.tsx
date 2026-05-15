@@ -93,6 +93,16 @@ const COLLAPSED_HEIGHT = 90;
 const EXPANDED_WIDTH = 880;
 const EXPANDED_HEIGHT = 640;
 
+const PAGE_DESIGNER_NODE_LABELS = {
+  'canvas.pageDesignerNode.collapse': 'Collapse page designer',
+  'canvas.pageDesignerNode.expand': 'Expand page designer',
+  'canvas.pageDesignerNode.open': 'Open page designer',
+  'canvas.pageDesignerNode.overwriteAuditReasonAria': 'Overwrite audit reason',
+  'canvas.pageDesignerNode.overwriteAuditReasonPlaceholder': 'Explain why this remote version should be overwritten.',
+} as const;
+
+type PageDesignerNodeLabelKey = keyof typeof PAGE_DESIGNER_NODE_LABELS;
+
 function hasSameSerializedDocument(left: PageArtifactDocument, right: PageArtifactDocument): boolean {
   return JSON.stringify(left.serializedBuilderDocument) === JSON.stringify(right.serializedBuilderDocument);
 }
@@ -195,6 +205,13 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   selected,
 }) => {
   const { t } = useTranslation('common');
+  const translateNodeLabel = useCallback(
+    (key: PageDesignerNodeLabelKey): string => {
+      const translated = t(key);
+      return translated === key ? PAGE_DESIGNER_NODE_LABELS[key] : translated;
+    },
+    [t],
+  );
   const executeCommand = useSetAtom(executeCommandAtom);
   const { projectId } = useParams<{ projectId: string }>();
   const currentUser = useAtomValue(currentUserAtom);
@@ -929,7 +946,11 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           <IconButton
             size="small"
             onClick={handleToggleExpand}
-            aria-label={isExpanded ? t('canvas.pageDesignerNode.collapse') : t('canvas.pageDesignerNode.expand')}
+            aria-label={
+              isExpanded
+                ? translateNodeLabel('canvas.pageDesignerNode.collapse')
+                : translateNodeLabel('canvas.pageDesignerNode.expand')
+            }
             title={isExpanded ? 'Collapse' : 'Expand (or double-click)'}
           >
             {isExpanded ? <CollapseIcon size={14} /> : <ExpandIcon size={14} />}
@@ -1019,8 +1040,8 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 	                      onChange={(event) => setOverwriteReason(event.target.value)}
                       disabled={!canMutatePageDocument}
                       rows={2}
-                      aria-label={t('canvas.pageDesignerNode.overwriteAuditReasonAria')}
-                      placeholder={t('canvas.pageDesignerNode.overwriteAuditReasonPlaceholder')}
+                      aria-label={translateNodeLabel('canvas.pageDesignerNode.overwriteAuditReasonAria')}
+                      placeholder={translateNodeLabel('canvas.pageDesignerNode.overwriteAuditReasonPlaceholder')}
                       data-testid="page-conflict-overwrite-reason"
                       className="mb-2 w-full text-xs"
                     />
@@ -1124,7 +1145,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                   variant="outlined"
                   size="small"
                   onClick={handleToggleExpand}
-                  aria-label={t('canvas.pageDesignerNode.open')}
+                  aria-label={translateNodeLabel('canvas.pageDesignerNode.open')}
                 >
                   Design
                 </Button>

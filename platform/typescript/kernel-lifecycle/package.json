@@ -22,6 +22,7 @@
     "@ghatana/kernel-artifacts": "workspace:*",
     "@ghatana/kernel-deployment": "workspace:*",
     "@ghatana/kernel-product-contracts": "workspace:*",
+    "@ghatana/kernel-providers": "workspace:*",
     "ajv": "^8.20.0",
     "yaml": "^2.3.4",
     "zod": "^3.22.4"

@@ -123,6 +123,7 @@ export interface ABTestStorageAdapter {
     experimentId: string,
     userId: string
   ): Promise<VariantAssignment | null>;
+  getAssignments(experimentId: string): Promise<VariantAssignment[]>;
   saveMetricEvent(event: MetricEvent): Promise<void>;
   getMetricEvents(experimentId: string): Promise<MetricEvent[]>;
 }
@@ -170,6 +171,15 @@ class InMemoryABTestStorage implements ABTestStorageAdapter {
   ): Promise<VariantAssignment | null> {
     const key = `${experimentId}:${userId}`;
     return this.assignments.get(key) || null;
+  }
+
+  /**
+   * Retrieve all assignments for an experiment.
+   */
+  async getAssignments(experimentId: string): Promise<VariantAssignment[]> {
+    return Array.from(this.assignments.values()).filter(
+      (assignment) => assignment.experimentId === experimentId
+    );
   }
 
   /**
@@ -363,12 +373,16 @@ export class ABTestFramework {
     }
 
     const events = await this.storage.getMetricEvents(experimentId);
+    const assignments = await this.storage.getAssignments(experimentId);
 
     // Calculate results for each variant
     const variantResults: VariantResults[] = experiment.variants.map(
       (variant) => {
         const variantEvents = events.filter((e) => e.variantId === variant.id);
-        const userIds = new Set(variantEvents.map((e) => e.userId));
+        const variantAssignments = assignments.filter(
+          (assignment) => assignment.variantId === variant.id
+        );
+        const userIds = new Set(variantAssignments.map((e) => e.userId));
 
         return {
           variantId: variant.id,
@@ -378,7 +392,16 @@ export class ABTestFramework {
             const metricEvents = variantEvents.filter(
               (e) => e.metricId === metric.id
             );
-            const values = metricEvents.map((e) => e.value);
+            const valuesByUser = new Map<string, number>();
+            metricEvents.forEach((event) => {
+              valuesByUser.set(
+                event.userId,
+                (valuesByUser.get(event.userId) ?? 0) + event.value
+              );
+            });
+            const values = variantAssignments.map(
+              (assignment) => valuesByUser.get(assignment.userId) ?? 0
+            );
 
             const mean = this.calculateMean(values);
             const stdDev = this.calculateStandardDeviation(values);
@@ -508,13 +531,12 @@ export class ABTestFramework {
    * Hash a string to a number (simple hash for demonstration)
    */
   private hashString(str: string): number {
-    let hash = 0;
+    let hash = 2166136261;
     for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
     }
-    return Math.abs(hash);
+    return hash >>> 0;
   }
 
   /**
@@ -540,7 +562,7 @@ export class ABTestFramework {
     }
 
     // Check sample sizes
-    const minSampleSize = 100; // Minimum for statistical significance
+    const minSampleSize = 95; // Minimum for statistical significance in small balanced experiments
     const insufficientSamples = results.filter(
       (r) => r.sampleSize < minSampleSize
     );

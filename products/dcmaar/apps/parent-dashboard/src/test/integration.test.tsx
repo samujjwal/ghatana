@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Dashboard } from '../pages/Dashboard';
 import { renderWithDashboardProviders } from './utils/renderWithProviders';
+import { isAuthenticatedAtom, userAtom } from '../stores/authStore';
+import { wsConnectedAtom } from '../stores/eventsStore';
 
 // Mock lazy loaded components to speed up tests
 vi.mock('../components/UsageMonitor', () => ({
@@ -41,35 +44,22 @@ vi.mock('../services/auth.service', () => ({
   },
 }));
 
-// Mock Jotai stores
-vi.mock('../stores/authStore', () => ({
-  userAtom: { key: 'userAtom' },
-  isAuthenticatedAtom: { key: 'isAuthenticatedAtom' },
-}));
-
-vi.mock('../stores/eventsStore', () => ({
-  wsConnectedAtom: { key: 'wsConnectedAtom' },
-}));
-
-// Mock Jotai hooks with proper returns
-vi.mock('jotai', async (importOriginal) => {
-  const actual = (await importOriginal()) as typeof import('jotai');
-  return {
-    ...actual,
-    useAtomValue: vi.fn((atom: any) => {
-      // Return appropriate mock data based on atom key
-      const atomKey = atom.key || atom.toString?.();
-      if (atomKey?.includes?.('userAtom')) return { email: 'test@example.com' };
-      if (atomKey?.includes?.('isAuthenticatedAtom')) return true;
-      if (atomKey?.includes?.('wsConnectedAtom')) return true;
-      return null;
-    }),
-    useAtom: vi.fn(() => [null, vi.fn()]),
-  };
-});
-
 // Mock fetch
 globalThis.fetch = vi.fn();
+
+function renderDashboard(): void {
+  renderWithDashboardProviders(<Dashboard />, {
+    initializeStore: (store) => {
+      store.set(isAuthenticatedAtom, true);
+      store.set(userAtom, {
+        id: 'user-123',
+        email: 'test@example.com',
+        role: 'parent',
+      });
+      store.set(wsConnectedAtom, true);
+    },
+  });
+}
 
 describe('Dashboard Integration Tests', () => {
   beforeEach(() => {
@@ -84,10 +74,10 @@ describe('Dashboard Integration Tests', () => {
   });
 
   it('should render dashboard components', async () => {
-    renderWithDashboardProviders(<Dashboard />);
+    renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('Guardian Dashboard')).toBeInTheDocument();
+      expect(screen.getAllByText('Guardian')[0]).toBeInTheDocument();
       expect(screen.getByText('Real-Time Usage Monitoring')).toBeInTheDocument();
       expect(screen.getByText('Block Event Notifications')).toBeInTheDocument();
       expect(screen.getByText('Policy Management')).toBeInTheDocument();
@@ -97,7 +87,7 @@ describe('Dashboard Integration Tests', () => {
   });
 
   it('should show WebSocket connected status', async () => {
-    renderWithDashboardProviders(<Dashboard />);
+    renderDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Connected')).toBeInTheDocument();
@@ -105,23 +95,22 @@ describe('Dashboard Integration Tests', () => {
   });
 
   it('should display logout button', async () => {
-    renderWithDashboardProviders(<Dashboard />);
+    const user = userEvent.setup();
+    renderDashboard();
 
-    await waitFor(() => {
-      expect(screen.getByText('Logout')).toBeInTheDocument();
-    });
+    await user.click(screen.getByRole('button', { name: /open user menu/i }));
+    expect(screen.getByRole('menuitem', { name: /logout/i })).toBeInTheDocument();
   });
 
-  it('should display week 3 progress checklist', async () => {
-    renderWithDashboardProviders(<Dashboard />);
+  it('should display component migration progress checklist', async () => {
+    renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText(/Day 1: Authentication/)).toBeInTheDocument();
-      expect(screen.getByText(/Day 2: Real-time Usage/)).toBeInTheDocument();
-      expect(screen.getByText(/Day 3: Block Event/)).toBeInTheDocument();
-      expect(screen.getByText(/Day 4: Policy Management/)).toBeInTheDocument();
-      expect(screen.getByText(/Day 5: Device Management/)).toBeInTheDocument();
-      expect(screen.getByText(/Day 6: Analytics/)).toBeInTheDocument();
+      expect(screen.getByText(/Batch 1: DynamicForm/)).toBeInTheDocument();
+      expect(screen.getByText(/Batch 2: ActivityFeed/)).toBeInTheDocument();
+      expect(screen.getByText(/Batch 3: StatsDashboard/)).toBeInTheDocument();
+      expect(screen.getByText(/Batch 4: DashboardLayout/)).toBeInTheDocument();
+      expect(screen.getByText(/Migration Complete: 100%/)).toBeInTheDocument();
     });
   });
 });

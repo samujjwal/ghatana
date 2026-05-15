@@ -189,6 +189,40 @@ export interface ProductUnitValidationResult {
   readonly errors: readonly string[];
 }
 
+export type ProductUnitValidationReasonCode =
+  | "missing-scope"
+  | "missing-lifecycle-config-path"
+  | "missing-lifecycle-profile"
+  | "missing-executable-surfaces"
+  | "invalid-provider-ref"
+  | "secret-like-config-or-metadata"
+  | "schema-invalid";
+
+export type ProductUnitValidationSeverity = "error" | "warning";
+
+export interface ProductUnitValidationIssue {
+  readonly path: string;
+  readonly reasonCode: ProductUnitValidationReasonCode;
+  readonly message: string;
+  readonly severity: ProductUnitValidationSeverity;
+}
+
+export interface ProductUnitDetailedValidationResult extends ProductUnitValidationResult {
+  readonly issues: readonly ProductUnitValidationIssue[];
+}
+
+export type ExecutableProductUnit = ProductUnit & {
+  readonly scope: ProductUnitScope;
+  readonly lifecycleProfile: string;
+  readonly lifecycleStatus: "enabled";
+  readonly surfaces: readonly [ProductUnitSurface, ...ProductUnitSurface[]];
+  readonly sourceProviderRef: ProviderRef & {
+    readonly config: Record<string, unknown> & {
+      readonly lifecycleConfigPath: string;
+    };
+  };
+};
+
 function hasProviderId(value: unknown): value is ProviderRef {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -379,25 +413,165 @@ function formatProductUnitIssue(issue: z.ZodIssue): string {
   return issue.message;
 }
 
-export function validateProductUnit(value: unknown): ProductUnitValidationResult {
+function reasonCodeForProductUnitIssue(
+  path: string,
+  message: string
+): ProductUnitValidationReasonCode {
+  if (path === "scope") {
+    return "missing-scope";
+  }
+  if (path === "lifecycleProfile") {
+    return "missing-lifecycle-profile";
+  }
+  if (path === "sourceProviderRef.config.lifecycleConfigPath") {
+    return "missing-lifecycle-config-path";
+  }
+  if (path === "surfaces" || path.startsWith("surfaces.")) {
+    return "missing-executable-surfaces";
+  }
+  if (path.includes("ProviderRef") || path.includes("providerRef")) {
+    return "invalid-provider-ref";
+  }
+  if (message.includes("secret-like")) {
+    return "secret-like-config-or-metadata";
+  }
+  return "schema-invalid";
+}
+
+function toProductUnitIssue(
+  path: string,
+  reasonCode: ProductUnitValidationReasonCode,
+  message: string
+): ProductUnitValidationIssue {
+  return {
+    path,
+    reasonCode,
+    message,
+    severity: "error",
+  };
+}
+
+function addExecutableProductUnitIssues(
+  value: unknown,
+  issues: ProductUnitValidationIssue[]
+): void {
   if (typeof value !== "object" || value === null) {
-    return { valid: false, errors: ["ProductUnit must be an object"] };
+    return;
+  }
+
+  const productUnit = value as {
+    readonly lifecycleStatus?: unknown;
+    readonly lifecycleProfile?: unknown;
+    readonly scope?: unknown;
+    readonly surfaces?: unknown;
+    readonly sourceProviderRef?: unknown;
+  };
+
+  if (productUnit.lifecycleStatus !== "enabled") {
+    return;
+  }
+
+  if (productUnit.scope === undefined) {
+    issues.push(
+      toProductUnitIssue(
+        "scope",
+        "missing-scope",
+        "enabled lifecycle requires scope"
+      )
+    );
+  }
+  if (typeof productUnit.lifecycleProfile !== "string" || productUnit.lifecycleProfile.trim().length === 0) {
+    issues.push(
+      toProductUnitIssue(
+        "lifecycleProfile",
+        "missing-lifecycle-profile",
+        "enabled lifecycle requires lifecycleProfile"
+      )
+    );
+  }
+  if (!Array.isArray(productUnit.surfaces) || productUnit.surfaces.length === 0) {
+    issues.push(
+      toProductUnitIssue(
+        "surfaces",
+        "missing-executable-surfaces",
+        "enabled lifecycle requires at least one executable surface"
+      )
+    );
+  }
+
+  const sourceProviderRef = productUnit.sourceProviderRef;
+  if (
+    typeof sourceProviderRef === "object" &&
+    sourceProviderRef !== null &&
+    (sourceProviderRef as { readonly providerId?: unknown }).providerId === "ghatana-file-registry" &&
+    !hasStringConfigValue(
+      sourceProviderRef as { readonly config?: Record<string, unknown> },
+      "lifecycleConfigPath"
+    )
+  ) {
+    issues.push(
+      toProductUnitIssue(
+        "sourceProviderRef.config.lifecycleConfigPath",
+        "missing-lifecycle-config-path",
+        "file-backed enabled lifecycle requires sourceProviderRef.config.lifecycleConfigPath"
+      )
+    );
+  }
+}
+
+export function validateProductUnitDetailed(
+  value: unknown
+): ProductUnitDetailedValidationResult {
+  if (typeof value !== "object" || value === null) {
+    const issue = toProductUnitIssue(
+      "",
+      "schema-invalid",
+      "ProductUnit must be an object"
+    );
+    return { valid: false, errors: [issue.message], issues: [issue] };
   }
 
   const pu = value as { readonly registryProviderRef?: unknown; readonly sourceProviderRef?: unknown };
-  const providerErrors: string[] = [];
+  const issues: ProductUnitValidationIssue[] = [];
   if (!hasProviderId(pu.registryProviderRef)) {
-    providerErrors.push("registryProviderRef.providerId must be a non-empty string");
+    issues.push(
+      toProductUnitIssue(
+        "registryProviderRef.providerId",
+        "invalid-provider-ref",
+        "registryProviderRef.providerId must be a non-empty string"
+      )
+    );
   }
   if (!hasProviderId(pu.sourceProviderRef)) {
-    providerErrors.push("sourceProviderRef.providerId must be a non-empty string");
+    issues.push(
+      toProductUnitIssue(
+        "sourceProviderRef.providerId",
+        "invalid-provider-ref",
+        "sourceProviderRef.providerId must be a non-empty string"
+      )
+    );
   }
   const parsed = ProductUnitSchema.safeParse(value);
-  const errors = parsed.success
-    ? []
-    : parsed.error.issues.map((issue: z.ZodIssue) => formatProductUnitIssue(issue));
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const path = issue.path.join(".");
+      const message = formatProductUnitIssue(issue);
+      issues.push(
+        toProductUnitIssue(path, reasonCodeForProductUnitIssue(path, message), message)
+      );
+    }
+  }
 
-  return { valid: providerErrors.length === 0 && errors.length === 0, errors: [...providerErrors, ...errors] };
+  addExecutableProductUnitIssues(value, issues);
+
+  const errors = issues.map((issue) => issue.message);
+
+  return { valid: errors.length === 0, errors, issues };
+}
+
+export function validateProductUnit(value: unknown): ProductUnitValidationResult {
+  const result = validateProductUnitDetailed(value);
+  return { valid: result.valid, errors: result.errors };
 }
 
 /**

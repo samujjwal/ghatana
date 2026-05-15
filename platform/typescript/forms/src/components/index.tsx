@@ -12,7 +12,7 @@ export interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
  */
 export const Form = React.forwardRef<HTMLFormElement, FormProps>(
   ({ children, ...props }, ref) => (
-    <form ref={ref} noValidate {...props}>
+    <form ref={ref} noValidate aria-label={props['aria-label'] ?? 'Form'} {...props}>
       {children}
     </form>
   )
@@ -34,9 +34,10 @@ export interface FormFieldProps {
  * @doc.pattern UI Component
  */
 export function FormField({ label, htmlFor, error, required, children }: FormFieldProps) {
+  const labelId = React.useId();
   return (
-    <div>
-      <label htmlFor={htmlFor}>
+    <div role="group" aria-labelledby={labelId} aria-required={required || undefined}>
+      <label id={labelId} htmlFor={htmlFor}>
         {label}
         {required && <span aria-hidden="true"> *</span>}
       </label>

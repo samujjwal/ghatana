@@ -54,6 +54,15 @@ function makeManifest(
     learnerAction: "Adjust parameter x and observe the output.",
     expectedOutputs: {},
     metadata: undefined,
+    claimRef: "claim-test-1",
+    accessibility: {
+      keyboardNavigable: true,
+      screenReaderCompatible: true,
+      colorContrastCompliant: true,
+      reducedMotionSupport: true,
+      captionsAvailable: true,
+      alternativeTextProvided: true,
+    },
     ...overrides,
   };
 }

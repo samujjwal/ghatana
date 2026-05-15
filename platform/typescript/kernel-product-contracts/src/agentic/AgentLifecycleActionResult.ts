@@ -14,6 +14,18 @@ export type AgentLifecycleDecision = "allowed" | "denied" | "requires-approval";
 export type AgentLifecycleApprovalDecision = "approved" | "rejected" | "pending" | "not-required";
 export type AgentLifecycleHealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
 export type AgentLifecycleRollbackReadiness = "ready" | "not-ready" | "not-required";
+export type AgentLifecycleRequiredNextAction =
+  | "request-approval"
+  | "run-verification"
+  | "prepare-rollback"
+  | "inspect-failure"
+  | "none";
+
+export interface AgentLifecycleActionFailure {
+  readonly reasonCode: string;
+  readonly message: string;
+  readonly evidenceRefs?: readonly string[] | undefined;
+}
 
 export interface AgentLifecycleActionResult {
   readonly schemaVersion: "1.0.0";
@@ -29,13 +41,30 @@ export interface AgentLifecycleActionResult {
   readonly healthStatus: AgentLifecycleHealthStatus;
   readonly rollbackReadiness: AgentLifecycleRollbackReadiness;
   readonly evaluatedAt: string;
-  readonly request?: unknown;
+  readonly failure?: AgentLifecycleActionFailure | undefined;
+  readonly requiredNextAction?: AgentLifecycleRequiredNextAction | undefined;
+  readonly request?: unknown | undefined;
 }
 
 const DECISIONS = ["allowed", "denied", "requires-approval"] as const;
 const APPROVAL_DECISIONS = ["approved", "rejected", "pending", "not-required"] as const;
 const HEALTH_STATUSES = ["healthy", "degraded", "unhealthy", "unknown"] as const;
 const ROLLBACK_READINESS = ["ready", "not-ready", "not-required"] as const;
+const REQUIRED_NEXT_ACTIONS = [
+  "request-approval",
+  "run-verification",
+  "prepare-rollback",
+  "inspect-failure",
+  "none",
+] as const;
+
+export const AgentLifecycleActionFailureSchema = z
+  .object({
+    reasonCode: z.string().trim().min(1),
+    message: z.string().trim().min(1),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
 
 export const AgentLifecycleActionResultSchema = z
   .object({
@@ -52,6 +81,8 @@ export const AgentLifecycleActionResultSchema = z
     healthStatus: z.enum(HEALTH_STATUSES),
     rollbackReadiness: z.enum(ROLLBACK_READINESS),
     evaluatedAt: z.string().datetime({ offset: true }),
+    failure: AgentLifecycleActionFailureSchema.optional(),
+    requiredNextAction: z.enum(REQUIRED_NEXT_ACTIONS).optional(),
     request: AgentLifecycleActionRequestSchema.optional(),
   })
   .strict();

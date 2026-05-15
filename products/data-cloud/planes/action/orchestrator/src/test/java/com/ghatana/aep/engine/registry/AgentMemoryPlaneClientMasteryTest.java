@@ -328,12 +328,35 @@ public class AgentMemoryPlaneClientMasteryTest {
         }).join();
     }
 
+    @Test
+    @DisplayName("Should preserve explicit tenant in canonical memory item query")
+    void testCanonicalMemoryQueryUsesExplicitTenant() throws InterruptedException {
+        eventloopThread.submit(() -> {
+            client.queryMemoryItemsMasteryAware(
+                    "tenant-b",
+                    "test-agent",
+                    "skill-1",
+                    10,
+                    false,
+                    false,
+                    true)
+                .join();
+
+            assertEquals("tenant-b", memoryPlane.lastTenantIdForItemQuery());
+        }).join();
+    }
+
     // ── Test Doubles ─────────────────────────────────────────────────────
 
     private static class InMemoryMemoryPlane implements MemoryPlane {
         private final java.util.Map<String, EnhancedProcedure> procedures = new java.util.HashMap<>();
         private final java.util.Map<String, EnhancedFact> facts = new java.util.HashMap<>();
         private final java.util.Map<String, EnhancedEpisode> episodes = new java.util.HashMap<>();
+        private String lastTenantIdForItemQuery;
+
+        String lastTenantIdForItemQuery() {
+            return lastTenantIdForItemQuery;
+        }
 
         @Override
         public com.io.activej.promise.Promise<EnhancedEpisode> storeEpisode(EnhancedEpisode episode) {
@@ -391,6 +414,7 @@ public class AgentMemoryPlaneClientMasteryTest {
         @Override
         public com.io.activej.promise.Promise<List<com.ghatana.agent.memory.model.MemoryItem>> query(
                 com.ghatana.agent.memory.store.MemoryQuery query) {
+            lastTenantIdForItemQuery = query.tenantId();
             return com.io.activej.promise.Promise.of(List.of());
         }
 

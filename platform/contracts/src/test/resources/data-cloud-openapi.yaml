@@ -80,6 +80,8 @@ tags:
     description: Brain API — salience, attention, workspace spotlight.
   - name: learning
     description: Learning API — policy extraction and human-review queue.
+  - name: mastery
+    description: Governed mastery previews, promotion diagnostics, and obsolescence processing.
   - name: analytics
     description: Ad-hoc analytics queries backed by ClickHouse.
   - name: context
@@ -4099,6 +4101,103 @@ paths:
             text/event-stream:
               schema:
                 type: string
+
+  /api/v1/mastery/preview/decision:
+    get:
+      summary: Preview the governed mastery decision for an agent and skill
+      operationId: apiV1MasteryPreviewDecisionGet
+      tags: [mastery]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: agentId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: skillId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: versionContext
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Mastery decision preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/mastery/preview/retrieval:
+    get:
+      summary: Preview mastery-backed retrieval candidates
+      operationId: apiV1MasteryPreviewRetrievalGet
+      tags: [mastery]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: agentId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: skillId
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/limitQuery"
+      responses:
+        "200":
+          description: Retrieval preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/mastery/learning-deltas/{deltaId}/dry-run-promotion:
+    post:
+      summary: Dry-run a learning delta promotion without mutating mastery state
+      operationId: apiV1MasteryLearningDeltaDryRunPromotionPost
+      tags: [mastery]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: deltaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion diagnostics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/mastery/obsolescence-events/process:
+    post:
+      summary: Process an obsolescence event through the governed mastery transition flow
+      operationId: apiV1MasteryObsolescenceEventsProcessPost
+      tags: [mastery]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Obsolescence transition result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   # ── Analytics API ──────────────────────────────────────────────────────────
 

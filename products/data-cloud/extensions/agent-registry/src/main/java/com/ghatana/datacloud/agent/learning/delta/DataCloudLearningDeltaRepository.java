@@ -114,11 +114,33 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
     public Promise<Optional<LearningDelta>> findById(@NotNull String deltaId) {
         String tenantId = deltaToTenantId.get(deltaId);
         UUID entityId = deltaToEntityId.get(deltaId);
-        if (tenantId == null || entityId == null) {
+        if (tenantId != null && entityId != null) {
+            return entityRepository.findById(tenantId, COLLECTION, entityId)
+                    .map(opt -> opt.map(e -> LearningDeltaMapper.fromDataMap(e.getData())));
+        }
+
+        // Fallback path: reverse indexes are volatile, so scan known tenant partitions.
+        return findByIdAcrossKnownTenants(deltaId);
+    }
+
+    @Override
+    @NotNull
+    public Promise<Optional<LearningDelta>> findById(@NotNull String tenantId, @NotNull String deltaId) {
+        if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(Optional.empty());
         }
-        return entityRepository.findById(tenantId, COLLECTION, entityId)
-                .map(opt -> opt.map(e -> LearningDeltaMapper.fromDataMap(e.getData())));
+        return entityRepository.findAll(tenantId, COLLECTION, Map.of("deltaId", deltaId), null, 0, 1)
+                .map(entities -> {
+                    Optional<Entity> match = firstByDeltaId(entities, deltaId);
+                    if (match.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    Entity entity = match.get();
+                    deltaToEntityId.put(deltaId, entity.getId());
+                    deltaToTenantId.put(deltaId, tenantId);
+                    knownTenantIds.add(tenantId);
+                    return Optional.of(LearningDeltaMapper.fromDataMap(entity.getData()));
+                });
     }
 
     @Override
@@ -204,10 +226,29 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
     @Override
     @NotNull
     public Promise<LearningDelta> updateState(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState newState) {
+        return doUpdateState(tenantId, deltaId, newState, null);
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> updateState(
             @NotNull String deltaId,
             @NotNull LearningDeltaState newState,
             @NotNull String rejectionReason) {
         return doUpdateState(deltaId, newState, rejectionReason);
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> updateState(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState newState,
+            @NotNull String rejectionReason) {
+        return doUpdateState(tenantId, deltaId, newState, rejectionReason);
     }
 
     @Override
@@ -238,20 +279,40 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
 
     @Override
     @NotNull
+    public Promise<LearningDelta> transition(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState state) {
+        return doUpdateState(tenantId, deltaId, state, null);
+    }
+
+    @Override
+    @NotNull
     public Promise<LearningDelta> appendEvaluationResult(
             @NotNull String deltaId,
             @NotNull String evaluationRunId,
             @NotNull String outcome,
             @NotNull java.util.Map<String, Object> metrics) {
         String tenantId = deltaToTenantId.get(deltaId);
-        UUID entityId = deltaToEntityId.get(deltaId);
-        if (tenantId == null || entityId == null) {
-            return Promise.of(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.ofException(new IllegalStateException(
+                    "tenantId is required for appendEvaluationResult; use tenant-scoped overload"));
         }
-        return entityRepository.findById(tenantId, COLLECTION, entityId)
+        return appendEvaluationResult(tenantId, deltaId, evaluationRunId, outcome, metrics);
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> appendEvaluationResult(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull String evaluationRunId,
+            @NotNull String outcome,
+            @NotNull java.util.Map<String, Object> metrics) {
+        return findEntityByTenantAndDeltaId(tenantId, deltaId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
-                        return Promise.of(null);
+                        return Promise.ofException(new IllegalStateException("Learning delta not found: " + deltaId));
                     }
                     Entity existing = opt.get();
                     LearningDelta current = LearningDeltaMapper.fromDataMap(existing.getData());
@@ -276,6 +337,12 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
                             "timestamp", Instant.now().toEpochMilli()
                     ));
                     newMetadata.put("evaluationResults", newEvalResults);
+
+                        appendLifecycleEvent(newMetadata, "evaluated", Map.of(
+                            "deltaId", deltaId,
+                            "evaluationRunId", evaluationRunId,
+                            "outcome", outcome));
+
                     updatedData.put("metadata", newMetadata);
                     
                     Entity updated = existing.toBuilder().data(updatedData).build();
@@ -292,17 +359,27 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
             @NotNull String outcome,
             @Nullable String reason) {
         String tenantId = deltaToTenantId.get(deltaId);
-        UUID entityId = deltaToEntityId.get(deltaId);
-        if (tenantId == null || entityId == null) {
-            return Promise.of(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.ofException(new IllegalStateException(
+                    "tenantId is required for appendPromotionResult; use tenant-scoped overload"));
         }
-        return entityRepository.findById(tenantId, COLLECTION, entityId)
+        return appendPromotionResult(tenantId, deltaId, promotionId, outcome, reason);
+    }
+
+    @Override
+    @NotNull
+    public Promise<LearningDelta> appendPromotionResult(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull String promotionId,
+            @NotNull String outcome,
+            @Nullable String reason) {
+        return findEntityByTenantAndDeltaId(tenantId, deltaId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
-                        return Promise.of(null);
+                        return Promise.ofException(new IllegalStateException("Learning delta not found: " + deltaId));
                     }
                     Entity existing = opt.get();
-                    LearningDelta current = LearningDeltaMapper.fromDataMap(existing.getData());
                     
                     Map<String, Object> updatedData = new HashMap<>(existing.getData());
                     
@@ -316,6 +393,13 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
                             "reason", reason != null ? reason : "",
                             "timestamp", Instant.now().toEpochMilli()
                     ));
+
+                            appendLifecycleEvent(newMetadata, "promoted", Map.of(
+                                "deltaId", deltaId,
+                                "promotionId", promotionId,
+                                "outcome", outcome,
+                                "reason", reason != null ? reason : ""));
+
                     updatedData.put("metadata", newMetadata);
                     
                     Entity updated = existing.toBuilder().data(updatedData).build();
@@ -333,14 +417,22 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
             @NotNull LearningDeltaState newState,
             @Nullable String rejectionReason) {
         String tenantId = deltaToTenantId.get(deltaId);
-        UUID entityId = deltaToEntityId.get(deltaId);
-        if (tenantId == null || entityId == null) {
-            return Promise.of(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.ofException(new IllegalStateException(
+                    "tenantId is required for state update; use tenant-scoped overload"));
         }
-        return entityRepository.findById(tenantId, COLLECTION, entityId)
+        return doUpdateState(tenantId, deltaId, newState, rejectionReason);
+    }
+
+    private Promise<LearningDelta> doUpdateState(
+            @NotNull String tenantId,
+            @NotNull String deltaId,
+            @NotNull LearningDeltaState newState,
+            @Nullable String rejectionReason) {
+        return findEntityByTenantAndDeltaId(tenantId, deltaId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
-                        return Promise.of(null);
+                        return Promise.ofException(new IllegalStateException("Learning delta not found: " + deltaId));
                     }
                     Entity existing = opt.get();
                     LearningDelta current = LearningDeltaMapper.fromDataMap(existing.getData());
@@ -359,10 +451,96 @@ public final class DataCloudLearningDeltaRepository implements LearningDeltaRepo
                     if (rejectionReason != null) {
                         updatedData.put("rejectionReason", rejectionReason);
                     }
+
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> metadata = (java.util.Map<String, Object>) updatedData.getOrDefault("metadata", new HashMap<>());
+                    java.util.Map<String, Object> newMetadata = new HashMap<>(metadata);
+                    appendLifecycleEvent(newMetadata, "state-changed", Map.of(
+                            "deltaId", deltaId,
+                            "state", newState.name(),
+                            "rejectionReason", rejectionReason != null ? rejectionReason : ""));
+                    updatedData.put("metadata", newMetadata);
+
                     Entity updated = existing.toBuilder().data(updatedData).build();
                     return entityRepository.save(tenantId, updated)
                             .map(saved -> LearningDeltaMapper.fromDataMap(saved.getData()));
                 });
+    }
+
+    private Promise<Optional<LearningDelta>> findByIdAcrossKnownTenants(@NotNull String deltaId) {
+        if (knownTenantIds.isEmpty()) {
+            return Promise.of(Optional.empty());
+        }
+
+        Promise<Optional<LearningDelta>> acc = Promise.of(Optional.empty());
+        for (String tenant : knownTenantIds) {
+            acc = acc.then(found -> {
+                if (found.isPresent()) {
+                    return Promise.of(found);
+                }
+                return entityRepository.findAll(tenant, COLLECTION, Map.of("deltaId", deltaId), null, 0, 1)
+                        .map(entities -> {
+                            Optional<Entity> match = firstByDeltaId(entities, deltaId);
+                            if (match.isEmpty()) {
+                                return Optional.empty();
+                            }
+                            Entity entity = match.get();
+                            deltaToEntityId.put(deltaId, entity.getId());
+                            deltaToTenantId.put(deltaId, tenant);
+                            return Optional.of(LearningDeltaMapper.fromDataMap(entity.getData()));
+                        });
+            });
+        }
+        return acc;
+    }
+
+    private Promise<Optional<Entity>> findEntityByTenantAndDeltaId(
+            @NotNull String tenantId,
+            @NotNull String deltaId) {
+        UUID entityId = deltaToEntityId.get(deltaId);
+        if (entityId != null) {
+            return entityRepository.findById(tenantId, COLLECTION, entityId)
+                    .then(opt -> {
+                        if (opt.isPresent()) {
+                            return Promise.of(opt);
+                        }
+                        return entityRepository.findAll(tenantId, COLLECTION, Map.of("deltaId", deltaId), null, 0, 1)
+                                .map(entities -> firstByDeltaId(entities, deltaId));
+                    });
+        }
+
+        return entityRepository.findAll(tenantId, COLLECTION, Map.of("deltaId", deltaId), null, 0, 1)
+                .map(entities -> {
+                    Optional<Entity> match = firstByDeltaId(entities, deltaId);
+                    if (match.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    Entity entity = match.get();
+                    deltaToEntityId.put(deltaId, entity.getId());
+                    deltaToTenantId.put(deltaId, tenantId);
+                    knownTenantIds.add(tenantId);
+                    return Optional.of(entity);
+                });
+    }
+
+    private static Optional<Entity> firstByDeltaId(@NotNull List<Entity> entities, @NotNull String deltaId) {
+        return entities.stream()
+                .filter(entity -> deltaId.equals(String.valueOf(entity.getData().get("deltaId"))))
+                .findFirst();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void appendLifecycleEvent(
+            @NotNull Map<String, Object> metadata,
+            @NotNull String eventType,
+            @NotNull Map<String, Object> details) {
+        List<Map<String, Object>> events = (List<Map<String, Object>>) metadata.getOrDefault("lifecycleEvents", new ArrayList<>());
+        List<Map<String, Object>> updatedEvents = new ArrayList<>(events);
+        Map<String, Object> event = new HashMap<>(details);
+        event.put("eventType", eventType);
+        event.put("timestamp", Instant.now().toEpochMilli());
+        updatedEvents.add(Map.copyOf(event));
+        metadata.put("lifecycleEvents", updatedEvents);
     }
 
     /**

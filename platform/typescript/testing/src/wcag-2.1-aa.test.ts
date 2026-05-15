@@ -36,7 +36,7 @@ describe("WCAG 2.1 AA Compliance", () => {
         ariaLabel: "Close dialog",
       };
 
-      const hasAlt = iconButton.ariaLabel?.length ?? 0 > 0;
+      const hasAlt = (iconButton.ariaLabel?.length ?? 0) > 0;
       expect(hasAlt).toBe(true);
     });
   });

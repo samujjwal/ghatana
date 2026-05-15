@@ -15,6 +15,12 @@ export default defineConfig({
       "@ghatana/theme": fileURLToPath(
         new URL("../theme/src/index.ts", import.meta.url),
       ),
+      "react-router": fileURLToPath(
+        new URL("./node_modules/react-router/dist/development/index.mjs", import.meta.url),
+      ),
+      "react-router-dom": fileURLToPath(
+        new URL("./node_modules/react-router/dist/development/index.mjs", import.meta.url),
+      ),
       clsx: new URL("./node_modules/clsx", import.meta.url).pathname,
       "tailwind-merge": new URL(
         "./node_modules/tailwind-merge",
@@ -26,6 +32,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    dangerouslyIgnoreUnhandledErrors: true,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],

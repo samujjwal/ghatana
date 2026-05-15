@@ -510,6 +510,8 @@ export interface ProductGateResult {
   evidenceRefs?: readonly string[];
   durationMs?: number;
   providerId?: string;
+  reasonCode?: string;
+  privacyClassification?: string;
 }
 
 /**

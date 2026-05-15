@@ -6,8 +6,10 @@ import {
   FileArtifactProvider,
   FileHealthProvider,
   FileLifecycleEventProvider,
+  FileMemoryProvider,
   FileProvenanceProvider,
   FileRuntimeTruthProvider,
+  GhatanaFileRegistryProvider,
   createBootstrapKernelProviders,
 } from "../..";
 
@@ -24,6 +26,7 @@ describe("createBootstrapKernelProviders", () => {
     expect(providers.health).toBeInstanceOf(FileHealthProvider);
     expect(providers.approvals).toBeInstanceOf(FileApprovalProvider);
     expect(providers.provenance).toBeInstanceOf(FileProvenanceProvider);
+    expect(providers.memory).toBeInstanceOf(FileMemoryProvider);
     expect(providers.runtimeTruth).toBeInstanceOf(FileRuntimeTruthProvider);
     expect(providers.context).toMatchObject({
       mode: "bootstrap",
@@ -32,6 +35,7 @@ describe("createBootstrapKernelProviders", () => {
       health: providers.health,
       approvals: providers.approvals,
       provenance: providers.provenance,
+      memory: providers.memory,
       runtimeTruth: providers.runtimeTruth,
     });
   });
@@ -47,6 +51,64 @@ describe("createBootstrapKernelProviders", () => {
     expect(providers.outputRoot).toBe(
       path.join(path.resolve(repoRoot), ".kernel", "out", "runs", "run-1")
     );
+  });
+
+  it("passes bootstrap scope to scoped providers", async () => {
+    const repoRoot = path.join(os.tmpdir(), "ghatana-repo");
+    const providers = createBootstrapKernelProviders({
+      repoRoot,
+      scope: {
+        tenantId: "tenant-a",
+        workspaceId: "workspace-a",
+        projectId: "project-a",
+      },
+    });
+
+    const result = await providers.events.appendEvent(
+      {
+        metadata: {
+          eventId: "event-1",
+          schemaVersion: "1.0.0",
+          eventType: "lifecycle.manifest.written",
+          productUnitId: "digital-marketing",
+          runId: "run-1",
+          phase: "build",
+          timestamp: "2026-05-14T00:00:00.000Z",
+          source: "kernel",
+          correlationId: "corr-1",
+        },
+        payload: {
+          manifestType: "lifecycle-events",
+          path: ".kernel/out/lifecycle-events.json",
+          required: true,
+          status: "written",
+        },
+      },
+      { required: true, correlationId: "corr-1" }
+    );
+
+    expect(result).toEqual({
+      success: true,
+      ref: path.join(
+        "tenant-a",
+        "workspace-a",
+        "project-a",
+        "events",
+        "lifecycle-events.json"
+      ),
+    });
+  });
+
+  it("creates file registry provider when requested", () => {
+    const repoRoot = path.join(os.tmpdir(), "ghatana-repo");
+
+    const providers = createBootstrapKernelProviders({
+      repoRoot,
+      includeRegistryProvider: true,
+    });
+
+    expect(providers.registryProvider).toBeInstanceOf(GhatanaFileRegistryProvider);
+    expect(providers.context.registryProvider).toBe(providers.registryProvider);
   });
 
   it("rejects custom output roots outside repo .kernel/out by default", () => {

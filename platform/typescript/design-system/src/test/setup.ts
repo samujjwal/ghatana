@@ -5,8 +5,33 @@
  * (e.g. `toBeInTheDocument`, `toHaveAccessibleName`, etc.).
  */
 import "@testing-library/jest-dom";
+import * as React from "react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
+
+Object.defineProperty(globalThis, "React", { configurable: true, value: React });
+Object.defineProperty(globalThis, "jest", { configurable: true, value: vi });
+
+Object.defineProperty(window, "matchMedia", {
+  configurable: true,
+  value: vi.fn((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+window.addEventListener("error", (event) => {
+  const stack = event.error instanceof Error ? event.error.stack ?? "" : "";
+  if (stack.includes("ErrorBoundary.test.tsx")) {
+    event.preventDefault();
+  }
+});
 
 /**
  * Install a functional localStorage mock.
@@ -46,4 +71,3 @@ vi.mock("@ghatana/theme", async () => {
     }),
   };
 });
-

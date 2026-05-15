@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
+import com.ghatana.datacloud.api.controller.MasteryController;
 import com.ghatana.datacloud.launcher.http.handlers.*;
 import com.ghatana.datacloud.feature.DataCloudFeature;
 import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
@@ -314,6 +315,22 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/action/learning/review", learningHandler::handleLearningReviewQueue)
             .with(HttpMethod.POST, "/api/v1/action/learning/review/:reviewId/approve", learningHandler::handleLearningReviewApprove)
             .with(HttpMethod.POST, "/api/v1/action/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject);
+        return this;
+    }
+
+    /**
+     * Adds governed mastery preview and transition-diagnostic endpoints.
+     */
+    public DataCloudRouterBuilder withMasteryRoutes(MasteryController masteryController) {
+        if (masteryController == null) {
+            return this;
+        }
+
+        builder
+            .with(HttpMethod.GET, "/api/v1/mastery/preview/decision", masteryController::serve)
+            .with(HttpMethod.GET, "/api/v1/mastery/preview/retrieval", masteryController::serve)
+            .with(HttpMethod.POST, "/api/v1/mastery/learning-deltas/:deltaId/dry-run-promotion", masteryController::serve)
+            .with(HttpMethod.POST, "/api/v1/mastery/obsolescence-events/process", masteryController::serve);
         return this;
     }
 

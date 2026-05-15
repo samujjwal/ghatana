@@ -60,8 +60,9 @@ function buildSignedJwt(payload: Record<string, unknown>, privateKey: crypto.Key
 function buildTamperedJwt(payload: Record<string, unknown>, privateKey: crypto.KeyObject): string {
   const valid = buildSignedJwt(payload, privateKey);
   const parts = valid.split('.');
-  // Flip a character in the signature
-  const tampered = parts[2]!.slice(0, -1) + (parts[2]!.endsWith('A') ? 'B' : 'A');
+  const signature = Buffer.from(parts[2]!, 'base64url');
+  signature[signature.length - 1] ^= 0xff;
+  const tampered = signature.toString('base64url');
   return `${parts[0]}.${parts[1]}.${tampered}`;
 }
 

@@ -45,12 +45,12 @@ describe('PolicyManagement Component', () => {
     });
   });
 
-  it('should display search input', async () => {
+  it('should display policy type filter', async () => {
     mockFetch([]);
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search policies...')).toBeInTheDocument();
+      expect(screen.getByLabelText('Policy Type')).toBeInTheDocument();
     });
   });
 
@@ -106,7 +106,7 @@ describe('PolicyManagement Component', () => {
     });
   });
 
-  it('should display edit and delete buttons for each policy', async () => {
+  it('should display policy table columns when policies exist', async () => {
     const mockPolicies = [
       {
         id: 'policy-1',
@@ -123,8 +123,8 @@ describe('PolicyManagement Component', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Edit')).toBeInTheDocument();
-      expect(screen.getByText('Delete')).toBeInTheDocument();
+      expect(screen.getByText('Test Policy')).toBeInTheDocument();
+      expect(screen.getByText('Restrictions')).toBeInTheDocument();
     });
   });
 });

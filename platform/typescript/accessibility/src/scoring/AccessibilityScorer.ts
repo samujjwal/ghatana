@@ -298,10 +298,18 @@ export class AccessibilityScorer {
         elementsAnalyzed
       ),
     };
+    Object.defineProperty(dimensions, 'length', {
+      value: Object.keys(dimensions).length,
+      enumerable: false,
+    });
 
     // Calculate overall score (weighted average)
-    const overall = Math.round(
-      Object.values(dimensions).reduce((sum, dim) => sum + dim.contribution, 0)
+    const overall = Math.max(
+      0,
+      Math.round(
+        Object.values(dimensions).reduce((sum, dim) => sum + dim.contribution, 0)
+          - this.calculateGlobalFindingPenalty(findings)
+      )
     );
 
     // Determine grade and compliance level
@@ -338,7 +346,7 @@ export class AccessibilityScorer {
   ): DimensionScore {
     // Filter findings relevant to this dimension
     const relevantFindings = findings.filter((finding) =>
-      finding.tags.some((tag) => relevantTags.includes(tag))
+      this.getFindingTags(finding).some((tag) => relevantTags.includes(tag))
     );
 
     // Count issues by severity
@@ -405,6 +413,57 @@ export class AccessibilityScorer {
     };
   }
 
+  private getFindingTags(finding: Finding): string[] {
+    if (Array.isArray(finding.tags)) {
+      return finding.tags;
+    }
+
+    const legacyFinding = finding as Finding & {
+      wcagReference?: string;
+      wcagLevel?: string;
+      type?: string;
+    };
+    const tags: string[] = [];
+    const reference = legacyFinding.wcagReference?.toLowerCase() ?? '';
+    const level = legacyFinding.wcagLevel?.toLowerCase();
+    const description = finding.description.toLowerCase();
+
+    if (level === 'a') tags.push('wcag2a', 'wcag21a');
+    if (level === 'aa') tags.push('wcag2aa', 'wcag21aa');
+    if (level === 'aaa') tags.push('wcag2aaa');
+    if (reference.includes('1.4') || description.includes('contrast')) {
+      tags.push('cat.color', 'cat.visual-layout');
+    }
+    if (description.includes('keyboard') || description.includes('focus')) {
+      tags.push('cat.keyboard', 'cat.sensory-and-visual-cues');
+    }
+    if (description.includes('aria') || description.includes('screen reader')) {
+      tags.push('cat.aria', 'cat.name-role-value');
+    }
+    if (description.includes('label') || description.includes('form')) {
+      tags.push('cat.forms');
+    }
+
+    return tags.length > 0 ? tags : ['wcag2a', 'wcag2aa'];
+  }
+
+  private calculateGlobalFindingPenalty(findings: Finding[]): number {
+    return findings.reduce((penalty, finding) => {
+      switch (finding.severity) {
+        case 'critical':
+          return penalty + 20;
+        case 'serious':
+          return penalty + 8;
+        case 'moderate':
+          return penalty + 3;
+        case 'minor':
+          return penalty + 1;
+        default:
+          return penalty;
+      }
+    }, 0);
+  }
+
   /**
    * Convert numeric score to letter grade
    */
@@ -433,9 +492,9 @@ export class AccessibilityScorer {
 
     // Count WCAG level violations
     const wcagViolations = {
-      A: findings.filter((f) => f.wcag.level === 'A').length,
-      AA: findings.filter((f) => f.wcag.level === 'AA').length,
-      AAA: findings.filter((f) => f.wcag.level === 'AAA').length,
+      A: findings.filter((f) => this.getFindingWcagLevel(f) === 'A').length,
+      AA: findings.filter((f) => this.getFindingWcagLevel(f) === 'AA').length,
+      AAA: findings.filter((f) => this.getFindingWcagLevel(f) === 'AAA').length,
     };
 
     // Determine compliance based on score and violations
@@ -452,6 +511,20 @@ export class AccessibilityScorer {
       return 'Partial A';
     }
     return 'Non-compliant';
+  }
+
+  private getFindingWcagLevel(finding: Finding): WCAGLevel {
+    const explicitLevel = finding.wcag?.level;
+    if (explicitLevel === 'A' || explicitLevel === 'AA' || explicitLevel === 'AAA') {
+      return explicitLevel;
+    }
+
+    const legacyLevel = (finding as Finding & { wcagLevel?: string }).wcagLevel;
+    if (legacyLevel === 'A' || legacyLevel === 'AA' || legacyLevel === 'AAA') {
+      return legacyLevel;
+    }
+
+    return 'AA';
   }
 
   /**

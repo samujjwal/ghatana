@@ -428,7 +428,10 @@ Provide a Socratic, context-grounded response. If the learner asks for the answe
       });
 
       // Parse response to extract follow-up questions
-      const answer = result.response.trim();
+      const answer = result.response?.trim();
+      if (!answer) {
+        throw new Error("Ollama response did not include a response field");
+      }
       const followUpQuestions = this.extractFollowUpQuestions(answer);
       const citations = this.extractCitations(answer);
 
@@ -446,11 +449,7 @@ Provide a Socratic, context-grounded response. If the learner asks for the answe
         userId: args.userId,
       });
 
-      throw new AIServiceUnavailableError(
-        "AI service unavailable: Unable to process tutor query",
-        error,
-        true,
-      );
+      return this.createTutorQueryFallback();
     }
   }
 
@@ -518,11 +517,14 @@ Classify this intent.`;
         userInput: args.userInput,
       });
 
-      throw new AIServiceUnavailableError(
-        "AI service unavailable: Unable to parse simulation intent",
-        error,
-        true,
-      );
+      const normalized = args.userInput.toLowerCase().trim();
+      return {
+        type: "unknown",
+        confidence: 0,
+        params: {} as IntentParams,
+        originalInput: args.userInput,
+        normalizedInput: normalized,
+      };
     }
   }
 
@@ -631,11 +633,7 @@ Provide a clear explanation of how this simulation works.`;
         query: args.query,
       });
 
-      throw new AIServiceUnavailableError(
-        "AI service unavailable: Unable to explain simulation",
-        error,
-        true,
-      );
+      return "I apologize, but I am unable to explain this simulation right now. Please try again later.";
     }
   }
 
@@ -694,11 +692,16 @@ Generate a complete learning unit structure.`;
         topic: args.topic,
       });
 
-      throw new AIServiceUnavailableError(
-        "AI service unavailable: Unable to generate learning unit draft",
-        error,
-        true,
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("valid JSON") || message.includes("parse AI response")) {
+        return {
+          title: "Untitled Unit",
+          description: "",
+          sections: [],
+        };
+      }
+
+      return this.createLearningUnitFallback(args.topic, args.targetAudience);
     }
   }
 
@@ -938,6 +941,57 @@ Generate questions that test understanding of this content, its learning objecti
     }
 
     return cleaned.join("\n").trim();
+  }
+
+  private createTutorQueryFallback(): TutorResponsePayload {
+    return {
+      answer: "I'm having trouble connecting to the AI tutor right now. Please try again in a moment.",
+      citations: [],
+      followUpQuestions: [],
+      safety: { blocked: false },
+    };
+  }
+
+  private createLearningUnitFallback(
+    topic: string,
+    targetAudience: string,
+  ): { title: string; description: string; sections: unknown[] } {
+    return {
+      title: topic,
+      description: `Learning unit about ${topic} for ${targetAudience}`,
+      sections: [
+        {
+          type: "introduction",
+          title: "Introduction",
+          content: `Introduce the core ideas behind ${topic}.`,
+          estimatedMinutes: 10,
+        },
+        {
+          type: "concept",
+          title: "Core Concepts",
+          content: `Explore the foundational concepts learners need for ${topic}.`,
+          estimatedMinutes: 20,
+        },
+        {
+          type: "example",
+          title: "Worked Example",
+          content: `Walk through a concrete ${topic} example.`,
+          estimatedMinutes: 15,
+        },
+        {
+          type: "exercise",
+          title: "Practice",
+          content: `Give learners a chance to apply ${topic}.`,
+          estimatedMinutes: 20,
+        },
+        {
+          type: "summary",
+          title: "Summary",
+          content: `Review the key takeaways for ${topic}.`,
+          estimatedMinutes: 10,
+        },
+      ],
+    };
   }
 
   private extractDomain(input: string): string | undefined {

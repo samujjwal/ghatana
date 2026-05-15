@@ -13,13 +13,24 @@ import { FileApprovalProvider } from "../approvals/FileApprovalProvider.js";
 import { FileArtifactProvider } from "../artifacts/FileArtifactProvider.js";
 import { FileLifecycleEventProvider } from "../events/FileLifecycleEventProvider.js";
 import { FileHealthProvider } from "../health/FileHealthProvider.js";
+import { FileMemoryProvider } from "../memory/FileMemoryProvider.js";
 import { FileProvenanceProvider } from "../provenance/FileProvenanceProvider.js";
 import { FileRuntimeTruthProvider } from "../runtime-truth/FileRuntimeTruthProvider.js";
+import { GhatanaFileRegistryProvider } from "../registry/GhatanaFileRegistryProvider.js";
 
 export interface BootstrapKernelProvidersOptions {
   readonly repoRoot: string;
   readonly outputRoot?: string;
   readonly allowOutputOutsideKernelOut?: boolean;
+  readonly scope?: BootstrapKernelProviderScope;
+  readonly includeRegistryProvider?: boolean;
+  readonly registryPath?: string;
+}
+
+export interface BootstrapKernelProviderScope {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
 }
 
 export interface BootstrapKernelProviders {
@@ -31,7 +42,9 @@ export interface BootstrapKernelProviders {
   readonly health: FileHealthProvider;
   readonly approvals: FileApprovalProvider;
   readonly provenance: FileProvenanceProvider;
+  readonly memory: FileMemoryProvider;
   readonly runtimeTruth: FileRuntimeTruthProvider;
+  readonly registryProvider?: GhatanaFileRegistryProvider;
 }
 
 export function createBootstrapKernelProviders(
@@ -45,7 +58,10 @@ export function createBootstrapKernelProviders(
 
   validateOutputRoot(repoRoot, outputRoot, options.allowOutputOutsideKernelOut ?? false);
 
-  const events = new FileLifecycleEventProvider({ outputDirectory: outputRoot });
+  const events = new FileLifecycleEventProvider({
+    outputDirectory: outputRoot,
+    ...(options.scope ? { scope: options.scope } : {}),
+  });
   const artifacts = new FileArtifactProvider({
     outputDirectory: outputRoot,
     artifactRootDirectory: repoRoot,
@@ -53,14 +69,25 @@ export function createBootstrapKernelProviders(
   const health = new FileHealthProvider({ outputDirectory: outputRoot });
   const approvals = new FileApprovalProvider({ outputDirectory: outputRoot });
   const provenance = new FileProvenanceProvider({ outputDirectory: outputRoot });
+  const memory = new FileMemoryProvider({ outputDirectory: outputRoot });
   const runtimeTruth = new FileRuntimeTruthProvider({ outputDirectory: outputRoot });
+  const registryProvider =
+    options.includeRegistryProvider === true
+      ? new GhatanaFileRegistryProvider({
+          registryPath:
+            options.registryPath ??
+            path.join(repoRoot, "config", "canonical-product-registry.json"),
+        })
+      : undefined;
   const context: KernelLifecycleProviderContext = {
     mode: "bootstrap",
+    ...(registryProvider ? { registryProvider } : {}),
     events,
     artifacts,
     health,
     approvals,
     provenance,
+    memory,
     runtimeTruth,
   };
 
@@ -73,7 +100,9 @@ export function createBootstrapKernelProviders(
     health,
     approvals,
     provenance,
+    memory,
     runtimeTruth,
+    ...(registryProvider ? { registryProvider } : {}),
   };
 }
 

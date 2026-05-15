@@ -26,7 +26,7 @@ const ColorScaleSchema = z.object({
   700: z.string(),
   800: z.string(),
   900: z.string(),
-}).strict();
+}).passthrough();
 
 const PaletteSchema = z.object({
   primary: ColorScaleSchema,
@@ -116,13 +116,54 @@ export const tokenRegistrySchema = z.object({
   breakpoints: z.object({
     breakpoints: z.record(z.string(), z.number().or(z.string())),
     semanticBreakpoints: z.record(z.string(), z.number().or(z.string())),
-    mediaQueries: z.record(z.string(), z.string()),
+    mediaQueries: z.record(z.string(), z.string().or(z.function())),
     containerMaxWidths: z.record(z.string(), z.number().or(z.string())),
     touchTargets: z.record(z.string(), z.number().or(z.string())),
   }).passthrough(),
 }).passthrough();
 
 export type TokenRegistrySchema = z.infer<typeof tokenRegistrySchema>;
+
+function isSerializableTokenValue(value: unknown): value is string | number | boolean | readonly unknown[] | Record<string, unknown> {
+  return (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    Array.isArray(value) ||
+    (typeof value === 'object' && value !== null)
+  );
+}
+
+function toDTCGGroup(input: Record<string, unknown>): Record<string, unknown> {
+  const group: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    if (typeof value === 'function' || value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      group[key] = toDTCGGroup(value as Record<string, unknown>);
+      continue;
+    }
+
+    if (isSerializableTokenValue(value)) {
+      group[key] = { $value: value };
+    }
+  }
+
+  return group;
+}
+
+export function toDTCGTokenFile(
+  registry: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    $schema: 'https://design-tokens.org/schema',
+    $version: '1.0.0',
+    ...toDTCGGroup(registry),
+  };
+}
 
 // ============================================================================
 // DTCG-aware validation result

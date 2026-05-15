@@ -14,8 +14,8 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@notifee/react-native": "^9.1.8",
@@ -29,7 +29,8 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
   },
   "author": "DCMAAR Team",
   "license": "MIT"

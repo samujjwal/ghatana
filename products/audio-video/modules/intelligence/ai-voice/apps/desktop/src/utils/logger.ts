@@ -129,7 +129,7 @@ export async function invokeWithLog<T>(
   logger.info('Invoke:request', { command, ...(args ? { args } : {}) });
   try {
     const { invoke } = await import('@tauri-apps/api/core');
-    const result = await invoke<T>(command, args);
+    const result = args ? await invoke<T>(command, args) : await invoke<T>(command);
     logger.info('Invoke:success', { command });
     return result;
   } catch (error) {

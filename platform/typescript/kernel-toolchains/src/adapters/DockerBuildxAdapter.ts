@@ -1,4 +1,5 @@
-﻿import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import type {
   ToolchainAdapter,
   ToolchainAdapterContext,
@@ -52,12 +53,16 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
     const { image, tag, dockerfile, dockerContext } = this.resolveConfig(context);
     const imageRef = `${image}:${tag}`;
     const args = this.buildArgs(context);
+    const labels = this.lifecycleLabels(context);
+    const platformArgs = this.platformArgs(context);
 
     const command: string[] = [
       'docker', 'buildx', 'build',
       '--load',
       '-t', imageRef,
       '-f', dockerfile,
+      ...labels,
+      ...platformArgs,
       ...args,
       dockerContext,
     ];
@@ -77,7 +82,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
     const [step] = await this.plan(context);
 
     if (context.dryRun) {
-      context.logger.info(`[DRY-RUN] Would execute: ${step.command.join(' ')}`);
+      context.logger.info(`[DRY-RUN] Would execute: ${this.safeCommand(step.command)}`);
       return createToolchainExecutionResult(context, {
         status: 'skipped',
         steps: [{ stepId: step.id, status: 'skipped', durationMs: 0 }],
@@ -87,7 +92,23 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
       });
     }
 
-    context.logger.info(`Building container image: ${step.command.join(' ')}`);
+    const preflight = await this.validatePreconditions(context);
+    if (preflight.status === 'invalid') {
+      return createToolchainExecutionResult(context, {
+        status: 'failed',
+        steps: [{ stepId: step.id, status: 'failed', durationMs: 0 }],
+        artifacts: [],
+        durationMs: Date.now() - startedAt,
+        failure: {
+          stepId: step.id,
+          message: preflight.errors.map((error) => error.message).join('; '),
+        },
+        warnings: preflight.unexpectedArtifacts,
+        observability: createDryRunObservability(step.id),
+      });
+    }
+
+    context.logger.info(`Building container image: ${this.safeCommand(step.command)}`);
 
     const commandResult = await this.commandRunner.run(
       step.command[0],
@@ -96,6 +117,8 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
         cwd: step.workingDirectory,
         env: { ...process.env, ...step.env },
         timeoutMs: 900_000, // 15 min â€” image builds can be slow
+        commandId: step.id,
+        redact: (value) => this.redactCommandText(value),
       },
     );
 
@@ -119,7 +142,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
         durationMs,
         failure: {
           stepId: step.id,
-          message: `docker buildx build exited with code ${commandResult.exitCode}`,
+          message: `docker-buildx-failed: docker buildx build exited with code ${commandResult.exitCode}`,
           cause: truncateToolchainOutput(commandResult.stderr),
         },
         observability: createCommandObservability(step.id, commandResult, durationMs),
@@ -194,6 +217,20 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
         unexpectedArtifacts: [],
       };
     }
+    const artifactRef = this.resolveDigestArtifactRef(imageRef, result.stdout);
+    if (this.requiresDigest(context) && artifactRef === imageRef) {
+      return {
+        status: 'invalid',
+        errors: [
+          {
+            path: 'container-image.digest',
+            message: `container-image-digest-missing: required image "${imageRef}" did not expose a sha256 digest`,
+          },
+        ],
+        missingArtifacts: [`${imageRef}@sha256`],
+        unexpectedArtifacts: [],
+      };
+    }
 
     return {
       status: 'valid',
@@ -247,6 +284,62 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
     return { image, tag, dockerfile, dockerContext };
   }
 
+  private async validatePreconditions(
+    context: ToolchainAdapterContext,
+  ): Promise<ToolchainOutputValidationResult> {
+    const { image, tag, dockerfile, dockerContext } = this.resolveConfig(context);
+    const errors: { path: string; message: string }[] = [];
+    const warnings: string[] = [];
+
+    if (!isValidImageName(image)) {
+      errors.push({
+        path: 'surfaceConfig.image',
+        message: `invalid-image-ref: DockerBuildxAdapter received invalid image "${image}"`,
+      });
+    }
+    if (!isValidTag(tag)) {
+      errors.push({
+        path: 'surfaceConfig.tag',
+        message: `invalid-image-tag: DockerBuildxAdapter received invalid tag "${tag}"`,
+      });
+    }
+    if (context.surfaceConfig.sbom === true) {
+      errors.push({
+        path: 'surfaceConfig.sbom',
+        message: 'sbom-not-ready: Docker Buildx SBOM export is declared but feature-gated off',
+      });
+    }
+
+    await this.expectPath(dockerfile, 'surfaceConfig.dockerfile', errors);
+    await this.expectPath(dockerContext, 'surfaceConfig.context', errors);
+
+    if (Array.isArray(context.surfaceConfig.platforms)) {
+      warnings.push('docker-buildx-platforms-declared');
+    }
+
+    return {
+      status: errors.length > 0 ? 'invalid' : 'valid',
+      errors,
+      missingArtifacts: errors.map((error) => error.path),
+      unexpectedArtifacts: warnings,
+    };
+  }
+
+  private async expectPath(
+    filePath: string,
+    field: string,
+    errors: { path: string; message: string }[],
+  ): Promise<void> {
+    try {
+      await fs.access(filePath);
+    } catch {
+      errors.push({
+        path: field,
+        message: `${field}-not-found: ${filePath}`,
+      });
+    }
+  }
+
   private requireConfigString(config: Record<string, unknown>, key: string): string {
     const value = config[key];
     if (typeof value !== 'string' || value.trim().length === 0) {
@@ -287,4 +380,50 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
     if (!buildArgs) return [];
     return Object.entries(buildArgs).flatMap(([k, v]) => ['--build-arg', `${k}=${v}`]);
   }
+
+  private platformArgs(context: ToolchainAdapterContext): string[] {
+    const platforms = context.surfaceConfig.platforms;
+    if (!Array.isArray(platforms) || platforms.length === 0) {
+      return [];
+    }
+    const normalized = platforms.filter(
+      (platform): platform is string =>
+        typeof platform === 'string' && platform.trim().length > 0,
+    );
+    return normalized.length === 0 ? [] : ['--platform', normalized.join(',')];
+  }
+
+  private lifecycleLabels(context: ToolchainAdapterContext): string[] {
+    const labelEntries: [string, string][] = [
+      ['ghatana.productUnit', context.productId],
+      ['ghatana.surface', context.surface.type],
+    ];
+    if (context.runId) {
+      labelEntries.push(['ghatana.kernel.runId', context.runId]);
+    }
+    if (context.correlationId) {
+      labelEntries.push(['ghatana.kernel.correlationId', context.correlationId]);
+    }
+    return labelEntries.flatMap(([key, value]) => ['--label', `${key}=${value}`]);
+  }
+
+  private requiresDigest(context: ToolchainAdapterContext): boolean {
+    return context.surfaceConfig.requiredDigest !== false;
+  }
+
+  private safeCommand(command: readonly string[]): string {
+    return this.redactCommandText(command.join(' '));
+  }
+
+  private redactCommandText(value: string): string {
+    return value.replace(/(--build-arg\s+[^=\s]+=)([^\s]+)/g, '$1<redacted>');
+  }
+}
+
+function isValidImageName(value: string): boolean {
+  return /^[a-z0-9]+(?:(?:[._/-][a-z0-9]+)+)?$/.test(value);
+}
+
+function isValidTag(value: string): boolean {
+  return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(value);
 }

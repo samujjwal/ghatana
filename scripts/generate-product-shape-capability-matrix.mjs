@@ -59,6 +59,7 @@ function analyzeProduct(productId, product, profiles, adapters) {
   const reasonCodes = [];
   const missingManifests = [];
   const missingProviders = [];
+  const blockingGaps = [];
   const gatesNeeded = [
     ...new Set([
       'security',
@@ -199,6 +200,14 @@ function analyzeProduct(productId, product, profiles, adapters) {
   }
   missingManifests.push(...asStringArray(lifecycleReadiness.missingManifests));
   missingProviders.push(...asStringArray(lifecycleReadiness.missingProviders));
+  const providerGapsForBlocking = missingProviders.filter((provider) =>
+    !(lifecycleStatus === 'enabled' && provider.startsWith('platform-')),
+  );
+  blockingGaps.push(
+    ...capabilityGaps,
+    ...missingManifests.map((manifest) => `missing-manifest:${manifest}`),
+    ...providerGapsForBlocking.map((provider) => `missing-provider:${provider}`),
+  );
 
   // Determine shape description
   const shapeDescription = getShapeDescription(surfaceTypes, lifecycleProfile, productKind);
@@ -217,6 +226,21 @@ function analyzeProduct(productId, product, profiles, adapters) {
     missingManifests: [...new Set(missingManifests)].sort(),
     missingProviders: [...new Set(missingProviders)].sort(),
     gatesNeeded,
+    readinessDimensions: readinessDimensions({
+      lifecycleStatus,
+      productKind,
+      profile,
+      requiredAdapters,
+      adapterReadiness,
+      missingManifests,
+      missingProviders,
+      gatesNeeded,
+      capabilityGaps,
+      lifecycleReadiness,
+    }),
+    minimumReleaseToEnable: lifecycleReadiness.minimumReleaseToEnable ?? minimumReleaseToEnable(lifecycleStatus),
+    blockingGaps: [...new Set(blockingGaps)].sort(),
+    nextValidationCommand: lifecycleReadiness.nextValidationCommand ?? nextValidationCommand(productId, lifecycleStatus),
     requiredCapabilities: requiredCapabilities.sort(),
     capabilityGaps: capabilityGaps.sort(),
     reasonCodes: [...new Set(reasonCodes)].sort(),
@@ -226,6 +250,115 @@ function analyzeProduct(productId, product, profiles, adapters) {
     status,
     findings: findings.length > 0 ? findings : undefined,
   };
+}
+
+function readinessDimensions({
+  lifecycleStatus,
+  productKind,
+  profile,
+  requiredAdapters,
+  adapterReadiness,
+  missingManifests,
+  missingProviders,
+  gatesNeeded,
+  capabilityGaps,
+  lifecycleReadiness,
+}) {
+  const adaptersExecutable = requiredAdapters.length > 0 &&
+    adapterReadiness.every((adapter) =>
+      adapter.status === 'implemented' &&
+      adapter.readiness === 'execution-ready' &&
+      adapter.lifecycleEnabled === true &&
+      adapter.supportsBootstrapMode === true
+    );
+  const platformProvidersMissing = missingProviders.filter((provider) => provider.startsWith('platform-'));
+  const nonPlatformProvidersMissing = missingProviders.filter((provider) => !provider.startsWith('platform-'));
+  const providerStatus = nonPlatformProvidersMissing.length > 0
+    ? 'blocked'
+    : platformProvidersMissing.length > 0 && lifecycleStatus === 'enabled'
+      ? 'bootstrap-ready-platform-planned'
+      : lifecycleStatus === 'enabled'
+        ? 'ready'
+        : 'not-required';
+  const manifestStatus = missingManifests.length === 0 ? 'ready' : 'blocked';
+  const privacySecurityStatus = gatesNeeded.some((gate) => ['privacy', 'security'].includes(gate))
+    ? 'declared'
+    : 'blocked';
+
+  return {
+    apiReadiness: dimension(profile ? 'profile-backed' : 'blocked', profile ? [] : ['missing-lifecycle-profile']),
+    uiReadiness: dimension(
+      hasReadinessEvidence(lifecycleReadiness, 'ui') ? 'evidence-backed' : 'unproven',
+      hasReadinessEvidence(lifecycleReadiness, 'ui') ? [] : ['ui-evidence-not-recorded'],
+      asStringArray(lifecycleReadiness.evidenceRefs).filter((ref) => ref.includes('ui')),
+    ),
+    providerReadiness: dimension(
+      providerStatus,
+      [
+        ...nonPlatformProvidersMissing.map((provider) => `missing-provider:${provider}`),
+        ...platformProvidersMissing.map((provider) => `platform-provider-planned:${provider}`),
+      ],
+    ),
+    runtimeTruthReadiness: dimension(
+      lifecycleStatus === 'enabled' ? 'required' : 'not-enabled',
+      lifecycleStatus === 'enabled' ? ['runtime-truth-required'] : ['lifecycle-not-enabled'],
+    ),
+    approvalReadiness: dimension(
+      gatesNeeded.includes('approval') || lifecycleStatus === 'enabled' ? 'required' : 'planned',
+      gatesNeeded.includes('approval') || lifecycleStatus === 'enabled' ? ['approval-gate-required'] : ['approval-gate-planned'],
+    ),
+    privacySecurityGateReadiness: dimension(
+      privacySecurityStatus,
+      privacySecurityStatus === 'declared' ? [] : ['missing-privacy-security-gates'],
+    ),
+    artifactDeploymentManifestReadiness: dimension(
+      manifestStatus,
+      missingManifests.map((manifest) => `missing-manifest:${manifest}`),
+    ),
+    adapterExecutionReadiness: dimension(
+      adaptersExecutable ? 'execution-ready' : 'not-executable',
+      adaptersExecutable ? [] : ['adapter-execution-not-ready', ...capabilityGaps],
+    ),
+    platformModeReadiness: dimension(
+      productKind === 'platform-provider' ? 'provider-owned' : 'requires-data-cloud-bridge',
+      productKind === 'platform-provider' ? ['platform-provider-owned'] : ['data-cloud-bridge-required'],
+    ),
+    enablementGuardrail: dimension(
+      capabilityGaps.length === 0 && adaptersExecutable && nonPlatformProvidersMissing.length === 0
+        ? 'can-evaluate'
+        : 'blocked',
+      [
+        ...capabilityGaps,
+        ...nonPlatformProvidersMissing.map((provider) => `missing-provider:${provider}`),
+      ],
+    ),
+  };
+}
+
+function dimension(status, reasonCodes = [], evidenceRefs = []) {
+  return {
+    status,
+    reasonCodes: [...new Set(reasonCodes)].sort(),
+    evidenceRefs: [...new Set(evidenceRefs)].sort(),
+  };
+}
+
+function hasReadinessEvidence(lifecycleReadiness, token) {
+  return asStringArray(lifecycleReadiness.evidenceRefs).some((ref) => ref.includes(token));
+}
+
+function minimumReleaseToEnable(lifecycleStatus) {
+  return lifecycleStatus === 'enabled' ? 'current-pilot' : 'future-readiness-gate';
+}
+
+function nextValidationCommand(productId, lifecycleStatus) {
+  if (productId === 'digital-marketing') {
+    return 'pnpm check:digital-marketing-lifecycle-pilot --smoke';
+  }
+  if (lifecycleStatus === 'enabled') {
+    return `node scripts/kernel-product.mjs product build ${productId} --dry-run --json`;
+  }
+  return 'pnpm check:product-shape-capability-matrix';
 }
 
 function asStringArray(value) {

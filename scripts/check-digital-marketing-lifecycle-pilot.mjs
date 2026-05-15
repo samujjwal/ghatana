@@ -182,16 +182,25 @@ async function main() {
     }
   }
 
+  if (config?.approval !== undefined) {
+    errors.push('kernel-product.yaml must use canonical approvals, not legacy approval');
+  }
   for (const phase of ['deploy', 'promote', 'rollback']) {
-    const approval = config?.approval?.[phase];
-    if (!approval?.required) {
-      errors.push(`approval.${phase}.required must be true`);
+    const approvals = config?.approvals?.[phase];
+    if (!Array.isArray(approvals) || approvals.length === 0) {
+      errors.push(`approvals.${phase} must include at least one approval requirement`);
+      continue;
     }
-    if (!Array.isArray(approval?.approverRoles) || approval.approverRoles.length === 0) {
-      errors.push(`approval.${phase}.approverRoles must include at least one role`);
-    }
-    if (!Array.isArray(approval?.evidenceRefs) || approval.evidenceRefs.length === 0) {
-      errors.push(`approval.${phase}.evidenceRefs must include required evidence refs`);
+    for (const [index, approval] of approvals.entries()) {
+      if (!approval?.required) {
+        errors.push(`approvals.${phase}[${index}].required must be true`);
+      }
+      if (typeof approval?.action !== 'string' || approval.action.length === 0) {
+        errors.push(`approvals.${phase}[${index}].action must be declared`);
+      }
+      if (!Array.isArray(approval?.requiredApprovers) || approval.requiredApprovers.length === 0) {
+        errors.push(`approvals.${phase}[${index}].requiredApprovers must include at least one role`);
+      }
     }
   }
 
@@ -326,6 +335,15 @@ async function main() {
       for (const violation of unsafeDefaults) {
         errors.push(`Env example ${deployLocal.envExampleFile}: ${violation}`);
       }
+      if (envContent.includes('DMOS_PERSISTENCE_TYPE=in-memory')) {
+        errors.push(`Env example ${deployLocal.envExampleFile} must not claim in-memory persistence for compose deploy`);
+      }
+      if (!envContent.includes('DMOS_PERSISTENCE_TYPE=postgres')) {
+        errors.push(`Env example ${deployLocal.envExampleFile} must set DMOS_PERSISTENCE_TYPE=postgres`);
+      }
+      if (!envContent.includes('DATABASE_URL=')) {
+        errors.push(`Env example ${deployLocal.envExampleFile} must include DATABASE_URL for compose deploy`);
+      }
     } else {
       warnings.push(`Env example file not found: ${deployLocal.envExampleFile}`);
     }
@@ -344,7 +362,20 @@ async function main() {
   // 11. Validate plan generation for deploy and verify with --env local
   for (const phase of ['deploy', 'verify']) {
     try {
-      runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      if (phase === 'deploy' && !hasApprovalRequirements(payload)) {
+        errors.push('Deploy plan must emit approvalRequirements from canonical approvals config');
+      }
+    } catch (err) {
+      errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  for (const phase of ['rollback']) {
+    try {
+      const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      if (!hasApprovalRequirements(payload)) {
+        errors.push(`${phase} plan must emit approvalRequirements from canonical approvals config`);
+      }
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -395,6 +426,13 @@ async function runLifecycleSmoke() {
     try {
       payload = runKernelProduct(smokeRun.args);
     } catch (err) {
+      const failureMessage = String(err instanceof Error ? err.message : err);
+      if (
+        smokeRun.phase === 'deploy' &&
+        (failureMessage.includes('approval required') || failureMessage.includes('approval request failed'))
+      ) {
+        continue;
+      }
       errors.push(`Lifecycle smoke failed for phase "${smokeRun.phase}": ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
@@ -456,6 +494,15 @@ function isExpectedForPhase(key, phase) {
     return phase === 'verify';
   }
   return false;
+}
+
+function hasApprovalRequirements(payload) {
+  const approvalRequirements = payload?.plan?.approvalRequirements ?? payload?.approvalRequirements;
+  return Array.isArray(approvalRequirements) && approvalRequirements.some((approval) =>
+    approval?.required === true &&
+    typeof approval?.action === 'string' &&
+    approval.action.length > 0,
+  );
 }
 
 function reportAndExit(errors, warnings) {

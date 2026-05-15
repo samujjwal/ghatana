@@ -21,7 +21,7 @@ import {
   parseSTTResult,
   parseDetectionResult,
   parseMultimodalResult,
-} from '../index.js';
+} from '../index.ts';
 
 // ─── DEFAULT_AUDIO_FORMAT ─────────────────────────────────────────────────────
 

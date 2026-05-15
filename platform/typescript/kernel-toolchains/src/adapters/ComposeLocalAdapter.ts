@@ -140,7 +140,12 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     const deploymentManifest = context.phase === 'deploy'
       ? await this.writeDeploymentManifest(context)
       : undefined;
-    const artifacts = deploymentManifest !== undefined ? [deploymentManifest] : [];
+    const rollbackManifest = context.phase === 'rollback'
+      ? await this.writeRollbackManifest(context)
+      : undefined;
+    const artifacts = [deploymentManifest, rollbackManifest].filter(
+      (artifact): artifact is string => artifact !== undefined,
+    );
 
     return createToolchainExecutionResult(context, {
       status: 'succeeded',
@@ -165,14 +170,28 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
     context.logger.debug(`[compose-local] validateOutputs for ${context.productId} (${context.phase})`);
 
-    // compose-local validates that required containers are running.
-    // Prerequisites (compose file existence) are checked during execute().
-    return {
-      status: 'valid',
-      errors: [],
-      missingArtifacts: [],
-      unexpectedArtifacts: [],
-    };
+    if (!['deploy', 'verify'].includes(context.phase)) {
+      return { status: 'valid', errors: [], missingArtifacts: [], unexpectedArtifacts: [] };
+    }
+    if (this.expectedServices(context).length === 0) {
+      return { status: 'valid', errors: [], missingArtifacts: [], unexpectedArtifacts: [] };
+    }
+
+    const { composeFile, envFile } = this.resolveConfig(context);
+    const psResult = await this.commandRunner.run(
+      'docker',
+      ['compose', '-f', composeFile, ...(envFile ? ['--env-file', envFile] : []), 'ps', '--format', 'json'],
+      { cwd: this.repoRoot, env: { ...process.env } },
+    );
+    if (psResult.exitCode !== 0) {
+      return {
+        status: 'invalid',
+        errors: [{ path: 'docker-compose.ps', message: 'docker compose ps failed during output validation' }],
+        missingArtifacts: [],
+        unexpectedArtifacts: [],
+      };
+    }
+    return this.validateExpectedServices(context, this.parseComposePs(psResult.stdout));
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -255,6 +274,29 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
       });
     }
 
+    const serviceValidation = this.validateExpectedServices(context, services);
+    if (serviceValidation.status === 'invalid') {
+      const verifyHealthReport = await this.writeVerifyHealthReport(context, {
+        status: 'unhealthy',
+        services,
+        checks: this.createHealthCheckSummaries(context, 'skipped'),
+        verifiedAt: new Date().toISOString(),
+      });
+      return createToolchainExecutionResult(context, {
+        status: 'failed',
+        steps: [{ stepId, status: 'failed', exitCode: psResult.exitCode, durationMs }],
+        artifacts: [verifyHealthReport],
+        durationMs,
+        manifestRefs: { verifyHealthReport },
+        evidenceRefs: [`manifest:${verifyHealthReport}`],
+        failure: {
+          stepId,
+          message: serviceValidation.errors.map((error) => error.message).join('; '),
+        },
+        observability: createCommandObservability(stepId, psResult, durationMs),
+      });
+    }
+
     // Check health checks from surfaceConfig (populated by planner from verify section)
     const healthResult = await this.runHealthChecks(context, startedAt, services);
     if (healthResult !== null) {
@@ -302,6 +344,7 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
 
     for (const [checkName, check] of Object.entries(healthChecks)) {
       if (check.type !== 'http' || !check.url) continue;
+      const resolvedUrl = this.resolveEnvTemplate(check.url, process.env);
 
       const retries = check.retries ?? 5;
       const intervalMs = check.intervalMs ?? 2000;
@@ -311,12 +354,12 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
         try {
           const curlResult = await this.commandRunner.run(
             'curl',
-            ['-sf', '--max-time', '5', check.url],
+            ['-sf', '--max-time', '5', resolvedUrl],
             { cwd: this.repoRoot, env: { ...process.env }, timeoutMs: (check.timeoutMs ?? 10_000) },
           );
 
           if (curlResult.exitCode === 0) {
-            context.logger.info(`Health check "${checkName}" passed: ${check.url}`);
+            context.logger.info(`Health check "${checkName}" passed: ${resolvedUrl}`);
             break;
           }
 
@@ -339,7 +382,7 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
               {
                 name: checkName,
                 type: check.type,
-                url: check.url,
+                url: resolvedUrl,
                 status: 'failed',
                 attempts: retries,
                 error: lastError,
@@ -356,7 +399,7 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
             evidenceRefs: [`manifest:${verifyHealthReport}`],
             failure: {
               stepId,
-              message: `Health check "${checkName}" failed after ${retries} attempts: ${check.url}`,
+              message: `Health check "${checkName}" failed after ${retries} attempts: ${resolvedUrl}`,
               cause: lastError,
             },
             observability: createDryRunObservability(stepId),
@@ -409,6 +452,9 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     const manifest = {
       schemaVersion: '1.0.0',
       productId: context.productId,
+      productUnitId: context.productId,
+      runId: context.runId,
+      correlationId: context.correlationId,
       environment: context.environment ?? 'local',
       adapter: 'compose-local',
       composeFile: path.relative(this.repoRoot, composeFile).replace(/\\/g, '/'),
@@ -416,12 +462,34 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
       services,
       env: context.environment ?? 'local',
       healthUrls,
+      evidenceRefs: [`compose:${context.productId}:${context.environment ?? 'local'}`],
       startedAt: deployStartedAt,
       completedAt,
       deployedAt: completedAt,
       status: 'deployed',
     };
 
+    await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+    return path.relative(this.repoRoot, manifestPath).replace(/\\/g, '/');
+  }
+
+  private async writeRollbackManifest(context: ToolchainAdapterContext): Promise<string> {
+    const outputDir = context.outputDir ?? path.join(this.repoRoot, '.kernel', 'out', 'rollback');
+    await fs.mkdir(outputDir, { recursive: true });
+    const manifestPath = path.join(outputDir, 'rollback-manifest.json');
+    const completedAt = new Date().toISOString();
+    const manifest = {
+      schemaVersion: '1.0.0',
+      productId: context.productId,
+      productUnitId: context.productId,
+      runId: context.runId,
+      correlationId: context.correlationId,
+      environment: context.environment ?? 'local',
+      adapter: 'compose-local',
+      status: 'rolled-back',
+      completedAt,
+      evidenceRefs: [`compose-rollback:${context.productId}:${context.environment ?? 'local'}`],
+    };
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
     return path.relative(this.repoRoot, manifestPath).replace(/\\/g, '/');
   }
@@ -441,12 +509,18 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     const manifest = {
       schemaVersion: '1.0.0',
       productId: context.productId,
+      productUnitId: context.productId,
+      runId: context.runId,
+      correlationId: context.correlationId,
       environment: context.environment ?? 'local',
       adapter: 'compose-local',
       status: report.status,
       services: report.services,
+      checks: report.checks,
       healthChecks: report.checks,
+      checkedAt: report.verifiedAt,
       verifiedAt: report.verifiedAt,
+      evidenceRefs: [`compose-verify:${context.productId}:${context.environment ?? 'local'}`],
     };
     await fs.writeFile(reportPath, JSON.stringify(manifest, null, 2), 'utf-8');
     return path.relative(this.repoRoot, reportPath).replace(/\\/g, '/');
@@ -481,7 +555,7 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     if (!value || typeof value !== 'object') return;
     const entry = value as Record<string, unknown>;
     const name = String(entry.Name ?? entry.Service ?? '');
-    const state = String(entry.State ?? entry.Status ?? 'unknown');
+    const state = this.classifyComposeState(String(entry.State ?? entry.Status ?? 'unknown'));
     if (name.length > 0) {
       services[name] = state;
     }
@@ -501,7 +575,9 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
         name,
         type: check.type,
         status,
-        ...(typeof check.url === 'string' ? { url: check.url } : {}),
+        ...(typeof check.url === 'string'
+          ? { url: this.resolveEnvTemplate(check.url, process.env) }
+          : {}),
       }));
   }
 
@@ -532,13 +608,23 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     const composeContent = await fs.readFile(composeFile, 'utf-8');
     const document = YAML.parse(composeContent) as { services?: Record<string, { labels?: unknown }> } | null;
     const services = document?.services ?? {};
-    const labeledServices = Object.entries(services).filter(([, service]) =>
-      this.hasRequiredGhatanaLabels(service.labels, context),
+    const managedServices = Object.entries(services).filter(([, service]) =>
+      this.isLifecycleManagedService(service.labels),
     );
 
-    if (labeledServices.length === 0) {
+    if (managedServices.length === 0) {
       throw new Error(
         `Compose file ${composeFile} must declare ghatana.kernel.productUnit=${context.productId}, ` +
+          `ghatana.kernel.surface=${context.surface.type}, and ghatana.kernel.lifecycle=true labels.`,
+      );
+    }
+    const invalidManagedServices = managedServices.filter(([, service]) =>
+      !this.hasRequiredGhatanaLabels(service.labels, context),
+    );
+    if (invalidManagedServices.length > 0) {
+      const serviceNames = invalidManagedServices.map(([serviceName]) => serviceName).join(', ');
+      throw new Error(
+        `Lifecycle-managed compose services ${serviceNames} must declare ghatana.kernel.productUnit=${context.productId}, ` +
           `ghatana.kernel.surface=${context.surface.type}, and ghatana.kernel.lifecycle=true labels.`,
       );
     }
@@ -553,6 +639,10 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
     return labelMap['ghatana.kernel.productUnit'] === context.productId &&
       labelMap['ghatana.kernel.surface'] === context.surface.type &&
       labelMap['ghatana.kernel.lifecycle'] === 'true';
+  }
+
+  private isLifecycleManagedService(labels: unknown): boolean {
+    return this.normalizeLabels(labels)['ghatana.kernel.lifecycle'] === 'true';
   }
 
   private normalizeLabels(labels: unknown): Record<string, string> {
@@ -579,6 +669,54 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
 
   private resolvePath(p: string): string {
     return path.isAbsolute(p) ? p : path.join(this.repoRoot, p);
+  }
+
+  private validateExpectedServices(
+    context: ToolchainAdapterContext,
+    services: Record<string, string>,
+  ): ToolchainOutputValidationResult {
+    const expectedServices = this.expectedServices(context);
+    const errors = expectedServices.flatMap((serviceName) => {
+      const state = services[serviceName];
+      if (state === undefined) {
+        return [{ path: `services.${serviceName}`, message: `expected service ${serviceName} is missing from docker compose ps` }];
+      }
+      if (!['running', 'healthy'].includes(state)) {
+        return [{ path: `services.${serviceName}`, message: `expected service ${serviceName} is ${state}` }];
+      }
+      return [];
+    });
+    return {
+      status: errors.length > 0 ? 'invalid' : 'valid',
+      errors,
+      missingArtifacts: errors.map((error) => error.path),
+      unexpectedArtifacts: [],
+    };
+  }
+
+  private expectedServices(context: ToolchainAdapterContext): string[] {
+    const expectedServices = context.surfaceConfig.expectedServices;
+    if (!Array.isArray(expectedServices)) {
+      return [];
+    }
+    return expectedServices.filter(
+      (serviceName): serviceName is string =>
+        typeof serviceName === 'string' && serviceName.trim().length > 0,
+    );
+  }
+
+  private classifyComposeState(rawState: string): string {
+    const value = rawState.toLowerCase();
+    if (value.includes('unhealthy')) return 'unhealthy';
+    if (value.includes('exited')) return 'exited';
+    if (value.includes('running') || value.startsWith('up ')) return 'running';
+    return value.trim() || 'unknown';
+  }
+
+  private resolveEnvTemplate(url: string, env: NodeJS.ProcessEnv): string {
+    return url.replace(/\$\{([A-Z0-9_]+)(?::-([^}]*))?\}/g, (_match, name: string, fallback: string | undefined) =>
+      env[name] ?? fallback ?? '',
+    );
   }
 
   private mapPhaseToActionArgs(phase: ProductLifecyclePhase): string[] {

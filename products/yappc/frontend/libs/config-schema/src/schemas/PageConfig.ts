@@ -18,13 +18,13 @@ import { z } from 'zod';
  * This aligns with ComponentSchema from ComponentRenderer
  */
 export const ComponentInstanceSchema = z.object({
-  type: z.string(),
+  type: z.string().min(1),
   props: z.record(z.string(), z.unknown()).optional(),
   children: z
     .lazy(() => z.array(z.any()))
     .or(z.string())
     .optional(),
-  id: z.string().optional(),
+  id: z.string().min(1).optional(),
   condition: z.string().optional(),
   dataBinding: z
     .object({
@@ -59,8 +59,8 @@ export const PropertyDefinitionSchema = z.object({
  * InterfaceDefinition schema
  */
 export const InterfaceDefinitionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
+  id: z.string().min(1),
+  name: z.string().min(1),
   type: z.enum(['input', 'output', 'api', 'event']),
   schema: z.object({
     type: z.enum(['object', 'array', 'string', 'number', 'boolean']),
@@ -78,7 +78,7 @@ export const InterfaceDefinitionSchema = z.object({
  * EventConnection schema
  */
 export const EventConnectionSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   sourceComponentId: z.string(),
   sourceEvent: z.string(),
   targetComponentId: z.string(),
@@ -91,7 +91,7 @@ export const EventConnectionSchema = z.object({
  * DataConnection schema
  */
 export const DataConnectionSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   sourceId: z.string(),
   sourcePath: z.string(),
   targetComponentId: z.string(),
@@ -104,7 +104,7 @@ export const DataConnectionSchema = z.object({
  * NavigationConnection schema
  */
 export const NavigationConnectionSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   sourceComponentId: z.string(),
   sourceEvent: z.string(),
   targetPageId: z.string(),
@@ -125,7 +125,7 @@ export const ConnectionDefinitionSchema = z.union([
  * DataSourceConfig schema
  */
 export const DataSourceConfigSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   type: z.enum(['api', 'database', 'static', 'mock']),
   config: z.record(z.string(), z.unknown()),
 });
@@ -155,12 +155,12 @@ export const ResponsiveConfigSchema = z.object({
  */
 export const PageConfigSchema = z
   .object({
-    id: z.string(),
+    id: z.string().min(1),
     version: z.string(),
 
     // Intent linkage
     intentId: z.string().optional(),
-    requirementIds: z.array(z.string()),
+    requirementIds: z.array(z.string().min(1)),
 
     // Page metadata
     title: z.string(),
