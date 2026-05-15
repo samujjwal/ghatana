@@ -154,7 +154,7 @@ class ToolchainAdapterBridge implements StepRunnerAdapter {
       surfaceConfig: ctx.surfaceConfig,
       phaseConfig: ctx.phaseConfig,
       logger: ctx.logger,
-      // Note: metadata is BuildMetadata in ToolchainAdapterContext — not propagated from StepRunner context.
+      // Note: metadata is BuildMetadata in ToolchainAdapterContext - not propagated from StepRunner context.
       ...(ctx.outputDir !== undefined ? { outputDir: ctx.outputDir } : {}),
     };
 

@@ -416,4 +416,431 @@ class VersionScopeTest {
 
         assertThat(scope.supportsActive(context)).isTrue();
     }
+
+    // Phase 1 FIX: Overlap validation tests
+
+    @Test
+    @DisplayName("Should reject overlapping active and maintenance constraints")
+    void shouldRejectOverlappingActiveAndMaintenanceConstraints() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.4.0 <7.0.0", "npm");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new VersionScope(
+                        List.of(activeConstraint),
+                        List.of(maintenanceConstraint),
+                        List.of()
+                )
+        );
+    }
+
+    @Test
+    @DisplayName("Should reject overlapping active and obsolete constraints")
+    void shouldRejectOverlappingActiveAndObsoleteConstraints() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=5.0.0 <6.5.0", "npm");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new VersionScope(
+                        List.of(activeConstraint),
+                        List.of(),
+                        List.of(obsoleteConstraint)
+                )
+        );
+    }
+
+    @Test
+    @DisplayName("Should reject overlapping maintenance and obsolete constraints")
+    void shouldRejectOverlappingMaintenanceAndObsoleteConstraints() {
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=5.0.0 <6.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=5.5.0 <6.5.0", "npm");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new VersionScope(
+                        List.of(),
+                        List.of(maintenanceConstraint),
+                        List.of(obsoleteConstraint)
+                )
+        );
+    }
+
+    @Test
+    @DisplayName("Should allow non-overlapping constraints for same package")
+    void shouldAllowNonOverlappingConstraintsForSamePackage() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=7.0.0 <8.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=3.0.0 <5.0.0", "npm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        assertThat(scope.active()).hasSize(1);
+        assertThat(scope.maintenance()).hasSize(1);
+        assertThat(scope.obsolete()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Should allow constraints for different packages")
+    void shouldAllowConstraintsForDifferentPackages() {
+        VersionConstraint activeConstraint1 = VersionConstraint.packageVersion("react", ">=18.0.0", "npm");
+        VersionConstraint activeConstraint2 = VersionConstraint.packageVersion("react-router", ">=6.0.0", "npm");
+
+        VersionScope scope = VersionScope.activeOnly(List.of(activeConstraint1, activeConstraint2));
+
+        assertThat(scope.active()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Should reject invalid npm range syntax")
+    void shouldRejectInvalidNpmRangeSyntax() {
+        VersionConstraint invalidConstraint = VersionConstraint.packageVersion("react", "invalid-range-syntax", "npm");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new VersionScope(
+                        List.of(invalidConstraint),
+                        List.of(),
+                        List.of()
+                )
+        );
+    }
+
+    @Test
+    @DisplayName("Should reject invalid Maven range syntax")
+    void shouldRejectInvalidMavenRangeSyntax() {
+        VersionConstraint invalidConstraint = VersionConstraint.packageVersion("spring-core", "not-a-maven-range", "maven");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new VersionScope(
+                        List.of(invalidConstraint),
+                        List.of(),
+                        List.of()
+                )
+        );
+    }
+
+    @Test
+    @DisplayName("Should reject empty range syntax")
+    void shouldRejectEmptyRangeSyntax() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> VersionConstraint.packageVersion("react", "", "npm")
+        );
+    }
+
+    // React Router version scenario tests
+
+    @Test
+    @DisplayName("React Router v7 should resolve to ACTIVE")
+    void reactRouterV7ShouldResolveToActive() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=7.0.0 <8.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=3.0.0 <6.0.0", "npm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("react-router", "7.1.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("React Router v6 should resolve to MAINTENANCE")
+    void reactRouterV6ShouldResolveToMaintenance() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=7.0.0 <8.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=3.0.0 <6.0.0", "npm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("react-router", "6.4.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.MAINTENANCE);
+    }
+
+    @Test
+    @DisplayName("React Router v4 should resolve to OBSOLETE")
+    void reactRouterV4ShouldResolveToObsolete() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=7.0.0 <8.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=3.0.0 <6.0.0", "npm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("react-router", "4.3.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.OBSOLETE);
+    }
+
+    @Test
+    @DisplayName("Unknown React Router version should resolve to UNKNOWN")
+    void unknownReactRouterVersionShouldResolveToUnknown() {
+        VersionConstraint activeConstraint = VersionConstraint.packageVersion("react-router", ">=7.0.0 <8.0.0", "npm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.packageVersion("react-router", ">=6.0.0 <7.0.0", "npm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.packageVersion("react-router", ">=3.0.0 <6.0.0", "npm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("react-router", "99.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.UNKNOWN);
+    }
+
+    // Java version range tests
+
+    @Test
+    @DisplayName("Java 21 should resolve to ACTIVE")
+    void java21ShouldResolveToActive() {
+        VersionConstraint activeConstraint = VersionConstraint.runtimeVersion("java", ">=21", "jvm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.runtimeVersion("java", ">=17 <21", "jvm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.runtimeVersion("java", ">=11 <17", "jvm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("java", "21.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("Java 17 should resolve to MAINTENANCE")
+    void java17ShouldResolveToMaintenance() {
+        VersionConstraint activeConstraint = VersionConstraint.runtimeVersion("java", ">=21", "jvm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.runtimeVersion("java", ">=17 <21", "jvm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.runtimeVersion("java", ">=11 <17", "jvm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("java", "17.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.MAINTENANCE);
+    }
+
+    @Test
+    @DisplayName("Java 11 should resolve to OBSOLETE")
+    void java11ShouldResolveToObsolete() {
+        VersionConstraint activeConstraint = VersionConstraint.runtimeVersion("java", ">=21", "jvm");
+        VersionConstraint maintenanceConstraint = VersionConstraint.runtimeVersion("java", ">=17 <21", "jvm");
+        VersionConstraint obsoleteConstraint = VersionConstraint.runtimeVersion("java", ">=11 <17", "jvm");
+
+        VersionScope scope = new VersionScope(
+                List.of(activeConstraint),
+                List.of(maintenanceConstraint),
+                List.of(obsoleteConstraint)
+        );
+
+        VersionContext context = new VersionContext(
+                Map.of("java", "11.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.classify(context)).isEqualTo(VersionApplicability.OBSOLETE);
+    }
+
+    // NPM semver range tests
+
+    @Test
+    @DisplayName("Should handle npm caret range correctly")
+    void shouldHandleNpmCaretRangeCorrectly() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "^18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.2.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version outside npm caret range")
+    void shouldRejectVersionOutsideNpmCaretRange() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "^18.0.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "19.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should handle npm tilde range correctly")
+    void shouldHandleNpmTildeRangeCorrectly() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "~18.2.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.2.5"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version outside npm tilde range")
+    void shouldRejectVersionOutsideNpmTildeRange() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("react", "~18.2.0", "npm");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("react", "18.3.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
+
+    // Maven range tests
+
+    @Test
+    @DisplayName("Should handle Maven inclusive range")
+    void shouldHandleMavenInclusiveRange() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("spring-core", "[5.0,6.0]", "maven");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("spring-core", "5.3.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should handle Maven exclusive range")
+    void shouldHandleMavenExclusiveRange() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("spring-core", "(5.0,6.0)", "maven");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("spring-core", "5.5.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject version at Maven exclusive bound")
+    void shouldRejectVersionAtMavenExclusiveBound() {
+        VersionConstraint constraint = VersionConstraint.packageVersion("spring-core", "(5.0,6.0)", "maven");
+        VersionScope scope = VersionScope.activeOnly(List.of(constraint));
+
+        VersionContext context = new VersionContext(
+                Map.of("spring-core", "5.0.0"),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                "test",
+                Instant.now()
+        );
+
+        assertThat(scope.supportsActive(context)).isFalse();
+    }
 }

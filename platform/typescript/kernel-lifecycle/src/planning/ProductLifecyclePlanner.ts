@@ -26,8 +26,6 @@ import type {
   KernelLifecycleProviderContext,
   KernelProviderMode,
   ProductUnit,
-  RegistryProvider,
-  SourceProvider,
 } from '@ghatana/kernel-product-contracts';
 
 /** Phases that are handled by the deployment target adapter, NOT surface adapters. */
@@ -42,10 +40,8 @@ const SURFACE_PHASES = new Set<ProductLifecyclePhase>(['dev', 'validate', 'test'
 /** Internal registry shape loaded from toolchain-adapter-registry.json */
 type ToolchainRegistry = Record<string, Record<string, unknown>>;
 
-export interface ProductLifecyclePlannerProviderContext extends KernelLifecycleProviderContext {
-  readonly registryProvider?: RegistryProvider;
-  readonly sourceProvider?: SourceProvider;
-}
+// Re-export KernelLifecycleProviderContext as-is since it already has all required properties
+export type ProductLifecyclePlannerProviderContext = KernelLifecycleProviderContext;
 
 export interface ProductLifecyclePlanOptions {
   readonly surfaceSelector?: string[];
@@ -56,6 +52,8 @@ export interface ProductLifecyclePlanOptions {
   readonly correlationId?: string;
   readonly providerMode?: KernelProviderMode;
   readonly shapeOnly?: boolean;
+  readonly allowBootstrapFallback?: boolean;
+  readonly semanticArtifactRefs?: readonly string[];
 }
 
 
@@ -213,8 +211,12 @@ export class ProductLifecyclePlanner {
     phase: ProductLifecyclePhase,
     options: ProductLifecyclePlanOptions = {},
   ): Promise<ProductLifecyclePlan> {
-    const providerMode = options.providerMode ?? this.providerContext?.mode ?? 'bootstrap';
-    this.assertProviderModeAvailable(providerMode);
+    const requestedMode = options.providerMode ?? this.providerContext?.mode ?? 'bootstrap';
+    const providerMode = this.assertProviderModeAvailable(
+      requestedMode,
+      options.allowBootstrapFallback ?? false,
+      options.correlationId,
+    );
 
     const [config, toolchains, productUnit] = await Promise.all([
       this.loadProductConfig(productId),
@@ -833,15 +835,83 @@ export class ProductLifecyclePlanner {
     return adapter;
   }
 
-  private assertProviderModeAvailable(providerMode: KernelProviderMode): void {
-    if (providerMode === 'platform' && this.providerContext === undefined) {
-      throw new Error('Kernel platform provider mode requires a provider context.');
+  private assertProviderModeAvailable(
+    providerMode: KernelProviderMode,
+    allowBootstrapFallback: boolean = false,
+    correlationId?: string,
+  ): KernelProviderMode {
+    // In bootstrap mode, continue with file-based validation even if providers are missing
+    if (providerMode === 'bootstrap') {
+      return 'bootstrap';
     }
-    if (providerMode === 'platform' && this.providerContext?.mode !== 'platform') {
-      throw new Error(
-        `Kernel platform provider mode requires a platform provider context; received ${this.providerContext?.mode ?? 'none'}.`,
-      );
+
+    // In platform mode, check for required providers
+    if (providerMode === 'platform') {
+      if (this.providerContext === undefined) {
+        if (allowBootstrapFallback) {
+          console.warn(
+            `[${correlationId ?? 'planner'}] Platform mode requested but provider context not available. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
+          );
+          return 'bootstrap';
+        }
+        throw new Error('Kernel platform provider mode requires a provider context. Set allowBootstrapFallback: true to fall back to bootstrap mode.');
+      }
+
+      if (this.providerContext.mode !== 'platform') {
+        if (allowBootstrapFallback) {
+          console.warn(
+            `[${correlationId ?? 'planner'}] Platform mode requested but provider context mode is ${this.providerContext.mode}. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
+          );
+          return 'bootstrap';
+        }
+        throw new Error(
+          `Kernel platform provider mode requires a platform provider context; received ${this.providerContext.mode}. Set allowBootstrapFallback: true to fall back to bootstrap mode.`,
+        );
+      }
+
+      // Check for required providers in platform mode
+      const missingProviders: string[] = [];
+      if (this.providerContext.registryProvider === undefined) {
+        missingProviders.push('registryProvider');
+      }
+      if (this.providerContext.sourceProvider === undefined) {
+        missingProviders.push('sourceProvider');
+      }
+      if (this.providerContext.artifacts === undefined) {
+        missingProviders.push('artifacts');
+      }
+      if (this.providerContext.events === undefined) {
+        missingProviders.push('events');
+      }
+      if (this.providerContext.health === undefined) {
+        missingProviders.push('health');
+      }
+      if (this.providerContext.approvals === undefined) {
+        missingProviders.push('approvals');
+      }
+      if (this.providerContext.provenance === undefined) {
+        missingProviders.push('provenance');
+      }
+      if (this.providerContext.runtimeTruth === undefined) {
+        missingProviders.push('runtimeTruth');
+      }
+
+      if (missingProviders.length > 0) {
+        if (allowBootstrapFallback) {
+          console.warn(
+            `[${correlationId ?? 'planner'}] Platform mode requested but required providers are missing: ${missingProviders.join(', ')}. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
+          );
+          return 'bootstrap';
+        }
+        throw new Error(
+          `Kernel platform provider mode requires all providers to be available. Missing: ${missingProviders.join(', ')}. Set allowBootstrapFallback: true to fall back to bootstrap mode.`,
+        );
+      }
+
+      return 'platform';
     }
+
+    throw new Error(`Invalid provider mode: ${providerMode}`);
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

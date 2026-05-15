@@ -130,22 +130,22 @@ class DataCloudMasteryRegistryTest {
                 "release-1",
                 state,
                 new VersionScope(
-                        List.of(new VersionConstraint("package", "agent-core", ">=1.0.0", "java")),
-                        List.of(),
-                        List.of()
+                        List.<VersionConstraint>of(new VersionConstraint("package", "agent-core", ">=1.0.0", "java")),
+                        List.<VersionConstraint>of(),
+                        List.<VersionConstraint>of()
                 ),
-                new ApplicabilityScope("tenant-1", "test", Map.of()),
+                new ApplicabilityScope("tenant-1", "test", Map.<String,String>of()),
                 MasteryScore.correctnessOnly(0.8),
-                List.of("proc-1"),
-                List.of("fact-1"),
-                List.of("neg-1"),
-                List.of("evidence-1"),
-                List.of("eval-1"),
-                List.of("failure-1"),
-                List.of(),
+                List.<String>of("proc-1"),
+                List.<String>of("fact-1"),
+                List.<String>of("neg-1"),
+                List.<String>of("evidence-1"),
+                List.<String>of("eval-1"),
+                List.<String>of("failure-1"),
+                List.<MasteryTransition>of(),
                 Instant.now(),
                 Instant.now().plusSeconds(86400),
-                Map.of("label", "test"),
+                Map.<String,String>of("label", "test"),
                 0.8
         );
     }

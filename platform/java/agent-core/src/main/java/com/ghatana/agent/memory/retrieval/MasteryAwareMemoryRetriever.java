@@ -156,12 +156,15 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
         Instant now = Instant.now();
 
         // Filter out items with hard-excluded mastery states and non-applicable versions
+        // Phase 4 FIX: Detect new-project tasks to prevent maintenance-only retrieval
+        boolean isNewProject = isNewProjectTask(query, versionContext);
+        
         List<MemoryItem> filteredItems = items.stream()
                 .filter(item -> {
                     MasteryItem masteryItem = skillMasteryItems.getOrDefault(item.getSkillId(), null);
                     if (masteryItem == null) {
                         // No mastery item found, use UNKNOWN state
-                        return isAllowedForRetrieval(MasteryState.UNKNOWN, versionContext, now, null);
+                        return isAllowedForRetrieval(MasteryState.UNKNOWN, versionContext, now, null, isNewProject);
                     }
                     // Check version applicability
                     VersionApplicability applicability = masteryItem.versionScope().classify(versionContext);
@@ -169,7 +172,15 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
                         // Obsolete versions are always excluded
                         return false;
                     }
-                    return isAllowedForRetrieval(masteryItem.state(), versionContext, now, applicability);
+                    // Phase 4 FIX: Filter by safety score (minimum 0.3)
+                    if (masteryItem.score().safety() < 0.3) {
+                        return false;
+                    }
+                    // Phase 4 FIX: Filter by regression stability (minimum 0.7)
+                    if (masteryItem.score().regressionStability() < 0.7) {
+                        return false;
+                    }
+                    return isAllowedForRetrieval(masteryItem.state(), versionContext, now, applicability, isNewProject);
                 })
                 .toList();
 
@@ -182,24 +193,33 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
     /**
      * Checks if a mastery state is allowed for retrieval.
      * Hard exclusion: obsolete, retired, and quarantined items are always excluded.
-     * MAINTENANCE_ONLY items are only allowed if version context classifies as MAINTENANCE.
+     * MAINTENANCE_ONLY items are only allowed if version context classifies as MAINTENANCE
+     * AND the task is not a new-project task.
      *
      * @param state mastery state
      * @param versionContext version context
      * @param now current time
      * @param applicability version applicability (null if unknown)
+     * @param isNewProject whether this is a new-project task (prevents maintenance-only retrieval)
      * @return true if allowed for retrieval
      */
     private boolean isAllowedForRetrieval(
             @NotNull MasteryState state,
             @NotNull VersionContext versionContext,
             @NotNull Instant now,
-            @Nullable VersionApplicability applicability) {
+            @Nullable VersionApplicability applicability,
+            boolean isNewProject) {
         // Hard exclusion: these states are never allowed for retrieval
         return switch (state) {
             case OBSOLETE, RETIRED, QUARANTINED -> false;
             case MAINTENANCE_ONLY -> {
-                // Maintenance-only items are only allowed if version context matches legacy scope
+                // Phase 4 FIX: Maintenance-only items are only allowed if:
+                // 1. Version context classifies as MAINTENANCE AND
+                // 2. Task is NOT a new-project task
+                if (isNewProject) {
+                    // New-project tasks cannot retrieve maintenance-only patterns
+                    yield false;
+                }
                 // Strict enforcement: only allow when applicability is MAINTENANCE
                 yield applicability == VersionApplicability.MAINTENANCE;
             }
@@ -332,6 +352,9 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
                         List<MemoryItem> selected = new ArrayList<>();
                         List<MemoryRetrievalService.RejectedItem> rejected = new ArrayList<>();
                         List<RetrievalDecision> decisions = new ArrayList<>();
+                        
+                        // Phase 4 FIX: Detect new-project tasks to prevent maintenance-only retrieval
+                        boolean isNewProject = isNewProjectTask(stub, versionContext);
 
                         for (MemoryItem item : raw) {
                         MasteryItem mi = skillIndex.get(item.getSkillId());
@@ -347,8 +370,26 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
                                 item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
                             continue;
                         }
+                        
+                        // Phase 4 FIX: Filter by safety score (minimum 0.3)
+                        if (mi != null && mi.score().safety() < 0.3) {
+                            String reason = "Safety score " + mi.score().safety() + " below minimum threshold 0.3";
+                            rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
+                            decisions.add(RetrievalDecision.excluded(
+                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
+                            continue;
+                        }
+                        
+                        // Phase 4 FIX: Filter by regression stability (minimum 0.7)
+                        if (mi != null && mi.score().regressionStability() < 0.7) {
+                            String reason = "Regression stability " + mi.score().regressionStability() + " below minimum threshold 0.7";
+                            rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
+                            decisions.add(RetrievalDecision.excluded(
+                                item.getId(), item.getSkillId(), state, applicability, 0.0, reason));
+                            continue;
+                        }
 
-                        boolean allowed = isAllowedForRetrieval(state, versionContext, now, applicability);
+                        boolean allowed = isAllowedForRetrieval(state, versionContext, now, applicability, isNewProject);
                         if (!allowed) {
                             String reason = "Mastery state " + state + " excluded from retrieval";
                             rejected.add(new MemoryRetrievalService.RejectedItem(item, reason));
@@ -377,10 +418,40 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
                         trace.put("tenantId", tenantId);
                         trace.put("skillId", skillId);
                         trace.put("retrievedAt", now.toString());
+                        trace.put("isNewProject", isNewProject);
 
                         return Promise.of(new RetrievalBundle(capped, rejected, trace, stub, decisions));
                     });
                 }
+
+    /**
+     * Detects if this is a new-project task based on query metadata and version context.
+     * New-project tasks should not retrieve maintenance-only patterns.
+     *
+     * @param query memory query
+     * @param versionContext version context
+     * @return true if this is a new-project task
+     */
+    private boolean isNewProjectTask(@NotNull MemoryQuery query, @NotNull VersionContext versionContext) {
+        // Check query metadata for new-project flag
+        if (query.metadata() != null && query.metadata().containsKey("newProject")) {
+            Object newProjectFlag = query.metadata().get("newProject");
+            if (Boolean.TRUE.equals(newProjectFlag) || "true".equalsIgnoreCase(String.valueOf(newProjectFlag))) {
+                return true;
+            }
+        }
+        
+        // Heuristic: if no existing dependencies or repository is empty, treat as new project
+        if (versionContext != null && versionContext.dependencies() != null) {
+            boolean hasDependencies = versionContext.dependencies().values().stream()
+                    .anyMatch(v -> v != null && !v.isBlank());
+            if (!hasDependencies) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     /** Freshness score between 0.0 and 1.0 based on item age (capped at 30 days old). */
     private double freshness(@NotNull MemoryItem item, @NotNull Instant now) {
@@ -479,7 +550,7 @@ public final class MasteryAwareMemoryRetriever implements MemoryRetriever {
                                 if (applicability == VersionApplicability.OBSOLETE) {
                                     return false;
                                 }
-                                return isAllowedForRetrieval(item.state(), versionContext, Instant.now(), applicability);
+                                return isAllowedForRetrieval(item.state(), versionContext, Instant.now(), applicability, false);
                             }));
                 });
     }

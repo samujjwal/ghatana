@@ -1,5 +1,7 @@
 # Kernel Architecture
 
+> **Authoritative Source**: This document is the canonical reference for Ghatana Kernel architecture. All other Kernel documentation should defer to this document for architectural truth. If you find conflicting information elsewhere, update this document as the source of truth.
+
 ## Current State
 
 Ghatana lifecycle execution is centered on the shared TypeScript Kernel packages. Product code describes what can be built and operated; Kernel code owns planning, execution, truth, manifests, and provider boundaries.

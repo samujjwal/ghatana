@@ -17,6 +17,10 @@ import type {
   ProductUnitSurface,
   ProductUnitSurfaceType,
   RegistryProvider,
+  ProductUnitIntentCapableRegistryProvider,
+  ProductUnitIntentApplyOptions,
+  ProductUnitIntentPreviewResult,
+  ProductUnitIntentApplyResult,
 } from "@ghatana/kernel-product-contracts";
 import {
   isImplementationStatus,
@@ -48,24 +52,6 @@ export interface ProductUnitIntentTargetValidationResult {
   readonly correlationId: string;
   readonly errors: readonly string[];
   readonly warnings: readonly string[];
-}
-
-export interface ProductUnitIntentPreviewResult
-  extends ProductUnitIntentTargetValidationResult {
-  readonly operation: ProductUnitIntent["intentType"];
-  readonly productUnitId: string;
-  readonly registryPath: string;
-  readonly before: GhatanaRegistryEntry | null;
-  readonly after: GhatanaRegistryEntry | null;
-  readonly diff: readonly string[];
-}
-
-export interface ProductUnitIntentApplyOptions {
-  readonly allowWrite: boolean;
-}
-
-export interface ProductUnitIntentApplyResult extends ProductUnitIntentPreviewResult {
-  readonly applied: boolean;
 }
 
 interface GhatanaRegistrySurface {
@@ -176,14 +162,15 @@ const LIFECYCLE_STATUSES: readonly LifecycleStatus[] = [
   "enabled",
 ];
 
-export class GhatanaFileRegistryProvider implements RegistryProvider {
+export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegistryProvider {
   readonly providerId = "ghatana-file-registry";
   readonly version = "1.0.0";
-  readonly capabilities = ["registry-read", "product-unit-conversion"];
+  readonly capabilities = ["registry-read", "product-unit-conversion", "product-unit-intent-apply"];
 
   private readonly registryPath: string;
   private readonly strict: boolean;
   private cachedRegistry: GhatanaRegistry | null = null;
+  private writeLock: Promise<void> = Promise.resolve();
 
   constructor(options?: string | GhatanaFileRegistryProviderOptions) {
     if (typeof options === "string" || options === undefined) {
@@ -395,16 +382,57 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
       return { ...preview, applied: false };
     }
 
-    const registry = await this.loadRegistry();
+    // Atomic write using lock to prevent concurrent modifications
+    const writeResult = await this.writeLock.then(() => {
+      return this.applyWithLock(intent, preview);
+    });
+
+    return writeResult;
+  }
+
+  private async applyWithLock(
+    intent: ProductUnitIntent,
+    preview: ProductUnitIntentPreviewResult
+  ): Promise<ProductUnitIntentApplyResult> {
+    // Conflict detection: re-read registry to detect concurrent modifications
+    const currentRegistry = await this.loadRegistry();
+    const existingEntry = currentRegistry.registry[intent.productUnit.id];
+
+    // Check for conflicts: if entry was modified since preview
+    if (existingEntry !== null && JSON.stringify(existingEntry) !== JSON.stringify(preview.before)) {
+      return {
+        ...preview,
+        valid: false,
+        applied: false,
+        errors: [...preview.errors, "Registry entry was modified concurrently, please retry"],
+      };
+    }
+
     const nextRegistry: GhatanaRegistry = {
-      ...registry,
+      ...currentRegistry,
       registry: {
-        ...registry.registry,
+        ...currentRegistry.registry,
         [preview.productUnitId]: preview.after,
       },
     };
+
     await this.writeRegistry(nextRegistry);
     this.cachedRegistry = nextRegistry;
+
+    // Re-read and validate registry after write
+    const validation = await this.validateRegistry();
+    if (!validation.valid && this.strict) {
+      // Rollback by reverting to previous state
+      await this.writeRegistry(currentRegistry);
+      this.cachedRegistry = currentRegistry;
+      return {
+        ...preview,
+        valid: false,
+        applied: false,
+        errors: [...preview.errors, ...validation.errors.map((e) => e.message)],
+      };
+    }
+
     return { ...preview, applied: true };
   }
 

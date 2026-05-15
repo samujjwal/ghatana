@@ -256,6 +256,9 @@ jobs:
       - name: Check production readiness
         run: pnpm check:production-readiness
 
+      - name: Check kernel product boundary audit
+        run: pnpm check:kernel-product-boundary-audit
+
       - name: Gradle check
         run: ./gradlew check --no-daemon --stacktrace
 
@@ -318,6 +321,138 @@ jobs:
             docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md
             **/test-results/**
             **/coverage/**
+          retention-days: 7
+
+  test-studio-lifecycle-ui:
+    name: Test Studio Lifecycle UI
+    needs: build-kernel
+    concurrency:
+      group: test-studio-lifecycle-ui-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Test Studio lifecycle UI components
+        run: pnpm --filter @ghatana/ghatana-studio test --run
+
+      - name: Upload Studio E2E traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-e2e-traces
+          path: |
+            platform/typescript/ghatana-studio/**/test-results/**
+            platform/typescript/ghatana-studio/**/coverage/**
+          retention-days: 7
+
+  test-yappc-handoff:
+    name: Test YAPPC ProductUnitIntent Handoff
+    needs: build-kernel
+    concurrency:
+      group: test-yappc-handoff-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Test YAPPC ProductUnitIntent handoff
+        run: pnpm --filter @ghatana/yappc-api test --run
+
+      - name: Upload YAPPC handoff test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-handoff-test-results
+          path: |
+            products/yappc/frontend/apps/api/**/test-results/**
+            products/yappc/frontend/apps/api/**/coverage/**
+          retention-days: 7
+
+  test-data-cloud-providers:
+    name: Test Data Cloud Provider Schemas
+    needs: build-kernel
+    concurrency:
+      group: test-data-cloud-providers-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Test Data Cloud Kernel bridge providers
+        run: pnpm --filter @ghatana/kernel-bridge-providers test --run
+
+      - name: Test Data Cloud gateway provider endpoints
+        run: pnpm --filter @ghatana/data-cloud-gateway test --run
+
+      - name: Upload Data Cloud provider test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-provider-test-results
+          path: |
+            products/data-cloud/libs/kernel-bridge-providers/**/test-results/**
+            products/data-cloud/planes/action/gateway/**/test-results/**
           retention-days: 7
 
   guardrail-scan:

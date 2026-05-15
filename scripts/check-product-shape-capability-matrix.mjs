@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const requiredReadinessDimensions = [
+  'contractReadiness',
   'apiReadiness',
   'uiReadiness',
   'providerReadiness',
@@ -25,6 +26,10 @@ const requiredReadinessDimensions = [
   'approvalReadiness',
   'privacySecurityGateReadiness',
   'artifactDeploymentManifestReadiness',
+  'adapterExecutionReadiness',
+  'platformModeReadiness',
+  'studioUxReadiness',
+  'e2eReadiness',
 ];
 
 function loadRegistry() {

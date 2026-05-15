@@ -278,6 +278,7 @@ export interface ProductLifecyclePlan {
   approvalRequirements: ProductLifecycleApprovalRequirement[];
   outputDirectory: string;
   estimatedDurationMs: number;
+  semanticArtifactRefs?: readonly string[];
 }
 
 export type ProductLifecycleManifestType =
@@ -496,6 +497,13 @@ export interface ProductGatePlan {
   source: string;
   providerId?: string;
   status: 'pending' | 'passed' | 'failed' | 'skipped';
+  gateInputs?: {
+    semanticArtifactRefs?: readonly string[];
+    residualIslandRef?: string;
+    riskHotspotRef?: string;
+    dependencyGraphRef?: string;
+    generatedChangeSetRef?: string;
+  };
 }
 
 /**

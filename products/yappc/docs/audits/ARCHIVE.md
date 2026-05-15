@@ -1,10 +1,16 @@
 # Archived Audit Findings
 
+> **Current Implementation Plan**: The authoritative implementation plan for YAPPC, Kernel lifecycle, Data Cloud platform providers, Studio integration, and Digital Marketing pilot is maintained in:
+> 
+> `products/yappc/docs/audits/yappc-todos.md`
+>
+> That document contains the granular implementation plan grounded in the current repo state (commit 1334d4e26f0e854352ddae12e6019e9cc6cd8d9b), with workstreams covering the complete implementation sequence.
+
 This document consolidates completed audit findings and implementation plans for historical reference.
 
 ## Archive Summary
 
-- **yappc-todos.md**: Completed P0-1 through P1-12 tasks, and sections 14–17 (2026-05-12)
+- **IMPLEMENTATION_TRACKER.md**: Archived 2026-05-15 (based on older snapshot 5e03f330990461913b4b8963dbee39f5ac75143a, superseded by yappc-todos.md)
 - **API_CLIENT_REFACTORING_PLAN.md**: Completed Phase 1-4 refactoring
 - **REPOSITORY_CLEANUP_PLAN.md**: Created cleanup plan
 - **I18N_A11Y_IMPLEMENTATION_PLAN.md**: Created i18n/a11y implementation plan

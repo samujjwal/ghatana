@@ -137,6 +137,26 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
         if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+/promotion-history$")) {
             return getPromotionHistory(request);
         }
+        // Phase 9 FIX: Add approve/reject delta endpoints
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/learning-deltas/[^/]+/approve$")) {
+            return approveLearningDelta(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/learning-deltas/[^/]+/reject$")) {
+            return rejectLearningDelta(request);
+        }
+        // Phase 9 FIX: Add state transition endpoints
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/[^/]+/mark-maintenance-only$")) {
+            return markMaintenanceOnly(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/[^/]+/mark-obsolete$")) {
+            return markObsolete(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/[^/]+/quarantine$")) {
+            return quarantine(request);
+        }
+        if (method == HttpMethod.POST && path.matches("^/api/v1/mastery/[^/]+/retire$")) {
+            return retire(request);
+        }
         if (method == HttpMethod.GET && path.matches("^/api/v1/mastery/[^/]+$")) {
             return getMastery(request);
         }
@@ -1032,6 +1052,358 @@ public class MasteryController extends JsonServlet implements AsyncServlet {
                                                 ));
                                             }
                                         })
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Approve a learning delta without full evaluation (human-approved path).
+     * POST /api/v1/mastery/learning-deltas/{deltaId}/approve
+     */
+    public Promise<HttpResponse> approveLearningDelta(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String deltaId = deltaId(request);
+        if (deltaId == null || deltaId.isBlank()) {
+            return Promise.of(badRequest("deltaId is required"));
+        }
+
+        // Governance check: tenant must have approval to approve learning
+        return approvalService.checkAccess(tenantId, "learning:approve")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to approve learning"));
+                    }
+
+                    return learningDeltaRepository.findById(tenantId, deltaId)
+                            .then(deltaOpt -> {
+                                if (deltaOpt.isEmpty()) {
+                                    return Promise.of(notFound("Learning delta not found"));
+                                }
+                                LearningDelta delta = deltaOpt.get();
+
+                                // Validate tenant ownership
+                                if (!delta.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot approve learning delta from another tenant"));
+                                }
+
+                                // Update delta state to APPROVED
+                                return learningDeltaRepository.updateState(deltaId, com.ghatana.agent.learning.LearningDeltaState.APPROVED)
+                                        .map(updated -> ok(java.util.Map.of(
+                                                "deltaId", deltaId,
+                                                "state", "APPROVED"
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Reject a learning delta.
+     * POST /api/v1/mastery/learning-deltas/{deltaId}/reject
+     */
+    public Promise<HttpResponse> rejectLearningDelta(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String deltaId = deltaId(request);
+        if (deltaId == null || deltaId.isBlank()) {
+            return Promise.of(badRequest("deltaId is required"));
+        }
+
+        // Governance check: tenant must have approval to reject learning
+        return approvalService.checkAccess(tenantId, "learning:reject")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to reject learning"));
+                    }
+
+                    return learningDeltaRepository.findById(tenantId, deltaId)
+                            .then(deltaOpt -> {
+                                if (deltaOpt.isEmpty()) {
+                                    return Promise.of(notFound("Learning delta not found"));
+                                }
+                                LearningDelta delta = deltaOpt.get();
+
+                                // Validate tenant ownership
+                                if (!delta.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot reject learning delta from another tenant"));
+                                }
+
+                                // Update delta state to REJECTED
+                                return learningDeltaRepository.updateState(deltaId, com.ghatana.agent.learning.LearningDeltaState.REJECTED)
+                                        .map(updated -> ok(java.util.Map.of(
+                                                "deltaId", deltaId,
+                                                "state", "REJECTED"
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Mark a mastery item as MAINTENANCE_ONLY.
+     * POST /api/v1/mastery/{masteryId}/mark-maintenance-only
+     */
+    public Promise<HttpResponse> markMaintenanceOnly(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String masteryId = masteryId(request);
+        if (masteryId == null || masteryId.isBlank()) {
+            return Promise.of(badRequest("masteryId is required"));
+        }
+
+        // Governance check: tenant must have approval to transition mastery states
+        return approvalService.checkAccess(tenantId, "mastery:transition")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to transition mastery state"));
+                    }
+
+                    return masteryRegistry.getById(tenantId, masteryId)
+                            .then(itemOpt -> {
+                                if (itemOpt.isEmpty()) {
+                                    return Promise.of(notFound("Mastery item not found"));
+                                }
+                                MasteryItem item = itemOpt.get();
+
+                                // Validate tenant ownership
+                                if (!item.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot transition mastery item from another tenant"));
+                                }
+
+                                // Create transition to MAINTENANCE_ONLY
+                                MasteryTransition transition = new MasteryTransition(
+                                        java.util.UUID.randomUUID().toString(),
+                                        tenantId,
+                                        masteryId,
+                                        item.agentId(),
+                                        item.agentReleaseId(),
+                                        item.skillId(),
+                                        item.state(),
+                                        com.ghatana.agent.mastery.MasteryState.MAINTENANCE_ONLY,
+                                        "Marked as maintenance-only via API",
+                                        "api",
+                                        java.time.Instant.now(),
+                                        Map.of(),
+                                        Map.of("source", "api")
+                                );
+
+                                return masteryRegistry.transition(transition)
+                                        .map(result -> ok(java.util.Map.of(
+                                                "masteryId", masteryId,
+                                                "previousState", result.previousState(),
+                                                "newState", result.newState(),
+                                                "success", result.success(),
+                                                "transitionId", result.transitionId()
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Mark a mastery item as OBSOLETE.
+     * POST /api/v1/mastery/{masteryId}/mark-obsolete
+     */
+    public Promise<HttpResponse> markObsolete(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String masteryId = masteryId(request);
+        if (masteryId == null || masteryId.isBlank()) {
+            return Promise.of(badRequest("masteryId is required"));
+        }
+
+        // Governance check: tenant must have approval to transition mastery states
+        return approvalService.checkAccess(tenantId, "mastery:transition")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to transition mastery state"));
+                    }
+
+                    return masteryRegistry.getById(tenantId, masteryId)
+                            .then(itemOpt -> {
+                                if (itemOpt.isEmpty()) {
+                                    return Promise.of(notFound("Mastery item not found"));
+                                }
+                                MasteryItem item = itemOpt.get();
+
+                                // Validate tenant ownership
+                                if (!item.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot transition mastery item from another tenant"));
+                                }
+
+                                // Create transition to OBSOLETE
+                                MasteryTransition transition = new MasteryTransition(
+                                        java.util.UUID.randomUUID().toString(),
+                                        tenantId,
+                                        masteryId,
+                                        item.agentId(),
+                                        item.agentReleaseId(),
+                                        item.skillId(),
+                                        item.state(),
+                                        com.ghatana.agent.mastery.MasteryState.OBSOLETE,
+                                        "Marked as obsolete via API",
+                                        "api",
+                                        java.time.Instant.now(),
+                                        Map.of(),
+                                        Map.of("source", "api")
+                                );
+
+                                return masteryRegistry.transition(transition)
+                                        .map(result -> ok(java.util.Map.of(
+                                                "masteryId", masteryId,
+                                                "previousState", result.previousState(),
+                                                "newState", result.newState(),
+                                                "success", result.success(),
+                                                "transitionId", result.transitionId()
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Quarantine a mastery item.
+     * POST /api/v1/mastery/{masteryId}/quarantine
+     */
+    public Promise<HttpResponse> quarantine(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String masteryId = masteryId(request);
+        if (masteryId == null || masteryId.isBlank()) {
+            return Promise.of(badRequest("masteryId is required"));
+        }
+
+        // Governance check: tenant must have approval to transition mastery states
+        return approvalService.checkAccess(tenantId, "mastery:transition")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to transition mastery state"));
+                    }
+
+                    return masteryRegistry.getById(tenantId, masteryId)
+                            .then(itemOpt -> {
+                                if (itemOpt.isEmpty()) {
+                                    return Promise.of(notFound("Mastery item not found"));
+                                }
+                                MasteryItem item = itemOpt.get();
+
+                                // Validate tenant ownership
+                                if (!item.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot transition mastery item from another tenant"));
+                                }
+
+                                // Create transition to QUARANTINED
+                                MasteryTransition transition = new MasteryTransition(
+                                        java.util.UUID.randomUUID().toString(),
+                                        tenantId,
+                                        masteryId,
+                                        item.agentId(),
+                                        item.agentReleaseId(),
+                                        item.skillId(),
+                                        item.state(),
+                                        com.ghatana.agent.mastery.MasteryState.QUARANTINED,
+                                        "Quarantined via API",
+                                        "api",
+                                        java.time.Instant.now(),
+                                        Map.of(),
+                                        Map.of("source", "api")
+                                );
+
+                                return masteryRegistry.transition(transition)
+                                        .map(result -> ok(java.util.Map.of(
+                                                "masteryId", masteryId,
+                                                "previousState", result.previousState(),
+                                                "newState", result.newState(),
+                                                "success", result.success(),
+                                                "transitionId", result.transitionId()
+                                        )))
+                                        .whenException(e -> Promise.of(internalError(e)));
+                            })
+                            .whenException(e -> Promise.of(internalError(e)));
+                });
+    }
+
+    /**
+     * Phase 9 FIX: Retire a mastery item.
+     * POST /api/v1/mastery/{masteryId}/retire
+     */
+    public Promise<HttpResponse> retire(@NotNull HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(badRequest("tenantId is required"));
+        }
+
+        String masteryId = masteryId(request);
+        if (masteryId == null || masteryId.isBlank()) {
+            return Promise.of(badRequest("masteryId is required"));
+        }
+
+        // Governance check: tenant must have approval to transition mastery states
+        return approvalService.checkAccess(tenantId, "mastery:transition")
+                .then(hasAccess -> {
+                    if (!hasAccess) {
+                        return Promise.of(forbidden("Access denied to transition mastery state"));
+                    }
+
+                    return masteryRegistry.getById(tenantId, masteryId)
+                            .then(itemOpt -> {
+                                if (itemOpt.isEmpty()) {
+                                    return Promise.of(notFound("Mastery item not found"));
+                                }
+                                MasteryItem item = itemOpt.get();
+
+                                // Validate tenant ownership
+                                if (!item.tenantId().equals(tenantId)) {
+                                    return Promise.of(forbidden("Cannot transition mastery item from another tenant"));
+                                }
+
+                                // Create transition to RETIRED
+                                MasteryTransition transition = new MasteryTransition(
+                                        java.util.UUID.randomUUID().toString(),
+                                        tenantId,
+                                        masteryId,
+                                        item.agentId(),
+                                        item.agentReleaseId(),
+                                        item.skillId(),
+                                        item.state(),
+                                        com.ghatana.agent.mastery.MasteryState.RETIRED,
+                                        "Retired via API",
+                                        "api",
+                                        java.time.Instant.now(),
+                                        Map.of(),
+                                        Map.of("source", "api")
+                                );
+
+                                return masteryRegistry.transition(transition)
+                                        .map(result -> ok(java.util.Map.of(
+                                                "masteryId", masteryId,
+                                                "previousState", result.previousState(),
+                                                "newState", result.newState(),
+                                                "success", result.success(),
+                                                "transitionId", result.transitionId()
+                                        )))
                                         .whenException(e -> Promise.of(internalError(e)));
                             })
                             .whenException(e -> Promise.of(internalError(e)));

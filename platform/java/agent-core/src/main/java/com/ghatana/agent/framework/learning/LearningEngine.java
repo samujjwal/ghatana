@@ -4,6 +4,13 @@
 
 package com.ghatana.agent.framework.learning;
 
+import com.ghatana.agent.framework.learning.extractor.FactExtractor;
+import com.ghatana.agent.framework.learning.extractor.FailureModeExtractor;
+import com.ghatana.agent.framework.learning.extractor.LearningCandidate;
+import com.ghatana.agent.framework.learning.extractor.LearningExtractor;
+import com.ghatana.agent.framework.learning.extractor.LearningType;
+import com.ghatana.agent.framework.learning.extractor.NegativeKnowledgeExtractor;
+import com.ghatana.agent.framework.learning.extractor.ProcedureExtractor;
 import com.ghatana.agent.framework.memory.Episode;
 import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.memory.MemoryStore;
@@ -97,6 +104,8 @@ public final class LearningEngine {
     private LearningDeltaRepository deltaRepository;
     @Nullable
     private String agentReleaseId;
+    // Phase 5 FIX: Typed learning extractors to replace heuristic synthesis
+    private final List<LearningExtractor> extractors;
     @NotNull
     private String tenantId;
 
@@ -114,6 +123,13 @@ public final class LearningEngine {
         this.deltaRepository = null;
         this.agentReleaseId = null;
         this.tenantId = "system";
+        // Phase 5 FIX: Initialize typed learning extractors
+        this.extractors = List.of(
+                new FactExtractor(),
+                new ProcedureExtractor(),
+                new NegativeKnowledgeExtractor(),
+                new FailureModeExtractor()
+        );
     }
 
     /**
@@ -264,9 +280,8 @@ public final class LearningEngine {
     }
 
     /**
-     * Synthesises candidate policies from a batch of episodes.
-     * In production this would call an LLM or rule extractor.
-     * This default implementation uses a simple N-gram pattern heuristic.
+     * Synthesises candidate policies from a batch of episodes using typed extractors.
+     * Phase 5 FIX: Replaces N-gram heuristic with typed learning extractors.
      *
      * @param agentId  agent identifier
      * @param episodes episodes to process
@@ -278,30 +293,43 @@ public final class LearningEngine {
             @NotNull String agentId,
             @NotNull List<Episode> episodes,
             @NotNull LearningContract contract) {
-        // Pattern: find repeated (action, outcome) pairs above frequency threshold
-        java.util.Map<String, long[]> patternCounts = new java.util.HashMap<>();
-        for (Episode ep : episodes) {
-            if (ep.getAction() == null || ep.getReward() == null) continue;
-            String key = ep.getAction();
-            patternCounts.computeIfAbsent(key, k -> new long[]{0, 0});
-            patternCounts.get(key)[0]++;
-            if (ep.getReward() != null && ep.getReward() > 0) patternCounts.get(key)[1]++;
+        // Phase 5 FIX: Use typed extractors instead of N-gram heuristic
+        // Run all extractors regardless of contract permission - contract check happens during delta creation
+        List<LearningCandidate> allCandidates = new java.util.ArrayList<>();
+        
+        // Run each extractor and collect candidates
+        for (LearningExtractor extractor : extractors) {
+            List<LearningCandidate> candidates = extractor.extract(agentId, episodes);
+            allCandidates.addAll(candidates);
         }
-
-        List<CandidatePolicy> out = new java.util.ArrayList<>();
-        for (var entry : patternCounts.entrySet()) {
-            long total = entry.getValue()[0];
-            long positive = entry.getValue()[1];
-            if (total < 3) continue; // Minimum sample size
-            double confidence = (double) positive / total;
-            if (confidence >= 0.4) { // Only synthesise plausible policies
-                out.add(new CandidatePolicy(
-                        "when: recent-context contains pattern '" + entry.getKey() + "'",
-                        "do: " + entry.getKey(),
-                        confidence));
-            }
-        }
-        return out;
+        
+        // Convert learning candidates to candidate policies
+        return allCandidates.stream()
+                .map(this::toCandidatePolicy)
+                .toList();
+    }
+    
+    /**
+     * Checks if an extractor type is permitted by the learning contract.
+     */
+    private boolean isExtractorPermitted(@NotNull LearningType type, @NotNull LearningContract contract) {
+        return switch (type) {
+            case SEMANTIC_FACT -> contract.permits(LearningTarget.SEMANTIC_FACT);
+            case PROCEDURAL_SKILL -> contract.permits(LearningTarget.PROCEDURAL_SKILL);
+            case NEGATIVE_KNOWLEDGE -> contract.permits(LearningTarget.NEGATIVE_KNOWLEDGE);
+            case FAILURE_MODE -> contract.permits(LearningTarget.NEGATIVE_KNOWLEDGE);
+        };
+    }
+    
+    /**
+     * Converts a learning candidate to a candidate policy.
+     */
+    @NotNull
+    private CandidatePolicy toCandidatePolicy(@NotNull LearningCandidate candidate) {
+        return new CandidatePolicy(
+                candidate.situation(),
+                candidate.action(),
+                candidate.confidence());
     }
 
     /**
@@ -439,12 +467,16 @@ public final class LearningEngine {
                 .toList();
 
         // Chain approved deltas sequentially (high-confidence → PROPOSED via proposeProceduralSkill)
-        // Only create procedural deltas if the contract permits PROCEDURAL_SKILL
+        // First propose all deltas, then reject those not permitted by contract
         Promise<Integer> approvedChain = Promise.of(0);
         final boolean proceduralSkillPermitted = learningContract.permits(LearningTarget.PROCEDURAL_SKILL);
         final int[] rejectedByContract = {0}; // Track deltas rejected by contract
+        final int[] proposedCount = {0}; // Track total proposed deltas
         
         for (CandidatePolicy candidate : approved) {
+            // Count all candidates as proposed first
+            proposedCount[0]++;
+            
             if (!proceduralSkillPermitted) {
                 // Contract does not permit procedural skills - record rejection and skip delta creation
                 rejectedByContract[0]++;
@@ -489,6 +521,9 @@ public final class LearningEngine {
         return approvedChain.then(approvedCount -> {
             Promise<Integer> pendingChain = Promise.of(0);
             for (CandidatePolicy candidate : flaggedCandidates) {
+                // Count all candidates as proposed first
+                proposedCount[0]++;
+                
                 if (!proceduralSkillPermitted) {
                     // Contract does not permit procedural skills - record rejection and skip delta creation
                     rejectedByContract[0]++;
@@ -523,7 +558,7 @@ public final class LearningEngine {
                 return new LearningOutcome(
                         agentId, start, duration, learningContract.level(),
                         episodeCount, 0, approvedCount, totalFlagged,
-                        totalCandidates, rejectedByContract[0], pendingCreated, approvedCount);
+                        proposedCount[0], rejectedByContract[0], pendingCreated, approvedCount);
             });
         });
     }

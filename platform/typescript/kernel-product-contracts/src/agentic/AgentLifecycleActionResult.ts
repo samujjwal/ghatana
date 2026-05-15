@@ -44,6 +44,17 @@ export interface AgentLifecycleActionResult {
   readonly failure?: AgentLifecycleActionFailure | undefined;
   readonly requiredNextAction?: AgentLifecycleRequiredNextAction | undefined;
   readonly request?: unknown | undefined;
+  readonly policyEvidenceRefs?: readonly string[];
+  readonly masteryStateRef?: string;
+  readonly toolPermissionRefs?: readonly string[];
+  readonly approvalTicketRefs?: readonly string[];
+  readonly verificationEvidenceRefs?: readonly string[];
+  readonly privacyClassification?: "public" | "internal" | "confidential" | "restricted";
+  readonly retention?: {
+    readonly expiresAt: string;
+  };
+  readonly modelDecisionContextRef?: string;
+  readonly redactionRequired?: boolean;
 }
 
 const DECISIONS = ["allowed", "denied", "requires-approval"] as const;
@@ -57,6 +68,7 @@ const REQUIRED_NEXT_ACTIONS = [
   "inspect-failure",
   "none",
 ] as const;
+const PRIVACY_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
 
 export const AgentLifecycleActionFailureSchema = z
   .object({
@@ -84,6 +96,17 @@ export const AgentLifecycleActionResultSchema = z
     failure: AgentLifecycleActionFailureSchema.optional(),
     requiredNextAction: z.enum(REQUIRED_NEXT_ACTIONS).optional(),
     request: AgentLifecycleActionRequestSchema.optional(),
+    policyEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
+    masteryStateRef: z.string().trim().min(1).optional(),
+    toolPermissionRefs: z.array(z.string().trim().min(1)).optional(),
+    approvalTicketRefs: z.array(z.string().trim().min(1)).optional(),
+    verificationEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
+    privacyClassification: z.enum(PRIVACY_CLASSIFICATIONS).optional(),
+    retention: z.object({
+      expiresAt: z.string().trim().min(1),
+    }).optional(),
+    modelDecisionContextRef: z.string().trim().min(1).optional(),
+    redactionRequired: z.boolean().optional(),
   })
   .strict();
 

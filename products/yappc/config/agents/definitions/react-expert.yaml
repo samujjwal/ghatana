@@ -50,6 +50,8 @@ learning:
     - SEMANTIC_FACT
     - EPISODIC_MEMORY
   skillRefs:
+    - skillId: frontend.react-router-routing
+      requiredLevel: L3
     - skillId: react-component
       requiredLevel: L3
     - skillId: typescript-typing
@@ -57,11 +59,25 @@ learning:
     - skillId: ui-implementation
       requiredLevel: L2
   masteryBindings:
-    - namespace: yappc
+    default:
+      namespace: yappc
       registryRef: yappc-mastery-registry
       freshnessPolicy: default
       versionPolicy: semver
       obsolescencePolicy: default
+      versionScenarios:
+        - name: react-router-v5
+          versionRange: "5.0.0..6.0.0"
+          state: MAINTENANCE_ONLY
+          reason: React Router v5 is legacy, only maintenance fixes allowed
+        - name: react-router-v6
+          versionRange: "6.0.0..7.0.0"
+          state: ACTIVE
+          reason: React Router v6 is the current stable version
+        - name: react-router-v7
+          versionRange: "7.0.0.."
+          state: OBSERVED
+          reason: React Router v7 is new, requires evaluation before full adoption
   masteryPolicyRefs:
     - promotion-policy-v1
     - freshness-policy-v1

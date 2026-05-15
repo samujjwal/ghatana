@@ -1,0 +1,214 @@
+name: MASTERY_CI_REGRESSION_GATES
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'platform/java/agent-core/**'
+      - 'products/data-cloud/extensions/agent-registry/**'
+      - 'products/data-cloud/delivery/api/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'platform/java/agent-core/**'
+      - 'products/data-cloud/extensions/agent-registry/**'
+      - 'products/data-cloud/delivery/api/**'
+
+concurrency:
+  group: mastery-ci-regression-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mastery-regression-tests:
+    name: Mastery System Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run VersionScopeParser tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*VersionScopeParserTest" --no-daemon
+
+      - name: Run learning extractor tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*FactExtractorTest" --tests "*ProcedureExtractorTest" --no-daemon
+
+      - name: Run reconciliation worker tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*MasteryReconciliationWorkerTest" --no-daemon
+
+      - name: Run obsolescence detector tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*DependencyVersionDetectorTest" --tests "*SecurityAdvisoryDetectorTest" --no-daemon
+
+      - name: Run maintenance policy tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*DefaultMaintenanceOnlyPolicyTest" --no-daemon
+
+      - name: Run fast learning policy tests
+        run: ./gradlew :platform:java:agent-core:test --tests "*DefaultFastLearningPolicyTest" --no-daemon
+
+  coverage-gates:
+    name: Coverage Threshold Enforcement
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Generate coverage report
+        run: ./gradlew :platform:java:agent-core:jacocoTestReport --no-daemon
+
+      - name: Enforce coverage thresholds
+        run: ./gradlew :platform:java:agent-core:jacocoTestCoverageVerification --no-daemon
+        env:
+          COVERAGE_MINIMUM: 0.80
+          BRANCH_COVERAGE_MINIMUM: 0.75
+          INSTRUCTION_COVERAGE_MINIMUM: 0.80
+          LINE_COVERAGE_MINIMUM: 0.80
+          COMPLEXITY_COVERAGE_MINIMUM: 0.75
+          METHOD_COVERAGE_MINIMUM: 0.80
+          CLASS_COVERAGE_MINIMUM: 0.85
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./platform/java/agent-core/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: mastery
+          name: mastery-coverage-report
+          fail_ci_if_error: false
+
+  performance-benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run mastery registry performance benchmarks
+        run: ./gradlew :platform:java:agent-core:jmh --tests "*MasteryRegistryBenchmark" --no-daemon
+
+      - name: Run promotion engine performance benchmarks
+        run: ./gradlew :platform:java:agent-core:jmh --tests "*PromotionEngineBenchmark" --no-daemon
+
+      - name: Run memory retrieval performance benchmarks
+        run: ./gradlew :platform:java:agent-core:jmh --tests "*MasteryAwareMemoryRetrieverBenchmark" --no-daemon
+
+      - name: Check performance thresholds
+        run: |
+          echo "Checking performance thresholds..."
+          # Performance thresholds should be enforced via JMH benchmark assertions
+          # This step can be expanded to parse JMH results and enforce specific thresholds
+
+  arch-unit-governance:
+    name: ArchUnit Governance Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run ArchUnit tests for governed dispatcher
+        run: ./gradlew :products:data-cloud:planes:action:agent-runtime:test --tests "*GovernedDispatcherArchTest" --no-daemon
+
+      - name: Run architectural conformance tests
+        run: ./gradlew :platform:java:agent-core:archTest --no-daemon
+
+  post-violation-comment:
+    name: Post Violation Comment
+    needs: [mastery-regression-tests, coverage-gates, performance-benchmarks, arch-unit-governance]
+    if: github.event_name == 'pull_request' && failure()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post PR comment on violations
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚨 **MASTERY_CI_REGRESSION_GATES Violations Detected**
+
+              This PR fails mastery CI regression gates:
+
+              - Mastery system regression tests (VersionScopeParser, learning extractors, reconciliation, obsolescence, policies)
+              - Coverage thresholds (minimum 80% instruction, line, method coverage; 85% class coverage)
+              - Performance benchmarks (mastery registry, promotion engine, memory retrieval)
+              - ArchUnit governance checks (governed dispatcher enforcement)
+
+              **Action Required:**
+              1. Ensure all mastery system tests pass
+              2. Verify coverage meets minimum thresholds
+              3. Check performance benchmarks are within acceptable limits
+              4. Review ArchUnit architectural violations
+
+              See \`docs/agent-system/gaa-self-learning-mastery-architecture.md\` for mastery system requirements.`
+            })

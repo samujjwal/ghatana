@@ -2,7 +2,7 @@
  * ProductUnitIntent handoff routes.
  *
  * @doc.type router
- * @doc.purpose Accept YAPPC ProductUnitIntent handoffs without mutating Kernel registry files
+ * @doc.purpose Accept YAPPC ProductUnitIntent handoffs and wire to Kernel application service
  * @doc.layer product
  * @doc.pattern REST API
  */
@@ -18,7 +18,10 @@ import {
   type ProductUnitIntent,
   type ProductUnitIntentApplyMode,
   type ProductUnitIntentStatus,
+  type ProductUnitIntentApplicationStatus,
 } from '@ghatana/kernel-product-contracts';
+import { KernelLifecycleService } from '@ghatana/kernel-lifecycle';
+import { DataCloudKernelProviderClient, createDataCloudKernelProviderContext } from '@ghatana/kernel-bridge-providers';
 
 interface ProductUnitIntentRequestBody {
   readonly intent?: unknown;
@@ -33,6 +36,7 @@ interface ProductUnitIntentResponse {
   readonly evidenceRef?: string;
   readonly previewRef?: string;
   readonly blockedReasons: readonly string[];
+  readonly providerMode?: 'bootstrap' | 'platform';
 }
 
 interface EvidenceBundle {
@@ -50,6 +54,29 @@ interface NormalizedEvidenceBundle {
 }
 
 export default async function productUnitIntentRoutes(fastify: FastifyInstance): Promise<void> {
+  // Initialize KernelLifecycleService
+  const kernelService = new KernelLifecycleService({
+    repoRoot: process.cwd(),
+  });
+
+  // Initialize Data Cloud provider client for platform mode evidence persistence
+  const dataCloudBaseUrl = process.env.DATACLOUD_PROVIDER_BASE_URL ?? 'http://localhost:8080';
+  const dataCloudTenantId = process.env.DATACLOUD_TENANT_ID ?? 'default-tenant';
+  const dataCloudWorkspaceId = process.env.DATACLOUD_WORKSPACE_ID ?? 'default-workspace';
+  const dataCloudProjectId = process.env.DATACLOUD_PROJECT_ID ?? 'default-project';
+  const dataCloudAuthToken = process.env.DATACLOUD_AUTH_TOKEN;
+
+  const dataCloudClient = dataCloudAuthToken
+    ? new DataCloudKernelProviderClient({
+        baseUrl: dataCloudBaseUrl,
+        tenantId: dataCloudTenantId,
+        workspaceId: dataCloudWorkspaceId,
+        projectId: dataCloudProjectId,
+        authToken: dataCloudAuthToken,
+        timeoutMs: 30000,
+      })
+    : null;
+
   fastify.post<{ Body: ProductUnitIntentRequestBody }>(
     '/yappc/product-unit-intents',
     async (request, reply) => {
@@ -91,7 +118,38 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
       }
 
       const providerMode = request.body?.providerMode ?? 'bootstrap';
-      if (providerMode === 'platform' && !evidence.evidenceRefs.some(isDataCloudEvidenceRef)) {
+      
+      // In platform mode, persist evidence through Data Cloud before Kernel apply
+      let evidenceRefsForKernel = evidence.evidenceRefs;
+      if (providerMode === 'platform') {
+        if (dataCloudClient === null) {
+          return reply.status(503).send({
+            intentId: intent.intentId,
+            status: 'blocked',
+            blockedReasons: ['platform-mode-requires-data-cloud-provider-client'],
+          } satisfies ProductUnitIntentResponse);
+        }
+
+        // Persist evidence to Data Cloud provider endpoint
+        const persistedEvidenceRefs = await persistEvidenceToDataCloud(
+          request.body?.evidence,
+          dataCloudClient,
+          intent.intentId,
+          intent.scope.tenantId,
+        );
+        
+        if (!persistedEvidenceRefs.success) {
+          return reply.status(503).send({
+            intentId: intent.intentId,
+            status: 'blocked',
+            blockedReasons: [`platform-mode-evidence-persistence-failed: ${persistedEvidenceRefs.error}`],
+          } satisfies ProductUnitIntentResponse);
+        }
+
+        evidenceRefsForKernel = persistedEvidenceRefs.refs;
+      }
+
+      if (providerMode === 'platform' && !evidenceRefsForKernel.some(isDataCloudEvidenceRef)) {
         return reply.status(409).send({
           intentId: intent.intentId,
           status: 'blocked',
@@ -110,16 +168,43 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
         } satisfies ProductUnitIntentResponse);
       }
 
-      const status: ProductUnitIntentStatus = requestedMode === 'apply' ? 'queued' : 'accepted';
-      return reply.status(requestedMode === 'apply' ? 202 : 200).send({
-        intentId: intent.intentId,
+      // Call KernelLifecycleService.applyProductUnitIntent with persisted evidence refs
+      const kernelResult = await kernelService.applyProductUnitIntent(intent, {
+        mode: providerMode,
+        allowWrite: requestedMode === 'apply',
+        evidenceRefs: evidenceRefsForKernel,
+      });
+
+      // Map Kernel result status to YAPPC response status
+      const status = mapKernelStatusToYappcStatus(kernelResult.status);
+
+      return reply.status(kernelResult.status === 'applied' ? 202 : 200).send({
+        intentId: kernelResult.intentId,
         status,
-        evidenceRef: evidence.evidenceRefs[0],
-        previewRef: buildPreviewRef(intent),
-        blockedReasons: [],
+        evidenceRef: kernelResult.provenanceRefs[0],
+        previewRef: kernelResult.status === 'previewed' ? buildPreviewRef(intent) : undefined,
+        blockedReasons: kernelResult.blockedReasons,
+        providerMode: providerMode, // Mark result providerMode
       } satisfies ProductUnitIntentResponse);
     },
   );
+}
+
+function mapKernelStatusToYappcStatus(
+  kernelStatus: ProductUnitIntentApplicationStatus
+): ProductUnitIntentStatus {
+  switch (kernelStatus) {
+    case 'applied':
+      return 'queued';
+    case 'previewed':
+      return 'accepted';
+    case 'blocked':
+      return 'blocked';
+    case 'failed':
+      return 'failed';
+    default:
+      return 'accepted';
+  }
 }
 
 function authenticatedActor(request: FastifyRequest): string | null {
@@ -220,4 +305,135 @@ function headerValue(request: FastifyRequest, name: string): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+interface EvidencePersistenceResult {
+  readonly success: boolean;
+  readonly refs: readonly string[];
+  readonly error?: string;
+}
+
+async function persistEvidenceToDataCloud(
+  evidenceBundle: unknown,
+  dataCloudClient: DataCloudKernelProviderClient,
+  intentId: string,
+  tenantId: string,
+): Promise<EvidencePersistenceResult> {
+  if (!isRecord(evidenceBundle)) {
+    return { success: true, refs: [] };
+  }
+
+  const bundle = evidenceBundle as EvidenceBundle;
+  const refs: string[] = [];
+  const correlationId = `yappc-intent-${intentId}`;
+
+  try {
+    // Persist semantic artifacts
+    if (Array.isArray(bundle.semanticArtifacts)) {
+      for (const artifact of bundle.semanticArtifacts) {
+        const parsed = SemanticArtifactReferenceSchema.safeParse(artifact);
+        if (parsed.success) {
+          const result = await dataCloudClient.post('/api/v1/kernel/providers/memory', {
+            memoryId: `artifact-${parsed.data.evidenceId}`,
+            contentRef: parsed.data.evidenceId,
+            productUnitId: parsed.data.productUnitId,
+            privacyClassification: parsed.data.privacyClassification,
+            retention: parsed.data.retention,
+          }, { correlationId });
+          const response = result as { success: boolean; ref?: string };
+          if (response.success && response.ref) {
+            refs.push(`datacloud://memory/${response.ref}`);
+          }
+        }
+      }
+    }
+
+    // Persist graph summaries
+    if (Array.isArray(bundle.graphSummaries)) {
+      for (const summary of bundle.graphSummaries) {
+        const parsed = ArtifactGraphSummarySchema.safeParse(summary);
+        if (parsed.success) {
+          const result = await dataCloudClient.post('/api/v1/kernel/providers/memory', {
+            memoryId: `graph-${parsed.data.evidenceId}`,
+            contentRef: parsed.data.evidenceId,
+            productUnitId: parsed.data.productUnitId,
+            privacyClassification: parsed.data.privacyClassification,
+            retention: parsed.data.retention,
+          }, { correlationId });
+          const response = result as { success: boolean; ref?: string };
+          if (response.success && response.ref) {
+            refs.push(`datacloud://memory/${response.ref}`);
+          }
+        }
+      }
+    }
+
+    // Persist residual island reports
+    if (Array.isArray(bundle.residualIslandReports)) {
+      for (const report of bundle.residualIslandReports) {
+        const parsed = ResidualIslandReportSchema.safeParse(report);
+        if (parsed.success) {
+          const result = await dataCloudClient.post('/api/v1/kernel/providers/memory', {
+            memoryId: `island-${parsed.data.evidenceId}`,
+            contentRef: parsed.data.evidenceId,
+            productUnitId: parsed.data.productUnitId,
+            privacyClassification: parsed.data.privacyClassification,
+            retention: parsed.data.retention,
+          }, { correlationId });
+          const response = result as { success: boolean; ref?: string };
+          if (response.success && response.ref) {
+            refs.push(`datacloud://memory/${response.ref}`);
+          }
+        }
+      }
+    }
+
+    // Persist risk hotspot reports
+    if (Array.isArray(bundle.riskHotspotReports)) {
+      for (const report of bundle.riskHotspotReports) {
+        const parsed = RiskHotspotReportSchema.safeParse(report);
+        if (parsed.success) {
+          const result = await dataCloudClient.post('/api/v1/kernel/providers/memory', {
+            memoryId: `risk-${parsed.data.evidenceId}`,
+            contentRef: parsed.data.evidenceId,
+            productUnitId: parsed.data.productUnitId,
+            privacyClassification: parsed.data.privacyClassification,
+            retention: parsed.data.retention,
+          }, { correlationId });
+          const response = result as { success: boolean; ref?: string };
+          if (response.success && response.ref) {
+            refs.push(`datacloud://memory/${response.ref}`);
+          }
+        }
+      }
+    }
+
+    // Persist generated change sets
+    if (Array.isArray(bundle.generatedChangeSets)) {
+      for (const changeSet of bundle.generatedChangeSets) {
+        const parsed = GeneratedChangeSetSummarySchema.safeParse(changeSet);
+        if (parsed.success) {
+          const result = await dataCloudClient.post('/api/v1/kernel/providers/memory', {
+            memoryId: `changeset-${parsed.data.evidenceId}`,
+            contentRef: parsed.data.evidenceId,
+            productUnitId: parsed.data.productUnitId,
+            privacyClassification: parsed.data.privacyClassification,
+            retention: parsed.data.retention,
+          }, { correlationId });
+          const response = result as { success: boolean; ref?: string };
+          if (response.success && response.ref) {
+            refs.push(`datacloud://memory/${response.ref}`);
+          }
+        }
+      }
+    }
+
+    return { success: true, refs };
+  } catch (error) {
+    return {
+      success: false,
+      refs: [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

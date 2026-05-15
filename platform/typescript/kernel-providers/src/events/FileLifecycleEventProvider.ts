@@ -17,6 +17,16 @@ import type {
   LifecycleProviderWriteOptions,
 } from "@ghatana/kernel-product-contracts";
 import { validateKernelLifecycleEvent } from "@ghatana/kernel-product-contracts";
+import {
+  atomicWrite,
+  cleanupRetainedFiles,
+  encodePathSegment,
+  fail,
+  isFileNotFound,
+  parseCursor,
+  safeJsonRead,
+  succeed,
+} from "../file-provider/FileProviderUtils.js";
 
 export interface FileLifecycleEventProviderOptions {
   readonly outputDirectory: string;
@@ -80,42 +90,38 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
     return path.join(this.eventsDirectory, this.fileName);
   }
 
-  private get eventsRef(): string {
-    return path.relative(this.outputDirectory, this.eventsPath);
+  private eventsRef(correlationId?: string): string {
+    const basePath = path.relative(this.outputDirectory, this.eventsPath);
+    if (correlationId === undefined) {
+      return basePath;
+    }
+    return `${basePath}?correlationId=${correlationId}&providerId=${this.providerId}`;
   }
 
   private async readStoredEvents(): Promise<StoredLifecycleEvents> {
-    try {
-      const content = await fs.readFile(this.eventsPath, "utf-8");
-      const parsed = JSON.parse(content) as Partial<StoredLifecycleEvents>;
-      if (parsed.schemaVersion !== "1.0.0" || !Array.isArray(parsed.events)) {
-        throw new Error("lifecycle events file has invalid shape");
-      }
-      const invalidEvent = parsed.events.find(
-        (event: KernelLifecycleEvent) => !validateKernelLifecycleEvent(event).valid
-      );
-      if (invalidEvent !== undefined) {
-        throw new Error(
-          `lifecycle events file contains invalid event ${invalidEvent.metadata.eventId}`
-        );
-      }
-      return {
-        schemaVersion: "1.0.0",
-        events: parsed.events,
-      };
-    } catch (error) {
-      if (isFileNotFound(error)) {
-        return { schemaVersion: "1.0.0", events: [] };
-      }
-      throw error;
+    const parsed = await safeJsonRead<Partial<StoredLifecycleEvents>>(this.eventsPath, {
+      schemaVersion: "1.0.0",
+      events: [],
+    });
+    if (parsed.schemaVersion !== "1.0.0" || !Array.isArray(parsed.events)) {
+      throw new Error("lifecycle events file has invalid shape");
     }
+    const invalidEvent = parsed.events.find(
+      (event: KernelLifecycleEvent) => !validateKernelLifecycleEvent(event).valid
+    );
+    if (invalidEvent !== undefined) {
+      throw new Error(
+        `lifecycle events file contains invalid event ${invalidEvent.metadata.eventId}`
+      );
+    }
+    return {
+      schemaVersion: "1.0.0",
+      events: parsed.events,
+    };
   }
 
   private async writeStoredEvents(events: StoredLifecycleEvents): Promise<void> {
-    await fs.mkdir(this.eventsDirectory, { recursive: true });
-    const tempPath = `${this.eventsPath}.${process.pid}.${Date.now()}.tmp`;
-    await fs.writeFile(tempPath, `${JSON.stringify(events, null, 2)}\n`, "utf-8");
-    await fs.rename(tempPath, this.eventsPath);
+    await atomicWrite(this.eventsPath, `${JSON.stringify(events, null, 2)}\n`);
   }
 
   async appendEvent(
@@ -143,14 +149,14 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
           providerId: this.providerId,
           eventCount: storedEvents.events.length + 1,
           threshold: this.eventCountWarningThreshold,
-          ref: this.eventsRef,
+          ref: this.eventsRef(options.correlationId),
         });
       }
       await this.writeStoredEvents({
         schemaVersion: "1.0.0",
         events: [...storedEvents.events, event],
       });
-      return { success: true, ref: this.eventsRef };
+      return { success: true, ref: this.eventsRef(options.correlationId) };
     }, options.required);
   }
 
@@ -182,10 +188,12 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
   }
 
   async cleanupRetainedEvents(): Promise<LifecycleProviderResult> {
-    return {
-      success: true,
-      ref: this.eventsRef,
-    };
+    try {
+      await cleanupRetainedFiles(this.eventsDirectory);
+      return succeed(this.eventsRef());
+    } catch (error) {
+      return fail(String(error).replace(/^Error: /, ""), true);
+    }
   }
 
   private async enqueueAppend(
@@ -203,32 +211,4 @@ export class FileLifecycleEventProvider implements LifecycleEventProvider {
       return fail(String(error).replace(/^Error: /, ""), required);
     }
   }
-}
-
-function fail(message: string, required: boolean): LifecycleProviderResult {
-  return {
-    success: false,
-    error: required ? message : `optional lifecycle event write skipped: ${message}`,
-  };
-}
-
-function isFileNotFound(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { readonly code?: unknown }).code === "ENOENT"
-  );
-}
-
-function encodePathSegment(segment: string): string {
-  return encodeURIComponent(segment.trim()).replace(/\./g, "%2E");
-}
-
-function parseCursor(cursor: string | undefined): number {
-  if (cursor === undefined) {
-    return 0;
-  }
-  const parsed = Number.parseInt(cursor, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }

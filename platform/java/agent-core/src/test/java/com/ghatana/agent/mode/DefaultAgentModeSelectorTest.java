@@ -16,6 +16,7 @@ import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionScope;
 import com.ghatana.agent.mastery.ApplicabilityScope;
+import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.runtime.mode.ExecutionMode;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -145,16 +146,16 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 VersionScope.empty(),
                 ApplicabilityScope.minimal("tenant-1", "production"),
                 new MasteryScore(0.9, 0.8, 0.7, 0.9, 0.6, 0.8, 0.9),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<MasteryTransition>of(),
                 Instant.now(),
                 Instant.now().plus(30, ChronoUnit.DAYS),
-                Map.of(),
+                Map.<String,String>of(),
                 0.9
         );
     }
@@ -171,16 +172,16 @@ class DefaultAgentModeSelectorTest extends EventloopTestBase {
                 VersionScope.empty(),
                 ApplicabilityScope.minimal("tenant-1", "production"),
                 new MasteryScore(0.9, 0.8, 0.7, 0.9, 0.6, 0.8, 0.9),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<MasteryTransition>of(),
                 Instant.now().minus(100, ChronoUnit.DAYS),
                 Instant.now().minus(1, ChronoUnit.DAYS),
-                Map.of(),
+                Map.<String,String>of(),
                 0.9
         );
     }

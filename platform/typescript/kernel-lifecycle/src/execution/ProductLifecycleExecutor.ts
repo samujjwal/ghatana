@@ -36,7 +36,7 @@ export interface ProductLifecycleExecutionOptions {
 }
 
 /**
- * Product lifecycle executor — supports sequential and parallel (DAG) execution modes.
+ * Product lifecycle executor - supports sequential and parallel (DAG) execution modes.
  */
 export class ProductLifecycleExecutor {
   private readonly stepRunner: ProductLifecycleStepRunner;
@@ -381,7 +381,7 @@ export class ProductLifecycleExecutor {
   }
 
   /**
-   * Execute steps in DAG order — steps whose dependencies are satisfied run concurrently.
+   * Execute steps in DAG order - steps whose dependencies are satisfied run concurrently.
    */
   private async executeDAG(
     steps: ProductLifecycleStep[],

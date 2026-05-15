@@ -13,6 +13,7 @@ import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -72,9 +73,9 @@ class MasteryAwareMemoryRetrieverTest extends EventloopTestBase {
                 VersionScope.empty(),          // UNKNOWN applicability — tests non-OBSOLETE path
                 ApplicabilityScope.minimal("tenant-1", "production"),
                 perfectScore(),
-                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.<String>of(), List.<String>of(), List.<String>of(), List.<String>of(), List.<String>of(), List.<String>of(), List.<MasteryTransition>of(),
                 Instant.now(), Instant.now().plusSeconds(86400),
-                Map.of(), 0.9
+                Map.<String,String>of(), 0.9
         );
     }
 

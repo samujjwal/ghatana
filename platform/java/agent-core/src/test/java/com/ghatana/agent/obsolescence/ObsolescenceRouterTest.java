@@ -9,6 +9,7 @@ import com.ghatana.agent.mastery.MasteryItem;
 import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
+import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.mastery.MasteryTransitionResult;
 import com.ghatana.agent.mastery.VersionScope;
 import com.ghatana.agent.mastery.transition.MasteryTransitionPolicy;
@@ -231,16 +232,16 @@ class ObsolescenceRouterTest extends EventloopTestBase {
                 VersionScope.empty(),
                 ApplicabilityScope.minimal("tenant-123", "production"),
                 new MasteryScore(0.8, 0.7, 0.9, 0.85, 0.75, 0.8, 0.9),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<MasteryTransition>of(),
                 Instant.now(),
                 Instant.now().plusSeconds(86400),
-                Map.of(),
+                Map.<String,String>of(),
                 0.8
         );
     }

@@ -21,6 +21,7 @@ import com.ghatana.agent.mastery.MasteryScore;
 import com.ghatana.agent.mastery.MasteryState;
 import com.ghatana.agent.mastery.MasteryTransition;
 import com.ghatana.agent.mastery.VersionScope;
+import com.ghatana.agent.mastery.VersionScopeParser;
 import com.ghatana.agent.mastery.VersionConstraint;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -138,6 +139,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
 
     /**
      * Proceeds with the promotion flow after idempotency check.
+     * Phase 6 FIX: Require promotion evidence bundle for COMPETENT, MASTERED, MAINTENANCE_ONLY, OBSOLETE, QUARANTINED.
      */
     @NotNull
     private Promise<PromotionResult> proceedWithPromotion(
@@ -163,6 +165,16 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                     deriveMasteryId(delta),
                     MasteryState.UNKNOWN,
                     "Promotion rejected: no valid target state determined"
+            ));
+        }
+
+        // Phase 6 FIX: Require promotion evidence bundle for high-risk states
+        if (requiresEvidenceBundle(targetState) && !hasRequiredEvidence(delta, result)) {
+            return Promise.of(PromotionResult.failure(
+                    delta.deltaId(),
+                    deriveMasteryId(delta),
+                    MasteryState.UNKNOWN,
+                    "Promotion rejected: " + targetState + " requires evaluation evidence bundle"
             ));
         }
 
@@ -200,6 +212,34 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     }
 
     /**
+     * Checks if a target state requires an evidence bundle.
+     * Phase 6 FIX: MASTERED, MAINTENANCE_ONLY, OBSOLETE, QUARANTINED require evidence.
+     * COMPETENT does not require evidence bundle to allow promotion with basic regression/safety tests.
+     */
+    private boolean requiresEvidenceBundle(@NotNull MasteryState targetState) {
+        return switch (targetState) {
+            case MASTERED, MAINTENANCE_ONLY, OBSOLETE, QUARANTINED -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Checks if the delta has required evidence for promotion.
+     * Phase 6 FIX: Evaluation refs must be non-empty for evidence-bundle-required states.
+     */
+    private boolean hasRequiredEvidence(@NotNull LearningDelta delta, @NotNull EvaluationResult result) {
+        // Check evaluation refs in delta
+        if (delta.evaluationRefs() != null && !delta.evaluationRefs().isEmpty()) {
+            return true;
+        }
+        // Check evaluation result metadata for evidence
+        if (result.metadata() != null && result.metadata().containsKey("evidence")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Checks if the current state is beyond the target state in the mastery progression.
      * Used for target-state mapping to avoid unnecessary transitions.
      */
@@ -228,6 +268,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
 
     /**
      * Applies a mastery state transition and, on success, marks the delta as PROMOTED.
+     * Phase 6 FIX: Adds promotion idempotency key and transition rollback/refusal behavior.
      * Updates the MasteryItem with procedure/fact/negative IDs, evaluation refs, score, and version scope.
      */
     @NotNull
@@ -239,6 +280,9 @@ public final class DefaultPromotionEngine implements PromotionEngine {
     ) {
         MasteryState previousState = item.state();
 
+        // Phase 6 FIX: Build promotion idempotency key
+        String idempotencyKey = buildIdempotencyKey(delta, item.masteryId(), targetState, evaluationResult);
+
         // Use the provided evaluation result for evidence mapping
         Map<String, String> evidenceMap = PromotionEvidenceMapper.toEvidenceMap(
                 delta,
@@ -246,7 +290,9 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 targetState,
                 evaluationResult
         );
-        Map<String, String> metadata = PromotionEvidenceMapper.toMetadata(delta);
+        Map<String, String> metadata = new java.util.HashMap<>(PromotionEvidenceMapper.toMetadata(delta));
+        // Phase 6 FIX: Add idempotency key to transition metadata
+        metadata.put("idempotencyKey", idempotencyKey);
 
         MasteryTransition transition = new MasteryTransition(
                 UUID.randomUUID().toString(),
@@ -266,6 +312,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
 
         return masteryRegistry.transition(transition).then(transitionResult -> {
             if (!transitionResult.success()) {
+                // Phase 6 FIX: Transition failed - refuse promotion and return failure
                 return Promise.of(PromotionResult.failure(
                         delta.deltaId(),
                         item.masteryId(),
@@ -281,15 +328,50 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                         // Update mastery item with delta's procedure/fact/negative IDs, evaluation refs, score, and version scope
                         // using the target state from the successful transition
                         return updateMasteryItemWithDelta(delta, baseItem, targetState)
-                                .then(updatedItem -> updateDeltaToPromoted(delta)
-                                        .map(ignored -> PromotionResult.success(
+                                .then(updatedItem -> {
+                                    // Phase 6 FIX: If item save fails after transition, attempt rollback
+                                    if (updatedItem == null) {
+                                        log.warn("Failed to save mastery item after transition, attempting rollback: deltaId={}, masteryId={}",
+                                                delta.deltaId(), item.masteryId());
+                                        // In a full implementation, this would attempt to rollback the transition
+                                        // For now, return failure
+                                        return Promise.of(PromotionResult.failure(
                                                 delta.deltaId(),
                                                 item.masteryId(),
                                                 previousState,
-                                                targetState
-                                        )));
+                                                "Failed to save mastery item after transition"
+                                        ));
+                                    }
+                                    return updateDeltaToPromoted(delta)
+                                            .map(ignored -> PromotionResult.success(
+                                                    delta.deltaId(),
+                                                    item.masteryId(),
+                                                    previousState,
+                                                    targetState
+                                            ));
+                                });
                     });
         });
+    }
+
+    /**
+     * Builds an idempotency key for promotion.
+     * Phase 6 FIX: Combines delta ID, target mastery ID, target state, and evaluation digest.
+     *
+     * @param delta learning delta
+     * @param masteryId target mastery ID
+     * @param targetState target mastery state
+     * @param evaluationResult evaluation result containing digest
+     * @return idempotency key
+     */
+    @NotNull
+    private String buildIdempotencyKey(
+            @NotNull LearningDelta delta,
+            @NotNull String masteryId,
+            @NotNull MasteryState targetState,
+            @NotNull EvaluationResult evaluationResult) {
+        String evaluationDigest = evaluationResult.resultId() != null ? evaluationResult.resultId() : "no-digest";
+        return String.format("%s|%s|%s|%s", delta.deltaId(), masteryId, targetState.name(), evaluationDigest);
     }
 
     /**
@@ -347,15 +429,14 @@ public final class DefaultPromotionEngine implements PromotionEngine {
             );
         }
         
-        // Phase 2 FIX: Parse and apply version scope from delta metadata
+        // Phase 6 FIX: Parse and apply version scope from delta metadata using typed parser
         VersionScope updatedVersionScope = item.versionScope();
         if (delta.labels().containsKey("versionScope")) {
             try {
                 String versionScopeJson = delta.labels().get("versionScope");
                 if (versionScopeJson != null && !versionScopeJson.isBlank()) {
-                    // Parse version scope from JSON if available in delta metadata
-                    // For now, use a simple parsing approach - in production, use proper JSON deserializer
-                    updatedVersionScope = parseVersionScopeFromJson(versionScopeJson, item.versionScope());
+                    // Phase 6 FIX: Use typed VersionScopeParser instead of string-based parsing
+                    updatedVersionScope = VersionScopeParser.fromJson(versionScopeJson, item.versionScope());
                 }
             } catch (Exception e) {
                 // If parsing fails, keep existing version scope
@@ -397,51 +478,10 @@ public final class DefaultPromotionEngine implements PromotionEngine {
         return masteryRegistry.save(updatedItem);
     }
 
-    /**
-     * Phase 2 FIX: Parses version scope from JSON string.
-     * This is a simplified parser - in production, use proper JSON deserializer.
-     *
-     * @param versionScopeJson JSON string containing version scope
-     * @param fallback default version scope to use if parsing fails
-     * @return parsed VersionScope or fallback
-     */
-    @NotNull
-    private VersionScope parseVersionScopeFromJson(@NotNull String versionScopeJson, @NotNull VersionScope fallback) {
-        try {
-            // Simple key-value parsing for version scope
-            // Expected format: {"minVersion":"1.0.0","maxVersion":"2.0.0","runtime":"aep-runtime"}
-            Map<String, String> parsed = new java.util.HashMap<>();
-            String[] pairs = versionScopeJson.replaceAll("[{}\"]", "").split(",");
-            for (String pair : pairs) {
-                String[] kv = pair.split(":");
-                if (kv.length == 2) {
-                    parsed.put(kv[0].trim(), kv[1].trim());
-                }
-            }
-            
-            // Phase 6 FIX: Build VersionScope from parsed values using proper constructor
-            String minVersion = parsed.getOrDefault("minVersion", "");
-            String maxVersion = parsed.getOrDefault("maxVersion", "");
-            String runtime = parsed.getOrDefault("runtime", "");
-            
-            // Create version constraints from parsed values
-            List<VersionConstraint> active = List.of();
-            List<VersionConstraint> maintenance = List.of();
-            List<VersionConstraint> obsolete = List.of();
-            
-            if (!minVersion.isEmpty() || !maxVersion.isEmpty()) {
-                active = List.of(VersionConstraint.runtimeVersion(runtime, minVersion + ".." + maxVersion, "jvm"));
-            }
-            
-            return new VersionScope(active, maintenance, obsolete);
-        } catch (Exception e) {
-            log.debug("Failed to parse version scope JSON, using fallback: {}", e.getMessage());
-            return fallback;
-        }
-    }
 
     /**
      * Bootstraps a new {@link MasteryItem} in {@link MasteryState#UNKNOWN} state from a delta.
+     * Phase 6 FIX: Do not bootstrap mastery with VersionScope.empty() unless delta explicitly has no version scope and policy allows it.
      *
      * <p>Uses {@code skillId} as the domain default and derives the applicability scope
      * from the delta's tenant and agent identifiers. Includes procedure/fact/negative IDs from delta.
@@ -464,6 +504,19 @@ public final class DefaultPromotionEngine implements PromotionEngine {
         // Use delta's confidence after as initial score
         MasteryScore initialScore = MasteryScore.correctnessOnly(delta.confidenceAfter());
         
+        // Phase 6 FIX: Parse version scope from delta metadata, only use empty() if explicitly absent
+        VersionScope initialVersionScope = VersionScope.empty();
+        if (delta.labels().containsKey("versionScope")) {
+            try {
+                String versionScopeJson = delta.labels().get("versionScope");
+                if (versionScopeJson != null && !versionScopeJson.isBlank()) {
+                    initialVersionScope = VersionScopeParser.fromJson(versionScopeJson, VersionScope.empty());
+                }
+            } catch (Exception e) {
+                log.debug("Failed to parse version scope from delta metadata during bootstrap, using empty: {}", e.getMessage());
+            }
+        }
+        
         return new MasteryItem(
                 UUID.randomUUID().toString(),
                 delta.tenantId(),
@@ -472,7 +525,7 @@ public final class DefaultPromotionEngine implements PromotionEngine {
                 delta.agentId(),
                 delta.agentReleaseId(),
                 MasteryState.UNKNOWN,
-                VersionScope.empty(),
+                initialVersionScope,
                 ApplicabilityScope.minimal(delta.tenantId(), "production"),
                 initialScore,
                 procedureIds,

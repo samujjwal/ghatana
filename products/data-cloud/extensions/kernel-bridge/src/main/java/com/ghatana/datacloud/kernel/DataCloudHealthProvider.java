@@ -17,6 +17,36 @@ import java.util.Map;
  */
 public final class DataCloudHealthProvider extends DataCloudKernelProviderSupport {
 
+    /**
+     * Typed record for health snapshot persist requests.
+     *
+     * @doc.type record
+     * @doc.purpose Encapsulate health snapshot persist request with tenant context
+     * @doc.layer adapter
+     * @doc.pattern Request
+     */
+    public record HealthSnapshotPersistRequest(
+        String snapshotId,
+        String status,
+        Map<String, Object> details,
+        Instant capturedAt,
+        String correlationId
+    ) {}
+
+    /**
+     * Typed record for health snapshot persist responses.
+     *
+     * @doc.type record
+     * @doc.purpose Encapsulate health snapshot persist response with success status
+     * @doc.layer adapter
+     * @doc.pattern Response
+     */
+    public record HealthSnapshotPersistResponse(
+        boolean success,
+        String snapshotId,
+        String persistedAt
+    ) {}
+
     public DataCloudHealthProvider(DataCloudKernelAdapter adapter, BridgeContext context) {
         super(adapter, context, "kernel.health." + context.getTenantId(), "health");
     }
@@ -29,5 +59,21 @@ public final class DataCloudHealthProvider extends DataCloudKernelProviderSuppor
             "tenantId", context().getTenantId(),
             "capturedAt", Instant.now().toString()
         ));
+    }
+
+    public Promise<HealthSnapshotPersistResponse> persistHealthSnapshotTyped(HealthSnapshotPersistRequest request) {
+        Map<String, Object> snapshotMap = Map.of(
+            "snapshotId", request.snapshotId(),
+            "status", request.status(),
+            "details", request.details() != null ? request.details() : Map.of(),
+            "capturedAt", request.capturedAt().toString(),
+            "correlationId", request.correlationId(),
+            "tenantId", context().getTenantId(),
+            "workspaceId", context().getWorkspaceId(),
+            "projectId", context().getProjectId(),
+            "persistedAt", Instant.now().toString()
+        );
+        return persistRecord(request.snapshotId(), snapshotMap)
+            .map($ -> new HealthSnapshotPersistResponse(true, request.snapshotId(), Instant.now().toString()));
     }
 }

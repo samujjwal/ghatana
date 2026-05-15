@@ -42,11 +42,25 @@ export const LIFECYCLE_READINESS_STATES = [
 ] as const;
 
 export const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
+const PRIVACY_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
 
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
 export type ProductShapeKind = (typeof PRODUCT_SHAPE_KINDS)[number];
 export type LifecycleReadinessState = (typeof LIFECYCLE_READINESS_STATES)[number];
 export type RiskLevel = (typeof RISK_LEVELS)[number];
+export type PrivacyClassification = (typeof PRIVACY_CLASSIFICATIONS)[number];
+
+export const EVIDENCE_TYPES = [
+  "semantic-artifact-reference",
+  "artifact-graph-summary",
+  "dependency-graph-evidence",
+  "product-shape-evidence",
+  "residual-island-report",
+  "risk-hotspot-report",
+  "generated-change-set-summary",
+] as const;
+
+export type EvidenceType = (typeof EVIDENCE_TYPES)[number];
 
 const NonEmptyStringSchema = z.string().trim().min(1);
 
@@ -54,17 +68,24 @@ export const ArtifactIntelligenceEvidenceBaseSchema = z
   .object({
     schemaVersion: z.literal(ARTIFACT_INTELLIGENCE_SCHEMA_VERSION),
     evidenceId: NonEmptyStringSchema,
-    source: NonEmptyStringSchema,
+    tenantId: NonEmptyStringSchema,
+    workspaceId: NonEmptyStringSchema,
+    projectId: NonEmptyStringSchema,
+    productUnitId: NonEmptyStringSchema,
+    createdAt: z.string().datetime({ offset: true }),
+    createdBy: NonEmptyStringSchema,
+    correlationId: NonEmptyStringSchema,
     confidence: z.number().min(0).max(1),
     provenanceRefs: z.array(NonEmptyStringSchema).min(1),
-    createdAt: z.string().datetime({ offset: true }),
-    correlationId: NonEmptyStringSchema,
+    privacyClassification: z.enum(PRIVACY_CLASSIFICATIONS),
+    retention: z.object({
+      expiresAt: z.string().datetime({ offset: true }),
+    }),
   })
   .strict();
 
 export const SemanticArtifactReferenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("semantic-artifact-reference"),
-  productUnitId: NonEmptyStringSchema,
   artifactId: NonEmptyStringSchema,
   artifactKind: z.enum(ARTIFACT_KINDS),
   displayName: NonEmptyStringSchema,
@@ -93,7 +114,6 @@ export const ArtifactGraphEdgeSchema = z
 
 export const ArtifactGraphSummarySchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("artifact-graph-summary"),
-  productUnitId: NonEmptyStringSchema,
   nodeCount: z.number().int().nonnegative(),
   edgeCount: z.number().int().nonnegative(),
   nodes: z.array(ArtifactGraphNodeSchema),
@@ -104,7 +124,6 @@ export const ArtifactGraphSummarySchema = ArtifactIntelligenceEvidenceBaseSchema
 
 export const ProductShapeEvidenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("product-shape-evidence"),
-  productUnitId: NonEmptyStringSchema,
   shapeKind: z.enum(PRODUCT_SHAPE_KINDS),
   lifecycleReadiness: z.enum(LIFECYCLE_READINESS_STATES),
   detectedSurfaces: z.array(NonEmptyStringSchema),
@@ -114,7 +133,6 @@ export const ProductShapeEvidenceSchema = ArtifactIntelligenceEvidenceBaseSchema
 
 export const DependencyGraphEvidenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("dependency-graph-evidence"),
-  productUnitId: NonEmptyStringSchema,
   dependencyCount: z.number().int().nonnegative(),
   internalDependencyCount: z.number().int().nonnegative(),
   externalDependencyCount: z.number().int().nonnegative(),
@@ -125,7 +143,6 @@ export const DependencyGraphEvidenceSchema = ArtifactIntelligenceEvidenceBaseSch
 
 export const ResidualIslandReportSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("residual-island-report"),
-  productUnitId: NonEmptyStringSchema,
   islandCount: z.number().int().nonnegative(),
   residualArtifactRefs: z.array(NonEmptyStringSchema),
   recommendedActions: z.array(NonEmptyStringSchema),
@@ -133,7 +150,6 @@ export const ResidualIslandReportSchema = ArtifactIntelligenceEvidenceBaseSchema
 
 export const RiskHotspotReportSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("risk-hotspot-report"),
-  productUnitId: NonEmptyStringSchema,
   hotspotCount: z.number().int().nonnegative(),
   highestRiskLevel: z.enum(RISK_LEVELS),
   hotspots: z.array(
@@ -150,13 +166,44 @@ export const RiskHotspotReportSchema = ArtifactIntelligenceEvidenceBaseSchema.ex
 
 export const GeneratedChangeSetSummarySchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("generated-change-set-summary"),
-  productUnitId: NonEmptyStringSchema,
   changeSetId: NonEmptyStringSchema,
   changeCount: z.number().int().nonnegative(),
   affectedArtifactRefs: z.array(NonEmptyStringSchema),
   generatedArtifactRefs: z.array(NonEmptyStringSchema),
   validationEvidenceRefs: z.array(NonEmptyStringSchema),
 }).strict();
+
+// Evidence bundle and envelope schemas
+export const SemanticArtifactEvidenceBundleSchema = z
+  .object({
+    bundleId: NonEmptyStringSchema,
+    productUnitId: NonEmptyStringSchema,
+    semanticArtifactRefs: z.array(NonEmptyStringSchema),
+    graphSummaryRef: NonEmptyStringSchema,
+    dependencyGraphRef: NonEmptyStringSchema,
+    productShapeRef: NonEmptyStringSchema,
+    residualIslandRef: NonEmptyStringSchema.optional(),
+    riskHotspotRef: NonEmptyStringSchema.optional(),
+    generatedChangeSetRef: NonEmptyStringSchema.optional(),
+    bundleCreatedAt: z.string().datetime({ offset: true }),
+    correlationId: NonEmptyStringSchema,
+  })
+  .strict();
+
+export const ArtifactIntelligenceEvidenceEnvelopeSchema = z
+  .object({
+    envelopeId: NonEmptyStringSchema,
+    tenantId: NonEmptyStringSchema,
+    workspaceId: NonEmptyStringSchema,
+    projectId: NonEmptyStringSchema,
+    productUnitId: NonEmptyStringSchema,
+    evidenceType: z.enum(EVIDENCE_TYPES),
+    evidenceId: NonEmptyStringSchema,
+    evidenceRef: NonEmptyStringSchema,
+    envelopeCreatedAt: z.string().datetime({ offset: true }),
+    correlationId: NonEmptyStringSchema,
+  })
+  .strict();
 
 export type ArtifactIntelligenceEvidenceBase = z.infer<
   typeof ArtifactIntelligenceEvidenceBaseSchema
@@ -170,6 +217,8 @@ export type DependencyGraphEvidence = z.infer<typeof DependencyGraphEvidenceSche
 export type ResidualIslandReport = z.infer<typeof ResidualIslandReportSchema>;
 export type RiskHotspotReport = z.infer<typeof RiskHotspotReportSchema>;
 export type GeneratedChangeSetSummary = z.infer<typeof GeneratedChangeSetSummarySchema>;
+export type SemanticArtifactEvidenceBundle = z.infer<typeof SemanticArtifactEvidenceBundleSchema>;
+export type ArtifactIntelligenceEvidenceEnvelope = z.infer<typeof ArtifactIntelligenceEvidenceEnvelopeSchema>;
 
 export function isSemanticArtifactReference(
   value: unknown
@@ -203,4 +252,16 @@ export function isGeneratedChangeSetSummary(
   value: unknown
 ): value is GeneratedChangeSetSummary {
   return GeneratedChangeSetSummarySchema.safeParse(value).success;
+}
+
+export function isSemanticArtifactEvidenceBundle(
+  value: unknown
+): value is SemanticArtifactEvidenceBundle {
+  return SemanticArtifactEvidenceBundleSchema.safeParse(value).success;
+}
+
+export function isArtifactIntelligenceEvidenceEnvelope(
+  value: unknown
+): value is ArtifactIntelligenceEvidenceEnvelope {
+  return ArtifactIntelligenceEvidenceEnvelopeSchema.safeParse(value).success;
 }

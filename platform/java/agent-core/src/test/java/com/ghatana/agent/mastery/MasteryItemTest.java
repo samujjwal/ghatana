@@ -39,16 +39,16 @@ class MasteryItemTest {
                 VersionScope.empty(),
                 ApplicabilityScope.minimal("tenant-1", "production"),
                 new MasteryScore(0.8, 0.7, 0.6, 0.9, 0.5, 0.7, 0.8),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of("evidence-1"),
-                List.of(),
-                List.of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of(),
+                List.<String>of("evidence-1"),
+                List.<String>of(),
+                List.<String>of(),
                 stateHistory,
                 now,
                 now.plusSeconds(86400),
-                Map.of(),
+                Map.<String,String>of(),
                 0.8
         );
     }

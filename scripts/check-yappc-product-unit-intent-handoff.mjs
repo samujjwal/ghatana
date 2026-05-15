@@ -43,6 +43,12 @@ requireIncludes(routePath, "providerMode === 'platform'", 'YAPPC ProductUnitInte
 requireIncludes(routePath, "platform-mode-requires-data-cloud-evidence-ref", 'YAPPC ProductUnitIntent route');
 requireNotIncludes(routePath, 'writeFileSync', 'YAPPC ProductUnitIntent route');
 requireNotIncludes(routePath, 'kernel-product.yaml', 'YAPPC ProductUnitIntent route');
+// New assertion: YAPPC route must call Kernel service in apply mode
+requireIncludes(routePath, "applyProductUnitIntent", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "requestedAction === 'apply'", 'YAPPC ProductUnitIntent route');
+// New assertion: ProductUnitIntent apply must produce application result schema
+requireIncludes(routePath, "ProductUnitIntentApplicationResultSchema", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "applicationResult", 'YAPPC ProductUnitIntent route');
 
 requireIncludes(frontendServicePath, "DEFAULT_INTENT_ENDPOINT = '/api/v1/yappc/product-unit-intents'");
 requireIncludes(frontendServicePath, 'dataCloudEvidenceEndpoint');

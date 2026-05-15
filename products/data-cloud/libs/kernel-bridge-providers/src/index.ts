@@ -19,6 +19,158 @@ import type {
   LifecycleRuntimeTruthProvider,
   LifecycleRuntimeTruthSnapshot,
 } from '@ghatana/kernel-product-contracts';
+import { z } from 'zod';
+
+// Zod schemas for Data Cloud provider responses
+const DataCloudProviderResponseSchema = z.object({
+  success: z.boolean(),
+  ref: z.string().optional(),
+  error: z.string().optional(),
+});
+
+const EventListResponseSchema = z.object({
+  items: z.array(z.unknown()),
+});
+
+const ArtifactManifestRefSchema = z.object({
+  productUnitId: z.string(),
+  manifestPath: z.string(),
+});
+
+const HealthSnapshotRefSchema = z.object({
+  productUnitId: z.string(),
+  snapshotPath: z.string(),
+});
+
+const ProvenanceRecordSchema = z.object({
+  provenanceId: z.string(),
+  evidenceRefs: z.array(z.unknown()),
+});
+
+const MemoryRecordSchema = z.object({
+  memoryId: z.string(),
+  contentRef: z.string(),
+});
+
+const RuntimeTruthSnapshotSchema = z.object({
+  productUnitId: z.string(),
+  observedAt: z.string(),
+});
+
+const KernelLifecycleEventSchema = z.object({
+  metadata: z.object({
+    eventId: z.string(),
+  }),
+});
+
+// Privacy and retention metadata schema
+const PrivacyMetadataSchema = z.object({
+  privacyClassification: z.string().optional(),
+  retention: z.object({
+    expiresAt: z.string().optional(),
+  }).optional(),
+});
+
+// Redact sensitive data from request bodies
+function redactSensitiveData(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map(redactSensitiveData);
+  }
+  const redacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    // Redact auth tokens
+    if (key === 'authToken' || key === 'authorization' || key === 'token') {
+      redacted[key] = '[REDACTED]';
+    }
+    // Redact evidence payload fields marked restricted
+    else if (key === 'evidenceRefs' && Array.isArray(value)) {
+      redacted[key] = value.map((evidence: unknown) => {
+        if (typeof evidence === 'object' && evidence !== null && 'privacyClassification' in evidence) {
+          const ev = evidence as Record<string, unknown>;
+          if (ev.privacyClassification === 'restricted') {
+            return { ...ev, payload: '[REDACTED]', content: '[REDACTED]' };
+          }
+        }
+        return evidence;
+      });
+    }
+    // Redact memory content refs if privacy level is restricted
+    else if (key === 'privacyClassification' && value === 'restricted') {
+      redacted[key] = value;
+    }
+    else if (key === 'contentRef' || key === 'content' || key === 'payload') {
+      // Check if this is in a restricted context by looking at sibling fields
+      if ('privacyClassification' in data && (data as Record<string, unknown>).privacyClassification === 'restricted') {
+        redacted[key] = '[REDACTED]';
+      } else {
+        redacted[key] = redactSensitiveData(value);
+      }
+    }
+    else {
+      redacted[key] = redactSensitiveData(value);
+    }
+  }
+  return redacted;
+}
+
+// Provider observability instrumentation interface
+export interface DataCloudKernelProviderInstrumentation {
+  recordRequestStart(params: {
+    providerId: string;
+    operation: string;
+    method: string;
+    path: string;
+  }): void;
+  recordRequestComplete(params: {
+    providerId: string;
+    operation: string;
+    method: string;
+    path: string;
+    statusCode: number;
+    durationMs: number;
+    reasonCode?: string;
+  }): void;
+  recordRequestFailure(params: {
+    providerId: string;
+    operation: string;
+    method: string;
+    path: string;
+    durationMs: number;
+    error: string;
+  }): void;
+}
+
+// Helper functions for error mapping
+function safeErrorMessage(value: unknown, fallback: string): string {
+  if (isRecord(value) && typeof value.error === 'string') {
+    return value.error;
+  }
+  if (isRecord(value) && typeof value.message === 'string') {
+    return value.message;
+  }
+  return fallback;
+}
+
+function extractReasonCode(value: unknown): string | undefined {
+  if (isRecord(value) && typeof value.reasonCode === 'string') {
+    return value.reasonCode;
+  }
+  return undefined;
+}
+
+function extractCorrelationId(value: unknown): string | undefined {
+  if (isRecord(value) && typeof value.correlationId === 'string') {
+    return value.correlationId;
+  }
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
 export interface DataCloudKernelProviderClientOptions {
   readonly baseUrl: string;
@@ -28,6 +180,7 @@ export interface DataCloudKernelProviderClientOptions {
   readonly authToken?: string;
   readonly timeoutMs?: number;
   readonly fetchImpl?: typeof fetch;
+  readonly instrumentation?: DataCloudKernelProviderInstrumentation;
 }
 
 interface DataCloudRequestOptions {
@@ -49,6 +202,7 @@ export class DataCloudKernelProviderClient {
   private readonly authToken: string | undefined;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly instrumentation: DataCloudKernelProviderInstrumentation | undefined;
 
   constructor(options: DataCloudKernelProviderClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
@@ -58,6 +212,7 @@ export class DataCloudKernelProviderClient {
     this.authToken = options.authToken;
     this.timeoutMs = options.timeoutMs ?? 10_000;
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.instrumentation = options.instrumentation;
   }
 
   async post<TBody extends object>(
@@ -67,7 +222,7 @@ export class DataCloudKernelProviderClient {
   ): Promise<unknown> {
     return this.request(path, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify(redactSensitiveData(body)),
       ...(options.correlationId ? { correlationId: options.correlationId } : {}),
     });
   }
@@ -92,6 +247,20 @@ export class DataCloudKernelProviderClient {
   ): Promise<unknown> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const startTimeMs = Date.now();
+
+    // Extract operation name from path for instrumentation
+    const operation = path.split('/').filter(Boolean).pop() ?? 'unknown';
+
+    if (this.instrumentation) {
+      this.instrumentation.recordRequestStart({
+        providerId: 'data-cloud-kernel-provider',
+        operation,
+        method: options.method,
+        path,
+      });
+    }
+
     try {
       const requestInit: RequestInit = {
         method: options.method,
@@ -101,10 +270,72 @@ export class DataCloudKernelProviderClient {
       };
       const response = await this.fetchImpl(`${this.baseUrl}${path}`, requestInit);
       const payload = await response.json().catch(() => ({}));
+      const durationMs = Date.now() - startTimeMs;
+
       if (!response.ok) {
-        throw new Error(safeErrorMessage(payload, `Data Cloud request failed with ${response.status}`));
+        const reasonCode = extractReasonCode(payload);
+        const errorCorrelationId = extractCorrelationId(payload);
+        const errorMessage = safeErrorMessage(payload, `Data Cloud request failed with ${response.status}`);
+
+        if (this.instrumentation) {
+          this.instrumentation.recordRequestFailure({
+            providerId: 'data-cloud-kernel-provider',
+            operation,
+            method: options.method,
+            path,
+            durationMs,
+            error: errorMessage,
+          });
+        }
+
+        throw new Error(
+          errorMessage +
+            (reasonCode ? ` [reasonCode: ${reasonCode}]` : '') +
+            (errorCorrelationId ? ` [correlationId: ${errorCorrelationId}]` : ''),
+        );
       }
+
+      if (this.instrumentation) {
+        const reasonCode = extractReasonCode(payload);
+        const completeParams: {
+          providerId: string;
+          operation: string;
+          method: string;
+          path: string;
+          statusCode: number;
+          durationMs: number;
+          reasonCode?: string;
+        } = {
+          providerId: 'data-cloud-kernel-provider',
+          operation,
+          method: options.method,
+          path,
+          statusCode: response.status,
+          durationMs,
+        };
+        if (reasonCode !== undefined) {
+          completeParams.reasonCode = reasonCode;
+        }
+        this.instrumentation.recordRequestComplete(completeParams);
+      }
+
       return payload;
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTimeMs;
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      if (this.instrumentation && err instanceof Error && err.name !== 'AbortError') {
+        this.instrumentation.recordRequestFailure({
+          providerId: 'data-cloud-kernel-provider',
+          operation,
+          method: options.method,
+          path,
+          durationMs,
+          error: errorMessage,
+        });
+      }
+
+      throw err;
     } finally {
       clearTimeout(timeout);
     }
@@ -116,6 +347,7 @@ export class DataCloudKernelProviderClient {
       'x-ghatana-tenant-id': this.tenantId,
       'x-ghatana-workspace-id': this.workspaceId,
       'x-ghatana-project-id': this.projectId,
+      'x-ghatana-provider-mode': 'platform',
       ...(correlationId ? { 'x-correlation-id': correlationId } : {}),
       ...(this.authToken ? { authorization: `Bearer ${this.authToken}` } : {}),
     };
@@ -133,7 +365,18 @@ abstract class DataCloudProviderBase {
     options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult> {
     try {
-      const response = await this.client.post(path, { ...body, writeOptions: options }, {
+      // Validate privacy and retention metadata if present
+      const writeBody = { ...body, writeOptions: options };
+      if (options.privacyClassification || options.retention) {
+        const privacyMetadata = PrivacyMetadataSchema.safeParse({
+          privacyClassification: options.privacyClassification,
+          retention: options.retention,
+        });
+        if (!privacyMetadata.success) {
+          throw new Error(`Invalid privacy or retention metadata: ${privacyMetadata.error.message}`);
+        }
+      }
+      const response = await this.client.post(path, writeBody, {
         correlationId: options.correlationId,
       });
       return parseProviderResult(response);
@@ -145,7 +388,7 @@ abstract class DataCloudProviderBase {
   protected async list<T>(
     path: string,
     query: LifecycleProviderQuery,
-    predicate: (value: unknown) => value is T,
+    schema: z.ZodSchema<T>,
   ): Promise<readonly T[]> {
     const response = await this.client.get(path, {
       ...(query.correlationId ? { correlationId: query.correlationId } : {}),
@@ -157,10 +400,19 @@ abstract class DataCloudProviderBase {
         cursor: query.cursor,
       },
     });
-    if (!isRecord(response) || !Array.isArray(response.items)) {
-      throw new Error('Data Cloud provider list response has invalid shape');
+    const listResult = EventListResponseSchema.safeParse(response);
+    if (!listResult.success) {
+      throw new Error(`Data Cloud provider list response has invalid shape: ${listResult.error.message}`);
     }
-    return response.items.filter(predicate);
+    const items: T[] = [];
+    for (const item of listResult.data.items) {
+      const itemResult = schema.safeParse(item);
+      if (!itemResult.success) {
+        throw new Error(`Data Cloud provider list item has invalid shape: ${itemResult.error.message}`);
+      }
+      items.push(itemResult.data);
+    }
+    return items;
   }
 }
 
@@ -177,7 +429,7 @@ export class DataCloudLifecycleEventProvider extends DataCloudProviderBase imple
   }
 
   async listEvents(query: LifecycleProviderQuery): Promise<readonly KernelLifecycleEvent[]> {
-    return this.list('/api/v1/kernel/providers/events', query, isKernelLifecycleEvent);
+    return this.list('/api/v1/kernel/providers/events', query, KernelLifecycleEventSchema);
   }
 }
 
@@ -194,7 +446,7 @@ export class DataCloudArtifactProvider extends DataCloudProviderBase implements 
   }
 
   async listArtifactManifests(query: LifecycleProviderQuery): Promise<readonly LifecycleArtifactManifestRef[]> {
-    return this.list('/api/v1/kernel/providers/artifacts', query, isArtifactManifestRef);
+    return this.list('/api/v1/kernel/providers/artifacts', query, ArtifactManifestRefSchema);
   }
 }
 
@@ -212,7 +464,8 @@ export class DataCloudHealthProvider extends DataCloudProviderBase implements Li
 
   async getLatestHealthSnapshot(productUnitId: string): Promise<LifecycleHealthSnapshotRef | null> {
     const response = await this.client.get(`/api/v1/kernel/providers/health/${encodeURIComponent(productUnitId)}/latest`);
-    return isHealthSnapshotRef(response) ? response : null;
+    const result = HealthSnapshotRefSchema.safeParse(response);
+    return result.success ? result.data : null;
   }
 }
 
@@ -246,7 +499,7 @@ export class DataCloudProvenanceProvider extends DataCloudProviderBase implement
   }
 
   async listProvenance(query: LifecycleProviderQuery): Promise<readonly LifecycleProvenanceRecord[]> {
-    return this.list('/api/v1/kernel/providers/provenance', query, isProvenanceRecord);
+    return this.list('/api/v1/kernel/providers/provenance', query, ProvenanceRecordSchema);
   }
 }
 
@@ -263,7 +516,7 @@ export class DataCloudMemoryProvider extends DataCloudProviderBase implements Li
   }
 
   async listMemory(query: LifecycleProviderQuery): Promise<readonly LifecycleMemoryRecord[]> {
-    return this.list('/api/v1/kernel/providers/memory', query, isMemoryRecord);
+    return this.list('/api/v1/kernel/providers/memory', query, MemoryRecordSchema);
   }
 }
 
@@ -281,7 +534,8 @@ export class DataCloudRuntimeTruthProvider extends DataCloudProviderBase impleme
 
   async getRuntimeTruth(productUnitId: string): Promise<LifecycleRuntimeTruthSnapshot | null> {
     const response = await this.client.get(`/api/v1/kernel/providers/runtime-truth/${encodeURIComponent(productUnitId)}/latest`);
-    return isRuntimeTruthSnapshot(response) ? response : null;
+    const result = RuntimeTruthSnapshotSchema.safeParse(response);
+    return result.success ? result.data : null;
   }
 }
 
@@ -323,42 +577,4 @@ function fail(error: unknown, required: boolean): LifecycleProviderResult {
     success: false,
     error: required ? message : `optional Data Cloud provider write skipped: ${message}`,
   };
-}
-
-function safeErrorMessage(value: unknown, fallback: string): string {
-  if (isRecord(value) && typeof value.error === 'string') {
-    return value.error;
-  }
-  if (isRecord(value) && typeof value.message === 'string') {
-    return value.message;
-  }
-  return fallback;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function isKernelLifecycleEvent(value: unknown): value is KernelLifecycleEvent {
-  return isRecord(value) && isRecord(value.metadata) && typeof value.metadata.eventId === 'string';
-}
-
-function isArtifactManifestRef(value: unknown): value is LifecycleArtifactManifestRef {
-  return isRecord(value) && typeof value.productUnitId === 'string' && typeof value.manifestPath === 'string';
-}
-
-function isHealthSnapshotRef(value: unknown): value is LifecycleHealthSnapshotRef {
-  return isRecord(value) && typeof value.productUnitId === 'string' && typeof value.snapshotPath === 'string';
-}
-
-function isProvenanceRecord(value: unknown): value is LifecycleProvenanceRecord {
-  return isRecord(value) && typeof value.provenanceId === 'string' && Array.isArray(value.evidenceRefs);
-}
-
-function isMemoryRecord(value: unknown): value is LifecycleMemoryRecord {
-  return isRecord(value) && typeof value.memoryId === 'string' && typeof value.contentRef === 'string';
-}
-
-function isRuntimeTruthSnapshot(value: unknown): value is LifecycleRuntimeTruthSnapshot {
-  return isRecord(value) && typeof value.productUnitId === 'string' && typeof value.observedAt === 'string';
 }

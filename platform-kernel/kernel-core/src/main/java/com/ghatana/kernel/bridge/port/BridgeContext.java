@@ -39,6 +39,8 @@ public final class BridgeContext {
     private final String principalId;
     private final String correlationId;
     private final String idempotencyKey;
+    private final String workspaceId;
+    private final String projectId;
     private final Map<String, String> attributes;
 
     private BridgeContext(Builder builder) {
@@ -46,6 +48,8 @@ public final class BridgeContext {
         this.principalId     = builder.principalId   != null ? builder.principalId   : "anonymous";
         this.correlationId   = builder.correlationId != null ? builder.correlationId : "none";
         this.idempotencyKey  = builder.idempotencyKey; // nullable – only required for writes
+        this.workspaceId     = builder.workspaceId;
+        this.projectId       = builder.projectId;
         this.attributes      = builder.attributes.isEmpty()
                 ? Collections.emptyMap()
                 : Collections.unmodifiableMap(new HashMap<>(builder.attributes));
@@ -74,6 +78,12 @@ public final class BridgeContext {
     /** Additional propagation attributes. Never {@code null}; may be empty. */
     public Map<String, String> getAttributes() { return attributes; }
 
+    /** Workspace ID for multi-tenant workspace isolation. May be {@code null}. */
+    public String getWorkspaceId() { return workspaceId; }
+
+    /** Project ID for project-scoped operations. May be {@code null}. */
+    public String getProjectId() { return projectId; }
+
     public static Builder builder() { return new Builder(); }
 
     // -------------------------------------------------------------------------
@@ -87,6 +97,8 @@ public final class BridgeContext {
         private String principalId;
         private String correlationId;
         private String idempotencyKey;
+        private String workspaceId;
+        private String projectId;
         private final Map<String, String> attributes = new HashMap<>();
 
         private Builder() {}
@@ -108,6 +120,16 @@ public final class BridgeContext {
 
         public Builder idempotencyKey(String idempotencyKey) {
             this.idempotencyKey = idempotencyKey;
+            return this;
+        }
+
+        public Builder workspaceId(String workspaceId) {
+            this.workspaceId = workspaceId;
+            return this;
+        }
+
+        public Builder projectId(String projectId) {
+            this.projectId = projectId;
             return this;
         }
 

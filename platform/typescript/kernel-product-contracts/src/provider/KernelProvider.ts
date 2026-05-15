@@ -26,4 +26,10 @@ export interface KernelProvider {
    * Provider capabilities.
    */
   readonly capabilities: readonly string[];
+
+  /**
+   * Provider backing store type.
+   * Indicates the underlying storage mechanism for the provider.
+   */
+  readonly backingStore: "file" | "data-cloud" | "external";
 }

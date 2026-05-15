@@ -21,7 +21,6 @@ import type {
 } from '../domain/ProductLifecyclePhase.js';
 import {
   KernelLifecycleError,
-  ProviderUnavailableError,
 } from '../service/KernelLifecycleErrors.js';
 import type {
   KernelLifecycleService,
@@ -108,6 +107,7 @@ export interface KernelLifecycleApiResponse {
 export interface KernelLifecycleApiHandlersOptions {
   readonly service: KernelLifecycleService;
   readonly requireScopeHeaders?: boolean;
+  readonly allowUnscopedLocalDevelopment?: boolean;
 }
 
 export interface KernelLifecycleRouteMetadata {
@@ -135,10 +135,12 @@ export class KernelLifecycleApiHandlers {
 
   private readonly service: KernelLifecycleService;
   private readonly requireScopeHeaders: boolean;
+  private readonly allowUnscopedLocalDevelopment: boolean;
 
   constructor(options: KernelLifecycleApiHandlersOptions) {
     this.service = options.service;
-    this.requireScopeHeaders = options.requireScopeHeaders ?? false;
+    this.requireScopeHeaders = options.requireScopeHeaders ?? true;
+    this.allowUnscopedLocalDevelopment = options.allowUnscopedLocalDevelopment ?? false;
   }
 
   async listProductUnits(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
@@ -310,10 +312,12 @@ export class KernelLifecycleApiHandlers {
     if (tenantId !== undefined && workspaceId !== undefined && projectId !== undefined) {
       return { tenantId, workspaceId, projectId };
     }
-    if (!this.requireScopeHeaders && tenantId === undefined && workspaceId === undefined && projectId === undefined) {
+    if (this.allowUnscopedLocalDevelopment || !this.requireScopeHeaders) {
       return undefined;
     }
-    throw new ProviderUnavailableError('Kernel lifecycle API requires tenant, workspace, and project headers', {
+    throw new KernelLifecycleError({
+      reasonCode: 'scope-headers-required',
+      message: 'Kernel lifecycle API requires tenant, workspace, and project headers',
       correlationId,
       safeDetails: {
         missingHeaders: [
@@ -462,6 +466,9 @@ function statusCodeForReason(reasonCode: string): number {
   }
   if (reasonCode === 'approval-required') {
     return 409;
+  }
+  if (reasonCode === 'scope-headers-required' || reasonCode === 'authorization-failed') {
+    return 403;
   }
   if (reasonCode === 'provider-unavailable') {
     return 503;

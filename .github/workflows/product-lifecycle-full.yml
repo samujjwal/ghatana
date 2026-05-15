@@ -1,0 +1,290 @@
+name: Product Lifecycle Full (Nightly/Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'Product to run full lifecycle for'
+        required: true
+        type: choice
+        options:
+          - digital-marketing
+      env:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - local
+  schedule:
+    - cron: '0 2 * * *' # Run daily at 2 AM UTC
+
+concurrency:
+  group: product-lifecycle-full-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  build-kernel:
+    name: Build Kernel Packages
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build kernel lifecycle platform
+        run: pnpm run build:kernel-lifecycle-platform
+
+      - name: Upload kernel build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: |
+            platform/typescript/kernel-*/dist/
+          retention-days: 1
+
+  package:
+    name: Package Product
+    needs: build-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Package product
+        run: node ./scripts/kernel-product.mjs product package ${{ inputs.product || 'digital-marketing' }} --json
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-artifacts
+          path: |
+            .kernel/out/**
+          retention-days: 7
+
+  deploy-local:
+    name: Deploy to Local Environment
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: package-artifacts
+          path: .
+
+      - name: Deploy to local
+        run: node ./scripts/kernel-product.mjs product deploy ${{ inputs.product || 'digital-marketing' }} --env local --json
+
+      - name: Upload deploy artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: |
+            .kernel/out/**
+          retention-days: 7
+
+  verify-local:
+    name: Verify Local Deployment
+    needs: deploy-local
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Download deploy artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-artifacts
+          path: .
+
+      - name: Verify local deployment
+        run: node ./scripts/kernel-product.mjs product verify ${{ inputs.product || 'digital-marketing' }} --env local --json
+
+      - name: Upload verify artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-artifacts
+          path: |
+            .kernel/out/**
+          retention-days: 7
+
+  upload-manifests:
+    name: Upload All Manifests
+    needs: [package, deploy-local, verify-local]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Generate product-shape capability matrix
+        run: node ./scripts/generate-product-shape-capability-matrix.mjs
+
+      - name: Upload all manifests and logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-lifecycle-manifests-and-logs
+          path: |
+            .kernel/out/**
+            config/generated/product-shape-capability-matrix.json
+            docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md
+            **/lifecycle-logs/**
+          retention-days: 30
+
+  validate-boundary-audit:
+    name: Validate Kernel Product Boundary Audit
+    needs: upload-manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check kernel product boundary audit
+        run: pnpm check:kernel-product-boundary-audit

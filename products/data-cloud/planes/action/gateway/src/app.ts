@@ -11,8 +11,78 @@ import type {
   KernelLifecycleApiRequest,
   KernelLifecycleApiResponse,
 } from '@ghatana/kernel-lifecycle';
+import {
+  AgentLifecycleActionRequestSchema,
+  type AgentLifecycleActionRequest,
+} from '@ghatana/kernel-product-contracts';
+import { z } from 'zod';
 export type { GatewayMetricsSnapshot } from './metrics.js';
 export { GatewayMetrics } from './metrics.js';
+
+// Zod schemas for provider endpoint validation
+const KernelLifecycleEventSchema = z.object({
+  metadata: z.object({
+    eventId: z.string(),
+    timestamp: z.string(),
+    eventType: z.string(),
+  }),
+  productUnitId: z.string(),
+  runId: z.string().optional(),
+});
+
+const ArtifactManifestRefSchema = z.object({
+  productUnitId: z.string(),
+  manifestPath: z.string(),
+  fingerprint: z.object({
+    algorithm: z.string(),
+    hash: z.string(),
+  }),
+});
+
+const HealthSnapshotRefSchema = z.object({
+  productUnitId: z.string(),
+  snapshotPath: z.string(),
+  status: z.string(),
+  observedAt: z.string(),
+});
+
+const ApprovalRequestSchema = z.object({
+  requestId: z.string(),
+  productUnitId: z.string(),
+  runId: z.string(),
+  requestedAction: z.string(),
+  riskLevel: z.string().optional(),
+});
+
+const ApprovalDecisionSchema = z.object({
+  requestId: z.string(),
+  approved: z.boolean(),
+  userId: z.string(),
+  decisionReason: z.string().optional(),
+});
+
+const ProvenanceRecordSchema = z.object({
+  provenanceId: z.string(),
+  productUnitId: z.string(),
+  runId: z.string().optional(),
+  evidenceRefs: z.array(z.unknown()),
+});
+
+const MemoryRecordSchema = z.object({
+  memoryId: z.string(),
+  contentRef: z.string(),
+  productUnitId: z.string(),
+  privacyClassification: z.string().optional(),
+  retention: z.object({
+    expiresAt: z.string().optional(),
+  }).optional(),
+});
+
+const RuntimeTruthSnapshotSchema = z.object({
+  productUnitId: z.string(),
+  observedAt: z.string(),
+  state: z.record(z.unknown()),
+});
 
 /**
  * Maximum proxy response body size in bytes (16 MiB).
@@ -115,9 +185,54 @@ function resolveHeaderTenantId(headers: FastifyRequest['headers']): string | nul
   return extractHeaderTenantId(headers['x-tenant-id']) ?? extractHeaderTenantId(headers['x-ghatana-tenant-id']);
 }
 
+function extractHeaderWorkspaceId(headers: FastifyRequest['headers']): string | null {
+  const value = headers['x-ghatana-workspace-id'];
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value) && value.length > 0 && value[0].trim().length > 0) {
+    return value[0].trim();
+  }
+  return null;
+}
+
+function extractHeaderProjectId(headers: FastifyRequest['headers']): string | null {
+  const value = headers['x-ghatana-project-id'];
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value) && value.length > 0 && value[0].trim().length > 0) {
+    return value[0].trim();
+  }
+  return null;
+}
+
 function extractPayloadTenantId(payload: JwtPayload): string | null {
   const tenantId = payload['tenantId'];
   return typeof tenantId === 'string' && tenantId.trim().length > 0 ? tenantId.trim() : null;
+}
+
+function extractUserId(payload: JwtPayload): string | null {
+  const userId = payload['sub'] ?? payload['userId'];
+  return typeof userId === 'string' && userId.trim().length > 0 ? userId.trim() : null;
+}
+
+function extractRoles(payload: JwtPayload): string[] {
+  const roles = payload['roles'];
+  if (Array.isArray(roles)) {
+    return roles.filter((r): r is string => typeof r === 'string' && r.trim().length > 0);
+  }
+  return [];
+}
+
+function extractWorkspaceId(payload: JwtPayload): string | null {
+  const workspaceId = payload['workspaceId'];
+  return typeof workspaceId === 'string' && workspaceId.trim().length > 0 ? workspaceId.trim() : null;
+}
+
+function extractProjectId(payload: JwtPayload): string | null {
+  const projectId = payload['projectId'];
+  return typeof projectId === 'string' && projectId.trim().length > 0 ? projectId.trim() : null;
 }
 
 function extractCorrelationId(value: string | string[] | undefined): string | null {
@@ -167,6 +282,50 @@ function resolveTraceparent(request: FastifyRequest): string {
   const traceId = randomUUID().replace(/-/g, '');
   const spanId = randomUUID().replace(/-/g, '').slice(0, 16);
   return `00-${traceId}-${spanId}-01`;
+}
+
+function extractReasonCode(body: unknown): string | undefined {
+  if (typeof body === 'object' && body !== null && 'reasonCode' in body) {
+    const reasonCode = (body as { readonly reasonCode?: unknown }).reasonCode;
+    return typeof reasonCode === 'string' ? reasonCode : undefined;
+  }
+  return undefined;
+}
+
+function extractProviderMode(body: unknown): string | undefined {
+  if (typeof body === 'object' && body !== null && 'providerMode' in body) {
+    const providerMode = (body as { readonly providerMode?: unknown }).providerMode;
+    return typeof providerMode === 'string' ? providerMode : undefined;
+  }
+  return undefined;
+}
+
+function extractProductUnitId(request: FastifyRequest): string | undefined {
+  const params = request.params as Record<string, string | undefined>;
+  return params.productUnitId;
+}
+
+function extractPhase(request: FastifyRequest): string | undefined {
+  const body = request.body as Record<string, unknown> | undefined;
+  if (body && typeof body === 'object' && 'phase' in body) {
+    const phase = body.phase;
+    return typeof phase === 'string' ? phase : undefined;
+  }
+  return undefined;
+}
+
+function extractRunId(request: FastifyRequest): string | undefined {
+  const params = request.params as Record<string, string | undefined>;
+  return params.runId;
+}
+
+function extractDecision(request: FastifyRequest): string | undefined {
+  const body = request.body as Record<string, unknown> | undefined;
+  if (body && typeof body === 'object' && 'approved' in body) {
+    const approved = body.approved;
+    return typeof approved === 'boolean' ? (approved ? 'approved' : 'rejected') : undefined;
+  }
+  return undefined;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -527,10 +686,14 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     const correlationId =
       (request as FastifyRequest & { correlationId?: string }).correlationId ??
       resolveCorrelationId(request);
-    const service = config.agentLifecycleActionService;
+    const traceId = (request as FastifyRequest & { traceId?: string }).traceId;
+    const spanId = (request as FastifyRequest & { spanId?: string }).spanId;
+    const startedAtMs = Date.now();
     reply.header(CORRELATION_ID_HEADER, correlationId);
 
+    const service = config.agentLifecycleActionService;
     if (!service) {
+      metrics.recordAgenticAction('service_unavailable');
       fastify.log.error(
         { correlationId },
         'Agent lifecycle action service is not configured; refusing raw action-plane execution',
@@ -542,11 +705,151 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       });
     }
 
+    // Extract authz metadata from JWT
+    const user = (request as FastifyRequest & { user: JwtPayload }).user;
+    const userId = extractUserId(user);
+    const roles = extractRoles(user);
+    const jwtTenantId = extractPayloadTenantId(user);
+    const jwtWorkspaceId = extractWorkspaceId(user);
+    const jwtProjectId = extractProjectId(user);
+
+    // Validate scope for tenant/workspace/project
+    const headerTenantId = resolveHeaderTenantId(request.headers);
+    const headerWorkspaceId = extractHeaderWorkspaceId(request.headers);
+    const headerProjectId = extractHeaderProjectId(request.headers);
+    const effectiveTenantId = jwtTenantId ?? headerTenantId;
+    const effectiveWorkspaceId = jwtWorkspaceId ?? headerWorkspaceId;
+    const effectiveProjectId = jwtProjectId ?? headerProjectId;
+
+    if (!effectiveTenantId || !effectiveWorkspaceId || !effectiveProjectId) {
+      metrics.recordAgenticAction('scope_denied');
+      fastify.log.warn(
+        { correlationId, userId },
+        'Tenant, workspace, and project scope required for agentic actions',
+      );
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Tenant, workspace, and project scope required for agentic actions',
+        correlationId,
+      });
+    }
+
+    // Validate request schema
+    const parsedRequest = AgentLifecycleActionRequestSchema.safeParse(request.body);
+    if (!parsedRequest.success) {
+      metrics.recordAgenticAction('schema_validation_failed');
+      fastify.log.warn(
+        { correlationId, userId, issues: parsedRequest.error.issues },
+        'Agent lifecycle action request schema validation failed',
+      );
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'Invalid agent lifecycle action request',
+        issues: parsedRequest.error.issues.map((issue: { readonly path: readonly (string | number)[]; readonly message: string }) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+        correlationId,
+      });
+    }
+
+    const actionRequest = parsedRequest.data;
+
+    // Validate scope matches request
+    if (actionRequest.scope.tenantId !== effectiveTenantId) {
+      metrics.recordAgenticAction('scope_denied');
+      fastify.log.warn(
+        { correlationId, userId, requestTenantId: actionRequest.scope.tenantId, effectiveTenantId },
+        'Tenant scope mismatch',
+      );
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Tenant scope mismatch between request and auth context',
+        correlationId,
+      });
+    }
+
+    if (actionRequest.scope.workspaceId !== effectiveWorkspaceId) {
+      metrics.recordAgenticAction('scope_denied');
+      fastify.log.warn(
+        { correlationId, userId, requestWorkspaceId: actionRequest.scope.workspaceId, effectiveWorkspaceId },
+        'Workspace scope mismatch',
+      );
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Workspace scope mismatch between request and auth context',
+        correlationId,
+      });
+    }
+
+    if (actionRequest.scope.projectId !== effectiveProjectId) {
+      metrics.recordAgenticAction('scope_denied');
+      fastify.log.warn(
+        { correlationId, userId, requestProjectId: actionRequest.scope.projectId, effectiveProjectId },
+        'Project scope mismatch',
+      );
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Project scope mismatch between request and auth context',
+        correlationId,
+      });
+    }
+
+    // Check if high-risk action requires appropriate role
+    const highRiskActions = new Set(['delete', 'destroy', 'purge', 'force-delete']);
+    const isHighRisk = highRiskActions.has(actionRequest.requestedAction.toLowerCase());
+    if (isHighRisk && !roles.includes('ADMIN') && !roles.includes('OWNER')) {
+      metrics.recordAgenticAction('high_risk_denied');
+      fastify.log.warn(
+        { correlationId, userId, requestedAction: actionRequest.requestedAction, roles },
+        'High-risk action requires ADMIN or OWNER role',
+      );
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'High-risk actions require ADMIN or OWNER role',
+        correlationId,
+      });
+    }
+
     try {
-      const result = await service.handle(request.body);
+      const result = await service.handle(actionRequest);
+      const durationMs = Date.now() - startedAtMs;
+
+      // Determine result status for metrics
+      const resultStatus = (result as { readonly status?: string }).status ?? 'unknown';
+      if (resultStatus === 'approved' || resultStatus === 'applied' || resultStatus === 'executed') {
+        metrics.recordAgenticAction('accepted', durationMs);
+      } else if (resultStatus === 'requires-approval' || resultStatus === 'pending') {
+        metrics.recordAgenticAction('requires_approval', durationMs);
+      } else if (resultStatus === 'denied' || resultStatus === 'rejected' || resultStatus === 'blocked') {
+        metrics.recordAgenticAction('denied', durationMs);
+      } else {
+        metrics.recordAgenticAction('failed', durationMs);
+      }
+
+      // Audit log event
+      fastify.log.info(
+        {
+          correlationId,
+          traceId,
+          spanId,
+          userId,
+          requestId: actionRequest.requestId,
+          productUnitId: actionRequest.productUnitId,
+          requestedAction: actionRequest.requestedAction,
+          lifecyclePhase: actionRequest.lifecyclePhase,
+          riskLevel: actionRequest.riskLevel,
+          resultStatus,
+          durationMs,
+        },
+        'Agent lifecycle action request completed',
+      );
+
       return reply.status(200).send(result);
     } catch (err: unknown) {
-      fastify.log.warn({ correlationId, err }, 'Agent lifecycle action request rejected');
+      const durationMs = Date.now() - startedAtMs;
+      metrics.recordAgenticAction('failed', durationMs);
+      fastify.log.warn({ correlationId, userId, err }, 'Agent lifecycle action request rejected');
       return reply.status(400).send({
         error: 'Bad Request',
         message: err instanceof Error ? err.message : 'Invalid agent lifecycle action request',
@@ -563,6 +866,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     const correlationId =
       (request as FastifyRequest & { correlationId?: string }).correlationId ??
       resolveCorrelationId(request);
+    const traceId = (request as FastifyRequest & { traceId?: string }).traceId;
+    const spanId = (request as FastifyRequest & { spanId?: string }).spanId;
     reply.header(CORRELATION_ID_HEADER, correlationId);
 
     const kernelLifecycleApi = config.kernelLifecycleApi;
@@ -579,10 +884,82 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       });
     }
 
+    // Extract authz metadata from JWT
+    const user = (request as FastifyRequest & { user: JwtPayload }).user;
+    const userId = extractUserId(user);
+    const roles = extractRoles(user);
+    const jwtWorkspaceId = extractWorkspaceId(user);
+    const jwtProjectId = extractProjectId(user);
+
+    // Validate workspace/project scope for lifecycle operations
+    const headerWorkspaceId = extractHeaderWorkspaceId(request.headers);
+    const headerProjectId = extractHeaderProjectId(request.headers);
+    const effectiveWorkspaceId = jwtWorkspaceId ?? headerWorkspaceId;
+    const effectiveProjectId = jwtProjectId ?? headerProjectId;
+
+    // Lifecycle operations require workspace and project scope
+    const lifecycleOperations: readonly (keyof KernelLifecycleApiPort)[] = [
+      'createLifecyclePlan',
+      'executeLifecyclePhase',
+      'listLifecycleRuns',
+      'getLifecycleRun',
+      'getGateResultManifest',
+      'getArtifactManifest',
+      'getDeploymentManifest',
+      'getVerifyHealthReport',
+      'requestApproval',
+      'submitApprovalDecision',
+    ];
+
+    if (lifecycleOperations.includes(operation)) {
+      if (!effectiveWorkspaceId || !effectiveProjectId) {
+        metrics.recordKernelLifecycleRequest(String(operation), 403);
+        fastify.log.warn(
+          { correlationId, operation, userId },
+          'Workspace and project scope required for lifecycle operations',
+        );
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Workspace and project scope required for lifecycle operations',
+          correlationId,
+        });
+      }
+    }
+
     try {
-      const apiRequest = toKernelLifecycleApiRequest(request);
+      const apiRequest = toKernelLifecycleApiRequest(request, {
+        userId,
+        roles,
+        effectiveWorkspaceId,
+        effectiveProjectId,
+      });
       const response = await kernelLifecycleApi[operation](apiRequest);
-      metrics.recordKernelLifecycleRequest(String(operation), response.statusCode);
+
+      // Extract metrics labels from response
+      const reasonCode = extractReasonCode(response.body);
+      const providerMode = extractProviderMode(response.body);
+
+      metrics.recordKernelLifecycleRequest(String(operation), response.statusCode, providerMode, reasonCode);
+
+      // Audit log metadata
+      fastify.log.info(
+        {
+          correlationId,
+          traceId,
+          spanId,
+          operation,
+          userId,
+          productUnitId: extractProductUnitId(request),
+          phase: extractPhase(request),
+          runId: extractRunId(request),
+          decision: extractDecision(request),
+          status: response.statusCode,
+          reasonCode,
+          providerMode,
+        },
+        'Kernel lifecycle API request completed',
+      );
+
       return sendKernelLifecycleApiResponse(reply, response);
     } catch (err: unknown) {
       metrics.recordKernelLifecycleRequest(String(operation), 500);
@@ -595,12 +972,41 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
   }
 
-  function toKernelLifecycleApiRequest(request: FastifyRequest): KernelLifecycleApiRequest {
+  function toKernelLifecycleApiRequest(
+    request: FastifyRequest,
+    authzMetadata?: {
+      userId: string | null;
+      roles: string[];
+      effectiveWorkspaceId: string | null;
+      effectiveProjectId: string | null;
+    },
+  ): KernelLifecycleApiRequest {
+    const headers: Record<string, string> = {};
+    for (const [key, value] of Object.entries(request.headers)) {
+      if (typeof value === 'string') {
+        headers[key] = value;
+      }
+    }
+
+    // Add authz metadata as headers
+    if (authzMetadata?.userId) {
+      headers['x-user-id'] = authzMetadata.userId;
+    }
+    if (authzMetadata?.roles && authzMetadata.roles.length > 0) {
+      headers['x-user-roles'] = authzMetadata.roles.join(',');
+    }
+    if (authzMetadata?.effectiveWorkspaceId) {
+      headers['x-ghatana-workspace-id'] = authzMetadata.effectiveWorkspaceId;
+    }
+    if (authzMetadata?.effectiveProjectId) {
+      headers['x-ghatana-project-id'] = authzMetadata.effectiveProjectId;
+    }
+
     return {
       params: request.params as Record<string, string | undefined>,
       query: request.query as Record<string, string | number | boolean | undefined>,
       body: request.body,
-      headers: request.headers,
+      headers,
     };
   }
 
@@ -638,6 +1044,286 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     dispatchKernelLifecycleApi('requestApproval', request, reply));
   fastify.post('/api/kernel/approvals/:approvalId/decisions', { preHandler: [authenticate] }, async (request, reply) =>
     dispatchKernelLifecycleApi('submitApprovalDecision', request, reply));
+
+  // ── Kernel Provider Endpoints (explicit routes, not generic proxy) ───────────
+  // In-memory storage for provider records (replace with Data Cloud storage abstraction)
+  const providerStorage = new Map<string, { readonly data: unknown; readonly createdAt: string; readonly tenantId: string; readonly privacyClassification?: string; readonly expiresAt?: string }>();
+
+  function generateProviderRef(): string {
+    return `ref-${randomUUID()}`;
+  }
+
+  function redactSensitiveFields(data: unknown): unknown {
+    if (typeof data !== 'object' || data === null) {
+      return data;
+    }
+    if (Array.isArray(data)) {
+      return data.map(redactSensitiveFields);
+    }
+    const redacted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (key === 'authToken' || key === 'authorization' || key === 'token') {
+        redacted[key] = '[REDACTED]';
+      } else if (key === 'privacyClassification' && value === 'restricted') {
+        redacted[key] = value;
+      } else if ((key === 'content' || key === 'payload' || key === 'contentRef') && typeof data === 'object' && 'privacyClassification' in data && (data as Record<string, unknown>).privacyClassification === 'restricted') {
+        redacted[key] = '[REDACTED]';
+      } else {
+        redacted[key] = redactSensitiveFields(value);
+      }
+    }
+    return redacted;
+  }
+
+  function validateScopeForProvider(request: FastifyReply): { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string; readonly userId: string; readonly correlationId: string } | null {
+    const reply = request as FastifyRequest & { user: JwtPayload; correlationId?: string };
+    const user = reply.user;
+    const tenantId = extractPayloadTenantId(user) ?? resolveHeaderTenantId(request.headers);
+    const workspaceId = extractWorkspaceId(user) ?? extractHeaderWorkspaceId(request.headers);
+    const projectId = extractProjectId(user) ?? extractHeaderProjectId(request.headers);
+    const userId = extractUserId(user);
+    const correlationId = reply.correlationId ?? resolveCorrelationId(request);
+
+    if (!tenantId || !workspaceId || !projectId || !userId) {
+      return null;
+    }
+    return { tenantId, workspaceId, projectId, userId, correlationId };
+  }
+
+  // POST /api/v1/kernel/providers/events
+  fastify.post('/api/v1/kernel/providers/events', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedEvent = KernelLifecycleEventSchema.safeParse(request.body);
+    if (!parsedEvent.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid event schema', reasonCode: 'INVALID_SCHEMA', issues: parsedEvent.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedEvent.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/events (list)
+  fastify.get('/api/v1/kernel/providers/events', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 100;
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
+      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
+      .slice(0, limit)
+      .map(([ref, v]) => ({ ref, ...v.data }));
+    return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/artifacts
+  fastify.post('/api/v1/kernel/providers/artifacts', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedArtifact = ArtifactManifestRefSchema.safeParse(request.body);
+    if (!parsedArtifact.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid artifact manifest schema', reasonCode: 'INVALID_SCHEMA', issues: parsedArtifact.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedArtifact.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/artifacts (list)
+  fastify.get('/api/v1/kernel/providers/artifacts', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 100;
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
+      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
+      .slice(0, limit)
+      .map(([ref, v]) => ({ ref, ...v.data }));
+    return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/health
+  fastify.post('/api/v1/kernel/providers/health', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedHealth = HealthSnapshotRefSchema.safeParse(request.body);
+    if (!parsedHealth.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid health snapshot schema', reasonCode: 'INVALID_SCHEMA', issues: parsedHealth.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedHealth.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/health/:productUnitId/latest
+  fastify.get('/api/v1/kernel/providers/health/:productUnitId/latest', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const params = request.params as { productUnitId: string };
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => (v.data as { productUnitId?: string })?.productUnitId === params.productUnitId)
+      .sort((a, b) => b[1].createdAt.localeCompare(a[1].createdAt));
+    if (items.length === 0) {
+      return reply.status(404).send({ success: false, error: 'No health snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
+    }
+    const [ref, v] = items[0];
+    return reply.status(200).send({ success: true, ref, ...v.data, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/approvals/requests
+  fastify.post('/api/v1/kernel/providers/approvals/requests', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedRequest = ApprovalRequestSchema.safeParse(request.body);
+    if (!parsedRequest.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid approval request schema', reasonCode: 'INVALID_SCHEMA', issues: parsedRequest.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedRequest.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/approvals/decisions
+  fastify.post('/api/v1/kernel/providers/approvals/decisions', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedDecision = ApprovalDecisionSchema.safeParse(request.body);
+    if (!parsedDecision.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid approval decision schema', reasonCode: 'INVALID_SCHEMA', issues: parsedDecision.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedDecision.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/provenance
+  fastify.post('/api/v1/kernel/providers/provenance', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedProvenance = ProvenanceRecordSchema.safeParse(request.body);
+    if (!parsedProvenance.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid provenance record schema', reasonCode: 'INVALID_SCHEMA', issues: parsedProvenance.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedProvenance.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/provenance (list)
+  fastify.get('/api/v1/kernel/providers/provenance', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 100;
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
+      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
+      .slice(0, limit)
+      .map(([ref, v]) => ({ ref, ...v.data }));
+    return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/memory
+  fastify.post('/api/v1/kernel/providers/memory', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedMemory = MemoryRecordSchema.safeParse(request.body);
+    if (!parsedMemory.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid memory record schema', reasonCode: 'INVALID_SCHEMA', issues: parsedMemory.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    const expiresAt = parsedMemory.data.retention?.expiresAt;
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedMemory.data), createdAt, tenantId: scope.tenantId, privacyClassification: parsedMemory.data.privacyClassification, expiresAt });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/memory (list)
+  fastify.get('/api/v1/kernel/providers/memory', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 100;
+    const now = new Date().toISOString();
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => !v.expiresAt || v.expiresAt > now)
+      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
+      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
+      .slice(0, limit)
+      .map(([ref, v]) => ({ ref, ...v.data }));
+    return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
+  });
+
+  // POST /api/v1/kernel/providers/runtime-truth
+  fastify.post('/api/v1/kernel/providers/runtime-truth', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const parsedRuntimeTruth = RuntimeTruthSnapshotSchema.safeParse(request.body);
+    if (!parsedRuntimeTruth.success) {
+      return reply.status(400).send({ success: false, error: 'Invalid runtime truth snapshot schema', reasonCode: 'INVALID_SCHEMA', issues: parsedRuntimeTruth.error.issues, correlationId: scope.correlationId });
+    }
+    const ref = generateProviderRef();
+    const createdAt = new Date().toISOString();
+    providerStorage.set(ref, { data: redactSensitiveFields(parsedRuntimeTruth.data), createdAt, tenantId: scope.tenantId });
+    return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
+  });
+
+  // GET /api/v1/kernel/providers/runtime-truth/:productUnitId/latest
+  fastify.get('/api/v1/kernel/providers/runtime-truth/:productUnitId/latest', { preHandler: [authenticate] }, async (request, reply) => {
+    const scope = validateScopeForProvider(request);
+    if (!scope) {
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+    }
+    const params = request.params as { productUnitId: string };
+    const items = Array.from(providerStorage.entries())
+      .filter(([_, v]) => v.tenantId === scope.tenantId)
+      .filter(([_, v]) => (v.data as { productUnitId?: string })?.productUnitId === params.productUnitId)
+      .sort((a, b) => b[1].createdAt.localeCompare(a[1].createdAt));
+    if (items.length === 0) {
+      return reply.status(404).send({ success: false, error: 'No runtime truth snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
+    }
+    const [ref, v] = items[0];
+    return reply.status(200).send({ success: true, ref, ...v.data, correlationId: scope.correlationId });
+  });
 
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────
   // T-17: Gateway is the sole external edge; backend auth becomes trust-internal-only

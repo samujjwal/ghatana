@@ -31,6 +31,114 @@ export type ProductUnitIntentType = "create" | "update" | "promote-candidate";
 export type ProductUnitIntentApplyMode = "preview" | "apply";
 export type ProductUnitIntentStatus = "accepted" | "queued" | "blocked" | "failed";
 
+/**
+ * Application status for ProductUnitIntent after Kernel processing.
+ */
+export type ProductUnitIntentApplicationStatus =
+  | "previewed"
+  | "queued"
+  | "applied"
+  | "blocked"
+  | "failed";
+
+/**
+ * Reason codes for ProductUnitIntent application failures.
+ */
+export type ProductUnitIntentApplicationReasonCode =
+  | "target-provider-mismatch"
+  | "missing-apply-permission"
+  | "provider-mode-not-available"
+  | "registry-apply-failed"
+  | "runtime-truth-write-failed"
+  | "provenance-write-failed"
+  | "event-write-failed"
+  | "schema-invalid";
+
+/**
+ * Result of applying a ProductUnitIntent through the Kernel.
+ */
+export interface ProductUnitIntentApplicationResult {
+  /**
+   * Schema version for contract compatibility.
+   */
+  readonly schemaVersion: "1.0.0";
+
+  /**
+   * Unique identifier for the intent that was applied.
+   */
+  readonly intentId: string;
+
+  /**
+   * Application status after Kernel processing.
+   */
+  readonly status: ProductUnitIntentApplicationStatus;
+
+  /**
+   * ProductUnit identifier that was created or updated.
+   */
+  readonly productUnitId: string;
+
+  /**
+   * Correlation identifier for tracing the operation.
+   */
+  readonly correlationId: string;
+
+  /**
+   * Provider mode used for the application.
+   */
+  readonly providerMode: "bootstrap" | "platform";
+
+  /**
+   * Registry provider identifier that handled the application.
+   */
+  readonly registryProviderId: string;
+
+  /**
+   * Source provider identifier that supplied the intent.
+   */
+  readonly sourceProviderId: string;
+
+  /**
+   * Reference to the preview result if in preview mode.
+   */
+  readonly previewRef?: string;
+
+  /**
+   * Reference to the application result if in apply mode.
+   */
+  readonly applicationRef?: string;
+
+  /**
+   * References to lifecycle events recorded during application.
+   */
+  readonly lifecycleEventRefs: readonly string[];
+
+  /**
+   * References to provenance records created during application.
+   */
+  readonly provenanceRefs: readonly string[];
+
+  /**
+   * References to runtime truth snapshots recorded during application.
+   */
+  readonly runtimeTruthRefs: readonly string[];
+
+  /**
+   * Reason codes explaining why the application was blocked or failed.
+   */
+  readonly blockedReasons: readonly string[];
+
+  /**
+   * Error messages describing any failures.
+   */
+  readonly errors: readonly string[];
+
+  /**
+   * ISO timestamp when the intent was applied (for successful applies).
+   */
+  readonly appliedAt?: string;
+}
+
 export type ProductUnitPrivacyLevel = "public" | "internal" | "confidential" | "restricted";
 
 export type ProductUnitDataSensitivity = "none" | "low" | "moderate" | "high" | "regulated";
@@ -182,6 +290,14 @@ const INTENT_TYPES = [
   "promote-candidate",
 ] as const satisfies readonly ProductUnitIntentType[];
 
+const APPLICATION_STATUSES = [
+  "previewed",
+  "queued",
+  "applied",
+  "blocked",
+  "failed",
+] as const satisfies readonly ProductUnitIntentApplicationStatus[];
+
 const PRODUCT_LIFECYCLE_PHASES = [
   "create",
   "bootstrap",
@@ -320,7 +436,7 @@ export const ProductUnitIntentSchema = z
     provenance: IntentProvenanceSchema.optional(),
   })
   .strict()
-  .superRefine((intent, context) => {
+  .superRefine((intent: ProductUnitIntent, context: z.RefinementCtx) => {
     if (hasSecretLikeField(intent)) {
       context.addIssue({
         code: "custom",
@@ -350,6 +466,27 @@ export const ProductUnitIntentSchema = z
       });
     }
   });
+
+export const ProductUnitIntentApplicationResultSchema = z
+  .object({
+    schemaVersion: z.literal("1.0.0"),
+    intentId: z.string().trim().min(1),
+    status: z.enum(APPLICATION_STATUSES),
+    productUnitId: z.string().trim().min(1),
+    correlationId: z.string().trim().min(1),
+    providerMode: z.enum(["bootstrap", "platform"]),
+    registryProviderId: z.string().trim().min(1),
+    sourceProviderId: z.string().trim().min(1),
+    previewRef: z.string().trim().min(1).optional(),
+    applicationRef: z.string().trim().min(1).optional(),
+    lifecycleEventRefs: z.array(z.string().trim().min(1)),
+    provenanceRefs: z.array(z.string().trim().min(1)),
+    runtimeTruthRefs: z.array(z.string().trim().min(1)),
+    blockedReasons: z.array(z.string().trim().min(1)),
+    errors: z.array(z.string().trim().min(1)),
+    appliedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .strict();
 
 function formatProductUnitIntentIssue(issue: z.ZodIssue): string {
   const path = issue.path.join(".");
@@ -474,7 +611,7 @@ export function validateProductUnitIntentDetailed(
           message
         );
       });
-  const errors = issues.map((issue) => issue.message);
+  const errors = issues.map((issue: ProductUnitIntentValidationIssue) => issue.message);
 
   return { valid: errors.length === 0, errors, issues };
 }

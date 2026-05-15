@@ -47,6 +47,17 @@ export interface AgentLifecycleActionRequest {
   readonly requiredVerification: readonly AgentLifecycleVerificationRequirement[];
   readonly evidenceRefs: readonly string[];
   readonly rollbackPlanRef: string;
+  readonly policyEvidenceRefs?: readonly string[];
+  readonly masteryStateRef?: string;
+  readonly toolPermissionRefs?: readonly string[];
+  readonly approvalTicketRefs?: readonly string[];
+  readonly verificationEvidenceRefs?: readonly string[];
+  readonly privacyClassification?: "public" | "internal" | "confidential" | "restricted";
+  readonly retention?: {
+    readonly expiresAt: string;
+  };
+  readonly modelDecisionContextRef?: string;
+  readonly redactionRequired?: boolean;
 }
 
 export type AgentLifecycleActionRequestReasonCode =
@@ -104,6 +115,7 @@ const LIFECYCLE_PHASES = [
 
 const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
 const VERIFICATION_KINDS = ["test", "policy", "health", "artifact", "deployment"] as const;
+const PRIVACY_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
 const RAW_COMMAND_VALUE_PATTERN = /\b(gradle|gradlew|pnpm|npm|yarn|docker|docker\s+buildx|kubectl)\b/i;
 
 function containsRawCommand(value: unknown): boolean {
@@ -153,6 +165,17 @@ export const AgentLifecycleActionRequestSchema = z
     requiredVerification: z.array(AgentLifecycleVerificationRequirementSchema),
     evidenceRefs: z.array(z.string().trim().min(1)).min(1),
     rollbackPlanRef: z.string().trim().min(1),
+    policyEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
+    masteryStateRef: z.string().trim().min(1).optional(),
+    toolPermissionRefs: z.array(z.string().trim().min(1)).optional(),
+    approvalTicketRefs: z.array(z.string().trim().min(1)).optional(),
+    verificationEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
+    privacyClassification: z.enum(PRIVACY_CLASSIFICATIONS).optional(),
+    retention: z.object({
+      expiresAt: z.string().trim().min(1),
+    }).optional(),
+    modelDecisionContextRef: z.string().trim().min(1).optional(),
+    redactionRequired: z.boolean().optional(),
   })
   .strict()
   .superRefine((value: AgentLifecycleActionRequest, context: z.RefinementCtx) => {
@@ -161,6 +184,33 @@ export const AgentLifecycleActionRequestSchema = z
         code: z.ZodIssueCode.custom,
         path: ["proposedPlanRef"],
         message: "AgentLifecycleActionRequest must not contain raw shell/tool commands",
+      });
+    }
+    // Validation: high/critical risk requires approval
+    if ((value.riskLevel === "high" || value.riskLevel === "critical") &&
+        value.requiredApprovals.every((approval: { required: boolean }) => !approval.required)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["requiredApprovals"],
+        message: "High or critical risk actions require at least one required approval",
+      });
+    }
+    // Validation: execute-lifecycle-phase and prepare-rollback require rollbackPlanRef
+    if ((value.requestedAction === "execute-lifecycle-phase" ||
+         value.requestedAction === "prepare-rollback") &&
+        value.rollbackPlanRef === "") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["rollbackPlanRef"],
+        message: "Execute-lifecycle-phase and prepare-rollback actions require a rollback plan reference",
+      });
+    }
+    // Validation: restricted classification requires redaction flag
+    if (value.privacyClassification === "restricted" && !value.redactionRequired) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["redactionRequired"],
+        message: "Restricted classification requires redactionRequired flag to be true",
       });
     }
   });

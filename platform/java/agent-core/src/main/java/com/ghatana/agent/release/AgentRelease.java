@@ -141,6 +141,65 @@ public record AgentRelease(
         compatibleRuntimeVersions = List.copyOf(compatibleRuntimeVersions);
         dataClassesHandled        = Set.copyOf(dataClassesHandled);
         permittedPurposes         = Set.copyOf(permittedPurposes);
+        // Phase 2 FIX: Enforce skill-specific evaluation packs and mastery policy refs for CANARY/ACTIVE releases
+        if (state != null && state.isResponseServing()) {
+            // If the release has skill-specific governance refs configured, validate they are present
+            // This check assumes the release was created from a definition with skillRefs
+            // In a full implementation, we would need access to the AgentDefinition to validate
+            // that all declared skills have corresponding refs. For now, we validate that if refs
+            // are configured, they are non-empty for response-serving states.
+            if (!skillEvaluationPackRefs.isEmpty() && !skillEvaluationPackRefs.containsKey("default")) {
+                // Validate that skill-specific refs are properly configured
+                for (Map.Entry<String, String> entry : skillEvaluationPackRefs.entrySet()) {
+                    if (entry.getKey() == null || entry.getKey().isBlank()) {
+                        throw new IllegalArgumentException(
+                                "skillEvaluationPackRefs contains blank skill key (governance gate - Phase 2)");
+                    }
+                    if (entry.getValue() == null || entry.getValue().isBlank()) {
+                        throw new IllegalArgumentException(
+                                "skillEvaluationPackRefs contains blank pack ID for skill: " + entry.getKey() +
+                                " (governance gate - Phase 2)");
+                    }
+                }
+            }
+            if (!masteryPolicyPackRefs.isEmpty() && !masteryPolicyPackRefs.containsKey("default")) {
+                // Validate that skill-specific mastery policy refs are properly configured
+                for (Map.Entry<String, String> entry : masteryPolicyPackRefs.entrySet()) {
+                    if (entry.getKey() == null || entry.getKey().isBlank()) {
+                        throw new IllegalArgumentException(
+                                "masteryPolicyPackRefs contains blank skill key (governance gate - Phase 2)");
+                    }
+                    if (entry.getValue() == null || entry.getValue().isBlank()) {
+                        throw new IllegalArgumentException(
+                                "masteryPolicyPackRefs contains blank pack ID for skill: " + entry.getKey() +
+                                " (governance gate - Phase 2)");
+                    }
+                }
+            }
+            
+            // Phase 2 FIX: L3+ release requires evaluation pack + promotion policy
+            // Check capability maturity profile for L3+ requirement
+            if (capabilityMaturityProfile != null && !capabilityMaturityProfile.isBlank()) {
+                try {
+                    int maturityLevel = Integer.parseInt(capabilityMaturityProfile.replaceAll("[^0-9]", ""));
+                    if (maturityLevel >= 3) {
+                        if (evaluationPackId == null || evaluationPackId.isBlank()) {
+                            throw new IllegalArgumentException(
+                                    "evaluationPackId must not be blank for L3+ release (maturity=" + capabilityMaturityProfile +
+                                    ") (governance gate - Phase 2)");
+                        }
+                        if (masteryPolicyPackId == null || masteryPolicyPackId.isBlank()) {
+                            throw new IllegalArgumentException(
+                                    "masteryPolicyPackId must not be blank for L3+ release (maturity=" + capabilityMaturityProfile +
+                                    ") (governance gate - Phase 2)");
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // If capabilityMaturityProfile is not a number, skip this validation
+                }
+            }
+        }
+        
         // P1 FIX: Handle skill-specific governance refs - default to empty maps if null
         skillEvaluationPackRefs   = skillEvaluationPackRefs != null ? Map.copyOf(skillEvaluationPackRefs) : Map.of();
         masteryPolicyPackRefs     = masteryPolicyPackRefs != null ? Map.copyOf(masteryPolicyPackRefs) : Map.of();

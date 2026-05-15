@@ -7,7 +7,13 @@ import {
   type ProductUnit,
   type ProductUnitScope,
   type RegistryProvider,
+  type ProductUnitIntent,
+  type ProductUnitIntentApplicationResult,
+  type ProductUnitIntentCapableRegistryProvider,
+  type ProductUnitIntentApplyOptions,
+  validateProductUnitIntent,
   validateKernelLifecycleProviderContext,
+  isProductUnitIntentCapableRegistryProvider,
 } from '@ghatana/kernel-product-contracts';
 import { createBootstrapKernelProviders, GhatanaFileRegistryProvider } from '@ghatana/kernel-providers';
 import type {
@@ -60,6 +66,7 @@ export interface KernelLifecycleServiceOptions {
 export interface KernelLifecycleScopeQuery {
   readonly scope?: ProductUnitScope;
   readonly correlationId?: string;
+  readonly providerMode?: 'bootstrap' | 'platform';
 }
 
 export interface CreateLifecyclePlanOptions extends KernelLifecycleScopeQuery {
@@ -83,6 +90,7 @@ export interface RunLifecyclePhaseOptions extends CreateLifecyclePlanOptions {
 export interface LifecycleRunQuery {
   readonly phase?: ProductLifecyclePhase;
   readonly correlationId?: string;
+  readonly providerMode?: 'bootstrap' | 'platform';
 }
 
 export interface ApprovalResult {
@@ -140,7 +148,7 @@ export class KernelLifecycleService {
   }
 
   async listProductUnits(query: KernelLifecycleScopeQuery = {}): Promise<readonly ProductUnit[]> {
-    this.validateProviderContext(query.correlationId);
+    this.validateProviderContext(query.correlationId, query.providerMode);
     const productUnits = await this.registryProvider.listProductUnits();
     const scope = query.scope;
     if (scope === undefined) {
@@ -153,7 +161,7 @@ export class KernelLifecycleService {
     productUnitId: string,
     query: KernelLifecycleScopeQuery = {},
   ): Promise<ProductUnit> {
-    this.validateProviderContext(query.correlationId);
+    this.validateProviderContext(query.correlationId, query.providerMode);
     const productUnit = await this.registryProvider.getProductUnit(productUnitId);
     if (productUnit === null) {
       throw new ProductUnitNotFoundError(productUnitId, query.correlationId);
@@ -169,7 +177,7 @@ export class KernelLifecycleService {
     phase: ProductLifecyclePhase,
     options: CreateLifecyclePlanOptions = {},
   ): Promise<ProductLifecyclePlan> {
-    this.validateProviderContext(options.correlationId);
+    this.validateProviderContext(options.correlationId, options.providerMode);
     const plan = await this.planner.plan(productUnitId, phase, this.planOptions(options));
     await this.writeJson(path.join(plan.outputDirectory, 'lifecycle-plan.json'), this.safePlan(plan));
     await this.pointerStore.writeLatestPointers(plan.productId, plan.phase, {
@@ -180,6 +188,22 @@ export class KernelLifecycleService {
     });
     await this.recordRuntimeTruth(plan, 'planned', [`lifecycle-plan:${plan.runId}`]);
     await this.recordProvenance(plan, [`lifecycle-plan:${plan.runId}`]);
+
+    // Append lifecycle event for plan creation
+    if (this.providerContext.events !== undefined) {
+      await this.providerContext.events.appendLifecycleEvent({
+        eventId: `plan-created-${plan.runId}`,
+        productUnitId: plan.productId,
+        runId: plan.runId,
+        phase: plan.phase,
+        eventType: 'plan-created',
+        status: 'succeeded',
+        occurredAt: this.clock(),
+        correlationId: plan.correlationId,
+        source: 'kernel-lifecycle-service',
+      }, { required: false, correlationId: plan.correlationId });
+    }
+
     return plan;
   }
 
@@ -187,7 +211,7 @@ export class KernelLifecycleService {
     plan: ProductLifecyclePlan,
     options: ExecuteLifecyclePlanOptions,
   ): Promise<ProductLifecycleResult> {
-    this.validateProviderContext(plan.correlationId);
+    this.validateProviderContext(plan.correlationId, options.providerMode ?? plan.providerMode);
     if (this.executor === undefined) {
       throw new ProviderUnavailableError('KernelLifecycleService requires an executor to execute lifecycle plans', {
         correlationId: plan.correlationId,
@@ -196,6 +220,24 @@ export class KernelLifecycleService {
         phase: plan.phase,
       });
     }
+
+    // Append lifecycle event for execution start
+    if (this.providerContext.events !== undefined) {
+      await this.providerContext.events.appendLifecycleEvent({
+        eventId: `execution-start-${plan.runId}`,
+        productUnitId: plan.productId,
+        runId: plan.runId,
+        phase: plan.phase,
+        eventType: 'execution-start',
+        status: 'succeeded',
+        occurredAt: this.clock(),
+        correlationId: plan.correlationId,
+        source: 'kernel-lifecycle-service',
+      }, { required: false, correlationId: plan.correlationId });
+    }
+
+    // Record runtime truth for execution started
+    await this.recordRuntimeTruth(plan, 'execution-started', [`execution:${plan.runId}`]);
 
     const executionOptions: ProductLifecycleExecutionOptions = {
       dryRun: options.dryRun,
@@ -207,13 +249,31 @@ export class KernelLifecycleService {
     const result = await this.executor.executePlan(plan, executionOptions);
     await this.writeJson(path.join(plan.outputDirectory, 'lifecycle-result.json'), this.safeResult(result));
     await this.writeLatestPointers(plan, result);
-    await this.recordRuntimeTruth(
-      plan,
-      result.status === 'succeeded' ? 'succeeded' : 'failed',
-      this.resultEvidenceRefs(result),
-    );
+
+    // Record runtime truth for execution result
+    const status = result.status === 'succeeded' ? 'succeeded' : 'failed';
+    await this.recordRuntimeTruth(plan, status === 'succeeded' ? 'execution-succeeded' : 'execution-failed', this.resultEvidenceRefs(result));
+
+    // Append lifecycle event for execution complete
+    if (this.providerContext.events !== undefined) {
+      await this.providerContext.events.appendLifecycleEvent({
+        eventId: `execution-complete-${plan.runId}`,
+        productUnitId: plan.productId,
+        runId: plan.runId,
+        phase: plan.phase,
+        eventType: 'execution-complete',
+        status,
+        occurredAt: this.clock(),
+        correlationId: plan.correlationId,
+        source: 'kernel-lifecycle-service',
+      }, { required: false, correlationId: plan.correlationId });
+    }
+
     if (result.status === 'failed') {
       if (result.failure?.reasonCode === 'approval-required') {
+        // Record runtime truth for approval required
+        await this.recordRuntimeTruth(plan, 'approval-required', this.resultEvidenceRefs(result));
+
         throw new ApprovalRequiredError(result.failure.message, {
           correlationId: plan.correlationId,
           productUnitId: plan.productId,
@@ -243,6 +303,7 @@ export class KernelLifecycleService {
     productUnitId: string,
     query: LifecycleRunQuery = {},
   ): Promise<readonly LifecycleRunSummary[]> {
+    this.validateProviderContext(query.correlationId, query.providerMode);
     const phases = query.phase === undefined ? await this.listPhaseDirectories(productUnitId) : [query.phase];
     const summaries: LifecycleRunSummary[] = [];
     for (const phase of phases) {
@@ -260,7 +321,9 @@ export class KernelLifecycleService {
   async getLifecycleRun(
     productUnitId: string,
     runId: string,
+    query: LifecycleRunQuery = {},
   ): Promise<LifecycleRunSummary> {
+    this.validateProviderContext(query.correlationId, query.providerMode);
     const phases = await this.listPhaseDirectories(productUnitId);
     for (const phase of phases) {
       const summary = await this.loadRunSummary(productUnitId, phase, runId);
@@ -281,7 +344,9 @@ export class KernelLifecycleService {
     runId: string,
     manifestType: ProductLifecycleManifestType,
     phase?: ProductLifecyclePhase,
+    query: LifecycleRunQuery = {},
   ): Promise<unknown> {
+    this.validateProviderContext(query.correlationId, query.providerMode);
     const resolvedPhase = phase ?? (await this.getLifecycleRun(productUnitId, runId)).phase ?? 'build';
     const manifestPath = await this.pointerStore.resolveManifestByType(
       productUnitId,
@@ -333,6 +398,161 @@ export class KernelLifecycleService {
     };
   }
 
+  async applyProductUnitIntent(
+    intent: ProductUnitIntent,
+    options: { readonly mode?: 'bootstrap' | 'platform'; readonly allowWrite: boolean }
+  ): Promise<ProductUnitIntentApplicationResult> {
+    // Validate ProductUnitIntent at method boundary
+    const intentValidation = validateProductUnitIntent(intent);
+    if (!intentValidation.valid) {
+      return {
+        schemaVersion: '1.0.0',
+        intentId: intent.intentId,
+        status: 'failed',
+        productUnitId: intent.productUnit.id,
+        correlationId: intent.producer.correlationId,
+        providerMode: options.mode ?? this.providerContext.mode,
+        registryProviderId: intent.target.registryProvider,
+        sourceProviderId: intent.target.sourceProvider,
+        lifecycleEventRefs: [],
+        provenanceRefs: [],
+        runtimeTruthRefs: [],
+        blockedReasons: [],
+        errors: intentValidation.errors,
+      };
+    }
+
+    // Resolve provider mode with fallback to providerContext.mode
+    const providerMode = options.mode ?? this.providerContext.mode;
+
+    // Reject invalid mode
+    if (providerMode !== 'bootstrap' && providerMode !== 'platform') {
+      return {
+        schemaVersion: '1.0.0',
+        intentId: intent.intentId,
+        status: 'failed',
+        productUnitId: intent.productUnit.id,
+        correlationId: intent.producer.correlationId,
+        providerMode,
+        registryProviderId: intent.target.registryProvider,
+        sourceProviderId: intent.target.sourceProvider,
+        lifecycleEventRefs: [],
+        provenanceRefs: [],
+        runtimeTruthRefs: [],
+        blockedReasons: ['provider-mode-not-available'],
+        errors: [`Invalid provider mode: ${providerMode}`],
+      };
+    }
+
+    // Fail closed in platform mode if required providers are missing
+    this.validateProviderContext(intent.producer.correlationId, providerMode);
+
+    // Require registry provider to support ProductUnitIntent application
+    if (!isProductUnitIntentCapableRegistryProvider(this.registryProvider)) {
+      return {
+        schemaVersion: '1.0.0',
+        intentId: intent.intentId,
+        status: 'failed',
+        productUnitId: intent.productUnit.id,
+        correlationId: intent.producer.correlationId,
+        providerMode,
+        registryProviderId: this.registryProvider.providerId,
+        sourceProviderId: intent.target.sourceProvider,
+        lifecycleEventRefs: [],
+        provenanceRefs: [],
+        runtimeTruthRefs: [],
+        blockedReasons: ['registry-apply-failed'],
+        errors: ['Registry provider does not support ProductUnitIntent application'],
+      };
+    }
+
+    const capableRegistry = this.registryProvider as ProductUnitIntentCapableRegistryProvider;
+    const applyOptions: ProductUnitIntentApplyOptions = { allowWrite: options.allowWrite };
+
+    // In preview mode or apply mode
+    const providerResult = options.allowWrite
+      ? await capableRegistry.applyProductUnitIntent(intent, applyOptions)
+      : await capableRegistry.previewApplyProductUnitIntent(intent);
+
+    // Build result
+    const result: ProductUnitIntentApplicationResult = {
+      schemaVersion: '1.0.0',
+      intentId: intent.intentId,
+      status: options.allowWrite && providerResult.applied ? 'applied' : 'previewed',
+      productUnitId: intent.productUnit.id,
+      correlationId: intent.producer.correlationId,
+      providerMode,
+      registryProviderId: this.registryProvider.providerId,
+      sourceProviderId: intent.target.sourceProvider,
+      lifecycleEventRefs: [],
+      provenanceRefs: [],
+      runtimeTruthRefs: [],
+      blockedReasons: providerResult.errors,
+      errors: providerResult.errors,
+    };
+
+    // Append lifecycle event
+    if (this.providerContext.events !== undefined) {
+      const eventResult = await this.providerContext.events.appendLifecycleEvent({
+        eventId: `intent-${intent.intentId}`,
+        productUnitId: intent.productUnit.id,
+        runId: intent.intentId,
+        phase: 'create' as ProductLifecyclePhase,
+        eventType: options.allowWrite ? 'intent-apply' : 'intent-preview',
+        status: result.status,
+        occurredAt: this.clock(),
+        correlationId: intent.producer.correlationId,
+        source: 'kernel-lifecycle-service',
+      }, { required: false, correlationId: intent.producer.correlationId });
+      if (eventResult.success && eventResult.ref !== undefined) {
+        result.lifecycleEventRefs = [eventResult.ref];
+      }
+    }
+
+    // Record runtime truth and provenance
+    const evidenceRefs: string[] = [];
+    if (this.providerContext.runtimeTruth !== undefined) {
+      const truthResult = await this.providerContext.runtimeTruth.recordRuntimeTruth(
+        {
+          productUnitId: intent.productUnit.id,
+          runId: intent.intentId,
+          phase: 'create' as ProductLifecyclePhase,
+          status: result.status,
+          observedAt: this.clock(),
+          evidenceRefs,
+        },
+        { required: true, correlationId: intent.producer.correlationId },
+      );
+      if (truthResult.success) {
+        result.runtimeTruthRefs = [truthResult.ref ?? 'runtime-truth://kernel-lifecycle'];
+      }
+    }
+
+    if (this.providerContext.provenance !== undefined) {
+      const provenanceResult = await this.providerContext.provenance.recordProvenance(
+        {
+          provenanceId: `kernel-intent:${intent.intentId}`,
+          productUnitId: intent.productUnit.id,
+          runId: intent.intentId,
+          source: 'kernel-lifecycle-service',
+          evidenceRefs,
+          recordedAt: this.clock(),
+        },
+        { required: true, correlationId: intent.producer.correlationId },
+      );
+      if (provenanceResult.success) {
+        result.provenanceRefs = [provenanceResult.ref ?? 'provenance://kernel-lifecycle'];
+      }
+    }
+
+    // Clear/refresh registry cache after successful apply
+    if (options.allowWrite && providerResult.applied && 'reload' in this.registryProvider) {
+      (this.registryProvider as { reload: () => void }).reload();
+    }
+
+    return result;
+  }
+
   normalizeError(error: unknown): KernelLifecycleError {
     if (error instanceof KernelLifecycleError) {
       return error;
@@ -351,7 +571,7 @@ export class KernelLifecycleService {
     };
   }
 
-  private validateProviderContext(correlationId?: string): void {
+  private validateProviderContext(correlationId?: string, requestedMode?: 'bootstrap' | 'platform'): void {
     const validation = validateKernelLifecycleProviderContext(this.providerContext);
     if (!validation.valid) {
       throw new ProviderUnavailableError(
@@ -361,6 +581,55 @@ export class KernelLifecycleService {
           safeDetails: { missingProviders: validation.missingProviders },
         },
       );
+    }
+
+    // Reject platform-mode run when provider context mode is bootstrap
+    if (requestedMode === 'platform' && this.providerContext.mode !== 'platform') {
+      throw new ProviderUnavailableError(
+        `Platform mode requested but provider context is in ${this.providerContext.mode} mode. Platform mode requires all providers to be Data Cloud-backed.`,
+        {
+          ...(correlationId === undefined ? {} : { correlationId }),
+          safeDetails: { contextMode: this.providerContext.mode, requestedMode: 'platform' },
+        },
+      );
+    }
+
+    // For platform mode, require all providers to be available
+    if (this.providerContext.mode === 'platform' || requestedMode === 'platform') {
+      const platformProviders = this.providerContext;
+      const missingPlatformProviders: string[] = [];
+
+      if (platformProviders.events === undefined) {
+        missingPlatformProviders.push('events');
+      }
+      if (platformProviders.artifacts === undefined) {
+        missingPlatformProviders.push('artifacts');
+      }
+      if (platformProviders.health === undefined) {
+        missingPlatformProviders.push('health');
+      }
+      if (platformProviders.approvals === undefined) {
+        missingPlatformProviders.push('approvals');
+      }
+      if (platformProviders.provenance === undefined) {
+        missingPlatformProviders.push('provenance');
+      }
+      if (platformProviders.memory === undefined) {
+        missingPlatformProviders.push('memory');
+      }
+      if (platformProviders.runtimeTruth === undefined) {
+        missingPlatformProviders.push('runtimeTruth');
+      }
+
+      if (missingPlatformProviders.length > 0) {
+        throw new ProviderUnavailableError(
+          `Platform mode requires Data Cloud-backed providers. Missing: ${missingPlatformProviders.join(', ')}`,
+          {
+            ...(correlationId === undefined ? {} : { correlationId }),
+            safeDetails: { missingProviders: missingPlatformProviders },
+          },
+        );
+      }
     }
   }
 

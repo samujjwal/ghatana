@@ -26,6 +26,7 @@ export interface LatencyHistogram {
 export interface GatewayMetricsSnapshot {
   httpProxyRequestsByStatus: Record<string, number>;
   kernelLifecycleRequestsByOperation: Record<string, number>;
+  agenticActionsByStatus: Record<string, number>;
   authFailuresByReason: Record<string, number>;
   tenantMismatchTotal: number;
   sseAcceptedTotal: number;
@@ -40,6 +41,7 @@ export interface GatewayMetricsSnapshot {
 export class GatewayMetrics {
   private readonly _httpProxyRequestsByStatus = new Map<string, number>();
   private readonly _kernelLifecycleRequestsByOperation = new Map<string, number>();
+  private readonly _agenticActionsByStatus = new Map<string, number>();
   private readonly _authFailuresByReason = new Map<string, number>();
   private _tenantMismatchTotal = 0;
   private _sseAcceptedTotal = 0;
@@ -61,12 +63,40 @@ export class GatewayMetrics {
   }
 
   /** Record an injected Kernel lifecycle API operation by operation and status code. */
-  recordKernelLifecycleRequest(operation: string, status: number): void {
+  recordKernelLifecycleRequest(
+    operation: string,
+    status: number,
+    providerMode?: string,
+    reasonCode?: string,
+  ): void {
     const key = `${operation}:${status}`;
     this._kernelLifecycleRequestsByOperation.set(
       key,
       (this._kernelLifecycleRequestsByOperation.get(key) ?? 0) + 1,
     );
+    // Track providerMode and reasonCode separately for richer observability
+    if (providerMode) {
+      const providerModeKey = `${operation}:providerMode:${providerMode}`;
+      this._kernelLifecycleRequestsByOperation.set(
+        providerModeKey,
+        (this._kernelLifecycleRequestsByOperation.get(providerModeKey) ?? 0) + 1,
+      );
+    }
+    if (reasonCode) {
+      const reasonCodeKey = `${operation}:reasonCode:${reasonCode}`;
+      this._kernelLifecycleRequestsByOperation.set(
+        reasonCodeKey,
+        (this._kernelLifecycleRequestsByOperation.get(reasonCodeKey) ?? 0) + 1,
+      );
+    }
+  }
+
+  /** Record an agentic lifecycle action by status and optional duration. */
+  recordAgenticAction(status: string, durationMs?: number): void {
+    this._agenticActionsByStatus.set(status, (this._agenticActionsByStatus.get(status) ?? 0) + 1);
+    if (durationMs !== undefined) {
+      this.recordBackendLatency(durationMs);
+    }
   }
 
   /**
@@ -132,6 +162,7 @@ export class GatewayMetrics {
     return {
       httpProxyRequestsByStatus: Object.fromEntries(this._httpProxyRequestsByStatus),
       kernelLifecycleRequestsByOperation: Object.fromEntries(this._kernelLifecycleRequestsByOperation),
+      agenticActionsByStatus: Object.fromEntries(this._agenticActionsByStatus),
       authFailuresByReason: Object.fromEntries(this._authFailuresByReason),
       tenantMismatchTotal: this._tenantMismatchTotal,
       sseAcceptedTotal: this._sseAcceptedTotal,
@@ -152,6 +183,7 @@ export class GatewayMetrics {
   reset(): void {
     this._httpProxyRequestsByStatus.clear();
     this._kernelLifecycleRequestsByOperation.clear();
+    this._agenticActionsByStatus.clear();
     this._authFailuresByReason.clear();
     this._tenantMismatchTotal = 0;
     this._sseAcceptedTotal = 0;

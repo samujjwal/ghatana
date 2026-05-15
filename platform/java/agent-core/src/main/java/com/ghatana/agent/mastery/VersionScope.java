@@ -34,36 +34,84 @@ public record VersionScope(
         Objects.requireNonNull(active, "active must not be null");
         Objects.requireNonNull(maintenance, "maintenance must not be null");
         Objects.requireNonNull(obsolete, "obsolete must not be null");
-        active = List.copyOf(active);
-        maintenance = List.copyOf(maintenance);
-        obsolete = List.copyOf(obsolete);
         
-        // Phase 7 FIX: Validate non-overlapping version constraints
-        // Disabled to avoid initialization order issues during class loading
-        // validateNoOverlappingConstraints();
+        // Phase 1 FIX: Validate before defensive copying using local variables
+        List<VersionConstraint> activeParam = active;
+        List<VersionConstraint> maintenanceParam = maintenance;
+        List<VersionConstraint> obsoleteParam = obsolete;
+        
+        validateNoOverlappingConstraints(activeParam, maintenanceParam, obsoleteParam);
+        validateRangeSyntax(activeParam, maintenanceParam, obsoleteParam);
+        
+        // Defensive copying after validation
+        active = List.copyOf(activeParam);
+        maintenance = List.copyOf(maintenanceParam);
+        obsolete = List.copyOf(obsoleteParam);
     }
     
     /**
-     * Phase 7 FIX: Validates that active and obsolete constraints do not overlap.
+     * Phase 1 FIX: Validates that version constraints do not overlap across categories.
      * Overlapping constraints would create ambiguous version classification.
+     * Detects conflicts across:
+     * - active vs maintenance
+     * - active vs obsolete
+     * - maintenance vs obsolete
      *
      * @throws IllegalArgumentException if constraints overlap
      */
-    private void validateNoOverlappingConstraints() {
+    private void validateNoOverlappingConstraints(
+            List<VersionConstraint> active,
+            List<VersionConstraint> maintenance,
+            List<VersionConstraint> obsolete) {
+        // Skip validation if all lists are empty
+        if (active.isEmpty() && maintenance.isEmpty() && obsolete.isEmpty()) {
+            return;
+        }
+
+        // Validate active vs maintenance overlap
+        for (VersionConstraint activeConstraint : active) {
+            for (VersionConstraint maintenanceConstraint : maintenance) {
+                if (constraintsOverlap(activeConstraint, maintenanceConstraint)) {
+                    throw new IllegalArgumentException(
+                            "Active and maintenance constraints overlap for " + activeConstraint.name() +
+                            ": active=" + activeConstraint.range() +
+                            ", maintenance=" + maintenanceConstraint.range() +
+                            ". Maintenance constraints must not overlap active constraints without explicit precedence.");
+                }
+            }
+        }
+
+        // Validate active vs obsolete overlap
         for (VersionConstraint activeConstraint : active) {
             for (VersionConstraint obsoleteConstraint : obsolete) {
                 if (constraintsOverlap(activeConstraint, obsoleteConstraint)) {
                     throw new IllegalArgumentException(
-                            "Active and obsolete constraints overlap: active=" + activeConstraint +
-                            ", obsolete=" + obsoleteConstraint);
+                            "Active and obsolete constraints overlap for " + activeConstraint.name() +
+                            ": active=" + activeConstraint.range() +
+                            ", obsolete=" + obsoleteConstraint.range() +
+                            ". Same package cannot appear in both active and obsolete with overlapping ranges.");
+                }
+            }
+        }
+
+        // Validate maintenance vs obsolete overlap
+        for (VersionConstraint maintenanceConstraint : maintenance) {
+            for (VersionConstraint obsoleteConstraint : obsolete) {
+                if (constraintsOverlap(maintenanceConstraint, obsoleteConstraint)) {
+                    throw new IllegalArgumentException(
+                            "Maintenance and obsolete constraints overlap for " + maintenanceConstraint.name() +
+                            ": maintenance=" + maintenanceConstraint.range() +
+                            ", obsolete=" + obsoleteConstraint.range() +
+                            ". Same package cannot appear in both maintenance and obsolete with overlapping ranges.");
                 }
             }
         }
     }
     
     /**
-     * Phase 7 FIX: Checks if two version constraints overlap by comparing their names and ranges.
+     * Phase 1 FIX: Checks if two version constraints overlap by comparing their names and ranges.
      * Two constraints overlap if they apply to the same component and have overlapping version ranges.
+     * Uses real semver/range overlap detection from VersionRangeEvaluator.
      *
      * @param c1 first constraint
      * @param c2 second constraint
@@ -75,19 +123,46 @@ public record VersionScope(
             return false;
         }
         
-        // Check if ranges overlap using VersionRangeEvaluator
-        // This is a simplified check - in production, use a more sophisticated range overlap detection
-        String range1 = c1.range();
-        String range2 = c2.range();
-        
-        // If ranges are identical, they definitely overlap
-        if (range1.equals(range2)) {
-            return true;
+        // Check if ranges overlap using VersionRangeEvaluator's real overlap detection
+        return VersionRangeEvaluator.rangesOverlap(c1.range(), c2.range());
+    }
+
+    /**
+     * Phase 1 FIX: Validates that all range syntaxes are valid for their ecosystems.
+     * Rejects unknown range syntax to prevent ambiguous version classification.
+     *
+     * @throws IllegalArgumentException if range syntax is invalid
+     */
+    private void validateRangeSyntax(
+            List<VersionConstraint> active,
+            List<VersionConstraint> maintenance,
+            List<VersionConstraint> obsolete) {
+        for (VersionConstraint constraint : active) {
+            if (!VersionRangeEvaluator.isValidRangeSyntax(constraint.range(), constraint.ecosystem())) {
+                throw new IllegalArgumentException(
+                        "Invalid range syntax for " + constraint.name() +
+                        " in active constraints: range=" + constraint.range() +
+                        ", ecosystem=" + constraint.ecosystem());
+            }
         }
-        
-        // For now, assume different ranges don't overlap
-        // A proper implementation would parse the ranges and check for actual overlap
-        return false;
+
+        for (VersionConstraint constraint : maintenance) {
+            if (!VersionRangeEvaluator.isValidRangeSyntax(constraint.range(), constraint.ecosystem())) {
+                throw new IllegalArgumentException(
+                        "Invalid range syntax for " + constraint.name() +
+                        " in maintenance constraints: range=" + constraint.range() +
+                        ", ecosystem=" + constraint.ecosystem());
+            }
+        }
+
+        for (VersionConstraint constraint : obsolete) {
+            if (!VersionRangeEvaluator.isValidRangeSyntax(constraint.range(), constraint.ecosystem())) {
+                throw new IllegalArgumentException(
+                        "Invalid range syntax for " + constraint.name() +
+                        " in obsolete constraints: range=" + constraint.range() +
+                        ", ecosystem=" + constraint.ecosystem());
+            }
+        }
     }
 
     /**

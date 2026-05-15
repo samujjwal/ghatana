@@ -55,6 +55,18 @@ requireAll('platform/typescript/kernel-lifecycle/src/providers/LifecycleProvider
   'Kernel ${context.mode} mode requires lifecycle provider',
 ]);
 
+// New assertion: Platform mode must use Data Cloud-backed providers
+requireAll('platform/typescript/kernel-lifecycle/src/providers/LifecycleProviderContext.ts', [
+  'platform mode requires Data Cloud-backed',
+  'events provider',
+  'artifacts provider',
+  'health provider',
+  'approvals provider',
+  'provenance provider',
+  'memory provider',
+  'runtimeTruth provider',
+]);
+
 requireAll('platform/typescript/kernel-providers/src/factory/createBootstrapKernelProviders.ts', [
   'mode: "bootstrap"',
   'FileLifecycleEventProvider',

@@ -284,8 +284,18 @@ function readinessDimensions({
   const privacySecurityStatus = gatesNeeded.some((gate) => ['privacy', 'security'].includes(gate))
     ? 'declared'
     : 'blocked';
+  const contractStatus = profile ? 'profile-backed' : 'blocked';
+  const e2eStatus = lifecycleStatus === 'enabled' && capabilityGaps.length === 0 && adaptersExecutable
+    ? 'ready'
+    : lifecycleStatus === 'enabled'
+      ? 'blocked'
+      : 'not-enabled';
 
   return {
+    contractReadiness: dimension(
+      contractStatus,
+      profile ? [] : ['missing-lifecycle-profile'],
+    ),
     apiReadiness: dimension(profile ? 'profile-backed' : 'blocked', profile ? [] : ['missing-lifecycle-profile']),
     uiReadiness: dimension(
       hasReadinessEvidence(lifecycleReadiness, 'ui') ? 'evidence-backed' : 'unproven',
@@ -322,6 +332,15 @@ function readinessDimensions({
     platformModeReadiness: dimension(
       productKind === 'platform-provider' ? 'provider-owned' : 'requires-data-cloud-bridge',
       productKind === 'platform-provider' ? ['platform-provider-owned'] : ['data-cloud-bridge-required'],
+    ),
+    studioUxReadiness: dimension(
+      hasReadinessEvidence(lifecycleReadiness, 'studio') ? 'evidence-backed' : 'unproven',
+      hasReadinessEvidence(lifecycleReadiness, 'studio') ? [] : ['studio-ux-evidence-not-recorded'],
+      asStringArray(lifecycleReadiness.evidenceRefs).filter((ref) => ref.includes('studio')),
+    ),
+    e2eReadiness: dimension(
+      e2eStatus,
+      e2eStatus === 'ready' ? [] : ['e2e-not-ready', ...capabilityGaps],
     ),
     enablementGuardrail: dimension(
       capabilityGaps.length === 0 && adaptersExecutable && nonPlatformProvidersMissing.length === 0

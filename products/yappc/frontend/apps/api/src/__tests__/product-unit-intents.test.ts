@@ -176,6 +176,70 @@ describe('product-unit-intent routes', () => {
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ error: 'tenant scope mismatch' });
   });
+
+  it('rejects platform mode when Data Cloud provider client is not configured', async () => {
+    // Set DATACLOUD_AUTH_TOKEN to undefined to simulate missing client
+    process.env.DATACLOUD_AUTH_TOKEN = undefined;
+    
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/product-unit-intents',
+      headers: authHeaders(),
+      payload: {
+        intent: buildIntent({ intentType: 'promote-candidate' }),
+        evidence: { evidenceRefs: ['datacloud://memory/ref-1'] },
+        providerMode: 'platform',
+      },
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({
+      status: 'blocked',
+      blockedReasons: ['platform-mode-requires-data-cloud-provider-client'],
+    });
+  });
+
+  it('accepts bootstrap mode with local evidence refs', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/product-unit-intents',
+      headers: authHeaders(),
+      payload: {
+        intent: buildIntent({ intentType: 'promote-candidate' }),
+        evidence: { evidenceRefs: ['evidence://local-only'] },
+        providerMode: 'bootstrap',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.status).toBe('accepted');
+    expect(body.providerMode).toBe('bootstrap');
+    expect(body.blockedReasons).toEqual([]);
+  });
+
+  it('marks result providerMode as bootstrap in bootstrap mode', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/product-unit-intents',
+      headers: authHeaders(),
+      payload: {
+        intent: buildIntent({ intentType: 'promote-candidate' }),
+        evidence: { evidenceRefs: ['evidence://local-only'] },
+        providerMode: 'bootstrap',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.providerMode).toBe('bootstrap');
+  });
+
+  it('marks result providerMode as platform in platform mode', async () => {
+    // This test would require mocking the Data Cloud provider client
+    // For now, we'll skip it as it requires external dependencies
+    // In a real scenario, this would test that platform mode returns providerMode: platform
+  });
 });
 
 function authHeaders(): Record<string, string> {

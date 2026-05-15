@@ -240,10 +240,25 @@ const ProductApprovalGateSchema = z
   })
   .passthrough();
 
+export const KernelLifecycleApiErrorSchema = z
+  .object({
+    error: z.string().trim().min(1),
+    message: z.string().trim().min(1),
+    correlationId: z.string().trim().min(1).optional(),
+    statusCode: z.number().int().positive().optional(),
+    details: z.record(z.unknown()).optional(),
+  })
+  .passthrough();
+
+export type KernelLifecycleApiError = z.infer<typeof KernelLifecycleApiErrorSchema>;
+
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;
 export type LifecycleRun = z.infer<typeof LifecycleRunSchema>;
 export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;
 export type VerifyHealthReport = z.infer<typeof VerifyHealthReportSchema>;
+export type ApprovalRequest = z.infer<typeof ApprovalRequestSchema>;
+export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
+export type ProductLifecyclePhase = (typeof PRODUCT_LIFECYCLE_PHASES)[number];
 
 export interface KernelLifecycleClientOptions {
   readonly baseUrl?: string;
@@ -252,11 +267,15 @@ export interface KernelLifecycleClientOptions {
   readonly workspaceId?: string;
   readonly projectId?: string;
   readonly correlationIdFactory?: () => string;
+  readonly authToken?: string;
 }
 
 export interface LifecyclePlanOptions {
   readonly environment?: string;
   readonly dryRun?: boolean;
+  readonly providerMode?: 'bootstrap' | 'platform';
+  readonly surfaceSelector?: string;
+  readonly sourceRef?: string;
   readonly correlationId?: string;
 }
 
@@ -314,6 +333,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
   private readonly workspaceId?: string;
   private readonly projectId?: string;
   private readonly correlationIdFactory: () => string;
+  private readonly authToken?: string;
 
   constructor(options: KernelLifecycleClientOptions) {
     this.apiClient = options.apiClient ?? new ApiClient({ baseUrl: options.baseUrl });
@@ -322,6 +342,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
     this.projectId = options.projectId;
     this.correlationIdFactory =
       options.correlationIdFactory ?? (() => `studio-${Date.now()}`);
+    this.authToken = options.authToken;
   }
 
   async listProductUnits(): Promise<readonly ProductUnit[]> {
@@ -362,6 +383,9 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
           correlationId,
           ...(options.environment !== undefined ? { environment: options.environment } : {}),
           ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+          ...(options.providerMode !== undefined ? { providerMode: options.providerMode } : {}),
+          ...(options.surfaceSelector !== undefined ? { surfaceSelector: options.surfaceSelector } : {}),
+          ...(options.sourceRef !== undefined ? { sourceRef: options.sourceRef } : {}),
         },
         schema: LifecyclePlanSchema,
       },
@@ -385,6 +409,9 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
           correlationId,
           dryRun: options.dryRun ?? false,
           ...(options.environment !== undefined ? { environment: options.environment } : {}),
+          ...(options.providerMode !== undefined ? { providerMode: options.providerMode } : {}),
+          ...(options.surfaceSelector !== undefined ? { surfaceSelector: options.surfaceSelector } : {}),
+          ...(options.sourceRef !== undefined ? { sourceRef: options.sourceRef } : {}),
         },
         schema: LifecycleRunSchema,
       },
@@ -507,12 +534,13 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
 
   private buildHeaders(correlationId?: string): Record<string, string> {
     return {
-      'X-Correlation-Id': correlationId ?? this.correlationIdFactory(),
+      'X-Correlation-ID': correlationId ?? this.correlationIdFactory(),
       ...(this.tenantId !== undefined ? { 'X-Ghatana-Tenant-Id': this.tenantId } : {}),
       ...(this.workspaceId !== undefined
         ? { 'X-Ghatana-Workspace-Id': this.workspaceId }
         : {}),
       ...(this.projectId !== undefined ? { 'X-Ghatana-Project-Id': this.projectId } : {}),
+      ...(this.authToken !== undefined ? { Authorization: `Bearer ${this.authToken}` } : {}),
     };
   }
 }

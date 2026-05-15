@@ -205,6 +205,7 @@ export const KernelProviderModeRequirements = {
     "health",
     "approvals",
     "provenance",
+    "memory",
     "runtimeTruth",
   ],
   platform: [
@@ -229,13 +230,21 @@ export type KernelLifecycleProviderName =
 
 export type KernelLifecycleProviderContextReasonCode =
   | "missing-provider"
-  | "invalid-provider-mode";
+  | "invalid-provider-mode"
+  | "invalid-backing-store";
 
 export interface KernelLifecycleProviderContextValidationResult {
   readonly valid: boolean;
   readonly missingProviders: readonly KernelLifecycleProviderName[];
+  readonly invalidBackingStores: readonly InvalidBackingStoreError[];
   readonly mode?: KernelProviderMode;
   readonly reasonCodes: readonly KernelLifecycleProviderContextReasonCode[];
+}
+
+export interface InvalidBackingStoreError {
+  readonly providerName: string;
+  readonly backingStore: string;
+  readonly reason: string;
 }
 
 export function isKernelProviderMode(value: unknown): value is KernelProviderMode {
@@ -252,6 +261,7 @@ export function validateKernelLifecycleProviderContext(
     return {
       valid: false,
       missingProviders: [],
+      invalidBackingStores: [],
       reasonCodes: ["invalid-provider-mode"],
     };
   }
@@ -261,11 +271,55 @@ export function validateKernelLifecycleProviderContext(
     (providerName) => context[providerName] === undefined
   );
 
+  const backingStoreValidation = validateProviderBackingForMode(context);
+
   return {
-    valid: missingProviders.length === 0,
+    valid: missingProviders.length === 0 && backingStoreValidation.valid,
     missingProviders,
+    invalidBackingStores: backingStoreValidation.invalidBackingStores,
     mode: context.mode,
-    reasonCodes: missingProviders.length > 0 ? ["missing-provider"] : [],
+    reasonCodes: [
+      ...(missingProviders.length > 0 ? (["missing-provider"] as const) : []),
+      ...(backingStoreValidation.reasonCodes ?? []),
+    ],
+  };
+}
+
+export function validateProviderBackingForMode(
+  context: KernelLifecycleProviderContext
+): Pick<KernelLifecycleProviderContextValidationResult, "valid" | "invalidBackingStores" | "reasonCodes"> {
+  if (context.mode !== "platform") {
+    // Bootstrap mode allows file providers
+    return { valid: true, invalidBackingStores: [], reasonCodes: [] };
+  }
+
+  const invalidBackingStores: InvalidBackingStoreError[] = [];
+  const providerEntries: ReadonlyArray<[string, KernelProvider | undefined]> = [
+    ["registryProvider", context.registryProvider],
+    ["sourceProvider", context.sourceProvider],
+    ["events", context.events],
+    ["artifacts", context.artifacts],
+    ["health", context.health],
+    ["approvals", context.approvals],
+    ["provenance", context.provenance],
+    ["memory", context.memory],
+    ["runtimeTruth", context.runtimeTruth],
+  ];
+
+  for (const [providerName, provider] of providerEntries) {
+    if (provider !== undefined && provider.backingStore === "file") {
+      invalidBackingStores.push({
+        providerName,
+        backingStore: provider.backingStore,
+        reason: "Platform mode cannot use file-backed providers. Use data-cloud or external backing store.",
+      });
+    }
+  }
+
+  return {
+    valid: invalidBackingStores.length === 0,
+    invalidBackingStores,
+    reasonCodes: invalidBackingStores.length > 0 ? ["invalid-backing-store"] : [],
   };
 }
 

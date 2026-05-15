@@ -49,6 +49,30 @@ export interface AgentLifecycleActionExecutor {
   ): Promise<ProductLifecycleResult>;
 }
 
+// Provider-backed governance interfaces
+export interface AgentPolicyProvider {
+  evaluatePolicy(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision>;
+}
+
+export interface AgentMasteryProvider {
+  evaluateMastery(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision>;
+}
+
+export interface AgentApprovalProvider {
+  resolveApproval(
+    request: AgentLifecycleActionRequest,
+    plan: ProductLifecyclePlan
+  ): Promise<AgentLifecycleApprovalDecision>;
+}
+
+export interface AgentVerificationProvider {
+  verifyResult(
+    request: AgentLifecycleActionRequest,
+    result: ProductLifecycleResult
+  ): Promise<boolean>;
+}
+
+// Legacy function-only checks for test adapters
 export interface AgentLifecycleActionChecks {
   readonly policy?: (request: AgentLifecycleActionRequest) => Promise<AgentLifecycleDecision> | AgentLifecycleDecision;
   readonly mastery?: (request: AgentLifecycleActionRequest) => Promise<AgentLifecycleDecision> | AgentLifecycleDecision;
@@ -62,12 +86,23 @@ export interface AgentLifecycleActionChecks {
   ) => Promise<boolean> | boolean;
 }
 
+export type AgentGovernanceMode = 'test' | 'bootstrap' | 'platform';
+
+export interface AgentLifecycleGovernanceProviders {
+  readonly policyProvider?: AgentPolicyProvider;
+  readonly masteryProvider?: AgentMasteryProvider;
+  readonly approvalProvider?: AgentApprovalProvider;
+  readonly verificationProvider?: AgentVerificationProvider;
+}
+
 export interface AgentLifecycleActionServiceOptions {
   readonly planner: AgentLifecycleActionPlanner | ProductLifecyclePlanner;
   readonly executor: AgentLifecycleActionExecutor | ProductLifecycleExecutor;
   readonly outputDirectory: string;
   readonly providerContext?: KernelLifecycleProviderContext;
-  readonly checks?: AgentLifecycleActionChecks;
+  readonly governanceMode?: AgentGovernanceMode;
+  readonly governanceProviders?: AgentLifecycleGovernanceProviders;
+  readonly checks?: AgentLifecycleActionChecks; // Legacy test adapters only
   readonly now?: () => string;
   readonly allowBootstrapDevDefaults?: boolean;
 }
@@ -77,6 +112,8 @@ export class AgentLifecycleActionService {
   private readonly executor: AgentLifecycleActionExecutor;
   private readonly outputDirectory: string;
   private readonly providerContext: KernelLifecycleProviderContext | undefined;
+  private readonly governanceMode: AgentGovernanceMode;
+  private readonly governanceProviders: AgentLifecycleGovernanceProviders;
   private readonly checks: AgentLifecycleActionChecks;
   private readonly now: () => string;
   private readonly allowBootstrapDevDefaults: boolean;
@@ -86,9 +123,30 @@ export class AgentLifecycleActionService {
     this.executor = options.executor;
     this.outputDirectory = options.outputDirectory;
     this.providerContext = options.providerContext;
+    this.governanceMode = options.governanceMode ?? 'bootstrap';
+    this.governanceProviders = options.governanceProviders ?? {};
     this.checks = options.checks ?? {};
     this.now = options.now ?? (() => new Date().toISOString());
     this.allowBootstrapDevDefaults = options.allowBootstrapDevDefaults ?? false;
+    this.validateGovernanceProviders();
+  }
+
+  private validateGovernanceProviders(): void {
+    if (this.governanceMode === 'platform') {
+      const missingProviders: string[] = [];
+      if (!this.governanceProviders.policyProvider) missingProviders.push('policy-provider-missing');
+      if (!this.governanceProviders.masteryProvider) missingProviders.push('mastery-provider-missing');
+      if (!this.governanceProviders.approvalProvider) missingProviders.push('approval-provider-missing');
+      if (!this.governanceProviders.verificationProvider) missingProviders.push('verification-provider-missing');
+      if (!this.providerContext?.provenance) missingProviders.push('provenance-provider-missing');
+      if (!this.providerContext?.runtimeTruth) missingProviders.push('runtime-truth-required');
+      if (!this.providerContext?.memory) missingProviders.push('memory-provider-missing');
+      if (missingProviders.length > 0) {
+        throw new Error(
+          `Platform governance mode requires all governance providers. Missing: ${missingProviders.join(', ')}`,
+        );
+      }
+    }
   }
 
   async handle(requestInput: unknown): Promise<AgentLifecycleActionResult> {
@@ -242,16 +300,25 @@ export class AgentLifecycleActionService {
   }
 
   private async evaluatePolicy(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision> {
+    if (this.governanceProviders.policyProvider) {
+      return this.governanceProviders.policyProvider.evaluatePolicy(request);
+    }
     if (this.checks.policy) {
       return this.checks.policy(request);
     }
     if (this.allowBootstrapDevDefaults && request.requestedAction === 'create-lifecycle-plan' && request.riskLevel === 'low') {
       return 'allowed';
     }
+    if (this.governanceMode === 'platform') {
+      throw new Error('Policy provider missing in platform governance mode');
+    }
     return 'denied';
   }
 
   private async evaluateMastery(request: AgentLifecycleActionRequest): Promise<AgentLifecycleDecision> {
+    if (this.governanceProviders.masteryProvider) {
+      return this.governanceProviders.masteryProvider.evaluateMastery(request);
+    }
     if (this.checks.mastery) {
       return this.checks.mastery(request);
     }
@@ -265,10 +332,13 @@ export class AgentLifecycleActionService {
     request: AgentLifecycleActionRequest,
     plan: ProductLifecyclePlan
   ): Promise<AgentLifecycleApprovalDecision> {
+    if (this.governanceProviders.approvalProvider) {
+      return this.governanceProviders.approvalProvider.resolveApproval(request, plan);
+    }
     if (this.checks.approval) {
       return this.checks.approval(request, plan);
     }
-    return request.requiredApprovals.some((approval) => approval.required) ? 'pending' : 'not-required';
+    return request.requiredApprovals.some((approval: { required: boolean }) => approval.required) ? 'pending' : 'not-required';
   }
 
   private phaseForRequestedAction(request: AgentLifecycleActionRequest): AgentLifecycleActionRequest['lifecyclePhase'] {
@@ -285,8 +355,14 @@ export class AgentLifecycleActionService {
     request: AgentLifecycleActionRequest,
     result: ProductLifecycleResult
   ): Promise<boolean> {
+    if (this.governanceProviders.verificationProvider) {
+      return this.governanceProviders.verificationProvider.verifyResult(request, result);
+    }
     if (this.checks.verification) {
       return this.checks.verification(request, result);
+    }
+    if (this.governanceMode === 'platform') {
+      throw new Error('Verification provider missing in platform governance mode');
     }
     return result.status === 'succeeded';
   }

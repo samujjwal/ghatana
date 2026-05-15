@@ -1,4 +1,10 @@
-# YAPPC Canonical Architecture Models
+# YAPPC Canonical Models
+
+> **Status**: Existing and Executable
+
+> This document defines the canonical models for YAPPC as implemented and operational.
+
+## Purpose Models
 
 Status: active contributor reference
 
