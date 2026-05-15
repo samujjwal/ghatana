@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: kernel - 5-15-1 [`37a7b1f`](https://github.com/samujjwal/ghatana/commit/37a7b1f815e726a37276ed4c1933b7d47cd36d56)
 - **Changed**: refactor 5-15-1 [`6f08ec8`](https://github.com/samujjwal/ghatana/commit/6f08ec83dee0176177c4c099eb3bf991935d86da)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`ea91f9f`](https://github.com/samujjwal/ghatana/commit/ea91f9ff6d20c557c905392faf42b92ade2c0e03)
 - **Changed**: kernel + yappc 1 [`462a414`](https://github.com/samujjwal/ghatana/commit/462a41402c214ccbdf009bab563428fa58505a5f)
