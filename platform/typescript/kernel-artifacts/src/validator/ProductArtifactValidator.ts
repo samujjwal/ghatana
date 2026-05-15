@@ -1,4 +1,10 @@
-import type { ArtifactEntry, ArtifactFingerprint } from '../domain/ArtifactManifest.js';
+import type {
+  ArtifactEntry,
+  ArtifactFingerprint,
+  ArtifactManifest,
+  ArtifactPackaging,
+  ArtifactType,
+} from '../domain/ArtifactManifest.js';
 
 /**
  * Product artifact validator
@@ -144,6 +150,77 @@ export class ProductArtifactValidator {
 
     return errors;
   }
+
+  validateExpectedArtifacts(params: {
+    manifest: ArtifactManifest;
+    expectedArtifacts: readonly ExpectedArtifactDeclaration[];
+  }): ProductArtifactValidationResult {
+    const errors: ValidationError[] = [];
+    const missing: MissingArtifactFailure[] = [];
+    const artifactsById = new Map(params.manifest.artifacts.map((artifact) => [artifact.id, artifact]));
+    const artifactsByRef = new Map(
+      params.manifest.artifacts
+        .filter((artifact) => artifact.metadata.artifactRef)
+        .map((artifact) => [artifact.metadata.artifactRef as string, artifact]),
+    );
+
+    for (const expected of params.expectedArtifacts) {
+      const artifact = artifactsById.get(expected.id) ??
+        (expected.artifactRef ? artifactsByRef.get(expected.artifactRef) : undefined);
+
+      if (!artifact || !artifact.found) {
+        const failure: MissingArtifactFailure = {
+          reasonCode: 'artifact-missing',
+          artifactId: expected.id,
+          required: expected.required,
+          message: `Expected artifact ${expected.id} is missing`,
+        };
+        missing.push(failure);
+        if (expected.required) {
+          errors.push({ path: `artifacts.${expected.id}`, message: failure.message });
+        }
+        continue;
+      }
+
+      if (artifact.metadata.type !== expected.type) {
+        errors.push({
+          path: `artifacts.${expected.id}.metadata.type`,
+          message: `Artifact ${expected.id} type mismatch: expected ${expected.type}, got ${artifact.metadata.type}`,
+        });
+      }
+
+      if (artifact.metadata.packaging !== expected.packaging) {
+        errors.push({
+          path: `artifacts.${expected.id}.metadata.packaging`,
+          message: `Artifact ${expected.id} packaging mismatch: expected ${expected.packaging}, got ${artifact.metadata.packaging}`,
+        });
+      }
+
+      if (expected.requireDigest && artifact.metadata.type === 'container-image') {
+        this.validateContainerDigest(expected, artifact, errors);
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      missing,
+    };
+  }
+
+  private validateContainerDigest(
+    expected: ExpectedArtifactDeclaration,
+    artifact: ArtifactEntry,
+    errors: ValidationError[],
+  ): void {
+    const imageRef = artifact.metadata.artifactRef ?? artifact.path;
+    if (!imageRef.includes('@sha256:')) {
+      errors.push({
+        path: `artifacts.${expected.id}.path`,
+        message: `Container image artifact ${expected.id} must include a sha256 digest reference`,
+      });
+    }
+  }
 }
 
 /**
@@ -152,4 +229,26 @@ export class ProductArtifactValidator {
 export interface ValidationError {
   path: string;
   message: string;
+}
+
+export interface ExpectedArtifactDeclaration {
+  id: string;
+  type: ArtifactType;
+  packaging: ArtifactPackaging;
+  required: boolean;
+  artifactRef?: string;
+  requireDigest?: boolean;
+}
+
+export interface MissingArtifactFailure {
+  reasonCode: 'artifact-missing';
+  artifactId: string;
+  required: boolean;
+  message: string;
+}
+
+export interface ProductArtifactValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  missing: MissingArtifactFailure[];
 }

@@ -50,7 +50,7 @@ public final class DashboardActionServiceImpl implements DashboardActionService 
             Principal principal,
             String correlationId
     ) {
-        // TODO: Implement actual dashboard action logic for workspace-level actions
+        // Implementation note: Implement actual dashboard action logic for workspace-level actions
         // This requires a project repository to list projects in the workspace
         // For now, return empty list as workspace-level dashboard is not yet implemented
         

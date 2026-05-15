@@ -13,6 +13,7 @@ import com.ghatana.kernel.adapter.aep.AepKernelAdapter.PipelineStatus;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapter.StreamCreateRequest;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapter.SubscriptionHandle;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapterImpl;
+import com.ghatana.kernel.testing.TestBridgePorts;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,11 @@ class AepKernelAdapterImplIT extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         recordingClient = new RecordingAepClient();
-        adapter = new AepKernelAdapterImpl(recordingClient);
+        adapter = new AepKernelAdapterImpl(
+            recordingClient,
+            TestBridgePorts.allowAllAuthorization(),
+            TestBridgePorts.noOpAuditEmitter(),
+            TestBridgePorts.noOpHealthIndicator());
     }
 
     // ==================== Event Stream ====================

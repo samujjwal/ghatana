@@ -9,42 +9,23 @@ Generated from:
 
 ## Matrix
 
-| Product | Kind | Mode | Profile | Lifecycle Status | Required Kernel Capabilities | Status |
-|---------|------|------|---------|------------------|------------------------------|--------|
-| audio-video | shared-service | disabled-observed | not-declared | disabled | None | Disabled observed |
-| aura | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
-| data-cloud | platform-provider | disabled-observed | not-declared | disabled | None | Disabled observed |
-| dcmaar | business-product | disabled-observed | not-declared | disabled | None | Disabled observed |
-| digital-marketing | business-product | execution | stable | enabled | backend-api:gradle-java-service, deploy:compose-local, web:pnpm-vite-react | Pilot |
-| finance | business-product | shape-only | stable | planned | backend-api:gradle-java-service | Shape-only |
-| flashit | business-product | shape-only | experimental | planned | backend-api:gradle-java-service | Shape-only |
-| phr | business-product | shape-only | stable | planned | backend-api:gradle-java-service, web:pnpm-vite-react | Shape-only |
-| security-gateway | shared-service | disabled-observed | not-declared | disabled | None | Disabled observed |
-| software-org | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
-| tutorputor | business-product | shape-only-with-known-limitations | stable | partial | backend-api:gradle-java-service, web:pnpm-vite-react | Shape-only with limitations |
-| virtual-org | demo/example | disabled-observed | not-declared | disabled | None | Disabled observed |
-| yappc | platform-provider | disabled-observed | not-declared | disabled | None | Disabled observed |
+| Product | Kind | Mode | Profile | Lifecycle Status | Readiness | Required Adapters | Reason Codes | Status |
+|---------|------|------|---------|------------------|-----------|-------------------|--------------|--------|
+| audio-video | shared-service | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
+| aura | demo/example | disabled-observed | not-declared | disabled | disabled | None | demo-product-not-execution-ready, disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
+| data-cloud | platform-provider | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, platform-provider-mode-required, requires-bootstrap-platform-separation, requires-runtime-truth-provider | Disabled observed |
+| dcmaar | business-product | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition, requires-security-threat-model-gates | Disabled observed |
+| digital-marketing | business-product | execution | stable | enabled | executable | compose-local, gradle-java-service, pnpm-vite-react | execution-ready | Pilot |
+| finance | business-product | shape-only | stable | planned | not-enabled | gradle-java-service | missing-adapter:operator, missing-adapter:portal, missing-adapter:sdk, planned-shape-only, requires-multi-module-build-validation, requires-portal-operator-sdk-adapters, requires-promotion-approval, requires-regulatory-gates | Shape-only |
+| flashit | business-product | shape-only | experimental | planned | not-enabled | gradle-java-service | missing-adapter:mobile, missing-adapter:web, planned-shape-only, requires-mobile-adapters, requires-mobile-bundle-artifacts, requires-personal-data-classification, requires-preview-security-gate | Shape-only |
+| phr | business-product | shape-only | stable | planned | not-enabled | gradle-java-service, pnpm-vite-react | planned-shape-only, requires-audit-evidence, requires-consent-gate, requires-data-sovereignty-gate, requires-fhir-contract-validation, requires-pii-classification | Shape-only |
+| security-gateway | shared-service | disabled-observed | not-declared | disabled | disabled | None | disabled-observed | Disabled observed |
+| software-org | demo/example | disabled-observed | not-declared | disabled | disabled | None | disabled-observed | Disabled observed |
+| tutorputor | business-product | shape-only-with-known-limitations | stable | partial | not-enabled | gradle-java-service, pnpm-vite-react | partial-lifecycle, requires-content-safety-gates, requires-product-owner-executable-surface-definition | Shape-only with limitations |
+| virtual-org | demo/example | disabled-observed | not-declared | disabled | disabled | None | disabled-observed | Disabled observed |
+| yappc | platform-provider | disabled-observed | not-declared | disabled | disabled | None | artifact-intelligence-evidence-contracts-ready, creator-lifecycle-distinct-from-kernel, disabled-observed, platform-provider-mode-required | Disabled observed |
 
 ## Findings
-
-### audio-video
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-
-### aura
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-
-### data-cloud
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json
-- Adapter "undefined" for surface "sdk" not found in toolchain-adapter-registry.json
-
-### dcmaar
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json
 
 ### finance
 
@@ -56,20 +37,3 @@ Generated from:
 
 - Surface "web" has no default adapter defined in profile "mobile-plus-api-product"
 - Surface "mobile" has no default adapter defined in profile "mobile-plus-api-product"
-
-### security-gateway
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-
-### software-org
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-
-### virtual-org
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-
-### yappc
-
-- Adapter "undefined" for surface "backend-api" not found in toolchain-adapter-registry.json
-- Adapter "undefined" for surface "web" not found in toolchain-adapter-registry.json

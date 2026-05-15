@@ -490,7 +490,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                 for (ConsentGrant grant : grants) {
                     if (grant.getRecipientId().equals(recipientId) &&
                         grant.overlaps(scope)) {
-                        return Promise.of(true);
+                        return Promise.of(Boolean.TRUE);
                     }
                 }
                 return Promise.of(false);

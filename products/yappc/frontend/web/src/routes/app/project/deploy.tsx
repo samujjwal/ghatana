@@ -13,7 +13,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 
-// TODO-009: Redirect legacy deploy route to canonical run phase
+// TRACK-009: Redirect legacy deploy route to canonical run phase
 export default function DeployRedirectRoute() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();

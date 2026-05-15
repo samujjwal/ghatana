@@ -7,7 +7,7 @@
  * @doc.pattern Snapshot
  */
 
-import type { HealthStatus } from "./HealthStatus";
+import type { HealthStatus } from "./HealthStatus.js";
 
 /**
  * Gate evaluation status.

@@ -131,6 +131,7 @@ function main() {
       console.log(`Product ${productId} has lifecycle enabled, delegating to lifecycle engine...`);
       const lifecycleArgs = planOnly ? ['product', 'plan', productId, phase] : ['product', phase, productId];
       if (dryRun) lifecycleArgs.push('--dry-run');
+      if (dryRun || planOnly) lifecycleArgs.push('--json');
       if (requestedSurface) lifecycleArgs.push('--surface', normalizeSurfaceName(requestedSurface));
       
       const result = spawnSync('node', [join(repoRoot, 'scripts/kernel-product.mjs'), ...lifecycleArgs], {

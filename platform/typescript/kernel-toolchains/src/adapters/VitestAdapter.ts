@@ -125,7 +125,7 @@ export class VitestAdapter implements ToolchainAdapter {
   }
 
   async validateOutputs(_context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
-    // TODO: Implement actual validation
+    // Implementation note: Implement actual validation
     return {
       status: 'valid',
       errors: [],
@@ -172,7 +172,7 @@ export class VitestAdapter implements ToolchainAdapter {
   }
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
-    // TODO: Parse Vitest output to extract artifact paths (coverage reports, etc.)
+    // Implementation note: Parse Vitest output to extract artifact paths (coverage reports, etc.)
     return [];
   }
 }

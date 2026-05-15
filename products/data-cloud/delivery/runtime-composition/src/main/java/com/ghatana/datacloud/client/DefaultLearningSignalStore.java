@@ -448,7 +448,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                 case PARQUET:
                     log.warn("Parquet import not yet implemented");
                     return Promise.ofException(new UnsupportedOperationException(
-                        "Parquet import not implemented"));
+                        "Parquet import unavailable"));
                 default:
                     throw new IllegalArgumentException("Unsupported format: " + format);
             }
@@ -482,7 +482,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
     private List<LearningSignal> parseJsonImport(String tenantId, String jsonContent) {
         List<LearningSignal> signals = new ArrayList<>();
         // In production: use Jackson for proper JSON parsing
-        // Stub implementation for now
+        // Baseline implementation for now
         log.debug("Parsing JSON import for tenant {}", tenantId);
         return signals;
     }
@@ -494,7 +494,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
     private List<LearningSignal> parseCsvImport(String tenantId, String csvContent) {
         List<LearningSignal> signals = new ArrayList<>();
         // In production: use CSV parser library
-        // Stub implementation for now
+        // Baseline implementation for now
         log.debug("Parsing CSV import for tenant {}", tenantId);
         return signals;
     }

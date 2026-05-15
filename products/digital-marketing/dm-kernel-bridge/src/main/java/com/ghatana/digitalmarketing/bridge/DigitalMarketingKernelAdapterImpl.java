@@ -112,29 +112,6 @@ public final class DigitalMarketingKernelAdapterImpl implements DigitalMarketing
         this.productionMode = productionMode;
     }
 
-    public DigitalMarketingKernelAdapterImpl(
-            BridgeAuthorizationService authService,
-            BridgeAuditEmitter auditEmitter,
-            BridgeHealthIndicator healthIndicator,
-            ConsentPlugin consentPlugin,
-            HumanApprovalPlugin approvalPlugin,
-            AuditTrailPlugin auditTrailPlugin,
-            RiskManagementPlugin riskManagementPlugin,
-            NotificationPlugin notificationPlugin) {
-        this(
-            authService,
-            auditEmitter,
-            healthIndicator,
-            consentPlugin,
-            approvalPlugin,
-            auditTrailPlugin,
-            riskManagementPlugin,
-            notificationPlugin,
-            new NoOpFeatureFlagPlugin(),
-            false
-        );
-    }
-
     // -----------------------------------------------------------------------
     // Lifecycle
     // -----------------------------------------------------------------------
@@ -587,30 +564,4 @@ public final class DigitalMarketingKernelAdapterImpl implements DigitalMarketing
         return SENSITIVE_KEY_PATTERN.matcher(metadata).replaceAll("$1=***REDACTED***");
     }
 
-    private static final class NoOpFeatureFlagPlugin implements FeatureFlagPlugin {
-        @Override
-        public Promise<Boolean> isEnabled(String flagKey, String scope) {
-            return Promise.of(Boolean.FALSE);
-        }
-
-        @Override
-        public Promise<String> getString(String flagKey, String tenantId, String defaultValue) {
-            return Promise.of(defaultValue);
-        }
-
-        @Override
-        public Promise<Integer> getInt(String flagKey, String tenantId, int defaultValue) {
-            return Promise.of(defaultValue);
-        }
-
-        @Override
-        public Promise<Boolean> getBoolean(String flagKey, String tenantId, boolean defaultValue) {
-            return Promise.of(defaultValue);
-        }
-
-        @Override
-        public Promise<Map<String, Object>> getAllFlags(String tenantId) {
-            return Promise.of(Map.of());
-        }
-    }
 }

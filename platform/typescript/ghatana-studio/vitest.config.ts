@@ -1,8 +1,15 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@ghatana/design-system': path.resolve(__dirname, '../design-system/src/index.ts'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

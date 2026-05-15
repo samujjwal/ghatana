@@ -51,13 +51,43 @@ class FakeSuccessAdapter implements Adapter {
   lastContext: AdapterContext | undefined;
   async execute(context: AdapterContext): Promise<AdapterResult> {
     this.lastContext = context;
-    return { status: 'succeeded' };
+    return {
+      status: 'succeeded',
+      steps: [
+        {
+          stepId: 'adapter-build',
+          status: 'succeeded',
+          stdout: 'adapter stdout',
+          durationMs: 12,
+        },
+      ],
+      artifacts: [
+        {
+          path: 'dist/app.jar',
+          type: 'jvm-service',
+          fingerprint: 'sha256:abc',
+        },
+      ],
+      testResults: { tests: 4, failures: 0, skipped: 0, durationMs: 12 },
+      coverageResults: { lineCoverage: 90, branchCoverage: 80, instructionCoverage: 85 },
+      durationMs: 12,
+      warnings: ['adapter warning'],
+      manifestRefs: { artifactManifest: 'artifact-manifest.json' },
+    };
   }
 }
 
 class FakeFailureAdapter implements Adapter {
   async execute(_context: AdapterContext): Promise<AdapterResult> {
-    return { status: 'failed' };
+    return {
+      status: 'failed',
+      stderr: 'adapter stderr',
+      failure: {
+        stepId: 'adapter-fail',
+        message: 'adapter failed',
+        cause: 'exit 1',
+      },
+    };
   }
 }
 
@@ -70,6 +100,15 @@ class FakeSkippedAdapter implements Adapter {
 class FakeThrowingAdapter implements Adapter {
   async execute(_context: AdapterContext): Promise<AdapterResult> {
     throw new Error('Adapter execution exploded');
+  }
+}
+
+class UntypedArtifactAdapter implements Adapter {
+  async execute(_context: AdapterContext): Promise<AdapterResult> {
+    return {
+      status: 'succeeded',
+      artifacts: [{ path: 'artifact.out' }],
+    };
   }
 }
 
@@ -100,7 +139,22 @@ describe('ProductLifecycleStepRunner', () => {
       expect(result.status).toBe('succeeded');
       expect(result.stepId).toBe('build-step');
       expect(result.exitCode).toBe(0);
-      expect(result.durationMs).toBeGreaterThanOrEqual(0);
+      expect(result.durationMs).toBe(12);
+      expect(result.stdout).toBe('adapter stdout');
+      expect(result.warnings).toEqual(['adapter warning']);
+      expect(result.testResults).toEqual({ tests: 4, failures: 0, skipped: 0, durationMs: 12 });
+      expect(result.coverageResults?.lineCoverage).toBe(90);
+      expect(result.manifestRefs?.artifactManifest).toBe('artifact-manifest.json');
+      expect(result.artifacts).toEqual([
+        {
+          id: 'build-step-artifact-0',
+          surface: 'backend-api',
+          type: 'jvm-service',
+          path: 'dist/app.jar',
+          fingerprint: 'sha256:abc',
+          producedBy: 'gradle-java-service',
+        },
+      ]);
     });
 
     it('logs step start and completion', async () => {
@@ -128,6 +182,8 @@ describe('ProductLifecycleStepRunner', () => {
       expect(result.status).toBe('failed');
       expect(result.stepId).toBe('step-fail');
       expect(result.exitCode).toBe(1);
+      expect(result.stderr).toBe('adapter stderr');
+      expect(result.errors).toEqual(['adapter failed', 'exit 1']);
     });
 
     it('returns failed when adapter throws', async () => {
@@ -142,6 +198,8 @@ describe('ProductLifecycleStepRunner', () => {
 
       expect(result.status).toBe('failed');
       expect(result.exitCode).toBe(1);
+      expect(result.stderr).toBe('Adapter execution exploded');
+      expect(result.errors).toEqual(['Adapter execution exploded']);
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -165,24 +223,30 @@ describe('ProductLifecycleStepRunner', () => {
       );
     });
 
-    it('does not fail when dryRun is true and adapter returns skipped', async () => {
-      // In dry-run mode the executor short-circuits to skipped before calling the runner.
-      // This test confirms the adapter's 'skipped' is not double-penalised in dry-run scenarios
-      // where it IS acceptable (e.g., the run method itself handles dry-run in the executor).
-      // Direct StepRunner calls in dry-run: skipped is still fail-closed (runner has no dry-run awareness).
+    it('preserves skipped when dryRun is true and adapter returns skipped', async () => {
       const registry = makeRegistry({ 'gradle-java-service': new FakeSkippedAdapter() });
       const runner = new ProductLifecycleStepRunner(registry);
 
-      // Dry-run is NOT a bypass of fail-closed inside the runner itself —
-      // the executor wraps the call and skips before calling the runner in dry-run.
-      // This test documents that the runner fails-closed even in dryRun=true StepContext.
       const result = await runner.run(
         makeStep({ id: 'step-skip-dry', adapter: 'gradle-java-service' }),
         makeContext({ dryRun: true }),
       );
 
-      // Fail closed regardless of dryRun flag at the runner level
-      expect(result.status).toBe('failed');
+      expect(result.status).toBe('skipped');
+      expect(result.exitCode).toBe(0);
+    });
+
+    it('preserves skipped when an optional step skips outside dry-run', async () => {
+      const registry = makeRegistry({ 'gradle-java-service': new FakeSkippedAdapter() });
+      const runner = new ProductLifecycleStepRunner(registry);
+
+      const result = await runner.run(
+        makeStep({ id: 'step-skip-optional', adapter: 'gradle-java-service' }),
+        makeContext({ dryRun: false, required: false }),
+      );
+
+      expect(result.status).toBe('skipped');
+      expect(result.exitCode).toBe(0);
     });
   });
 
@@ -237,6 +301,31 @@ describe('ProductLifecycleStepRunner', () => {
       await runner.run(makeStep({ id: 's', adapter: 'gradle-java-service' }), context);
 
       expect(successAdapter.lastContext?.environment).toBeUndefined();
+    });
+  });
+
+  describe('run() — artifact type inference', () => {
+    it('infers package, deploy, verify, test, web, and default artifact types', async () => {
+      const registry = makeRegistry({ adapter: new UntypedArtifactAdapter() });
+      const runner = new ProductLifecycleStepRunner(registry);
+
+      const results = await Promise.all([
+        runner.run(makeStep({ id: 'package-step', adapter: 'adapter', stepKind: 'package', phase: 'package' }), makeContext()),
+        runner.run(makeStep({ id: 'deploy-step', adapter: 'adapter', stepKind: 'deploy', phase: 'deploy' }), makeContext()),
+        runner.run(makeStep({ id: 'verify-step', adapter: 'adapter', stepKind: 'verify', phase: 'verify' }), makeContext()),
+        runner.run(makeStep({ id: 'test-step', adapter: 'adapter', phase: 'test' }), makeContext()),
+        runner.run(makeStep({ id: 'web-step', adapter: 'adapter', surface: 'web' }), makeContext()),
+        runner.run(makeStep({ id: 'backend-step', adapter: 'adapter', surface: 'backend-api' }), makeContext()),
+      ]);
+
+      expect(results.map((result) => result.artifacts?.[0].type)).toEqual([
+        'container-image',
+        'deployment-manifest',
+        'verify-health-report',
+        'test-report',
+        'static-web-bundle',
+        'jvm-service',
+      ]);
     });
   });
 

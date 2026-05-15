@@ -17,6 +17,7 @@
     "test:e2e:a11y": "playwright test --grep @a11y",
     "test:e2e:realbackend": "playwright test --config=playwright.config.realbackend.ts",
     "test": "pnpm run test:unit",
+    "test:kernel-lifecycle-ui": "pnpm run test:route-contract",
     "test:route-contract": "vitest run src/__tests__/route-contracts.test.tsx",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",

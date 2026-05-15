@@ -418,6 +418,24 @@ class CampaignServiceImplTest extends EventloopTestBase {
             auditActions.add(action);
             return Promise.of("audit-1");
         }
+
+        @Override
+        public Promise<Double> evaluateRisk(
+                DmOperationContext context,
+                String entityId,
+                String riskModelId,
+                Map<String, Object> factors) {
+            return Promise.of(0.0);
+        }
+
+        @Override
+        public Promise<Void> notifyUser(
+                DmOperationContext context,
+                String recipientId,
+                String template,
+                Map<String, String> attributes) {
+            return Promise.complete();
+        }
     }
 
     private static final class ToggleCompliancePlugin implements CompliancePlugin {

@@ -5,6 +5,7 @@ export * from './execution/CommandResult.js';
 export * from './execution/CommandRunner.js';
 export * from './execution/SpawnCommandRunner.js';
 export * from './execution/FakeCommandRunner.js';
+export * from './execution/ToolchainExecutionResultFactory.js';
 export * from './adapters/GradleJavaServiceAdapter.js';
 export * from './adapters/PnpmViteReactAdapter.js';
 export * from './adapters/VitestAdapter.js';

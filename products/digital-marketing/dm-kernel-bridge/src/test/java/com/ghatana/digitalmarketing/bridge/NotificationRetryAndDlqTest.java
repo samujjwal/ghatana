@@ -231,7 +231,7 @@ class NotificationRetryAndDlqTest {
         return new DigitalMarketingKernelAdapterImpl(
             new AlwaysAuthorizedService(),
             new NoOpAuditEmitter(),
-            BridgeHealthIndicator.noOp(),
+            com.ghatana.kernel.testing.TestBridgePorts.noOpHealthIndicator(),
             new InMemoryConsentPlugin(),
             new InMemoryApprovalPlugin(),
             new InMemoryAuditTrailPlugin(),

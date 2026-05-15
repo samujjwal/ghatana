@@ -193,7 +193,7 @@ function BillingSection({ user }: { user?: { tier?: string } | null }) {
       name: 'Teams',
       id: 'TEAMS',
       price: '$29/user/mo',
-      features: ['Unlimited spheres', 'Unlimited moments', 'Unlimited collaborators', '200 hrs transcription', '3-year audit logs', 'SSO/SAML (Coming Soon)', 'Full API access'],
+      features: ['Unlimited spheres', 'Unlimited moments', 'Unlimited collaborators', '200 hrs transcription', '3-year audit logs', 'SSO/SAML', 'Full API access'],
     },
   ];
 

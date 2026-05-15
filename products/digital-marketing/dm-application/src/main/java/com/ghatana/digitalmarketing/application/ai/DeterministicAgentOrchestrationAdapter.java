@@ -57,7 +57,7 @@ public final class DeterministicAgentOrchestrationAdapter implements DmAgentOrch
 
     @Override
     public Promise<Boolean> isAvailable() {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     @Override

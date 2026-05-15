@@ -1,9 +1,23 @@
-package com.ghatana.kernel.adapter.datacloud;
+package com.ghatana.datacloud.kernel;
 
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataResult;
+import com.ghatana.kernel.adapter.datacloud.DataStream;
+import com.ghatana.kernel.adapter.datacloud.DataStreamRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
+import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
 import com.ghatana.kernel.audit.CrossScopeAuditService;
 import com.ghatana.kernel.bridge.AbstractKernelBridge;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
+import com.ghatana.kernel.bridge.port.BridgeContext;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.communication.KernelInterScopeBus;
 import com.ghatana.platform.core.client.AsyncClient;
@@ -57,19 +71,6 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
     private final AtomicLong streamCounter = new AtomicLong(0);
 
     /**
-     * Creates a new DataCloud adapter with the given client.
-     * Uses no-op bridge ports — suitable for development and testing scaffolding.
-     *
-     * @param dataCloudClient the Data-Cloud client for storage operations
-     */
-    public DataCloudKernelAdapterImpl(DataCloudClient dataCloudClient) {
-        this(dataCloudClient,
-                BridgeAuthorizationService.allowAll(),
-                BridgeAuditEmitter.noOp(),
-                BridgeHealthIndicator.noOp());
-    }
-
-    /**
      * Creates a new DataCloud adapter with the given client and kernel bridge ports.
      * This constructor wires production-grade authorization, audit, and health.
      *
@@ -91,56 +92,52 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
     @Override
     public Promise<DataResult> readData(DataReadRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
-        // Wrap Data-Cloud CompletableFuture with ActiveJ Promise
-        CompletableFuture<DataResult> future = dataCloudClient.read(
-            request.getDatasetId(),
-            request.getRecordId(),
-            request.getOptions()
-        );
-
-        return wrapFuture(future);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, READ_MODE)
+            .then(() -> executeWithRetry("readData", request.getContext(), resource, READ_MODE, () ->
+                dataCloudClient.read(request.getDatasetId(), request.getRecordId(), request.getOptions())));
     }
 
     @Override
     public Promise<Void> writeData(DataWriteRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
-        CompletableFuture<Void> future = dataCloudClient.write(
-            request.getDatasetId(),
-            request.getRecordId(),
-            request.getData(),
-            request.getMetadata()
-        );
-
-        return wrapFuture(future);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, WRITE_MODE)
+            .then(() -> executeWithRetry("writeData", request.getContext(), resource, WRITE_MODE, () ->
+                dataCloudClient.write(request.getDatasetId(), request.getRecordId(), request.getData(), request.getMetadata())));
     }
 
     @Override
     public Promise<Void> deleteData(DataDeleteRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
-        CompletableFuture<Void> future = dataCloudClient.delete(
-            request.getDatasetId(),
-            request.getRecordId()
-        );
-
-        return wrapFuture(future);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, "delete")
+            .then(() -> executeWithRetry("deleteData", request.getContext(), resource, "delete", () ->
+                dataCloudClient.delete(request.getDatasetId(), request.getRecordId())));
     }
 
     @Override
     public Promise<QueryResult> queryData(DataQueryRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
-        CompletableFuture<List<DataResult>> future = dataCloudClient.query(
-            request.getDatasetId(),
-            request.getQuery(),
-            request.getParameters(),
-            request.getLimit(),
-            request.getOffset()
-        );
-
-        return wrapFuture(future).then(results -> {
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, "query")
+            .then(() -> executeWithRetry("queryData", request.getContext(), resource, "query", () ->
+                dataCloudClient.query(
+                    request.getDatasetId(),
+                    request.getQuery(),
+                    request.getParameters(),
+                    request.getLimit(),
+                    request.getOffset()
+                )))
+            .then(results -> {
             boolean hasMore = results.size() == request.getLimit();
             return Promise.of(new QueryResult(results, results.size(), hasMore));
         });
@@ -149,76 +146,90 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
     @Override
     public Promise<Void> createSchema(SchemaCreateRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
-        CompletableFuture<Void> future = dataCloudClient.createDataset(
-            request.getDatasetId(),
-            request.getSchema(),
-            request.getOptions()
-        );
-
-        return wrapFuture(future);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, "schema:create")
+            .then(() -> executeWithRetry("createSchema", request.getContext(), resource, "schema:create", () ->
+                dataCloudClient.createDataset(request.getDatasetId(), request.getSchema(), request.getOptions())));
     }
 
     @Override
-    public Promise<SchemaInfo> getSchema(String datasetId) {
+    public Promise<SchemaInfo> getSchema(BridgeContext context, String datasetId) {
+        Objects.requireNonNull(context, "context cannot be null");
         Objects.requireNonNull(datasetId, "datasetId cannot be null");
+        requireStarted();
 
-        CompletableFuture<SchemaInfo> future = dataCloudClient.getSchema(datasetId);
-
-        return wrapFuture(future);
+        String resource = datasetResource(datasetId);
+        return authorize(context, resource, "schema:read")
+            .then(() -> executeWithRetry("getSchema", context, resource, "schema:read", () ->
+                dataCloudClient.getSchema(datasetId)));
     }
 
     @Override
-    public Promise<List<DatasetInfo>> listDatasets() {
-        CompletableFuture<List<DatasetInfo>> future = dataCloudClient.listDatasets();
+    public Promise<List<DatasetInfo>> listDatasets(BridgeContext context) {
+        Objects.requireNonNull(context, "context cannot be null");
+        requireStarted();
 
-        return wrapFuture(future);
+        String resource = tenantResource(context);
+        return authorize(context, resource, "dataset:list")
+            .then(() -> executeWithRetry("listDatasets", context, resource, "dataset:list", dataCloudClient::listDatasets));
     }
 
     @Override
-    public Promise<TransactionHandle> beginTransaction() {
+    public Promise<TransactionHandle> beginTransaction(BridgeContext context) {
+        Objects.requireNonNull(context, "context cannot be null");
+        requireStarted();
         String txId = "tx-" + transactionCounter.incrementAndGet();
 
-        CompletableFuture<TransactionHandle> future = dataCloudClient.beginTransaction()
-            .thenApply(innerTx -> {
+        String resource = tenantResource(context);
+        return authorize(context, resource, "transaction:begin")
+            .then(() -> executeWithRetry("beginTransaction", context, resource, "transaction:begin", () ->
+                dataCloudClient.beginTransaction().thenApply(innerTx -> {
                 TransactionImpl handle = new TransactionImpl(txId, innerTx);
                 activeTransactions.put(txId, handle);
                 return handle;
-            });
-
-        return wrapFuture(future);
+            })));
     }
 
     @Override
-    public Promise<Void> commitTransaction(TransactionHandle handle) {
+    public Promise<Void> commitTransaction(BridgeContext context, TransactionHandle handle) {
+        Objects.requireNonNull(context, "context cannot be null");
         Objects.requireNonNull(handle, "handle cannot be null");
+        requireStarted();
 
         TransactionImpl tx = activeTransactions.remove(handle.getId());
         if (tx == null) {
             return Promise.ofException(new IllegalStateException("Transaction not found: " + handle.getId()));
         }
 
-        CompletableFuture<Void> future = dataCloudClient.commitTransaction(tx.getInnerTransaction());
-
-        return wrapFuture(future);
+        String resource = tenantResource(context);
+        return authorize(context, resource, "transaction:commit")
+            .then(() -> executeWithRetry("commitTransaction", context, resource, "transaction:commit", () ->
+                dataCloudClient.commitTransaction(tx.getInnerTransaction())));
     }
 
     @Override
-    public Promise<Void> rollbackTransaction(TransactionHandle handle) {
+    public Promise<Void> rollbackTransaction(BridgeContext context, TransactionHandle handle) {
+        Objects.requireNonNull(context, "context cannot be null");
         Objects.requireNonNull(handle, "handle cannot be null");
+        requireStarted();
 
         TransactionImpl tx = activeTransactions.remove(handle.getId());
         if (tx == null) {
             return Promise.ofException(new IllegalStateException("Transaction not found: " + handle.getId()));
         }
 
-        CompletableFuture<Void> future = dataCloudClient.rollbackTransaction(tx.getInnerTransaction());
-
-        return wrapFuture(future);
+        String resource = tenantResource(context);
+        return authorize(context, resource, "transaction:rollback")
+            .then(() -> executeWithRetry("rollbackTransaction", context, resource, "transaction:rollback", () ->
+                dataCloudClient.rollbackTransaction(tx.getInnerTransaction())));
     }
 
     @Override
     public Promise<DataStream> openStream(DataStreamRequest request) {
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
         String mode = request.getOptions().getOrDefault(MODE, READ_MODE);
         if (WRITE_MODE.equalsIgnoreCase(mode)) {
             return openWriteStream(request);
@@ -228,36 +239,42 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
 
     public Promise<DataStream> openReadStream(DataStreamRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
         String streamId = "stream-read-" + streamCounter.incrementAndGet();
-
-        CompletableFuture<DataStreamImpl> future = dataCloudClient.openReadStream(
-            request.getDatasetId(),
-            request.getOptions()
-        ).thenApply(innerStream -> {
-            DataStreamImpl stream = new DataStreamImpl(streamId, innerStream, true);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, "stream:read")
+            .then(() -> executeWithRetry("openReadStream", request.getContext(), resource, "stream:read", () ->
+                dataCloudClient.openReadStream(request.getDatasetId(), request.getOptions()).thenApply(innerStream -> {
+            DataStreamImpl stream = new DataStreamImpl(
+                streamId,
+                innerStream,
+                true,
+                request.getContext(),
+                resource);
             activeStreams.put(streamId, stream);
             return stream;
-        });
-
-        return wrapFuture(future).cast();
+        }))).cast();
     }
 
     public Promise<DataStream> openWriteStream(DataStreamRequest request) {
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
+        requireStarted();
 
         String streamId = "stream-write-" + streamCounter.incrementAndGet();
-
-        CompletableFuture<DataStreamImpl> future = dataCloudClient.openWriteStream(
-            request.getDatasetId(),
-            request.getOptions()
-        ).thenApply(innerStream -> {
-            DataStreamImpl stream = new DataStreamImpl(streamId, innerStream, false);
+        String resource = datasetResource(request.getDatasetId());
+        return authorize(request.getContext(), resource, "stream:write")
+            .then(() -> executeWithRetry("openWriteStream", request.getContext(), resource, "stream:write", () ->
+                dataCloudClient.openWriteStream(request.getDatasetId(), request.getOptions()).thenApply(innerStream -> {
+            DataStreamImpl stream = new DataStreamImpl(
+                streamId,
+                innerStream,
+                false,
+                request.getContext(),
+                resource);
             activeStreams.put(streamId, stream);
             return stream;
-        });
-
-        return wrapFuture(future).cast();
+        }))).cast();
     }
 
     // ==================== Canonical Scope-Aware Methods ====================
@@ -335,6 +352,21 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         return wrapAsync(() -> future);
     }
 
+    private Promise<Void> authorize(BridgeContext context, String resource, String action) {
+        return checkAuthorized(context, resource, action)
+            .then(allowed -> allowed
+                ? Promise.complete()
+                : Promise.ofException(new SecurityException("Not authorized for " + action + " on " + resource)));
+    }
+
+    private static String datasetResource(String datasetId) {
+        return "dataset:" + Objects.requireNonNull(datasetId, DATASET_ID_CANNOT_BE_NULL);
+    }
+
+    private static String tenantResource(BridgeContext context) {
+        return "tenant:" + context.getTenantId();
+    }
+
     // ==================== Inner Types ====================
 
     /**
@@ -353,7 +385,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
 
         @Override
         default Promise<Boolean> healthCheck() {
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         @Override
@@ -401,16 +433,26 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         private final String streamId;
         private final Object innerStream;
         private final boolean isReadStream;
+        private final BridgeContext context;
+        private final String resource;
         private final AtomicBoolean open = new AtomicBoolean(true);
 
-        DataStreamImpl(String streamId, Object innerStream, boolean isReadStream) {
+        DataStreamImpl(
+                String streamId,
+                Object innerStream,
+                boolean isReadStream,
+                BridgeContext context,
+                String resource) {
             this.streamId = streamId;
             this.innerStream = innerStream;
             this.isReadStream = isReadStream;
+            this.context = context;
+            this.resource = resource;
         }
 
         @Override
         public Promise<byte[]> readChunk() {
+            requireStarted();
             if (!isReadStream) {
                 return Promise.ofException(new IllegalStateException("Not a read stream"));
             }
@@ -418,12 +460,14 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
                 return Promise.ofException(new IllegalStateException("Stream closed"));
             }
 
-            CompletableFuture<byte[]> future = dataCloudClient.readStreamChunk(innerStream);
-            return wrapFuture(future);
+            return authorize(context, resource, "stream:chunk:read")
+                .then(() -> executeWithRetry("readStreamChunk", context, resource, "stream:chunk:read", () ->
+                    dataCloudClient.readStreamChunk(innerStream)));
         }
 
         @Override
         public Promise<Void> writeChunk(byte[] data) {
+            requireStarted();
             if (isReadStream) {
                 return Promise.ofException(new IllegalStateException("Not a write stream"));
             }
@@ -431,19 +475,22 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
                 return Promise.ofException(new IllegalStateException("Stream closed"));
             }
 
-            CompletableFuture<Void> future = dataCloudClient.writeStreamChunk(innerStream, data);
-            return wrapFuture(future);
+            return authorize(context, resource, "stream:chunk:write")
+                .then(() -> executeWithRetry("writeStreamChunk", context, resource, "stream:chunk:write", () ->
+                    dataCloudClient.writeStreamChunk(innerStream, data)));
         }
 
         @Override
         public Promise<Void> close() {
+            requireStarted();
             if (!open.compareAndSet(true, false)) {
                 return Promise.complete();
             }
 
             activeStreams.remove(streamId);
-            CompletableFuture<Void> future = dataCloudClient.closeStream(innerStream);
-            return wrapFuture(future);
+            return authorize(context, resource, "stream:close")
+                .then(() -> executeWithRetry("closeStream", context, resource, "stream:close", () ->
+                    dataCloudClient.closeStream(innerStream)));
         }
 
         @Override

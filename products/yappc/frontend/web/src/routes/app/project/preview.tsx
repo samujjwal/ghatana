@@ -13,7 +13,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 
-// TODO-009: Redirect legacy preview route to canonical observe phase
+// TRACK-009: Redirect legacy preview route to canonical observe phase
 export default function PreviewRedirectRoute() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();

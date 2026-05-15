@@ -45,10 +45,12 @@ import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
 import com.ghatana.agent.runtime.safety.InvariantMonitor;
 import com.ghatana.agent.runtime.safety.DefaultInvariantMonitor;
 import com.ghatana.agent.audit.AgentTraceLedger;
-import com.ghatana.agent.audit.HashChainedTraceAppender;
+import com.ghatana.agent.audit.DataCloudAgentTraceLedger;
 import com.ghatana.agent.runtime.mode.DefaultModeSelectionPolicy;
 import com.ghatana.datacloud.agent.learning.delta.DataCloudLearningDeltaRepository;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
@@ -68,6 +70,7 @@ import com.ghatana.orchestrator.store.PipelineCheckpointRepository;
 import com.ghatana.orchestrator.store.PostgresqlCheckpointStore;
 import com.ghatana.orchestrator.store.StepCheckpointRepository;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import java.net.URI;
@@ -75,6 +78,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * ActiveJ DI module for AEP orchestration components.
@@ -403,6 +407,7 @@ public class AepOrchestrationModule extends AbstractModule {
         return new MasteryRegistry() {
             @Override
             @NotNull
+            @SuppressWarnings("deprecation")
             public Promise<Optional<com.ghatana.agent.mastery.MasteryItem>> findBySkill(
                     @NotNull String skillId,
                     @NotNull com.ghatana.agent.environment.EnvironmentFingerprint env) {
@@ -541,16 +546,32 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides the agent trace ledger implementation.
+     * Provides the Data Cloud event log used by the agent trace ledger.
      *
-     * <p>Uses {@link HashChainedTraceAppender} for in-memory hash-chained trace storage.
-     * Production deployments should back this with a persistent ledger service.
+     * <p>Production deployments supply a Data Cloud {@code EventLogStore} provider.
+     * Local development falls back to the registered in-memory Data Cloud SPI provider
+     * while still using the same Data Cloud event-log contract.
      *
-     * @return hash-chained trace ledger
+     * @return platform event log store for agent trace evidence
      */
     @Provides
-    AgentTraceLedger agentTraceLedger() {
-        return new HashChainedTraceAppender();
+    EventLogStore agentTraceEventLogStore() {
+        com.ghatana.datacloud.spi.EventLogStore dataCloudStore =
+                ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class)
+                        .findFirst()
+                        .orElseGet(InMemoryEventLogStoreProvider::new);
+        return EventLogStoreAdapters.toPlatformStore(dataCloudStore);
+    }
+
+    /**
+     * Provides the agent trace ledger implementation.
+     *
+     * @param eventLogStore Data Cloud event-log store for trace evidence
+     * @return Data Cloud-backed hash-chained trace ledger
+     */
+    @Provides
+    AgentTraceLedger agentTraceLedger(EventLogStore eventLogStore) {
+        return new DataCloudAgentTraceLedger(eventLogStore);
     }
 
     /**

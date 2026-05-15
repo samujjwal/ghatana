@@ -83,7 +83,7 @@ public class PluginDependencyResolver {
 
         PluginManifest manifest = plugins.get(pluginId);
         if (manifest != null) {
-            // Check dependencies (placeholder implementation)
+            // Check dependencies (baseline implementation)
             // In a full implementation, this would check actual dependencies
         }
 

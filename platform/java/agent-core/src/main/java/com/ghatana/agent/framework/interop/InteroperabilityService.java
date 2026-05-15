@@ -167,7 +167,7 @@ public final class InteroperabilityService {
             @NotNull Map<String, Object> content,
             @Nullable String errorMsg) {
 
-        /** Creates a pending placeholder response (awaiting async resolution). */
+        /** Creates a pending pending response (awaiting async resolution). */
         @NotNull
         static McpResponse pending(@NotNull String toolName) {
             return new McpResponse(toolName, "pending", Map.of(), null);

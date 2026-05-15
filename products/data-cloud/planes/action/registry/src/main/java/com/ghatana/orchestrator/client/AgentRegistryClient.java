@@ -35,7 +35,7 @@ public interface AgentRegistryClient {
      * @return a Promise resolving to true if healthy
      */
     default Promise<Boolean> isHealthy() {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**

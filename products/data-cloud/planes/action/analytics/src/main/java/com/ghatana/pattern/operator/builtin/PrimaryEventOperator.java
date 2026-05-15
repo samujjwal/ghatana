@@ -41,7 +41,7 @@ import java.util.Map;
  *                   cross-event state tracking. Each event is independently evaluated against the
  *                   eventTypes list. Cannot operate in stateful mode (supportsStateful=false).
  * @doc.threading Thread-Safe Validation - Validation logic is stateless and thread-safe. Runtime execution
- *                (not implemented here) is also inherently thread-safe - simple type membership check.
+ *                (unavailable here) is also inherently thread-safe - simple type membership check.
  *                Event type registry lookups (if enabled) must be thread-safe at catalog layer.
  * @doc.performance O(n) Validation Performance - Linear in number of event types for parameter validation
  *                  (must validate each type format + catalog existence). Typical validation time: <1ms

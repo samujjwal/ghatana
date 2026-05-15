@@ -142,7 +142,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       localStorage.setItem('flashit_error_logs', JSON.stringify(errorLogs));
 
-      // TODO: Send to error logging service (e.g., Sentry)
+      // Implementation note: Send to error logging service (e.g., Sentry)
       // errorLogger.log(errorData);
     } catch (e) {
       console.error('Failed to log error:', e);

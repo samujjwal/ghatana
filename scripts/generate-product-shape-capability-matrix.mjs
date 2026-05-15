@@ -37,6 +37,7 @@ function loadToolchainAdapters() {
 function analyzeProduct(productId, product, profiles, adapters) {
   const lifecycleProfile = product.lifecycleProfile;
   const profile = profiles[lifecycleProfile];
+  const lifecycleReadiness = product.lifecycleReadiness ?? {};
   const lifecycleStatus = product.lifecycleStatus || (product.lifecycle?.enabled ? 'enabled' : 'disabled');
   const surfaces = product.surfaces || [];
   const surfaceTypes = surfaces.map(s => s.type).sort();
@@ -51,16 +52,35 @@ function analyzeProduct(productId, product, profiles, adapters) {
 
   // Determine required capabilities based on profile and surfaces
   const requiredCapabilities = [];
+  const requiredAdapters = [];
+  const adapterReadiness = [];
   const findings = [];
   const capabilityGaps = [];
+  const reasonCodes = [];
+  const missingManifests = [];
+  const missingProviders = [];
+  const gatesNeeded = [
+    ...new Set([
+      'security',
+      'privacy',
+      'i18n',
+      'a11y',
+      ...asStringArray(lifecycleReadiness.requiredGates),
+    ]),
+  ].sort();
+  reasonCodes.push(...asStringArray(lifecycleReadiness.reasonCodes));
 
   if (!profile && lifecycleStatus !== 'disabled') {
     findings.push(`Lifecycle profile "${lifecycleProfile}" not found in product-lifecycle-profiles.json`);
     capabilityGaps.push('missing-lifecycle-profile');
+    reasonCodes.push('missing-lifecycle-profile');
   }
 
   // Check adapter support for each surface
   for (const surface of surfaces) {
+    if (lifecycleStatus === 'disabled' && !profile) {
+      continue;
+    }
     const surfaceType = surface.type;
     const adapterKey = profile?.defaultAdapters?.[surfaceType];
     const adapter = adapterKey ? adapters[adapterKey] : null;
@@ -68,17 +88,34 @@ function analyzeProduct(productId, product, profiles, adapters) {
     if (!adapterKey && lifecycleStatus !== 'disabled') {
       findings.push(`Surface "${surfaceType}" has no default adapter defined in profile "${lifecycleProfile}"`);
       capabilityGaps.push(`missing-adapter:${surfaceType}`);
+      reasonCodes.push(`missing-adapter:${surfaceType}`);
     } else if (!adapter) {
       findings.push(`Adapter "${adapterKey}" for surface "${surfaceType}" not found in toolchain-adapter-registry.json`);
       capabilityGaps.push(`unknown-adapter:${adapterKey}`);
+      reasonCodes.push(`unknown-adapter:${adapterKey}`);
     } else if (adapter.status !== 'implemented') {
       findings.push(`Adapter "${adapterKey}" for surface "${surfaceType}" has status "${adapter.status}" (not fully implemented)`);
       capabilityGaps.push(`adapter-not-implemented:${adapterKey}`);
+      reasonCodes.push(`adapter-not-implemented:${adapterKey}`);
+    } else if (adapter.readiness !== 'execution-ready' || adapter.lifecycleEnabled !== true) {
+      findings.push(`Adapter "${adapterKey}" for surface "${surfaceType}" is not lifecycle execution-ready`);
+      capabilityGaps.push(`adapter-not-execution-ready:${adapterKey}`);
+      reasonCodes.push(`adapter-not-execution-ready:${adapterKey}`);
     }
 
     // Add capability requirements
     if (adapterKey) {
       requiredCapabilities.push(`${surfaceType}:${adapterKey}`);
+      requiredAdapters.push(adapterKey);
+      adapterReadiness.push({
+        adapterId: adapterKey,
+        surfaceType,
+        status: adapter?.status ?? 'unknown',
+        readiness: adapter?.readiness ?? 'unknown',
+        lifecycleEnabled: adapter?.lifecycleEnabled === true,
+        supportsBootstrapMode: adapter?.supportsBootstrapMode === true,
+        supportsPlatformMode: adapter?.supportsPlatformMode === true,
+      });
     }
   }
 
@@ -93,13 +130,29 @@ function analyzeProduct(productId, product, profiles, adapters) {
     } else if (!deployAdapter) {
       findings.push(`Deployment adapter "${deployAdapterKey}" not found in toolchain-adapter-registry.json`);
       capabilityGaps.push(`unknown-deploy-adapter:${deployAdapterKey}`);
+      reasonCodes.push(`unknown-deploy-adapter:${deployAdapterKey}`);
     } else if (deployAdapter.status !== 'implemented') {
       findings.push(`Deployment adapter "${deployAdapterKey}" has status "${deployAdapter.status}" (not fully implemented)`);
       capabilityGaps.push(`deploy-adapter-not-implemented:${deployAdapterKey}`);
+      reasonCodes.push(`deploy-adapter-not-implemented:${deployAdapterKey}`);
+    } else if (deployAdapter.readiness !== 'execution-ready' || deployAdapter.lifecycleEnabled !== true) {
+      findings.push(`Deployment adapter "${deployAdapterKey}" is not lifecycle execution-ready`);
+      capabilityGaps.push(`deploy-adapter-not-execution-ready:${deployAdapterKey}`);
+      reasonCodes.push(`deploy-adapter-not-execution-ready:${deployAdapterKey}`);
     }
 
     if (deployAdapterKey) {
       requiredCapabilities.push(`deploy:${deployAdapterKey}`);
+      requiredAdapters.push(deployAdapterKey);
+      adapterReadiness.push({
+        adapterId: deployAdapterKey,
+        surfaceType: 'deploy.local',
+        status: deployAdapter?.status ?? 'unknown',
+        readiness: deployAdapter?.readiness ?? 'unknown',
+        lifecycleEnabled: deployAdapter?.lifecycleEnabled === true,
+        supportsBootstrapMode: deployAdapter?.supportsBootstrapMode === true,
+        supportsPlatformMode: deployAdapter?.supportsPlatformMode === true,
+      });
     }
   }
 
@@ -119,13 +172,33 @@ function analyzeProduct(productId, product, profiles, adapters) {
   } else if (lifecycleStatus === 'disabled') {
     status = 'Disabled observed';
     executionReadiness = 'disabled';
+    reasonCodes.push('disabled-observed');
   } else if (lifecycleStatus === 'partial') {
     status = 'Shape-only with limitations';
     executionReadiness = 'not-enabled';
+    reasonCodes.push('partial-lifecycle');
   } else {
     status = 'Unknown';
     executionReadiness = 'unknown';
+    reasonCodes.push('unknown-lifecycle-status');
   }
+
+  if (lifecycleStatus === 'planned') {
+    reasonCodes.push('planned-shape-only');
+  }
+  if (lifecycleStatus === 'enabled' && capabilityGaps.length === 0) {
+    reasonCodes.push('execution-ready');
+  }
+  if (lifecycleStatus === 'enabled') {
+    missingProviders.push(...['platform-events', 'platform-artifacts', 'platform-health'].filter((provider) =>
+      product.kind === 'platform-provider' ? false : provider.startsWith('platform-'),
+    ));
+  }
+  if (lifecycleStatus !== 'enabled') {
+    missingManifests.push('lifecycle-plan', 'lifecycle-result', 'artifact-manifest', 'deployment-manifest');
+  }
+  missingManifests.push(...asStringArray(lifecycleReadiness.missingManifests));
+  missingProviders.push(...asStringArray(lifecycleReadiness.missingProviders));
 
   // Determine shape description
   const shapeDescription = getShapeDescription(surfaceTypes, lifecycleProfile, productKind);
@@ -139,12 +212,44 @@ function analyzeProduct(productId, product, profiles, adapters) {
     lifecycleStatus,
     shapeValidationMode,
     profileStatus,
+    requiredAdapters: [...new Set(requiredAdapters)].sort(),
+    adapterReadiness,
+    missingManifests: [...new Set(missingManifests)].sort(),
+    missingProviders: [...new Set(missingProviders)].sort(),
+    gatesNeeded,
     requiredCapabilities: requiredCapabilities.sort(),
     capabilityGaps: capabilityGaps.sort(),
+    reasonCodes: [...new Set(reasonCodes)].sort(),
+    nextActions: getNextActions(lifecycleStatus, capabilityGaps, productKind, lifecycleReadiness),
+    readinessEvidence: asStringArray(lifecycleReadiness.evidenceRefs),
     executionReadiness,
     status,
     findings: findings.length > 0 ? findings : undefined,
   };
+}
+
+function asStringArray(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(item => typeof item === 'string' && item.length > 0);
+}
+
+function getNextActions(lifecycleStatus, capabilityGaps, productKind, lifecycleReadiness = {}) {
+  const configuredActions = asStringArray(lifecycleReadiness.nextRequiredWork);
+  const defaultActions = [];
+  if (lifecycleStatus === 'enabled' && capabilityGaps.length === 0) {
+    defaultActions.push('Keep lifecycle smoke passing and preserve manifest evidence');
+  } else if (lifecycleStatus === 'planned') {
+    defaultActions.push('Keep shape-only until required adapters and manifests are executable');
+  } else if (productKind === 'platform-provider') {
+    defaultActions.push('Wire platform-mode provider bridge before enabling lifecycle execution');
+  } else if (capabilityGaps.length > 0) {
+    defaultActions.push('Resolve adapter capability gaps before enabling lifecycle execution');
+  } else {
+    defaultActions.push('Keep disabled until lifecycle profile and ProductUnit evidence are ready');
+  }
+  return [...new Set([...configuredActions, ...defaultActions])];
 }
 
 function getShapeDescription(surfaceTypes, lifecycleProfile, productKind) {
@@ -165,13 +270,15 @@ function generateMarkdown(matrix) {
     '',
     '## Matrix',
     '',
-    '| Product | Kind | Mode | Profile | Lifecycle Status | Required Kernel Capabilities | Status |',
-    '|---------|------|------|---------|------------------|------------------------------|--------|',
+    '| Product | Kind | Mode | Profile | Lifecycle Status | Readiness | Required Adapters | Reason Codes | Status |',
+    '|---------|------|------|---------|------------------|-----------|-------------------|--------------|--------|',
   ];
 
   for (const row of matrix) {
     const capabilities = row.requiredCapabilities.join(', ') || 'None';
-    lines.push(`| ${row.productId} | ${row.productKind} | ${row.shapeValidationMode} | ${row.profileStatus} | ${row.lifecycleStatus} | ${capabilities} | ${row.status} |`);
+    const adapters = row.requiredAdapters.join(', ') || capabilities;
+    const reasons = row.reasonCodes.join(', ') || 'None';
+    lines.push(`| ${row.productId} | ${row.productKind} | ${row.shapeValidationMode} | ${row.profileStatus} | ${row.lifecycleStatus} | ${row.executionReadiness} | ${adapters} | ${reasons} | ${row.status} |`);
   }
 
   lines.push('');

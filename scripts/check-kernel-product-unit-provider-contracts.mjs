@@ -82,8 +82,18 @@ function main() {
     errors.push('kernel-providers package name must be @ghatana/kernel-providers');
   }
   const providerDependencies = Object.keys(providerPackage.dependencies ?? {});
-  if (providerDependencies.some((dependency) => dependency !== '@ghatana/kernel-product-contracts')) {
-    errors.push('kernel-providers must depend only on @ghatana/kernel-product-contracts');
+  const allowedProviderDependencies = new Set([
+    '@ghatana/kernel-artifacts',
+    '@ghatana/kernel-product-contracts',
+    '@ghatana/kernel-release',
+  ]);
+  const unexpectedProviderDependencies = providerDependencies.filter(
+    (dependency) => !allowedProviderDependencies.has(dependency),
+  );
+  if (unexpectedProviderDependencies.length > 0) {
+    errors.push(
+      `kernel-providers has unexpected dependencies: ${unexpectedProviderDependencies.join(', ')}`,
+    );
   }
 
   const registry = readJson('config/canonical-product-registry.json').registry;

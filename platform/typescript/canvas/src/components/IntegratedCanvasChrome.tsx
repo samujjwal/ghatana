@@ -156,7 +156,7 @@ const IntegratedCanvasChromeInner: React.FC<IntegratedCanvasChromeProps> = ({
                     <LeftPanel type="tasks" onClose={() => setLeftPanel(null)}>
                         <div style={{ padding: '16px' }}>
                             <p style={{ color: '#6b7280', fontSize: '14px' }}>
-                                Tasks panel - Coming soon
+                                Tasks panel - Unavailable
                             </p>
                         </div>
                     </LeftPanel>
@@ -166,7 +166,7 @@ const IntegratedCanvasChromeInner: React.FC<IntegratedCanvasChromeProps> = ({
                     <LeftPanel type="minimap" onClose={() => setLeftPanel(null)}>
                         <div style={{ padding: '16px' }}>
                             <p style={{ color: '#6b7280', fontSize: '14px' }}>
-                                Minimap - Coming soon
+                                Minimap - Unavailable
                             </p>
                         </div>
                     </LeftPanel>

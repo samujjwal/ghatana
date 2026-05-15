@@ -71,6 +71,13 @@ export default defineConfig({
         ),
       },
       {
+        find: '@ghatana/kernel-product-contracts',
+        replacement: resolve(
+          __dirname,
+          '../../../../platform/typescript/kernel-product-contracts/dist/index.js'
+        ),
+      },
+      {
         find: 'clsx',
         replacement: resolve(
           __dirname,

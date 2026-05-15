@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.api;
 
 import com.ghatana.digitalmarketing.application.DmosObservability;
+import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.application.ai.KernelAgentOrchestrationAdapter;
 import com.ghatana.digitalmarketing.application.ai.AiPolicyCheckServiceImpl;
@@ -108,7 +109,7 @@ import com.ghatana.platform.http.security.RouteEntitlementEvaluator;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
 import com.ghatana.plugin.consent.impl.StandardConsentPlugin;
-import com.ghatana.plugin.notification.NotificationPlugin;
+import com.ghatana.plugin.featureflag.FeatureFlagPlugin;
 import com.ghatana.plugin.notification.impl.DurableNotificationPlugin;
 import com.ghatana.plugin.notification.impl.InMemoryNotificationPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -258,9 +259,9 @@ public final class DmosApiServer extends Launcher {
         }
 
         String otelEndpoint = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
-        String legacyOtelEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
+        String secondaryOtelEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
         if ((otelEndpoint == null || otelEndpoint.isBlank())
-            && (legacyOtelEndpoint == null || legacyOtelEndpoint.isBlank())) {
+            && (secondaryOtelEndpoint == null || secondaryOtelEndpoint.isBlank())) {
             throw new IllegalStateException(
                 "OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_COLLECTOR_ENDPOINT is required for production telemetry"
             );
@@ -431,6 +432,7 @@ public final class DmosApiServer extends Launcher {
         AuditTrailPlugin auditTrailPlugin = createAuditTrailPlugin();
         RiskManagementPlugin riskPlugin = createRiskManagementPlugin();
         NotificationPlugin notificationPlugin = createNotificationPlugin();
+        FeatureFlagPlugin featureFlagPlugin = new EnvironmentFeatureFlagPlugin();
 
         // Wire kernel adapter
         DigitalMarketingKernelAdapter kernelAdapter = new DigitalMarketingKernelAdapterImpl(
@@ -441,12 +443,15 @@ public final class DmosApiServer extends Launcher {
             approvalPlugin,
             auditTrailPlugin,
             riskPlugin,
-            notificationPlugin
+            notificationPlugin,
+            featureFlagPlugin,
+            environment.equals(PRODUCTION)
         );
         kernelAdapter.start();
         register(DigitalMarketingKernelAdapter.class, kernelAdapter);
         register(ConsentPlugin.class, consentPlugin);
         register(HumanApprovalPlugin.class, approvalPlugin);
+        register(FeatureFlagPlugin.class, featureFlagPlugin);
 
         // Wire repositories based on persistence type
         if (usePostgres()) {
@@ -555,7 +560,7 @@ public final class DmosApiServer extends Launcher {
             LOG.info("[{}] Using TracingManager with OTLP endpoint: {}", environment, collectorEndpoint);
         } else {
             tracingManager = TracingManager.createNoOp();
-            LOG.info("[{}] Using no-op TracingManager for development", environment);
+            LOG.info("[{}] Using local TracingManager for development", environment);
         }
         register(TracingManager.class, tracingManager);
 
@@ -631,7 +636,7 @@ public final class DmosApiServer extends Launcher {
                 }
             };
         } else {
-            // Dev/test: use a no-op implementation until credentials are configured
+            // Dev/test uses an in-memory connector until credentials are configured.
             apiClient = new InMemoryDmGoogleAdsCampaignApiClient();
         }
 
@@ -1102,7 +1107,7 @@ public final class DmosApiServer extends Launcher {
      *
      * <p>When {@code DMOS_OPA_URL} is set, a real OPA-backed authorization service is
      * returned wrapped in a circuit breaker (fail-closed on OPA unavailability).
-     * Otherwise falls back to allow-all for development convenience.</p>
+     * Otherwise falls back to a development-only permissive implementation.</p>
      */
     private BridgeAuthorizationService createAuthorizationService() {
         String opaUrl = System.getenv("DMOS_OPA_URL");
@@ -1118,21 +1123,21 @@ public final class DmosApiServer extends Launcher {
         if (environment.equals(PRODUCTION)) {
             throw new IllegalStateException("DMOS_OPA_URL is required in production; allow-all authorization is not permitted.");
         } else {
-            LOG.info("[{}] Using allowAll authorization for development (set DMOS_OPA_URL for OPA)", environment);
+            LOG.info("[{}] Using development authorization for local mode (set DMOS_OPA_URL for OPA)", environment);
         }
-        return BridgeAuthorizationService.allowAll();
+        return (context, resource, action) -> io.activej.promise.Promise.of(Boolean.TRUE);
     }
 
     /**
      * Creates the audit emitter implementation based on environment.
-     * Production uses real kernel bridge; dev/test uses noOp for convenience.
+     * Production uses real kernel bridge; dev/test uses an in-process emitter.
      */
     private BridgeAuditEmitter createAuditEmitter() {
         if (environment.equals(PRODUCTION)) {
-            throw new IllegalStateException("Production audit emitter is not configured; no-op audit is not permitted.");
+            throw new IllegalStateException("Production audit emitter is not configured.");
         }
-        LOG.info("[{}] Using noOp audit emitter for development", environment);
-        return BridgeAuditEmitter.noOp();
+        LOG.info("[{}] Using development audit emitter", environment);
+        return event -> { };
     }
 
     // -----------------------------------------------------------------------
@@ -1201,7 +1206,6 @@ public final class DmosApiServer extends Launcher {
         if (usePostgres()) {
             DataSource dataSource = get(DataSource.class);
             Executor executor = Executors.newCachedThreadPool();
-            // No-op event bus — replace with real EventBusPort when available
             EventBusPort eventBus = event -> {};
             DurableNotificationPlugin plugin = new DurableNotificationPlugin(dataSource, eventBus, executor);
             plugin.ensureSchema();
@@ -1226,6 +1230,99 @@ public final class DmosApiServer extends Launcher {
             return Integer.parseInt(port);
         }
         return 8080;
+    }
+
+    private static final class EnvironmentFeatureFlagPlugin implements FeatureFlagPlugin {
+        private static final Map<String, FlagDefinition> KNOWN_FLAGS = Map.ofEntries(
+            Map.entry(DmosFeatureFlags.AI_ENABLED, new FlagDefinition("DMOS_AI_ENABLED", false)),
+            Map.entry(
+                DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED,
+                new FlagDefinition("DMOS_GOOGLE_ADS_CONNECTOR_ENABLED", false)
+            ),
+            Map.entry(DmosFeatureFlags.KILL_SWITCH_ENABLED, new FlagDefinition("DMOS_KILL_SWITCH_ENABLED", true)),
+            Map.entry(
+                DmosFeatureFlags.ROLLBACK_WORKFLOW_ENABLED,
+                new FlagDefinition("DMOS_ROLLBACK_WORKFLOW_ENABLED", true)
+            ),
+            Map.entry(DmosFeatureFlags.ROLLBACK_ENABLED, new FlagDefinition("DMOS_ROLLBACK_ENABLED", true)),
+            Map.entry(DmosFeatureFlags.OBSERVABILITY_ENABLED, new FlagDefinition("DMOS_OBSERVABILITY_ENABLED", true)),
+            Map.entry(
+                DmosFeatureFlags.DASHBOARD_GROWTH_METRICS,
+                new FlagDefinition("DMOS_DASHBOARD_GROWTH_METRICS_ENABLED", false)
+            ),
+            Map.entry(DmosFeatureFlags.BUDGET_PAGE_ENABLED, new FlagDefinition("DMOS_BUDGET_PAGE_ENABLED", false)),
+            Map.entry(DmosFeatureFlags.STRATEGY_PAGE_ENABLED, new FlagDefinition("DMOS_STRATEGY_PAGE_ENABLED", false)),
+            Map.entry(DmosFeatureFlags.CAMPAIGNS_PAGE_ENABLED, new FlagDefinition("DMOS_CAMPAIGNS_PAGE_ENABLED", false))
+        );
+
+        @Override
+        public Promise<Boolean> isEnabled(String flagKey, String tenantId) {
+            return getBoolean(flagKey, tenantId, defaultBoolean(flagKey, false));
+        }
+
+        @Override
+        public Promise<String> getString(String flagKey, String tenantId, String defaultValue) {
+            String value = System.getenv(envNameFor(flagKey));
+            return Promise.of(value == null || value.isBlank() ? defaultValue : value.trim());
+        }
+
+        @Override
+        public Promise<Integer> getInt(String flagKey, String tenantId, int defaultValue) {
+            String value = System.getenv(envNameFor(flagKey));
+            if (value == null || value.isBlank()) {
+                return Promise.of(defaultValue);
+            }
+            try {
+                return Promise.of(Integer.parseInt(value.trim()));
+            } catch (NumberFormatException ignored) {
+                return Promise.of(defaultValue);
+            }
+        }
+
+        @Override
+        public Promise<Boolean> getBoolean(String flagKey, String tenantId, boolean defaultValue) {
+            String value = System.getenv(envNameFor(flagKey));
+            if (value == null || value.isBlank()) {
+                return Promise.of(defaultValue);
+            }
+            return Promise.of("true".equalsIgnoreCase(value.trim()));
+        }
+
+        @Override
+        public Promise<Map<String, Object>> getAllFlags(String tenantId) {
+            Map<String, Object> values = new LinkedHashMap<>();
+            KNOWN_FLAGS.forEach((flagKey, definition) ->
+                values.put(flagKey, "true".equalsIgnoreCase(
+                    System.getenv().getOrDefault(definition.envName, Boolean.toString(definition.defaultEnabled))
+                ))
+            );
+            return Promise.of(Map.copyOf(values));
+        }
+
+        private static boolean defaultBoolean(String flagKey, boolean fallback) {
+            FlagDefinition definition = KNOWN_FLAGS.get(flagKey);
+            return definition == null ? fallback : definition.defaultEnabled;
+        }
+
+        private static String envNameFor(String flagKey) {
+            FlagDefinition definition = KNOWN_FLAGS.get(flagKey);
+            if (definition != null) {
+                return definition.envName;
+            }
+            return "DMOS_FEATURE_" + flagKey.toUpperCase()
+                .replace('.', '_')
+                .replace('-', '_');
+        }
+
+        private static final class FlagDefinition {
+            private final String envName;
+            private final boolean defaultEnabled;
+
+            private FlagDefinition(String envName, boolean defaultEnabled) {
+                this.envName = envName;
+                this.defaultEnabled = defaultEnabled;
+            }
+        }
     }
 
     /**

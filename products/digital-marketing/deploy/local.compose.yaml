@@ -14,7 +14,7 @@ services:
     environment:
       - DMOS_API_PORT=8080
       - DMOS_ENV=${DMOS_ENV:-development}
-      - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/digital_marketing}
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required for Digital Marketing local deploy}
       - DATABASE_USERNAME=${DATABASE_USERNAME:-dmos}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - LOG_LEVEL=${LOG_LEVEL:-info}
@@ -29,6 +29,9 @@ services:
       ghatana.kernel.surface: backend-api
       ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
+      ghatana.kernel.artifactRef: "kernel://artifacts/digital-marketing/backend-api:local"
+      ghatana.kernel.health.livePath: /health/live
+      ghatana.kernel.health.readyPath: /health/ready
     networks:
       - digital-marketing-network
     depends_on:
@@ -56,6 +59,9 @@ services:
       ghatana.kernel.surface: web
       ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
+      ghatana.kernel.artifactRef: "kernel://artifacts/digital-marketing/web:local"
+      ghatana.kernel.health.livePath: /
+      ghatana.kernel.health.readyPath: /
     networks:
       - digital-marketing-network
     depends_on:
@@ -86,4 +92,3 @@ networks:
 
 volumes:
   digital-marketing-postgres-data:
-

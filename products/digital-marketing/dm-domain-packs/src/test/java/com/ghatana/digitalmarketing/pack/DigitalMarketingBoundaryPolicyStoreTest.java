@@ -50,10 +50,10 @@ class DigitalMarketingBoundaryPolicyStoreTest {
     }
 
     @Test
-    @DisplayName("DM-BP-001: workspaces/** read is ALLOW with no consent or audit requirement")
+    @DisplayName("DM-BP-001: digital-marketing:workspaces/** read is ALLOW with no consent or audit requirement")
     void shouldHaveWorkspaceReadAllow() {
         BoundaryPolicyRule rule = findRule("DM-BP-001");
-        assertThat(rule.getResourcePattern()).isEqualTo("workspaces/**");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:workspaces/**");
         assertThat(rule.getActions()).containsExactlyInAnyOrder("read");
         assertThat(rule.getEffect()).isEqualTo(Effect.ALLOW);
         assertThat(rule.isRequiresConsent()).isFalse();
@@ -61,10 +61,10 @@ class DigitalMarketingBoundaryPolicyStoreTest {
     }
 
     @Test
-    @DisplayName("DM-BP-002: contacts/** read is ALLOW with consent and audit required")
+    @DisplayName("DM-BP-002: digital-marketing:contacts/** read is ALLOW with consent and audit required")
     void shouldHaveContactReadAllow() {
         BoundaryPolicyRule rule = findRule("DM-BP-002");
-        assertThat(rule.getResourcePattern()).isEqualTo("contacts/**");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:contacts/**");
         assertThat(rule.getActions()).containsExactlyInAnyOrder("read");
         assertThat(rule.getEffect()).isEqualTo(Effect.ALLOW);
         assertThat(rule.isRequiresConsent()).isTrue();
@@ -72,62 +72,62 @@ class DigitalMarketingBoundaryPolicyStoreTest {
     }
 
     @Test
-    @DisplayName("DM-BP-003: contacts/** write/delete/export is REQUIRE_APPROVAL with audit required")
+    @DisplayName("DM-BP-003: digital-marketing:contacts/** write/delete/export is REQUIRE_APPROVAL with audit required")
     void shouldHaveContactWriteRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-003");
-        assertThat(rule.getResourcePattern()).isEqualTo("contacts/**");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:contacts/**");
         assertThat(rule.getActions()).containsExactlyInAnyOrder("write", "delete", "export");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresAudit()).isTrue();
     }
 
     @Test
-    @DisplayName("DM-BP-004: audiences/** export/sync is REQUIRE_APPROVAL with consent and audit required")
+    @DisplayName("DM-BP-004: digital-marketing:audiences/** export/sync is REQUIRE_APPROVAL with consent and audit required")
     void shouldHaveAudienceExportRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-004");
-        assertThat(rule.getResourcePattern()).isEqualTo("audiences/**");
-        assertThat(rule.getActions()).containsExactlyInAnyOrder("export", "sync");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:audiences/**");
+        assertThat(rule.getActions()).containsExactlyInAnyOrder("export", "digital-marketing:sync");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresConsent()).isTrue();
         assertThat(rule.isRequiresAudit()).isTrue();
     }
 
     @Test
-    @DisplayName("DM-BP-005: campaigns/** launch/pause/resume is REQUIRE_APPROVAL with audit required")
+    @DisplayName("DM-BP-005: digital-marketing:campaigns/** launch/pause/resume is REQUIRE_APPROVAL with audit required")
     void shouldHaveCampaignLifecycleRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-005");
-        assertThat(rule.getResourcePattern()).isEqualTo("campaigns/**");
-        assertThat(rule.getActions()).containsExactlyInAnyOrder("launch", "pause", "resume");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:campaigns/**");
+        assertThat(rule.getActions()).containsExactlyInAnyOrder("digital-marketing:launch", "digital-marketing:pause", "digital-marketing:resume");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresAudit()).isTrue();
     }
 
     @Test
-    @DisplayName("DM-BP-006: budgets/** write/increase is REQUIRE_APPROVAL with audit required")
+    @DisplayName("DM-BP-006: digital-marketing:budgets/** write/increase is REQUIRE_APPROVAL with audit required")
     void shouldHaveBudgetWriteRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-006");
-        assertThat(rule.getResourcePattern()).isEqualTo("budgets/**");
-        assertThat(rule.getActions()).containsExactlyInAnyOrder("write", "increase");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:budgets/**");
+        assertThat(rule.getActions()).containsExactlyInAnyOrder("write", "digital-marketing:increase");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresAudit()).isTrue();
     }
 
     @Test
-    @DisplayName("DM-BP-007: content/** publish is REQUIRE_APPROVAL with audit required")
+    @DisplayName("DM-BP-007: digital-marketing:content/** publish is REQUIRE_APPROVAL with audit required")
     void shouldHaveContentPublishRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-007");
-        assertThat(rule.getResourcePattern()).isEqualTo("content/**");
-        assertThat(rule.getActions()).containsExactlyInAnyOrder("publish");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:content/**");
+        assertThat(rule.getActions()).containsExactlyInAnyOrder("digital-marketing:publish");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresAudit()).isTrue();
     }
 
     @Test
-    @DisplayName("DM-BP-008: connectors/** write/execute is REQUIRE_APPROVAL with audit required")
+    @DisplayName("DM-BP-008: digital-marketing:connectors/** write/execute is REQUIRE_APPROVAL with audit required")
     void shouldHaveConnectorWriteRequireApproval() {
         BoundaryPolicyRule rule = findRule("DM-BP-008");
-        assertThat(rule.getResourcePattern()).isEqualTo("connectors/**");
-        assertThat(rule.getActions()).containsExactlyInAnyOrder("write", "execute");
+        assertThat(rule.getResourcePattern()).isEqualTo("digital-marketing:connectors/**");
+        assertThat(rule.getActions()).containsExactlyInAnyOrder("write", "digital-marketing:execute");
         assertThat(rule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
         assertThat(rule.isRequiresAudit()).isTrue();
     }

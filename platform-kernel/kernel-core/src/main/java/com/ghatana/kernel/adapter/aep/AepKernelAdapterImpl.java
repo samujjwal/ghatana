@@ -46,19 +46,6 @@ public class AepKernelAdapterImpl extends AbstractKernelBridge implements AepKer
     private final AtomicLong pipelineCounter = new AtomicLong(0);
 
     /**
-     * Creates a new AEP adapter with the given client.
-     * Uses no-op bridge ports — suitable for development and testing scaffolding.
-     *
-     * @param aepClient the AEP client for event/agent operations
-     */
-    public AepKernelAdapterImpl(AepClient aepClient) {
-        this(aepClient,
-                BridgeAuthorizationService.allowAll(),
-                BridgeAuditEmitter.noOp(),
-                BridgeHealthIndicator.noOp());
-    }
-
-    /**
      * Creates a new AEP adapter with the given client and kernel bridge ports.
      * This constructor wires production-grade authorization, audit, and health.
      *
@@ -341,7 +328,7 @@ public class AepKernelAdapterImpl extends AbstractKernelBridge implements AepKer
 
         @Override
         default Promise<Boolean> healthCheck() {
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         @Override

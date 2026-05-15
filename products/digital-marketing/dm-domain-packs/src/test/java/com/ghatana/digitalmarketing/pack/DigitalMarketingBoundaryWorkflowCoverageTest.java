@@ -35,14 +35,14 @@ class DigitalMarketingBoundaryWorkflowCoverageTest {
     @DisplayName("every DM-BP rule is exercised by a product workflow allow/deny scenario")
     void shouldExerciseEveryBoundaryRuleWithWorkflowScenarios() {
         List<WorkflowScenario> scenarios = List.of(
-            allow("DM-BP-001", "workspace dashboard read", "workspaces/ws-1", "read", false, false),
-            allow("DM-BP-002", "contact profile read", "contacts/contact-1", "read", true, true),
-            approval("DM-BP-003", "contact export mutation", "contacts/contact-1", "export"),
-            approval("DM-BP-004", "audience sync operation", "audiences/audience-1", "sync"),
-            approval("DM-BP-005", "campaign launch", "campaigns/campaign-1", "launch"),
-            approval("DM-BP-006", "budget increase", "budgets/budget-1", "increase"),
-            approval("DM-BP-007", "content publish", "content/version-1", "publish"),
-            approval("DM-BP-008", "connector execute", "connectors/google-ads", "execute"),
+            allow("DM-BP-001", "workspace dashboard read", "digital-marketing:workspaces/ws-1", "read", false, false),
+            allow("DM-BP-002", "contact profile read", "digital-marketing:contacts/contact-1", "read", true, true),
+            approval("DM-BP-003", "contact export mutation", "digital-marketing:contacts/contact-1", "export"),
+            approval("DM-BP-004", "audience sync operation", "digital-marketing:audiences/audience-1", "digital-marketing:sync"),
+            approval("DM-BP-005", "campaign launch", "digital-marketing:campaigns/campaign-1", "digital-marketing:launch"),
+            approval("DM-BP-006", "budget increase", "digital-marketing:budgets/budget-1", "digital-marketing:increase"),
+            approval("DM-BP-007", "content publish", "digital-marketing:content/version-1", "digital-marketing:publish"),
+            approval("DM-BP-008", "connector execute", "digital-marketing:connectors/google-ads", "digital-marketing:execute"),
             deny("DM-BP-999", "unknown product workflow", "marketplace/listing-1", "delete")
         );
 
@@ -53,14 +53,14 @@ class DigitalMarketingBoundaryWorkflowCoverageTest {
     @DisplayName("every DM-BP workflow has a blocked direct variant")
     void shouldDenyDirectOrMismatchedWorkflowVariants() {
         List<WorkflowScenario> blockedVariants = List.of(
-            deny("DM-BP-001", "workspace write without mutation rule", "workspaces/ws-1", "write"),
-            deny("DM-BP-002", "contact read from untrusted scope", ScopeDescriptor.product("external.partner"), "contacts/contact-1", "read"),
-            deny("DM-BP-003", "contact archive without registered action", "contacts/contact-1", "archive"),
-            deny("DM-BP-004", "audience read without export/sync action", "audiences/audience-1", "read"),
-            deny("DM-BP-005", "campaign delete without lifecycle action", "campaigns/campaign-1", "delete"),
-            deny("DM-BP-006", "budget read without mutation action", "budgets/budget-1", "read"),
-            deny("DM-BP-007", "content draft read without publish action", "content/version-1", "read"),
-            deny("DM-BP-008", "connector read without write/execute action", "connectors/google-ads", "read"),
+            deny("DM-BP-001", "workspace write without mutation rule", "digital-marketing:workspaces/ws-1", "write"),
+            deny("DM-BP-002", "contact read from untrusted scope", ScopeDescriptor.product("external.partner"), "digital-marketing:contacts/contact-1", "read"),
+            deny("DM-BP-003", "contact archive without registered action", "digital-marketing:contacts/contact-1", "archive"),
+            deny("DM-BP-004", "audience read without export/sync action", "digital-marketing:audiences/audience-1", "read"),
+            deny("DM-BP-005", "campaign delete without lifecycle action", "digital-marketing:campaigns/campaign-1", "delete"),
+            deny("DM-BP-006", "budget read without mutation action", "digital-marketing:budgets/budget-1", "read"),
+            deny("DM-BP-007", "content draft read without publish action", "digital-marketing:content/version-1", "read"),
+            deny("DM-BP-008", "connector read without write/execute action", "digital-marketing:connectors/google-ads", "read"),
             deny("DM-BP-999", "unknown product workflow remains denied", "unknown/resource-1", "execute")
         );
 

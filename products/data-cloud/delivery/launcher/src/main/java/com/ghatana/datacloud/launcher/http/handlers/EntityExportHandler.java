@@ -25,7 +25,7 @@ import java.util.Optional;
  * .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
  * }</pre>
  *
- * <p>Returns {@code 501 Not Implemented} when no {@link EntityExportService} is
+ * <p>Returns {@code 501 Unavailable} when no {@link EntityExportService} is
  * configured on this instance.
  *
  * @doc.type    class

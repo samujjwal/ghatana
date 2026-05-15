@@ -62,6 +62,31 @@
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "planned-shape-only",
+          "requires-consent-gate",
+          "requires-pii-classification",
+          "requires-audit-evidence",
+          "requires-fhir-contract-validation",
+          "requires-data-sovereignty-gate"
+        ],
+        "requiredGates": [
+          "consent",
+          "pii-classification",
+          "audit-evidence",
+          "fhir-contract-validation",
+          "tenant-data-sovereignty"
+        ],
+        "nextRequiredWork": [
+          "Validate PHR backend-api and web adapters against healthcare gates before enabling lifecycle execution",
+          "Produce FHIR contract and tenant/data sovereignty evidence in product-local lifecycle manifests"
+        ],
+        "evidenceRefs": [
+          "products/phr/kernel-product.yaml",
+          "products/phr/schema-packs/schema-registry.yaml"
+        ]
+      },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
@@ -230,6 +255,29 @@
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "planned-shape-only",
+          "requires-regulatory-gates",
+          "requires-promotion-approval",
+          "requires-multi-module-build-validation",
+          "requires-portal-operator-sdk-adapters"
+        ],
+        "requiredGates": [
+          "regulatory-compliance",
+          "risk-controls",
+          "promotion-approval",
+          "multi-module-build"
+        ],
+        "nextRequiredWork": [
+          "Validate the Finance multi-module Gradle graph before lifecycle execution",
+          "Add portal, operator, and SDK adapter readiness only after executable adapters exist"
+        ],
+        "evidenceRefs": [
+          "products/finance/kernel-product.yaml",
+          "products/finance/schema-packs/schema-registry.yaml"
+        ]
+      },
       "lifecycleConfigPath": "products/finance/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
@@ -377,12 +425,14 @@
         "owner": "Digital Marketing Team",
         "created": "2026-03-19",
         "documentation": "products/digital-marketing/README.md",
-        "status": "active"
+        "status": "active",
+        "pilot": true
       },
       "lifecycleProfile": "standard-web-api-product",
       "lifecycleStatus": "enabled",
       "lifecycleMigration": {
         "status": "ready",
+        "readinessReasonCode": "validated-digital-marketing-lifecycle-pilot",
         "notes": "Digital Marketing is the validated lifecycle pilot."
       },
       "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
@@ -517,6 +567,32 @@
       "lifecycleMigration": {
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "planned-shape-only",
+          "requires-mobile-adapters",
+          "requires-preview-security-gate",
+          "requires-personal-data-classification",
+          "requires-mobile-bundle-artifacts"
+        ],
+        "requiredGates": [
+          "privacy",
+          "preview-security",
+          "personal-data-classification",
+          "mobile-bundle-contract"
+        ],
+        "missingManifests": [
+          "mobile-ipa-artifact-manifest",
+          "mobile-aab-artifact-manifest"
+        ],
+        "nextRequiredWork": [
+          "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
+          "Add ipa/aab artifact contracts before enabling mobile bundle execution"
+        ],
+        "evidenceRefs": [
+          "products/flashit/kernel-product.yaml"
+        ]
       },
       "lifecycleConfigPath": "products/flashit/kernel-product.yaml",
       "lifecycle": {
@@ -690,6 +766,27 @@
         "created": "2026-03-19",
         "documentation": "products/data-cloud/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "platform-provider-mode-required",
+          "requires-bootstrap-platform-separation",
+          "requires-runtime-truth-provider"
+        ],
+        "requiredGates": [
+          "bootstrap-build-without-platform-providers",
+          "platform-provider-health",
+          "runtime-truth-provider"
+        ],
+        "nextRequiredWork": [
+          "Declare Data Cloud lifecycle profile only after bootstrap build/deploy remains independent of Data Cloud providers",
+          "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed"
+        ],
+        "evidenceRefs": [
+          "products/data-cloud/extensions/kernel-bridge",
+          "products/data-cloud/planes/action/kernel-bridge"
+        ]
       }
     },
     "yappc": {
@@ -783,6 +880,27 @@
         "created": "2026-03-19",
         "documentation": "products/yappc/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "platform-provider-mode-required",
+          "creator-lifecycle-distinct-from-kernel",
+          "artifact-intelligence-evidence-contracts-ready"
+        ],
+        "requiredGates": [
+          "product-unit-intent-export",
+          "artifact-intelligence-boundary",
+          "creator-kernel-lifecycle-separation"
+        ],
+        "nextRequiredWork": [
+          "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
+          "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts"
+        ],
+        "evidenceRefs": [
+          "products/yappc/kernel-bridge",
+          "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+        ]
       }
     },
     "audio-video": {
@@ -843,6 +961,25 @@
         "created": "2026-03-19",
         "documentation": "products/audio-video/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "requires-product-owner-executable-surface-definition",
+          "requires-lifecycle-profile"
+        ],
+        "requiredGates": [
+          "media-privacy",
+          "content-safety",
+          "artifact-retention"
+        ],
+        "nextRequiredWork": [
+          "Define executable Audio-Video surfaces before adding lifecycle configs",
+          "Add media artifact and retention evidence before enabling lifecycle execution"
+        ],
+        "evidenceRefs": [
+          "products/audio-video/docs-generated/01-vision-plan-requirements/02-capability-map.md"
+        ]
       }
     },
     "dcmaar": {
@@ -897,6 +1034,26 @@
         "created": "2026-03-19",
         "documentation": "products/dcmaar/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "requires-product-owner-executable-surface-definition",
+          "requires-lifecycle-profile",
+          "requires-security-threat-model-gates"
+        ],
+        "requiredGates": [
+          "threat-model",
+          "guardian-policy",
+          "security-review"
+        ],
+        "nextRequiredWork": [
+          "Define DCMAAR executable backend and web surfaces before adding lifecycle configs",
+          "Add threat-model and Guardian policy evidence before enabling lifecycle execution"
+        ],
+        "evidenceRefs": [
+          "products/dcmaar/libs/java/guardian-threat-service"
+        ]
       }
     },
     "tutorputor": {
@@ -962,6 +1119,25 @@
       "lifecycleMigration": {
         "status": "partial",
         "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "partial-lifecycle",
+          "requires-product-owner-executable-surface-definition",
+          "requires-content-safety-gates"
+        ],
+        "requiredGates": [
+          "content-safety",
+          "learner-data-privacy",
+          "model-output-evaluation"
+        ],
+        "nextRequiredWork": [
+          "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
+          "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests"
+        ],
+        "evidenceRefs": [
+          "products/tutorputor/kernel-product.yaml"
+        ]
       },
       "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
       "lifecycle": {
@@ -1080,6 +1256,26 @@
         "created": "2026-03-19",
         "documentation": "products/aura/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "requires-product-owner-executable-surface-definition",
+          "requires-lifecycle-profile",
+          "demo-product-not-execution-ready"
+        ],
+        "requiredGates": [
+          "recommendation-safety",
+          "explainability-evidence",
+          "demo-scope-review"
+        ],
+        "nextRequiredWork": [
+          "Keep Aura disabled until product owners define executable lifecycle surfaces",
+          "Add recommendation safety and explainability evidence before lifecycle execution"
+        ],
+        "evidenceRefs": [
+          "products/aura/platform/api"
+        ]
       }
     },
     "software-org": {

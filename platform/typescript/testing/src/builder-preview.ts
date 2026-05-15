@@ -10,6 +10,7 @@
  */
 
 import { vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 // ============================================================================
 // Structural types (mirrors @ghatana/ui-builder/preview without importing it)
@@ -59,11 +60,11 @@ export type MockPreviewToHostMessage =
  * exported by `@ghatana/ui-builder/preview`.
  */
 export interface MockPreviewHostService {
-  send: ReturnType<typeof vi.fn<[MockHostToPreviewMessage], void>>;
-  onMessage: ReturnType<typeof vi.fn<[handler: (msg: MockPreviewToHostMessage) => void], () => void>>;
-  mount: ReturnType<typeof vi.fn<[document: unknown, sandbox: PreviewSandboxProfile], Promise<void>>>;
-  update: ReturnType<typeof vi.fn<[document: unknown], Promise<void>>>;
-  teardown: ReturnType<typeof vi.fn<[], Promise<void>>>;
+  send: Mock<(message: MockHostToPreviewMessage) => void>;
+  onMessage: Mock<(handler: (msg: MockPreviewToHostMessage) => void) => () => void>;
+  mount: Mock<(document: unknown, sandbox: PreviewSandboxProfile) => Promise<void>>;
+  update: Mock<(document: unknown) => Promise<void>>;
+  teardown: Mock<() => Promise<void>>;
   /**
    * Utility: simulate a message arriving from the preview side.
    * Calls all currently registered handlers from `onMessage`.

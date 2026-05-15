@@ -658,7 +658,7 @@ public class ColdTierArchivePlugin implements StoragePlugin {
                 }
             }
             case NONE, SSE_C -> {
-                // No encryption or customer-provided (not implemented)
+                // No encryption or customer-provided (unavailable)
             }
         }
     }

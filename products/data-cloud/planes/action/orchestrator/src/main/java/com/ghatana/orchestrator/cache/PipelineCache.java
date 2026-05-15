@@ -88,7 +88,7 @@ public class PipelineCache {
         CacheEntry removed = cache.remove(pipelineId);
         if (removed != null) {
             size.set(cache.size());
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
         return Promise.of(false);
     }

@@ -233,7 +233,7 @@ async function loadTemplate(
 ): Promise<{ html: string; text: string }> {
   // Template loading implementation
   // This would load from a template directory or database
-  throw new Error("Template loading not implemented");
+  throw new Error("Template loading unavailable");
 }
 
 function renderTemplate(

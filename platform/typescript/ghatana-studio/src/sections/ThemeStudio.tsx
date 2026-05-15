@@ -9,10 +9,10 @@
  * @doc.layer platform
  */
 
-import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Typography } from '@ghatana/design-system';
 
-export default function ThemeStudio() {
+export default function ThemeStudio(): ReactElement {
   return (
     <div className="p-6">
       <div className="studio-section">
@@ -24,13 +24,13 @@ export default function ThemeStudio() {
         </div>
         
         <div className="studio-card">
-          <Typography variant="body" className="text-gray-600 mb-4">
+          <Typography variant="body1" className="text-gray-600 mb-4">
             Materialize and customize design system presets with brand overrides.
           </Typography>
           
           <div className="space-y-4">
             <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Typography variant="body" className="text-gray-500">
+              <Typography variant="body1" className="text-gray-500">
                 No themes yet. Create your first design system theme.
               </Typography>
             </div>

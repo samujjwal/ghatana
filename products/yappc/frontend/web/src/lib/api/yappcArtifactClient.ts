@@ -153,7 +153,7 @@ export interface Artifact {
   status: string;
   content: unknown;
   createdAt: string;
-  // TODO-016: Add lineage tracking to trace artifacts to intent and plan
+  // TRACK-016: Add lineage tracking to trace artifacts to intent and plan
   lineage?: ArtifactLineage;
 }
 

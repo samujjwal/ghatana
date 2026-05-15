@@ -9,10 +9,10 @@
  * @doc.layer platform
  */
 
-import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Typography } from '@ghatana/design-system';
 
-export default function ImportMigrationLab() {
+export default function ImportMigrationLab(): ReactElement {
   return (
     <div className="p-6">
       <div className="studio-section">
@@ -24,13 +24,13 @@ export default function ImportMigrationLab() {
         </div>
         
         <div className="studio-card">
-          <Typography variant="body" className="text-gray-600 mb-4">
+          <Typography variant="body1" className="text-gray-600 mb-4">
             Test code import from JSON, TSX, and HTML with ownership-aware reconciliation.
           </Typography>
           
           <div className="space-y-4">
             <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Typography variant="body" className="text-gray-500">
+              <Typography variant="body1" className="text-gray-500">
                 Paste or upload code to test import and reconciliation.
               </Typography>
             </div>

@@ -209,7 +209,7 @@ public class HybridStateStore implements StateStore {
         return localStore.exists(key)
             .then(localExists -> {
                 if (localExists) {
-                    return Promise.of(true);
+                    return Promise.of(Boolean.TRUE);
                 }
                 // Check central
                 return centralStore.exists(key);

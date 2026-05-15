@@ -32,7 +32,7 @@ import java.util.UUID;
  * .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
  * }</pre>
  *
- * <p>Returns {@code 501 Not Implemented} when no {@link StatisticalAnomalyDetector} is
+ * <p>Returns {@code 501 Unavailable} when no {@link StatisticalAnomalyDetector} is
  * configured on this instance.
  *
  * @doc.type    class

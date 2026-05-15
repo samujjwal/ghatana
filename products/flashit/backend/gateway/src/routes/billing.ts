@@ -211,8 +211,7 @@ export async function registerBillingRoutes(fastify: FastifyInstance) {
    * POST /api/billing/webhook
    * Handle Stripe webhook events (subscription created, updated, canceled)
    * 
-   * Phase 1: Not implemented
-   * Phase 2: Full webhook handling
+   * Webhook handling is available when Stripe signing secrets are configured.
    */
   fastify.post(
     '/api/billing/webhook',

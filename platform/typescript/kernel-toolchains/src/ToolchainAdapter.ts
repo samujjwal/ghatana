@@ -3,12 +3,18 @@ import type {
   ProductSurface,
   ProductSurfaceType,
 } from '@ghatana/kernel-product-contracts';
+import type { ProductLifecycleManifestRefs } from '@ghatana/kernel-lifecycle';
 
 export type {
   ProductLifecyclePhase,
   ProductSurface,
   ProductSurfaceType,
 };
+
+export const TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION = '1.0.0' as const;
+
+export type ToolchainExecutionResultSchemaVersion =
+  typeof TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION;
 
 /**
  * A toolchain adapter abstracts a specific tool (Gradle, pnpm, Docker, etc.)
@@ -51,6 +57,16 @@ export interface ToolchainAdapter {
  * Context provided to an adapter for planning and execution.
  */
 export interface ToolchainAdapterContext {
+  /**
+   * Kernel lifecycle run identifier for evidence correlation.
+   */
+  runId?: string;
+
+  /**
+   * Cross-provider correlation identifier for logs, events, and manifests.
+   */
+  correlationId?: string;
+
   /**
    * Product identifier.
    */
@@ -177,6 +193,21 @@ export interface ToolchainPlanStep {
  */
 export interface ToolchainExecutionResult {
   /**
+   * Schema version for this adapter result contract.
+   */
+  schemaVersion?: ToolchainExecutionResultSchemaVersion;
+
+  /**
+   * Kernel lifecycle run identifier echoed from context.
+   */
+  runId?: string;
+
+  /**
+   * Cross-provider correlation identifier echoed from context.
+   */
+  correlationId?: string;
+
+  /**
    * Overall status.
    */
   status: 'succeeded' | 'failed' | 'skipped';
@@ -214,6 +245,32 @@ export interface ToolchainExecutionResult {
     message: string;
     cause?: string;
   };
+
+  warnings?: string[];
+
+  stdout?: string;
+
+  stderr?: string;
+
+  manifestRefs?: ProductLifecycleManifestRefs;
+
+  evidenceRefs?: string[];
+
+  observability?: ToolchainExecutionObservability;
+}
+
+/**
+ * Stable execution telemetry that is safe to persist as lifecycle evidence.
+ */
+export interface ToolchainExecutionObservability {
+  commandId: string;
+  durationMs: number;
+  exitCode?: number;
+  stdoutBytes: number;
+  stderrBytes: number;
+  stdoutTruncated: boolean;
+  stderrTruncated: boolean;
+  outputLimitBytes: number;
 }
 
 /**

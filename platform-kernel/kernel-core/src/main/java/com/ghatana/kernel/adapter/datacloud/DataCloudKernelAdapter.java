@@ -2,6 +2,8 @@ package com.ghatana.kernel.adapter.datacloud;
 
 import io.activej.promise.Promise;
 
+import com.ghatana.kernel.bridge.port.BridgeContext;
+
 import java.util.List;
 
 /**
@@ -71,14 +73,14 @@ public interface DataCloudKernelAdapter {
      * @param datasetId the dataset identifier
      * @return Promise containing schema info
      */
-    Promise<SchemaInfo> getSchema(String datasetId);
+    Promise<SchemaInfo> getSchema(BridgeContext context, String datasetId);
 
     /**
      * Lists all datasets.
      *
      * @return Promise containing dataset list
      */
-    Promise<List<DatasetInfo>> listDatasets();
+    Promise<List<DatasetInfo>> listDatasets(BridgeContext context);
 
     // ==================== Transaction Operations ====================
 
@@ -87,7 +89,7 @@ public interface DataCloudKernelAdapter {
      *
      * @return Promise containing transaction handle
      */
-    Promise<TransactionHandle> beginTransaction();
+    Promise<TransactionHandle> beginTransaction(BridgeContext context);
 
     /**
      * Commits a transaction.
@@ -95,7 +97,7 @@ public interface DataCloudKernelAdapter {
      * @param transaction the transaction handle
      * @return Promise completing when committed
      */
-    Promise<Void> commitTransaction(TransactionHandle transaction);
+    Promise<Void> commitTransaction(BridgeContext context, TransactionHandle transaction);
 
     /**
      * Rolls back a transaction.
@@ -103,7 +105,7 @@ public interface DataCloudKernelAdapter {
      * @param transaction the transaction handle
      * @return Promise completing when rolled back
      */
-    Promise<Void> rollbackTransaction(TransactionHandle transaction);
+    Promise<Void> rollbackTransaction(BridgeContext context, TransactionHandle transaction);
 
     // ==================== Streaming Operations ====================
 

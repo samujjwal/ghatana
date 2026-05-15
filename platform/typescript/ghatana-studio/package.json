@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Unified maintainer app combining Builder Studio, Theme Studio, Component Playground, Canvas Diagnostics, AI Review Console, Import/Migration Lab, and Preview Lab",
+  "description": "Unified Ghatana Studio experience for ideation, blueprinting, development, lifecycle execution, deployment, health, learning, and evolution.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,13 +12,20 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "vitest",
+    "test:a11y": "vitest run src/__tests__/navigation.test.tsx",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@ghatana/api": "workspace:*",
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
     "@ghatana/ds-generator": "workspace:*",
     "@ghatana/ds-registry": "workspace:*",
+    "@ghatana/kernel-artifacts": "workspace:*",
+    "@ghatana/kernel-deployment": "workspace:*",
+    "@ghatana/kernel-product-contracts": "workspace:*",
+    "@ghatana/kernel-release": "workspace:*",
+    "@ghatana/i18n": "workspace:*",
     "@ghatana/platform-events": "workspace:*",
     "@ghatana/tokens": "workspace:*",
     "@ghatana/ui-builder": "workspace:*",
@@ -26,12 +33,14 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router": "^7.14.0",
-    "zustand": "^5.0.2"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.2.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
     "eslint": "^10.2.0",

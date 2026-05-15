@@ -76,6 +76,10 @@ export const DEFAULT_BACKEND_RETRY_MAX_BACKOFF_MS = 2000;
 export const DEFAULT_BREAKER_FAILURE_THRESHOLD = 5;
 export const DEFAULT_BREAKER_OPEN_MS = 30 * 1000; // 30s
 
+export interface AgentLifecycleActionServicePort {
+  handle(request: unknown): Promise<unknown>;
+}
+
 function extractHeaderTenantId(value: string | string[] | undefined): string | null {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim();
@@ -208,6 +212,11 @@ export interface GatewayConfig {
   backendBreakerFailureThreshold?: number;
   /** Breaker open duration in milliseconds. Default: DEFAULT_BREAKER_OPEN_MS. */
   backendBreakerOpenMs?: number;
+  /**
+   * Governed Kernel lifecycle action service for agent-proposed product work.
+   * When absent, agentic lifecycle routes fail closed instead of proxying to raw tools.
+   */
+  agentLifecycleActionService?: AgentLifecycleActionServicePort;
 }
 
 export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> {
@@ -474,6 +483,38 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       dependency: 'aep-backend',
       correlationId,
     };
+  });
+
+  fastify.post('/api/v1/agentic/lifecycle-actions', { preHandler: [authenticate] }, async (request, reply) => {
+    const correlationId =
+      (request as FastifyRequest & { correlationId?: string }).correlationId ??
+      resolveCorrelationId(request);
+    const service = config.agentLifecycleActionService;
+    reply.header(CORRELATION_ID_HEADER, correlationId);
+
+    if (!service) {
+      fastify.log.error(
+        { correlationId },
+        'Agent lifecycle action service is not configured; refusing raw action-plane execution',
+      );
+      return reply.status(503).send({
+        error: 'Service Unavailable',
+        message: 'Agent lifecycle actions require the governed Kernel lifecycle service',
+        correlationId,
+      });
+    }
+
+    try {
+      const result = await service.handle(request.body);
+      return reply.status(200).send(result);
+    } catch (err: unknown) {
+      fastify.log.warn({ correlationId, err }, 'Agent lifecycle action request rejected');
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: err instanceof Error ? err.message : 'Invalid agent lifecycle action request',
+        correlationId,
+      });
+    }
   });
 
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────

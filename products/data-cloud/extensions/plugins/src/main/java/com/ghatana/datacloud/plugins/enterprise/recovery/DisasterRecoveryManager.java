@@ -163,7 +163,7 @@ public class DisasterRecoveryManager {
                 failoverHistory.add(event);
             }
 
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         } catch (Exception e) {
             return Promise.ofException(e);
         }

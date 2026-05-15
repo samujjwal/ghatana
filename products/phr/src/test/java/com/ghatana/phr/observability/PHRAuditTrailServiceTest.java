@@ -220,27 +220,27 @@ class PHRAuditTrailServiceTest {
         }
 
         @Override
-        public Promise<SchemaInfo> getSchema(String datasetId) {
+        public Promise<SchemaInfo> getSchema(com.ghatana.kernel.bridge.port.BridgeContext context, String datasetId) {
             return Promise.of(null);
         }
 
         @Override
-        public Promise<List<DatasetInfo>> listDatasets() {
+        public Promise<List<DatasetInfo>> listDatasets(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(List.of());
         }
 
         @Override
-        public Promise<TransactionHandle> beginTransaction() {
+        public Promise<TransactionHandle> beginTransaction(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(null);
         }
 
         @Override
-        public Promise<Void> commitTransaction(TransactionHandle handle) {
+        public Promise<Void> commitTransaction(com.ghatana.kernel.bridge.port.BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 
         @Override
-        public Promise<Void> rollbackTransaction(TransactionHandle handle) {
+        public Promise<Void> rollbackTransaction(com.ghatana.kernel.bridge.port.BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 

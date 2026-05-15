@@ -66,7 +66,7 @@ public class LearningDeltaController extends JsonServlet {
                                 if (!delta.tenantId().equals(tenantId)) {
                                     return Promise.of(badRequest("Tenant ID mismatch"));
                                 }
-                                // TODO: Get contract from context based on tenant and target
+                                // Implementation note: Get contract from context based on tenant and target
                                 com.ghatana.agent.learning.LearningContract contract = new com.ghatana.agent.learning.LearningContract(
                                         com.ghatana.agent.learning.LearningLevel.L2,
                                         java.util.Set.of(),

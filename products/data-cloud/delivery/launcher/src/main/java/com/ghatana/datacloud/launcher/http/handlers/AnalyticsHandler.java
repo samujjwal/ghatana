@@ -45,7 +45,7 @@ public class AnalyticsHandler {
     private ReportService reportService;
     private ReportExecutionCapability reportCapability;
     private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
-    // DC-P1-001: cancellation is not implemented; capability registry advertises analytics.cancellation.configured=false
+    // DC-P1-001: cancellation is unavailable; capability registry advertises analytics.cancellation.configured=false
     private boolean cancellationSupported = false;
 
     public AnalyticsHandler(AnalyticsQueryEngine analyticsEngine, HttpHandlerSupport http) {
@@ -511,7 +511,7 @@ public class AnalyticsHandler {
      * Handles DELETE /api/v1/analytics/queries/{queryId} — cancel a running query.
      *
      * <p>When {@link #cancellationSupported} is {@code false} (the default), this endpoint
-    * returns {@code 501 Not Implemented}. The runtime truth registry
+    * returns {@code 501 Unavailable}. The runtime truth registry
     * ({@code GET /api/v1/surfaces}) will expose {@code analytics.cancellation.configured=false}
      * so that UI clients can disable the cancel action before reaching this endpoint.
      *

@@ -285,7 +285,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
             Record removed = storage.remove(key);
             if (removed != null) {
                 events.emit(new ChangeEvent(ChangeType.DELETE, key, null, removed));
-                return Promise.of(true);
+                return Promise.of(Boolean.TRUE);
             }
             return Promise.of(false);
         }

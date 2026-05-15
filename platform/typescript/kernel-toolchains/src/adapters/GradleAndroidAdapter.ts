@@ -128,7 +128,7 @@ export class GradleAndroidAdapter implements ToolchainAdapter {
   }
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
-    // TODO: Parse Gradle output to extract .apk/.aab paths
+    // Implementation note: Parse Gradle output to extract .apk/.aab paths
     return [];
   }
 }

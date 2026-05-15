@@ -11,6 +11,12 @@ import type {
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
+import {
+  createCommandObservability,
+  createDryRunObservability,
+  createToolchainExecutionResult,
+  truncateToolchainOutput,
+} from '../execution/ToolchainExecutionResultFactory.js';
 
 /**
  * pnpm Vite React adapter
@@ -60,18 +66,25 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
             `Configure the docker-buildx adapter for the package phase of surface ${context.surface.type}.`,
         );
       }
+      if (expectedArtifactType !== undefined && expectedArtifactType !== 'static-web-bundle') {
+        throw new Error(
+          `PnpmViteReactAdapter can only package static-web-bundle artifacts. ` +
+            `Received expectedArtifactType "${String(expectedArtifactType)}" for surface ${context.surface.type}.`,
+        );
+      }
     }
 
     const [step] = await this.plan(context);
 
     if (context.dryRun) {
       context.logger.info(`[DRY-RUN] Would execute: ${step.command.join(' ')}`);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'skipped',
         steps: [{ stepId: step.id, status: 'skipped', durationMs: 0 }],
         artifacts: [],
         durationMs: 0,
-      };
+        observability: createDryRunObservability(step.id),
+      });
     }
 
     const commandResult = await this.commandRunner.run(step.command[0], step.command.slice(1), {
@@ -82,15 +95,15 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     const durationMs = commandResult.durationMs || Date.now() - startedAt;
 
     if (commandResult.exitCode !== 0) {
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
@@ -101,27 +114,29 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
           message: 'pnpm execution failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     // dev phase: the Vite dev server is long-running; write processes.json, skip dist validation.
     if (context.phase === 'dev') {
       await this.writeProcessesJson(context, step.id, durationMs);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'succeeded',
         steps: [
           {
             stepId: step.id,
             status: 'succeeded',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
         artifacts: [],
         durationMs,
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     const validation = await this.validateOutputs(context);
@@ -129,15 +144,15 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
 
     const failed = validation.status === 'invalid';
     if (failed) {
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
@@ -148,36 +163,40 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
           message: validation.errors.map((error) => error.message).join('; ') || 'pnpm execution failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
-    if (context.phase === 'package') {
-      await this.writeArtifactManifest(context, artifacts);
-    }
+    const artifactManifest = context.phase === 'package'
+      ? await this.writeArtifactManifest(context, artifacts)
+      : undefined;
 
-    return {
+    return createToolchainExecutionResult(context, {
       status: 'succeeded',
       steps: [
         {
           stepId: step.id,
           status: 'succeeded',
           exitCode: commandResult.exitCode,
-          stdout: commandResult.stdout.slice(0, 10000),
-          stderr: commandResult.stderr.slice(0, 10000),
+          stdout: truncateToolchainOutput(commandResult.stdout),
+          stderr: truncateToolchainOutput(commandResult.stderr),
           durationMs,
         },
       ],
       artifacts,
       durationMs,
-    };
+      ...(artifactManifest !== undefined ? { manifestRefs: { artifactManifest } } : {}),
+      evidenceRefs: artifacts.map((artifact) => `artifact:${artifact}`),
+      observability: createCommandObservability(step.id, commandResult, durationMs),
+    });
   }
 
   private async writeArtifactManifest(
     context: ToolchainAdapterContext,
     staticArtifacts: string[],
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const packagePath = context.surfaceConfig.packagePath;
-    if (typeof packagePath !== 'string') return;
+    if (typeof packagePath !== 'string') return undefined;
 
     const packageDirectory = path.isAbsolute(packagePath)
       ? this.resolvePackageDirectory(packagePath)
@@ -186,25 +205,27 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     const buildDir = path.join(packageDirectory, 'build');
     await fs.mkdir(buildDir, { recursive: true });
 
-    const manifestArtifacts: Array<{ path: string; metadata: { type: string } }> = staticArtifacts.map(
-      (artifactPath) => ({ path: artifactPath, metadata: { type: 'static-web-bundle' } }),
+    const manifestArtifacts: Array<{
+      path: string;
+      metadata: {
+        type: 'static-web-bundle';
+        productId: string;
+        phase: ProductLifecyclePhase;
+        surfaceType: ProductSurfaceType;
+        adapter: string;
+      };
+    }> = staticArtifacts.map(
+      (artifactPath) => ({
+        path: artifactPath,
+        metadata: {
+          type: 'static-web-bundle',
+          productId: context.productId,
+          phase: context.phase,
+          surfaceType: context.surface.type,
+          adapter: this.id,
+        },
+      }),
     );
-
-    // Detect Dockerfile and build a Docker image if present.
-    const dockerfilePath = path.join(packageDirectory, 'Dockerfile');
-    if (await this.exists(dockerfilePath)) {
-      const imageName = `${context.productId}/${context.surface.path ?? 'web'}:latest`
-        .toLowerCase()
-        .replace(/[^a-z0-9/:.-]/g, '-');
-      const buildResult = await this.commandRunner.run(
-        'docker',
-        ['buildx', 'build', '--load', '-t', imageName, packageDirectory],
-        { cwd: this.repoRoot },
-      );
-      if (buildResult.exitCode === 0) {
-        manifestArtifacts.push({ path: imageName, metadata: { type: 'docker-image' } });
-      }
-    }
 
     const manifest = {
       productId: context.productId,
@@ -213,11 +234,9 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       artifacts: manifestArtifacts,
     };
 
-    await fs.writeFile(
-      path.join(buildDir, 'artifact-manifest.json'),
-      JSON.stringify(manifest, null, 2),
-      'utf-8',
-    );
+    const manifestPath = path.join(buildDir, 'artifact-manifest.json');
+    await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+    return path.relative(this.repoRoot, manifestPath).replace(/\\/g, '/');
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
@@ -245,11 +264,23 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       status: missingArtifacts.length === 0 ? 'valid' : 'invalid',
       errors: missingArtifacts.map((artifact) => ({
         path: 'outputs',
-        message: `Missing expected output: ${artifact}`,
+        message: this.createMissingOutputMessage(context, artifact),
       })),
       missingArtifacts,
       unexpectedArtifacts: [],
     };
+  }
+
+  private createMissingOutputMessage(context: ToolchainAdapterContext, artifact: string): string {
+    const packageDirectory = this.resolvePackageDirectory(
+      String(context.surfaceConfig.packagePath ?? context.surface.path),
+    );
+    const expectedIndexPath = path.join(packageDirectory, 'dist', 'index.html').replace(/\\/g, '/');
+    if (artifact === expectedIndexPath || artifact.endsWith('/dist/index.html')) {
+      return `Missing Vite static entrypoint: ${artifact}. ` +
+        `The ${context.phase} phase must produce dist/index.html for a static-web-bundle artifact.`;
+    }
+    return `Missing expected output: ${artifact}`;
   }
 
   /** Write a processes.json to outputDir for the dev phase. */

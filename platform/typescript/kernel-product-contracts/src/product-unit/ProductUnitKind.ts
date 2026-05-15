@@ -26,23 +26,24 @@ export type ProductUnitKind =
   | "agent-runtime"
   | "external-application";
 
+export const PRODUCT_UNIT_KINDS = [
+  "business-product",
+  "platform-provider",
+  "shared-service",
+  "demo-example",
+  "domain-pack",
+  "sdk",
+  "plugin",
+  "data-pipeline",
+  "agent-runtime",
+  "external-application",
+] as const satisfies readonly ProductUnitKind[];
+
 /**
  * Type guard to check if a string is a valid ProductUnitKind.
  */
 export function isProductUnitKind(value: unknown): value is ProductUnitKind {
-  const validKinds: readonly ProductUnitKind[] = [
-    "business-product",
-    "platform-provider",
-    "shared-service",
-    "demo-example",
-    "domain-pack",
-    "sdk",
-    "plugin",
-    "data-pipeline",
-    "agent-runtime",
-    "external-application",
-  ];
-  return typeof value === "string" && validKinds.includes(value as ProductUnitKind);
+  return typeof value === "string" && PRODUCT_UNIT_KINDS.includes(value as ProductUnitKind);
 }
 
 /**

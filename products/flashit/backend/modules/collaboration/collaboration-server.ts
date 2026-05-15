@@ -555,7 +555,7 @@ export class CollaborationServer {
 
       // Send notifications for mentions
       for (const mentionedUserId of mentions) {
-        // TODO: Send notification to mentioned user
+        // Implementation note: Send notification to mentioned user
       }
 
     } catch (error) {

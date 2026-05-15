@@ -618,7 +618,7 @@ function WidgetContent({
       default:
         return (
           <div className="text-center py-8 text-gray-500">
-            <p>Widget type "{type}" not implemented yet</p>
+            <p>Widget type "{type}" unavailable</p>
           </div>
         );
     }

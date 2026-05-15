@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { AccessibilityAuditor } from './AccessibilityAuditor';
 
 import type { AccessibilityReport } from './types';
+import type { RunOptions } from 'axe-core';
 
 /**
  *
@@ -15,7 +16,7 @@ export interface UseAccessibilityAuditOptions {
   context?: Element | Document | string;
   
   /** axe-core run options */
-  axeOptions?: unknown;
+  axeOptions?: RunOptions;
   
   /** Callback when audit completes */
   onComplete?: (report: AccessibilityReport) => void;

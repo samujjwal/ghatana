@@ -2,6 +2,7 @@
 import * as path from 'node:path';
 import type { ToolchainAdapter, ToolchainAdapterContext, AdapterLogger } from './ToolchainAdapter.js';
 import type { ProductLifecyclePhase } from '@ghatana/kernel-product-contracts';
+import type { AdapterArtifact, AdapterResult } from '@ghatana/kernel-lifecycle';
 import { SpawnCommandRunner } from './execution/SpawnCommandRunner.js';
 import type { CommandRunner } from './execution/CommandRunner.js';
 import { GradleJavaServiceAdapter } from './adapters/GradleJavaServiceAdapter.js';
@@ -92,6 +93,12 @@ export interface AdapterDefinition {
   requires: string[];
   outputs: string[];
   implementation?: string;
+  readiness: 'declared-only' | 'planning-only' | 'execution-ready' | 'production-ready';
+  requiresApprovalForProduction: boolean;
+  supportsBootstrapMode: boolean;
+  supportsPlatformMode: boolean;
+  lifecycleEnabled: boolean;
+  featureFlagRequired?: boolean;
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -103,7 +110,7 @@ export interface AdapterDefinition {
  * Maps 1:1 to the interface in execution/ProductLifecycleStepRunner.ts.
  */
 export interface StepRunnerAdapter {
-  execute(context: StepRunnerAdapterContext): Promise<{ status: 'succeeded' | 'failed' | 'skipped' }>;
+  execute(context: StepRunnerAdapterContext): Promise<AdapterResult>;
 }
 
 /**
@@ -131,7 +138,7 @@ export interface StepRunnerAdapterContext {
 class ToolchainAdapterBridge implements StepRunnerAdapter {
   constructor(private readonly delegate: ToolchainAdapter) {}
 
-  async execute(ctx: StepRunnerAdapterContext): Promise<{ status: 'succeeded' | 'failed' | 'skipped' }> {
+  async execute(ctx: StepRunnerAdapterContext): Promise<AdapterResult> {
     const toolchainCtx: ToolchainAdapterContext = {
       productId: ctx.productId,
       phase: ctx.phase as ProductLifecyclePhase,
@@ -140,6 +147,7 @@ class ToolchainAdapterBridge implements StepRunnerAdapter {
         adapter: ctx.surface.adapter,
         path: ctx.surface.path,
       },
+      ...this.resolveExecutionIds(ctx.metadata),
       ...(ctx.environment !== undefined ? { environment: ctx.environment } : {}),
       ...(ctx.sourceRef !== undefined ? { sourceRef: ctx.sourceRef } : {}),
       dryRun: ctx.dryRun,
@@ -151,7 +159,73 @@ class ToolchainAdapterBridge implements StepRunnerAdapter {
     };
 
     const result = await this.delegate.execute(toolchainCtx);
-    return { status: result.status };
+    return {
+      status: result.status,
+      steps: result.steps,
+      artifacts: result.artifacts.map((artifactPath, index) =>
+        this.toAdapterArtifact(ctx, artifactPath, index),
+      ),
+      ...(result.testResults !== undefined ? { testResults: result.testResults } : {}),
+      ...(result.coverageResults !== undefined ? { coverageResults: result.coverageResults } : {}),
+      durationMs: result.durationMs,
+      ...(result.failure !== undefined ? { failure: result.failure } : {}),
+      ...(result.warnings !== undefined ? { warnings: result.warnings } : {}),
+      ...(result.stdout !== undefined ? { stdout: result.stdout } : {}),
+      ...(result.stderr !== undefined ? { stderr: result.stderr } : {}),
+      ...(result.manifestRefs !== undefined ? { manifestRefs: result.manifestRefs } : {}),
+      ...(result.evidenceRefs !== undefined ? { evidenceRefs: result.evidenceRefs } : {}),
+    };
+  }
+
+  private resolveExecutionIds(
+    metadata: Record<string, unknown> | undefined,
+  ): Pick<ToolchainAdapterContext, 'runId' | 'correlationId'> {
+    const runId = metadata?.runId;
+    const correlationId = metadata?.correlationId;
+    return {
+      ...(typeof runId === 'string' && runId.length > 0 ? { runId } : {}),
+      ...(typeof correlationId === 'string' && correlationId.length > 0 ? { correlationId } : {}),
+    };
+  }
+
+  private toAdapterArtifact(
+    ctx: StepRunnerAdapterContext,
+    artifactPath: string,
+    index: number,
+  ): AdapterArtifact {
+    const artifactType = this.inferArtifactType(ctx, artifactPath);
+    return {
+      id: `${ctx.phase}-${ctx.surface.adapter}-artifact-${index}`,
+      type: artifactType,
+      path: artifactPath,
+      fingerprint: artifactPath,
+      producedBy: ctx.surface.adapter,
+      metadata: {
+        productId: ctx.productId,
+        phase: ctx.phase,
+        surfaceType: ctx.surface.type,
+        ...(artifactType === 'container-image' ? { packaging: 'container' } : {}),
+      },
+      ...(artifactType === 'container-image' ? { image: artifactPath } : {}),
+    };
+  }
+
+  private inferArtifactType(ctx: StepRunnerAdapterContext, artifactPath: string): string {
+    if (ctx.phase === 'package') {
+      return ctx.surface.type === 'web' && artifactPath.includes('/dist')
+        ? 'static-web-bundle'
+        : 'container-image';
+    }
+    if (ctx.phase === 'deploy') {
+      return 'deployment-manifest';
+    }
+    if (ctx.phase === 'verify') {
+      return 'verify-health-report';
+    }
+    if (ctx.phase === 'test') {
+      return 'test-report';
+    }
+    return ctx.surface.type === 'web' ? 'static-web-bundle' : 'jvm-service';
   }
 }
 
@@ -210,4 +284,3 @@ export function createDefaultToolchainAdapterRegistry(
 
   return { registry, bridge: new ToolchainAdapterRegistryBridge(registry) };
 }
-

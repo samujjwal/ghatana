@@ -2,6 +2,9 @@ package com.ghatana.aep.kernel;
 
 import com.ghatana.kernel.adapter.aep.AepKernelAdapter;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapterImpl;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
@@ -32,7 +35,7 @@ import java.util.Set;
  * <h2>Usage</h2>
  * <pre>{@code
  * AepKernelAdapterImpl.AepClient myClient = new ProdAepClient(...);
- * AepKernelExtension extension = new AepKernelExtension(myClient);
+ * AepKernelExtension extension = new AepKernelExtension(myClient, authService, auditEmitter, healthIndicator);
  * kernelModule.registerExtension(extension);
  * }</pre>
  *
@@ -57,14 +60,24 @@ public final class AepKernelExtension extends AbstractKernelExtension {
     private static final String EXTENSION_VERSION = "1.0.0";
 
     private final AepKernelAdapterImpl.AepClient client;
+    private final BridgeAuthorizationService authorizationService;
+    private final BridgeAuditEmitter auditEmitter;
+    private final BridgeHealthIndicator healthIndicator;
 
     /**
-     * Creates the bridge extension backed by the provided AEP client.
+     * Creates the bridge extension backed by the provided AEP client and bridge ports.
      *
      * @param client the AEP client implementation — must not be {@code null}
      */
-    public AepKernelExtension(AepKernelAdapterImpl.AepClient client) {
+    public AepKernelExtension(
+            AepKernelAdapterImpl.AepClient client,
+            BridgeAuthorizationService authorizationService,
+            BridgeAuditEmitter auditEmitter,
+            BridgeHealthIndicator healthIndicator) {
         this.client = Objects.requireNonNull(client, "AEP client must not be null");
+        this.authorizationService = Objects.requireNonNull(authorizationService, "authorizationService must not be null");
+        this.auditEmitter = Objects.requireNonNull(auditEmitter, "auditEmitter must not be null");
+        this.healthIndicator = Objects.requireNonNull(healthIndicator, "healthIndicator must not be null");
     }
 
     // ==================== KernelExtension identity ====================
@@ -116,7 +129,11 @@ public final class AepKernelExtension extends AbstractKernelExtension {
     protected void onInitialize(KernelContext context) {
         LOG.info("[AepKernelExtension] Initializing: registering AepKernelAdapter into context");
 
-        AepKernelAdapterImpl adapter = new AepKernelAdapterImpl(client);
+        AepKernelAdapterImpl adapter = new AepKernelAdapterImpl(
+            client,
+            authorizationService,
+            auditEmitter,
+            healthIndicator);
         context.registerService(AepKernelAdapter.class, adapter);
 
         LOG.info("[AepKernelExtension] AepKernelAdapter registered successfully");

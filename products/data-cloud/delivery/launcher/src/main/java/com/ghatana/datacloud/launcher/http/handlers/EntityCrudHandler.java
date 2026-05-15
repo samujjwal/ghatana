@@ -1381,7 +1381,7 @@ public class EntityCrudHandler {
     /**
      * Handles full-text entity search via OpenSearch.
      *
-     * <p>Returns {@code 501 Not Implemented} when no {@link OpenSearchConnector} is
+     * <p>Returns {@code 501 Unavailable} when no {@link OpenSearchConnector} is
      * configured. Returns {@code 400 Bad Request} when required query params are
      * absent or invalid.
      *

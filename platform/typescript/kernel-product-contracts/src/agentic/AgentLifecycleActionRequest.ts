@@ -1,0 +1,143 @@
+/**
+ * Agent lifecycle action request contract.
+ *
+ * @doc.type module
+ * @doc.purpose Governed request contract for agent-proposed lifecycle actions
+ * @doc.layer kernel-product-contracts
+ * @doc.pattern Contract
+ */
+
+import { z } from "zod";
+import type { ProductLifecyclePhase } from "../lifecycle/ProductLifecyclePhase";
+import { ProductUnitScopeSchema, type ProductUnitScope } from "../product-unit/ProductUnit.js";
+
+export type AgentLifecycleRequestedAction =
+  | "create-lifecycle-plan"
+  | "execute-lifecycle-phase"
+  | "request-approval"
+  | "verify-lifecycle-health"
+  | "prepare-rollback";
+
+export type AgentLifecycleRiskLevel = "low" | "medium" | "high" | "critical";
+
+export interface AgentLifecycleApprovalRequirement {
+  readonly approvalId: string;
+  readonly approverRole: string;
+  readonly required: boolean;
+}
+
+export interface AgentLifecycleVerificationRequirement {
+  readonly verificationId: string;
+  readonly kind: "test" | "policy" | "health" | "artifact" | "deployment";
+  readonly required: boolean;
+}
+
+export interface AgentLifecycleActionRequest {
+  readonly schemaVersion: "1.0.0";
+  readonly requestId: string;
+  readonly correlationId: string;
+  readonly productUnitId: string;
+  readonly scope: ProductUnitScope;
+  readonly requestedByAgent: string;
+  readonly requestedAction: AgentLifecycleRequestedAction;
+  readonly lifecyclePhase: ProductLifecyclePhase;
+  readonly proposedPlanRef: string;
+  readonly riskLevel: AgentLifecycleRiskLevel;
+  readonly requiredApprovals: readonly AgentLifecycleApprovalRequirement[];
+  readonly requiredVerification: readonly AgentLifecycleVerificationRequirement[];
+  readonly evidenceRefs: readonly string[];
+  readonly rollbackPlanRef: string;
+}
+
+const REQUESTED_ACTIONS = [
+  "create-lifecycle-plan",
+  "execute-lifecycle-phase",
+  "request-approval",
+  "verify-lifecycle-health",
+  "prepare-rollback",
+] as const satisfies readonly AgentLifecycleRequestedAction[];
+
+const LIFECYCLE_PHASES = [
+  "create",
+  "bootstrap",
+  "dev",
+  "validate",
+  "test",
+  "build",
+  "package",
+  "release",
+  "deploy",
+  "verify",
+  "promote",
+  "rollback",
+  "operate",
+  "retire",
+] as const satisfies readonly ProductLifecyclePhase[];
+
+const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
+const VERIFICATION_KINDS = ["test", "policy", "health", "artifact", "deployment"] as const;
+const RAW_COMMAND_VALUE_PATTERN = /\b(gradle|gradlew|pnpm|npm|yarn|docker|docker\s+buildx|kubectl)\b/i;
+
+function containsRawCommand(value: unknown): boolean {
+  if (typeof value === "string") {
+    return RAW_COMMAND_VALUE_PATTERN.test(value);
+  }
+  if (Array.isArray(value)) {
+    return value.some((item: unknown) => containsRawCommand(item));
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return Object.values(value as Record<string, unknown>).some((nested) =>
+    containsRawCommand(nested)
+  );
+}
+
+export const AgentLifecycleApprovalRequirementSchema = z
+  .object({
+    approvalId: z.string().trim().min(1),
+    approverRole: z.string().trim().min(1),
+    required: z.boolean(),
+  })
+  .strict();
+
+export const AgentLifecycleVerificationRequirementSchema = z
+  .object({
+    verificationId: z.string().trim().min(1),
+    kind: z.enum(VERIFICATION_KINDS),
+    required: z.boolean(),
+  })
+  .strict();
+
+export const AgentLifecycleActionRequestSchema = z
+  .object({
+    schemaVersion: z.literal("1.0.0"),
+    requestId: z.string().trim().min(1),
+    correlationId: z.string().trim().min(1),
+    productUnitId: z.string().trim().min(1),
+    scope: ProductUnitScopeSchema,
+    requestedByAgent: z.string().trim().min(1),
+    requestedAction: z.enum(REQUESTED_ACTIONS),
+    lifecyclePhase: z.enum(LIFECYCLE_PHASES),
+    proposedPlanRef: z.string().trim().min(1),
+    riskLevel: z.enum(RISK_LEVELS),
+    requiredApprovals: z.array(AgentLifecycleApprovalRequirementSchema),
+    requiredVerification: z.array(AgentLifecycleVerificationRequirementSchema),
+    evidenceRefs: z.array(z.string().trim().min(1)).min(1),
+    rollbackPlanRef: z.string().trim().min(1),
+  })
+  .strict()
+  .superRefine((value: AgentLifecycleActionRequest, context: z.RefinementCtx) => {
+    if (containsRawCommand(value)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "AgentLifecycleActionRequest must not contain raw shell/tool commands",
+      });
+    }
+  });
+
+export function isAgentLifecycleActionRequest(
+  value: unknown
+): value is AgentLifecycleActionRequest {
+  return AgentLifecycleActionRequestSchema.safeParse(value).success;
+}

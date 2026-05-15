@@ -62,7 +62,7 @@ const TIERS: Record<string, TierInfo> = {
     name: 'Teams',
     icon: 'people-outline',
     color: flashitMobileTheme.status.warning,
-    features: ['Everything in Pro', 'Collaboration', 'API keys', 'SSO/SAML (Coming Soon)', 'Priority support', 'Admin dashboard'],
+    features: ['Everything in Pro', 'Collaboration', 'API keys', 'SSO/SAML', 'Priority support', 'Admin dashboard'],
   },
 };
 

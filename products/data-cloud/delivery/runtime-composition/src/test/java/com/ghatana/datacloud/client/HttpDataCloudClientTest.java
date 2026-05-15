@@ -27,13 +27,13 @@ class HttpDataCloudClientTest extends EventloopTestBase {
         Boolean ready = runPromise(client::checkReadiness); 
         DataCloudClient.SystemMetrics metrics = runPromise(client::getMetrics); 
 
-        assertThat(client.isRunning()).isTrue(); 
-        assertThat(health).isNotNull(); 
-        assertThat(health.isHealthy()).isFalse(); 
-        assertThat(health.getMessage()).contains("not implemented");
+        assertThat(client.isRunning()).isTrue();
+        assertThat(health).isNotNull();
+        assertThat(health.isHealthy()).isFalse();
+        assertThat(health.getMessage()).contains("unavailable");
         assertThat(health.getComponents()).containsKey("transport");
-        assertThat(ready).isFalse(); 
-        assertThat(metrics).isNotNull(); 
+        assertThat(ready).isFalse();
+        assertThat(metrics).isNotNull();
         assertThat(metrics.getMetricsByOperation()).containsEntry("unimplemented_operations", 1L); 
     }
 

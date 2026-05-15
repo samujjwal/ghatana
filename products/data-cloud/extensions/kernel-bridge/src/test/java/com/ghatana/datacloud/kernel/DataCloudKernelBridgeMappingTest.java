@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.kernel;
 
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
 import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
 import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
 import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
@@ -13,7 +12,11 @@ import com.ghatana.kernel.adapter.datacloud.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
 import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeContext;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.testing.TestBridgePorts;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,9 +27,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +40,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -66,10 +72,15 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
     private KernelContext context;
 
     private DataCloudKernelAdapterImpl adapter;
+    private final BridgeContext bridgeContext = BridgeContext.builder()
+        .tenantId("tenant-a")
+        .principalId("test-principal")
+        .correlationId("test-correlation")
+        .build();
 
     @BeforeEach
     void setUp() {
-        adapter = new DataCloudKernelAdapterImpl(client);
+        adapter = new DataCloudKernelAdapterImpl(client, TestBridgePorts.allowAllAuthorization(), captureAudit(), captureHealth());
     }
 
     // ==================== Null boundary guards ====================
@@ -81,7 +92,11 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @Test
         @DisplayName("null client at construction time is rejected")
         void nullClientAtConstructionIsRejected() {
-            assertThatThrownBy(() -> new DataCloudKernelAdapterImpl(null))
+            assertThatThrownBy(() -> new DataCloudKernelAdapterImpl(
+                null,
+                TestBridgePorts.allowAllAuthorization(),
+                captureAudit(),
+                captureHealth()))
                 .isInstanceOf(NullPointerException.class);
         }
 
@@ -123,7 +138,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @Test
         @DisplayName("null datasetId in getSchema is rejected")
         void nullDatasetIdInGetSchemaIsRejected() {
-            assertThatThrownBy(() -> adapter.getSchema(null))
+            assertThatThrownBy(() -> adapter.getSchema(null, "dataset"))
                 .isInstanceOf(NullPointerException.class);
         }
     }
@@ -142,7 +157,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(expected));
 
             DataResult result = runPromise(() ->
-                adapter.readData(new DataReadRequest("tenant-a.entities", "rec-42", Map.of())));
+                adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "rec-42", Map.of())));
 
             assertThat(result.getRecordId()).isEqualTo("rec-42");
             verify(client).read("tenant-a.entities", "rec-42", Map.of());
@@ -156,7 +171,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.read(any(), any(), eq(opts)))
                 .thenReturn(CompletableFuture.completedFuture(expected));
 
-            runPromise(() -> adapter.readData(new DataReadRequest("ds", "r1", opts)));
+            runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", opts)));
 
             verify(client).read("ds", "r1", opts);
         }
@@ -169,7 +184,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(expected));
 
             DataResult result = runPromise(() ->
-                adapter.readData(new DataReadRequest("ds", "r1", null)));
+                adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", null)));
 
             assertThat(result).isNotNull();
         }
@@ -190,7 +205,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
             runPromise(() ->
-                adapter.writeData(new DataWriteRequest("tenant-b.events", "evt-1", payload, meta)));
+                adapter.writeData(new DataWriteRequest(bridgeContext, "tenant-b.events", "evt-1", payload, meta)));
 
             verify(client).write("tenant-b.events", "evt-1", payload, meta);
         }
@@ -209,7 +224,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
             runPromise(() ->
-                adapter.deleteData(new DataDeleteRequest("tenant-c.entities", "ent-99")));
+                adapter.deleteData(new DataDeleteRequest(bridgeContext, "tenant-c.entities", "ent-99")));
 
             verify(client).delete("tenant-c.entities", "ent-99");
         }
@@ -229,7 +244,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(List.of(r1)));
 
             var result = runPromise(() ->
-                adapter.queryData(new DataQueryRequest("ds", "SELECT *", Map.of(), 10, 0)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 10, 0)));
 
             assertThat(result.hasMore()).isFalse();
             assertThat(result.getTotalCount()).isEqualTo(1);
@@ -244,7 +259,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(List.of(r1, r2)));
 
             var result = runPromise(() ->
-                adapter.queryData(new DataQueryRequest("ds", "SELECT *", Map.of(), 2, 0)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 2, 0)));
 
             assertThat(result.hasMore()).isTrue();
             assertThat(result.getTotalCount()).isEqualTo(2);
@@ -258,7 +273,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
 
             runPromise(() ->
-                adapter.queryData(new DataQueryRequest("ds", "SELECT *", params, 5, 10)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", params, 5, 10)));
 
             verify(client).query("ds", "SELECT *", params, 5, 10);
         }
@@ -278,7 +293,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(cause));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.readData(new DataReadRequest("ds", "r1", Map.of()))))
+                runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", Map.of()))))
                 .hasMessageContaining("storage unavailable");
         }
 
@@ -290,7 +305,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
 
             assertThatThrownBy(() ->
                 runPromise(() ->
-                    adapter.writeData(new DataWriteRequest("ds", "r1", new byte[0], Map.of()))))
+                    adapter.writeData(new DataWriteRequest(bridgeContext, "ds", "r1", new byte[0], Map.of()))))
                 .hasMessageContaining("write failed");
         }
 
@@ -301,7 +316,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("delete failed")));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.deleteData(new DataDeleteRequest("ds", "r1"))))
+                runPromise(() -> adapter.deleteData(new DataDeleteRequest(bridgeContext, "ds", "r1"))))
                 .hasMessageContaining("delete failed");
         }
 
@@ -313,7 +328,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
 
             assertThatThrownBy(() ->
                 runPromise(() ->
-                    adapter.queryData(new DataQueryRequest("ds", "SELECT *", Map.of(), 10, 0))))
+                    adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 10, 0))))
                 .hasMessageContaining("query timeout");
         }
 
@@ -324,8 +339,85 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("schema not found")));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.getSchema("missing-dataset")))
+                runPromise(() -> adapter.getSchema(bridgeContext, "missing-dataset")))
                 .hasMessageContaining("schema not found");
+        }
+    }
+
+    // ==================== Security, audit, and health ====================
+
+    @Nested
+    @DisplayName("security, audit, and health signals")
+    class SecurityAuditAndHealthSignals {
+
+        @Test
+        @DisplayName("denied authorization fails closed before client call")
+        void deniedAuthorizationFailsClosedBeforeClientCall() {
+            DataCloudKernelAdapterImpl deniedAdapter = new DataCloudKernelAdapterImpl(
+                client,
+                (context, resource, action) -> io.activej.promise.Promise.of(Boolean.FALSE),
+                captureAudit(),
+                captureHealth());
+
+            assertThatThrownBy(() -> runPromise(() ->
+                deniedAdapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "rec-42", Map.of()))))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Not authorized");
+
+            verifyNoInteractions(client);
+        }
+
+        @Test
+        @DisplayName("client retry exhaustion reports unhealthy and emits error audit")
+        void retryExhaustionReportsUnhealthyAndEmitsErrorAudit() {
+            AtomicInteger calls = new AtomicInteger();
+            when(client.read(any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    calls.incrementAndGet();
+                    return CompletableFuture.failedFuture(new RuntimeException("backend down"));
+                });
+            CapturingHealth health = new CapturingHealth();
+            List<BridgeAuditEmitter.BridgeAuditEvent> auditEvents = new ArrayList<>();
+            DataCloudKernelAdapterImpl retryingAdapter = new DataCloudKernelAdapterImpl(
+                client,
+                TestBridgePorts.allowAllAuthorization(),
+                auditEvents::add,
+                health);
+
+            assertThatThrownBy(() -> runPromise(() ->
+                retryingAdapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "rec-42", Map.of()))))
+                .hasMessageContaining("backend down");
+
+            assertThat(calls.get()).isEqualTo(4);
+            assertThat(health.degradedReasons).isNotEmpty();
+            assertThat(health.unhealthyReasons).anyMatch(reason -> reason.contains("exhausted retries"));
+            assertThat(auditEvents).anyMatch(event -> event.outcome().equals("ERROR"));
+        }
+
+        @Test
+        @DisplayName("successful read emits authorization and operation audit with healthy signal")
+        void successfulReadEmitsAuditAndHealth() {
+            DataResult expected = new DataResult("rec-42", "hello".getBytes(), Map.of(), Instant.now().toEpochMilli());
+            when(client.read(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(expected));
+            CapturingHealth health = new CapturingHealth();
+            List<BridgeAuditEmitter.BridgeAuditEvent> auditEvents = new ArrayList<>();
+            DataCloudKernelAdapterImpl auditedAdapter = new DataCloudKernelAdapterImpl(
+                client,
+                TestBridgePorts.allowAllAuthorization(),
+                auditEvents::add,
+                health);
+
+            runPromise(() ->
+                auditedAdapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "rec-42", Map.of())));
+
+            assertThat(health.healthyBridgeIds).contains("data-cloud-kernel-bridge");
+            assertThat(auditEvents)
+                .extracting(BridgeAuditEmitter.BridgeAuditEvent::tenantId)
+                .contains("tenant-a");
+            assertThat(auditEvents)
+                .extracting(BridgeAuditEmitter.BridgeAuditEvent::outcome)
+                .contains("ALLOWED");
         }
     }
 
@@ -341,7 +433,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.beginTransaction())
                 .thenReturn(CompletableFuture.completedFuture("inner-tx"));
 
-            var handle = runPromise(adapter::beginTransaction);
+            var handle = runPromise(() -> adapter.beginTransaction(bridgeContext));
 
             assertThat(handle).isNotNull();
             assertThat(handle.getId()).isNotBlank();
@@ -355,8 +447,8 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.commitTransaction(eq("tx-obj")))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-            var handle = runPromise(adapter::beginTransaction);
-            runPromise(() -> adapter.commitTransaction(handle));
+            var handle = runPromise(() -> adapter.beginTransaction(bridgeContext));
+            runPromise(() -> adapter.commitTransaction(bridgeContext, handle));
 
             verify(client).commitTransaction("tx-obj");
         }
@@ -369,8 +461,8 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.rollbackTransaction(eq("tx-obj")))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-            var handle = runPromise(adapter::beginTransaction);
-            runPromise(() -> adapter.rollbackTransaction(handle));
+            var handle = runPromise(() -> adapter.beginTransaction(bridgeContext));
+            runPromise(() -> adapter.rollbackTransaction(bridgeContext, handle));
 
             verify(client).rollbackTransaction("tx-obj");
         }
@@ -386,7 +478,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 public boolean isActive() { return true; }
             };
 
-            assertThatThrownBy(() -> runPromise(() -> adapter.commitTransaction(orphanHandle)))
+            assertThatThrownBy(() -> runPromise(() -> adapter.commitTransaction(bridgeContext, orphanHandle)))
                 .hasMessageContaining("Transaction not found");
         }
 
@@ -400,7 +492,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 public boolean isActive() { return true; }
             };
 
-            assertThatThrownBy(() -> runPromise(() -> adapter.rollbackTransaction(orphanHandle)))
+            assertThatThrownBy(() -> runPromise(() -> adapter.rollbackTransaction(bridgeContext, orphanHandle)))
                 .hasMessageContaining("Transaction not found");
         }
     }
@@ -423,9 +515,9 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(resultB));
 
             DataResult a = runPromise(() ->
-                adapter.readData(new DataReadRequest("tenant-a.entities", "r1", Map.of())));
+                adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "r1", Map.of())));
             DataResult b = runPromise(() ->
-                adapter.readData(new DataReadRequest("tenant-b.entities", "r2", Map.of())));
+                adapter.readData(new DataReadRequest(bridgeContext, "tenant-b.entities", "r2", Map.of())));
 
             assertThat(a.getRecordId()).isEqualTo("r1");
             assertThat(b.getRecordId()).isEqualTo("r2");
@@ -440,7 +532,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
             runPromise(() ->
-                adapter.writeData(new DataWriteRequest("tenant-a.events", "evt-1", new byte[0], Map.of())));
+                adapter.writeData(new DataWriteRequest(bridgeContext, "tenant-a.events", "evt-1", new byte[0], Map.of())));
 
             // Verify only tenant-a was touched
             verify(client).write(eq("tenant-a.events"), any(), any(), any());
@@ -453,7 +545,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.getSchema(eq("tenant-x.schema")))
                 .thenReturn(CompletableFuture.completedFuture(schema));
 
-            SchemaInfo result = runPromise(() -> adapter.getSchema("tenant-x.schema"));
+            SchemaInfo result = runPromise(() -> adapter.getSchema(bridgeContext, "tenant-x.schema"));
 
             assertThat(result.getDatasetId()).isEqualTo("tenant-x.schema");
             verify(client).getSchema("tenant-x.schema");
@@ -474,7 +566,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.listDatasets())
                 .thenReturn(CompletableFuture.completedFuture(List.of(d1, d2)));
 
-            List<DatasetInfo> result = runPromise(adapter::listDatasets);
+            List<DatasetInfo> result = runPromise(() -> adapter.listDatasets(bridgeContext));
 
             assertThat(result).hasSize(2);
         }
@@ -485,7 +577,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.listDatasets())
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
 
-            List<DatasetInfo> result = runPromise(adapter::listDatasets);
+            List<DatasetInfo> result = runPromise(() -> adapter.listDatasets(bridgeContext));
 
             assertThat(result).isEmpty();
         }
@@ -496,7 +588,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.listDatasets())
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("catalog unavailable")));
 
-            assertThatThrownBy(() -> runPromise(adapter::listDatasets))
+            assertThatThrownBy(() -> runPromise(() -> adapter.listDatasets(bridgeContext)))
                 .hasMessageContaining("catalog unavailable");
         }
     }
@@ -511,7 +603,12 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @DisplayName("registered service is a DataCloudKernelAdapter")
         void registeredServiceIsCorrectType() {
             FailingDataCloudClient failingClient = new FailingDataCloudClient();
-            DataCloudKernelExtension extension = new DataCloudKernelExtension(failingClient);
+            DataCloudKernelExtension extension = new DataCloudKernelExtension(
+                failingClient,
+                TestBridgePorts.allowAllAuthorization(),
+                captureAudit(),
+                captureHealth(),
+                ignored -> bridgeContext);
 
             // Capture what gets registered
             var registered = new DataCloudKernelAdapter[1];
@@ -593,6 +690,44 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @Override
         public CompletableFuture<Void> closeStream(Object s) {
             return CompletableFuture.failedFuture(new UnsupportedOperationException("stub"));
+        }
+    }
+
+    private static BridgeAuditEmitter captureAudit() {
+        return event -> { };
+    }
+
+    private static BridgeHealthIndicator captureHealth() {
+        return new BridgeHealthIndicator() {
+            @Override
+            public void reportHealthy(String bridgeId) { }
+
+            @Override
+            public void reportDegraded(String bridgeId, String reason) { }
+
+            @Override
+            public void reportUnhealthy(String bridgeId, String reason) { }
+        };
+    }
+
+    private static final class CapturingHealth implements BridgeHealthIndicator {
+        private final List<String> healthyBridgeIds = new ArrayList<>();
+        private final List<String> degradedReasons = new ArrayList<>();
+        private final List<String> unhealthyReasons = new ArrayList<>();
+
+        @Override
+        public void reportHealthy(String bridgeId) {
+            healthyBridgeIds.add(bridgeId);
+        }
+
+        @Override
+        public void reportDegraded(String bridgeId, String reason) {
+            degradedReasons.add(reason);
+        }
+
+        @Override
+        public void reportUnhealthy(String bridgeId, String reason) {
+            unhealthyReasons.add(reason);
         }
     }
 }

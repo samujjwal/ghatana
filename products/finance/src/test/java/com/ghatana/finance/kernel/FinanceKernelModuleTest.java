@@ -303,28 +303,28 @@ class FinanceKernelModuleTest extends EventloopTestBase {
             return Promise.complete();
         }
 
-        @Override public Promise<SchemaInfo> getSchema(String datasetId) {
+        @Override public Promise<SchemaInfo> getSchema(com.ghatana.kernel.bridge.port.BridgeContext context, String datasetId) {
             return Promise.of(new SchemaInfo(datasetId, java.util.Map.of(), System.currentTimeMillis(), System.currentTimeMillis()));
         }
 
-        @Override public Promise<java.util.List<DatasetInfo>> listDatasets() {
+        @Override public Promise<java.util.List<DatasetInfo>> listDatasets(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(datasets.keySet().stream()
                 .map(datasetId -> new DatasetInfo(datasetId, datasetId, "test dataset", 0L, System.currentTimeMillis()))
                 .toList());
         }
 
-        @Override public Promise<TransactionHandle> beginTransaction() {
+        @Override public Promise<TransactionHandle> beginTransaction(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(new TransactionHandle() {
                 @Override public String getId() { return "tx-1"; }
                 @Override public boolean isActive() { return true; }
             });
         }
 
-        @Override public Promise<Void> commitTransaction(TransactionHandle handle) {
+        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.bridge.port.BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 
-        @Override public Promise<Void> rollbackTransaction(TransactionHandle handle) {
+        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.bridge.port.BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 

@@ -9,7 +9,7 @@
  * @doc.pattern Module
  */
 
-export * from "./ProductUnitKind";
-export * from "./ProductUnitSurface";
-export * from "./ProductUnit";
-export * from "./ProductUnitIntent";
+export * from "./ProductUnitKind.js";
+export * from "./ProductUnitSurface.js";
+export * from "./ProductUnit.js";
+export * from "./ProductUnitIntent.js";

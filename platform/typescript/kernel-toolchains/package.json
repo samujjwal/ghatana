@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@ghatana/kernel-artifacts": "workspace:*",
+    "@ghatana/kernel-lifecycle": "workspace:*",
     "@ghatana/kernel-product-contracts": "workspace:*",
     "yaml": "^2.3.4"
   },

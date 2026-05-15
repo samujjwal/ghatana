@@ -185,7 +185,7 @@ public class JpaEntityRepositoryImpl implements EntityRepository {
         // Use findByQuery() with DynamicQueryBuilder for filtered queries.
         if (filter != null && !filter.isEmpty()) {
             return Promise.ofException(new UnsupportedOperationException(
-                "JSONB field filtering via findAll() is not implemented. " +
+                "JSONB field filtering via findAll() is unavailable. " +
                 "Use findByQuery() with DynamicQueryBuilder for filtered entity queries."));
         }
 

@@ -344,7 +344,7 @@ public class AppointmentService extends PhrServiceBase {
         // Check cache first
         SlotCacheEntry cached = slotCache.get(slotId);
         if (cached != null && cached.isAvailable()) {
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         // Query from storage

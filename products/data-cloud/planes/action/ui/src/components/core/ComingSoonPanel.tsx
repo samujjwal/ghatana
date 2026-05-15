@@ -1,8 +1,8 @@
 /**
- * ComingSoonPanel — Placeholder panel for unimplemented features.
+ * DisabledFeaturePanel — Disabled panel for gated features.
  *
  * @doc.type component
- * @doc.purpose Display "Coming Soon" or enterprise feature messaging for unimplemented features
+ * @doc.purpose Display enterprise feature messaging for disabled features
  * @doc.layer frontend
  */
 
@@ -23,10 +23,9 @@ interface ComingSoonPanelProps {
 }
 
 /**
- * ComingSoonPanel component
+ * DisabledFeaturePanel component
  *
- * Displays a placeholder message for features that are not yet implemented
- * or are available only in enterprise/premium tiers.
+ * Displays a gated message for features available only in enterprise/premium tiers.
  */
 export const ComingSoonPanel: React.FC<ComingSoonPanelProps> = ({
   title,
@@ -50,7 +49,7 @@ export const ComingSoonPanel: React.FC<ComingSoonPanelProps> = ({
         {description ||
           (isEnterprise
             ? 'This feature is available in the Enterprise edition. Contact your administrator to upgrade.'
-            : 'This feature is coming soon. We\'re working hard to bring it to you.')}
+            : 'This feature is unavailable. We\'re working hard to bring it to you.')}
       </p>
       {action}
     </div>
@@ -79,7 +78,7 @@ export const ComingSoonSection: React.FC<{
         {description ||
           (isEnterprise
             ? 'Enterprise feature. Contact your administrator.'
-            : 'Coming soon.')}
+            : 'Unavailable.')}
       </p>
     </div>
   );

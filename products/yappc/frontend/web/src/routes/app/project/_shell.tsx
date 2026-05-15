@@ -133,7 +133,7 @@ export function Layout() {
 
   // SIMP-Y18: Eagerly prefetch data that child routes commonly need,
   // so navigating to any phase tab starts without a loading spinner.
-  // All prefetches must use scoped access (TODO-001, TODO-002)
+  // All prefetches must use scoped access (TRACK-001, TRACK-002)
   useEffect(() => {
     if (!projectId || !currentWorkspace?.id) return;
 
@@ -177,7 +177,7 @@ export function Layout() {
       }
     : { id: 'guest', name: 'Guest', email: '', initials: 'G' };
 
-  // Prepare workspace info - TODO-004: Use backend capability contract
+  // Prepare workspace info - TRACK-004: Use backend capability contract
   // All capability decisions come from backend, not frontend derivation
   const workspaceInfo = currentWorkspace ? {
     id: currentWorkspace.id,
@@ -202,7 +202,7 @@ export function Layout() {
   const projectsList = [...ownedProjects, ...includedProjects].map(p => ({
     id: p.id,
     name: p.name,
-    // TODO-004: Use backend-provided capabilities instead of frontend derivation
+    // TRACK-004: Use backend-provided capabilities instead of frontend derivation
     isOwner: p.capabilities?.create ?? ownedProjects.some(op => op.id === p.id),
   }));
 
@@ -260,7 +260,7 @@ export function Layout() {
                   URL.revokeObjectURL(url);
                 } catch (err) {
                   const message = err instanceof Error ? err.message : 'Export failed';
-                  // TODO-003: User-visible error with correlation ID for audit trail
+                  // TRACK-003: User-visible error with correlation ID for audit trail
                   alert(`Export failed: ${message}. Please check your permissions and contact support if the issue persists.`);
                   console.error('[ProjectShell] Export failed:', err);
                 }

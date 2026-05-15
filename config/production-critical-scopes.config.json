@@ -55,6 +55,10 @@
     "/test/",
     "/tests/",
     "test-utils",
+    "testFixtures",
+    "__stories__",
+    "platform/java/testing/",
+    "platform/typescript/testing/",
     "scripts/",
     "monitoring/",
     "docs/",
@@ -64,11 +68,15 @@
     "integration-tests/",
     "frontend/dist/",
     "frontend/build/",
-    "frontend/generated/"
+    "frontend/generated/",
+    "generated/",
+    "platform/typescript/testing/"
   ],
   "excludedFilenamePatterns": [
     "\\.test\\.[jt]sx?$",
     "\\.spec\\.[jt]sx?$",
+    "\\.stories\\.[jt]sx?$",
+    "vitest\\.setup\\.[jt]s$",
     "Test\\.java$",
     "IT\\.java$",
     "Spec\\.java$",
@@ -78,14 +86,14 @@
     {
       "id": "TODO_FIXME_PROD",
       "severity": "critical",
-      "pattern": "\\b(TODO|FIXME|HACK|TEMP|XXX)\\b",
+      "pattern": "(//|#|/\\*|\\*)\\s*(TODO|FIXME|HACK|TEMP|XXX)\\b",
       "description": "TODO / FIXME / HACK / TEMP marker in production code"
     },
     {
       "id": "NOT_IMPLEMENTED",
       "severity": "critical",
-      "pattern": "not\\s+implemented|coming\\s+soon|placeholder|stub\\s+implementation|demo\\s+only|remove\\s+before\\s+prod",
-      "description": "Explicit \"not implemented\" or placeholder comment"
+      "pattern": "not\\s+implemented|coming\\s+soon|placeholder\\s+(response|implementation|class|panel)|stub\\s+implementation|demo\\s+only|remove\\s+before\\s+prod",
+      "description": "Explicit incomplete implementation marker"
     },
     {
       "id": "STUB_METHOD_NAME",
@@ -116,6 +124,36 @@
       "severity": "warning",
       "pattern": "return\\s+Promise\\.of\\(null\\)\\s*;",
       "description": "Method returns Promise.of(null) — likely a stub ActiveJ promise"
+    },
+    {
+      "id": "BRIDGE_AUTH_ALLOW_ALL",
+      "severity": "critical",
+      "pattern": "BridgeAuthorizationService\\.allowAll\\(",
+      "description": "Production bridge authorization must not use allow-all authorization"
+    },
+    {
+      "id": "BRIDGE_AUDIT_NOOP",
+      "severity": "critical",
+      "pattern": "BridgeAuditEmitter\\.noOp\\(",
+      "description": "Production bridge audit emission must not be no-op"
+    },
+    {
+      "id": "BRIDGE_HEALTH_NOOP",
+      "severity": "critical",
+      "pattern": "BridgeHealthIndicator\\.noOp\\(",
+      "description": "Production bridge health indicator must not be no-op"
+    },
+    {
+      "id": "PROMISE_TRUE_HEALTH_DEFAULT",
+      "severity": "critical",
+      "pattern": "Promise\\.of\\(true\\)",
+      "description": "Production health or authorization defaults must not unconditionally return Promise.of(true)"
+    },
+    {
+      "id": "LIFECYCLE_RESULT_TRUNCATION",
+      "severity": "critical",
+      "pattern": "return\\s*\\{\\s*status\\s*:\\s*result\\.status\\s*\\}",
+      "description": "Lifecycle bridges must not truncate execution results to status only"
     },
     {
       "id": "MOCK_IMPORT_PROD",

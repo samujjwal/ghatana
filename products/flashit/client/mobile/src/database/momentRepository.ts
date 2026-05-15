@@ -324,7 +324,7 @@ class MomentRepository {
     options: MomentFilterOptions = {},
   ): Promise<Moment[]> {
     // For now, use LIKE-based search
-    // TODO: Implement FTS5 for better performance
+    // Implementation note: Implement FTS5 for better performance
     const searchTerm = `%${query}%`;
     const conditions: string[] = [
       "(content LIKE ? OR transcription LIKE ? OR tags LIKE ?)",

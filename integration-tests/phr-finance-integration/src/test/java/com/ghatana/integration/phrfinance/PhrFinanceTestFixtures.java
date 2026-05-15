@@ -1,11 +1,7 @@
 package com.ghatana.integration.phrfinance;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
-import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
-import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
-import com.ghatana.kernel.adapter.datacloud.DataResult;
-import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
+import com.ghatana.kernel.adapter.datacloud.*;
+import com.ghatana.kernel.bridge.port.BridgeContext;
 import com.ghatana.kernel.adapter.datacloud.DataStream;
 import com.ghatana.kernel.adapter.datacloud.DataStreamRequest;
 import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
@@ -237,27 +233,27 @@ final class PhrFinanceTestFixtures {
         }
 
         @Override
-        public Promise<SchemaInfo> getSchema(String datasetId) {
+        public Promise<SchemaInfo> getSchema(BridgeContext context, String datasetId) {
             return Promise.of(null);
         }
 
         @Override
-        public Promise<List<DatasetInfo>> listDatasets() {
+        public Promise<List<DatasetInfo>> listDatasets(BridgeContext context) {
             return Promise.of(List.of());
         }
 
         @Override
-        public Promise<TransactionHandle> beginTransaction() {
+        public Promise<TransactionHandle> beginTransaction(BridgeContext context) {
             return Promise.of(null);
         }
 
         @Override
-        public Promise<Void> commitTransaction(TransactionHandle handle) {
+        public Promise<Void> commitTransaction(BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 
         @Override
-        public Promise<Void> rollbackTransaction(TransactionHandle handle) {
+        public Promise<Void> rollbackTransaction(BridgeContext context, TransactionHandle handle) {
             return Promise.complete();
         }
 

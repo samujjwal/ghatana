@@ -275,7 +275,7 @@ public class IngressConnectorRouter {
                 connectorId, topic, tenant);
 
         // In production, would route to actual queue source connector here
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**

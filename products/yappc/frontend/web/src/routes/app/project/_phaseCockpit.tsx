@@ -158,7 +158,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
 
-  // TODO-008: Verify scope and phase capability before allowing access
+  // TRACK-008: Verify scope and phase capability before allowing access
   if (!projectId) {
     return (
       <div className="p-6">

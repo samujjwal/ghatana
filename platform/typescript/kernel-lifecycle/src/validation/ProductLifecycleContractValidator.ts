@@ -14,6 +14,18 @@ export class ProductLifecycleContractValidator {
       errors.push({ path: 'productId', message: 'Product ID is required' });
     }
 
+    if (!plan.runId || plan.runId.trim().length === 0) {
+      errors.push({ path: 'runId', message: 'Run ID is required' });
+    }
+
+    if (!plan.correlationId || plan.correlationId.trim().length === 0) {
+      errors.push({ path: 'correlationId', message: 'Correlation ID is required' });
+    }
+
+    if (plan.providerMode !== 'bootstrap' && plan.providerMode !== 'platform') {
+      errors.push({ path: 'providerMode', message: 'Provider mode must be bootstrap or platform' });
+    }
+
     if (!plan.phase) {
       errors.push({ path: 'phase', message: 'Phase is required' });
     }
@@ -36,6 +48,18 @@ export class ProductLifecycleContractValidator {
 
     if (plan.estimatedDurationMs < 0) {
       errors.push({ path: 'estimatedDurationMs', message: 'Estimated duration must be non-negative' });
+    }
+
+    if (!Array.isArray(plan.requiredManifests)) {
+      errors.push({ path: 'requiredManifests', message: 'Required manifests must be an array' });
+    }
+
+    if (!Array.isArray(plan.requiredPlugins)) {
+      errors.push({ path: 'requiredPlugins', message: 'Required plugins must be an array' });
+    }
+
+    if (!Array.isArray(plan.approvalRequirements)) {
+      errors.push({ path: 'approvalRequirements', message: 'Approval requirements must be an array' });
     }
 
     return errors;

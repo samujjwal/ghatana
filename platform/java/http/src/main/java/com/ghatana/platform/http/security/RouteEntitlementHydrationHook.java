@@ -53,7 +53,7 @@ public interface RouteEntitlementHydrationHook {
                     String tier,
                     String correlationId) {
                 throw new IllegalStateException(
-                    "Route entitlement hydration not implemented. " +
+                    "Route entitlement hydration unavailable. " +
                     "Products must implement RouteEntitlementHydrationHook to fetch entitlements from backend. " +
                     "Frontend-only visibility decisions are not allowed."
                 );

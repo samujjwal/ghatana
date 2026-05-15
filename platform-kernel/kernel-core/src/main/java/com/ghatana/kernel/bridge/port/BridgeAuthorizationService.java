@@ -4,8 +4,6 @@
  */
 package com.ghatana.kernel.bridge.port;
 
-import io.activej.promise.Promise;
-
 /**
  * Kernel-owned authorization port for bridge calls.
  *
@@ -40,15 +38,5 @@ public interface BridgeAuthorizationService {
      * @return a {@link Promise} resolving to {@code true} when the call is authorized,
      *         {@code false} otherwise; never a failed Promise for a mere denial
      */
-    Promise<Boolean> isAuthorized(BridgeContext context, String resource, String action);
-
-    /**
-     * A no-op allow-all implementation for use in tests and development scaffolding
-     * where real authorization binding is not yet wired.
-     *
-     * <p><strong>This implementation must not be used in production.</strong></p>
-     */
-    static BridgeAuthorizationService allowAll() {
-        return (context, resource, action) -> Promise.of(Boolean.TRUE);
-    }
+    io.activej.promise.Promise<Boolean> isAuthorized(BridgeContext context, String resource, String action);
 }

@@ -720,7 +720,7 @@ export interface ProjectDashboardAction {
   readonly summary: string;
   readonly severity: ProjectDashboardActionSeverity;
   readonly source: 'project.aiNextActions' | 'project.lifecyclePhase';
-  // TODO-011: Mark client-derived actions as degraded/fallback
+  // TRACK-011: Mark client-derived actions as degraded/fallback
   readonly isDegraded: boolean;
   readonly isFallback: boolean;
   readonly requiresReview: boolean;

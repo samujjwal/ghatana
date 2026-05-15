@@ -8,6 +8,7 @@ import {
   isProductUnit,
   validateProductUnit,
   createMinimalProductUnit,
+  createExecutableProductUnit,
   type ProductUnitSurface,
 } from "../ProductUnit";
 
@@ -20,8 +21,24 @@ describe("ProductUnit", () => {
         name: "Digital Marketing",
         kind: "business-product",
         registryProviderRef: { providerId: "ghatana-file-registry" },
-        sourceProviderRef: { providerId: "ghatana-file-registry" },
-        surfaces: [],
+        sourceProviderRef: {
+          providerId: "ghatana-file-registry",
+          config: { lifecycleConfigPath: "products/digital-marketing/kernel-product.yaml" },
+        },
+        surfaces: [
+          {
+            id: "digital-marketing-api",
+            type: "backend-api",
+            implementationStatus: "implemented",
+          },
+          {
+            id: "digital-marketing-web",
+            type: "web",
+            implementationStatus: "implemented",
+          },
+        ],
+        lifecycleProfile: "standard-web-api-product",
+        lifecycleStatus: "enabled",
       };
 
       expect(isProductUnit(validProductUnit)).toBe(true);
@@ -43,7 +60,13 @@ describe("ProductUnit", () => {
         kind: "business-product",
         registryProviderRef: { providerId: "test" },
         sourceProviderRef: { providerId: "test" },
-        surfaces: [],
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
       };
       expect(isProductUnit(missingSchemaVersion)).toBe(false);
 
@@ -66,7 +89,13 @@ describe("ProductUnit", () => {
         kind: "business-product",
         registryProviderRef: { providerId: "" },
         sourceProviderRef: { providerId: "source" },
-        surfaces: [],
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
       };
 
       expect(isProductUnit(productUnit)).toBe(false);
@@ -146,7 +175,13 @@ describe("ProductUnit", () => {
         kind: "business-product",
         registryProviderRef: { providerId: "registry" },
         sourceProviderRef: { providerId: "source" },
-        surfaces: [],
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
         lifecycleStatus: "enabled",
       };
 
@@ -155,27 +190,235 @@ describe("ProductUnit", () => {
         "enabled lifecycle requires lifecycleProfile"
       );
     });
+
+    it("rejects executable ProductUnits without surfaces", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "surfaces must contain at least one surface"
+      );
+    });
+
+    it("rejects secret-like metadata", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+        metadata: {
+          apiKey: "raw-key",
+        },
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "metadata must not include raw secret-like fields"
+      );
+    });
+
+    it("rejects nested secret-like metadata inside arrays", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+        metadata: {
+          integrations: [{ credential: "raw-credential" }],
+        },
+      };
+
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "metadata must not include raw secret-like fields"
+      );
+    });
+
+    it("rejects secret-like provider config", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: {
+          providerId: "registry",
+          config: { token: "raw-token" },
+        },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+      };
+
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "provider config must not include raw secret-like fields"
+      );
+    });
+
+    it("rejects missing source provider ids", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+      };
+
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "sourceProviderRef.providerId must be a non-empty string"
+      );
+    });
+
+    it("rejects file-backed enabled lifecycle without lifecycle config path", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "ghatana-file-registry" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "implemented",
+          },
+        ],
+        lifecycleProfile: "standard-web-api-product",
+        lifecycleStatus: "enabled",
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "file-backed enabled lifecycle requires sourceProviderRef.config.lifecycleConfigPath"
+      );
+    });
   });
 
   describe("createMinimalProductUnit", () => {
-    it("creates a minimal valid ProductUnit", () => {
+    it("creates a draft-only ProductUnit skeleton", () => {
       const productUnit = createMinimalProductUnit(
         "test-product",
         "Test Product",
         "business-product"
       );
 
-      expect(productUnit.schemaVersion).toBe("1.0.0");
       expect(productUnit.id).toBe("test-product");
       expect(productUnit.name).toBe("Test Product");
       expect(productUnit.kind).toBe("business-product");
-      expect(productUnit.registryProviderRef.providerId).toBe(
-        "ghatana-file-registry"
-      );
-      expect(productUnit.sourceProviderRef.providerId).toBe(
-        "ghatana-file-registry"
-      );
       expect(productUnit.surfaces).toEqual([]);
+      expect(isProductUnit(productUnit)).toBe(false);
+    });
+  });
+
+  describe("createExecutableProductUnit", () => {
+    it("creates a valid executable ProductUnit when surfaces are supplied", () => {
+      const productUnit = createExecutableProductUnit({
+        id: "test-product",
+        name: "Test Product",
+        kind: "business-product",
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "implemented",
+          },
+        ],
+        lifecycleProfile: "standard-web-api-product",
+        lifecycleStatus: "enabled",
+      });
+
+      expect(isProductUnit(productUnit)).toBe(true);
+      expect(productUnit.sourceProviderRef.config).toEqual({
+        lifecycleConfigPath: "kernel-product.yaml",
+      });
+    });
+
+    it("preserves optional executable ProductUnit fields", () => {
+      const productUnit = createExecutableProductUnit({
+        id: "test-product",
+        name: "Test Product",
+        kind: "business-product",
+        scope: {
+          tenantId: "tenant-1",
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+        },
+        owner: "platform-team",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "github" },
+        surfaces: [
+          {
+            id: "test-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+        conformance: {
+          requiredChecks: ["typecheck"],
+          level: "strict",
+        },
+        governance: {
+          approvalGates: ["release-manager"],
+        },
+        metadata: {
+          productLine: "studio",
+        },
+      });
+
+      expect(productUnit.scope?.tenantId).toBe("tenant-1");
+      expect(productUnit.owner).toBe("platform-team");
+      expect(productUnit.conformance?.level).toBe("strict");
+      expect(productUnit.governance?.approvalGates).toEqual(["release-manager"]);
+      expect(productUnit.metadata).toEqual({ productLine: "studio" });
+    });
+
+    it("throws when executable ProductUnit input is not lifecycle valid", () => {
+      expect(() =>
+        createExecutableProductUnit({
+          id: "test-product",
+          name: "Test Product",
+          kind: "business-product",
+          surfaces: [],
+        })
+      ).toThrow(/Invalid executable ProductUnit/);
     });
   });
 
@@ -207,7 +450,10 @@ describe("ProductUnit", () => {
         kind: "business-product",
         owner: "digital-marketing-team",
         registryProviderRef: { providerId: "ghatana-file-registry" },
-        sourceProviderRef: { providerId: "ghatana-file-registry" },
+        sourceProviderRef: {
+          providerId: "ghatana-file-registry",
+          config: { lifecycleConfigPath: "products/digital-marketing/kernel-product.yaml" },
+        },
         surfaces,
         lifecycleProfile: "standard-web-api-product",
         lifecycleStatus: "enabled",

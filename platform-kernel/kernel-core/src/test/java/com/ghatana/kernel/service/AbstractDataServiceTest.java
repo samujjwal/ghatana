@@ -235,17 +235,17 @@ class AbstractDataServiceTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<SchemaInfo> getSchema(String datasetId) {
+        public Promise<SchemaInfo> getSchema(com.ghatana.kernel.bridge.port.BridgeContext context, String datasetId) {
             return Promise.of(new SchemaInfo(datasetId, Map.of(), 0L, 0L));
         }
 
         @Override
-        public Promise<List<DatasetInfo>> listDatasets() {
+        public Promise<List<DatasetInfo>> listDatasets(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(List.of());
         }
 
         @Override
-        public Promise<TransactionHandle> beginTransaction() {
+        public Promise<TransactionHandle> beginTransaction(com.ghatana.kernel.bridge.port.BridgeContext context) {
             return Promise.of(new TransactionHandle() {
                 @Override
                 public String getId() {
@@ -259,12 +259,16 @@ class AbstractDataServiceTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<Void> commitTransaction(TransactionHandle transaction) {
+        public Promise<Void> commitTransaction(
+                com.ghatana.kernel.bridge.port.BridgeContext context,
+                TransactionHandle transaction) {
             return Promise.complete();
         }
 
         @Override
-        public Promise<Void> rollbackTransaction(TransactionHandle transaction) {
+        public Promise<Void> rollbackTransaction(
+                com.ghatana.kernel.bridge.port.BridgeContext context,
+                TransactionHandle transaction) {
             return Promise.complete();
         }
 

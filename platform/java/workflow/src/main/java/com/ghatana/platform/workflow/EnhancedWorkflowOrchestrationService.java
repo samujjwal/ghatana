@@ -426,7 +426,7 @@ public final class EnhancedWorkflowOrchestrationService {
         public Optional<String> getRetryAfter() { return Optional.ofNullable(retryAfter); }
     }
 
-    // Placeholder classes for implementation
+    // Internal implementation support classes
     private static final class ParallelStepExecutor {
         private final Executor executor;
 

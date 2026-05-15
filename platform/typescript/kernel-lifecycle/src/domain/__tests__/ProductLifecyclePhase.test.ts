@@ -4,10 +4,9 @@ import type {
   ProductLifecyclePlan,
   ProductLifecycleStep,
   ProductLifecycleResult,
+  ProductLifecycleFailureReasonCode,
   ProductLifecycleStepResult,
   ProductArtifact,
-  LifecyclePlan,
-  LifecyclePlanStep,
   LifecycleStepKind,
   LifecycleStepAdapterContext,
   KernelProductConfiguration,
@@ -127,6 +126,8 @@ describe('ProductLifecyclePlan', () => {
     return {
       schemaVersion: '1.0.0',
       runId: 'run-abc123',
+      correlationId: 'corr-abc123',
+      providerMode: 'bootstrap',
       productId: 'digital-marketing',
       phase: 'build',
       phaseMode: 'sequential',
@@ -135,6 +136,9 @@ describe('ProductLifecyclePlan', () => {
       gates: [],
       steps: [],
       expectedArtifacts: [],
+      requiredManifests: [],
+      requiredPlugins: [],
+      approvalRequirements: [],
       outputDirectory: '/tmp/out',
       estimatedDurationMs: 0,
     };
@@ -191,48 +195,87 @@ describe('ProductLifecyclePlan', () => {
     expect(plan.steps).toHaveLength(1);
     expect(plan.steps[0].id).toBe('s1');
   });
-});
 
-// ── LifecyclePlan — deprecated alias ─────────────────────────────────────────
-
-describe('LifecyclePlan (deprecated alias)', () => {
-  it('is structurally identical to ProductLifecyclePlan', () => {
-    const plan: LifecyclePlan = {
-      schemaVersion: '1.0.0',
-      runId: 'run-001',
-      productId: 'test-product',
-      phase: 'test',
-      phaseMode: 'sequential',
-      lifecycleProfile: 'standard-web-api-product',
-      surfaces: [],
-      gates: [],
-      steps: [],
-      expectedArtifacts: [],
-      outputDirectory: '/tmp',
-      estimatedDurationMs: 0,
+  it('stores provider mode, required manifests, plugins, approvals, and semantic artifact refs', () => {
+    const plan: ProductLifecyclePlan = {
+      ...makeMinimalPlan(),
+      providerMode: 'platform',
+      expectedArtifacts: [
+        {
+          surface: 'web',
+          type: 'static-web-bundle',
+          required: true,
+          providerId: 'file-artifacts',
+          semanticRef: 'artifact://digital-marketing/build/web/static-web-bundle',
+        },
+      ],
+      requiredManifests: ['lifecycle-result', 'artifact-manifest'],
+      requiredPlugins: [{ pluginId: 'audit', required: true, providerId: 'audit-provider' }],
+      approvalRequirements: [
+        {
+          approvalId: 'deploy-prod-approval',
+          action: 'deploy:prod',
+          riskLevel: 'high',
+          required: true,
+          source: 'kernel-product.environments.prod',
+        },
+      ],
     };
-    // LifecyclePlan must be assignable to ProductLifecyclePlan and vice versa
-    const canonical: ProductLifecyclePlan = plan;
-    expect(canonical.productId).toBe('test-product');
+
+    expect(plan.providerMode).toBe('platform');
+    expect(plan.requiredManifests).toContain('artifact-manifest');
+    expect(plan.requiredPlugins[0].pluginId).toBe('audit');
+    expect(plan.approvalRequirements[0].riskLevel).toBe('high');
+    expect(plan.expectedArtifacts[0].semanticRef).toBe('artifact://digital-marketing/build/web/static-web-bundle');
   });
 });
 
-// ── LifecyclePlanStep — deprecated alias ─────────────────────────────────────
-
-describe('LifecyclePlanStep (deprecated alias)', () => {
-  it('is structurally identical to ProductLifecycleStep', () => {
-    const step: LifecyclePlanStep = {
-      id: 'step-1',
-      stepKind: 'gate',
-      phase: 'validate',
-      surface: 'backend-api',
-      adapter: 'gradle-java-service',
-      description: 'Gate check',
-      dependsOn: [],
-      estimatedDurationMs: 1000,
+describe('ProductLifecycleResult', () => {
+  it('supports lifecycle truth refs and typed failure reason codes', () => {
+    const reasonCode: ProductLifecycleFailureReasonCode = 'provider-unavailable';
+    const result: ProductLifecycleResult = {
+      schemaVersion: '1.0.0',
+      runId: 'run-001',
+      correlationId: 'corr-001',
+      providerMode: 'bootstrap',
+      productId: 'digital-marketing',
+      productUnitRef: 'product-unit://digital-marketing',
+      phase: 'build',
+      status: 'failed',
+      startedAt: '2026-05-14T00:00:00.000Z',
+      completedAt: '2026-05-14T00:00:01.000Z',
+      steps: [],
+      gates: [],
+      artifacts: [],
+      manifestRefs: {
+        lifecyclePlan: 'lifecycle-plan.json',
+        lifecycleResult: 'lifecycle-result.json',
+        gateResultManifest: 'gate-result-manifest.json',
+        artifactManifest: 'artifact-manifest.json',
+        deploymentManifest: 'deployment-manifest.json',
+        verifyHealthReport: 'verify-health-report.json',
+      },
+      eventsRef: 'lifecycle-events.json',
+      healthSnapshotRef: 'lifecycle-health-snapshot.json',
+      approvalRefs: [
+        {
+          approvalId: 'approval-1',
+          status: 'pending',
+          ref: 'approval-gates/approval-1.json',
+        },
+      ],
+      outputDirectory: '/tmp/out',
+      failure: {
+        reasonCode,
+        stepId: 'provider-health',
+        message: 'Provider unavailable',
+      },
     };
-    const canonical: ProductLifecycleStep = step;
-    expect(canonical.id).toBe('step-1');
+
+    expect(result.providerMode).toBe('bootstrap');
+    expect(result.failure?.reasonCode).toBe('provider-unavailable');
+    expect(result.manifestRefs?.artifactManifest).toBe('artifact-manifest.json');
+    expect(result.approvalRefs?.[0].status).toBe('pending');
   });
 });
 

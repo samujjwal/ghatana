@@ -276,7 +276,7 @@ public class Orchestrator {
 
         if (agentIds == null || agentIds.isEmpty()) {
             log.debug("Pipeline {} has no agent references, skipping agent validation", pipeline.id);
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         log.debug("Validating {} agents for pipeline {}", agentIds.size(), pipeline.id);

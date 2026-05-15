@@ -11,6 +11,12 @@ import type {
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
+import {
+  createCommandObservability,
+  createDryRunObservability,
+  createToolchainExecutionResult,
+  truncateToolchainOutput,
+} from '../execution/ToolchainExecutionResultFactory.js';
 
 /**
  * Gradle Java service adapter
@@ -51,31 +57,35 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
 
     if (context.dryRun) {
       context.logger.info(`[DRY-RUN] Would execute: ${step.command.join(' ')}`);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'skipped',
         steps: [{ stepId: step.id, status: 'skipped', durationMs: 0 }],
         artifacts: [],
         durationMs: 0,
-      };
+        observability: createDryRunObservability(step.id),
+      });
     }
+
+    await this.validateGradleModule(context);
 
     const commandResult = await this.commandRunner.run(step.command[0], step.command.slice(1), {
       cwd: step.workingDirectory,
       env: { ...process.env, ...step.env },
+      timeoutMs: this.resolveTimeoutMs(context),
     });
 
     const durationMs = commandResult.durationMs || Date.now() - startedAt;
 
     if (commandResult.exitCode !== 0) {
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
@@ -86,28 +96,30 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
           message: 'Gradle execution failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     // dev phase: the process is long-running; write processes.json and return immediately.
     // Do NOT validate dist/jar outputs for dev — the server runs in the foreground.
     if (context.phase === 'dev') {
       await this.writeProcessesJson(context, step.id, durationMs);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'succeeded',
         steps: [
           {
             stepId: step.id,
             status: 'succeeded',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
         artifacts: [],
         durationMs,
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     const validation = await this.validateOutputs(context);
@@ -115,43 +127,47 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
 
     const failed = validation.status === 'invalid';
     if (failed) {
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10000),
-            stderr: commandResult.stderr.slice(0, 10000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
         artifacts,
         durationMs,
+        evidenceRefs: artifacts.map((artifact) => `artifact:${artifact}`),
         failure: {
           stepId: step.id,
           message: validation.errors.map((error) => error.message).join('; ') || 'Output validation failed',
           ...(commandResult.stderr ? { cause: commandResult.stderr } : {}),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
-    return {
+    return createToolchainExecutionResult(context, {
       status: 'succeeded',
       steps: [
         {
           stepId: step.id,
           status: 'succeeded',
           exitCode: commandResult.exitCode,
-          stdout: commandResult.stdout.slice(0, 10000),
-          stderr: commandResult.stderr.slice(0, 10000),
+          stdout: truncateToolchainOutput(commandResult.stdout),
+          stderr: truncateToolchainOutput(commandResult.stderr),
           durationMs,
         },
       ],
       artifacts,
       durationMs,
-    };
+      evidenceRefs: artifacts.map((artifact) => `artifact:${artifact}`),
+      observability: createCommandObservability(step.id, commandResult, durationMs),
+    });
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
@@ -249,24 +265,17 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     if (context.phase === 'build' || context.phase === 'package') {
       return [path.join(surfacePath, 'build', 'libs', '*.jar').replace(/\\/g, '/')];
     }
-    if (context.phase === 'test' || context.phase === 'validate') {
-      return [
-        path.join(surfacePath, 'build', 'reports', 'tests').replace(/\\/g, '/'),
-        path.join(surfacePath, 'build', 'test-results', 'test').replace(/\\/g, '/'),
-      ];
-    }
-    return [];
+    return [
+      path.join(surfacePath, 'build', 'reports', 'tests').replace(/\\/g, '/'),
+      path.join(surfacePath, 'build', 'test-results', 'test').replace(/\\/g, '/'),
+    ];
   }
 
   private async extractArtifacts(context: ToolchainAdapterContext): Promise<string[]> {
-    if (context.phase !== 'build' && context.phase !== 'package') {
-      return [];
-    }
-
     const outputPatterns = this.getExpectedOutputsForPhase(context);
-    const artifactCandidates = outputPatterns.length > 0 ? outputPatterns : [
-      path.join(this.resolveSurfacePath(context), 'build', 'libs', '*.jar').replace(/\\/g, '/'),
-    ];
+    const artifactCandidates = outputPatterns.length > 0
+      ? outputPatterns
+      : this.getArtifactCandidatesForPhase(context);
 
     const artifacts = new Set<string>();
     for (const pattern of artifactCandidates) {
@@ -277,6 +286,62 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     }
 
     return [...artifacts];
+  }
+
+  private getArtifactCandidatesForPhase(context: ToolchainAdapterContext): string[] {
+    const surfacePath = this.resolveSurfacePath(context);
+    if (context.phase === 'build' || context.phase === 'package') {
+      return [path.join(surfacePath, 'build', 'libs', '*.jar').replace(/\\/g, '/')];
+    }
+    return [
+      path.join(surfacePath, 'build', 'reports', 'tests').replace(/\\/g, '/'),
+      path.join(surfacePath, 'build', 'test-results', 'test').replace(/\\/g, '/'),
+      path.join(surfacePath, 'build', 'reports', 'jacoco').replace(/\\/g, '/'),
+    ];
+  }
+
+  private async validateGradleModule(context: ToolchainAdapterContext): Promise<void> {
+    const gradleModule = context.surfaceConfig.gradleModule as string;
+
+    const settingsFiles = [
+      path.join(this.repoRoot, 'settings.gradle.kts'),
+      path.join(this.repoRoot, 'settings.gradle'),
+    ];
+    const settingsContents: string[] = [];
+    for (const settingsFile of settingsFiles) {
+      if (await this.exists(settingsFile)) {
+        settingsContents.push(await fs.readFile(settingsFile, 'utf-8'));
+      }
+    }
+
+    if (settingsContents.some((content) => this.settingsIncludeModule(content, gradleModule))) {
+      return;
+    }
+
+    if (await this.exists(this.resolveSurfacePath(context))) {
+      return;
+    }
+
+    throw new Error(
+      `Gradle module ${gradleModule} is not declared in settings.gradle(.kts) and ` +
+        `surface source path ${this.resolveSurfacePath(context)} does not exist.`,
+    );
+  }
+
+  private settingsIncludeModule(settingsContent: string, gradleModule: string): boolean {
+    const escapedModule = gradleModule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const includePattern = new RegExp(
+      `include\\s*\\(?[\\s\\S]*?["']${escapedModule}["']`,
+      'm',
+    );
+    return includePattern.test(settingsContent);
+  }
+
+  private resolveTimeoutMs(context: ToolchainAdapterContext): number {
+    const configured = context.phaseConfig.timeoutMs ?? context.surfaceConfig.timeoutMs;
+    return typeof configured === 'number' && Number.isFinite(configured) && configured > 0
+      ? configured
+      : 900_000;
   }
 
   private async patternExists(pattern: string): Promise<boolean> {

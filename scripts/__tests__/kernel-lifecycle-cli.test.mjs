@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +56,53 @@ test('kernel-product build dry-run returns skipped execution results', () => {
   assert.equal(payload.result.status, 'skipped');
   assert.equal(payload.result.steps.length, 2);
   assert.match(payload.result.steps[0].stdout, /^\[DRY-RUN\]/);
+  assert.equal(payload.plan.providerMode, 'bootstrap');
+  assert.ok(payload.manifests.lifecyclePlan.endsWith('lifecycle-plan.json'));
+  assert.ok(payload.manifests.lifecycleResult.endsWith('lifecycle-result.json'));
+});
+
+test('kernel-product propagates correlation id and writes latest manifest pointers', () => {
+  const result = runNodeScript([
+    join(repoRoot, 'scripts', 'kernel-product.mjs'),
+    'product',
+    'plan',
+    'digital-marketing',
+    'build',
+    '--mode',
+    'bootstrap',
+    '--correlation-id',
+    'corr-cli-test',
+    '--json',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr);
+  const plan = JSON.parse(result.stdout);
+  assert.equal(plan.correlationId, 'corr-cli-test');
+  assert.equal(plan.providerMode, 'bootstrap');
+
+  const latestPointers = JSON.parse(readFileSync(
+    join(repoRoot, '.kernel', 'out', 'products', 'digital-marketing', 'build', 'latest', 'manifest-pointers.json'),
+    'utf8',
+  ));
+  assert.equal(latestPointers.runId, plan.runId);
+  assert.equal(latestPointers.correlationId, 'corr-cli-test');
+  assert.equal(latestPointers.providerMode, 'bootstrap');
+});
+
+test('kernel-product fails closed for platform mode until Data Cloud provider bridge exists', () => {
+  const result = runNodeScript([
+    join(repoRoot, 'scripts', 'kernel-product.mjs'),
+    'product',
+    'plan',
+    'digital-marketing',
+    'build',
+    '--mode',
+    'platform',
+    '--json',
+  ]);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Data Cloud-backed provider bridge/);
 });
 
 test('run-product-task delegates lifecycle-enabled builds to kernel execution', () => {

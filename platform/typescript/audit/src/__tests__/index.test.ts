@@ -12,12 +12,13 @@
  * @doc.layer platform
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createAuditLogService,
   HIGH_RISK_AUDIT_ACTIONS,
   isHighRiskAuditAction,
   type AuditEvent,
+  type AuditHttpTransport,
 } from '../index';
 
 // ---------------------------------------------------------------------------
@@ -40,13 +41,16 @@ function makeEvent(
   };
 }
 
-const mockTransport = {
-  post: vi.fn<[string, unknown], Promise<unknown>>().mockResolvedValue({}),
-  get: vi.fn<[string, Record<string, unknown> | undefined], Promise<unknown>>().mockResolvedValue({
+const mockTransport: AuditHttpTransport = {
+  post: vi.fn(async (_url: string, _body: unknown): Promise<unknown> => ({})),
+  get: vi.fn(async (
+    _url: string,
+    _params?: Record<string, string | number | boolean | null | undefined>
+  ): Promise<unknown> => ({
     events: [],
     total: 0,
     hasMore: false,
-  }),
+  })),
 };
 
 // ---------------------------------------------------------------------------
@@ -84,11 +88,8 @@ describe('isHighRiskAuditAction', () => {
 // ---------------------------------------------------------------------------
 
 describe('createAuditLogService.storeLocally', () => {
-  let sessionStorageSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
-    sessionStorageSpy = vi.spyOn(globalThis.sessionStorage, 'setItem');
-    sessionStorageSpy.mockClear();
+    globalThis.sessionStorage.clear();
   });
 
   it('does NOT write to sessionStorage for redaction even when enableLocalBackup=true', () => {
@@ -99,55 +100,55 @@ describe('createAuditLogService.storeLocally', () => {
 
     service.storeLocally(makeEvent('redaction'));
 
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for purge', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('purge'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for consent_change', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('consent_change'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for retention_classify', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('retention_classify'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for policy_approve', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('policy_approve'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for policy_reject', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('policy_reject'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does NOT write to sessionStorage for bulk_delete', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('bulk_delete'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('writes to sessionStorage for pipeline_run when enableLocalBackup=true', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: true });
     service.storeLocally(makeEvent('pipeline_run'));
-    expect(sessionStorageSpy).toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(1);
   });
 
-  it('does NOT write to sessionStorage for pipeline_run when enableLocalBackup=false', () => {
+  it('stores pipeline_run when storeLocally is called directly', () => {
     const service = createAuditLogService({ transport: mockTransport, enableLocalBackup: false });
     service.storeLocally(makeEvent('pipeline_run'));
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(1);
   });
 });
 
@@ -156,17 +157,23 @@ describe('createAuditLogService.storeLocally', () => {
 // ---------------------------------------------------------------------------
 
 describe('createAuditLogService.log — high-risk fallback', () => {
-  let sessionStorageSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    sessionStorageSpy = vi.spyOn(globalThis.sessionStorage, 'setItem');
-    sessionStorageSpy.mockClear();
+    globalThis.sessionStorage.clear();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('does not fall back to sessionStorage for redaction even when transport fails', async () => {
-    const failingTransport = {
-      post: vi.fn().mockRejectedValue(new Error('network error')),
-      get: vi.fn().mockResolvedValue({ events: [], total: 0, hasMore: false }),
+    const failingTransport: AuditHttpTransport = {
+      post: vi.fn(async () => {
+        throw new Error('network error');
+      }),
+      get: vi.fn(async () => ({ events: [], total: 0, hasMore: false })),
     };
     const service = createAuditLogService({ transport: failingTransport, enableLocalBackup: true });
 
@@ -178,13 +185,15 @@ describe('createAuditLogService.log — high-risk fallback', () => {
       status: 'success',
     });
 
-    expect(sessionStorageSpy).not.toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 
   it('does fall back to sessionStorage for pipeline_run when transport fails', async () => {
-    const failingTransport = {
-      post: vi.fn().mockRejectedValue(new Error('network error')),
-      get: vi.fn().mockResolvedValue({ events: [], total: 0, hasMore: false }),
+    const failingTransport: AuditHttpTransport = {
+      post: vi.fn(async () => {
+        throw new Error('network error');
+      }),
+      get: vi.fn(async () => ({ events: [], total: 0, hasMore: false })),
     };
     const service = createAuditLogService({ transport: failingTransport, enableLocalBackup: true });
 
@@ -196,6 +205,26 @@ describe('createAuditLogService.log — high-risk fallback', () => {
       status: 'success',
     });
 
-    expect(sessionStorageSpy).toHaveBeenCalled();
+    expect(service.getLocalBackups()).toHaveLength(1);
+  });
+
+  it('does not fall back to sessionStorage for pipeline_run when local backup is disabled', async () => {
+    const failingTransport: AuditHttpTransport = {
+      post: vi.fn(async () => {
+        throw new Error('network error');
+      }),
+      get: vi.fn(async () => ({ events: [], total: 0, hasMore: false })),
+    };
+    const service = createAuditLogService({ transport: failingTransport, enableLocalBackup: false });
+
+    await service.log({
+      userId: 'user-1',
+      tenantId: 'tenant-1',
+      action: 'pipeline_run',
+      resource: '/pipelines/p-1',
+      status: 'success',
+    });
+
+    expect(service.getLocalBackups()).toHaveLength(0);
   });
 });

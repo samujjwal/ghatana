@@ -10,6 +10,12 @@ import type {
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
+import {
+  createCommandObservability,
+  createDryRunObservability,
+  createToolchainExecutionResult,
+  truncateToolchainOutput,
+} from '../execution/ToolchainExecutionResultFactory.js';
 
 /** Container image artifact produced by a successful Docker build. */
 export interface ContainerImageArtifact {
@@ -58,7 +64,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
 
     return [
       {
-        id: `docker-buildx-package-${context.surface}`,
+        id: `docker-buildx-package-${context.surface.type}`,
         description: `Build container image ${imageRef} from ${dockerfile}`,
         command,
         workingDirectory: this.repoRoot,
@@ -72,12 +78,13 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
 
     if (context.dryRun) {
       context.logger.info(`[DRY-RUN] Would execute: ${step.command.join(' ')}`);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'skipped',
         steps: [{ stepId: step.id, status: 'skipped', durationMs: 0 }],
         artifacts: [],
         durationMs: 0,
-      };
+        observability: createDryRunObservability(step.id),
+      });
     }
 
     context.logger.info(`Building container image: ${step.command.join(' ')}`);
@@ -96,15 +103,15 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
 
     if (commandResult.exitCode !== 0) {
       context.logger.error(`docker buildx build failed (exit ${commandResult.exitCode})`);
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10_000),
-            stderr: commandResult.stderr.slice(0, 10_000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
@@ -113,24 +120,25 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
         failure: {
           stepId: step.id,
           message: `docker buildx build exited with code ${commandResult.exitCode}`,
-          cause: commandResult.stderr.slice(0, 2_000),
+          cause: truncateToolchainOutput(commandResult.stderr),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     const validation = await this.validateOutputs(context);
     const artifacts = await this.extractArtifacts(context);
 
     if (validation.status === 'invalid') {
-      return {
+      return createToolchainExecutionResult(context, {
         status: 'failed',
         steps: [
           {
             stepId: step.id,
             status: 'failed',
             exitCode: commandResult.exitCode,
-            stdout: commandResult.stdout.slice(0, 10_000),
-            stderr: commandResult.stderr.slice(0, 10_000),
+            stdout: truncateToolchainOutput(commandResult.stdout),
+            stderr: truncateToolchainOutput(commandResult.stderr),
             durationMs,
           },
         ],
@@ -140,38 +148,39 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
           stepId: step.id,
           message: validation.errors.map((e) => e.message).join('; '),
         },
-      };
+        observability: createCommandObservability(step.id, commandResult, durationMs),
+      });
     }
 
     context.logger.info(`Container image build succeeded in ${durationMs}ms`);
-    return {
+    return createToolchainExecutionResult(context, {
       status: 'succeeded',
       steps: [
         {
           stepId: step.id,
           status: 'succeeded',
           exitCode: 0,
-          stdout: commandResult.stdout.slice(0, 10_000),
-          stderr: commandResult.stderr.slice(0, 10_000),
+          stdout: truncateToolchainOutput(commandResult.stdout),
+          stderr: truncateToolchainOutput(commandResult.stderr),
           durationMs,
         },
       ],
       artifacts,
       durationMs,
-    };
+      evidenceRefs: artifacts.map((artifact) => `container-image:${artifact}`),
+      observability: createCommandObservability(step.id, commandResult, durationMs),
+    });
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
-    const { image, tag } = this.resolveConfig(context);
-    const imageRef = `${image}:${tag}`;
-
+    const { imageRef } = this.resolveImageRef(context);
     const result = await this.commandRunner.run(
       'docker',
-      ['image', 'inspect', '--format', '{{.Id}}', imageRef],
+      ['image', 'inspect', '--format', '{{json .RepoDigests}}|{{.Id}}', imageRef],
       { cwd: this.repoRoot, env: { ...process.env } },
     );
 
-    if (result.exitCode !== 0) {
+    if (result.exitCode !== 0 || result.stdout.trim().length === 0) {
       return {
         status: 'invalid',
         errors: [
@@ -199,21 +208,18 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private async extractArtifacts(context: ToolchainAdapterContext): Promise<string[]> {
-    const { image, tag } = this.resolveConfig(context);
-    const imageRef = `${image}:${tag}`;
+    const { imageRef } = this.resolveImageRef(context);
 
     const idResult = await this.commandRunner.run(
       'docker',
-      ['image', 'inspect', '--format', '{{.Id}}', imageRef],
+      ['image', 'inspect', '--format', '{{json .RepoDigests}}|{{.Id}}', imageRef],
       { cwd: this.repoRoot, env: { ...process.env } },
     );
 
-    // Return [imageRef] â€” we use strings to stay compatible with ToolchainExecutionResult.artifacts
-    // The caller (executor / ArtifactWriter) will enrich with digest and typed metadata.
     if (idResult.exitCode === 0 && idResult.stdout.trim().length > 0) {
-      return [imageRef];
+      return [this.resolveDigestArtifactRef(imageRef, idResult.stdout)];
     }
-    return [imageRef]; // Still return the ref even if inspect failed; validation already surfaced the error
+    return [imageRef];
   }
 
   /** Resolve image, tag, dockerfile, and context from adapter context config. */
@@ -223,13 +229,12 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
     dockerfile: string;
     dockerContext: string;
   } {
-    // The config comes from adapterContext.packageConfig populated by the planner
     const cfg = context.surfaceConfig;
 
-    const image = String(cfg.image ?? `${context.productId}-${String(context.surface.type)}`);
-    const tag = String(cfg.tag ?? 'local');
-    const rawDockerfile = String(cfg.dockerfile ?? 'Dockerfile');
-    const rawContext = String(cfg.context ?? '.');
+    const image = this.requireConfigString(cfg, 'image');
+    const tag = this.requireConfigString(cfg, 'tag');
+    const rawDockerfile = this.requireConfigString(cfg, 'dockerfile');
+    const rawContext = this.requireConfigString(cfg, 'context');
 
     const dockerfile = path.isAbsolute(rawDockerfile)
       ? rawDockerfile
@@ -240,6 +245,40 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
       : path.join(this.repoRoot, rawContext);
 
     return { image, tag, dockerfile, dockerContext };
+  }
+
+  private requireConfigString(config: Record<string, unknown>, key: string): string {
+    const value = config[key];
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      throw new Error(`DockerBuildxAdapter requires surfaceConfig.${key}`);
+    }
+    return value;
+  }
+
+  private resolveImageRef(context: ToolchainAdapterContext): { imageRef: string } {
+    const { image, tag } = this.resolveConfig(context);
+    return { imageRef: `${image}:${tag}` };
+  }
+
+  private resolveDigestArtifactRef(imageRef: string, inspectOutput: string): string {
+    const [repoDigestsRaw] = inspectOutput.trim().split('|');
+    if (!repoDigestsRaw) {
+      return imageRef;
+    }
+
+    try {
+      const repoDigests = JSON.parse(repoDigestsRaw) as unknown;
+      if (Array.isArray(repoDigests)) {
+        const digestRef = repoDigests.find((value): value is string =>
+          typeof value === 'string' && value.includes('@sha256:'),
+        );
+        return digestRef ?? imageRef;
+      }
+    } catch {
+      return imageRef;
+    }
+
+    return imageRef;
   }
 
   /** Build `--build-arg KEY=VALUE` args array from surfaceConfig.buildArgs. */

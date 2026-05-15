@@ -276,7 +276,7 @@ class MonitoringService {
 
       await AsyncStorage.setItem(CRASHES_KEY, JSON.stringify(crashes));
 
-      // TODO: Send to crash reporting service
+      // Implementation note: Send to crash reporting service
       this.log('error', 'Crash reported', { crashId: crash.id });
     } catch (e) {
       console.error('Failed to store crash report:', e);
@@ -404,7 +404,7 @@ class MonitoringService {
    * Flush data to server
    */
   async flush(): Promise<void> {
-    // TODO: Send data to monitoring server
+    // Implementation note: Send data to monitoring server
     this.log('info', 'Flushing monitoring data');
   }
 

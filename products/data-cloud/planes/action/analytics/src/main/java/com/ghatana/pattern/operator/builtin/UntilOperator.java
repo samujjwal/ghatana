@@ -24,7 +24,7 @@ import java.util.Map;
  *                   termination condition. Cannot operate in stateless mode (supportsStateless=false).
  *                   State includes partial matches, termination detection, and optional time bounds.
  * @doc.threading Thread-Safe Validation - Validation logic is stateless and thread-safe. Runtime execution
- *                (not implemented here) would require per-instance state isolation or external synchronization
+ *                (unavailable here) would require per-instance state isolation or external synchronization
  *                for termination tracking and partial match buffering.
  * @doc.performance O(1) Validation Performance - Fixed 2-operand validation, O(p) for parameter validation
  *                  where p = parameter count. Typical validation time: <1ms. Runtime performance depends

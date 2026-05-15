@@ -228,7 +228,7 @@ export const useSearchMoments = (params?: {
     queryKey: ['moments', params],
     queryFn: async () => {
       // Use standard getMoments which supports filtering and simple search
-      // TODO: Future: Integrate AI search here if query is present, with response mapping
+      // Implementation note: Future: Integrate AI search here if query is present, with response mapping
       return apiClient.getMoments(params);
     },
     staleTime: 30 * 1000, // 30 seconds

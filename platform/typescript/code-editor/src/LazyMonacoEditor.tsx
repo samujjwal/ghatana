@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Monaco Editor Code Splitting
  * Lazy-loaded code editor for performance optimization

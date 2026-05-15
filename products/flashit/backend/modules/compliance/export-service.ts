@@ -358,7 +358,7 @@ export class DataExportService {
       if (encryption?.enabled && encryption.password) {
         // Note: archiver doesn't support password encryption natively
         // In production, use a library like node-7z or implement AES encryption
-        console.warn('Password encryption not implemented in this demo');
+        console.warn('Password encryption unavailable in this local');
       }
 
       // Add all files from source directory

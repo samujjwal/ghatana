@@ -13,6 +13,7 @@ import type {
   LifecycleStatus,
   ProductUnit,
   ProductUnitConformance,
+  ProductUnitIntent,
   ProductUnitSurface,
   ProductUnitSurfaceType,
   RegistryProvider,
@@ -21,6 +22,7 @@ import {
   isImplementationStatus,
   isProductUnitKind,
   isProductUnitSurfaceType,
+  validateProductUnitIntent,
   validateProductUnit,
 } from "@ghatana/kernel-product-contracts";
 
@@ -41,6 +43,31 @@ export interface RegistryValidationResult {
   readonly warnings: readonly RegistryValidationIssue[];
 }
 
+export interface ProductUnitIntentTargetValidationResult {
+  readonly valid: boolean;
+  readonly correlationId: string;
+  readonly errors: readonly string[];
+  readonly warnings: readonly string[];
+}
+
+export interface ProductUnitIntentPreviewResult
+  extends ProductUnitIntentTargetValidationResult {
+  readonly operation: ProductUnitIntent["intentType"];
+  readonly productUnitId: string;
+  readonly registryPath: string;
+  readonly before: GhatanaRegistryEntry | null;
+  readonly after: GhatanaRegistryEntry | null;
+  readonly diff: readonly string[];
+}
+
+export interface ProductUnitIntentApplyOptions {
+  readonly allowWrite: boolean;
+}
+
+export interface ProductUnitIntentApplyResult extends ProductUnitIntentPreviewResult {
+  readonly applied: boolean;
+}
+
 interface GhatanaRegistrySurface {
   readonly type: string;
   readonly path?: string;
@@ -49,7 +76,7 @@ interface GhatanaRegistrySurface {
   readonly implementationStatus?: string;
 }
 
-interface GhatanaRegistryEntry {
+export interface GhatanaRegistryEntry {
   readonly id: string;
   readonly name: string;
   readonly kind: string;
@@ -66,6 +93,75 @@ interface GhatanaRegistryEntry {
   readonly environments?: unknown;
   readonly conformance?: Record<string, boolean>;
   readonly metadata?: Record<string, unknown>;
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getSourceRegistryMetadata(
+  metadata: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  if (!isRecord(metadata?.sourceRegistry)) {
+    return {};
+  }
+  return metadata.sourceRegistry;
+}
+
+function stripSourceRegistryMetadata(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const { sourceRegistry, ...remaining } = metadata;
+  return remaining;
+}
+
+function containsProductSpecificPlatformMetadata(
+  metadata: Record<string, unknown> | undefined
+): boolean {
+  if (!isRecord(metadata?.platform)) {
+    return false;
+  }
+  return Object.keys(metadata.platform).some((key) =>
+    /(productSpecific|hardcodedProduct|productId|productUnitId)/i.test(key)
+  );
+}
+
+function buildPreviewDiff(
+  before: GhatanaRegistryEntry | null,
+  after: GhatanaRegistryEntry | null
+): readonly string[] {
+  if (after === null) {
+    return [];
+  }
+  if (before === null) {
+    return [`+ registry.${after.id}`];
+  }
+
+  const diff: string[] = [];
+  const fields: readonly (keyof GhatanaRegistryEntry)[] = [
+    "name",
+    "kind",
+    "owner",
+    "lifecycleProfile",
+    "lifecycleStatus",
+    "lifecycleConfigPath",
+  ];
+  for (const field of fields) {
+    if (before[field] !== after[field]) {
+      diff.push(`~ registry.${after.id}.${field}`);
+    }
+  }
+  if (JSON.stringify(before.surfaces ?? []) !== JSON.stringify(after.surfaces)) {
+    diff.push(`~ registry.${after.id}.surfaces`);
+  }
+  if (JSON.stringify(before.metadata ?? {}) !== JSON.stringify(after.metadata)) {
+    diff.push(`~ registry.${after.id}.metadata`);
+  }
+  return diff;
 }
 
 interface GhatanaRegistry {
@@ -218,6 +314,100 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
     return { valid: errors.length === 0, errors, warnings };
   }
 
+  async validateIntentTarget(
+    intent: ProductUnitIntent
+  ): Promise<ProductUnitIntentTargetValidationResult> {
+    const intentValidation = validateProductUnitIntent(intent);
+    const errors = [...intentValidation.errors];
+    const warnings: string[] = [];
+
+    if (intent.target.registryProvider !== this.providerId) {
+      errors.push(
+        `Intent targets registry provider ${intent.target.registryProvider}, expected ${this.providerId}`
+      );
+    }
+    if (intent.target.sourceProvider !== this.providerId) {
+      errors.push(
+        `Intent targets source provider ${intent.target.sourceProvider}, expected ${this.providerId}`
+      );
+    }
+    if (containsProductSpecificPlatformMetadata(intent.productUnit.metadata)) {
+      errors.push("Intent platform metadata must not contain product-specific logic");
+    }
+
+    const registry = await this.loadRegistry();
+    const existingEntry = registry.registry[intent.productUnit.id];
+    if (intent.intentType === "create" && existingEntry !== undefined) {
+      errors.push(`ProductUnit already exists: ${intent.productUnit.id}`);
+    }
+    if (intent.intentType === "update" && existingEntry === undefined) {
+      errors.push(`ProductUnit does not exist: ${intent.productUnit.id}`);
+    }
+    if (intent.intentType === "promote-candidate") {
+      warnings.push(
+        "promote-candidate intents are previewed as registry updates only"
+      );
+    }
+
+    return {
+      valid: errors.length === 0,
+      correlationId: intent.producer.correlationId,
+      errors,
+      warnings,
+    };
+  }
+
+  async previewApplyProductUnitIntent(
+    intent: ProductUnitIntent
+  ): Promise<ProductUnitIntentPreviewResult> {
+    const targetValidation = await this.validateIntentTarget(intent);
+    const registry = await this.loadRegistry();
+    const before = registry.registry[intent.productUnit.id] ?? null;
+    const after = targetValidation.valid
+      ? this.convertIntentToRegistryEntry(intent, before)
+      : null;
+
+    return {
+      ...targetValidation,
+      operation: intent.intentType,
+      productUnitId: intent.productUnit.id,
+      registryPath: this.registryPath,
+      before,
+      after,
+      diff: buildPreviewDiff(before, after),
+    };
+  }
+
+  async applyProductUnitIntent(
+    intent: ProductUnitIntent,
+    options: ProductUnitIntentApplyOptions
+  ): Promise<ProductUnitIntentApplyResult> {
+    const preview = await this.previewApplyProductUnitIntent(intent);
+    if (!options.allowWrite) {
+      return {
+        ...preview,
+        valid: false,
+        applied: false,
+        errors: [...preview.errors, "File registry intent apply requires allowWrite: true"],
+      };
+    }
+    if (!preview.valid || preview.after === null) {
+      return { ...preview, applied: false };
+    }
+
+    const registry = await this.loadRegistry();
+    const nextRegistry: GhatanaRegistry = {
+      ...registry,
+      registry: {
+        ...registry.registry,
+        [preview.productUnitId]: preview.after,
+      },
+    };
+    await this.writeRegistry(nextRegistry);
+    this.cachedRegistry = nextRegistry;
+    return { ...preview, applied: true };
+  }
+
   private assertEntryValid(entry: GhatanaRegistryEntry, productId: string): void {
     if (!this.strict) {
       return;
@@ -233,9 +423,6 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
   }
 
   private convertLifecycleStatus(status?: string): LifecycleStatus | undefined {
-    if (status === undefined) {
-      return undefined;
-    }
     if (LIFECYCLE_STATUSES.includes(status as LifecycleStatus)) {
       return status as LifecycleStatus;
     }
@@ -316,7 +503,12 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
         ? { owner: entry.owner ?? metadataOwner }
         : {}),
       registryProviderRef: { providerId: this.providerId },
-      sourceProviderRef: { providerId: this.providerId },
+      sourceProviderRef: {
+        providerId: this.providerId,
+        ...(entry.lifecycleConfigPath !== undefined
+          ? { config: { lifecycleConfigPath: entry.lifecycleConfigPath } }
+          : {}),
+      },
       surfaces,
       ...(entry.lifecycleProfile !== undefined
         ? { lifecycleProfile: entry.lifecycleProfile }
@@ -329,6 +521,62 @@ export class GhatanaFileRegistryProvider implements RegistryProvider {
     };
 
     return productUnit;
+  }
+
+  private convertIntentToRegistryEntry(
+    intent: ProductUnitIntent,
+    existingEntry: GhatanaRegistryEntry | null
+  ): GhatanaRegistryEntry {
+    const sourceRegistry = getSourceRegistryMetadata(intent.productUnit.metadata);
+    return {
+      ...(existingEntry ?? {}),
+      id: intent.productUnit.id,
+      name: intent.productUnit.name,
+      kind: intent.productUnit.kind,
+      ...(intent.productUnit.owner !== undefined
+        ? { owner: intent.productUnit.owner }
+        : {}),
+      ...(getString(sourceRegistry.lifecycleConfigPath) !== undefined
+        ? { lifecycleConfigPath: getString(sourceRegistry.lifecycleConfigPath) }
+        : {}),
+      ...(getString(sourceRegistry.lifecycleProfile) !== undefined
+        ? { lifecycleProfile: getString(sourceRegistry.lifecycleProfile) }
+        : intent.requestedLifecycle !== undefined
+          ? { lifecycleProfile: intent.requestedLifecycle.profile }
+          : intent.productUnit.lifecycleProfile !== undefined
+            ? { lifecycleProfile: intent.productUnit.lifecycleProfile }
+            : {}),
+      ...(intent.requestedLifecycle !== undefined
+        ? {
+            lifecycleStatus: intent.requestedLifecycle.enableExecution
+              ? "enabled"
+              : "planned",
+          }
+        : existingEntry?.lifecycleStatus !== undefined
+          ? { lifecycleStatus: existingEntry.lifecycleStatus }
+          : {}),
+      surfaces: intent.productUnit.surfaces.map((surface) => ({
+        type: surface.type,
+        ...(surface.sourceRef !== undefined ? { path: surface.sourceRef } : {}),
+        ...(surface.packagePath !== undefined
+          ? { packagePath: surface.packagePath }
+          : {}),
+        ...(surface.gradleModule !== undefined
+          ? { gradleModule: surface.gradleModule }
+          : {}),
+        implementationStatus: surface.implementationStatus,
+      })),
+      ...(intent.productUnit.metadata !== undefined
+        ? { metadata: stripSourceRegistryMetadata(intent.productUnit.metadata) }
+        : {}),
+    };
+  }
+
+  private async writeRegistry(registry: GhatanaRegistry): Promise<void> {
+    await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
+    const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
+    await fs.writeFile(tempPath, `${JSON.stringify(registry, null, 2)}\n`, "utf-8");
+    await fs.rename(tempPath, this.registryPath);
   }
 
   async getProductUnit(productUnitId: string): Promise<ProductUnit | null> {

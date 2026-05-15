@@ -457,29 +457,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("DataCloudKernelAdapterImpl legacy audit methods must be @Deprecated(forRemoval=true)")
-    void adapterLegacyAuditMethodsMustBeDeprecated() { 
-        Class<?> adapter = com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl.class;
-        Arrays.stream(adapter.getDeclaredMethods()) 
-            .filter(m -> m.getName().equals("storeAuditEvent") || m.getName().equals("queryAuditEvents"))
-            .forEach(m -> { 
-                assertTrue(m.isAnnotationPresent(Deprecated.class), 
-                    "DataCloudKernelAdapterImpl." + m.getName() + "() must be @Deprecated — " + 
-                    "use scope-aware methods instead.");
-                Deprecated d = m.getAnnotation(Deprecated.class); 
-                assertTrue(d.forRemoval(), 
-                    "DataCloudKernelAdapterImpl." + m.getName() + "() must be @Deprecated(forRemoval=true)."); 
-            });
-    }
-
-    @Test
-    @DisplayName("DataCloudKernelAdapterImpl must have canonical scope-aware audit method")
-    void adapterMustHaveScopeAwareAuditMethod() { 
-        Class<?> adapter = com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl.class;
-        boolean hasCanonical = Arrays.stream(adapter.getDeclaredMethods()) 
-            .anyMatch(m -> m.getName().equals("storeScopeAuditRecord"));
-        assertTrue(hasCanonical, 
-            "DataCloudKernelAdapterImpl must have storeScopeAuditRecord() as canonical replacement."); 
+    @DisplayName("DataCloudKernelAdapterImpl must not live in kernel-core")
+    void dataCloudImplementationMustNotLiveInKernelCore() {
+        assertThrows(ClassNotFoundException.class,
+            () -> Class.forName("com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl"),
+            "DataCloudKernelAdapterImpl belongs in products/data-cloud/extensions/kernel-bridge.");
     }
 
     // ========================================================================

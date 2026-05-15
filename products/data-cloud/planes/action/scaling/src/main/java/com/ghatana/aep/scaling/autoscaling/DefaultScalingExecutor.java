@@ -67,7 +67,7 @@ public class DefaultScalingExecutor implements ScalingExecutor {
         if (action.getType() == null) {
             return Promise.of(false);
         }
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     @Override

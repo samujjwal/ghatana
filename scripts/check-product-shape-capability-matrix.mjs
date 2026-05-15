@@ -31,6 +31,11 @@ function loadMatrix() {
   return JSON.parse(readFileSync(matrixPath, 'utf8'));
 }
 
+function loadAdapters() {
+  const adaptersPath = join(repoRoot, 'config/toolchain-adapter-registry.json');
+  return JSON.parse(readFileSync(adaptersPath, 'utf8')).adapters;
+}
+
 async function main() {
   const errors = [];
   const warnings = [];
@@ -53,6 +58,7 @@ async function main() {
 
   // 3. Load registry for comparison
   const registry = loadRegistry();
+  const adapters = loadAdapters();
   const registryProductIds = Object.keys(registry);
   const matrixProductIds = matrix.matrix.map(m => m.productId);
 
@@ -80,8 +86,73 @@ async function main() {
     if (!row.executionReadiness) {
       errors.push(`Matrix row "${row.productId}" is missing executionReadiness`);
     }
+    if (!Array.isArray(row.reasonCodes)) {
+      errors.push(`Matrix row "${row.productId}" is missing reasonCodes`);
+    }
+    if (!Array.isArray(row.requiredAdapters)) {
+      errors.push(`Matrix row "${row.productId}" is missing requiredAdapters`);
+    }
+    if (!Array.isArray(row.adapterReadiness)) {
+      errors.push(`Matrix row "${row.productId}" is missing adapterReadiness`);
+    }
+    if (!Array.isArray(row.missingManifests)) {
+      errors.push(`Matrix row "${row.productId}" is missing missingManifests`);
+    }
+    if (!Array.isArray(row.missingProviders)) {
+      errors.push(`Matrix row "${row.productId}" is missing missingProviders`);
+    }
+    if (!Array.isArray(row.gatesNeeded)) {
+      errors.push(`Matrix row "${row.productId}" is missing gatesNeeded`);
+    }
+    const registryProduct = registry[row.productId];
+    const lifecycleReadiness = registryProduct?.lifecycleReadiness;
+    if (lifecycleReadiness) {
+      for (const reasonCode of lifecycleReadiness.reasonCodes ?? []) {
+        if (!row.reasonCodes.includes(reasonCode)) {
+          errors.push(`Matrix row "${row.productId}" is missing configured readiness reason code "${reasonCode}"`);
+        }
+      }
+      for (const gate of lifecycleReadiness.requiredGates ?? []) {
+        if (!row.gatesNeeded.includes(gate)) {
+          errors.push(`Matrix row "${row.productId}" is missing configured readiness gate "${gate}"`);
+        }
+      }
+      for (const nextAction of lifecycleReadiness.nextRequiredWork ?? []) {
+        if (!row.nextActions?.includes(nextAction)) {
+          errors.push(`Matrix row "${row.productId}" is missing configured next action "${nextAction}"`);
+        }
+      }
+      for (const evidenceRef of lifecycleReadiness.evidenceRefs ?? []) {
+        if (!row.readinessEvidence?.includes(evidenceRef)) {
+          errors.push(`Matrix row "${row.productId}" is missing configured readiness evidence "${evidenceRef}"`);
+        }
+      }
+    }
     if (row.lifecycleStatus === 'disabled' && row.findings?.some(f => f.includes('Lifecycle profile "undefined" not found'))) {
       errors.push(`Disabled product "${row.productId}" has a false missing-profile finding`);
+    }
+    if (
+      row.lifecycleStatus === 'disabled' &&
+      row.shapeValidationMode === 'disabled-observed' &&
+      row.capabilityGaps?.some(gap => gap === 'unknown-adapter:undefined')
+    ) {
+      errors.push(`Disabled observed product "${row.productId}" must not report unknown-adapter:undefined`);
+    }
+    for (const adapterId of row.requiredAdapters ?? []) {
+      const adapter = adapters[adapterId];
+      if (!adapter) {
+        errors.push(`Matrix row "${row.productId}" references unknown adapter "${adapterId}"`);
+        continue;
+      }
+      const readiness = row.adapterReadiness?.find(entry => entry.adapterId === adapterId);
+      if (!readiness) {
+        errors.push(`Matrix row "${row.productId}" is missing readiness entry for adapter "${adapterId}"`);
+      } else if (readiness.readiness !== adapter.readiness || readiness.lifecycleEnabled !== (adapter.lifecycleEnabled === true)) {
+        errors.push(`Matrix row "${row.productId}" readiness for adapter "${adapterId}" is out of sync with toolchain registry`);
+      }
+    }
+    if (row.lifecycleStatus === 'enabled' && row.capabilityGaps?.length > 0) {
+      errors.push(`Enabled product "${row.productId}" has capability gaps: ${row.capabilityGaps.join(', ')}`);
     }
   }
 
@@ -107,6 +178,9 @@ async function main() {
     if (matrixRow && matrixRow.lifecycleStatus === 'enabled') {
       errors.push(`Product "${productId}" has lifecycleStatus="enabled" but should be "planned" (not lifecycle execution pilot)`);
     }
+    if (!registry[productId]?.lifecycleReadiness) {
+      errors.push(`Product "${productId}" is missing lifecycleReadiness guardrails in the canonical registry`);
+    }
   }
 
   // 7. Check YAPPC/Data Cloud platform-provider status is visible
@@ -118,6 +192,9 @@ async function main() {
     } else {
       if (matrixRow.productKind !== 'platform-provider') {
         warnings.push(`Platform provider product "${productId}" shape does not indicate platform-provider status: ${matrixRow.shape}`);
+      }
+      if (!registry[productId]?.lifecycleReadiness) {
+        errors.push(`Platform provider product "${productId}" is missing lifecycleReadiness guardrails in the canonical registry`);
       }
     }
   }

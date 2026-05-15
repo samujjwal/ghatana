@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  * <p>Elements marked with this annotation should not be used in production
  * environments. They may be:
  * <ul>
- *   <li>Simple placeholder implementations that need to be replaced with production-grade code</li>
+ *   <li>Local-only implementations that must stay out of production wiring</li>
  *   <li>Components with known limitations or performance issues</li>
  *   <li>Experimental features not yet ready for production use</li>
  * </ul>

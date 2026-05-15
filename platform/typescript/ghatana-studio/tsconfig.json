@@ -16,19 +16,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../design-system" },
-    { "path": "../ui-builder" },
-    { "path": "../ds-generator" },
-    { "path": "../ds-registry" },
-    { "path": "../tokens" },
-    { "path": "../canvas" },
-    { "path": "../platform-events" }
-  ]
+  "include": ["src"]
 }

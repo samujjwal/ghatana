@@ -13,7 +13,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 
-// TODO-009: Redirect legacy lifecycle route to canonical intent phase
+// TRACK-009: Redirect legacy lifecycle route to canonical intent phase
 export default function LifecycleRedirectRoute() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();

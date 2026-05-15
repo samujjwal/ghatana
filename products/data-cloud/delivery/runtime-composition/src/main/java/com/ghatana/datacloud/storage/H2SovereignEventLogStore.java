@@ -345,7 +345,7 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                         headers,
                         Optional.ofNullable(resultSet.getString("idempotency_key")),
                         // DC-20: New optional fields - not yet in H2 schema, use empty optionals
-                        // TODO: Add columns to H2 schema and update SELECT statement
+                        // Implementation note: Add columns to H2 schema and update SELECT statement
                         Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()
                     ));
                 }

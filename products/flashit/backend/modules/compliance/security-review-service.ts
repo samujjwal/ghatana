@@ -738,8 +738,8 @@ export class SecurityReviewService {
     const recommendations: string[] = [];
 
     // Check if rate limiting is implemented
-    // Currently not implemented in our routes
-    findings.push('API rate limiting not implemented');
+    // Currently unavailable in our routes
+    findings.push('API rate limiting unavailable');
     recommendations.push('Implement rate limiting middleware for API endpoints');
     recommendations.push('Add stricter limits for authentication endpoints');
 

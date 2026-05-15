@@ -2,7 +2,7 @@
  * Growth goal widget — feature-flagged dashboard card.
  *
  * Disabled by default via {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED}.
- * Shows "Coming soon" when the flag is off.
+ * Shows "Unavailable" when the flag is off.
  *
  * @doc.type component
  * @doc.purpose Dashboard card for marketing growth goal status
@@ -19,7 +19,7 @@ export const GrowthGoalWidget: React.FC = () => {
         testId="growth-goal-widget"
         title="Growth Goals"
         state="unavailable"
-        message="Coming soon"
+        message="Unavailable"
         stateMessageTestId="growth-goal-unavailable"
       />
     );

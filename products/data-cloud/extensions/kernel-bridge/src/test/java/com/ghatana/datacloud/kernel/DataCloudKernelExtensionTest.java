@@ -1,14 +1,17 @@
 package com.ghatana.datacloud.kernel;
 
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
 import com.ghatana.kernel.adapter.datacloud.DataResult;
 import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
 import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeContext;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.kernel.testing.TestBridgePorts;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,11 +53,21 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
 
     private DataCloudKernelAdapterImpl.DataCloudClient stubClient;
     private DataCloudKernelExtension extension;
+    private final BridgeContext bridgeContext = BridgeContext.builder()
+        .tenantId("tenant-test")
+        .principalId("extension-test")
+        .correlationId("extension-correlation")
+        .build();
 
     @BeforeEach
     void setUp() { 
         stubClient = new StubDataCloudClient(); 
-        extension = new DataCloudKernelExtension(stubClient); 
+        extension = new DataCloudKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            captureAudit(),
+            captureHealth(),
+            ignored -> bridgeContext);
     }
 
     // ==================== Identity ====================
@@ -149,6 +163,23 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("onModuleInitialized registers all Data Cloud platform providers")
+    void onModuleInitializedRegistersPlatformProviders() {
+        extension.onModuleInitialized(context);
+
+        verify(context).registerService(eq(DataCloudEventProvider.class), any(DataCloudEventProvider.class));
+        verify(context).registerService(eq(DataCloudArtifactProvider.class), any(DataCloudArtifactProvider.class));
+        verify(context).registerService(eq(DataCloudHealthProvider.class), any(DataCloudHealthProvider.class));
+        verify(context).registerService(eq(DataCloudProvenanceProvider.class), any(DataCloudProvenanceProvider.class));
+        verify(context).registerService(eq(DataCloudMemoryProvider.class), any(DataCloudMemoryProvider.class));
+        verify(context).registerService(eq(DataCloudKnowledgeProvider.class), any(DataCloudKnowledgeProvider.class));
+        verify(context).registerService(eq(DataCloudRuntimeTruthProvider.class), any(DataCloudRuntimeTruthProvider.class));
+        verify(context).registerService(
+            eq(DataCloudPolicyEvidenceProvider.class),
+            any(DataCloudPolicyEvidenceProvider.class));
+    }
+
+    @Test
     @DisplayName("onModuleInitialized is idempotent — second call is no-op")
     void onModuleInitializedIsIdempotent() { 
         extension.onModuleInitialized(context); 
@@ -166,13 +197,75 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
         extension.onModuleStopped(context); 
     }
 
+    @Test
+    @DisplayName("lifecycle reports provider health snapshots")
+    void lifecycleReportsProviderHealthSnapshots() {
+        CapturingHealth health = new CapturingHealth();
+        DataCloudKernelExtension healthExtension = new DataCloudKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            captureAudit(),
+            health,
+            ignored -> bridgeContext);
+
+        healthExtension.onModuleInitialized(context);
+        healthExtension.onModuleStarted(context);
+        healthExtension.onModuleStopped(context);
+
+        assertThat(health.healthyBridgeIds)
+            .contains(
+                "data-cloud-kernel-bridge:initializing:tenant-test",
+                "data-cloud-kernel-bridge:providers:tenant-test",
+                "data-cloud-kernel-bridge:started:tenant-test");
+        assertThat(health.degradedReasons)
+            .contains("stopped for tenant tenant-test");
+    }
+
     // ==================== Construction guard ====================
 
     @Test
     @DisplayName("null client is rejected at construction")
     void nullClientIsRejected() { 
-        assertThatThrownBy(() -> new DataCloudKernelExtension(null)) 
+        assertThatThrownBy(() -> new DataCloudKernelExtension(
+            null,
+            TestBridgePorts.allowAllAuthorization(),
+            captureAudit(),
+            captureHealth(),
+            ignored -> bridgeContext))
             .isInstanceOf(NullPointerException.class); 
+    }
+
+    @Test
+    @DisplayName("required bridge ports are rejected when null")
+    void requiredBridgePortsAreRejected() {
+        assertThatThrownBy(() -> new DataCloudKernelExtension(
+            stubClient,
+            null,
+            captureAudit(),
+            captureHealth(),
+            ignored -> bridgeContext))
+            .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new DataCloudKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            null,
+            captureHealth(),
+            ignored -> bridgeContext))
+            .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new DataCloudKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            captureAudit(),
+            null,
+            ignored -> bridgeContext))
+            .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new DataCloudKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            captureAudit(),
+            captureHealth(),
+            null))
+            .isInstanceOf(NullPointerException.class);
     }
 
     // ==================== Helpers ====================
@@ -255,6 +348,42 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
         @Override
         public CompletableFuture<Void> closeStream(Object stream) { 
             return CompletableFuture.completedFuture(null); 
+        }
+    }
+
+    private static BridgeAuditEmitter captureAudit() {
+        return event -> { };
+    }
+
+    private static BridgeHealthIndicator captureHealth() {
+        return new BridgeHealthIndicator() {
+            @Override
+            public void reportHealthy(String bridgeId) { }
+
+            @Override
+            public void reportDegraded(String bridgeId, String reason) { }
+
+            @Override
+            public void reportUnhealthy(String bridgeId, String reason) { }
+        };
+    }
+
+    private static final class CapturingHealth implements BridgeHealthIndicator {
+        private final List<String> healthyBridgeIds = new ArrayList<>();
+        private final List<String> degradedReasons = new ArrayList<>();
+
+        @Override
+        public void reportHealthy(String bridgeId) {
+            healthyBridgeIds.add(bridgeId);
+        }
+
+        @Override
+        public void reportDegraded(String bridgeId, String reason) {
+            degradedReasons.add(reason);
+        }
+
+        @Override
+        public void reportUnhealthy(String bridgeId, String reason) {
         }
     }
 }

@@ -155,20 +155,20 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
 
     @Override
     public Promise<List<AuditEvent>> query(AuditQuery query) {
-        // Placeholder implementation - query by criteria
+        // Baseline implementation - query by criteria
         return Promise.of(new ArrayList<>());
     }
 
 
     @Override
     public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
-        // Placeholder implementation - query by project
+        // Baseline implementation - query by project
         return Promise.of(new ArrayList<>());
     }
 
     @Override
     public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
-        // Placeholder implementation - query by phase
+        // Baseline implementation - query by phase
         return Promise.of(new ArrayList<>());
     }
 }

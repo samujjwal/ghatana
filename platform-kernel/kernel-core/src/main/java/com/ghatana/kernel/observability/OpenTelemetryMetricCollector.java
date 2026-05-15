@@ -46,7 +46,7 @@ public final class OpenTelemetryMetricCollector implements MetricCollectorPort {
     @Override
     public void recordGauge(String name, double value, String... tags) {
         // OpenTelemetry gauges are callback-based (ObservableGauge)
-        // For simplicity, we skip gauge recording in this stub implementation
+        // For simplicity, we skip gauge recording in this baseline implementation
         // A production implementation would use ObservableGauge with callbacks
     }
 

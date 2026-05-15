@@ -55,6 +55,13 @@ import {
   type ArtifactGraphMergeReviewResult,
 } from '../../../services/canvas/commands/ArtifactGraphMergeReviewService';
 import {
+  buildYappcArtifactIntelligenceEvidence,
+  exportProductUnitIntentFromYappcArtifacts,
+  type ProductUnitIntentExportProviderMode,
+  type ProductUnitIntentExportResponse,
+  type YappcArtifactIntelligenceEvidenceBundle,
+} from '../../../services/canvas/commands/ProductUnitIntentExportService';
+import {
   emitPageBuilderCommandAudit,
   emitPageBuilderCommandTelemetry,
   type PageBuilderCommandAuditContext,
@@ -381,6 +388,12 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const [importReviewQueue, setImportReviewQueue] = useState<readonly ImportReviewQueueItem[]>([]);
   const [importReviewDecisions, setImportReviewDecisions] = useState<Readonly<Record<string, ImportReviewDecision>>>({});
   const [artifactGraphMergeReview, setArtifactGraphMergeReview] = useState<ArtifactGraphMergeReviewState | null>(null);
+  const [lastImportedArtifacts, setLastImportedArtifacts] = useState<readonly import('./pageArtifactDocument').PageArtifactDocument[]>([]);
+  const [artifactIntelligenceEvidence, setArtifactIntelligenceEvidence] =
+    useState<YappcArtifactIntelligenceEvidenceBundle | null>(null);
+  const [productUnitIntentExport, setProductUnitIntentExport] = useState<ProductUnitIntentExportResponse | null>(null);
+  const [productUnitIntentError, setProductUnitIntentError] = useState<string | null>(null);
+  const [exportingProductUnitIntent, setExportingProductUnitIntent] = useState(false);
   const [importFidelity, setImportFidelity] = useState<
     import('./pageArtifactDocument').PageArtifactDocument['roundTripFidelity'] | null
   >(null);
@@ -763,6 +776,23 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         }
       : null);
     setRegistryCandidates([]);
+    setLastImportedArtifacts(artifacts);
+    setProductUnitIntentExport(null);
+    setProductUnitIntentError(null);
+    setArtifactIntelligenceEvidence(buildYappcArtifactIntelligenceEvidence({
+      artifacts,
+      scope: {
+        tenantId: auditContext?.tenantId ?? 'tenant-unscoped',
+        workspaceId: auditContext?.workspaceId ?? 'workspace-unscoped',
+        projectId: projectId ?? auditContext?.projectId ?? 'project-unscoped',
+      },
+      createdBy: auditContext?.userId ?? 'yappc-creator',
+      productUnitName: projectId ?? auditContext?.projectId ?? 'YAPPC imported product',
+      correlationId: `yappc-import-${first.artifactId}`,
+      registryProvider: 'kernel-product-registry',
+      sourceProvider: 'yappc-creator',
+      providerMode: 'bootstrap',
+    }));
 
     const importedNodes = importedDocument.nodes;
     const affectedNodeIds: readonly string[] =
@@ -796,7 +826,55 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     setImportPanelOpen(false);
     setImportInput('');
     setGuidedSourceLocator('');
-  }, [announceReadOnly, auditContext?.tenantId, auditContext?.workspaceId, canAdd, canEdit, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
+  }, [announceReadOnly, auditContext?.projectId, auditContext?.tenantId, auditContext?.userId, auditContext?.workspaceId, canAdd, canEdit, executeCommand, guidedSourceLocator, guidedSourceType, importInput, importWorkflowMode, onImportArtifacts, projectId, recordAIChange]);
+
+  const handleProductUnitIntentExport = useCallback(async () => {
+    if (!canEdit) {
+      announceReadOnly();
+      return;
+    }
+    if (!auditContext?.tenantId || !auditContext.workspaceId) {
+      setProductUnitIntentError('Tenant and workspace scope are required before sending a ProductUnitIntent to Kernel.');
+      return;
+    }
+    const productUnitProjectId = projectId ?? auditContext.projectId;
+    if (lastImportedArtifacts.length === 0) {
+      setProductUnitIntentError('Import artifact intelligence before sending a ProductUnitIntent to Kernel.');
+      return;
+    }
+
+    const providerMode = ((import.meta.env.VITE_YAPPC_PRODUCT_INTENT_PROVIDER_MODE as string | undefined) === 'platform'
+      ? 'platform'
+      : 'bootstrap') satisfies ProductUnitIntentExportProviderMode;
+    setExportingProductUnitIntent(true);
+    setProductUnitIntentError(null);
+    try {
+      const response = await exportProductUnitIntentFromYappcArtifacts(
+        {
+          artifacts: lastImportedArtifacts,
+          scope: {
+            tenantId: auditContext.tenantId,
+            workspaceId: auditContext.workspaceId,
+            projectId: productUnitProjectId,
+          },
+          createdBy: auditContext.userId,
+          productUnitName: productUnitProjectId,
+          correlationId: `yappc-intent-${Date.now()}`,
+          registryProvider: 'kernel-product-registry',
+          sourceProvider: 'yappc-creator',
+          providerMode,
+        },
+        {
+          dataCloudEvidenceEndpoint: import.meta.env.VITE_YAPPC_DATACLOUD_EVIDENCE_ENDPOINT as string | undefined,
+        },
+      );
+      setProductUnitIntentExport(response);
+    } catch (error) {
+      setProductUnitIntentError(error instanceof Error ? error.message : 'ProductUnitIntent export failed.');
+    } finally {
+      setExportingProductUnitIntent(false);
+    }
+  }, [announceReadOnly, auditContext?.projectId, auditContext?.tenantId, auditContext?.userId, auditContext?.workspaceId, canEdit, lastImportedArtifacts, projectId]);
 
   const selectedImportTemplate = useMemo(
     () => IMPORT_WIZARD_TEMPLATES.find((template) => template.id === importTemplateId) ?? IMPORT_WIZARD_TEMPLATES[0],
@@ -1848,6 +1926,52 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               {artifactGraphMergeReview.status === 'failed' || artifactGraphMergeReview.status === 'conflicts'
                 ? 'Retry graph merge review'
                 : 'Run graph merge review'}
+            </Button>
+          </Box>
+        ) : null}
+
+        {artifactIntelligenceEvidence ? (
+          <Box
+            className="mt-4 rounded-lg border border-info-border bg-info-bg p-3"
+            data-testid="page-designer-artifact-intelligence"
+          >
+            <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              Artifact intelligence evidence
+            </Typography>
+            <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
+              {artifactIntelligenceEvidence.semanticArtifacts.length} semantic artifact references · {artifactIntelligenceEvidence.graphSummaries.length} graph summaries · {artifactIntelligenceEvidence.residualIslandReports[0]?.islandCount ?? 0} residual islands · {artifactIntelligenceEvidence.riskHotspotReports[0]?.hotspotCount ?? 0} risk hotspots
+            </Typography>
+            {productUnitIntentExport ? (
+              <Typography
+                variant="caption"
+                color="success"
+                data-testid="page-designer-product-unit-intent-status"
+                style={{ display: 'block', marginBottom: 6 }}
+              >
+                ProductUnitIntent {productUnitIntentExport.intentId} {productUnitIntentExport.status}
+              </Typography>
+            ) : null}
+            {productUnitIntentError ? (
+              <Typography
+                variant="caption"
+                color="danger"
+                data-testid="page-designer-product-unit-intent-error"
+                style={{ display: 'block', marginBottom: 6 }}
+              >
+                {productUnitIntentError}
+              </Typography>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              disabled={!canEdit || exportingProductUnitIntent || lastImportedArtifacts.length === 0}
+              data-testid="page-designer-product-unit-intent-export"
+              onClick={() => {
+                void handleProductUnitIntentExport();
+              }}
+            >
+              {exportingProductUnitIntent ? 'Sending ProductUnitIntent' : 'Send ProductUnitIntent to Kernel'}
             </Button>
           </Box>
         ) : null}

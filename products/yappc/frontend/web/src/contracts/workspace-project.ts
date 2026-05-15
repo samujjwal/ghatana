@@ -61,7 +61,7 @@ export type ProjectShellContract = {
 	workspaceId?: string;
 	currentPhase: string;
 	phaseProgress?: number;
-	// TODO-004: Backend capability contract - authoritative source of truth
+	// TRACK-004: Backend capability contract - authoritative source of truth
 	userId?: string;
 	role?: string;
 	capabilities?: {
@@ -74,7 +74,7 @@ export type ProjectShellContract = {
 		export?: boolean;
 		share?: boolean;
 	};
-	// Deprecated - use capabilities instead (TODO-004)
+	// Deprecated - use capabilities instead (TRACK-004)
 	isOwner?: boolean;
 	isIncluded?: boolean;
 };

@@ -26,7 +26,7 @@ import java.util.Map;
  *                   mode (supportsStateless=false). State includes active windows, buffered events,
  *                   and window metadata (start time, end time, event count).
  * @doc.threading Thread-Safe Validation - Validation logic is stateless and thread-safe. Runtime execution
- *                (not implemented here) would require per-instance state isolation or external synchronization
+ *                (unavailable here) would require per-instance state isolation or external synchronization
  *                for window state management and event buffering.
  * @doc.performance O(1) Validation Performance - Single operand validation, O(1) for window type validation,
  *                  O(p) for parameter validation where p = parameter count (3-4 parameters typical).

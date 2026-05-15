@@ -642,7 +642,7 @@ public record CompiledPartitionKey(
             case FIELD ->
                 record.get(field);
             case EXPRESSION ->
-                record.get(field); // Simplified; expression eval not implemented
+                record.get(field); // Simplified; expression eval unavailable
             case COMPOSITE -> {
                 StringBuilder sb = new StringBuilder();
                 for (String f : fields) {

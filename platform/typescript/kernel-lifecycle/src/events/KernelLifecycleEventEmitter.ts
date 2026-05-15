@@ -10,20 +10,12 @@
  * @doc.pattern Service
  */
 
-import type { TelemetryProvider } from "@ghatana/kernel-product-contracts";
+import type { LifecycleEventProvider, TelemetryProvider } from "@ghatana/kernel-product-contracts";
 import type {
   KernelEventMetadata,
   KernelLifecycleEvent,
-  KernelGateEvent,
-  GateEventPayload,
-  KernelArtifactEvent,
-  ArtifactEventPayload,
-  KernelDeploymentEvent,
-  DeploymentEventPayload,
-  KernelHealthEvent,
-  HealthEventPayload,
-  KernelAgentGovernanceEvent,
-  AgentGovernanceEventPayload,
+  KernelLifecycleEventType,
+  ProductLifecyclePhase,
 } from "@ghatana/kernel-product-contracts";
 
 /**
@@ -36,9 +28,19 @@ export interface EventEmitterOptions {
   readonly telemetryProvider?: TelemetryProvider;
 
   /**
+   * Lifecycle event provider for durable lifecycle truth.
+   */
+  readonly lifecycleEventProvider?: LifecycleEventProvider;
+
+  /**
    * Whether to log events to console when telemetry provider is not available.
    */
   readonly enableConsoleLogging?: boolean;
+
+  /**
+   * Whether provider writes are required by this emitter.
+   */
+  readonly lifecycleEventWritesRequired?: boolean;
 }
 
 /**
@@ -46,18 +48,22 @@ export interface EventEmitterOptions {
  */
 export class KernelLifecycleEventEmitter {
   private readonly telemetryProvider: TelemetryProvider | undefined;
+  private readonly lifecycleEventProvider: LifecycleEventProvider | undefined;
   private readonly enableConsoleLogging: boolean;
+  private readonly lifecycleEventWritesRequired: boolean;
 
   constructor(options: EventEmitterOptions = {}) {
     this.telemetryProvider = options.telemetryProvider;
+    this.lifecycleEventProvider = options.lifecycleEventProvider;
     this.enableConsoleLogging = options.enableConsoleLogging ?? true;
+    this.lifecycleEventWritesRequired = options.lifecycleEventWritesRequired ?? true;
   }
 
   private createMetadata(
-    eventType: string,
+    eventType: KernelLifecycleEventType,
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     correlationId?: string
   ): KernelEventMetadata {
     return {
@@ -82,6 +88,22 @@ export class KernelLifecycleEventEmitter {
   }
 
   private emitEvent(event: KernelLifecycleEvent): void {
+    if (this.lifecycleEventProvider) {
+      this.lifecycleEventProvider
+        .appendEvent(event, {
+          required: this.lifecycleEventWritesRequired,
+          correlationId: event.metadata.correlationId,
+        })
+        .then((result) => {
+          if (!result.success) {
+            console.error("Failed to append lifecycle event:", result.error ?? "unknown provider error");
+          }
+        })
+        .catch((error: unknown) => {
+          console.error("Failed to append lifecycle event:", error);
+        });
+    }
+
     if (this.telemetryProvider) {
       // Map KernelLifecycleEvent to TelemetryEvent
       const telemetryEvent = {
@@ -89,7 +111,7 @@ export class KernelLifecycleEventEmitter {
         eventType: event.metadata.eventType,
         timestamp: event.metadata.timestamp,
         productUnitId: event.metadata.productUnitId,
-        payload: event.payload as Record<string, unknown>,
+        payload: event.payload as unknown as Record<string, unknown>,
       };
       this.telemetryProvider.emitEvent(telemetryEvent).catch((error: unknown) => {
         console.error("Failed to emit event via telemetry provider:", error);
@@ -109,11 +131,11 @@ export class KernelLifecycleEventEmitter {
   emitLifecyclePhaseStart(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "lifecycle.phase.start",
+      "lifecycle.phase.started",
       productUnitId,
       runId,
       phase,
@@ -124,8 +146,8 @@ export class KernelLifecycleEventEmitter {
       metadata,
       payload: {
         phase,
-        status: "started",
-        timestamp: metadata.timestamp,
+        status: "running",
+        startedAt: metadata.timestamp,
       },
     };
 
@@ -138,13 +160,13 @@ export class KernelLifecycleEventEmitter {
   emitLifecyclePhaseComplete(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     status: "succeeded" | "failed" | "skipped",
     duration: number,
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "lifecycle.phase.complete",
+      "lifecycle.phase.completed",
       productUnitId,
       runId,
       phase,
@@ -156,8 +178,87 @@ export class KernelLifecycleEventEmitter {
       payload: {
         phase,
         status,
-        duration,
-        timestamp: metadata.timestamp,
+        durationMs: duration,
+        completedAt: metadata.timestamp,
+      },
+    };
+
+    this.emitEvent(event);
+  }
+
+  /**
+   * Emits a lifecycle step start event.
+   */
+  emitLifecycleStepStart(
+    productUnitId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    stepId: string,
+    stepKind: string,
+    surface: string,
+    adapter: string,
+    correlationId?: string
+  ): void {
+    const metadata = this.createMetadata(
+      "lifecycle.step.started",
+      productUnitId,
+      runId,
+      phase,
+      correlationId
+    );
+
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        stepId,
+        stepKind,
+        surface,
+        adapter,
+        status: "running",
+        startedAt: metadata.timestamp,
+      },
+    };
+
+    this.emitEvent(event);
+  }
+
+  /**
+   * Emits a lifecycle step complete event.
+   */
+  emitLifecycleStepComplete(
+    productUnitId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    stepId: string,
+    stepKind: string,
+    surface: string,
+    adapter: string,
+    status: "succeeded" | "failed" | "skipped",
+    duration: number,
+    evidenceRefs: readonly string[],
+    correlationId?: string,
+    exitCode?: number
+  ): void {
+    const metadata = this.createMetadata(
+      "lifecycle.step.completed",
+      productUnitId,
+      runId,
+      phase,
+      correlationId
+    );
+
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        stepId,
+        stepKind,
+        surface,
+        adapter,
+        status,
+        durationMs: duration,
+        completedAt: metadata.timestamp,
+        ...(exitCode !== undefined ? { exitCode } : {}),
+        evidenceRefs,
       },
     };
 
@@ -170,7 +271,7 @@ export class KernelLifecycleEventEmitter {
   emitGateEvaluated(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     gateId: string,
     passed: boolean,
     reason: string,
@@ -179,22 +280,25 @@ export class KernelLifecycleEventEmitter {
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "gate.evaluated",
+      "lifecycle.gate.evaluated",
       productUnitId,
       runId,
       phase,
       correlationId
     );
 
-    const payload: GateEventPayload = {
-      gateId,
-      passed,
-      reason,
-      evidence,
-      duration,
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        gateId,
+        status: passed ? "passed" : "failed",
+        required: true,
+        reason,
+        evidenceRefs: evidence,
+        durationMs: duration,
+      },
     };
 
-    const event: KernelGateEvent = { metadata, payload };
     this.emitEvent(event);
   }
 
@@ -204,7 +308,7 @@ export class KernelLifecycleEventEmitter {
   emitArtifactProduced(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     artifactId: string,
     artifactName: string,
     version: string,
@@ -215,24 +319,25 @@ export class KernelLifecycleEventEmitter {
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "artifact.produced",
+      "lifecycle.artifact.recorded",
       productUnitId,
       runId,
       phase,
       correlationId
     );
 
-    const payload: ArtifactEventPayload = {
-      artifactId,
-      artifactName,
-      version,
-      type,
-      size,
-      checksum,
-      surfaceId,
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        artifactId,
+        artifactType: type,
+        required: true,
+        path: artifactName,
+        fingerprint: checksum,
+        evidenceRefs: [`surface:${surfaceId}`, `version:${version}`, `size:${size}`],
+      },
     };
 
-    const event: KernelArtifactEvent = { metadata, payload };
     this.emitEvent(event);
   }
 
@@ -242,33 +347,35 @@ export class KernelLifecycleEventEmitter {
   emitDeploymentComplete(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     deploymentId: string,
     environment: string,
-    status: string,
+    status: "succeeded" | "failed" | "skipped",
     artifactIds: readonly string[],
     endpoints: readonly string[],
     duration: number,
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "deployment.complete",
+      "lifecycle.deployment.completed",
       productUnitId,
       runId,
       phase,
       correlationId
     );
 
-    const payload: DeploymentEventPayload = {
-      deploymentId,
-      environment,
-      status,
-      artifactIds,
-      endpoints,
-      duration,
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        deploymentId,
+        environment,
+        status,
+        artifactIds,
+        endpoints,
+        durationMs: duration,
+      },
     };
 
-    const event: KernelDeploymentEvent = { metadata, payload };
     this.emitEvent(event);
   }
 
@@ -278,7 +385,7 @@ export class KernelLifecycleEventEmitter {
   emitHealthCheckResult(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     checkId: string,
     checkName: string,
     status: "healthy" | "degraded" | "blocked" | "failed" | "skipped" | "unknown",
@@ -289,30 +396,25 @@ export class KernelLifecycleEventEmitter {
     correlationId?: string
   ): void {
     const metadata = this.createMetadata(
-      "health.check.result",
+      "lifecycle.health.checked",
       productUnitId,
       runId,
       phase,
       correlationId
     );
 
-    const payload: HealthEventPayload = {
-      checkId,
-      checkName,
-      status,
-      message,
-      duration,
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        checkId,
+        checkName,
+        status,
+        message,
+        durationMs: duration,
+        ...(deploymentId !== undefined ? { deploymentId } : {}),
+        ...(environment !== undefined ? { environment } : {}),
+      },
     };
-
-    // Conditionally add optional fields
-    if (deploymentId !== undefined) {
-      (payload as HealthEventPayload & { deploymentId: string }).deploymentId = deploymentId;
-    }
-    if (environment !== undefined) {
-      (payload as HealthEventPayload & { environment: string }).environment = environment;
-    }
-
-    const event: KernelHealthEvent = { metadata, payload };
     this.emitEvent(event);
   }
 
@@ -322,10 +424,10 @@ export class KernelLifecycleEventEmitter {
   emitAgentGovernanceEvent(
     productUnitId: string,
     runId: string,
-    phase: string,
+    phase: ProductLifecyclePhase,
     agentId: string,
     actionType: string,
-    decision: string,
+    decision: "allowed" | "denied" | "requires-approval",
     reason: string,
     correlationId?: string,
     masteryState?: string,
@@ -333,32 +435,25 @@ export class KernelLifecycleEventEmitter {
     evidenceRefs?: readonly string[]
   ): void {
     const metadata = this.createMetadata(
-      "agent.governance",
+      "lifecycle.agent.governance.evaluated",
       productUnitId,
       runId,
       phase,
       correlationId
     );
 
-    const payload: AgentGovernanceEventPayload = {
-      agentId,
-      actionType,
-      decision,
-      reason,
+    const event: KernelLifecycleEvent = {
+      metadata,
+      payload: {
+        agentId,
+        actionType,
+        decision,
+        reason,
+        ...(masteryState !== undefined ? { masteryState } : {}),
+        ...(executionMode !== undefined ? { executionMode } : {}),
+        evidenceRefs: evidenceRefs ?? [],
+      },
     };
-
-    // Conditionally add optional fields
-    if (masteryState !== undefined) {
-      (payload as AgentGovernanceEventPayload & { masteryState: string }).masteryState = masteryState;
-    }
-    if (executionMode !== undefined) {
-      (payload as AgentGovernanceEventPayload & { executionMode: string }).executionMode = executionMode;
-    }
-    if (evidenceRefs !== undefined) {
-      (payload as AgentGovernanceEventPayload & { evidenceRefs: readonly string[] }).evidenceRefs = evidenceRefs;
-    }
-
-    const event: KernelAgentGovernanceEvent = { metadata, payload };
     this.emitEvent(event);
   }
 }

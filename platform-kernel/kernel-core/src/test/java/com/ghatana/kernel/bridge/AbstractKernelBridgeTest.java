@@ -96,6 +96,10 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
     private BridgeHealthIndicator capturingHealth;
     private BridgeContext testContext;
 
+    private static BridgeAuthorizationService allowAllAuthorization() {
+        return (context, resource, action) -> Promise.of(Boolean.TRUE);
+    }
+
     @BeforeEach
     void setUp() {
         capturingAuditor = emittedEvents::add;
@@ -125,7 +129,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("requireStarted() throws before markStarted()")
         void requireStartedThrowsBeforeStart() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             assertThatThrownBy(bridge::requireStarted)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("test-bridge");
@@ -135,7 +139,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("requireStarted() passes after markStarted()")
         void requireStartedPassesAfterStart() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
             bridge.requireStarted(); // must not throw
         }
@@ -144,7 +148,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("markStarted() reports healthy via health port")
         void markStartedReportsHealthy() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
             assertThat(healthCalls).contains("HEALTHY:test-bridge");
         }
@@ -162,7 +166,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("allowed call emits ALLOWED audit event")
         void allowedCallEmitsAllowedAuditEvent() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
 
             Boolean result = bridge.authorize(testContext, "dataset:read", "read").getResult();
@@ -195,7 +199,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("audit event carries tenant, principal, correlation from BridgeContext")
         void auditEventCarriesContextFields() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
             bridge.authorize(testContext, "resource", "action").getResult();
 
@@ -219,7 +223,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("succeeds on first attempt without retrying")
         void succeedsOnFirstAttempt() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
 
             String result = runPromise(() -> bridge.retryOp(
@@ -237,7 +241,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("exhausts all retries and reports unhealthy after max failures")
         void exhaustsRetriesAndReportsUnhealthy() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             bridge.start();
 
             assertThatThrownBy(() -> runPromise(() -> bridge.retryOp(
@@ -267,7 +271,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("redact() replaces sensitive key=value pairs")
         void redactsPasswordAndToken() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
 
             String raw = "user=alice,password=s3cr3t,token=Bearer xyz123,host=db.example.com";
             String redacted = bridge.callRedact(raw);
@@ -283,7 +287,7 @@ class AbstractKernelBridgeTest extends EventloopTestBase {
         @DisplayName("redact() handles null input safely")
         void redactsNullSafely() {
             TestBridge bridge = new TestBridge(
-                    BridgeAuthorizationService.allowAll(), capturingAuditor, capturingHealth);
+                    allowAllAuthorization(), capturingAuditor, capturingHealth);
             assertThat(bridge.callRedact(null)).isEqualTo("<null>");
         }
     }

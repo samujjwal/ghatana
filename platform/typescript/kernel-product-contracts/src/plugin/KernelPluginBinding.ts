@@ -10,7 +10,7 @@
  * @doc.pattern ValueObject
  */
 
-import type { PluginRef } from './PluginRef';
+import type { PluginRef } from './PluginRef.js';
 
 /**
  * Represents a binding between a plugin and a ProductUnit.

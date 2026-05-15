@@ -32,7 +32,12 @@
       ],
       "planningImplemented": true,
       "executionImplemented": true,
-      "outputValidationImplemented": true
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": true,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true
     },
     "gradle-java-library": {
       "kind": "build-tool",
@@ -61,7 +66,12 @@
       "tests": [],
       "planningImplemented": false,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "declared-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "pnpm-vite-react": {
       "kind": "build-tool",
@@ -91,7 +101,12 @@
       ],
       "planningImplemented": true,
       "executionImplemented": true,
-      "outputValidationImplemented": true
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": true,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true
     },
     "pnpm-node-api": {
       "kind": "build-tool",
@@ -120,7 +135,12 @@
       "tests": [],
       "planningImplemented": false,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "declared-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "vitest": {
       "kind": "test-tool",
@@ -145,7 +165,12 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "playwright": {
       "kind": "test-tool",
@@ -170,7 +195,12 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "docker-buildx": {
       "kind": "package-tool",
@@ -198,7 +228,12 @@
       ],
       "planningImplemented": true,
       "executionImplemented": true,
-      "outputValidationImplemented": true
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true
     },
     "docker-static-web": {
       "kind": "package-tool",
@@ -222,7 +257,12 @@
       "tests": [],
       "planningImplemented": false,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "declared-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "compose-local": {
       "kind": "deployment-tool",
@@ -254,7 +294,12 @@
       ],
       "planningImplemented": true,
       "executionImplemented": true,
-      "outputValidationImplemented": true
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": true,
+      "supportsBootstrapMode": true,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true
     },
     "kubernetes": {
       "kind": "deployment-tool",
@@ -283,7 +328,12 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": true,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "helm": {
       "kind": "deployment-tool",
@@ -313,7 +363,12 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": true,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "terraform": {
       "kind": "deployment-tool",
@@ -342,7 +397,12 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": true,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "xcode-ios": {
       "kind": "build-tool",
@@ -370,7 +430,13 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false,
+      "featureFlagRequired": true
     },
     "gradle-android": {
       "kind": "build-tool",
@@ -399,7 +465,13 @@
       "tests": [],
       "planningImplemented": true,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "planning-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false,
+      "featureFlagRequired": true
     },
     "maven-publish": {
       "kind": "package-tool",
@@ -421,7 +493,12 @@
       "tests": [],
       "planningImplemented": false,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "declared-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     },
     "domain-pack-validator": {
       "kind": "validation-tool",
@@ -444,7 +521,12 @@
       "tests": [],
       "planningImplemented": false,
       "executionImplemented": false,
-      "outputValidationImplemented": false
+      "outputValidationImplemented": false,
+      "readiness": "declared-only",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": false,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": false
     }
   }
 }

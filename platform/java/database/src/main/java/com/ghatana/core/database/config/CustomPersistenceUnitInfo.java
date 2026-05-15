@@ -506,7 +506,7 @@ final class CustomPersistenceUnitInfo implements PersistenceUnitInfo {
 
     @Override
     public void addTransformer(ClassTransformer transformer) {
-        // Not implemented for this use case
+        // Runtime bytecode transformers are intentionally outside this persistence unit.
     }
 
     @Override

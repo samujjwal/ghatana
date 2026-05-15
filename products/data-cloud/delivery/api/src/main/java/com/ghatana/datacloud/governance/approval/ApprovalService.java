@@ -47,7 +47,7 @@ public final class ApprovalService {
      */
     @NotNull
     public Promise<Boolean> checkAccess(@NotNull String tenantId, @NotNull String resource) {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**
@@ -61,6 +61,6 @@ public final class ApprovalService {
      */
     @NotNull
     public Promise<Boolean> requestApproval(@NotNull String tenantId, @NotNull String resource) {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 }

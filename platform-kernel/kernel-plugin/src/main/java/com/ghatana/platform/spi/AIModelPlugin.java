@@ -26,9 +26,7 @@ public interface AIModelPlugin extends Plugin, LLMGateway {
     @Override
     @NotNull
     default Promise<CompletionResult> complete(CompletionRequest request) {
-        // This default is just to satisfy the interface if the plugin
-        // implements LLMGateway logic directly in the class.
-        // In practice, the implementation will provide the logic.
-        return Promise.ofException(new UnsupportedOperationException("Not implemented"));
+        return Promise.ofException(
+            new UnsupportedOperationException("AI model plugin must provide completion capability"));
     }
 }

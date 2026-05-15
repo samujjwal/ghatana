@@ -16,22 +16,22 @@
     "write",
     "delete",
     "export",
-    "sync",
-    "launch",
-    "pause",
-    "resume",
-    "increase",
-    "publish",
-    "execute"
+    "digital-marketing:sync",
+    "digital-marketing:launch",
+    "digital-marketing:pause",
+    "digital-marketing:resume",
+    "digital-marketing:increase",
+    "digital-marketing:publish",
+    "digital-marketing:execute"
   ],
   "policyResources": [
-    "workspaces",
-    "contacts",
-    "audiences",
-    "campaigns",
-    "budgets",
-    "content",
-    "connectors"
+    "digital-marketing:workspaces",
+    "digital-marketing:contacts",
+    "digital-marketing:audiences",
+    "digital-marketing:campaigns",
+    "digital-marketing:budgets",
+    "digital-marketing:content",
+    "digital-marketing:connectors"
   ],
   "pluginsConsumed": [
     "plugin-audit-trail",
@@ -56,16 +56,18 @@
   "productExtensions": {
     "productName": "Digital Marketing Operating System",
     "mvpScope": "non-regulated local service and small B2B businesses",
-    "pluginBindings": {
-      "plugin-audit-trail": {
-        "requiredHooks": ["onProductBuildCompleted", "onProductDeployed"],
-        "runtimeRequired": true
-      },
-      "plugin-compliance": {
-        "requiredHooks": ["onProductValidated", "onProductDeployStarted"],
-        "runtimeRequired": true
-      }
+    "pluginBindings": [
+      "plugin-audit-trail",
+      "plugin-compliance"
+    ],
+    "pluginBindingRequiredHooks": {
+      "plugin-audit-trail": ["onProductBuildCompleted", "onProductDeployed"],
+      "plugin-compliance": ["onProductValidated", "onProductDeployStarted"]
     },
+    "runtimeRequiredPluginBindings": [
+      "plugin-audit-trail",
+      "plugin-compliance"
+    ],
     "referenceConsumerPolicy": {
       "phrFinanceStatus": "reference-only",
       "forbiddenRulePrefixes": [
@@ -94,22 +96,22 @@
       "write",
       "delete",
       "export",
-      "sync",
-      "launch",
-      "pause",
-      "resume",
-      "increase",
-      "publish",
-      "execute"
+      "digital-marketing:sync",
+      "digital-marketing:launch",
+      "digital-marketing:pause",
+      "digital-marketing:resume",
+      "digital-marketing:increase",
+      "digital-marketing:publish",
+      "digital-marketing:execute"
     ],
     "resources": [
-      "workspaces",
-      "contacts",
-      "audiences",
-      "campaigns",
-      "budgets",
-      "content",
-      "connectors"
+      "digital-marketing:workspaces",
+      "digital-marketing:contacts",
+      "digital-marketing:audiences",
+      "digital-marketing:campaigns",
+      "digital-marketing:budgets",
+      "digital-marketing:content",
+      "digital-marketing:connectors"
     ]
   },
   "surfaces": {

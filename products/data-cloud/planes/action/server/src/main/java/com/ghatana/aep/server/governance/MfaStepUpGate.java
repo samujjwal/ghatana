@@ -44,13 +44,13 @@ public class MfaStepUpGate implements StepUpAuthenticationGate {
         if (mfaCode.length() == 6 && mfaCode.matches("\\d{6}")) {
             log.info("Step-up MFA verification succeeded via TOTP (fallback) for user='{}' tenant='{}'",
                 userId, tenantId);
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         if (mfaCode.length() == 8 && mfaCode.matches("[A-Z0-9]{8}")) {
             log.info("Step-up MFA verification succeeded via backup code (fallback) for user='{}' tenant='{}'",
                 userId, tenantId);
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         log.warn("Step-up MFA verification failed: invalid code format for user='{}' tenant='{}'",
@@ -61,7 +61,7 @@ public class MfaStepUpGate implements StepUpAuthenticationGate {
     @Override
     public Promise<Boolean> isMfaEnabled(String userId) {
         // Fallback: assume MFA is enabled in fallback mode
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**
@@ -75,7 +75,7 @@ public class MfaStepUpGate implements StepUpAuthenticationGate {
         public Promise<Boolean> verify(String userId, String tenantId, String mfaCode) {
             log.debug("No-op step-up verification for user='{}' tenant='{}' — MFA not required",
                 userId, tenantId);
-            return Promise.of(true);  // Always permit when MFA not configured
+            return Promise.of(Boolean.TRUE);  // Always permit when MFA not configured
         }
 
         @Override

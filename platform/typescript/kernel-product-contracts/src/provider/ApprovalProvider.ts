@@ -7,7 +7,7 @@
  * @doc.pattern Interface
  */
 
-import type { KernelProvider } from "./KernelProvider";
+import type { KernelProvider } from "./KernelProvider.js";
 
 /**
  * Approval request.
@@ -15,8 +15,15 @@ import type { KernelProvider } from "./KernelProvider";
 export interface ApprovalRequest {
   readonly approvalId: string;
   readonly productUnitId: string;
+  readonly runId?: string;
+  readonly correlationId?: string;
   readonly requestedBy: string;
+  readonly requestedAt?: string;
   readonly reason: string;
+  readonly environment?: string;
+  readonly action?: string;
+  readonly riskLevel?: "low" | "medium" | "high" | "critical";
+  readonly evidenceRefs?: readonly string[];
   readonly requiredApprovers: readonly string[];
   readonly expiresAt: string;
 }
@@ -30,6 +37,7 @@ export interface ApprovalDecision {
   readonly approvedBy: string;
   readonly reason: string;
   readonly decidedAt: string;
+  readonly evidenceRefs?: readonly string[];
 }
 
 /**

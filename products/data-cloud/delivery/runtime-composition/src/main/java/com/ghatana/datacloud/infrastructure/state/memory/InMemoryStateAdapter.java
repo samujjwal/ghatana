@@ -279,7 +279,7 @@ public class InMemoryStateAdapter implements StateAdapter<String, String> {
         try {
             Entry entry = store.get(key);
             if (entry != null && !entry.isExpired()) {
-                return Promise.of(true);
+                return Promise.of(Boolean.TRUE);
             }
             return Promise.of(false);
         } catch (Exception e) {

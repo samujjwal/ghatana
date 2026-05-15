@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 /**
  * Configuration for a single HTTP health check.
@@ -16,17 +17,23 @@ export interface HealthCheckConfig {
  * Result entry for a single health check.
  */
 export interface HealthCheckVerificationEntry {
+  checkId: string;
+  name: string;
   url: string;
   status: 'passed' | 'failed' | 'skipped';
   latencyMs: number | null;
   error: string | null;
   checkedAt: string;
+  attempts: number;
+  evidenceRefs: string[];
 }
 
 /**
  * Overall result of live health check verification.
  */
 export interface HealthCheckVerificationResult {
+  schemaVersion: '1.0.0';
+  generatedAt: string;
   allPassed: boolean;
   checks: HealthCheckVerificationEntry[];
   errors: string[];
@@ -220,8 +227,10 @@ export class DeploymentVerifier {
       let passed = false;
       let latencyMs: number | null = null;
       let checkedAt = new Date().toISOString();
+      let attempts = 0;
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        attempts = attempt + 1;
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
         const requestStart = Date.now();
@@ -241,23 +250,27 @@ export class DeploymentVerifier {
         } catch (err: unknown) {
           latencyMs = Date.now() - requestStart;
           checkedAt = new Date().toISOString();
-          lastError = err instanceof Error ? err.message : String(err);
+          lastError = this.resolveFetchError(err, timeoutMs);
         } finally {
           clearTimeout(timer);
         }
 
         if (attempt < maxRetries - 1) {
           // Exponential backoff
-          await this.sleep(intervalMs * Math.pow(2, attempt));
+          await sleep(intervalMs * Math.pow(2, attempt));
         }
       }
 
       entries.push({
+        checkId: this.createCheckId(check.url),
+        name: check.url,
         url: check.url,
         status: passed ? 'passed' : 'failed',
         latencyMs: passed ? latencyMs : null,
         error: lastError,
         checkedAt,
+        attempts,
+        evidenceRefs: [`health-check:${this.createCheckId(check.url)}`],
       });
 
       if (!passed && required) {
@@ -268,6 +281,8 @@ export class DeploymentVerifier {
     }
 
     const result: HealthCheckVerificationResult = {
+      schemaVersion: '1.0.0',
+      generatedAt: new Date().toISOString(),
       allPassed: aggregateErrors.length === 0,
       checks: entries,
       errors: aggregateErrors,
@@ -284,8 +299,15 @@ export class DeploymentVerifier {
     return result;
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private resolveFetchError(error: unknown, timeoutMs: number): string {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return `Timed out after ${timeoutMs}ms`;
+    }
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  private createCheckId(url: string): string {
+    return url.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'health-check';
   }
 }
 

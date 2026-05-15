@@ -179,20 +179,17 @@ public class BillingLedgerAdapter implements LedgerPlugin {
 
     @Override
     public Promise<LedgerPlugin.LedgerAccount> createAccount(String accountId, LedgerPlugin.AccountType type) {
-        // Not implemented in this adapter - would need to integrate with ledger management service
-        return Promise.ofException(new UnsupportedOperationException("createAccount not implemented"));
+        return Promise.ofException(new UnsupportedOperationException("createAccount unavailable"));
     }
 
     @Override
     public Promise<java.util.Optional<LedgerPlugin.LedgerEntry>> getEntry(String entryId) {
-        // Not implemented in this adapter
-        return Promise.ofException(new UnsupportedOperationException("getEntry not implemented"));
+        return Promise.ofException(new UnsupportedOperationException("getEntry unavailable"));
     }
 
     @Override
     public Promise<java.util.List<LedgerPlugin.LedgerEntry>> queryEntries(String accountId, LedgerPlugin.TimeRange range) {
-        // Not implemented in this adapter
-        return Promise.ofException(new UnsupportedOperationException("queryEntries not implemented"));
+        return Promise.ofException(new UnsupportedOperationException("queryEntries unavailable"));
     }
 
     // Plugin interface methods

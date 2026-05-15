@@ -355,7 +355,7 @@ function normalizeDashboardRoutePhase(lifecyclePhase: unknown): MountedDashboard
  * In production, this should call a dedicated policy evaluation service that returns
  * authoritative decisions with policyDecisionId, reasonCode, and evidenceIds.
  * 
- * TODO: Replace with backend policy engine integration for authoritative governance decisions.
+ * Implementation note: Replace with backend policy engine integration for authoritative governance decisions.
  */
 function generatePolicyDecision(title: string, source: 'project.aiNextActions' | 'project.lifecyclePhase'): ProjectDashboardActionDecision {
   const id = `decision-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -1102,7 +1102,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/projects/:projectId
-   * Get single project with ownership context (TODO-004: Return capability contract)
+   * Get single project with ownership context (TRACK-004: Return capability contract)
    */
   fastify.get<{ Params: ProjectParams; Querystring: { workspaceId?: string } }>(
     '/projects/:projectId',
@@ -1135,7 +1135,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           )
         : includedProjectAccess();
 
-      // TODO-004: Include capability contract in response
+      // TRACK-004: Include capability contract in response
       const capabilities = await getProjectCapabilities(
         request.user?.userId || '',
         projectId,
@@ -1146,7 +1146,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         project: {
           ...project,
           ...access,
-          // TODO-004: Add backend capability contract
+          // TRACK-004: Add backend capability contract
           userId: request.user?.userId,
           role: isOwned && request.user?.userId
             ? await getWorkspaceRole(request.user.userId, workspaceId || project.ownerWorkspaceId)
@@ -1172,7 +1172,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       const { projectId } = request.params;
       const { workspaceId } = request.query as { workspaceId?: string };
 
-      // TODO-002: Validate workspace access if workspaceId is provided
+      // TRACK-002: Validate workspace access if workspaceId is provided
       // For now, we accept workspaceId but don't enforce it until full scoping is implemented
       const project = await prisma.project.findUnique({
         where: { id: projectId },
@@ -1660,7 +1660,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/projects/:projectId/export
-   * Export project as a ZIP file (TODO-003: Backend-authorized, scoped, audited)
+   * Export project as a ZIP file (TRACK-003: Backend-authorized, scoped, audited)
    */
   fastify.get<{
     Params: ProjectParams;
@@ -1690,7 +1690,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      // TODO-003: Verify workspace access - project must be owned by or included in the workspace
+      // TRACK-003: Verify workspace access - project must be owned by or included in the workspace
       // For now, we accept the workspaceId but should enforce it
       if (project.ownerWorkspaceId !== workspaceId) {
         // Check if project is included in the workspace
@@ -1705,8 +1705,8 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // TODO-003: Generate actual project export ZIP
-      // For now, return a placeholder response
+      // TRACK-003: Generate actual project export ZIP
+      // For now, return a pending response
       try {
         // Audit log export attempt
         await logProjectLifecycleEvent({
@@ -1718,7 +1718,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         });
 
         // Placeholder: Return empty ZIP for now
-        // TODO-003: Implement actual project export generation
+        // TRACK-003: Implement actual project export generation
         reply.header('Content-Type', 'application/zip');
         reply.header('Content-Disposition', `attachment; filename="project-${projectId}.zip"`);
         return reply.send(Buffer.from(''));

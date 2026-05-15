@@ -57,22 +57,22 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             "write",
             "delete",
             "export",
-            "sync",
-            "launch",
-            "pause",
-            "resume",
-            "increase",
-            "publish",
-            "execute"));
+            "digital-marketing:sync",
+            "digital-marketing:launch",
+            "digital-marketing:pause",
+            "digital-marketing:resume",
+            "digital-marketing:increase",
+            "digital-marketing:publish",
+            "digital-marketing:execute"));
     private static final BoundaryPolicyResourceRegistry RESOURCE_REGISTRY =
         BoundaryPolicyResourceRegistry.ofDeclaredResources(Set.of(
-            "workspaces",
-            "contacts",
-            "audiences",
-            "campaigns",
-            "budgets",
-            "content",
-            "connectors"));
+            "digital-marketing:workspaces",
+            "digital-marketing:contacts",
+            "digital-marketing:audiences",
+            "digital-marketing:campaigns",
+            "digital-marketing:budgets",
+            "digital-marketing:content",
+            "digital-marketing:connectors"));
 
     /** Source scope pattern used on all DMOS rules — matches any caller within the dm scope. */
     private static final String DM_SOURCE_SCOPE = "digital-marketing.*";
@@ -126,13 +126,13 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
         );
     }
 
-    /** DM-BP-001: workspaces/**: read → ALLOW */
+    /** DM-BP-001: digital-marketing:workspaces/**: read → ALLOW */
     private static BoundaryPolicyRule workspaceReadAllow() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-001")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("workspaces/**")
+            .resourcePattern("digital-marketing:workspaces/**")
             .actions(Set.of("read"))
             .requiresConsent(false)
             .requiresAudit(false)
@@ -141,13 +141,13 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-002: contacts/**: read → ALLOW (requiresConsent, requiresAudit) */
+    /** DM-BP-002: digital-marketing:contacts/**: read → ALLOW (requiresConsent, requiresAudit) */
     private static BoundaryPolicyRule contactReadAllow() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-002")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("contacts/**")
+            .resourcePattern("digital-marketing:contacts/**")
             .actions(Set.of("read"))
             .requiresConsent(true)
             .requiresAudit(true)
@@ -156,13 +156,13 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-003: contacts/**: write, delete, export → REQUIRE_APPROVAL (requiresAudit) */
+    /** DM-BP-003: digital-marketing:contacts/**: write, delete, export → REQUIRE_APPROVAL (requiresAudit) */
     private static BoundaryPolicyRule contactWriteRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-003")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("contacts/**")
+            .resourcePattern("digital-marketing:contacts/**")
             .actions(Set.of("write", "delete", "export"))
             .requiresConsent(false)
             .requiresAudit(true)
@@ -174,14 +174,14 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-004: audiences/**: export, sync → REQUIRE_APPROVAL (requiresConsent, requiresAudit) */
+    /** DM-BP-004: digital-marketing:audiences/**: export, sync → REQUIRE_APPROVAL (requiresConsent, requiresAudit) */
     private static BoundaryPolicyRule audienceExportSyncRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-004")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("audiences/**")
-            .actions(Set.of("export", "sync"))
+            .resourcePattern("digital-marketing:audiences/**")
+            .actions(Set.of("export", "digital-marketing:sync"))
             .requiresConsent(true)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
@@ -192,14 +192,14 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-005: campaigns/**: launch, pause, resume → REQUIRE_APPROVAL (requiresAudit) */
+    /** DM-BP-005: digital-marketing:campaigns/**: launch, pause, resume → REQUIRE_APPROVAL (requiresAudit) */
     private static BoundaryPolicyRule campaignLifecycleRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-005")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("campaigns/**")
-            .actions(Set.of("launch", "pause", "resume"))
+            .resourcePattern("digital-marketing:campaigns/**")
+            .actions(Set.of("digital-marketing:launch", "digital-marketing:pause", "digital-marketing:resume"))
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
@@ -210,14 +210,14 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-006: budgets/**: write, increase → REQUIRE_APPROVAL (requiresAudit) */
+    /** DM-BP-006: digital-marketing:budgets/**: write, increase → REQUIRE_APPROVAL (requiresAudit) */
     private static BoundaryPolicyRule budgetWriteRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-006")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("budgets/**")
-            .actions(Set.of("write", "increase"))
+            .resourcePattern("digital-marketing:budgets/**")
+            .actions(Set.of("write", "digital-marketing:increase"))
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
@@ -228,14 +228,14 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-007: content/**: publish → REQUIRE_APPROVAL (requiresAudit) */
+    /** DM-BP-007: digital-marketing:content/**: publish → REQUIRE_APPROVAL (requiresAudit) */
     private static BoundaryPolicyRule contentPublishRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-007")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("content/**")
-            .actions(Set.of("publish"))
+            .resourcePattern("digital-marketing:content/**")
+            .actions(Set.of("digital-marketing:publish"))
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
@@ -246,14 +246,14 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .build();
     }
 
-    /** DM-BP-008: connectors/**: write, execute → REQUIRE_APPROVAL (requiresAudit) */
+    /** DM-BP-008: digital-marketing:connectors/**: write, execute → REQUIRE_APPROVAL (requiresAudit) */
     private static BoundaryPolicyRule connectorWriteExecuteRequireApproval() {
         return BoundaryPolicyRule.builder()
             .ruleId("DM-BP-008")
             .sourceScopePattern(DM_SOURCE_SCOPE)
             .targetScopePattern(DM_TARGET_SCOPE)
-            .resourcePattern("connectors/**")
-            .actions(Set.of("write", "execute"))
+            .resourcePattern("digital-marketing:connectors/**")
+            .actions(Set.of("write", "digital-marketing:execute"))
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)

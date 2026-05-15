@@ -296,7 +296,7 @@ public class QueueSinkConnector implements ConnectorOperator {
                 return Promise.of(healthy);
             }
 
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
     }
 

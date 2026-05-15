@@ -1,19 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
+body {
+  background-color: #f9fafb;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer components {
-  .studio-card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
-  }
+.studio-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  padding: 1.5rem;
+}
 
-  .studio-section {
-    @apply space-y-6;
-  }
+.studio-section > * + * {
+  margin-top: 1.5rem;
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }

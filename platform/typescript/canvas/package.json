@@ -94,6 +94,7 @@
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/platform-events": "workspace:*",
     "@preact/signals-core": "^1.14.1",
     "@xyflow/react": "^12.10.2",
     "dagre": "^0.8.5",

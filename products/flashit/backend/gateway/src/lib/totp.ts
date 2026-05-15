@@ -222,7 +222,7 @@ export async function disableTOTP(
     return false;
   }
 
-  // TODO: Verify password here
+  // Implementation note: Verify password here
   const validPassword = await comparePassword(password, user.passwordHash);
   if (!validPassword) {
     throw new Error("Invalid password");

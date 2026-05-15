@@ -95,6 +95,12 @@ describe('DockerBuildxAdapter', () => {
       const buildArgCount = step.command.filter((a) => a === '--build-arg').length;
       expect(buildArgCount).toBe(2);
     });
+
+    it('requires dockerfile, context, image, and tag', async () => {
+      const ctx = makeContext({ surfaceConfig: { image: 'test/img', tag: 'v1', context: '.' } });
+
+      await expect(adapter.plan(ctx)).rejects.toThrow('surfaceConfig.dockerfile');
+    });
   });
 
   describe('execute()', () => {
@@ -110,7 +116,39 @@ describe('DockerBuildxAdapter', () => {
       const result = await adapter.execute(makeContext());
 
       expect(result.status).toBe('succeeded');
+      expect(result.schemaVersion).toBe('1.0.0');
+      expect(result.artifacts).toContain('ghatana/digital-marketing-api:local');
+      expect(result.evidenceRefs).toContain('container-image:ghatana/digital-marketing-api:local');
+      expect(result.observability).toMatchObject({
+        commandId: 'docker-buildx-package-backend-api',
+        exitCode: 0,
+      });
       expect(commandRunner.invocations[0].command).toBe('docker');
+    });
+
+    it('returns digest artifact refs when docker inspect exposes RepoDigests', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 5000 },
+        {
+          exitCode: 0,
+          stdout: '["ghatana/digital-marketing-api@sha256:abc123"]|sha256:imageid',
+          stderr: '',
+          durationMs: 10,
+        },
+        {
+          exitCode: 0,
+          stdout: '["ghatana/digital-marketing-api@sha256:abc123"]|sha256:imageid',
+          stderr: '',
+          durationMs: 10,
+        },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext());
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toContain('ghatana/digital-marketing-api@sha256:abc123');
+      expect(result.evidenceRefs).toContain('container-image:ghatana/digital-marketing-api@sha256:abc123');
     });
 
     it('returns failed when docker buildx exits non-zero', async () => {
@@ -122,6 +160,63 @@ describe('DockerBuildxAdapter', () => {
       const result = await adapter.execute(makeContext());
 
       expect(result.status).toBe('failed');
+      expect(result.failure?.cause).toBe('Build failed');
+    });
+
+    it('returns failed when image inspect cannot find the built image', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 5000 },
+        { exitCode: 1, stdout: '', stderr: 'not found', durationMs: 10 },
+        { exitCode: 1, stdout: '', stderr: 'not found', durationMs: 10 },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext());
+
+      expect(result.status).toBe('failed');
+      expect(result.failure?.message).toContain('not found in local Docker daemon');
+    });
+
+    it('falls back to image ref when inspect output is empty', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 5000 },
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 10 },
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 10 },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext());
+
+      expect(result.status).toBe('failed');
+      expect(result.artifacts).toContain('ghatana/digital-marketing-api:local');
+    });
+
+    it('falls back to image ref when inspect digest segment is empty', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 5000 },
+        { exitCode: 0, stdout: '|sha256:imageid', stderr: '', durationMs: 10 },
+        { exitCode: 0, stdout: '|sha256:imageid', stderr: '', durationMs: 10 },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext());
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toContain('ghatana/digital-marketing-api:local');
+    });
+
+    it('falls back to image ref when inspect digest payload is not an array', async () => {
+      commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: '', stderr: '', durationMs: 5000 },
+        { exitCode: 0, stdout: '{"Id":"sha256:imageid"}|sha256:imageid', stderr: '', durationMs: 10 },
+        { exitCode: 0, stdout: '{"Id":"sha256:imageid"}|sha256:imageid', stderr: '', durationMs: 10 },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot: '/repo', commandRunner });
+
+      const result = await adapter.execute(makeContext());
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toContain('ghatana/digital-marketing-api:local');
     });
 
     it('skips execution in dryRun mode', async () => {

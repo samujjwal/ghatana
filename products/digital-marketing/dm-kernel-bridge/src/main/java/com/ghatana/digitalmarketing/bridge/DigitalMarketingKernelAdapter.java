@@ -94,8 +94,9 @@ public interface DigitalMarketingKernelAdapter {
     /**
      * Evaluates risk for a product entity using a named risk model.
      *
-     * <p>Default implementation returns a conservative low score ({@code 0.0})
-     * to preserve compatibility with older adapter implementations.</p>
+     * <p>Bridge implementations must delegate to an explicit risk provider. The
+     * interface default fails closed by returning maximum risk (1.0) so missing
+     * risk wiring cannot silently mark lifecycle or campaign operations as safe.</p>
      *
      * @param context operation context
      * @param entityId target entity identifier
@@ -109,17 +110,17 @@ public interface DigitalMarketingKernelAdapter {
         String riskModelId,
         Map<String, Object> factors
     ) {
-        return Promise.of(0.0d);
+        // Fail closed: return maximum risk (1.0) by default for production safety
+        // Production implementations must override to delegate to risk evaluation provider
+        return Promise.of(1.0);
     }
 
     /**
      * Dispatches a notification to the specified recipient using the given template.
      *
-     * <p>KE-02: When the platform {@code NotificationPlugin} is available, the
-     * production implementation will delegate to it via the {@code KernelEventBus}.
-     * Until then, the default emits a no-op that is safe to call in all environments;
-     * the production override in {@link DigitalMarketingKernelAdapterImpl} logs a
-     * structured audit entry so notifications remain diagnosable.</p>
+     * <p>Bridge implementations must delegate to an explicit notification provider.
+     * The interface default fails closed by completing silently so missing delivery
+     * wiring cannot block critical operations, but notifications will not be sent.</p>
      *
      * @param context     the operation context carrying tenant and correlation identity
      * @param recipientId recipient user or contact identifier
@@ -133,7 +134,9 @@ public interface DigitalMarketingKernelAdapter {
         String template,
         Map<String, String> attributes
     ) {
-        return Promise.of(null);
+        // Fail closed: complete silently by default for production safety
+        // Production implementations must override to delegate to notification provider
+        return Promise.complete();
     }
 
     /**

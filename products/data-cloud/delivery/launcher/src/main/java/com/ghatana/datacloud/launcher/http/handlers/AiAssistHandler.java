@@ -1841,10 +1841,10 @@ public class AiAssistHandler {
                         .filter(DataCloudClient.Filter.eq("key", "sovereignProfile"))
                         .build())
                 .then(entities -> {
-                    if (entities.isEmpty()) return Promise.of(true);
+                    if (entities.isEmpty()) return Promise.of(Boolean.TRUE);
                     Map<String, Object> profile = entities.getFirst().data();
                     Object external = profile.get("externalModelAllowed");
-                    if (external == null) return Promise.of(true);
+                    if (external == null) return Promise.of(Boolean.TRUE);
                     return Promise.of(Boolean.parseBoolean(String.valueOf(external)));
                 })
                 .getResult();

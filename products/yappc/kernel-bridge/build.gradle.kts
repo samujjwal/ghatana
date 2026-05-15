@@ -3,14 +3,14 @@ plugins {
 }
 
 group = "com.ghatana.platform.shared-services"
-description = "YAPPC Kernel Bridge - KernelExtension that exposes YAPPC PluginRegistry into kernel context"
+description = "YAPPC Kernel Bridge - KernelExtension that exposes narrow YAPPC evidence ports into kernel context"
 
 dependencies {
     // Kernel SPI (KernelExtension lifecycle and context registration)
     api(project(":platform-kernel:kernel-core"))
 
-    // YAPPC shared module — provides PluginRegistry and plugin types
-    api(project(":products:yappc:core:yappc-shared"))
+    // YAPPC shared module stays internal to the compatibility adapter.
+    implementation(project(":products:yappc:core:yappc-shared"))
 
     compileOnly(libs.spotbugs.annotations)
 

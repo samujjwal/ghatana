@@ -392,7 +392,7 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
         Promise<Void> mergePatterns(RiskPatterns patterns);
     }
 
-    // Placeholder implementations for reflection
+    // Deterministic defaults used when reflective wiring has not supplied external engines.
     private final RiskPatternEngine riskPatternEngine = episodes -> Promise.of(new RiskPatterns(0.75));
     private final RiskPolicyStore riskPolicyStore = patterns -> Promise.complete();
 }

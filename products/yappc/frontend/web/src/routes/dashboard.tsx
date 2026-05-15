@@ -55,8 +55,8 @@ function getProjectUpdatedAt(project: ProjectWithOwnership): string {
     return new Date(0).toISOString();
 }
 
-// TODO-011: Mark client-derived actions as degraded/fallback
-// TODO-012: Remove empty-action fallback that masks backend failure
+// TRACK-011: Mark client-derived actions as degraded/fallback
+// TRACK-012: Remove empty-action fallback that masks backend failure
 // Distinguish between loaded-and-empty and backend-unavailable
 interface NextActionTitlesResult {
     readonly titles: readonly string[];
@@ -83,7 +83,7 @@ function getProjectNextActionTitles(
 
         if (backedActions.length > 0) {
             // Mark as degraded since we're using aiNextActions instead of the new endpoint
-            // TODO: Integrate the /api/projects/:id/next-actions endpoint with proper async handling
+            // Implementation note: Integrate the /api/projects/:id/next-actions endpoint with proper async handling
             return { titles: backedActions, isDegraded: true, isFallback: true };
         }
     }
@@ -93,7 +93,7 @@ function getProjectNextActionTitles(
     return { titles: [], isDegraded: false, isFallback: false };
 }
 
-// TODO-013: Add dashboard degraded-state UX
+// TRACK-013: Add dashboard degraded-state UX
 // Show retry, reason, correlation ID when APIs fail
 interface DashboardDecisionBrief {
     readonly headline: string;
@@ -128,7 +128,7 @@ function buildDashboardDecisionBrief(
     }
 
     if (error) {
-        // TODO-013: Add correlation ID and retry information for degraded state
+        // TRACK-013: Add correlation ID and retry information for degraded state
         const correlationId = typeof error === 'object' && error !== null && 'correlationId' in error 
             ? String(error.correlationId) 
             : undefined;
@@ -236,7 +236,7 @@ export default function Component() {
     const blockedWork = dashboardActions?.blockedWork ?? [];
     const reviewRequired = dashboardActions?.reviewRequired ?? [];
     const safeToContinue = dashboardActions?.safeToContinue ?? [];
-    // TODO-011: Use backend dashboard actions as authoritative source
+    // TRACK-011: Use backend dashboard actions as authoritative source
     // Mark as degraded when backend is unavailable
     const dashboardDecisionBrief = buildDashboardDecisionBrief(
         blockedWork,
@@ -276,7 +276,7 @@ export default function Component() {
         const backendAvailable = !dashboardActionsLoading && !dashboardActionsError;
         const { titles, isDegraded, isFallback } = getProjectNextActionTitles(mostRecentProject, backendAvailable);
 
-        // TODO-011: Don't show client-derived fallback actions in dashboard
+        // TRACK-011: Don't show client-derived fallback actions in dashboard
         // Only show backend-authoritative actions
         if (isFallback) {
             return [];
@@ -695,7 +695,7 @@ function DashboardActionStatusCard(props: DashboardActionStatusCardProps) {
                 ? 'border-primary-200 bg-primary-50/60 text-primary-800 dark:border-primary-900/50 dark:bg-primary-950/20 dark:text-primary-200'
                 : 'border-warning-border bg-warning-bg/60 text-warning-color dark:border-warning-border/50 dark:bg-warning-bg/20 dark:text-warning-color';
 
-    // TODO-013: Extract error details for degraded state UX
+    // TRACK-013: Extract error details for degraded state UX
     const getErrorDetails = (err: unknown): { message: string; correlationId?: string } => {
         if (typeof err === 'string') {
             return { message: err };

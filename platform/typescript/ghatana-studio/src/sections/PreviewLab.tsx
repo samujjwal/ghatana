@@ -9,10 +9,10 @@
  * @doc.layer platform
  */
 
-import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Typography } from '@ghatana/design-system';
 
-export default function PreviewLab() {
+export default function PreviewLab(): ReactElement {
   return (
     <div className="p-6">
       <div className="studio-section">
@@ -24,13 +24,13 @@ export default function PreviewLab() {
         </div>
         
         <div className="studio-card">
-          <Typography variant="body" className="text-gray-600 mb-4">
+          <Typography variant="body1" className="text-gray-600 mb-4">
             Test preview sandbox with device emulation, CSP validation, and trust checks.
           </Typography>
           
           <div className="space-y-4">
             <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Typography variant="body" className="text-gray-500">
+              <Typography variant="body1" className="text-gray-500">
                 Load a BuilderDocument to test preview rendering.
               </Typography>
             </div>

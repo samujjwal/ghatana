@@ -32,7 +32,10 @@
       "import": "./dist/selection/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -43,6 +46,8 @@
   },
   "dependencies": {
     "@ghatana/platform-utils": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "lucide-react": "catalog:",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
@@ -55,7 +60,14 @@
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   },
-  "keywords": ["ghatana", "domain-components", "privacy", "security", "voice", "nlp"],
+  "keywords": [
+    "ghatana",
+    "domain-components",
+    "privacy",
+    "security",
+    "voice",
+    "nlp"
+  ],
   "author": "Ghatana Team",
   "license": "MIT"
 }

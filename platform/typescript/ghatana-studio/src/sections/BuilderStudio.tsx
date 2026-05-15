@@ -9,10 +9,10 @@
  * @doc.layer platform
  */
 
-import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Typography } from '@ghatana/design-system';
 
-export default function BuilderStudio() {
+export default function BuilderStudio(): ReactElement {
   return (
     <div className="p-6">
       <div className="studio-section">
@@ -24,13 +24,13 @@ export default function BuilderStudio() {
         </div>
         
         <div className="studio-card">
-          <Typography variant="body" className="text-gray-600 mb-4">
+          <Typography variant="body1" className="text-gray-600 mb-4">
             Create and edit BuilderDocument instances with the UI Builder platform.
           </Typography>
           
           <div className="space-y-4">
             <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Typography variant="body" className="text-gray-500">
+              <Typography variant="body1" className="text-gray-500">
                 No documents yet. Create your first BuilderDocument.
               </Typography>
             </div>

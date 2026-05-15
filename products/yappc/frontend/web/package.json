@@ -44,6 +44,7 @@
     "@ghatana/design-system": "workspace:*",
     "@ghatana/ds-registry": "workspace:*",
     "@ghatana/i18n": "workspace:*",
+    "@ghatana/kernel-product-contracts": "workspace:*",
     "@ghatana/product-shell": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/realtime": "workspace:*",

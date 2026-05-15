@@ -10,13 +10,13 @@
  * @doc.pattern Module
  */
 
-export * from "./HealthStatus";
-export * from "./ProductUnitHealthSnapshot";
-export * from "./LifecycleHealthSnapshot";
-export * from "./GateHealthSnapshot";
-export * from "./ArtifactHealthSnapshot";
-export * from "./DeploymentHealthSnapshot";
-export * from "./PluginHealthSnapshot";
-export * from "./AgentGovernanceHealthSnapshot";
-export * from "./LearningHealthSnapshot";
-export * from "./PreviewSecurityHealthSnapshot";
+export * from "./HealthStatus.js";
+export * from "./ProductUnitHealthSnapshot.js";
+export * from "./LifecycleHealthSnapshot.js";
+export * from "./GateHealthSnapshot.js";
+export * from "./ArtifactHealthSnapshot.js";
+export * from "./DeploymentHealthSnapshot.js";
+export * from "./PluginHealthSnapshot.js";
+export * from "./AgentGovernanceHealthSnapshot.js";
+export * from "./LearningHealthSnapshot.js";
+export * from "./PreviewSecurityHealthSnapshot.js";

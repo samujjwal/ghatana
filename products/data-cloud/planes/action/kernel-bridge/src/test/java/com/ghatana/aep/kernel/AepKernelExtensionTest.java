@@ -6,6 +6,7 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.module.KernelModule;
+import com.ghatana.kernel.testing.TestBridgePorts;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +52,11 @@ class AepKernelExtensionTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { 
         stubClient = new StubAepClient(); 
-        extension = new AepKernelExtension(stubClient); 
+        extension = new AepKernelExtension(
+            stubClient,
+            TestBridgePorts.allowAllAuthorization(),
+            TestBridgePorts.noOpAuditEmitter(),
+            TestBridgePorts.noOpHealthIndicator());
     }
 
     // ==================== Identity ====================
@@ -165,7 +170,11 @@ class AepKernelExtensionTest extends EventloopTestBase {
     @Test
     @DisplayName("null client is rejected at construction")
     void nullClientIsRejected() { 
-        assertThatThrownBy(() -> new AepKernelExtension(null)) 
+        assertThatThrownBy(() -> new AepKernelExtension(
+            null,
+            TestBridgePorts.allowAllAuthorization(),
+            TestBridgePorts.noOpAuditEmitter(),
+            TestBridgePorts.noOpHealthIndicator()))
             .isInstanceOf(NullPointerException.class); 
     }
 

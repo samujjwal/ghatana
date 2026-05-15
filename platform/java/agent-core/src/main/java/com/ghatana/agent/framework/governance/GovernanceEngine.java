@@ -143,7 +143,7 @@ public final class GovernanceEngine {
                 return false;
             });
         }
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     // =========================================================================

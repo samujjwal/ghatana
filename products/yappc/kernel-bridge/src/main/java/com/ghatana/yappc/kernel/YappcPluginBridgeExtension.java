@@ -5,7 +5,6 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.extension.AbstractKernelExtension;
 import com.ghatana.kernel.module.KernelModule;
-import com.ghatana.yappc.plugin.PluginRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,34 +12,34 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * KernelExtension that exposes YAPPC's in-process {@link PluginRegistry} into the kernel context.
+ * KernelExtension that exposes narrow YAPPC evidence and intent ports into the kernel context.
  *
  * <h2>Architectural role</h2>
- * <p>YAPPC maintains its own in-process plugin registry ({@link PluginRegistry}) for
- * code-generation validators, generators, and other product-specific plugins. This bridge
- * registers that registry as a kernel service so that cross-product consumers can discover
- * and invoke YAPPC plugins without coupling directly to YAPPC's internal wiring.</p>
+ * <p>YAPPC keeps its product plugin registry and compiler/scanner internals inside the
+ * product boundary. This bridge registers stable service ports so Kernel consumers can
+ * request ProductUnitIntent candidates and artifact-intelligence evidence without receiving
+ * the broad plugin registry.</p>
  *
  * <h2>Dependency direction</h2>
  * <pre>
- *   kernel-core  &lt;─── yappc-kernel-bridge  &lt;─── yappc product (provides PluginRegistry)
+ *   kernel-core  &lt;─── yappc-kernel-bridge  &lt;─── yappc product providers
  * </pre>
  *
  * <h2>Usage in the YAPPC launcher / service entry-point</h2>
  * <pre>{@code
- * PluginRegistry registry = PluginRegistry.create(pluginContext);
- * YappcPluginBridgeExtension extension = new YappcPluginBridgeExtension(registry);
+ * YappcPluginBridgeExtension extension = new YappcPluginBridgeExtension(
+ *     intentProvider, semanticEvidenceProvider, graphSummaryProvider,
+ *     residualIslandReportProvider, riskHotspotReportProvider);
  * kernelModule.registerExtension(extension);
  * }</pre>
  *
- * <p>After module initialisation, kernel consumers can retrieve the registry:</p>
+ * <p>After module initialisation, kernel consumers can retrieve the narrow ports:</p>
  * <pre>{@code
- * PluginRegistry plugins = context.getDependency(PluginRegistry.class);
- * List&lt;ValidatorPlugin&gt; validators = plugins.getValidators();
+ * YappcProductUnitIntentProvider intents = context.getDependency(YappcProductUnitIntentProvider.class);
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Bridge extension that exposes YAPPC PluginRegistry via the kernel context
+ * @doc.purpose Bridge extension that exposes YAPPC evidence ports via the kernel context
  * @doc.layer adapter
  * @doc.pattern Extension, Bridge
  * @author Ghatana Platform Team
@@ -54,15 +53,31 @@ public final class YappcPluginBridgeExtension extends AbstractKernelExtension {
     private static final String EXTENSION_NAME = "YAPPC Plugin Bridge";
     private static final String EXTENSION_VERSION = "1.0.0";
 
-    private final PluginRegistry pluginRegistry;
+    private final YappcProductUnitIntentProvider productUnitIntentProvider;
+    private final YappcSemanticArtifactEvidenceProvider semanticArtifactEvidenceProvider;
+    private final YappcArtifactGraphSummaryProvider artifactGraphSummaryProvider;
+    private final YappcResidualIslandReportProvider residualIslandReportProvider;
+    private final YappcRiskHotspotReportProvider riskHotspotReportProvider;
 
     /**
-     * Creates the bridge extension backed by the provided YAPPC plugin registry.
-     *
-     * @param pluginRegistry the initialized YAPPC plugin registry — must not be {@code null}
+     * Creates the bridge extension backed by narrow YAPPC provider ports.
      */
-    public YappcPluginBridgeExtension(PluginRegistry pluginRegistry) {
-        this.pluginRegistry = Objects.requireNonNull(pluginRegistry, "PluginRegistry must not be null");
+    public YappcPluginBridgeExtension(
+            YappcProductUnitIntentProvider productUnitIntentProvider,
+            YappcSemanticArtifactEvidenceProvider semanticArtifactEvidenceProvider,
+            YappcArtifactGraphSummaryProvider artifactGraphSummaryProvider,
+            YappcResidualIslandReportProvider residualIslandReportProvider,
+            YappcRiskHotspotReportProvider riskHotspotReportProvider) {
+        this.productUnitIntentProvider =
+            Objects.requireNonNull(productUnitIntentProvider, "productUnitIntentProvider must not be null");
+        this.semanticArtifactEvidenceProvider =
+            Objects.requireNonNull(semanticArtifactEvidenceProvider, "semanticArtifactEvidenceProvider must not be null");
+        this.artifactGraphSummaryProvider =
+            Objects.requireNonNull(artifactGraphSummaryProvider, "artifactGraphSummaryProvider must not be null");
+        this.residualIslandReportProvider =
+            Objects.requireNonNull(residualIslandReportProvider, "residualIslandReportProvider must not be null");
+        this.riskHotspotReportProvider =
+            Objects.requireNonNull(riskHotspotReportProvider, "riskHotspotReportProvider must not be null");
     }
 
     // ==================== KernelExtension identity ====================
@@ -89,16 +104,16 @@ public final class YappcPluginBridgeExtension extends AbstractKernelExtension {
             .withName(EXTENSION_NAME)
             .withVersion(EXTENSION_VERSION)
             .withType(KernelDescriptor.DescriptorType.EXTENSION)
-            .withDescription("Registers YAPPC's PluginRegistry into the kernel context. " +
-                             "YAPPC provides this extension; the kernel receives code-generation capabilities.")
+            .withDescription("Registers narrow YAPPC ProductUnitIntent and artifact-intelligence provider ports. " +
+                             "YAPPC keeps plugin registry internals inside the product boundary.")
             .build();
     }
 
     @Override
     public Set<KernelCapability> getContributedCapabilities() {
         return Set.of(
-            YappcBridgeCapabilities.YAPPC_PLUGIN_REGISTRY,
-            YappcBridgeCapabilities.YAPPC_CODE_VALIDATORS
+            YappcBridgeCapabilities.YAPPC_PRODUCT_UNIT_INTENTS,
+            YappcBridgeCapabilities.YAPPC_ARTIFACT_INTELLIGENCE
         );
     }
 
@@ -111,18 +126,20 @@ public final class YappcPluginBridgeExtension extends AbstractKernelExtension {
 
     @Override
     protected void onInitialize(KernelContext context) {
-        LOG.info("[YappcPluginBridgeExtension] Initializing: registering PluginRegistry into context ({} plugins)",
-            pluginRegistry.getPluginCount());
+        LOG.info("[YappcPluginBridgeExtension] Initializing: registering narrow YAPPC provider ports");
 
-        context.registerService(PluginRegistry.class, pluginRegistry);
+        context.registerService(YappcProductUnitIntentProvider.class, productUnitIntentProvider);
+        context.registerService(YappcSemanticArtifactEvidenceProvider.class, semanticArtifactEvidenceProvider);
+        context.registerService(YappcArtifactGraphSummaryProvider.class, artifactGraphSummaryProvider);
+        context.registerService(YappcResidualIslandReportProvider.class, residualIslandReportProvider);
+        context.registerService(YappcRiskHotspotReportProvider.class, riskHotspotReportProvider);
 
-        LOG.info("[YappcPluginBridgeExtension] PluginRegistry registered successfully");
+        LOG.info("[YappcPluginBridgeExtension] YAPPC provider ports registered successfully");
     }
 
     @Override
     protected void onStart(KernelContext context) {
-        LOG.info("[YappcPluginBridgeExtension] Started — YAPPC plugin bridge active ({} plugins)",
-            pluginRegistry.getPluginCount());
+        LOG.info("[YappcPluginBridgeExtension] Started — YAPPC evidence bridge active");
     }
 
     @Override

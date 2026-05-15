@@ -58,7 +58,7 @@ class PluginContextAdapter implements PluginContext {
         return new PluginInteractionBus() {
             @Override
             public <Req, Res> Promise<Res> request(String targetPluginId, Req request, Class<Res> responseType, Duration timeout) {
-                return Promise.ofException(new UnsupportedOperationException("request not implemented"));
+                return Promise.ofException(new UnsupportedOperationException("request unavailable"));
             }
 
             @Override

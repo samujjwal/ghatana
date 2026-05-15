@@ -19,6 +19,10 @@ const checks = [
   'check-digital-marketing-lifecycle-pilot.mjs',
   'check-kernel-plugin-registry.mjs',
   'check-product-shape-capability-matrix.mjs',
+  'check-kernel-lifecycle-truth.mjs',
+  'check-kernel-provider-mode.mjs',
+  'check-agentic-lifecycle-action-contracts.mjs',
+  'check-yappc-artifact-intelligence-boundary.mjs',
   'check-kernel-yappc-boundary.mjs',
   'check-kernel-product-unit-provider-contracts.mjs',
 ];

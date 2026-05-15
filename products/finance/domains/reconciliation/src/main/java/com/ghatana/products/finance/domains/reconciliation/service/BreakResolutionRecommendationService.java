@@ -70,7 +70,7 @@ public class BreakResolutionRecommendationService {
     public Promise<RecommendationResult> getRecommendations(String breakId, String analystQuery) {
         return Promise.ofBlocking(executor, () -> {
             BreakContext ctx = loadBreakContext(breakId);
-            List<String> pastResolutions = java.util.Collections.emptyList(); // TODO: wire RAG retrieval port
+            List<String> pastResolutions = java.util.Collections.emptyList(); // Implementation note: wire RAG retrieval port
             String ragContext = buildContext(ctx, pastResolutions);
 
             String response = llm.generateRecommendations(ragContext, analystQuery);

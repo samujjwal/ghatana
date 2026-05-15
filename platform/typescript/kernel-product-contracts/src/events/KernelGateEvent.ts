@@ -7,7 +7,7 @@
  * @doc.pattern Event
  */
 
-import type { KernelEventMetadata } from "./KernelLifecycleEvent";
+import type { KernelEventMetadata } from "./KernelLifecycleEvent.js";
 
 /**
  * Gate evaluation event payload.

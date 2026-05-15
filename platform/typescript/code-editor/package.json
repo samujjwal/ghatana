@@ -22,13 +22,17 @@
     "format": "prettier --write src"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "yjs": "^13.6.30"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@types/node": "catalog:",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
@@ -40,9 +44,9 @@
     "vitest": "^4.1.4"
   },
   "peerDependencies": {
+    "monaco-editor": "^0.30.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "monaco-editor": "^0.30.0"
+    "react-dom": "^18.0.0"
   },
   "keywords": [
     "code-editor",

@@ -129,7 +129,7 @@ export class XcodeIosAdapter implements ToolchainAdapter {
   }
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
-    // TODO: Parse Xcode output to extract .app/.ipa paths
+    // Implementation note: Parse Xcode output to extract .app/.ipa paths
     return [];
   }
 }

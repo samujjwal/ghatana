@@ -71,7 +71,7 @@ public class KernelPluginSecurityManager {
 
         // Non-strict mode: allow unsigned plugins in development
         if (!strictMode && !hasSignatureFile(pluginJar)) {
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         try {

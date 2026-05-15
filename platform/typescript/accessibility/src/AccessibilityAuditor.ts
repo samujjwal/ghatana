@@ -48,6 +48,21 @@ import type {
 } from "axe-core";
 import type axe from "axe-core";
 
+type AccessibilityViolation = {
+  id: string;
+  impact: ViolationSeverity | null;
+  description: string;
+  help: string;
+  helpUrl: string;
+  html: string;
+  tags: string[];
+  nodes: Array<{
+    html: string;
+    target: string[];
+    failureSummary?: string;
+  }>;
+};
+
 /**
  * Simple configuration for the auditor
  */

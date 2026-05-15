@@ -225,7 +225,7 @@ public final class PluginInstallHandler {
     /**
      * Hot-swaps runtime feature plugins or reloads storage plugins without restarting the launcher.
      *
-     * <p>This endpoint is disabled by default (returns HTTP 501 Not Implemented) and must be
+     * <p>This endpoint is disabled by default (returns HTTP 501 Unavailable) and must be
      * explicitly enabled via {@link #withPluginUpgradeEnabled(boolean)} before it becomes active.
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {

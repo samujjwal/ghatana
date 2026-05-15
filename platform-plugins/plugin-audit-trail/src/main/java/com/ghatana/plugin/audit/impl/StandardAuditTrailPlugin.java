@@ -77,7 +77,7 @@ public class StandardAuditTrailPlugin implements AuditTrailPlugin {
                 "durability", "non-durable",
                 "supportedExportFormats", List.of("JSON", "CSV", "XML"),
                 "unsupportedExportFormats", List.of("PDF"),
-                "unsupportedExportReason", "PDF export is not implemented in standard variant"
+                "unsupportedExportReason", "PDF export is unavailable in standard variant"
             ))
             .build();
     }

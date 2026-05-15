@@ -59,7 +59,8 @@ if (existsSync(SCAN_CONFIG_PATH)) {
 const args = process.argv.slice(2);
 const PRODUCE_REPORT = args.includes('--report');
 const ALLOWLIST_FLAG = args.find((a) => a.startsWith('--allowlist='));
-const ALLOWLIST_PATH = ALLOWLIST_FLAG ? ALLOWLIST_FLAG.split('=')[1] : null;
+const DEFAULT_ALLOWLIST_PATH = join(REPO_ROOT, 'config', 'production-stubs.allowlist.json');
+const ALLOWLIST_PATH = ALLOWLIST_FLAG ? ALLOWLIST_FLAG.split('=')[1] : DEFAULT_ALLOWLIST_PATH;
 const CHANGED_ONLY = args.includes('--changed-only');
 const BASE_REF_FLAG = args.find((a) => a.startsWith('--base-ref='));
 const BASE_REF = BASE_REF_FLAG ? BASE_REF_FLAG.split('=')[1] : 'origin/main';
@@ -118,18 +119,49 @@ const EXCLUDED_FILENAME_PATTERNS = scanConfig.excludedFilenamePatterns.map((p) =
 
 /** @type {Map<string, { owner: string; expiry: string; reason: string }[]>} */
 const allowlist = new Map();
+const allowlistErrors = [];
 
 if (ALLOWLIST_PATH && existsSync(ALLOWLIST_PATH)) {
   try {
     const raw = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8'));
+    if (!Array.isArray(raw)) {
+      throw new Error('allowlist must be a JSON array');
+    }
     for (const entry of raw) {
+      const validation = validateAllowlistEntry(entry);
+      if (validation.length > 0) {
+        allowlistErrors.push(...validation.map((error) => `${entry?.file ?? '<unknown file>'}: ${error}`));
+        continue;
+      }
       if (!allowlist.has(entry.file)) allowlist.set(entry.file, []);
       allowlist.get(entry.file).push({ owner: entry.owner, expiry: entry.expiry, reason: entry.reason });
     }
-    console.log(`Loaded ${allowlist.size} allowlisted file(s) from ${ALLOWLIST_PATH}`);
+    if (ALLOWLIST_FLAG) {
+      console.log(`Loaded ${allowlist.size} allowlisted file(s) from ${ALLOWLIST_PATH}`);
+    }
   } catch {
-    console.warn(`Warning: could not parse allowlist at ${ALLOWLIST_PATH}`);
+    allowlistErrors.push(`could not parse allowlist at ${ALLOWLIST_PATH}`);
   }
+}
+
+function validateAllowlistEntry(entry) {
+  const errors = [];
+  if (!entry || typeof entry !== 'object') {
+    return ['entry must be an object'];
+  }
+  if (typeof entry.file !== 'string' || entry.file.trim().length === 0) {
+    errors.push('file is required');
+  }
+  if (typeof entry.owner !== 'string' || entry.owner.trim().length === 0) {
+    errors.push('owner is required');
+  }
+  if (typeof entry.reason !== 'string' || entry.reason.trim().length === 0) {
+    errors.push('reason is required');
+  }
+  if (typeof entry.expiry !== 'string' || Number.isNaN(Date.parse(entry.expiry))) {
+    errors.push('expiry must be an ISO date');
+  }
+  return errors;
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +260,19 @@ for (const root of scanRoots) {
 const critical = violations.filter((v) => v.severity === 'critical');
 const warnings = violations.filter((v) => v.severity === 'warning');
 
-if (violations.length === 0) {
+for (const error of allowlistErrors) {
+  critical.push({
+    file: ALLOWLIST_PATH ?? 'allowlist',
+    line: 1,
+    col: 1,
+    patternId: 'INVALID_ALLOWLIST',
+    severity: 'critical',
+    description: 'Production stub allowlist entries require owner, expiry, and reason',
+    text: error,
+  });
+}
+
+if (critical.length === 0 && warnings.length === 0) {
   console.log('✅  No production stub/placeholder violations found.');
   process.exit(0);
 }
@@ -246,7 +290,7 @@ function printViolations(vs) {
 console.log('\n══════════════════════════════════════════════════════════════');
 console.log('  Production Stub / Placeholder Scan Report');
 console.log('══════════════════════════════════════════════════════════════');
-console.log(`  Critical: ${critical.length}   Warnings: ${warnings.length}   Total: ${violations.length}`);
+console.log(`  Critical: ${critical.length}   Warnings: ${warnings.length}   Total: ${critical.length + warnings.length}`);
 
 if (critical.length > 0) {
   console.log('\n── Critical violations (CI will fail) ─────────────────────────');

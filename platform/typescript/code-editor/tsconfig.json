@@ -9,6 +9,11 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "types": ["node"],
+    "strict": false,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
     "noEmit": false
   },
   "include": ["src"],

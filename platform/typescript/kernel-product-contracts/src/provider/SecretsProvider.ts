@@ -7,7 +7,7 @@
  * @doc.pattern Interface
  */
 
-import type { KernelProvider } from "./KernelProvider";
+import type { KernelProvider } from "./KernelProvider.js";
 
 /**
  * Secrets provider for securely accessing deployment secrets.

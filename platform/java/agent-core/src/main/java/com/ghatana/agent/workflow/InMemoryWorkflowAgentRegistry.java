@@ -79,7 +79,7 @@ public class InMemoryWorkflowAgentRegistry implements WorkflowAgentRegistry {
             if (roleAgents != null) {
                 roleAgents.remove(agentId);
             }
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
         return Promise.of(false);
     }

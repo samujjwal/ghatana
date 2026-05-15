@@ -5,7 +5,7 @@ import { PnpmViteReactAdapter } from '../PnpmViteReactAdapter.js';
 import type { ToolchainAdapterContext } from '../../ToolchainAdapter.js';
 import { FakeCommandRunner } from '../../execution/FakeCommandRunner.js';
 
-describe('PnpmViteReactAdapter - Docker artifact generation', () => {
+describe('PnpmViteReactAdapter - static artifact generation', () => {
   let tempDir: string;
   let adapter: PnpmViteReactAdapter;
   let commandRunner: FakeCommandRunner;
@@ -15,8 +15,7 @@ describe('PnpmViteReactAdapter - Docker artifact generation', () => {
     // Provide a FakeCommandRunner to avoid spawning real pnpm/docker binaries.
     // The build step runs pnpm build; we return success so artifact detection logic runs.
     commandRunner = new FakeCommandRunner([
-      { exitCode: 0, stdout: '', stderr: '', durationMs: 50 }, // pnpm build
-      { exitCode: 0, stdout: '', stderr: '', durationMs: 10 }, // docker buildx build
+      { exitCode: 0, stdout: '', stderr: '', durationMs: 50 },
     ]);
     adapter = new PnpmViteReactAdapter({ repoRoot: tempDir, commandRunner });
   });
@@ -25,7 +24,7 @@ describe('PnpmViteReactAdapter - Docker artifact generation', () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it('should detect Dockerfile in package directory', async () => {
+  it('does not build a Docker image when a Dockerfile is present', async () => {
     const packageDir = path.join(tempDir, 'ui');
     await fs.mkdir(packageDir, { recursive: true });
     
@@ -79,13 +78,15 @@ describe('PnpmViteReactAdapter - Docker artifact generation', () => {
     const manifestExists = await fs.access(manifestPath).then(() => true).catch(() => false);
     expect(manifestExists).toBe(true);
 
-    // Verify manifest contains both static-web-bundle and docker-image
+    // Verify manifest contains only the static-web-bundle; container images belong to docker-buildx.
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf-8'));
     expect(manifest.artifacts).toBeDefined();
     
     const artifactTypes = manifest.artifacts.map((a: { metadata: { type: string } }) => a.metadata.type);
     expect(artifactTypes).toContain('static-web-bundle');
-    expect(artifactTypes).toContain('docker-image');
+    expect(artifactTypes).not.toContain('docker-image');
+    expect(commandRunner.invocations).toHaveLength(1);
+    expect(commandRunner.invocations[0].command).toBe('pnpm');
   });
 
   it('should only generate static-web-bundle when no Dockerfile present', async () => {

@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import BuilderStudio from '../sections/BuilderStudio';
 import ThemeStudio from '../sections/ThemeStudio';
 import ComponentPlayground from '../sections/ComponentPlayground';
@@ -106,32 +106,44 @@ describe('@ghatana/ghatana-studio - Section Components', () => {
     });
   });
 
-  describe('AI Review Console', () => {
-    it('should render AI Review Console section with title and button', () => {
+  describe('Agentic Development Review', () => {
+    it('should render governed action proposal context', () => {
       render(<AIReviewConsole />);
-      expect(screen.getByText('AI Review Console')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /load events/i })).toBeInTheDocument();
-      expect(screen.getByText(/review ai operations/i)).toBeInTheDocument();
-      expect(screen.getByText(/no ai events loaded yet/i)).toBeInTheDocument();
+      expect(screen.getByText('Agentic Development Review')).toBeInTheDocument();
+      expect(screen.getByText(/execute-lifecycle-phase/i)).toBeInTheDocument();
+      expect(screen.getByText(/high risk/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /approve proposal/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /reject proposal/i })).toBeInTheDocument();
     });
 
     it('should have proper heading hierarchy', () => {
       const { container } = render(<AIReviewConsole />);
       const heading = container.querySelector('h2');
       expect(heading).toBeInTheDocument();
-      expect(heading?.textContent).toBe('AI Review Console');
+      expect(heading?.textContent).toBe('Agentic Development Review');
     });
 
-    it('should display confidence badge', () => {
+    it('should display evidence confidence, risk, approval, verification, and rollback state', () => {
       render(<AIReviewConsole />);
-      expect(screen.getByText(/sample confidence display/i)).toBeInTheDocument();
-      // ConfidenceBadge should render with confidence score
-      expect(screen.getByText(/85%/i)).toBeInTheDocument();
+      expect(screen.getByText('ProductUnitIntent')).toBeInTheDocument();
+      expect(screen.getByText(/94%/i)).toBeInTheDocument();
+      expect(screen.getByText('Policy')).toBeInTheDocument();
+      expect(screen.getByText('Mastery')).toBeInTheDocument();
+      expect(screen.getByText('Approval')).toBeInTheDocument();
+      expect(screen.getByText('Rollback')).toBeInTheDocument();
+      expect(screen.getByText(/policy, health/i)).toBeInTheDocument();
+      expect(screen.getByText(/product-owner, release-captain/i)).toBeInTheDocument();
     });
 
-    it('should display empty state message', () => {
+    it('should support approve and reject audit trail decisions', () => {
       render(<AIReviewConsole />);
-      expect(screen.getByText(/load telemetry data to begin review/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /approve proposal/i }));
+      expect(screen.getByText('Proposal approved')).toBeInTheDocument();
+      expect(screen.getAllByText('approved').length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getByRole('button', { name: /reject proposal/i }));
+      expect(screen.getByText('Proposal rejected')).toBeInTheDocument();
+      expect(screen.getAllByText('rejected').length).toBeGreaterThan(0);
     });
   });
 

@@ -1,13 +1,7 @@
 # Ghatana Studio
 
-Unified maintainer app combining all Phase 6 platform tools:
-- Builder Studio
-- Theme Studio
-- Component Playground
-- Canvas Diagnostics
-- AI Review Console
-- Import/Migration Lab
-- Preview Lab
+Unified Ghatana Studio experience for ideation, blueprinting, development,
+lifecycle execution, deployment, health, learning, and evolution.
 
 ## Development
 
@@ -30,26 +24,12 @@ pnpm lint
 
 ## Features
 
-### Builder Studio
-Create and edit BuilderDocument instances with the UI Builder platform.
+### Unified Navigation
 
-### Theme Studio
-Materialize and customize design system presets with brand overrides.
-
-### Component Playground
-Explore and test design system components with live prop editing.
-
-### Canvas Diagnostics
-Inspect canvas plugins, node types, and telemetry events.
-
-### AI Review Console
-Review AI operations, confidence scores, and human-in-the-loop decisions.
-
-### Import/Migration Lab
-Test code import from JSON, TSX, and HTML with ownership-aware reconciliation.
-
-### Preview Lab
-Test preview sandbox with device emulation, CSP validation, and trust checks.
+Studio uses canonical customer-facing navigation: Home, Ideas, Blueprints,
+Canvas, Develop, Lifecycle, Agents, Artifacts, Deployments, Health, Learn, and
+Settings. The navigation metadata lives in `src/navigation/studioNavigation.ts`
+with route ownership, capability, visibility, and route status.
 
 ## Architecture
 

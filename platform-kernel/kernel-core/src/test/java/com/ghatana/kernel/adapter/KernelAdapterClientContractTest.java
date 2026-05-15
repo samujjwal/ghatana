@@ -2,16 +2,11 @@ package com.ghatana.kernel.adapter;
 
 import com.ghatana.kernel.adapter.aep.AepKernelAdapter;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapterImpl;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
-import com.ghatana.kernel.adapter.datacloud.DataResult;
-import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
-import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -20,92 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Kernel adapter client contracts")
 class KernelAdapterClientContractTest extends EventloopTestBase {
-
-    @Test
-    @DisplayName("DataCloud adapter client exposes AsyncClient lifecycle defaults")
-    void dataCloudClientExposesAsyncClientDefaults() { 
-        DataCloudKernelAdapterImpl.DataCloudClient client = new DataCloudKernelAdapterImpl.DataCloudClient() { 
-            @Override
-            public CompletableFuture<DataResult> read(String datasetId, String recordId, Map<String, String> options) { 
-                return CompletableFuture.completedFuture(new DataResult(recordId, new byte[0], Map.of(), Instant.now().toEpochMilli())); 
-            }
-
-            @Override
-            public CompletableFuture<Void> write(String datasetId, String recordId, byte[] data, Map<String, String> metadata) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<Void> delete(String datasetId, String recordId) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<List<DataResult>> query(String datasetId, String query, Map<String, Object> params, int limit, int offset) { 
-                return CompletableFuture.completedFuture(List.of()); 
-            }
-
-            @Override
-            public CompletableFuture<Void> createDataset(String datasetId, Map<String, String> schema, Map<String, String> options) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<SchemaInfo> getSchema(String datasetId) { 
-                return CompletableFuture.completedFuture(new SchemaInfo(datasetId, Map.of(), Instant.now().toEpochMilli(), Instant.now().toEpochMilli())); 
-            }
-
-            @Override
-            public CompletableFuture<List<DatasetInfo>> listDatasets() { 
-                return CompletableFuture.completedFuture(List.of()); 
-            }
-
-            @Override
-            public CompletableFuture<Object> beginTransaction() { 
-                return CompletableFuture.completedFuture("tx-1");
-            }
-
-            @Override
-            public CompletableFuture<Void> commitTransaction(Object transaction) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<Void> rollbackTransaction(Object transaction) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options) { 
-                return CompletableFuture.completedFuture("read-stream");
-            }
-
-            @Override
-            public CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options) { 
-                return CompletableFuture.completedFuture("write-stream");
-            }
-
-            @Override
-            public CompletableFuture<byte[]> readStreamChunk(Object stream) { 
-                return CompletableFuture.completedFuture(new byte[0]); 
-            }
-
-            @Override
-            public CompletableFuture<Void> writeStreamChunk(Object stream, byte[] data) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-
-            @Override
-            public CompletableFuture<Void> closeStream(Object stream) { 
-                return CompletableFuture.completedFuture(null); 
-            }
-        };
-
-        runPromise(client::start); 
-        assertThat(runPromise(client::healthCheck)).isTrue(); 
-        assertThat(client.isRunning()).isTrue(); 
-        runPromise(client::stop); 
-    }
 
     @Test
     @DisplayName("AEP adapter client exposes AsyncClient lifecycle defaults")

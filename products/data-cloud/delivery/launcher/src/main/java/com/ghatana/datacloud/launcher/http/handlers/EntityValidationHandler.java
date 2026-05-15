@@ -27,7 +27,7 @@ import java.util.Optional;
  * .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities)
  * }</pre>
  *
- * <p>Returns {@code 501 Not Implemented} when no {@link EntitySchemaValidator} is
+ * <p>Returns {@code 501 Unavailable} when no {@link EntitySchemaValidator} is
  * configured.
  *
  * @doc.type    class

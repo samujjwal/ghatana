@@ -283,11 +283,11 @@ class PhrKernelModuleTest extends EventloopTestBase {
                         @Override public Promise<Void> deleteData(com.ghatana.kernel.adapter.datacloud.DataDeleteRequest r) { return Promise.complete(); }
                         @Override public Promise<com.ghatana.kernel.adapter.datacloud.QueryResult> queryData(com.ghatana.kernel.adapter.datacloud.DataQueryRequest r) { return Promise.of(new com.ghatana.kernel.adapter.datacloud.QueryResult(java.util.List.of(), 0, false)); }
                         @Override public Promise<Void> createSchema(com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest r) { return Promise.complete(); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.SchemaInfo> getSchema(String datasetId) { return Promise.of(null); }
-                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DatasetInfo>> listDatasets() { return Promise.of(java.util.List.of()); }
-                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.TransactionHandle> beginTransaction() { return Promise.of(null); }
-                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
-                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.SchemaInfo> getSchema(com.ghatana.kernel.bridge.port.BridgeContext c, String datasetId) { return Promise.of(null); }
+                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DatasetInfo>> listDatasets(com.ghatana.kernel.bridge.port.BridgeContext c) { return Promise.of(java.util.List.of()); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.TransactionHandle> beginTransaction(com.ghatana.kernel.bridge.port.BridgeContext c) { return Promise.of(null); }
+                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.bridge.port.BridgeContext c, com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.bridge.port.BridgeContext c, com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
                         @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataStream> openStream(com.ghatana.kernel.adapter.datacloud.DataStreamRequest r) { return Promise.of(null); }
                     });
                 }

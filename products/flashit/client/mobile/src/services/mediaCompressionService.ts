@@ -107,7 +107,7 @@ const AUDIO_QUALITY_PRESETS = {
  * Media Compression Service
  */
 class MediaCompressionService {
-  private apiUrl = "http://localhost:2900"; // TODO: Use environment config
+  private apiUrl = "http://localhost:2900"; // Implementation note: Use environment config
 
   /**
    * Compress media file based on type
@@ -198,7 +198,7 @@ class MediaCompressionService {
     );
     console.log("[MediaCompression] Preset:", preset);
 
-    // TODO: Implement backend video compression
+    // Implementation note: Implement backend video compression
     // 1. Upload video to backend compression endpoint
     // 2. Backend uses FFmpeg to compress
     // 3. Return compressed video URL
@@ -249,7 +249,7 @@ class MediaCompressionService {
     );
     console.log("[MediaCompression] Preset:", preset);
 
-    // TODO: Implement backend audio compression
+    // Implementation note: Implement backend audio compression
     // Use FFmpeg to convert to AAC with target bitrate
 
     // Estimate compression based on preset

@@ -11,58 +11,27 @@
  * @doc.pattern Command
  */
 
-import type { ProductUnitKind } from "./ProductUnitKind";
-import { isProductUnitKind } from "./ProductUnitKind";
-import type { ProductUnitSurface } from "./ProductUnitSurface";
+import { z } from "zod";
+import type { ProductLifecyclePhase } from "../lifecycle/ProductLifecyclePhase";
 import {
-  isImplementationStatus,
-  isProductUnitSurfaceType,
-} from "./ProductUnitSurface";
+  ProductUnitDraftSchema,
+  ProductUnitScopeSchema,
+  type ProductUnitDraft,
+  type ProductUnitScope,
+} from "./ProductUnit.js";
+
+export type { ProductUnitDraft, ProductUnitScope };
 
 /**
  * The type of producer that created the ProductUnitIntent.
  */
 export type ProducerType = "yappc" | "api" | "cli" | "manual" | "external";
 
-/**
- * A draft ProductUnit for creation or update.
- */
-export interface ProductUnitDraft {
-  /**
-   * Unique identifier for the ProductUnit.
-   */
-  readonly id: string;
+export type ProductUnitIntentType = "create" | "update" | "promote-candidate";
 
-  /**
-   * Human-readable name of the ProductUnit.
-   */
-  readonly name: string;
+export type ProductUnitPrivacyLevel = "public" | "internal" | "confidential" | "restricted";
 
-  /**
-   * Kind of ProductUnit.
-   */
-  readonly kind: ProductUnitKind;
-
-  /**
-   * Owner or team responsible for the ProductUnit.
-   */
-  readonly owner?: string;
-
-  /**
-   * Deployable surfaces within this ProductUnit.
-   */
-  readonly surfaces: readonly ProductUnitSurface[];
-
-  /**
-   * Lifecycle profile name.
-   */
-  readonly lifecycleProfile?: string;
-
-  /**
-   * Additional metadata for the ProductUnit.
-   */
-  readonly metadata?: Record<string, unknown>;
-}
+export type ProductUnitDataSensitivity = "none" | "low" | "moderate" | "high" | "regulated";
 
 /**
  * Target providers for the ProductUnit.
@@ -112,6 +81,30 @@ export interface RequestedLifecycle {
    * Whether to enable lifecycle execution.
    */
   readonly enableExecution: boolean;
+
+  /**
+   * Requested lifecycle phases.
+   */
+  readonly phases?: readonly ProductLifecyclePhase[];
+}
+
+export interface ProductUnitGovernanceHints {
+  readonly privacyLevel?: ProductUnitPrivacyLevel;
+  readonly evidencePrivacyClassification?: ProductUnitPrivacyLevel;
+  readonly regulatedDomain?: string;
+  readonly requiresHumanApproval?: boolean;
+  readonly requiredPolicyPacks?: readonly string[];
+  readonly dataSensitivity?: ProductUnitDataSensitivity;
+  readonly retentionPolicyId?: string;
+  readonly retentionDays?: number;
+}
+
+export interface IntentProvenance {
+  readonly sourceSystem: ProducerType;
+  readonly sourceArtifactRefs: readonly string[];
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly evidenceRefs?: readonly string[];
 }
 
 /**
@@ -130,6 +123,16 @@ export interface ProductUnitIntent {
    * Unique identifier for this intent.
    */
   readonly intentId: string;
+
+  /**
+   * Intent operation type.
+   */
+  readonly intentType: ProductUnitIntentType;
+
+  /**
+   * Tenant/workspace/project scope for this requested ProductUnit change.
+   */
+  readonly scope: ProductUnitScope;
 
   /**
    * Producer that created this intent.
@@ -154,12 +157,12 @@ export interface ProductUnitIntent {
   /**
    * Optional governance hints for Kernel gate/provider selection.
    */
-  readonly governanceHints?: Record<string, unknown>;
+  readonly governanceHints?: ProductUnitGovernanceHints;
 
   /**
    * Optional provenance information. Must not contain raw secrets.
    */
-  readonly provenance?: Record<string, unknown>;
+  readonly provenance?: IntentProvenance;
 }
 
 const PRODUCER_TYPES: readonly ProducerType[] = [
@@ -169,6 +172,44 @@ const PRODUCER_TYPES: readonly ProducerType[] = [
   "manual",
   "external",
 ];
+
+const INTENT_TYPES = [
+  "create",
+  "update",
+  "promote-candidate",
+] as const satisfies readonly ProductUnitIntentType[];
+
+const PRODUCT_LIFECYCLE_PHASES = [
+  "create",
+  "bootstrap",
+  "dev",
+  "validate",
+  "test",
+  "build",
+  "package",
+  "release",
+  "deploy",
+  "verify",
+  "promote",
+  "rollback",
+  "operate",
+  "retire",
+] as const satisfies readonly ProductLifecyclePhase[];
+
+const PRIVACY_LEVELS = [
+  "public",
+  "internal",
+  "confidential",
+  "restricted",
+] as const satisfies readonly ProductUnitPrivacyLevel[];
+
+const DATA_SENSITIVITY_LEVELS = [
+  "none",
+  "low",
+  "moderate",
+  "high",
+  "regulated",
+] as const satisfies readonly ProductUnitDataSensitivity[];
 
 const SECRET_KEY_PATTERN = /(secret|password|token|api[-_]?key|credential)/i;
 
@@ -193,87 +234,154 @@ function hasSecretLikeField(value: unknown): boolean {
   });
 }
 
+export const ProducerSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    type: z.enum(PRODUCER_TYPES),
+    correlationId: z.string().trim().min(1),
+  })
+  .strict();
+
+export const TargetProvidersSchema = z
+  .object({
+    registryProvider: z.string().trim().min(1),
+    sourceProvider: z.string().trim().min(1),
+  })
+  .strict();
+
+export const RequestedLifecycleSchema = z
+  .object({
+    profile: z.string().trim().min(1),
+    enableExecution: z.boolean(),
+    phases: z.array(z.enum(PRODUCT_LIFECYCLE_PHASES)).optional(),
+  })
+  .strict();
+
+export const ProductUnitGovernanceHintsSchema = z
+  .object({
+    privacyLevel: z.enum(PRIVACY_LEVELS).optional(),
+    evidencePrivacyClassification: z.enum(PRIVACY_LEVELS).optional(),
+    regulatedDomain: z.string().trim().min(1).optional(),
+    requiresHumanApproval: z.boolean().optional(),
+    requiredPolicyPacks: z.array(z.string().trim().min(1)).optional(),
+    dataSensitivity: z.enum(DATA_SENSITIVITY_LEVELS).optional(),
+    retentionPolicyId: z.string().trim().min(1).optional(),
+    retentionDays: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
+export const IntentProvenanceSchema = z
+  .object({
+    sourceSystem: z.enum(PRODUCER_TYPES),
+    sourceArtifactRefs: z.array(z.string().trim().min(1)),
+    createdBy: z.string().trim().min(1),
+    createdAt: z.string().datetime({ offset: true }),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
+export const ProductUnitIntentSchema = z
+  .object({
+    schemaVersion: z.literal("1.0.0"),
+    intentId: z.string().trim().min(1),
+    intentType: z.enum(INTENT_TYPES),
+    scope: ProductUnitScopeSchema,
+    producer: ProducerSchema,
+    target: TargetProvidersSchema,
+    productUnit: ProductUnitDraftSchema.extend({
+      surfaces: ProductUnitDraftSchema.shape.surfaces.min(1),
+    }),
+    requestedLifecycle: RequestedLifecycleSchema.optional(),
+    governanceHints: ProductUnitGovernanceHintsSchema.optional(),
+    provenance: IntentProvenanceSchema.optional(),
+  })
+  .strict()
+  .superRefine((intent, context) => {
+    if (hasSecretLikeField(intent)) {
+      context.addIssue({
+        code: "custom",
+        message: "ProductUnitIntent must not include raw secret-like fields",
+      });
+    }
+  });
+
+function formatProductUnitIntentIssue(issue: z.ZodIssue): string {
+  const path = issue.path.join(".");
+  if (path === "schemaVersion") {
+    return 'schemaVersion must be "1.0.0"';
+  }
+  if (path === "intentId") {
+    return "intentId must be a non-empty string";
+  }
+  if (path === "intentType") {
+    return "intentType is not supported";
+  }
+  if (path === "scope") {
+    return "scope must be an object";
+  }
+  if (path === "producer") {
+    return "producer must be an object";
+  }
+  if (path === "producer.id") {
+    return "producer.id must be a non-empty string";
+  }
+  if (path === "producer.type") {
+    return "producer.type is not supported";
+  }
+  if (path === "producer.correlationId") {
+    return "producer.correlationId must be a non-empty string";
+  }
+  if (path === "target") {
+    return "target must be an object";
+  }
+  if (path === "target.registryProvider") {
+    return "target.registryProvider must be a non-empty string";
+  }
+  if (path === "target.sourceProvider") {
+    return "target.sourceProvider must be a non-empty string";
+  }
+  if (path === "productUnit") {
+    return "productUnit must be an object";
+  }
+  if (path === "productUnit.kind") {
+    return "productUnit.kind is not a known ProductUnit kind";
+  }
+  if (path === "productUnit.surfaces") {
+    return "productUnit.surfaces must contain at least one surface";
+  }
+  if (/^productUnit\.surfaces\.\d+\.type$/.test(path)) {
+    const index = path.split(".")[2];
+    return `productUnit.surfaces[${index}].type is not supported`;
+  }
+  if (/^productUnit\.surfaces\.\d+\.implementationStatus$/.test(path)) {
+    const index = path.split(".")[2];
+    return `productUnit.surfaces[${index}].implementationStatus is not supported`;
+  }
+  if (path === "governanceHints.evidencePrivacyClassification") {
+    return "governanceHints.evidencePrivacyClassification is invalid";
+  }
+  if (path === "governanceHints.retentionPolicyId") {
+    return "governanceHints.retentionPolicyId must be a non-empty string";
+  }
+  if (path === "governanceHints.retentionDays") {
+    return "governanceHints.retentionDays must be non-negative";
+  }
+  return issue.message;
+}
+
 export function validateProductUnitIntent(
   value: unknown
 ): ProductUnitIntentValidationResult {
-  const errors: string[] = [];
-
   if (typeof value !== "object" || value === null) {
     return { valid: false, errors: ["ProductUnitIntent must be an object"] };
   }
 
-  const intent = value as Record<string, unknown>;
-  const producer = intent.producer as Record<string, unknown> | undefined;
-  const target = intent.target as Record<string, unknown> | undefined;
-  const productUnit = intent.productUnit as Record<string, unknown> | undefined;
-
-  if (intent.schemaVersion !== "1.0.0") {
-    errors.push('schemaVersion must be "1.0.0"');
-  }
-  if (typeof intent.intentId !== "string" || intent.intentId.trim().length === 0) {
-    errors.push("intentId must be a non-empty string");
-  }
-  if (typeof producer !== "object" || producer === null) {
-    errors.push("producer must be an object");
-  } else {
-    if (typeof producer.id !== "string" || producer.id.trim().length === 0) {
-      errors.push("producer.id must be a non-empty string");
-    }
-    if (!PRODUCER_TYPES.includes(producer.type as ProducerType)) {
-      errors.push("producer.type is not supported");
-    }
-    if (
-      typeof producer.correlationId !== "string" ||
-      producer.correlationId.trim().length === 0
-    ) {
-      errors.push("producer.correlationId must be a non-empty string");
-    }
-  }
-  if (typeof target !== "object" || target === null) {
-    errors.push("target must be an object");
-  } else {
-    if (
-      typeof target.registryProvider !== "string" ||
-      target.registryProvider.trim().length === 0
-    ) {
-      errors.push("target.registryProvider must be a non-empty string");
-    }
-    if (
-      typeof target.sourceProvider !== "string" ||
-      target.sourceProvider.trim().length === 0
-    ) {
-      errors.push("target.sourceProvider must be a non-empty string");
-    }
-  }
-  if (typeof productUnit !== "object" || productUnit === null) {
-    errors.push("productUnit must be an object");
-  } else {
-    if (!isProductUnitKind(productUnit.kind)) {
-      errors.push("productUnit.kind is not a known ProductUnit kind");
-    }
-    if (!Array.isArray(productUnit.surfaces) || productUnit.surfaces.length === 0) {
-      errors.push("productUnit.surfaces must contain at least one surface");
-    } else {
-      productUnit.surfaces.forEach((surface, index) => {
-        if (typeof surface !== "object" || surface === null) {
-          errors.push(`productUnit.surfaces[${index}] must be an object`);
-          return;
-        }
-        const surfaceRecord = surface as Record<string, unknown>;
-        if (!isProductUnitSurfaceType(surfaceRecord.type)) {
-          errors.push(`productUnit.surfaces[${index}].type is not supported`);
-        }
-        if (!isImplementationStatus(surfaceRecord.implementationStatus)) {
-          errors.push(
-            `productUnit.surfaces[${index}].implementationStatus is not supported`
-          );
-        }
-      });
-    }
-  }
-  if (hasSecretLikeField(value)) {
-    errors.push("ProductUnitIntent must not include raw secret-like fields");
-  }
+  const parsed = ProductUnitIntentSchema.safeParse(value);
+  const errors = parsed.success
+    ? []
+    : parsed.error.issues.map((issue: z.ZodIssue) =>
+        formatProductUnitIntentIssue(issue)
+      );
 
   return { valid: errors.length === 0, errors };
 }

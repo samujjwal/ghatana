@@ -197,7 +197,7 @@ public class HttpDataCloudClient extends ManagedDataCloudClient {
 
             @Override
             public String getMessage() {
-                return "HTTP client transport is not implemented";
+                return "HTTP client transport is unavailable";
             }
         });
     }

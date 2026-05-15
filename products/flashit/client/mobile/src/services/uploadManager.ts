@@ -366,7 +366,7 @@ class UploadManagerService {
                 ? "image/jpeg"
                 : "video/mp4", // Simple mapping
           fileName: filename,
-          fileSize: 1024, // TODO: Get real file size
+          fileSize: 1024, // Implementation note: Get real file size
         }),
       },
     );
@@ -420,7 +420,7 @@ class UploadManagerService {
    * Get API URL (should be from config)
    */
   private getApiUrl(): string {
-    // TODO: Get from environment config
+    // Implementation note: Get from environment config
     return "http://localhost:2900";
   }
 

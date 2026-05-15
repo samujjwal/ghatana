@@ -486,7 +486,7 @@ public class DataCloudHttpServer {
      *       for matching entity changes.</li>
      * </ul>
      *
-     * <p>When this method is not called, both routes return {@code 501 Not Implemented}.
+     * <p>When this method is not called, both routes return {@code 501 Unavailable}.
      *
      * @param connector the OpenSearch connector; must not be {@code null}
      * @return {@code this} for method chaining
@@ -1028,7 +1028,7 @@ public class DataCloudHttpServer {
      *
      * <p>Valid values: {@code local}, {@code development}, {@code staging}, {@code production}.
      * The mode is exposed via capability snapshot so the UI can warn when using
-     * in-memory fallbacks or demo data.
+     * in-memory fallbacks or local data.
      *
      * @param mode deployment mode label
      * @return {@code this} for method chaining

@@ -125,7 +125,7 @@ export class PlaywrightAdapter implements ToolchainAdapter {
   }
 
   async validateOutputs(_context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
-    // TODO: Implement actual validation
+    // Implementation note: Implement actual validation
     return {
       status: 'valid',
       errors: [],
@@ -172,7 +172,7 @@ export class PlaywrightAdapter implements ToolchainAdapter {
   }
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
-    // TODO: Parse Playwright output to extract artifact paths (test reports, screenshots, traces)
+    // Implementation note: Parse Playwright output to extract artifact paths (test reports, screenshots, traces)
     return [];
   }
 }

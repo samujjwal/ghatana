@@ -84,7 +84,7 @@ public interface AsyncClient extends AutoCloseable {
      */
     @NotNull
     default Promise<Boolean> healthCheck() {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**

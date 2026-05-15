@@ -1,7 +1,10 @@
 package com.ghatana.datacloud.kernel;
 
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
+import com.ghatana.kernel.bridge.port.BridgeContext;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
@@ -57,14 +60,27 @@ public final class DataCloudKernelExtension extends AbstractKernelExtension {
     private static final String EXTENSION_VERSION = "1.0.0";
 
     private final DataCloudKernelAdapterImpl.DataCloudClient client;
+    private final BridgeAuthorizationService authorizationService;
+    private final BridgeAuditEmitter auditEmitter;
+    private final BridgeHealthIndicator healthIndicator;
+    private final TenantBridgeContextResolver tenantContextResolver;
 
     /**
-     * Creates the bridge extension backed by the provided Data-Cloud client.
+     * Creates the bridge extension backed by the provided Data-Cloud ports.
      *
      * @param client the Data-Cloud client implementation — must not be {@code null}
      */
-    public DataCloudKernelExtension(DataCloudKernelAdapterImpl.DataCloudClient client) {
+    public DataCloudKernelExtension(
+            DataCloudKernelAdapterImpl.DataCloudClient client,
+            BridgeAuthorizationService authorizationService,
+            BridgeAuditEmitter auditEmitter,
+            BridgeHealthIndicator healthIndicator,
+            TenantBridgeContextResolver tenantContextResolver) {
         this.client = Objects.requireNonNull(client, "DataCloud client must not be null");
+        this.authorizationService = Objects.requireNonNull(authorizationService, "authorizationService must not be null");
+        this.auditEmitter = Objects.requireNonNull(auditEmitter, "auditEmitter must not be null");
+        this.healthIndicator = Objects.requireNonNull(healthIndicator, "healthIndicator must not be null");
+        this.tenantContextResolver = Objects.requireNonNull(tenantContextResolver, "tenantContextResolver must not be null");
     }
 
     // ==================== KernelExtension identity ====================
@@ -116,20 +132,61 @@ public final class DataCloudKernelExtension extends AbstractKernelExtension {
     @Override
     protected void onInitialize(KernelContext context) {
         LOG.info("[DataCloudKernelExtension] Initializing: registering DataCloudKernelAdapter into context");
+        BridgeContext bridgeContext = tenantContextResolver.resolve(context);
+        healthIndicator.reportHealthy(EXTENSION_ID + ":initializing:" + bridgeContext.getTenantId());
 
-        DataCloudKernelAdapterImpl adapter = new DataCloudKernelAdapterImpl(client);
+        DataCloudKernelAdapterImpl adapter = new DataCloudKernelAdapterImpl(
+            client,
+            authorizationService,
+            auditEmitter,
+            healthIndicator);
         context.registerService(DataCloudKernelAdapter.class, adapter);
+        registerPlatformProviders(context, bridgeContext, adapter);
 
         LOG.info("[DataCloudKernelExtension] DataCloudKernelAdapter registered successfully");
     }
 
     @Override
     protected void onStart(KernelContext context) {
+        BridgeContext bridgeContext = tenantContextResolver.resolve(context);
+        healthIndicator.reportHealthy(EXTENSION_ID + ":started:" + bridgeContext.getTenantId());
         LOG.info("[DataCloudKernelExtension] Started — Data-Cloud storage capabilities active");
     }
 
     @Override
     protected void onStop(KernelContext context) {
+        BridgeContext bridgeContext = tenantContextResolver.resolve(context);
+        healthIndicator.reportDegraded(EXTENSION_ID, "stopped for tenant " + bridgeContext.getTenantId());
         LOG.info("[DataCloudKernelExtension] Stopping — Data-Cloud storage capabilities removed");
+    }
+
+    private void registerPlatformProviders(
+            KernelContext context,
+            BridgeContext bridgeContext,
+            DataCloudKernelAdapter adapter) {
+        context.registerService(DataCloudEventProvider.class, new DataCloudEventProvider(adapter, bridgeContext));
+        context.registerService(DataCloudArtifactProvider.class, new DataCloudArtifactProvider(adapter, bridgeContext));
+        context.registerService(DataCloudHealthProvider.class, new DataCloudHealthProvider(adapter, bridgeContext));
+        context.registerService(DataCloudProvenanceProvider.class, new DataCloudProvenanceProvider(adapter, bridgeContext));
+        context.registerService(DataCloudMemoryProvider.class, new DataCloudMemoryProvider(adapter, bridgeContext));
+        context.registerService(DataCloudKnowledgeProvider.class, new DataCloudKnowledgeProvider(adapter, bridgeContext));
+        context.registerService(DataCloudRuntimeTruthProvider.class, new DataCloudRuntimeTruthProvider(adapter, bridgeContext));
+        context.registerService(
+            DataCloudPolicyEvidenceProvider.class,
+            new DataCloudPolicyEvidenceProvider(adapter, bridgeContext));
+        healthIndicator.reportHealthy(EXTENSION_ID + ":providers:" + bridgeContext.getTenantId());
+    }
+
+    /**
+     * Resolves the platform tenant scope used when registering Data Cloud bridge providers.
+     *
+     * @doc.type interface
+     * @doc.purpose Product-side resolver that converts KernelContext into BridgeContext
+     * @doc.layer adapter
+     * @doc.pattern Port
+     */
+    @FunctionalInterface
+    public interface TenantBridgeContextResolver {
+        BridgeContext resolve(KernelContext context);
     }
 }

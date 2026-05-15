@@ -91,7 +91,7 @@ public interface ConnectionManager<T> {
      */
     @NotNull
     default Promise<Boolean> validateConnection(@NotNull T connection) {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**

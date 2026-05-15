@@ -25,6 +25,7 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.featureflag.FeatureFlagPlugin;
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import static com.ghatana.plugin.consent.ConsentPlugin.ConsentAction;
@@ -81,6 +82,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
     private RecordingAuditTrailPlugin auditTrailPlugin;
     private InMemoryRiskPlugin riskPlugin;
     private InMemoryNotificationPlugin notificationPlugin;
+    private InMemoryFeatureFlagPlugin featureFlagPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private DmOperationContext ctx;
@@ -94,6 +96,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         auditTrailPlugin = new RecordingAuditTrailPlugin();
         riskPlugin = new InMemoryRiskPlugin();
         notificationPlugin = new InMemoryNotificationPlugin();
+        featureFlagPlugin = new InMemoryFeatureFlagPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -103,7 +106,9 @@ class KernelBridgeWiringIT extends EventloopTestBase {
             approvalPlugin,
             auditTrailPlugin,
             riskPlugin,
-            notificationPlugin
+            notificationPlugin,
+            featureFlagPlugin,
+            false
         );
 
         ctx = DmOperationContext.builder()
@@ -336,6 +341,35 @@ class KernelBridgeWiringIT extends EventloopTestBase {
 
         @Override
         public void reportUnhealthy(String bridgeId, String reason) { }
+    }
+
+    private static final class InMemoryFeatureFlagPlugin implements FeatureFlagPlugin {
+        private final Map<String, Boolean> flags = new ConcurrentHashMap<>();
+
+        @Override
+        public Promise<Boolean> isEnabled(String flagKey, String tenantId) {
+            return Promise.of(flags.getOrDefault(tenantId + "|" + flagKey, Boolean.FALSE));
+        }
+
+        @Override
+        public Promise<String> getString(String flagKey, String tenantId, String defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Integer> getInt(String flagKey, String tenantId, int defaultValue) {
+            return Promise.of(defaultValue);
+        }
+
+        @Override
+        public Promise<Boolean> getBoolean(String flagKey, String tenantId, boolean defaultValue) {
+            return Promise.of(flags.getOrDefault(tenantId + "|" + flagKey, defaultValue));
+        }
+
+        @Override
+        public Promise<Map<String, Object>> getAllFlags(String tenantId) {
+            return Promise.of(Map.of());
+        }
     }
 
     private static final class InMemoryConsentPlugin implements ConsentPlugin {

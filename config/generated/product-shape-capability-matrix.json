@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-14T05:37:49.775Z",
+  "generated": "2026-05-15T00:06:47.866Z",
   "matrix": [
     {
       "productId": "audio-video",
@@ -10,15 +10,41 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "artifact-retention",
+        "content-safety",
+        "i18n",
+        "media-privacy",
+        "privacy",
+        "security"
+      ],
       "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined"
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed",
+        "requires-lifecycle-profile",
+        "requires-product-owner-executable-surface-definition"
+      ],
+      "nextActions": [
+        "Define executable Audio-Video surfaces before adding lifecycle configs",
+        "Add media artifact and retention evidence before enabling lifecycle execution",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [
+        "products/audio-video/docs-generated/01-vision-plan-requirements/02-capability-map.md"
       ],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "aura",
@@ -28,15 +54,42 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "demo-scope-review",
+        "explainability-evidence",
+        "i18n",
+        "privacy",
+        "recommendation-safety",
+        "security"
+      ],
       "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined"
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "demo-product-not-execution-ready",
+        "disabled-observed",
+        "requires-lifecycle-profile",
+        "requires-product-owner-executable-surface-definition"
+      ],
+      "nextActions": [
+        "Keep Aura disabled until product owners define executable lifecycle surfaces",
+        "Add recommendation safety and explainability evidence before lifecycle execution",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [
+        "products/aura/platform/api"
       ],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "data-cloud",
@@ -46,19 +99,43 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "bootstrap-build-without-platform-providers",
+        "i18n",
+        "platform-provider-health",
+        "privacy",
+        "runtime-truth-provider",
+        "security"
+      ],
       "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined",
-        "unknown-adapter:undefined",
-        "unknown-adapter:undefined"
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed",
+        "platform-provider-mode-required",
+        "requires-bootstrap-platform-separation",
+        "requires-runtime-truth-provider"
+      ],
+      "nextActions": [
+        "Declare Data Cloud lifecycle profile only after bootstrap build/deploy remains independent of Data Cloud providers",
+        "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed",
+        "Wire platform-mode provider bridge before enabling lifecycle execution"
+      ],
+      "readinessEvidence": [
+        "products/data-cloud/extensions/kernel-bridge",
+        "products/data-cloud/planes/action/kernel-bridge"
       ],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
-        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json",
-        "Adapter \"undefined\" for surface \"sdk\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "dcmaar",
@@ -68,17 +145,42 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "guardian-policy",
+        "i18n",
+        "privacy",
+        "security",
+        "security-review",
+        "threat-model"
+      ],
       "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined",
-        "unknown-adapter:undefined"
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed",
+        "requires-lifecycle-profile",
+        "requires-product-owner-executable-surface-definition",
+        "requires-security-threat-model-gates"
+      ],
+      "nextActions": [
+        "Define DCMAAR executable backend and web surfaces before adding lifecycle configs",
+        "Add threat-model and Guardian policy evidence before enabling lifecycle execution",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [
+        "products/dcmaar/libs/java/guardian-threat-service"
       ],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
-        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "digital-marketing",
@@ -88,12 +190,65 @@
       "lifecycleStatus": "enabled",
       "shapeValidationMode": "execution",
       "profileStatus": "stable",
+      "requiredAdapters": [
+        "compose-local",
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "pnpm-vite-react",
+          "surfaceType": "web",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "compose-local",
+          "surfaceType": "deploy.local",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [],
+      "missingProviders": [
+        "platform-artifacts",
+        "platform-events",
+        "platform-health"
+      ],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "deploy:compose-local",
         "web:pnpm-vite-react"
       ],
       "capabilityGaps": [],
+      "reasonCodes": [
+        "execution-ready"
+      ],
+      "nextActions": [
+        "Keep lifecycle smoke passing and preserve manifest evidence"
+      ],
+      "readinessEvidence": [],
       "executionReadiness": "executable",
       "status": "Pilot"
     },
@@ -105,6 +260,37 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "stable",
+      "requiredAdapters": [
+        "gradle-java-service"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "multi-module-build",
+        "privacy",
+        "promotion-approval",
+        "regulatory-compliance",
+        "risk-controls",
+        "security"
+      ],
       "requiredCapabilities": [
         "backend-api:gradle-java-service"
       ],
@@ -112,6 +298,25 @@
         "missing-adapter:operator",
         "missing-adapter:portal",
         "missing-adapter:sdk"
+      ],
+      "reasonCodes": [
+        "missing-adapter:operator",
+        "missing-adapter:portal",
+        "missing-adapter:sdk",
+        "planned-shape-only",
+        "requires-multi-module-build-validation",
+        "requires-portal-operator-sdk-adapters",
+        "requires-promotion-approval",
+        "requires-regulatory-gates"
+      ],
+      "nextActions": [
+        "Validate the Finance multi-module Gradle graph before lifecycle execution",
+        "Add portal, operator, and SDK adapter readiness only after executable adapters exist",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/finance/kernel-product.yaml",
+        "products/finance/schema-packs/schema-registry.yaml"
       ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only",
@@ -129,12 +334,61 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "experimental",
+      "requiredAdapters": [
+        "gradle-java-service"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result",
+        "mobile-aab-artifact-manifest",
+        "mobile-ipa-artifact-manifest"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "mobile-bundle-contract",
+        "personal-data-classification",
+        "preview-security",
+        "privacy",
+        "security"
+      ],
       "requiredCapabilities": [
         "backend-api:gradle-java-service"
       ],
       "capabilityGaps": [
         "missing-adapter:mobile",
         "missing-adapter:web"
+      ],
+      "reasonCodes": [
+        "missing-adapter:mobile",
+        "missing-adapter:web",
+        "planned-shape-only",
+        "requires-mobile-adapters",
+        "requires-mobile-bundle-artifacts",
+        "requires-personal-data-classification",
+        "requires-preview-security-gate"
+      ],
+      "nextActions": [
+        "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
+        "Add ipa/aab artifact contracts before enabling mobile bundle execution",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/flashit/kernel-product.yaml"
       ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only",
@@ -151,11 +405,70 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "stable",
+      "requiredAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "pnpm-vite-react",
+          "surfaceType": "web",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "audit-evidence",
+        "consent",
+        "fhir-contract-validation",
+        "i18n",
+        "pii-classification",
+        "privacy",
+        "security",
+        "tenant-data-sovereignty"
+      ],
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "web:pnpm-vite-react"
       ],
       "capabilityGaps": [],
+      "reasonCodes": [
+        "planned-shape-only",
+        "requires-audit-evidence",
+        "requires-consent-gate",
+        "requires-data-sovereignty-gate",
+        "requires-fhir-contract-validation",
+        "requires-pii-classification"
+      ],
+      "nextActions": [
+        "Validate PHR backend-api and web adapters against healthcare gates before enabling lifecycle execution",
+        "Produce FHIR contract and tenant/data sovereignty evidence in product-local lifecycle manifests",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/phr/kernel-product.yaml",
+        "products/phr/schema-packs/schema-registry.yaml"
+      ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only"
     },
@@ -167,15 +480,32 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
-      "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined"
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
       ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredCapabilities": [],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed"
+      ],
+      "nextActions": [
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "software-org",
@@ -185,15 +515,32 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
-      "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined"
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
       ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredCapabilities": [],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed"
+      ],
+      "nextActions": [
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "tutorputor",
@@ -203,11 +550,64 @@
       "lifecycleStatus": "partial",
       "shapeValidationMode": "shape-only-with-known-limitations",
       "profileStatus": "stable",
+      "requiredAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "pnpm-vite-react",
+          "surfaceType": "web",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "content-safety",
+        "i18n",
+        "learner-data-privacy",
+        "model-output-evaluation",
+        "privacy",
+        "security"
+      ],
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "web:pnpm-vite-react"
       ],
       "capabilityGaps": [],
+      "reasonCodes": [
+        "partial-lifecycle",
+        "requires-content-safety-gates",
+        "requires-product-owner-executable-surface-definition"
+      ],
+      "nextActions": [
+        "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
+        "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [
+        "products/tutorputor/kernel-product.yaml"
+      ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only with limitations"
     },
@@ -219,15 +619,32 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
-      "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined"
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
       ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredCapabilities": [],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "disabled-observed"
+      ],
+      "nextActions": [
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     },
     {
       "productId": "yappc",
@@ -237,17 +654,43 @@
       "lifecycleStatus": "disabled",
       "shapeValidationMode": "disabled-observed",
       "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "artifact-intelligence-boundary",
+        "creator-kernel-lifecycle-separation",
+        "i18n",
+        "privacy",
+        "product-unit-intent-export",
+        "security"
+      ],
       "requiredCapabilities": [],
-      "capabilityGaps": [
-        "unknown-adapter:undefined",
-        "unknown-adapter:undefined"
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "artifact-intelligence-evidence-contracts-ready",
+        "creator-lifecycle-distinct-from-kernel",
+        "disabled-observed",
+        "platform-provider-mode-required"
+      ],
+      "nextActions": [
+        "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
+        "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts",
+        "Wire platform-mode provider bridge before enabling lifecycle execution"
+      ],
+      "readinessEvidence": [
+        "products/yappc/kernel-bridge",
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
       ],
       "executionReadiness": "disabled",
-      "status": "Disabled observed",
-      "findings": [
-        "Adapter \"undefined\" for surface \"backend-api\" not found in toolchain-adapter-registry.json",
-        "Adapter \"undefined\" for surface \"web\" not found in toolchain-adapter-registry.json"
-      ]
+      "status": "Disabled observed"
     }
   ]
 }

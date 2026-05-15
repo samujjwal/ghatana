@@ -7,7 +7,7 @@
  * @doc.pattern Plugin
  */
 
-import type { PluginKind } from "./PluginKind";
+import type { PluginKind } from "./PluginKind.js";
 
 /**
  * Plugin execution context.

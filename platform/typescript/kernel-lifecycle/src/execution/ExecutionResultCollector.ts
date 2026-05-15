@@ -1,5 +1,24 @@
-import { ProductLifecycleResult, ProductLifecycleStepResult, ProductArtifact, ProductGateResult, ProductLifecyclePhase } from '../domain/ProductLifecyclePhase.js';
+import {
+  ProductLifecycleResult,
+  ProductLifecycleStepResult,
+  ProductArtifact,
+  ProductGateResult,
+  ProductLifecyclePhase,
+  ProductLifecycleManifestRefs,
+  ProductLifecycleApprovalRef,
+} from '../domain/ProductLifecyclePhase.js';
 import { ExecutionLogger } from '../domain/ProductLifecyclePhase.js';
+import type { KernelProviderMode } from '@ghatana/kernel-product-contracts';
+
+export interface ExecutionResultCollectionMetadata {
+  readonly correlationId?: string;
+  readonly providerMode?: KernelProviderMode;
+  readonly productUnitRef?: string;
+  readonly manifestRefs?: ProductLifecycleManifestRefs;
+  readonly eventsRef?: string;
+  readonly healthSnapshotRef?: string;
+  readonly approvalRefs?: readonly ProductLifecycleApprovalRef[];
+}
 
 /**
  * Execution result collector
@@ -54,6 +73,7 @@ export class ExecutionResultCollector {
     phase: ProductLifecyclePhase,
     outputDirectory: string,
     runId: string = `run-${Date.now()}`,
+    metadata: ExecutionResultCollectionMetadata = {},
   ): ProductLifecycleResult {
     const status = this.determineOverallStatus();
     const failure = this.getFailureDetails();
@@ -61,7 +81,10 @@ export class ExecutionResultCollector {
     const result: ProductLifecycleResult = {
       schemaVersion: '1.0.0',
       runId,
+      ...(metadata.correlationId !== undefined ? { correlationId: metadata.correlationId } : {}),
+      ...(metadata.providerMode !== undefined ? { providerMode: metadata.providerMode } : {}),
       productId,
+      ...(metadata.productUnitRef !== undefined ? { productUnitRef: metadata.productUnitRef } : {}),
       phase,
       status,
       startedAt: this.getStartTime(),
@@ -69,6 +92,10 @@ export class ExecutionResultCollector {
       steps: this.results,
       gates: this.gateResults,
       artifacts: this.artifacts,
+      ...(metadata.manifestRefs !== undefined ? { manifestRefs: metadata.manifestRefs } : {}),
+      ...(metadata.eventsRef !== undefined ? { eventsRef: metadata.eventsRef } : {}),
+      ...(metadata.healthSnapshotRef !== undefined ? { healthSnapshotRef: metadata.healthSnapshotRef } : {}),
+      ...(metadata.approvalRefs !== undefined ? { approvalRefs: metadata.approvalRefs } : {}),
       outputDirectory,
     };
 
@@ -104,16 +131,17 @@ export class ExecutionResultCollector {
    * Get failure details
    */
   private getFailureDetails():
-    | { stepId: string; message: string; cause?: string }
+    | { reasonCode: 'adapter-failed'; stepId: string; message: string; cause?: string }
     | undefined {
     const failedStep = this.results.find((r) => r.status === 'failed');
     if (!failedStep) {
       return undefined;
     }
 
-    const failure: { stepId: string; message: string; cause?: string } = {
+    const failure: { reasonCode: 'adapter-failed'; stepId: string; message: string; cause?: string } = {
       stepId: failedStep.stepId,
       message: `Step ${failedStep.stepId} failed`,
+      reasonCode: 'adapter-failed',
     };
 
     if (failedStep.stderr !== undefined) {

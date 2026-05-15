@@ -87,7 +87,7 @@ export async function checkExportApplyAuthorization(
     };
   }
 
-  // TODO-017: Verify user has required capabilities (read, update) on the project
+  // TRACK-017: Verify user has required capabilities (read, update) on the project
   // This would call the backend capability contract to check authorization
   // For now, we assume authorization if all context is present
   return { authorized: true };

@@ -17,9 +17,18 @@ import {
   ProductGatePlan,
   ProductExpectedArtifact,
   LifecycleStepKind,
+  ProductLifecycleManifestType,
+  ProductLifecycleRequiredPlugin,
+  ProductLifecycleApprovalRequirement,
+  ProductLifecycleApprovalRequirementConfig,
 } from '../domain/ProductLifecyclePhase.js';
-import type { LifecycleProviderContext } from '../providers/LifecycleProviderContext.js';
-import type { ProductUnit } from '@ghatana/kernel-product-contracts';
+import type {
+  KernelLifecycleProviderContext,
+  KernelProviderMode,
+  ProductUnit,
+  RegistryProvider,
+  SourceProvider,
+} from '@ghatana/kernel-product-contracts';
 
 /** Phases that are handled by the deployment target adapter, NOT surface adapters. */
 const DEPLOYMENT_PHASES = new Set<ProductLifecyclePhase>(['deploy', 'verify', 'rollback']);
@@ -32,6 +41,22 @@ const SURFACE_PHASES = new Set<ProductLifecyclePhase>(['dev', 'validate', 'test'
 
 /** Internal registry shape loaded from toolchain-adapter-registry.json */
 type ToolchainRegistry = Record<string, Record<string, unknown>>;
+
+export interface ProductLifecyclePlannerProviderContext extends KernelLifecycleProviderContext {
+  readonly registryProvider?: RegistryProvider;
+  readonly sourceProvider?: SourceProvider;
+}
+
+export interface ProductLifecyclePlanOptions {
+  readonly surfaceSelector?: string[];
+  readonly environment?: string;
+  readonly sourceRef?: string;
+  readonly outputDir?: string;
+  readonly runId?: string;
+  readonly correlationId?: string;
+  readonly providerMode?: KernelProviderMode;
+  readonly shapeOnly?: boolean;
+}
 
 
 /**
@@ -48,12 +73,12 @@ export class ProductLifecyclePlanner {
   private readonly profilesPath: string;
   private readonly toolchainPath: string;
   private readonly repoRoot: string;
-  private providerContext: LifecycleProviderContext | undefined;
+  private readonly providerContext: ProductLifecyclePlannerProviderContext | undefined;
 
   constructor(
     repoRoot: string = process.cwd(),
     configDir?: string,
-    providerContext?: LifecycleProviderContext,
+    providerContext?: ProductLifecyclePlannerProviderContext,
   ) {
     this.repoRoot = repoRoot;
     const actualConfigDir = configDir ?? path.join(repoRoot, 'config');
@@ -141,6 +166,18 @@ export class ProductLifecyclePlanner {
       productId: String(config.productId ?? productId),
       lifecycleProfile: String(config.lifecycleProfile ?? ''),
       allowExperimentalAdapters: Boolean(config.allowExperimentalAdapters ?? false),
+      ...(config.requiredManifests !== undefined
+        ? { requiredManifests: config.requiredManifests as NonNullable<KernelProductConfiguration['requiredManifests']> }
+        : {}),
+      ...(config.plugins !== undefined
+        ? { plugins: config.plugins as NonNullable<KernelProductConfiguration['plugins']> }
+        : {}),
+      ...(config.environments !== undefined
+        ? { environments: config.environments as NonNullable<KernelProductConfiguration['environments']> }
+        : {}),
+      ...(config.approvals !== undefined
+        ? { approvals: config.approvals as NonNullable<KernelProductConfiguration['approvals']> }
+        : {}),
       surfaces: (config.surfaces ?? {}) as KernelProductConfiguration['surfaces'],
       phases: (config.phases ?? {}) as KernelProductConfiguration['phases'],
       ...(config.package !== undefined ? { package: config.package as Record<string, PackageSurfaceConfig> } : {}),
@@ -174,15 +211,11 @@ export class ProductLifecyclePlanner {
   async plan(
     productId: string,
     phase: ProductLifecyclePhase,
-    options: {
-      surfaceSelector?: string[];
-      environment?: string;
-      sourceRef?: string;
-      outputDir?: string;
-      runId?: string;
-      correlationId?: string;
-    } = {},
+    options: ProductLifecyclePlanOptions = {},
   ): Promise<ProductLifecyclePlan> {
+    const providerMode = options.providerMode ?? this.providerContext?.mode ?? 'bootstrap';
+    this.assertProviderModeAvailable(providerMode);
+
     const [config, toolchains, productUnit] = await Promise.all([
       this.loadProductConfig(productId),
       this.loadToolchains(),
@@ -210,6 +243,8 @@ export class ProductLifecyclePlanner {
         phase,
         config,
         options.environment,
+        toolchains,
+        options.shapeOnly ?? false,
       ));
     } else if (PACKAGE_PHASES.has(phase)) {
       ({ steps, selectedSurfaces, phaseMode } = await this.resolvePackageSteps(
@@ -219,6 +254,7 @@ export class ProductLifecyclePlanner {
         profile,
         toolchains,
         options.surfaceSelector,
+        options.shapeOnly ?? false,
       ));
     } else if (SURFACE_PHASES.has(phase)) {
       ({ steps, selectedSurfaces, phaseMode } = this.resolveSurfaceSteps(
@@ -228,6 +264,7 @@ export class ProductLifecyclePlanner {
         profile,
         toolchains,
         options.surfaceSelector,
+        options.shapeOnly ?? false,
       ));
     } else {
       throw new Error(
@@ -237,22 +274,19 @@ export class ProductLifecyclePlanner {
     }
 
     const gates = this.resolveGates(phase, config, profile);
-    const expectedArtifacts = this.resolveExpectedArtifacts(phase, config, profile, selectedSurfaces);
+    const expectedArtifacts = this.resolveExpectedArtifacts(productId, phase, config, profile, selectedSurfaces);
+    const requiredManifests = this.resolveRequiredManifests(phase, config);
+    const requiredPlugins = this.resolveRequiredPlugins(config);
+    const approvalRequirements = this.resolveApprovalRequirements(phase, config, options.environment);
 
     return {
       schemaVersion: '1.0.0',
       runId,
       correlationId,
+      providerMode,
       productId,
       ...(productUnit ? { productUnitRef: productUnit.id } : {}),
-      ...(productUnit
-        ? {
-            providerRefs: {
-              registryProviderId: productUnit.registryProviderRef.providerId,
-              sourceProviderId: productUnit.sourceProviderRef.providerId,
-            },
-          }
-        : {}),
+      ...this.resolveProviderRefs(productUnit),
       phase,
       phaseMode,
       lifecycleProfile: config.lifecycleProfile,
@@ -263,6 +297,9 @@ export class ProductLifecyclePlanner {
       gates,
       steps,
       expectedArtifacts,
+      requiredManifests,
+      requiredPlugins,
+      approvalRequirements,
       outputDirectory,
       estimatedDurationMs: this.estimateDuration(steps),
     };
@@ -282,6 +319,7 @@ export class ProductLifecyclePlanner {
     profile: Record<string, unknown>,
     toolchains: ToolchainRegistry,
     surfaceSelector?: string[],
+    shapeOnly: boolean = false,
   ): { steps: ProductLifecycleStep[]; selectedSurfaces: ProductSurfaceSelection[]; phaseMode: ProductLifecyclePlan['phaseMode'] } {
     const phaseConfig = this.resolvePhaseConfig(phase, config, profile);
     const surfaces = surfaceSelector ?? phaseConfig.defaultSurfaces;
@@ -300,11 +338,12 @@ export class ProductLifecyclePlanner {
         );
       }
 
-      this.validateSurfaceAdapter(surfaceName, surfaceConfig, phase, toolchains, config);
+      const surfaceType = this.resolveSurfaceType(surfaceName, surfaceConfig);
+      this.validateSurfaceAdapter(surfaceName, surfaceConfig, surfaceType, phase, toolchains, config, shapeOnly);
 
       selectedSurfaces.push({
         surface: surfaceName,
-        type: surfaceConfig.type,
+        type: surfaceType,
         adapter: surfaceConfig.adapter,
         config: { ...surfaceConfig } as Record<string, unknown>,
       });
@@ -350,6 +389,7 @@ export class ProductLifecyclePlanner {
     profile: Record<string, unknown>,
     toolchains: ToolchainRegistry,
     surfaceSelector?: string[],
+    shapeOnly: boolean = false,
   ): Promise<{
     steps: ProductLifecycleStep[];
     selectedSurfaces: ProductSurfaceSelection[];
@@ -382,11 +422,14 @@ export class ProductLifecyclePlanner {
       }
 
       const adapterId = surfacePkgConfig.adapter ?? 'docker-buildx';
-      this.validateAdapterExists(adapterId, toolchains);
+      this.validateAdapterForPhase(adapterId, phase, toolchains, config, shapeOnly);
 
       selectedSurfaces.push({
         surface: surfaceName,
-        type: (config.surfaces[surfaceName]?.type ?? 'backend-api') as ProductSurface['type'],
+        type:
+          config.surfaces[surfaceName] !== undefined
+            ? this.resolveSurfaceType(surfaceName, config.surfaces[surfaceName])
+            : 'backend-api',
         adapter: adapterId,
         config: { ...surfacePkgConfig } as Record<string, unknown>,
       });
@@ -430,6 +473,8 @@ export class ProductLifecyclePlanner {
     phase: ProductLifecyclePhase,
     config: KernelProductConfiguration,
     environment: string | undefined,
+    toolchains: ToolchainRegistry,
+    shapeOnly: boolean = false,
   ): Promise<{
     steps: ProductLifecycleStep[];
     selectedSurfaces: ProductSurfaceSelection[];
@@ -450,6 +495,7 @@ export class ProductLifecyclePlanner {
     }
 
     const adapterId = deploymentConfig.adapter ?? 'compose-local';
+    this.validateAdapterForPhase(adapterId, phase, toolchains, config, shapeOnly);
     const verifyConfig = config.verify?.[resolvedEnv];
 
     const stepKind: LifecycleStepKind =
@@ -528,6 +574,7 @@ export class ProductLifecyclePlanner {
   }
 
   private resolveExpectedArtifacts(
+    productId: string,
     phase: ProductLifecyclePhase,
     config: KernelProductConfiguration,
     _profile: Record<string, unknown>,
@@ -535,36 +582,180 @@ export class ProductLifecyclePlanner {
   ): ProductExpectedArtifact[] {
     const configuredArtifacts = config.artifacts?.[phase];
     if (configuredArtifacts) {
-      return Object.entries(configuredArtifacts).map(([surface, artConfig]) => ({
-        surface,
-        type: String(((artConfig as unknown) as Record<string, unknown>).type ?? 'unknown'),
-        required: Boolean(((artConfig as unknown) as Record<string, unknown>).required ?? true),
-      }));
+      return Object.entries(configuredArtifacts).map(([surface, artConfig]) => {
+        const type = String(((artConfig as unknown) as Record<string, unknown>).type ?? 'unknown');
+        return {
+          surface,
+          type,
+          required: Boolean(((artConfig as unknown) as Record<string, unknown>).required ?? true),
+          ...this.resolveArtifactProviderTruth(productId, surface, phase, type),
+        };
+      });
     }
 
     return surfaces.flatMap((sel) =>
-      this.defaultArtifactsForPhaseAndSurface(phase, sel.surface, sel.type),
+      this.defaultArtifactsForPhaseAndSurface(productId, phase, sel.surface, sel.type),
     );
   }
 
+  private resolveRequiredManifests(
+    phase: ProductLifecyclePhase,
+    config: KernelProductConfiguration,
+  ): ProductLifecycleManifestType[] {
+    return [...(config.requiredManifests?.[phase] ?? [])];
+  }
+
+  private resolveRequiredPlugins(config: KernelProductConfiguration): ProductLifecycleRequiredPlugin[] {
+    return Object.entries(config.plugins ?? {}).map(([pluginId, pluginConfig]) => ({
+      pluginId,
+      required: pluginConfig.required ?? true,
+      ...(pluginConfig.providerId !== undefined ? { providerId: pluginConfig.providerId } : {}),
+    }));
+  }
+
+  private resolveApprovalRequirements(
+    phase: ProductLifecyclePhase,
+    config: KernelProductConfiguration,
+    environment: string | undefined,
+  ): ProductLifecycleApprovalRequirement[] {
+    const declared = (config.approvals?.[phase] ?? []).map((requirement) =>
+      this.normalizeApprovalRequirement(phase, requirement),
+    );
+
+    const environmentApproval = this.resolveEnvironmentApprovalRequirement(phase, config, environment);
+    return environmentApproval ? [...declared, environmentApproval] : declared;
+  }
+
+  private normalizeApprovalRequirement(
+    phase: ProductLifecyclePhase,
+    requirement: ProductLifecycleApprovalRequirementConfig,
+  ): ProductLifecycleApprovalRequirement {
+    const action = requirement.action.trim();
+    const approvalId = requirement.approvalId?.trim() || `${phase}-${action}`;
+    return {
+      approvalId,
+      action,
+      riskLevel: requirement.riskLevel ?? 'medium',
+      required: requirement.required ?? true,
+      ...(requirement.requiredApprovers !== undefined
+        ? { requiredApprovers: requirement.requiredApprovers.map((approver) => approver.trim()).filter(Boolean) }
+        : {}),
+      source: requirement.source ?? 'kernel-product.approvals',
+    };
+  }
+
+  private resolveEnvironmentApprovalRequirement(
+    phase: ProductLifecyclePhase,
+    config: KernelProductConfiguration,
+    environment: string | undefined,
+  ): ProductLifecycleApprovalRequirement | undefined {
+    if (!DEPLOYMENT_PHASES.has(phase)) {
+      return undefined;
+    }
+
+    const resolvedEnvironment =
+      environment ??
+      ((config.phases['deploy'] as (LifecyclePhaseConfiguration & { defaultEnvironment?: string }) | undefined)
+        ?.defaultEnvironment ??
+        'local');
+    const environmentConfig = config.environments?.[resolvedEnvironment];
+    if (environmentConfig?.approvalRequired !== true) {
+      return undefined;
+    }
+
+    return {
+      approvalId: `${phase}-${resolvedEnvironment}-approval`,
+      action: `${phase}:${resolvedEnvironment}`,
+      riskLevel: phase === 'deploy' ? 'high' : 'medium',
+      required: true,
+      source: `kernel-product.environments.${resolvedEnvironment}`,
+    };
+  }
+
+  private resolveProviderRefs(
+    productUnit: ProductUnit | null,
+  ): Pick<ProductLifecyclePlan, 'providerRefs'> {
+    const providerRefs: NonNullable<ProductLifecyclePlan['providerRefs']> = {
+      ...(productUnit !== null ? { registryProviderId: productUnit.registryProviderRef.providerId } : {}),
+      ...(productUnit !== null ? { sourceProviderId: productUnit.sourceProviderRef.providerId } : {}),
+      ...(this.providerContext?.events !== undefined ? { eventProviderId: this.providerContext.events.providerId } : {}),
+      ...(this.providerContext?.artifacts !== undefined ? { artifactProviderId: this.providerContext.artifacts.providerId } : {}),
+      ...(this.providerContext?.health !== undefined ? { healthProviderId: this.providerContext.health.providerId } : {}),
+      ...(this.providerContext?.approvals !== undefined ? { approvalProviderId: this.providerContext.approvals.providerId } : {}),
+      ...(this.providerContext?.provenance !== undefined
+        ? { provenanceProviderId: this.providerContext.provenance.providerId }
+        : {}),
+      ...(this.providerContext?.runtimeTruth !== undefined
+        ? { runtimeTruthProviderId: this.providerContext.runtimeTruth.providerId }
+        : {}),
+    };
+
+    return Object.keys(providerRefs).length > 0 ? { providerRefs } : {};
+  }
+
+  private resolveArtifactProviderTruth(
+    productId: string,
+    surface: string,
+    phase: ProductLifecyclePhase,
+    type: string,
+  ): Pick<ProductExpectedArtifact, 'providerId' | 'semanticRef'> {
+    const artifactProvider = this.providerContext?.artifacts;
+    if (artifactProvider === undefined) {
+      return {};
+    }
+    return {
+      providerId: artifactProvider.providerId,
+      semanticRef: `artifact://${productId}/${phase}/${surface}/${type}`,
+    };
+  }
+
   private defaultArtifactsForPhaseAndSurface(
+    productId: string,
     phase: ProductLifecyclePhase,
     surface: string,
     surfaceType: string,
   ): ProductExpectedArtifact[] {
     if (phase === 'build') {
       if (surfaceType === 'backend-api' || surfaceType === 'worker') {
-        return [{ surface, type: 'jvm-service', required: true }];
+        return [
+          {
+            surface,
+            type: 'jvm-service',
+            required: true,
+            ...this.resolveArtifactProviderTruth(productId, surface, phase, 'jvm-service'),
+          },
+        ];
       }
       if (surfaceType === 'web') {
-        return [{ surface, type: 'static-web-bundle', required: true }];
+        return [
+          {
+            surface,
+            type: 'static-web-bundle',
+            required: true,
+            ...this.resolveArtifactProviderTruth(productId, surface, phase, 'static-web-bundle'),
+          },
+        ];
       }
     }
     if (phase === 'package') {
-      return [{ surface, type: 'container-image', required: true }];
+      return [
+        {
+          surface,
+          type: 'container-image',
+          required: true,
+          ...this.resolveArtifactProviderTruth(productId, surface, phase, 'container-image'),
+        },
+      ];
     }
     if (phase === 'test') {
-      return [{ surface, type: 'test-report', required: false }];
+      return [
+        {
+          surface,
+          type: 'test-report',
+          required: false,
+          ...this.resolveArtifactProviderTruth(productId, surface, phase, 'test-report'),
+        },
+      ];
     }
     return [];
   }
@@ -576,39 +767,25 @@ export class ProductLifecyclePlanner {
   private validateSurfaceAdapter(
     surfaceName: string,
     surfaceConfig: ProductSurface,
+    surfaceType: ProductSurface['type'],
     phase: ProductLifecyclePhase,
     toolchains: ToolchainRegistry,
     config: KernelProductConfiguration,
+    shapeOnly: boolean,
   ): void {
     const adapterId = String(surfaceConfig.adapter ?? '');
     if (!adapterId) {
       throw new Error(`Surface "${surfaceName}" does not declare an adapter in kernel-product.yaml.`);
     }
 
-    const adapter = toolchains[adapterId];
-    if (!adapter) {
-      const available = Object.keys(toolchains).join(', ');
-      throw new Error(
-        `Unknown adapter "${adapterId}" for surface "${surfaceName}". ` +
-          `Available adapters: ${available}`,
-      );
-    }
+    const adapter = this.validateAdapterForPhase(adapterId, phase, toolchains, config, shapeOnly, surfaceName);
+    const supportedSurfaceTypes = (adapter.supportedSurfaceTypes ?? []) as string[];
 
-    const supportedPhases = (adapter.supportedPhases ?? []) as string[];
-    if (!supportedPhases.includes(phase)) {
+    if (supportedSurfaceTypes.length > 0 && !supportedSurfaceTypes.includes(surfaceType)) {
       throw new Error(
-        `Adapter "${adapterId}" does not support phase "${phase}" for surface "${surfaceName}". ` +
-          `Supported phases: ${supportedPhases.join(', ')}`,
+        `Adapter "${adapterId}" does not support surface type "${surfaceType}" for surface "${surfaceName}". ` +
+          `Supported surface types: ${supportedSurfaceTypes.join(', ')}`,
       );
-    }
-
-    if (!config.allowExperimentalAdapters) {
-      if (!Boolean(adapter.safeForDefault)) {
-        throw new Error(
-          `Adapter "${adapterId}" is not marked safeForDefault in toolchain-adapter-registry.json. ` +
-            'Set allowExperimentalAdapters: true in kernel-product.yaml to use experimental adapters.',
-        );
-      }
     }
   }
 
@@ -616,6 +793,54 @@ export class ProductLifecyclePlanner {
     if (!toolchains[adapterId]) {
       const available = Object.keys(toolchains).join(', ');
       throw new Error(`Unknown adapter "${adapterId}". Available adapters: ${available}`);
+    }
+  }
+
+  private validateAdapterForPhase(
+    adapterId: string,
+    phase: ProductLifecyclePhase,
+    toolchains: ToolchainRegistry,
+    config: KernelProductConfiguration,
+    shapeOnly: boolean,
+    surfaceName?: string,
+  ): Record<string, unknown> {
+    this.validateAdapterExists(adapterId, toolchains);
+    const adapter = toolchains[adapterId];
+    const supportedPhases = (adapter.supportedPhases ?? []) as string[];
+    if (!supportedPhases.includes(phase)) {
+      const surfaceContext = surfaceName === undefined ? '' : ` for surface "${surfaceName}"`;
+      throw new Error(
+        `Adapter "${adapterId}" does not support phase "${phase}"${surfaceContext}. ` +
+          `Supported phases: ${supportedPhases.join(', ')}`,
+      );
+    }
+
+    const status = String(adapter.status ?? 'unknown');
+    if (status !== 'implemented' && !shapeOnly) {
+      throw new Error(
+        `Adapter "${adapterId}" has status "${status}" in toolchain-adapter-registry.json and cannot be used for executable planning. ` +
+          'Use shapeOnly planning to inspect planned or partial adapters without executing them.',
+      );
+    }
+
+    if (!config.allowExperimentalAdapters && !Boolean(adapter.safeForDefault)) {
+      throw new Error(
+        `Adapter "${adapterId}" is not marked safeForDefault in toolchain-adapter-registry.json. ` +
+          'Set allowExperimentalAdapters: true in kernel-product.yaml only after an explicit safety review.',
+      );
+    }
+
+    return adapter;
+  }
+
+  private assertProviderModeAvailable(providerMode: KernelProviderMode): void {
+    if (providerMode === 'platform' && this.providerContext === undefined) {
+      throw new Error('Kernel platform provider mode requires a provider context.');
+    }
+    if (providerMode === 'platform' && this.providerContext?.mode !== 'platform') {
+      throw new Error(
+        `Kernel platform provider mode requires a platform provider context; received ${this.providerContext?.mode ?? 'none'}.`,
+      );
     }
   }
 
@@ -665,6 +890,26 @@ export class ProductLifecyclePlanner {
     }
 
     return { defaultSurfaces: profileDefaultSurfaces, mode: 'sequential' };
+  }
+
+  private resolveSurfaceType(surfaceName: string, surfaceConfig: ProductSurface): ProductSurface['type'] {
+    if (surfaceConfig.type !== undefined) {
+      return surfaceConfig.type;
+    }
+    const runtime = typeof surfaceConfig.runtime === 'string' ? surfaceConfig.runtime : '';
+    if (runtime === 'java-service') {
+      return 'backend-api';
+    }
+    if (runtime === 'static-web') {
+      return 'web';
+    }
+    if (surfaceName === 'web') {
+      return 'web';
+    }
+    if (surfaceName.includes('worker')) {
+      return 'worker';
+    }
+    return 'backend-api';
   }
 
   private resolveOutputDirectory(

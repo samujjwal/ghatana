@@ -7,6 +7,8 @@ package com.ghatana.agent.runtime.safety;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentResultStatus;
 import com.ghatana.agent.audit.AgentTraceLedger;
+import com.ghatana.agent.audit.DataCloudAgentTraceLedger;
+import com.ghatana.agent.audit.HashChainedTraceAppender;
 import com.ghatana.agent.audit.TraceEvent;
 import com.ghatana.agent.audit.TraceEventBuilder;
 import com.ghatana.agent.audit.TraceEventType;
@@ -252,8 +254,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             String agentId, String traceId, String tenantId, String reason) {
         TraceEventBuilder eventBuilder = new TraceEventBuilder(
                 traceId, agentId, tenantId,
-                traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
-                        ? hc.getLastHash(tenantId) : "");
+                currentLedgerHash(tenantId));
         TraceEvent denialEvent = eventBuilder.build(
                 TraceEventType.ACTION_DENIED,
                 "Dispatch denied: " + reason,
@@ -323,8 +324,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         if (versionContextResolver != null) {
             TraceEventBuilder vcEventBuilder = new TraceEventBuilder(
                     traceId, agentId, tenantId,
-                    traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
-                            ? hc.getLastHash(tenantId) : "");
+                    currentLedgerHash(tenantId));
             ctxWithVersionPromise = versionContextResolver.resolve(
                     new EnvironmentSnapshot(
                             VersionContext.empty(),
@@ -366,8 +366,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             if (masteryRegistry != null && skillId != null) {
                 TraceEventBuilder masteryEventBuilder = new TraceEventBuilder(
                         traceId, agentId, tenantId,
-                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
-                                ? hc.getLastHash(tenantId) : "");
+                        currentLedgerHash(tenantId));
                 
                 // Extract resolved version context and encode using canonical codec for mastery query
                 String versionContextStr = "";
@@ -405,8 +404,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                             if (masteryDecision.requiresHumanApproval()) {
                                                 TraceEventBuilder approvalBuilder = new TraceEventBuilder(
                                                         traceId, agentId, tenantId,
-                                                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc2
-                                                                ? hc2.getLastHash(tenantId) : "");
+                                                        currentLedgerHash(tenantId));
                                                 com.ghatana.agent.approval.ApprovalProof approvalProof = ctxWithVersion.getApprovalProof();
                                                 boolean approvalValid = approvalProof != null && approvalProof.isValidFor(
                                                         tenantId, agentId, 
@@ -441,8 +439,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                                             if (masteryDecision.requiresVerification()) {
                                                 TraceEventBuilder verifyBuilder = new TraceEventBuilder(
                                                         traceId, agentId, tenantId,
-                                                        traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc3
-                                                                ? hc3.getLastHash(tenantId) : "");
+                                                        currentLedgerHash(tenantId));
                                                 com.ghatana.agent.approval.VerificationProof verificationProof = ctxWithVersion.getVerificationProof();
                                                 boolean verificationValid = verificationProof != null && verificationProof.isValidFor(
                                                         tenantId, agentId,
@@ -496,8 +493,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         if (modeSelector != null && skillId != null) {
             TraceEventBuilder modeEventBuilder = new TraceEventBuilder(
                     traceId, agentId, tenantId,
-                    traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
-                            ? hc.getLastHash(tenantId) : "");
+                    currentLedgerHash(tenantId));
             
             // Extract resolved version context from context if available
             VersionContext versionCtx = VersionContext.empty();
@@ -583,8 +579,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         // Build trace event builder for this dispatch
         TraceEventBuilder eventBuilder = new TraceEventBuilder(
                 traceId, agentId, tenantId,
-                traceLedger instanceof com.ghatana.agent.audit.HashChainedTraceAppender hc
-                        ? hc.getLastHash(tenantId) : "");
+                currentLedgerHash(tenantId));
 
         // ── TX-4: TURN_STARTED — capture what was perceived (context + release metadata) ──
         Map<String, String> turnStartPayload = buildTurnStartPayload(agentId, release);
@@ -847,6 +842,17 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         Object v = ctx.getConfig(key);
         if (v instanceof Number n) return n.longValue();
         return defaultVal;
+    }
+
+    @NotNull
+    private String currentLedgerHash(@NotNull String tenantId) {
+        if (traceLedger instanceof HashChainedTraceAppender hashChainedTraceAppender) {
+            return hashChainedTraceAppender.getLastHash(tenantId);
+        }
+        if (traceLedger instanceof DataCloudAgentTraceLedger dataCloudAgentTraceLedger) {
+            return dataCloudAgentTraceLedger.getLastHash(tenantId);
+        }
+        return "";
     }
 
     /**

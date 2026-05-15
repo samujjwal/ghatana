@@ -162,7 +162,7 @@ public class RocksDBStore implements EmbeddedStore {
                 return Promise.of(false);
             }
             db.delete(keyBytes);
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         } catch (RocksDBException e) {
             log.error("RocksDB delete failed: key={}", key, e);
             return Promise.ofException(e);

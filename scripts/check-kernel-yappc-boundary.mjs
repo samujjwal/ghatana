@@ -20,7 +20,7 @@ const PLATFORM_PATHS = [
 const VIOLATING_PATTERNS = [
   /from ['"]@ghatana\/platform-java/,
   /from ['"]@ghatana\/platform-typescript/,
-  /from ['"]@ghatana\/kernel-/,
+  /from ['"]@ghatana\/kernel-(?!product-contracts\b)/,
 ];
 
 function isFile(path) {

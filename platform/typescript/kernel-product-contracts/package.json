@@ -21,6 +21,9 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
+  "dependencies": {
+    "zod": "catalog:"
+  },
   "files": [
     "dist",
     "src"

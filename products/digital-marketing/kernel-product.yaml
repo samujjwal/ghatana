@@ -18,19 +18,41 @@ requiredManifests:
     - verify-health-report
     - lifecycle-health-snapshot
 
+manifestSchemaVersions:
+  lifecycle-result: 1.0.0
+  artifact-manifest: 1.0.0
+  lifecycle-health-snapshot: 1.0.0
+  deployment-manifest: 1.0.0
+  verify-health-report: 1.0.0
+  lifecycle-events: 1.0.0
+
 plugins:
   audit:
+    bindingId: kernel.audit
     required: true
   observability:
+    bindingId: kernel.observability
     required: true
   data-access:
+    bindingId: kernel.data-access
     required: true
   identity-entitlement:
+    bindingId: kernel.identity-entitlement
     required: true
   security:
+    bindingId: kernel.security
     required: true
   preview-security:
+    bindingId: kernel.preview-security
     required: false
+
+policyPacks:
+  security:
+    - kernel://policy-packs/web-api-security-baseline
+    - kernel://policy-packs/container-image-integrity
+  privacy:
+    - kernel://policy-packs/non-regulated-customer-data-minimization
+    - kernel://policy-packs/marketing-consent-boundary
 
 environments:
   local:
@@ -105,6 +127,36 @@ phases:
     mode: sequential
   deploy:
     defaultEnvironment: local
+  promote:
+    defaultEnvironment: local
+  rollback:
+    defaultEnvironment: local
+
+approval:
+  deploy:
+    required: true
+    approverRoles:
+      - product-owner
+      - release-captain
+    evidenceRefs:
+      - deployment-manifest
+      - lifecycle-health-snapshot
+  promote:
+    required: true
+    approverRoles:
+      - product-owner
+      - release-captain
+    evidenceRefs:
+      - verify-health-report
+      - lifecycle-health-snapshot
+  rollback:
+    required: true
+    approverRoles:
+      - incident-commander
+      - release-captain
+    evidenceRefs:
+      - rollback-plan
+      - lifecycle-events
 
 artifacts:
   build:
@@ -142,6 +194,8 @@ gates:
     - web-route-contract
     - web-typecheck
     - web-bundle-budget
+    - web-a11y-readiness
+    - web-i18n-readiness
 
 # Per-surface package config used by the docker-buildx adapter during the package phase.
 package:
@@ -183,6 +237,16 @@ deployment:
 verify:
   local:
     adapter: compose-local
+    expectedReportFields:
+      - schemaVersion
+      - productUnitId
+      - runId
+      - correlationId
+      - environment
+      - status
+      - checkedAt
+      - checks
+      - evidenceRefs
     healthChecks:
       backend-api:
         type: http

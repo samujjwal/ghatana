@@ -1,0 +1,374 @@
+/**
+ * ProductUnitIntent export service for YAPPC creator workflows.
+ *
+ * The frontend creates typed handoff contracts and sends them to backend/provider
+ * endpoints. It never writes Kernel registry files directly.
+ *
+ * @doc.type service
+ * @doc.purpose Export YAPPC creator artifacts as ProductUnitIntent and artifact intelligence evidence
+ * @doc.layer product
+ * @doc.pattern Repository Pattern
+ * @doc.security Cookie-based auth, no localStorage tokens
+ */
+
+import {
+  ArtifactGraphSummarySchema,
+  GeneratedChangeSetSummarySchema,
+  ProductUnitIntentSchema,
+  ResidualIslandReportSchema,
+  RiskHotspotReportSchema,
+  SemanticArtifactReferenceSchema,
+} from '@ghatana/kernel-product-contracts';
+import type {
+  ArtifactGraphSummary,
+  GeneratedChangeSetSummary,
+  ProductUnitIntent,
+  ResidualIslandReport,
+  RiskHotspotReport,
+  SemanticArtifactReference,
+} from '@ghatana/kernel-product-contracts';
+import type {
+  PageArtifactDocument,
+  PageArtifactGraphNodeKind,
+  PageArtifactGraphSnapshot,
+} from '@/components/canvas/page/pageArtifactDocument';
+
+export type ProductUnitIntentExportProviderMode = 'bootstrap' | 'platform';
+
+export interface ProductUnitIntentExportScope {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
+}
+
+export interface ProductUnitIntentExportRequest {
+  readonly artifacts: readonly PageArtifactDocument[];
+  readonly scope: ProductUnitIntentExportScope;
+  readonly createdBy: string;
+  readonly productUnitName?: string;
+  readonly correlationId: string;
+  readonly registryProvider: string;
+  readonly sourceProvider: string;
+  readonly providerMode: ProductUnitIntentExportProviderMode;
+}
+
+export interface ProductUnitIntentExportOptions {
+  readonly endpoint?: string;
+  readonly dataCloudEvidenceEndpoint?: string;
+  readonly fetchImpl?: typeof fetch;
+  readonly now?: () => string;
+}
+
+export interface ProductUnitIntentExportResponse {
+  readonly intentId: string;
+  readonly status: 'accepted' | 'queued';
+  readonly evidenceRef?: string;
+}
+
+export interface YappcArtifactIntelligenceEvidenceBundle {
+  readonly semanticArtifacts: readonly SemanticArtifactReference[];
+  readonly graphSummaries: readonly ArtifactGraphSummary[];
+  readonly residualIslandReports: readonly ResidualIslandReport[];
+  readonly riskHotspotReports: readonly RiskHotspotReport[];
+  readonly generatedChangeSets: readonly GeneratedChangeSetSummary[];
+}
+
+const DEFAULT_INTENT_ENDPOINT = '/api/v1/yappc/product-unit-intents';
+const EVIDENCE_SOURCE = 'yappc-creator-ui';
+
+function requireNonEmpty(value: string, field: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`ProductUnitIntent export requires ${field}`);
+  }
+  return trimmed;
+}
+
+function artifactKindForNode(kind: PageArtifactGraphNodeKind): SemanticArtifactReference['artifactKind'] {
+  switch (kind) {
+    case 'product':
+      return 'service';
+    case 'page':
+      return 'ui-route';
+    case 'component':
+      return 'source-file';
+    case 'source':
+      return 'source-file';
+    case 'residual':
+      return 'configuration';
+  }
+}
+
+function firstGraph(artifacts: readonly PageArtifactDocument[]): PageArtifactGraphSnapshot | null {
+  return artifacts.find((artifact) => artifact.artifactGraph)?.artifactGraph ?? null;
+}
+
+function buildEvidenceId(prefix: string, subject: string): string {
+  return `${prefix}:${subject.replace(/[^a-zA-Z0-9:_-]+/g, '-')}`;
+}
+
+export function buildYappcArtifactIntelligenceEvidence(
+  request: ProductUnitIntentExportRequest,
+  options: Pick<ProductUnitIntentExportOptions, 'now'> = {},
+): YappcArtifactIntelligenceEvidenceBundle {
+  const createdAt = options.now?.() ?? new Date().toISOString();
+  const productUnitId = requireNonEmpty(request.scope.projectId, 'scope.projectId');
+  const provenanceRefs = request.artifacts.map((artifact) => `yappc:artifact:${artifact.artifactId}`);
+  const base = {
+    schemaVersion: '1.0.0',
+    source: EVIDENCE_SOURCE,
+    confidence: 0.9,
+    provenanceRefs: provenanceRefs.length > 0 ? provenanceRefs : ['yappc:artifact:unknown'],
+    createdAt,
+    correlationId: requireNonEmpty(request.correlationId, 'correlationId'),
+  } as const;
+
+  const semanticArtifacts = request.artifacts.flatMap((artifact) => {
+    const graph = artifact.artifactGraph;
+    if (!graph) {
+      return [
+        SemanticArtifactReferenceSchema.parse({
+          ...base,
+          evidenceId: buildEvidenceId('semantic-artifact', artifact.artifactId),
+          evidenceType: 'semantic-artifact-reference',
+          productUnitId,
+          artifactId: artifact.artifactId,
+          artifactKind: 'ui-route',
+          displayName: artifact.documentId,
+          artifactRef: `yappc:artifact:${artifact.artifactId}`,
+          semanticTags: [artifact.source, artifact.trustLevel],
+          riskLevel: artifact.residualIslandIds && artifact.residualIslandIds.length > 0 ? 'medium' : 'low',
+        }),
+      ];
+    }
+
+    return graph.nodes.map((node) =>
+      SemanticArtifactReferenceSchema.parse({
+        ...base,
+        evidenceId: buildEvidenceId('semantic-artifact', node.id),
+        evidenceType: 'semantic-artifact-reference',
+        productUnitId,
+        artifactId: node.id,
+        artifactKind: artifactKindForNode(node.kind),
+        displayName: node.label,
+        artifactRef: `yappc:artifact:${artifact.artifactId}`,
+        ...(node.sourceLocation ? { path: node.sourceLocation.filePath } : {}),
+        semanticTags: [graph.sourceType, node.kind],
+        riskLevel: node.kind === 'residual' ? 'high' : 'low',
+      })
+    );
+  });
+
+  const graphSummaries = request.artifacts
+    .filter((artifact): artifact is PageArtifactDocument & { readonly artifactGraph: PageArtifactGraphSnapshot } =>
+      artifact.artifactGraph !== undefined
+    )
+    .map((artifact) =>
+      ArtifactGraphSummarySchema.parse({
+        ...base,
+        evidenceId: buildEvidenceId('artifact-graph', artifact.artifactGraph.graphId),
+        evidenceType: 'artifact-graph-summary',
+        productUnitId,
+        nodeCount: artifact.artifactGraph.nodes.length,
+        edgeCount: artifact.artifactGraph.edges.length,
+        nodes: artifact.artifactGraph.nodes.map((node) => ({
+          artifactId: node.id,
+          artifactKind: artifactKindForNode(node.kind),
+          label: node.label,
+        })),
+        edges: artifact.artifactGraph.edges.map((edge) => ({
+          fromArtifactId: edge.from,
+          toArtifactId: edge.to,
+          relationship: edge.kind,
+        })),
+        rootArtifactIds: artifact.artifactGraph.nodes
+          .filter((node) => node.kind === 'product' || node.kind === 'page')
+          .map((node) => node.id),
+        orphanArtifactIds: artifact.artifactGraph.provenance.residualIslandIds,
+      })
+    );
+
+  const residualRefs = request.artifacts.flatMap((artifact) => artifact.residualIslandIds ?? []);
+  const residualIslandReports = [
+    ResidualIslandReportSchema.parse({
+      ...base,
+      evidenceId: buildEvidenceId('residual-islands', productUnitId),
+      evidenceType: 'residual-island-report',
+      productUnitId,
+      islandCount: residualRefs.length,
+      residualArtifactRefs: residualRefs,
+      recommendedActions:
+        residualRefs.length > 0
+          ? ['review residual islands before ProductUnit promotion']
+          : ['no residual islands detected'],
+    }),
+  ];
+
+  const graph = firstGraph(request.artifacts);
+  const graphConfidence = graph?.provenance.confidence ?? 0.9;
+  const hotspotRisk = residualRefs.length > 0 || graphConfidence < 0.75 ? 'high' : 'low';
+  const riskHotspotReports = [
+    RiskHotspotReportSchema.parse({
+      ...base,
+      evidenceId: buildEvidenceId('risk-hotspots', productUnitId),
+      evidenceType: 'risk-hotspot-report',
+      productUnitId,
+      hotspotCount: hotspotRisk === 'high' ? 1 : 0,
+      highestRiskLevel: hotspotRisk,
+      hotspots:
+        hotspotRisk === 'high'
+          ? [
+              {
+                artifactId: residualRefs[0] ?? productUnitId,
+                riskLevel: hotspotRisk,
+                reason: 'residual artifact intelligence requires operator review before Kernel handoff',
+                evidenceRefs: provenanceRefs,
+              },
+            ]
+          : [],
+    }),
+  ];
+
+  const generatedChangeSets = [
+    GeneratedChangeSetSummarySchema.parse({
+      ...base,
+      evidenceId: buildEvidenceId('generated-changes', productUnitId),
+      evidenceType: 'generated-change-set-summary',
+      productUnitId,
+      changeSetId: `yappc-export:${productUnitId}:${request.correlationId}`,
+      changeCount: request.artifacts.length,
+      affectedArtifactRefs: request.artifacts.map((artifact) => `yappc:artifact:${artifact.artifactId}`),
+      generatedArtifactRefs: graphSummaries.map((summary) => summary.evidenceId),
+      validationEvidenceRefs: residualIslandReports.map((report) => report.evidenceId),
+    }),
+  ];
+
+  return {
+    semanticArtifacts,
+    graphSummaries,
+    residualIslandReports,
+    riskHotspotReports,
+    generatedChangeSets,
+  };
+}
+
+export function buildProductUnitIntentFromYappcArtifacts(
+  request: ProductUnitIntentExportRequest,
+): ProductUnitIntent {
+  const productUnitId = requireNonEmpty(request.scope.projectId, 'scope.projectId');
+  const artifact = request.artifacts[0];
+  if (!artifact) {
+    throw new Error('ProductUnitIntent export requires at least one page artifact');
+  }
+
+  return ProductUnitIntentSchema.parse({
+    schemaVersion: '1.0.0',
+    intentId: `intent:yappc:${productUnitId}:${request.correlationId}`,
+    intentType: 'promote-candidate',
+    scope: {
+      tenantId: requireNonEmpty(request.scope.tenantId, 'scope.tenantId'),
+      workspaceId: requireNonEmpty(request.scope.workspaceId, 'scope.workspaceId'),
+      projectId: productUnitId,
+    },
+    producer: {
+      id: 'yappc-creator-ui',
+      type: 'yappc',
+      correlationId: requireNonEmpty(request.correlationId, 'correlationId'),
+    },
+    target: {
+      registryProvider: requireNonEmpty(request.registryProvider, 'registryProvider'),
+      sourceProvider: requireNonEmpty(request.sourceProvider, 'sourceProvider'),
+    },
+    productUnit: {
+      id: productUnitId,
+      name: request.productUnitName?.trim() || productUnitId,
+      kind: 'business-product',
+      scope: request.scope,
+      owner: request.createdBy,
+      surfaces: [
+        {
+          id: `${productUnitId}-web`,
+          type: 'web',
+          implementationStatus: artifact.trustLevel === 'TRUSTED_WORKSPACE' ? 'implemented' : 'experimental',
+          sourceRef: `yappc:artifact:${artifact.artifactId}`,
+        },
+      ],
+      lifecycleProfile: 'standard-web-product',
+      metadata: {
+        providerMode: request.providerMode,
+        artifactCount: request.artifacts.length,
+      },
+    },
+    requestedLifecycle: {
+      profile: 'standard-web-product',
+      enableExecution: false,
+      phases: ['validate', 'build'],
+    },
+    provenance: {
+      sourceSystem: 'yappc',
+      sourceArtifactRefs: request.artifacts.map((pageArtifact) => `yappc:artifact:${pageArtifact.artifactId}`),
+      createdBy: request.createdBy,
+      createdAt: new Date().toISOString(),
+    },
+  });
+}
+
+function isExportResponse(value: unknown): value is ProductUnitIntentExportResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record['intentId'] === 'string' &&
+    (record['status'] === 'accepted' || record['status'] === 'queued') &&
+    (record['evidenceRef'] === undefined || typeof record['evidenceRef'] === 'string')
+  );
+}
+
+async function postJson(
+  fetchImpl: typeof fetch,
+  endpoint: string,
+  body: unknown,
+): Promise<Response> {
+  return fetchImpl(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function exportProductUnitIntentFromYappcArtifacts(
+  request: ProductUnitIntentExportRequest,
+  options: ProductUnitIntentExportOptions = {},
+): Promise<ProductUnitIntentExportResponse> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const intent = buildProductUnitIntentFromYappcArtifacts(request);
+  const evidence = buildYappcArtifactIntelligenceEvidence(request, options);
+
+  if (request.providerMode === 'platform') {
+    if (!options.dataCloudEvidenceEndpoint) {
+      throw new Error('Platform-mode ProductUnitIntent export requires a Data Cloud evidence endpoint');
+    }
+    const evidenceResponse = await postJson(fetchImpl, options.dataCloudEvidenceEndpoint, evidence);
+    if (!evidenceResponse.ok) {
+      const body = await evidenceResponse.text().catch(() => '');
+      throw new Error(`Data Cloud evidence persistence failed (HTTP ${evidenceResponse.status}): ${body}`);
+    }
+  }
+
+  const response = await postJson(fetchImpl, options.endpoint ?? DEFAULT_INTENT_ENDPOINT, {
+    intent,
+    evidence,
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`ProductUnitIntent export failed (HTTP ${response.status}): ${body}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isExportResponse(payload)) {
+    throw new Error('ProductUnitIntent export response had an unexpected shape');
+  }
+  return payload;
+}

@@ -1,6 +1,8 @@
 /**
  * Product lifecycle phases
  */
+import type { KernelProviderMode } from '@ghatana/kernel-product-contracts';
+
 export type ProductLifecyclePhase =
   | 'create'
   | 'bootstrap'
@@ -65,6 +67,10 @@ export interface KernelProductConfiguration {
   productId: string;
   lifecycleProfile: string;
   allowExperimentalAdapters?: boolean;
+  requiredManifests?: Record<string, ProductLifecycleManifestType[]>;
+  plugins?: Record<string, KernelProductPluginConfig>;
+  environments?: Record<string, KernelProductEnvironmentConfig>;
+  approvals?: Record<string, ProductLifecycleApprovalRequirementConfig[]>;
   surfaces: Record<string, ProductSurface>;
   phases: Record<string, LifecyclePhaseConfiguration>;
   package?: Record<string, PackageSurfaceConfig>;
@@ -120,6 +126,29 @@ export interface HealthCheckConfig {
   timeoutMs?: number;
 }
 
+export interface KernelProductPluginConfig {
+  required?: boolean;
+  providerId?: string;
+}
+
+export interface KernelProductEnvironmentConfig {
+  approvalRequired?: boolean;
+  requiredGates?: string[];
+  safeForDefault?: boolean;
+  type?: string;
+  deploymentProvider?: string;
+  secretsProvider?: string;
+}
+
+export interface ProductLifecycleApprovalRequirementConfig {
+  approvalId?: string;
+  action: string;
+  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  required?: boolean;
+  requiredApprovers?: string[];
+  source?: string;
+}
+
 /**
  * Artifact configuration
  */
@@ -154,18 +183,6 @@ export interface LifecycleStepAdapterContext {
   artifactConfig?: Record<string, unknown>;
   environmentConfig?: Record<string, unknown>;
 }
-
-/**
- * Lifecycle plan step
- * @deprecated Use ProductLifecycleStep directly. This alias is kept for backward compatibility.
- */
-export type LifecyclePlanStep = ProductLifecycleStep;
-
-/**
- * Lifecycle plan
- * @deprecated Use ProductLifecyclePlan directly. This alias is kept for backward compatibility.
- */
-export type LifecyclePlan = ProductLifecyclePlan;
 
 /**
  * Execution context
@@ -227,17 +244,24 @@ export interface ValidationError {
 }
 
 /**
- * Product lifecycle plan — canonical plan type (consolidates LifecyclePlan usage)
+ * Product lifecycle plan.
  */
 export interface ProductLifecyclePlan {
   schemaVersion: '1.0.0';
   runId: string;
   correlationId: string;
+  providerMode: KernelProviderMode;
   productId: string;
   productUnitRef?: string;
   providerRefs?: {
-    registryProviderId: string;
-    sourceProviderId: string;
+    registryProviderId?: string;
+    sourceProviderId?: string;
+    eventProviderId?: string;
+    artifactProviderId?: string;
+    healthProviderId?: string;
+    approvalProviderId?: string;
+    provenanceProviderId?: string;
+    runtimeTruthProviderId?: string;
   };
   phase: ProductLifecyclePhase;
   phaseMode: 'parallel' | 'sequential' | 'dag';
@@ -249,8 +273,62 @@ export interface ProductLifecyclePlan {
   gates: ProductGatePlan[];
   steps: ProductLifecycleStep[];
   expectedArtifacts: ProductExpectedArtifact[];
+  requiredManifests: ProductLifecycleManifestType[];
+  requiredPlugins: ProductLifecycleRequiredPlugin[];
+  approvalRequirements: ProductLifecycleApprovalRequirement[];
   outputDirectory: string;
   estimatedDurationMs: number;
+}
+
+export type ProductLifecycleManifestType =
+  | 'lifecycle-plan'
+  | 'lifecycle-result'
+  | 'gate-result-manifest'
+  | 'artifact-manifest'
+  | 'deployment-manifest'
+  | 'verify-health-report'
+  | 'lifecycle-health-snapshot'
+  | 'lifecycle-events';
+
+export interface ProductLifecycleRequiredPlugin {
+  pluginId: string;
+  required: boolean;
+  providerId?: string;
+}
+
+export interface ProductLifecycleApprovalRequirement {
+  approvalId: string;
+  action: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  required: boolean;
+  requiredApprovers?: readonly string[];
+  source: string;
+}
+
+export type ProductLifecycleFailureReasonCode =
+  | 'adapter-failed'
+  | 'gate-failed'
+  | 'artifact-missing'
+  | 'manifest-write-failed'
+  | 'approval-required'
+  | 'policy-denied'
+  | 'provider-unavailable';
+
+export interface ProductLifecycleManifestRefs {
+  lifecyclePlan?: string;
+  lifecycleResult?: string;
+  lifecycleEvents?: string;
+  gateResultManifest?: string;
+  artifactManifest?: string;
+  deploymentManifest?: string;
+  verifyHealthReport?: string;
+  lifecycleHealthSnapshot?: string;
+}
+
+export interface ProductLifecycleApprovalRef {
+  approvalId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  ref: string;
 }
 
 /**
@@ -259,7 +337,10 @@ export interface ProductLifecyclePlan {
 export interface ProductLifecycleResult {
   schemaVersion: '1.0.0';
   runId: string;
+  correlationId?: string;
+  providerMode?: KernelProviderMode;
   productId: string;
+  productUnitRef?: string;
   phase: ProductLifecyclePhase;
   status: 'succeeded' | 'failed' | 'skipped';
   startedAt: string;
@@ -267,8 +348,13 @@ export interface ProductLifecycleResult {
   steps: ProductLifecycleStepResult[];
   gates: ProductGateResult[];
   artifacts: ProductArtifact[];
+  manifestRefs?: ProductLifecycleManifestRefs;
+  eventsRef?: string;
+  healthSnapshotRef?: string;
+  approvalRefs?: readonly ProductLifecycleApprovalRef[];
   outputDirectory: string;
   failure?: {
+    reasonCode?: ProductLifecycleFailureReasonCode;
     stepId: string;
     message: string;
     cause?: string;
@@ -312,9 +398,26 @@ export interface ProductLifecycleStepResult {
   stderr?: string;
   durationMs: number;
   artifacts?: ProductArtifact[];
+  testResults?: ProductLifecycleTestResults;
+  coverageResults?: ProductLifecycleCoverageResults;
+  manifestRefs?: ProductLifecycleManifestRefs;
   errors?: string[];
   warnings?: string[];
   correlationId?: string;
+  evidenceRefs?: readonly string[];
+}
+
+export interface ProductLifecycleTestResults {
+  tests: number;
+  failures: number;
+  skipped: number;
+  durationMs: number;
+}
+
+export interface ProductLifecycleCoverageResults {
+  lineCoverage: number;
+  branchCoverage: number;
+  instructionCoverage: number;
 }
 
 /**
@@ -404,6 +507,9 @@ export interface ProductGateResult {
   status: 'passed' | 'failed' | 'skipped';
   checkedAt: string;
   details?: string;
+  evidenceRefs?: readonly string[];
+  durationMs?: number;
+  providerId?: string;
 }
 
 /**
@@ -423,6 +529,8 @@ export interface ProductExpectedArtifact {
   surface: string;
   type: string;
   required: boolean;
+  providerId?: string;
+  semanticRef?: string;
 }
 
 /**

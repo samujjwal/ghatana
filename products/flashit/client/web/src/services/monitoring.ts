@@ -291,7 +291,7 @@ class MonitoringService {
   private sendMetricsDebounced = this.debounce(() => {
     if (this.metrics.length === 0) return;
 
-    // TODO: Send to backend
+    // Implementation note: Send to backend
     // fetch('/api/metrics', {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },

@@ -269,7 +269,7 @@ public class MockTraceStorage implements TraceStorage {
      */
     @Override
     public Promise<Boolean> isHealthy() {
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     /**

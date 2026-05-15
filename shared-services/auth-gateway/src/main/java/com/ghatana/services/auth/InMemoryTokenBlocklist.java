@@ -55,7 +55,7 @@ public class InMemoryTokenBlocklist implements TokenBlocklist {
         }
         
         log.debug("Token jti={} is blocked", jti);
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 
     @Override

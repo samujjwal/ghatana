@@ -4,7 +4,7 @@ import { ProductSurfaceValidator } from '../validation/ProductSurfaceValidator.j
 import { ProductEnvironmentValidator } from '../validation/ProductEnvironmentValidator.js';
 import { ProductArtifactValidator } from '../validation/ProductArtifactValidator.js';
 import { ProductGateValidator } from '../validation/ProductGateValidator.js';
-import { ProductLifecyclePlan, ProductLifecycleResult, ProductSurface, ProductEnvironment, ProductArtifact, ProductGate, ProductGatePlan, ProductGateResult } from '../domain/ProductLifecyclePhase.js';
+import { ProductLifecyclePlan, ProductLifecycleResult, ProductSurface, ProductSurfaceType, ProductEnvironment, ProductArtifact, ProductGate, ProductGatePlan, ProductGateResult } from '../domain/ProductLifecyclePhase.js';
 
 describe('ProductLifecycleContractValidator', () => {
   const validator = new ProductLifecycleContractValidator();
@@ -12,8 +12,12 @@ describe('ProductLifecycleContractValidator', () => {
   it('should validate correct lifecycle plan', () => {
     const plan: ProductLifecyclePlan = {
       schemaVersion: '1.0.0',
+      runId: 'run-1',
+      correlationId: 'corr-1',
+      providerMode: 'bootstrap',
       productId: 'test-product',
       phase: 'build',
+      phaseMode: 'sequential',
       lifecycleProfile: 'standard-web-api-product',
       surfaces: [
         {
@@ -27,6 +31,7 @@ describe('ProductLifecycleContractValidator', () => {
       steps: [
         {
           id: 'build-backend',
+          stepKind: 'surface',
           phase: 'build',
           surface: 'backend-api',
           adapter: 'gradle-java-service',
@@ -36,6 +41,9 @@ describe('ProductLifecycleContractValidator', () => {
         },
       ],
       expectedArtifacts: [],
+      requiredManifests: [],
+      requiredPlugins: [],
+      approvalRequirements: [],
       outputDirectory: '/tmp/output',
       estimatedDurationMs: 30000,
     };
@@ -53,9 +61,57 @@ describe('ProductLifecycleContractValidator', () => {
     expect(errors.some((e) => e.path === 'phase')).toBe(true);
   });
 
+  it('should detect invalid lifecycle truth fields in plan', () => {
+    const plan = {
+      schemaVersion: '1.0.0',
+      runId: '',
+      correlationId: '',
+      providerMode: 'legacy',
+      productId: 'test-product',
+      phase: 'build',
+      phaseMode: 'sequential',
+      lifecycleProfile: 'standard-web-api-product',
+      surfaces: [{ surface: 'backend-api', type: 'backend-api', adapter: 'gradle-java-service', config: {} }],
+      gates: [],
+      steps: [
+        {
+          id: 'build-backend',
+          stepKind: 'surface',
+          phase: 'build',
+          surface: 'backend-api',
+          adapter: 'gradle-java-service',
+          description: 'Build backend',
+          dependsOn: [],
+          estimatedDurationMs: 30000,
+        },
+      ],
+      expectedArtifacts: [],
+      requiredManifests: 'artifact-manifest',
+      requiredPlugins: 'audit',
+      approvalRequirements: 'approval',
+      outputDirectory: '/tmp/output',
+      estimatedDurationMs: -1,
+    } as unknown as ProductLifecyclePlan;
+
+    const errors = validator.validatePlan(plan);
+
+    expect(errors.map((error) => error.path)).toEqual(
+      expect.arrayContaining([
+        'runId',
+        'correlationId',
+        'providerMode',
+        'estimatedDurationMs',
+        'requiredManifests',
+        'requiredPlugins',
+        'approvalRequirements',
+      ]),
+    );
+  });
+
   it('should validate correct lifecycle result', () => {
     const result: ProductLifecycleResult = {
       schemaVersion: '1.0.0',
+      runId: 'run-1',
       productId: 'test-product',
       phase: 'build',
       status: 'succeeded',
@@ -80,6 +136,7 @@ describe('ProductLifecycleContractValidator', () => {
   it('should detect missing failure details for failed result', () => {
     const result: ProductLifecycleResult = {
       schemaVersion: '1.0.0',
+      runId: 'run-1',
       productId: 'test-product',
       phase: 'build',
       status: 'failed',
@@ -100,6 +157,25 @@ describe('ProductLifecycleContractValidator', () => {
     const errors = validator.validateResult(result);
     expect(errors.some((e) => e.path === 'failure')).toBe(true);
   });
+
+  it('should detect invalid lifecycle result fields', () => {
+    const result = {
+      schemaVersion: '1.0.0',
+      runId: 'run-1',
+      productId: '',
+      status: '',
+      startedAt: '',
+      completedAt: '',
+      steps: [],
+      outputDirectory: '',
+    } as unknown as ProductLifecycleResult;
+
+    const errors = validator.validateResult(result);
+
+    expect(errors.map((error) => error.path)).toEqual(
+      expect.arrayContaining(['productId', 'phase', 'status', 'startedAt', 'completedAt', 'steps', 'outputDirectory']),
+    );
+  });
 });
 
 describe('ProductSurfaceValidator', () => {
@@ -119,7 +195,7 @@ describe('ProductSurfaceValidator', () => {
 
   it('should detect invalid surface type', () => {
     const surface: ProductSurface = {
-      type: 'invalid-type' as any,
+      type: 'invalid-type' as ProductSurfaceType,
       adapter: 'gradle-java-service',
       path: '/products/test/backend',
       implementationStatus: 'implemented',

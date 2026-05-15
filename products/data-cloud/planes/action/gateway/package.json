@@ -13,6 +13,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",
+    "@ghatana/kernel-lifecycle": "workspace:*",
     "fastify": "^5.8.4",
     "ws": "^8.20.0"
   },

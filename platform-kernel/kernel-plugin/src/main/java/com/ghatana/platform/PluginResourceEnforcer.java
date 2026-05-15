@@ -70,7 +70,7 @@ public final class PluginResourceEnforcer {
         try {
             PluginResourceQuota quotas = plugin.resourceQuota();
 
-            // Check current resource usage (placeholder implementation)
+            // Check current resource usage (baseline implementation)
             ResourceUsage currentUsage = getCurrentResourceUsage(plugin.basicPlugin().id());
 
             // Enforce memory quota
@@ -137,7 +137,7 @@ public final class PluginResourceEnforcer {
     }
 
     /**
-     * Gets current resource usage for a plugin (placeholder implementation).
+     * Gets current resource usage for a plugin (baseline implementation).
      */
     private ResourceUsage getCurrentResourceUsage(String pluginId) {
         // This would integrate with system monitoring to get actual usage

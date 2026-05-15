@@ -24,7 +24,7 @@ import java.util.Map;
  *                   independently against operands. Cannot operate in stateful mode (supportsStateful=false).
  *                   This is the only stateless composition operator in the builtin set.
  * @doc.threading Thread-Safe Validation - Validation logic is stateless and thread-safe. Runtime execution
- *                (not implemented here) is also inherently thread-safe due to stateless nature - each event
+ *                (unavailable here) is also inherently thread-safe due to stateless nature - each event
  *                evaluation is independent.
  * @doc.performance O(n) Validation Performance - Linear in number of operands for operand validation,
  *                  O(p) for parameter validation where p = parameter count. Typical validation time: <1ms

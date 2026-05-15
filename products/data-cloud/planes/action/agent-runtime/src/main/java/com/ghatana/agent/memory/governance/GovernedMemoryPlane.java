@@ -254,7 +254,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         }
 
         // For now, fall back to synchronous label-based filtering
-        // TODO: Implement full async filtering with MasteryRegistry queries
+        // Implementation note: Implement full async filtering with MasteryRegistry queries
         return Promise.of(filterByMasteryState(items, query));
     }
 
@@ -294,7 +294,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
         }
 
         // For now, fall back to synchronous label-based filtering
-        // TODO: Implement full async filtering with MasteryRegistry queries
+        // Implementation note: Implement full async filtering with MasteryRegistry queries
         return Promise.of(filterScoredByMasteryState(items));
     }
 

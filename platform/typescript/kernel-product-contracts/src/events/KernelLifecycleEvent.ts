@@ -7,6 +7,65 @@
  * @doc.pattern Event
  */
 
+import { z } from "zod";
+import type { ProductLifecyclePhase } from "../lifecycle/ProductLifecyclePhase";
+
+export const KERNEL_EVENT_SCHEMA_VERSION = "1.0.0";
+
+export const KERNEL_LIFECYCLE_EVENT_TYPES = [
+  "product-unit.intent.created",
+  "product-unit.intent.validated",
+  "product-unit.intent.applied",
+  "lifecycle.phase.started",
+  "lifecycle.phase.completed",
+  "lifecycle.step.started",
+  "lifecycle.step.completed",
+  "lifecycle.gate.evaluated",
+  "lifecycle.artifact.recorded",
+  "lifecycle.manifest.written",
+  "lifecycle.deployment.completed",
+  "lifecycle.health.checked",
+  "lifecycle.agent.governance.evaluated",
+  "lifecycle.approval.requested",
+  "lifecycle.approval.decided",
+] as const;
+
+export type KernelLifecycleEventType =
+  (typeof KERNEL_LIFECYCLE_EVENT_TYPES)[number];
+
+const PRODUCT_LIFECYCLE_PHASES = [
+  "create",
+  "bootstrap",
+  "dev",
+  "validate",
+  "test",
+  "build",
+  "package",
+  "release",
+  "deploy",
+  "verify",
+  "promote",
+  "rollback",
+  "operate",
+  "retire",
+] as const satisfies readonly ProductLifecyclePhase[];
+
+export const LIFECYCLE_EVENT_STATUSES = [
+  "healthy",
+  "degraded",
+  "blocked",
+  "failed",
+  "skipped",
+  "running",
+  "pending approval",
+  "requires verification",
+  "obsolete",
+  "quarantined",
+  "unknown",
+] as const;
+
+export type LifecycleEventStatus = (typeof LIFECYCLE_EVENT_STATUSES)[number];
+
 /**
  * Base event metadata for all Kernel lifecycle events.
  */
@@ -19,12 +78,12 @@ export interface KernelEventMetadata {
   /**
    * Schema version for event contract compatibility.
    */
-  readonly schemaVersion: string;
+  readonly schemaVersion: "1.0.0";
 
   /**
    * Event type identifier.
    */
-  readonly eventType: string;
+  readonly eventType: KernelLifecycleEventType;
 
   /**
    * ProductUnit identifier.
@@ -37,9 +96,9 @@ export interface KernelEventMetadata {
   readonly runId: string;
 
   /**
-   * Lifecycle phase (dev, validate, test, build, package, deploy, verify, promote, rollback).
+   * Lifecycle phase.
    */
-  readonly phase: string;
+  readonly phase: ProductLifecyclePhase;
 
   /**
    * Event timestamp (ISO 8601).
@@ -72,6 +131,155 @@ export interface KernelEventMetadata {
   readonly correlationId: string;
 }
 
+export interface ProductUnitIntentCreatedPayload {
+  readonly intentId: string;
+  readonly intentType: "create" | "update" | "promote-candidate";
+  readonly producerId: string;
+  readonly producerType: string;
+  readonly productUnitDraftId: string;
+}
+
+export interface ProductUnitIntentValidatedPayload {
+  readonly intentId: string;
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+}
+
+export interface ProductUnitIntentAppliedPayload {
+  readonly intentId: string;
+  readonly productUnitId: string;
+  readonly applied: boolean;
+  readonly changedFiles: readonly string[];
+}
+
+export interface LifecyclePhaseStartedPayload {
+  readonly phase: ProductLifecyclePhase;
+  readonly status: "running";
+  readonly startedAt: string;
+}
+
+export interface LifecyclePhaseCompletedPayload {
+  readonly phase: ProductLifecyclePhase;
+  readonly status: "succeeded" | "failed" | "skipped";
+  readonly durationMs: number;
+  readonly completedAt: string;
+}
+
+export interface LifecycleStepStartedPayload {
+  readonly stepId: string;
+  readonly stepKind: string;
+  readonly surface: string;
+  readonly adapter: string;
+  readonly status: "running";
+  readonly startedAt: string;
+}
+
+export interface LifecycleStepCompletedPayload {
+  readonly stepId: string;
+  readonly stepKind: string;
+  readonly surface: string;
+  readonly adapter: string;
+  readonly status: "succeeded" | "failed" | "skipped";
+  readonly durationMs: number;
+  readonly completedAt: string;
+  readonly exitCode?: number;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface LifecycleGateEvaluatedPayload {
+  readonly gateId: string;
+  readonly status: "passed" | "failed" | "skipped";
+  readonly required: boolean;
+  readonly reason: string;
+  readonly evidenceRefs: readonly string[];
+  readonly durationMs: number;
+}
+
+export interface LifecycleArtifactRecordedPayload {
+  readonly artifactId: string;
+  readonly artifactType: string;
+  readonly required: boolean;
+  readonly path?: string;
+  readonly fingerprint?: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface LifecycleManifestWrittenPayload {
+  readonly manifestType:
+    | "lifecycle-plan"
+    | "lifecycle-result"
+    | "gate-result-manifest"
+    | "artifact-manifest"
+    | "deployment-manifest"
+    | "verify-health-report"
+    | "lifecycle-health-snapshot"
+    | "lifecycle-events";
+  readonly path: string;
+  readonly required: boolean;
+  readonly status: "written" | "failed";
+}
+
+export interface LifecycleDeploymentCompletedPayload {
+  readonly deploymentId: string;
+  readonly environment: string;
+  readonly status: "succeeded" | "failed" | "skipped";
+  readonly artifactIds: readonly string[];
+  readonly endpoints: readonly string[];
+  readonly durationMs: number;
+}
+
+export interface LifecycleHealthCheckedPayload {
+  readonly checkId: string;
+  readonly checkName: string;
+  readonly status: "healthy" | "degraded" | "blocked" | "failed" | "skipped" | "unknown";
+  readonly message: string;
+  readonly durationMs: number;
+  readonly deploymentId?: string;
+  readonly environment?: string;
+}
+
+export interface LifecycleAgentGovernanceEvaluatedPayload {
+  readonly agentId: string;
+  readonly actionType: string;
+  readonly decision: "allowed" | "denied" | "requires-approval";
+  readonly reason: string;
+  readonly masteryState?: string;
+  readonly executionMode?: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface LifecycleApprovalRequestedPayload {
+  readonly approvalId: string;
+  readonly action: string;
+  readonly riskLevel: "low" | "medium" | "high" | "critical";
+  readonly requestedBy: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface LifecycleApprovalDecidedPayload {
+  readonly approvalId: string;
+  readonly decision: "approved" | "rejected";
+  readonly decidedBy: string;
+  readonly reason: string;
+}
+
+export type KernelLifecycleEventPayload =
+  | ProductUnitIntentCreatedPayload
+  | ProductUnitIntentValidatedPayload
+  | ProductUnitIntentAppliedPayload
+  | LifecyclePhaseStartedPayload
+  | LifecyclePhaseCompletedPayload
+  | LifecycleStepStartedPayload
+  | LifecycleStepCompletedPayload
+  | LifecycleGateEvaluatedPayload
+  | LifecycleArtifactRecordedPayload
+  | LifecycleManifestWrittenPayload
+  | LifecycleDeploymentCompletedPayload
+  | LifecycleHealthCheckedPayload
+  | LifecycleAgentGovernanceEvaluatedPayload
+  | LifecycleApprovalRequestedPayload
+  | LifecycleApprovalDecidedPayload;
+
 /**
  * Kernel lifecycle event.
  */
@@ -82,7 +290,251 @@ export interface KernelLifecycleEvent {
   readonly metadata: KernelEventMetadata;
 
   /**
-   * Event payload (specific to event type).
+   * Event payload.
    */
-  readonly payload: Record<string, unknown>;
+  readonly payload: KernelLifecycleEventPayload;
+}
+
+export interface KernelLifecycleEventValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+}
+
+export const KernelEventMetadataSchema = z
+  .object({
+    eventId: z.string().trim().min(1),
+    schemaVersion: z.literal(KERNEL_EVENT_SCHEMA_VERSION),
+    eventType: z.enum(KERNEL_LIFECYCLE_EVENT_TYPES),
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
+    timestamp: z.string().datetime({ offset: true }),
+    source: z.string().trim().min(1),
+    tenantId: z.string().trim().min(1).optional(),
+    workspaceId: z.string().trim().min(1).optional(),
+    projectId: z.string().trim().min(1).optional(),
+    correlationId: z.string().trim().min(1),
+  })
+  .strict();
+
+const ProductUnitIntentCreatedPayloadSchema = z
+  .object({
+    intentId: z.string().trim().min(1),
+    intentType: z.enum(["create", "update", "promote-candidate"]),
+    producerId: z.string().trim().min(1),
+    producerType: z.string().trim().min(1),
+    productUnitDraftId: z.string().trim().min(1),
+  })
+  .strict();
+
+const ProductUnitIntentValidatedPayloadSchema = z
+  .object({
+    intentId: z.string().trim().min(1),
+    valid: z.boolean(),
+    errors: z.array(z.string()),
+  })
+  .strict();
+
+const ProductUnitIntentAppliedPayloadSchema = z
+  .object({
+    intentId: z.string().trim().min(1),
+    productUnitId: z.string().trim().min(1),
+    applied: z.boolean(),
+    changedFiles: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecyclePhaseStartedPayloadSchema = z
+  .object({
+    phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
+    status: z.literal("running"),
+    startedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+const LifecyclePhaseCompletedPayloadSchema = z
+  .object({
+    phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
+    status: z.enum(["succeeded", "failed", "skipped"]),
+    durationMs: z.number().nonnegative(),
+    completedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+const LifecycleStepStartedPayloadSchema = z
+  .object({
+    stepId: z.string().trim().min(1),
+    stepKind: z.string().trim().min(1),
+    surface: z.string().trim().min(1),
+    adapter: z.string().trim().min(1),
+    status: z.literal("running"),
+    startedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+const LifecycleStepCompletedPayloadSchema = z
+  .object({
+    stepId: z.string().trim().min(1),
+    stepKind: z.string().trim().min(1),
+    surface: z.string().trim().min(1),
+    adapter: z.string().trim().min(1),
+    status: z.enum(["succeeded", "failed", "skipped"]),
+    durationMs: z.number().nonnegative(),
+    completedAt: z.string().datetime({ offset: true }),
+    exitCode: z.number().int().optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecycleGateEvaluatedPayloadSchema = z
+  .object({
+    gateId: z.string().trim().min(1),
+    status: z.enum(["passed", "failed", "skipped"]),
+    required: z.boolean(),
+    reason: z.string().trim().min(1),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+    durationMs: z.number().nonnegative(),
+  })
+  .strict();
+
+const LifecycleArtifactRecordedPayloadSchema = z
+  .object({
+    artifactId: z.string().trim().min(1),
+    artifactType: z.string().trim().min(1),
+    required: z.boolean(),
+    path: z.string().trim().min(1).optional(),
+    fingerprint: z.string().trim().min(1).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecycleManifestWrittenPayloadSchema = z
+  .object({
+    manifestType: z.enum([
+      "lifecycle-plan",
+      "lifecycle-result",
+      "gate-result-manifest",
+      "artifact-manifest",
+      "deployment-manifest",
+      "verify-health-report",
+      "lifecycle-health-snapshot",
+      "lifecycle-events",
+    ]),
+    path: z.string().trim().min(1),
+    required: z.boolean(),
+    status: z.enum(["written", "failed"]),
+  })
+  .strict();
+
+const LifecycleDeploymentCompletedPayloadSchema = z
+  .object({
+    deploymentId: z.string().trim().min(1),
+    environment: z.string().trim().min(1),
+    status: z.enum(["succeeded", "failed", "skipped"]),
+    artifactIds: z.array(z.string().trim().min(1)),
+    endpoints: z.array(z.string().trim().min(1)),
+    durationMs: z.number().nonnegative(),
+  })
+  .strict();
+
+const LifecycleHealthCheckedPayloadSchema = z
+  .object({
+    checkId: z.string().trim().min(1),
+    checkName: z.string().trim().min(1),
+    status: z.enum(["healthy", "degraded", "blocked", "failed", "skipped", "unknown"]),
+    message: z.string().trim().min(1),
+    durationMs: z.number().nonnegative(),
+    deploymentId: z.string().trim().min(1).optional(),
+    environment: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const LifecycleAgentGovernanceEvaluatedPayloadSchema = z
+  .object({
+    agentId: z.string().trim().min(1),
+    actionType: z.string().trim().min(1),
+    decision: z.enum(["allowed", "denied", "requires-approval"]),
+    reason: z.string().trim().min(1),
+    masteryState: z.string().trim().min(1).optional(),
+    executionMode: z.string().trim().min(1).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecycleApprovalRequestedPayloadSchema = z
+  .object({
+    approvalId: z.string().trim().min(1),
+    action: z.string().trim().min(1),
+    riskLevel: z.enum(["low", "medium", "high", "critical"]),
+    requestedBy: z.string().trim().min(1),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecycleApprovalDecidedPayloadSchema = z
+  .object({
+    approvalId: z.string().trim().min(1),
+    decision: z.enum(["approved", "rejected"]),
+    decidedBy: z.string().trim().min(1),
+    reason: z.string().trim().min(1),
+  })
+  .strict();
+
+const payloadSchemasByEventType = {
+  "product-unit.intent.created": ProductUnitIntentCreatedPayloadSchema,
+  "product-unit.intent.validated": ProductUnitIntentValidatedPayloadSchema,
+  "product-unit.intent.applied": ProductUnitIntentAppliedPayloadSchema,
+  "lifecycle.phase.started": LifecyclePhaseStartedPayloadSchema,
+  "lifecycle.phase.completed": LifecyclePhaseCompletedPayloadSchema,
+  "lifecycle.step.started": LifecycleStepStartedPayloadSchema,
+  "lifecycle.step.completed": LifecycleStepCompletedPayloadSchema,
+  "lifecycle.gate.evaluated": LifecycleGateEvaluatedPayloadSchema,
+  "lifecycle.artifact.recorded": LifecycleArtifactRecordedPayloadSchema,
+  "lifecycle.manifest.written": LifecycleManifestWrittenPayloadSchema,
+  "lifecycle.deployment.completed": LifecycleDeploymentCompletedPayloadSchema,
+  "lifecycle.health.checked": LifecycleHealthCheckedPayloadSchema,
+  "lifecycle.agent.governance.evaluated": LifecycleAgentGovernanceEvaluatedPayloadSchema,
+  "lifecycle.approval.requested": LifecycleApprovalRequestedPayloadSchema,
+  "lifecycle.approval.decided": LifecycleApprovalDecidedPayloadSchema,
+} as const;
+
+export const KernelLifecycleEventSchema = z
+  .object({
+    metadata: KernelEventMetadataSchema,
+    payload: z.unknown(),
+  })
+  .strict()
+  .superRefine((event, context) => {
+    const schema = payloadSchemasByEventType[event.metadata.eventType];
+    const payloadResult = schema.safeParse(event.payload);
+    if (!payloadResult.success) {
+      for (const issue of payloadResult.error.issues) {
+        context.addIssue({
+          ...issue,
+          path: ["payload", ...issue.path],
+        });
+      }
+    }
+  });
+
+export function validateKernelLifecycleEvent(
+  value: unknown
+): KernelLifecycleEventValidationResult {
+  const parsed = KernelLifecycleEventSchema.safeParse(value);
+  if (parsed.success) {
+    return { valid: true, errors: [] };
+  }
+  return {
+    valid: false,
+    errors: parsed.error.issues.map((issue) => {
+      const path = issue.path.join(".");
+      return `${path}: ${issue.message}`;
+    }),
+  };
+}
+
+export function isKernelLifecycleEvent(
+  value: unknown
+): value is KernelLifecycleEvent {
+  return validateKernelLifecycleEvent(value).valid;
 }

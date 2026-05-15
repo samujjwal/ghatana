@@ -72,7 +72,7 @@ public abstract class ApiContractConformanceTestBase {
             .map(route -> HttpRouteScanner.normalizePathFormat(route.getPath(), true))
             .collect(Collectors.toSet());
 
-        // Check for routes in spec but not implemented
+        // Check for routes in spec but unavailable
         Set<String> missingRoutes = new HashSet<>(specPaths);
         missingRoutes.removeAll(implPaths);
 

@@ -295,36 +295,43 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 null, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
-                riskManagementPlugin, notificationPlugin
+                riskManagementPlugin, notificationPlugin, featureFlagPlugin, false
             ));
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, null, approvalPlugin, auditTrailPlugin,
-                riskManagementPlugin, notificationPlugin
+                riskManagementPlugin, notificationPlugin, featureFlagPlugin, false
             ))
             .withMessageContaining("consentPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, null, auditTrailPlugin,
-                riskManagementPlugin, notificationPlugin
+                riskManagementPlugin, notificationPlugin, featureFlagPlugin, false
             ))
             .withMessageContaining("approvalPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, null,
-                riskManagementPlugin, notificationPlugin
+                riskManagementPlugin, notificationPlugin, featureFlagPlugin, false
             ))
             .withMessageContaining("auditTrailPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
-                null, notificationPlugin
+                null, notificationPlugin, featureFlagPlugin, false
             ))
             .withMessageContaining("riskManagementPlugin");
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
+                authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
+                riskManagementPlugin, notificationPlugin, null, false
+            ))
+            .withMessageContaining("featureFlagPlugin");
     }
 
     private static final class RecordingBridgeAuthorizationService implements BridgeAuthorizationService {

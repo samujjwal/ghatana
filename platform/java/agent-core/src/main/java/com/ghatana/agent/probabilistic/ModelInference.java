@@ -43,7 +43,7 @@ public interface ModelInference {
      * Returns whether the model is currently available.
      */
     @NotNull
-    default Promise<Boolean> isAvailable() { return Promise.of(true); }
+    default Promise<Boolean> isAvailable() { return Promise.of(Boolean.TRUE); }
 
     /**
      * Result of a model inference call.

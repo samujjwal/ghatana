@@ -365,7 +365,7 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
             LOG.info("Cancelled execution: {}", requestId);
             cancelSpan.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
             cancelSpan.end();
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         } finally {
             MDC.remove("requestId");
         }

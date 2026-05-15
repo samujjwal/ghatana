@@ -8,6 +8,12 @@ import {
 const baseIntent: ProductUnitIntent = {
   schemaVersion: "1.0.0",
   intentId: "intent-1",
+  intentType: "create",
+  scope: {
+    tenantId: "tenant-1",
+    workspaceId: "workspace-1",
+    projectId: "project-1",
+  },
   producer: {
     id: "yappc-control-plane",
     type: "yappc",
@@ -30,9 +36,37 @@ const baseIntent: ProductUnitIntent = {
       },
     ],
   },
+  requestedLifecycle: {
+    profile: "standard-web-product",
+    enableExecution: false,
+    phases: ["validate", "build"],
+  },
+  governanceHints: {
+    privacyLevel: "internal",
+    evidencePrivacyClassification: "confidential",
+    regulatedDomain: "marketing",
+    requiresHumanApproval: true,
+    requiredPolicyPacks: ["marketing-default"],
+    dataSensitivity: "moderate",
+    retentionPolicyId: "marketing-evidence-365",
+    retentionDays: 365,
+  },
+  provenance: {
+    sourceSystem: "yappc",
+    sourceArtifactRefs: ["artifact:yappc:blueprint-1"],
+    createdBy: "user:builder",
+    createdAt: "2026-05-14T00:00:00.000Z",
+    evidenceRefs: ["evidence:canvas:1"],
+  },
 };
 
 describe("ProductUnitIntent", () => {
+  it("rejects non-object input", () => {
+    expect(validateProductUnitIntent(null).errors).toContain(
+      "ProductUnitIntent must be an object"
+    );
+  });
+
   it("accepts a YAPPC-produced intent", () => {
     expect(isProductUnitIntent(baseIntent)).toBe(true);
   });
@@ -73,6 +107,51 @@ describe("ProductUnitIntent", () => {
     );
   });
 
+  it("rejects missing target object", () => {
+    const { target: _target, ...intent } = baseIntent;
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "target must be an object"
+    );
+  });
+
+  it("rejects missing producer object", () => {
+    const { producer: _producer, ...intent } = baseIntent;
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "producer must be an object"
+    );
+  });
+
+  it("rejects empty producer fields", () => {
+    const intent = {
+      ...baseIntent,
+      producer: {
+        id: "",
+        type: "yappc",
+        correlationId: "",
+      },
+    };
+
+    const errors = validateProductUnitIntent(intent).errors;
+    expect(errors).toContain("producer.id must be a non-empty string");
+    expect(errors).toContain("producer.correlationId must be a non-empty string");
+  });
+
+  it("rejects invalid intent metadata", () => {
+    const invalidSchemaVersion = {
+      ...baseIntent,
+      schemaVersion: "2.0.0",
+      intentId: "",
+      intentType: "delete",
+    };
+
+    const errors = validateProductUnitIntent(invalidSchemaVersion).errors;
+    expect(errors).toContain('schemaVersion must be "1.0.0"');
+    expect(errors).toContain("intentId must be a non-empty string");
+    expect(errors).toContain("intentType is not supported");
+  });
+
   it("rejects empty surfaces", () => {
     const intent = {
       ...baseIntent,
@@ -87,16 +166,120 @@ describe("ProductUnitIntent", () => {
     );
   });
 
+  it("rejects missing scope", () => {
+    const { scope: _scope, ...intent } = baseIntent;
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "scope must be an object"
+    );
+  });
+
+  it("rejects unsupported producer types", () => {
+    const intent = {
+      ...baseIntent,
+      producer: {
+        ...baseIntent.producer,
+        type: "unknown-producer",
+      },
+    };
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "producer.type is not supported"
+    );
+  });
+
+  it("rejects unsupported surface implementation status", () => {
+    const intent = {
+      ...baseIntent,
+      productUnit: {
+        ...baseIntent.productUnit,
+        surfaces: [
+          {
+            id: "external-demo-web",
+            type: "web",
+            implementationStatus: "half-built",
+          },
+        ],
+      },
+    };
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "productUnit.surfaces[0].implementationStatus is not supported"
+    );
+  });
+
+  it("rejects unsupported surface type", () => {
+    const intent = {
+      ...baseIntent,
+      productUnit: {
+        ...baseIntent.productUnit,
+        surfaces: [
+          {
+            id: "external-demo-web",
+            type: "unknown-surface",
+            implementationStatus: "planned",
+          },
+        ],
+      },
+    };
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "productUnit.surfaces[0].type is not supported"
+    );
+  });
+
+  it("rejects missing productUnit", () => {
+    const { productUnit: _productUnit, ...intent } = baseIntent;
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "productUnit must be an object"
+    );
+  });
+
+  it("rejects unknown productUnit kind", () => {
+    const intent = {
+      ...baseIntent,
+      productUnit: {
+        ...baseIntent.productUnit,
+        kind: "mystery-product",
+      },
+    };
+
+    expect(validateProductUnitIntent(intent).errors).toContain(
+      "productUnit.kind is not a known ProductUnit kind"
+    );
+  });
+
   it("rejects raw secret-like fields", () => {
     const intent = {
       ...baseIntent,
-      provenance: {
-        githubToken: "do-not-put-this-here",
+      productUnit: {
+        ...baseIntent.productUnit,
+        metadata: {
+          githubToken: "do-not-put-this-here",
+        },
       },
     };
 
     expect(validateProductUnitIntent(intent).errors).toContain(
       "ProductUnitIntent must not include raw secret-like fields"
     );
+  });
+
+  it("rejects invalid privacy classification and retention hints", () => {
+    const intent = {
+      ...baseIntent,
+      governanceHints: {
+        ...baseIntent.governanceHints,
+        evidencePrivacyClassification: "private",
+        retentionPolicyId: "",
+        retentionDays: -1,
+      },
+    };
+
+    const errors = validateProductUnitIntent(intent).errors;
+    expect(errors).toContain("governanceHints.evidencePrivacyClassification is invalid");
+    expect(errors).toContain("governanceHints.retentionPolicyId must be a non-empty string");
+    expect(errors).toContain("governanceHints.retentionDays must be non-negative");
   });
 });

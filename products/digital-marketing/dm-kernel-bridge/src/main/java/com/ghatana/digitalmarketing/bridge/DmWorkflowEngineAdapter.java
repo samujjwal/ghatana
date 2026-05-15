@@ -66,7 +66,7 @@ public final class DmWorkflowEngineAdapter {
         if (steps.isEmpty()) {
             LOG.warn("[DMOS] Workflow submitted with no steps: workflowId={} correlationId={}",
                 workflowId, ctx.getCorrelationId().getValue());
-            return Promise.of(true);
+            return Promise.of(Boolean.TRUE);
         }
 
         DefaultWorkflowContext workflowCtx = new DefaultWorkflowContext(

@@ -9,10 +9,43 @@ export { EnvironmentResolver } from './planning/EnvironmentResolver.js';
 export { ToolchainResolver } from './planning/ToolchainResolver.js';
 
 export { ProductLifecycleExecutor } from './execution/ProductLifecycleExecutor.js';
-export { ProductLifecycleStepRunner, AdapterRegistry, Adapter, AdapterResult, AdapterContext, StepContext } from './execution/ProductLifecycleStepRunner.js';
+export {
+  ProductLifecycleStepRunner,
+  AdapterRegistry,
+  Adapter,
+  AdapterResult,
+  AdapterArtifact,
+  AdapterContext,
+  StepContext,
+} from './execution/ProductLifecycleStepRunner.js';
 export { ConsoleExecutionLogger, FileExecutionLogger } from './execution/ExecutionLogger.js';
 export { ExecutionFailureHandler, FailureHandlingResult } from './execution/ExecutionFailureHandler.js';
 export { ExecutionResultCollector } from './execution/ExecutionResultCollector.js';
+export {
+  AgentLifecycleActionService,
+  type AgentLifecycleActionChecks,
+  type AgentLifecycleActionExecutor,
+  type AgentLifecycleActionPlanner,
+  type AgentLifecycleActionServiceOptions,
+} from './agentic/AgentLifecycleActionService.js';
+
+export {
+  LifecycleManifestWriter,
+  type LifecycleManifestWriterOptions,
+  type LifecycleManifestWriteRequest,
+  type LifecycleManifestWriteResult,
+} from './manifest/LifecycleManifestWriter.js';
+export {
+  GateExecutor,
+  type GateExecutorOptions,
+  type GateExecutionRequest,
+  type GateExecutionResult,
+} from './gates/GateExecutor.js';
+export {
+  requireLifecycleContextProvider,
+  type LifecycleProviderContext,
+  type LifecycleProviderName,
+} from './providers/LifecycleProviderContext.js';
 
 export { CanonicalRegistryLoader } from './io/CanonicalRegistryLoader.js';
 export { LifecycleProfileLoader } from './io/LifecycleProfileLoader.js';

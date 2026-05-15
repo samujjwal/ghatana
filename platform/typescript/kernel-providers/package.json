@@ -17,7 +17,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ghatana/kernel-product-contracts": "workspace:*"
+    "@ghatana/kernel-artifacts": "workspace:*",
+    "@ghatana/kernel-product-contracts": "workspace:*",
+    "@ghatana/kernel-release": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

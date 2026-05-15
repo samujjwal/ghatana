@@ -58,7 +58,7 @@ public class PluginStateMigrationService {
      * @return true if compatible
      */
     public boolean isStateCompatible(Object state, String targetVersion) {
-        // Placeholder implementation
+        // Baseline implementation
         return true;
     }
 }

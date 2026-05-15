@@ -50,7 +50,7 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
             if (store.containsKey(compositeKey)) {
                 Instant expiry = store.get(compositeKey);
                 if (expiry != null && expiry.isAfter(now)) {
-                    return Promise.of(true);
+                    return Promise.of(Boolean.TRUE);
                 }
             }
 

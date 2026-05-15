@@ -10,10 +10,10 @@
  * @doc.pattern Module
  */
 
-export * from "./KernelLifecycleEvent";
-export * from "./KernelGateEvent";
-export * from "./KernelArtifactEvent";
-export * from "./KernelDeploymentEvent";
-export * from "./KernelHealthEvent";
-export * from "./KernelAgentGovernanceEvent";
-export * from "./KernelPreviewSecurityEvent";
+export * from "./KernelLifecycleEvent.js";
+export * from "./KernelGateEvent.js";
+export * from "./KernelArtifactEvent.js";
+export * from "./KernelDeploymentEvent.js";
+export * from "./KernelHealthEvent.js";
+export * from "./KernelAgentGovernanceEvent.js";
+export * from "./KernelPreviewSecurityEvent.js";

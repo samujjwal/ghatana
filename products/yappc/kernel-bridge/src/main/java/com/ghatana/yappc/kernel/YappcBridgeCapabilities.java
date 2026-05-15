@@ -8,7 +8,7 @@ import java.util.Map;
  * Canonical {@link KernelCapability} constants contributed by the YAPPC kernel bridge.
  *
  * @doc.type class
- * @doc.purpose Typed KernelCapability constants for YAPPC plugin system capabilities
+ * @doc.purpose Typed KernelCapability constants for YAPPC evidence bridge capabilities
  * @doc.layer adapter
  * @doc.pattern Constants
  * @author Ghatana Platform Team
@@ -16,27 +16,18 @@ import java.util.Map;
  */
 public final class YappcBridgeCapabilities {
 
-    /**
-     * Capability indicating that YAPPC's PluginRegistry is available in the kernel context.
-     *
-     * <p>When present, callers may safely call:
-     * {@code context.getDependency(PluginRegistry.class)}</p>
-     */
-    public static final KernelCapability YAPPC_PLUGIN_REGISTRY = new KernelCapability(
-        "yappc.plugin-registry",
-        "YAPPC Plugin Registry",
-        "YAPPC in-process plugin registry accessible through the kernel context",
+    public static final KernelCapability YAPPC_PRODUCT_UNIT_INTENTS = new KernelCapability(
+        "yappc.product-unit-intents",
+        "YAPPC ProductUnitIntent Provider",
+        "YAPPC ProductUnitIntent candidates accessible through a narrow provider port",
         KernelCapability.CapabilityType.INTEGRATION,
         Map.of("is_shared", "true", "scope", "platform")
     );
 
-    /**
-     * Capability indicating that YAPPC code-generation validators are available.
-     */
-    public static final KernelCapability YAPPC_CODE_VALIDATORS = new KernelCapability(
-        "yappc.code-validators",
-        "YAPPC Code Validators",
-        "YAPPC ValidatorPlugin implementations accessible via PluginRegistry",
+    public static final KernelCapability YAPPC_ARTIFACT_INTELLIGENCE = new KernelCapability(
+        "yappc.artifact-intelligence",
+        "YAPPC Artifact Intelligence",
+        "YAPPC semantic artifact evidence exposed through stable provider ports",
         KernelCapability.CapabilityType.BUSINESS_LOGIC,
         Map.of("is_shared", "true", "scope", "platform")
     );

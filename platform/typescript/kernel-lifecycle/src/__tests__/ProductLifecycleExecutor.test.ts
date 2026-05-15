@@ -1,7 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import type {
+  KernelLifecycleEvent,
+  LifecycleArtifactProvider,
+  LifecycleApprovalProvider,
+  LifecycleEventProvider,
+  GateProvider,
+} from '@ghatana/kernel-product-contracts';
 import { ProductLifecycleExecutor } from '../execution/ProductLifecycleExecutor.js';
 import {
   ProductLifecycleStepRunner,
@@ -13,12 +20,34 @@ import {
 import { ConsoleExecutionLogger } from '../execution/ExecutionLogger.js';
 import { ExecutionResultCollector } from '../execution/ExecutionResultCollector.js';
 import { ProductLifecycleStep, ProductLifecyclePhase, ProductLifecyclePlan } from '../domain/ProductLifecyclePhase.js';
+import { KernelLifecycleEventEmitter } from '../events/KernelLifecycleEventEmitter.js';
 
 class FakeAdapter implements Adapter {
   constructor(private shouldSucceed: boolean = true) {}
 
   async execute(_context: AdapterContext): Promise<AdapterResult> {
     return { status: this.shouldSucceed ? 'succeeded' : 'failed' };
+  }
+}
+
+class ArtifactAdapter implements Adapter {
+  async execute(_context: AdapterContext): Promise<AdapterResult> {
+    return {
+      status: 'succeeded',
+      artifacts: [
+        {
+          id: 'backend-jar',
+          surface: 'backend-api',
+          type: 'jvm-service',
+          path: 'build/libs/app.jar',
+          fingerprint: 'sha256:jar',
+          producedBy: 'gradle-java-service',
+        },
+      ],
+      stdout: 'artifact produced',
+      warnings: ['artifact warning'],
+      manifestRefs: { artifactManifest: 'artifact-manifest.json' },
+    };
   }
 }
 
@@ -59,13 +88,74 @@ function makePlan(
     schemaVersion: '1.0.0',
     runId: 'run-001',
     correlationId: 'corr-run-001',
+    providerMode: 'bootstrap',
     phaseMode: 'sequential',
     lifecycleProfile: 'standard-web-api-product',
     surfaces: [],
     gates: [],
     expectedArtifacts: [],
+    requiredManifests: [],
+    requiredPlugins: [],
+    approvalRequirements: [],
     outputDirectory: '/tmp/output',
     estimatedDurationMs: 5000,
+    ...overrides,
+  };
+}
+
+function createLifecycleEventProvider(): LifecycleEventProvider {
+  return {
+    providerId: 'events-test',
+    version: '1.0.0',
+    capabilities: ['events'],
+    appendEvent: vi.fn().mockResolvedValue({ success: true, ref: 'events/run-001.jsonl' }),
+    listEvents: vi.fn().mockResolvedValue([]),
+  };
+}
+
+function appendedEvents(provider: LifecycleEventProvider): KernelLifecycleEvent[] {
+  return vi.mocked(provider.appendEvent).mock.calls.map(([event]) => event);
+}
+
+function createArtifactProvider(overrides: Partial<LifecycleArtifactProvider> = {}): LifecycleArtifactProvider {
+  return {
+    providerId: 'artifact-provider',
+    version: '1.0.0',
+    capabilities: ['artifact-manifests'],
+    recordArtifactManifest: vi.fn().mockResolvedValue({ success: true, ref: 'artifact-provider-ref' }),
+    listArtifactManifests: vi.fn().mockResolvedValue([]),
+    ...overrides,
+  };
+}
+
+function createGateProvider(overrides: Partial<GateProvider> = {}): GateProvider {
+  return {
+    providerId: 'policy-gates',
+    version: '1.0.0',
+    capabilities: ['gates'],
+    evaluateGate: vi.fn().mockResolvedValue({
+      gateId: 'security',
+      passed: true,
+      reason: 'policy passed',
+      evidence: ['policy:security'],
+      evaluatedAt: '2026-05-14T00:00:00.000Z',
+      duration: 10,
+    }),
+    getGateConfig: vi.fn().mockResolvedValue(null),
+    listGates: vi.fn().mockResolvedValue(['security']),
+    ...overrides,
+  };
+}
+
+function createApprovalProvider(
+  overrides: Partial<LifecycleApprovalProvider> = {},
+): LifecycleApprovalProvider {
+  return {
+    providerId: 'approval-provider',
+    version: '1.0.0',
+    capabilities: ['approvals'],
+    requestLifecycleApproval: vi.fn().mockResolvedValue({ success: true, ref: 'approval-gates/deploy-prod.json' }),
+    decideLifecycleApproval: vi.fn().mockResolvedValue({ success: true, ref: 'approval-gates/deploy-prod.json' }),
     ...overrides,
   };
 }
@@ -163,6 +253,7 @@ describe('ProductLifecycleExecutor', () => {
       phase: 'build' as ProductLifecyclePhase,
       steps: [makeStep({ id: 'step-x', adapter: 'gradle-java-service' })],
       phaseMode: 'sequential',
+      productUnitRef: 'product-unit://test',
     });
 
     const result = await executor.executePlan(plan, {
@@ -172,6 +263,365 @@ describe('ProductLifecycleExecutor', () => {
     });
 
     expect(result.status).toBe('succeeded');
+    expect(result.correlationId).toBe('corr-run-001');
+    expect(result.providerMode).toBe('bootstrap');
+    expect(result.productUnitRef).toBe('product-unit://test');
+  });
+
+  it('fails closed with artifact-missing reason code when required artifacts are absent', async () => {
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'step-x', adapter: 'gradle-java-service' })],
+      expectedArtifacts: [
+        {
+          surface: 'backend-api',
+          type: 'jvm-service',
+          required: true,
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.failure?.reasonCode).toBe('artifact-missing');
+    expect(result.failure?.stepId).toBe('artifact-validation');
+  });
+
+  it('collects adapter artifacts and preserves step evidence in lifecycle results', async () => {
+    adapterRegistry.register('artifact-adapter', new ArtifactAdapter());
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'artifact-step', adapter: 'artifact-adapter' })],
+      expectedArtifacts: [
+        {
+          surface: 'backend-api',
+          type: 'jvm-service',
+          required: true,
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+    });
+
+    expect(result.status).toBe('succeeded');
+    expect(result.artifacts).toEqual([
+      {
+        id: 'backend-jar',
+        surface: 'backend-api',
+        type: 'jvm-service',
+        path: 'build/libs/app.jar',
+        fingerprint: 'sha256:jar',
+        producedBy: 'gradle-java-service',
+      },
+    ]);
+    expect(result.steps[0]).toMatchObject({
+      stepId: 'artifact-step',
+      stdout: 'artifact produced',
+      warnings: ['artifact warning'],
+      manifestRefs: { artifactManifest: 'artifact-manifest.json' },
+    });
+    expect(result.manifestRefs?.artifactManifest).toContain('artifact-manifest.json');
+  });
+
+  it('fails closed when a required artifact manifest provider write fails', async () => {
+    adapterRegistry.register('artifact-adapter', new ArtifactAdapter());
+    const artifactProvider = createArtifactProvider({
+      recordArtifactManifest: vi.fn().mockResolvedValue({ success: false, error: 'artifact store unavailable' }),
+    });
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'artifact-step', adapter: 'artifact-adapter' })],
+      requiredManifests: ['artifact-manifest'],
+      expectedArtifacts: [
+        {
+          surface: 'backend-api',
+          type: 'jvm-service',
+          required: true,
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+      providerContext: {
+        mode: 'bootstrap',
+        artifacts: artifactProvider,
+      },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.failure).toMatchObject({
+      reasonCode: 'manifest-write-failed',
+      stepId: 'manifest-writer',
+    });
+    expect(result.failure?.message).toContain('artifact store unavailable');
+  });
+
+  it('emits correlated phase and step lifecycle events through the event provider', async () => {
+    adapterRegistry.register('artifact-adapter', new ArtifactAdapter());
+    const eventProvider = createLifecycleEventProvider();
+    const eventEmitter = new KernelLifecycleEventEmitter({
+      lifecycleEventProvider: eventProvider,
+      enableConsoleLogging: false,
+    });
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'artifact-step', adapter: 'artifact-adapter' })],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+      eventEmitter,
+    });
+
+    expect(result.status).toBe('succeeded');
+    expect(appendedEvents(eventProvider).map((event) => event.metadata.eventType)).toEqual([
+      'lifecycle.phase.started',
+      'lifecycle.step.started',
+      'lifecycle.step.completed',
+      'lifecycle.phase.completed',
+    ]);
+    expect(appendedEvents(eventProvider).every((event) => event.metadata.correlationId === 'corr-run-001')).toBe(true);
+    expect(appendedEvents(eventProvider)[2]).toMatchObject({
+      payload: {
+        stepId: 'artifact-step',
+        status: 'succeeded',
+        evidenceRefs: ['artifact:backend-jar', 'manifest:artifact-manifest.json'],
+      },
+    });
+  });
+
+  it('blocks adapter execution when a required gate fails', async () => {
+    const gateProvider = createGateProvider({
+      evaluateGate: vi.fn().mockResolvedValue({
+        gateId: 'security',
+        passed: false,
+        reason: 'policy denied',
+        evidence: ['policy:deny'],
+        evaluatedAt: '2026-05-14T00:00:00.000Z',
+        duration: 15,
+      }),
+    });
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'step-x', adapter: 'gradle-java-service' })],
+      gates: [
+        {
+          gateId: 'security',
+          gateName: 'Security',
+          required: true,
+          phase: 'build',
+          source: 'kernel-product.yaml',
+          status: 'pending',
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+      providerContext: {
+        mode: 'bootstrap',
+        gates: {
+          security: gateProvider,
+        },
+      },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.failure).toMatchObject({
+      reasonCode: 'gate-failed',
+      stepId: 'gate:security',
+      message: 'policy denied',
+    });
+    expect(result.gates).toEqual([
+      expect.objectContaining({
+        gateId: 'security',
+        status: 'failed',
+        evidenceRefs: ['policy:deny'],
+      }),
+    ]);
+    expect(result.steps).toEqual([]);
+  });
+
+  it('continues adapter execution when optional gate providers are missing', async () => {
+    const plan = makePlan({
+      productId: 'test',
+      phase: 'build' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'step-x', adapter: 'gradle-java-service' })],
+      gates: [
+        {
+          gateId: 'observability',
+          gateName: 'Observability',
+          required: false,
+          phase: 'build',
+          source: 'kernel-product.yaml',
+          status: 'pending',
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+      providerContext: {
+        mode: 'bootstrap',
+        gates: {},
+      },
+    });
+
+    expect(result.status).toBe('succeeded');
+    expect(result.gates).toEqual([
+      expect.objectContaining({
+        gateId: 'observability',
+        status: 'skipped',
+        details: 'Optional gate provider missing: observability',
+      }),
+    ]);
+    expect(result.steps).toHaveLength(1);
+  });
+
+  it('requests required approvals and blocks adapter execution until approval is decided', async () => {
+    const approvalProvider = createApprovalProvider();
+    const plan = makePlan({
+      productId: 'test-product',
+      phase: 'deploy' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'deploy-step', adapter: 'docker-buildx', phase: 'deploy' })],
+      approvalRequirements: [
+        {
+          approvalId: 'deploy-prod-approval',
+          action: 'deploy:prod',
+          riskLevel: 'high',
+          required: true,
+          requiredApprovers: ['alice'],
+          source: 'kernel-product.approvals',
+        },
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      environment: 'prod',
+      logger,
+      providerContext: {
+        mode: 'bootstrap',
+        approvals: approvalProvider,
+      },
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.failure).toMatchObject({
+      reasonCode: 'approval-required',
+      stepId: 'approval-required',
+    });
+    expect(result.approvalRefs).toEqual([
+      {
+        approvalId: 'deploy-prod-approval',
+        status: 'pending',
+        ref: 'approval-gates/deploy-prod.json',
+      },
+    ]);
+    expect(result.steps).toEqual([]);
+    expect(approvalProvider.requestLifecycleApproval).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approvalId: 'deploy-prod-approval',
+        productUnitId: 'test-product',
+        runId: 'run-001',
+        correlationId: 'corr-run-001',
+        environment: 'prod',
+        action: 'deploy:prod',
+        riskLevel: 'high',
+        requiredApprovers: ['alice'],
+      }),
+      {
+        required: true,
+        correlationId: 'corr-run-001',
+      },
+    );
+  });
+
+  it('fails closed when required approvals lack a provider or approvers', async () => {
+    const plan = makePlan({
+      productId: 'test-product',
+      phase: 'deploy' as ProductLifecyclePhase,
+      steps: [makeStep({ id: 'deploy-step', adapter: 'docker-buildx', phase: 'deploy' })],
+      approvalRequirements: [
+        {
+          approvalId: 'deploy-prod-approval',
+          action: 'deploy:prod',
+          riskLevel: 'high',
+          required: true,
+          requiredApprovers: ['alice'],
+          source: 'kernel-product.approvals',
+        },
+      ],
+    });
+
+    await expect(executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+    })).resolves.toMatchObject({
+      status: 'failed',
+      failure: {
+        reasonCode: 'approval-required',
+        stepId: 'approval-provider',
+      },
+      steps: [],
+    });
+
+    const missingApproversPlan = makePlan({
+      ...plan,
+      approvalRequirements: [
+        {
+          approvalId: 'deploy-prod-approval',
+          action: 'deploy:prod',
+          riskLevel: 'high',
+          required: true,
+          source: 'kernel-product.approvals',
+        },
+      ],
+    });
+    const approvalProvider = createApprovalProvider();
+
+    await expect(executor.executePlan(missingApproversPlan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+      providerContext: {
+        mode: 'bootstrap',
+        approvals: approvalProvider,
+      },
+    })).resolves.toMatchObject({
+      status: 'failed',
+      failure: {
+        reasonCode: 'approval-required',
+        stepId: 'approval:deploy-prod-approval',
+      },
+      steps: [],
+    });
+    expect(approvalProvider.requestLifecycleApproval).not.toHaveBeenCalled();
   });
 
   it('executes independent steps in parallel when phaseMode is parallel', async () => {
@@ -272,12 +722,14 @@ describe('ProductLifecycleExecutor', () => {
 
       expect(result.status).toBe('succeeded');
 
-      const summaryContent = await readFile(path.join(tmpDir, 'test-summary.json'), 'utf-8');
-      const summary = JSON.parse(summaryContent) as Record<string, unknown>;
-      expect(summary.schemaVersion).toBe('1.0.0');
-      expect(summary.productId).toBe('test-product');
-      expect(summary.status).toBe('succeeded');
-      expect(summary.passedSteps).toBe(1);
+      const resultContent = await readFile(
+        path.join(tmpDir, 'test-product', 'run-001', 'test', 'lifecycle-result.json'),
+        'utf-8',
+      );
+      const manifest = JSON.parse(resultContent) as Record<string, unknown>;
+      expect(manifest.schemaVersion).toBe('1.0.0');
+      expect(manifest.productId).toBe('test-product');
+      expect(manifest.status).toBe('succeeded');
     });
 
     it('writes deployment-manifest.json after deploy phase', async () => {
@@ -298,12 +750,17 @@ describe('ProductLifecycleExecutor', () => {
 
       expect(result.status).toBe('succeeded');
 
-      const manifestContent = await readFile(path.join(tmpDir, 'deployment-manifest.json'), 'utf-8');
+      const manifestContent = await readFile(
+        path.join(tmpDir, 'test-product', 'run-001', 'deploy', 'deployment-manifest.json'),
+        'utf-8',
+      );
       const manifest = JSON.parse(manifestContent) as Record<string, unknown>;
       expect(manifest.schemaVersion).toBe('1.0.0');
       expect(manifest.productId).toBe('test-product');
       expect(manifest.environment).toBe('local');
-      expect(manifest.status).toBe('succeeded');
+      expect(manifest.surfaces).toEqual([
+        expect.objectContaining({ status: 'deployed' }),
+      ]);
     });
   });
 });

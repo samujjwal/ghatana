@@ -10,11 +10,11 @@
  * @doc.pattern Module
  */
 
-export * from "./PluginKind";
-export * from "./KernelPlugin";
-export * from "./PluginRef";
-export * from "./KernelPluginCapability";
-export * from "./KernelPluginBinding";
-export * from "./KernelPluginHealthSnapshot";
-export * from "./KernelPluginLifecycleHook";
-export * from "./KernelPluginGateResult";
+export * from "./PluginKind.js";
+export * from "./KernelPlugin.js";
+export * from "./PluginRef.js";
+export * from "./KernelPluginCapability.js";
+export * from "./KernelPluginBinding.js";
+export * from "./KernelPluginHealthSnapshot.js";
+export * from "./KernelPluginLifecycleHook.js";
+export * from "./KernelPluginGateResult.js";

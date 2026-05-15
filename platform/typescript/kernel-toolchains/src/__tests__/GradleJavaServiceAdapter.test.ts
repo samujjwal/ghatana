@@ -28,6 +28,28 @@ describe('GradleJavaServiceAdapter', () => {
     expect(plan[0].command[1]).toBe(':products:digital-marketing:backend:build');
   });
 
+  it('requires gradleModule during planning', async () => {
+    const adapter = new GradleJavaServiceAdapter({ repoRoot });
+    const context = createContext(repoRoot);
+    delete context.surfaceConfig.gradleModule;
+
+    await expect(adapter.plan(context)).rejects.toThrow('gradleModule is required');
+  });
+
+  it('returns schema-backed dry-run evidence without executing commands', async () => {
+    const commandRunner = new FakeCommandRunner([]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.dryRun = true;
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('skipped');
+    expect(result.schemaVersion).toBe('1.0.0');
+    expect(result.observability).toMatchObject({ commandId: 'gradle-build', durationMs: 0 });
+    expect(commandRunner.invocations).toHaveLength(0);
+  });
+
   it('executes successfully when the expected jar output exists', async () => {
     await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
     await fs.writeFile(
@@ -43,9 +65,89 @@ describe('GradleJavaServiceAdapter', () => {
     const result = await adapter.execute(createContext(repoRoot));
 
     expect(result.status).toBe('succeeded');
+    expect(result.schemaVersion).toBe('1.0.0');
     expect(result.artifacts).toContain('products/digital-marketing/backend/build/libs/digital-marketing.jar');
+    expect(result.evidenceRefs).toContain('artifact:products/digital-marketing/backend/build/libs/digital-marketing.jar');
+    expect(result.observability).toMatchObject({
+      commandId: 'gradle-build',
+      exitCode: 0,
+      stdoutBytes: 'BUILD SUCCESSFUL'.length,
+    });
     expect(commandRunner.invocations).toHaveLength(1);
     expect(commandRunner.invocations[0].options.cwd).toBe(repoRoot);
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(900_000);
+  });
+
+  it('uses configured command timeout', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phaseConfig.timeoutMs = 123_000;
+
+    await adapter.execute(context);
+
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(123_000);
+  });
+
+  it('uses surface timeout when phase timeout is absent', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.timeoutMs = 456_000;
+
+    await adapter.execute(context);
+
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(456_000);
+  });
+
+  it('falls back to default timeout when configured timeout is invalid', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phaseConfig.timeoutMs = -1;
+
+    await adapter.execute(context);
+
+    expect(commandRunner.invocations[0].options.timeoutMs).toBe(900_000);
+  });
+
+  it('returns failure cause when Gradle exits non-zero', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend'), { recursive: true });
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 1, stdout: 'BUILD FAILED', stderr: 'Compilation failed', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const result = await adapter.execute(createContext(repoRoot));
+
+    expect(result.status).toBe('failed');
+    expect(result.failure?.cause).toBe('Compilation failed');
+    expect(result.steps[0].stderr).toBe('Compilation failed');
   });
 
   it('fails closed when required configured output is missing', async () => {
@@ -71,6 +173,33 @@ describe('GradleJavaServiceAdapter', () => {
     expect(result.failure?.message).toContain('Missing expected output');
   });
 
+  it('returns existing artifact evidence when one configured output is missing', async () => {
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const context = createContext(repoRoot);
+    context.surfaceConfig.expectedOutputs = {
+      build: [
+        'products/digital-marketing/backend/build/libs/digital-marketing.jar',
+        'products/digital-marketing/backend/build/libs/missing.jar',
+      ],
+    };
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('failed');
+    expect(result.artifacts).toContain('products/digital-marketing/backend/build/libs/digital-marketing.jar');
+    expect(result.evidenceRefs).toContain('artifact:products/digital-marketing/backend/build/libs/digital-marketing.jar');
+  });
+
   it('rejects unsupported phases instead of falling back', async () => {
     const adapter = new GradleJavaServiceAdapter({ repoRoot });
     const context = createContext(repoRoot);
@@ -79,8 +208,70 @@ describe('GradleJavaServiceAdapter', () => {
     await expect(adapter.plan(context)).rejects.toThrow('does not support phase deploy');
   });
 
+  it('fails closed when gradle module is not declared and source path is missing', async () => {
+    await fs.writeFile(path.join(repoRoot, 'settings.gradle.kts'), 'include(":other:module")');
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+
+    await expect(adapter.execute(context)).rejects.toThrow('is not declared in settings.gradle');
+    expect(commandRunner.invocations).toHaveLength(0);
+  });
+
+  it('accepts a module declared in settings.gradle.kts', async () => {
+    await fs.writeFile(path.join(repoRoot, 'settings.gradle.kts'), 'include(":products:digital-marketing:backend")');
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const result = await adapter.execute(createContext(repoRoot));
+    expect(result.status).toBe('succeeded');
+  });
+
+  it('accepts a module declared in settings.gradle', async () => {
+    await fs.writeFile(path.join(repoRoot, 'settings.gradle'), "include ':products:digital-marketing:backend'");
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const result = await adapter.execute(createContext(repoRoot));
+    expect(result.status).toBe('succeeded');
+  });
+
+  it('fails output validation when wildcard search root is missing', async () => {
+    await fs.writeFile(path.join(repoRoot, 'settings.gradle.kts'), 'include(":products:digital-marketing:backend")');
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const result = await adapter.execute(createContext(repoRoot));
+
+    expect(result.status).toBe('failed');
+    expect(result.failure?.message).toContain('Missing expected output');
+  });
+
   describe('dev phase', () => {
     it('skips output validation and writes processes.json', async () => {
+      await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend'), { recursive: true });
       const outputDir = path.join(repoRoot, '.kernel', 'out', 'dev');
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'Started application', stderr: '', durationMs: 50 },
@@ -127,6 +318,7 @@ describe('GradleJavaServiceAdapter', () => {
 
   describe('test phase', () => {
     it('fails when test result directories are missing', async () => {
+      await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend'), { recursive: true });
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'Tests passed', stderr: '', durationMs: 10 },
       ]);
@@ -151,6 +343,10 @@ describe('GradleJavaServiceAdapter', () => {
         path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'test-results', 'test'),
         { recursive: true },
       );
+      await fs.mkdir(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'jacoco'),
+        { recursive: true },
+      );
 
       const commandRunner = new FakeCommandRunner([
         { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
@@ -159,6 +355,59 @@ describe('GradleJavaServiceAdapter', () => {
 
       const context = createContext(repoRoot);
       context.phase = 'test';
+
+      const result = await adapter.execute(context);
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toEqual(
+        expect.arrayContaining([
+          'products/digital-marketing/backend/build/reports/tests',
+          'products/digital-marketing/backend/build/test-results/test',
+          'products/digital-marketing/backend/build/reports/jacoco',
+        ]),
+      );
+    });
+  });
+
+  describe('package phase', () => {
+    it('returns jar artifact paths for package phase', async () => {
+      await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), { recursive: true });
+      await fs.writeFile(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+        'jar-content',
+      );
+
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+      ]);
+      const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+      const context = createContext(repoRoot);
+      context.phase = 'package';
+
+      const result = await adapter.execute(context);
+
+      expect(result.status).toBe('succeeded');
+      expect(result.artifacts).toContain('products/digital-marketing/backend/build/libs/digital-marketing.jar');
+    });
+  });
+
+  describe('validate phase', () => {
+    it('uses fallback report validation when configured expected outputs are invalid', async () => {
+      await fs.mkdir(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'reports', 'tests'),
+        { recursive: true },
+      );
+      await fs.mkdir(
+        path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'test-results', 'test'),
+        { recursive: true },
+      );
+
+      const commandRunner = new FakeCommandRunner([
+        { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+      ]);
+      const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+      const context = createContext(repoRoot);
+      context.phase = 'validate';
+      context.surfaceConfig.expectedOutputs = { validate: 'not-an-array' };
 
       const result = await adapter.execute(context);
       expect(result.status).toBe('succeeded');

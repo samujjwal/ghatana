@@ -9,10 +9,10 @@
  * @doc.layer platform
  */
 
-import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Typography } from '@ghatana/design-system';
 
-export default function ComponentPlayground() {
+export default function ComponentPlayground(): ReactElement {
   return (
     <div className="p-6">
       <div className="studio-section">
@@ -24,13 +24,13 @@ export default function ComponentPlayground() {
         </div>
         
         <div className="studio-card">
-          <Typography variant="body" className="text-gray-600 mb-4">
+          <Typography variant="body1" className="text-gray-600 mb-4">
             Explore and test design system components with live prop editing.
           </Typography>
           
           <div className="space-y-4">
             <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Typography variant="body" className="text-gray-500">
+              <Typography variant="body1" className="text-gray-500">
                 Select a component to explore its props and variants.
               </Typography>
             </div>

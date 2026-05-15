@@ -245,7 +245,7 @@ public final class GoogleAdsOutboxExecutor {
             .map(Optional::isPresent)
             .then(globalActive -> {
                 if (globalActive) {
-                    return Promise.of(true);
+                    return Promise.of(Boolean.TRUE);
                 }
                 // Check tenant-specific scope
                 return killSwitchService.findActiveByScope(ctx, KILL_SWITCH_SCOPE, command.getTenantId())
@@ -253,7 +253,7 @@ public final class GoogleAdsOutboxExecutor {
             })
             .then(tenantActive -> {
                 if (tenantActive) {
-                    return Promise.of(true);
+                    return Promise.of(Boolean.TRUE);
                 }
                 // Check workspace-specific scope
                 return killSwitchService.findActiveByScope(ctx, KILL_SWITCH_SCOPE, command.getWorkspaceId())

@@ -74,6 +74,6 @@ public final class InMemoryMemoryNamespaceRepository implements MemoryNamespaceR
             return Promise.of(false);
         }
         store.remove(namespaceId);
-        return Promise.of(true);
+        return Promise.of(Boolean.TRUE);
     }
 }

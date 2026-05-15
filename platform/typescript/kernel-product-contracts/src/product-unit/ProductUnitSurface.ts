@@ -29,6 +29,23 @@ export type ProductUnitSurfaceType =
   | "agent-runtime"
   | "data-pipeline";
 
+export const PRODUCT_UNIT_SURFACE_TYPES = [
+  "backend-api",
+  "web",
+  "worker",
+  "operator",
+  "portal",
+  "sdk",
+  "mobile",
+  "mobile-ios",
+  "mobile-android",
+  "cli",
+  "domain-pack",
+  "plugin",
+  "agent-runtime",
+  "data-pipeline",
+] as const satisfies readonly ProductUnitSurfaceType[];
+
 /**
  * The implementation status of a ProductUnit surface.
  */
@@ -37,6 +54,13 @@ export type ImplementationStatus =
   | "planned"
   | "backend-only"
   | "experimental";
+
+export const IMPLEMENTATION_STATUSES = [
+  "implemented",
+  "planned",
+  "backend-only",
+  "experimental",
+] as const satisfies readonly ImplementationStatus[];
 
 /**
  * Represents a deployable component within a ProductUnit.
@@ -89,23 +113,7 @@ export interface ProductUnitSurface {
 export function isProductUnitSurfaceType(
   value: unknown
 ): value is ProductUnitSurfaceType {
-  const validTypes: readonly ProductUnitSurfaceType[] = [
-    "backend-api",
-    "web",
-    "worker",
-    "operator",
-    "portal",
-    "sdk",
-    "mobile",
-    "mobile-ios",
-    "mobile-android",
-    "cli",
-    "domain-pack",
-    "plugin",
-    "agent-runtime",
-    "data-pipeline",
-  ];
-  return typeof value === "string" && validTypes.includes(value as ProductUnitSurfaceType);
+  return typeof value === "string" && PRODUCT_UNIT_SURFACE_TYPES.includes(value as ProductUnitSurfaceType);
 }
 
 /**
@@ -114,11 +122,5 @@ export function isProductUnitSurfaceType(
 export function isImplementationStatus(
   value: unknown
 ): value is ImplementationStatus {
-  const validStatuses: readonly ImplementationStatus[] = [
-    "implemented",
-    "planned",
-    "backend-only",
-    "experimental",
-  ];
-  return typeof value === "string" && validStatuses.includes(value as ImplementationStatus);
+  return typeof value === "string" && IMPLEMENTATION_STATUSES.includes(value as ImplementationStatus);
 }

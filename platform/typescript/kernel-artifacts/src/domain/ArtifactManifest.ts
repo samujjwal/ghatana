@@ -53,6 +53,15 @@ export interface ArtifactMetadata {
   gitBranch: string | undefined;
   timestamp: string;
   sizeBytes: number;
+  artifactRef?: string;
+  deploymentRefs?: ArtifactDeploymentLink[];
+}
+
+export interface ArtifactDeploymentLink {
+  deploymentId?: string;
+  deploymentManifestRef?: string;
+  environment?: string;
+  promotedFromArtifactRef?: string;
 }
 
 /**
@@ -83,21 +92,52 @@ export interface ArtifactEntryInput {
  */
 export interface ArtifactManifest {
   schemaVersion: string;
+  runId?: string;
+  correlationId?: string;
   productId: string;
+  productUnitId?: string;
+  providerMode?: 'bootstrap' | 'platform';
   phase: string;
-  surface: string;
+  surface?: string;
+  sourceRef?: string;
+  generatedBy?: ArtifactManifestGeneratedBy;
   timestamp: string;
   artifacts: ArtifactEntry[];
+}
+
+export interface ArtifactManifestGeneratedBy {
+  providerId?: string;
+  adapterId?: string;
+  toolchainId?: string;
+  version?: string;
 }
 
 /**
  * Zod schema for artifact manifest validation
  */
+const ArtifactDeploymentLinkSchema = z.object({
+  deploymentId: z.string().min(1).optional(),
+  deploymentManifestRef: z.string().min(1).optional(),
+  environment: z.string().min(1).optional(),
+  promotedFromArtifactRef: z.string().min(1).optional(),
+});
+
 export const ArtifactManifestSchema = z.object({
   schemaVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+  runId: z.string().min(1).optional(),
+  correlationId: z.string().min(1).optional(),
   productId: z.string().min(1),
+  productUnitId: z.string().min(1).optional(),
+  providerMode: z.enum(['bootstrap', 'platform']).optional(),
   phase: z.string().min(1),
-  surface: z.string().min(1),
+  surface: z.string().min(1).optional(),
+  sourceRef: z.string().min(1).optional(),
+  generatedBy: z.object({
+    providerId: z.string().min(1).optional(),
+    adapterId: z.string().min(1).optional(),
+    toolchainId: z.string().min(1).optional(),
+    version: z.string().min(1).optional(),
+  }).optional(),
   timestamp: z.string().datetime(),
   artifacts: z.array(
     z.object({
@@ -112,6 +152,8 @@ export const ArtifactManifestSchema = z.object({
         gitBranch: z.string().optional(),
         timestamp: z.string().datetime(),
         sizeBytes: z.number().int().nonnegative(),
+        artifactRef: z.string().min(1).optional(),
+        deploymentRefs: z.array(ArtifactDeploymentLinkSchema).optional(),
       }),
       fingerprint: z.object({
         algorithm: z.enum(['sha256', 'sha512']),
@@ -133,16 +175,28 @@ export class ArtifactManifestGenerator {
    * Create a new artifact manifest
    */
   createManifest(params: {
+    runId?: string;
+    correlationId?: string;
     productId: string;
+    productUnitId?: string;
+    providerMode?: 'bootstrap' | 'platform';
     phase: string;
-    surface: string;
+    surface?: string;
+    sourceRef?: string;
+    generatedBy?: ArtifactManifestGeneratedBy;
     artifacts: ArtifactEntryInput[];
   }): ArtifactManifest {
     return {
       schemaVersion: '1.0.0',
+      ...(params.runId !== undefined ? { runId: params.runId } : {}),
+      ...(params.correlationId !== undefined ? { correlationId: params.correlationId } : {}),
       productId: params.productId,
+      ...(params.productUnitId !== undefined ? { productUnitId: params.productUnitId } : {}),
+      ...(params.providerMode !== undefined ? { providerMode: params.providerMode } : {}),
       phase: params.phase,
-      surface: params.surface,
+      ...(params.surface !== undefined ? { surface: params.surface } : {}),
+      ...(params.sourceRef !== undefined ? { sourceRef: params.sourceRef } : {}),
+      ...(params.generatedBy !== undefined ? { generatedBy: params.generatedBy } : {}),
       timestamp: new Date().toISOString(),
       artifacts: params.artifacts.map((artifact) => ({
         ...artifact,

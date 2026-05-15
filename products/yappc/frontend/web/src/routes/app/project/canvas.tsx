@@ -12,7 +12,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 
-// TODO-009: Redirect legacy canvas route to canonical shape phase
+// TRACK-009: Redirect legacy canvas route to canonical shape phase
 export default function CanvasRedirectRoute() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
