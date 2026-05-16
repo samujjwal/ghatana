@@ -10,6 +10,7 @@
  * The diff format uses hunk-level granularity to minimize the patch size.
  */
 
+import { createHash } from 'crypto';
 import type { PatchEmitter, ChangeOp, TextPatch, PatchContext } from './types';
 import type { SemanticModelElement } from '../model/types';
 
@@ -26,6 +27,10 @@ interface Range {
   endLine: number;
   endColumn: number;
   nodeType?: string | undefined;
+}
+
+function checksumFor(content: string): string {
+  return createHash('sha256').update(content).digest('hex');
 }
 
 /**
@@ -182,61 +187,9 @@ export class ReactPatchEmitter implements PatchEmitter {
 
     const sourcePaths = context.elementSourcePaths.get(element.id) ?? [];
     if (sourcePaths.length === 0) return [];
-    const relativePath = sourcePaths[0]!;
-
-    // Async emit is bridged via a synchronous promise wrapper
-    // (In production use via PatchCoordinator which awaits properly)
-    return this.emitSync(op, element, relativePath, context);
-  }
-
-  private emitSync(
-    op: ChangeOp,
-    _element: SemanticModelElement,
-    relativePath: string,
-    _context: PatchContext,
-  ): TextPatch[] {
-    switch (op.kind) {
-      case 'rename-component': {
-        const oldName = op.before as string | undefined;
-        const newName = op.after as string | undefined;
-        if (!oldName || !newName) return [];
-        // Return a placeholder diff — actual content read happens in PatchCoordinator
-        return [{
-          relativePath,
-          diff: `// YAPPC-RENAME: ${oldName} → ${newName} in ${relativePath}`,
-          isAtomic: true,
-          sourceChangeOpId: op.id,
-          emitterId: this.id,
-        }];
-      }
-
-      case 'add-prop': {
-        const propDef = op.after as { name: string; type: string } | undefined;
-        if (!propDef) return [];
-        return [{
-          relativePath,
-          diff: `// YAPPC-ADD-PROP: ${propDef.name}: ${propDef.type} in ${relativePath}`,
-          isAtomic: true,
-          sourceChangeOpId: op.id,
-          emitterId: this.id,
-        }];
-      }
-
-      case 'remove-prop': {
-        const propDef = op.before as { name: string } | undefined;
-        if (!propDef) return [];
-        return [{
-          relativePath,
-          diff: `// YAPPC-REMOVE-PROP: ${propDef.name} in ${relativePath}`,
-          isAtomic: false,
-          sourceChangeOpId: op.id,
-          emitterId: this.id,
-        }];
-      }
-
-      default:
-        return [];
-    }
+    // Real source-aware patch generation requires file I/O, so synchronous calls
+    // deliberately no-op rather than emitting placeholder diffs.
+    return [];
   }
 
   /**
@@ -272,9 +225,16 @@ export class ReactPatchEmitter implements PatchEmitter {
         const diff = makeDiff(relativePath, oldLines, newLines);
         if (!diff) return [];
         
-        // Include range metadata in the patch (as JSON in a comment for now, since TextPatch doesn't have ranges field)
-        const rangeComment = range ? `// YAPPC-RANGE: ${JSON.stringify(range)}\n` : '';
-        return [{ relativePath, diff: rangeComment + diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
+        return [{
+          relativePath,
+          diff,
+          ranges: range ? [range] : [],
+          isAtomic: true,
+          sourceChangeOpId: op.id,
+          emitterId: this.id,
+          baseChecksum: checksumFor(source),
+          targetChecksum: checksumFor(newSource),
+        }];
       }
 
       case 'add-prop': {
@@ -292,8 +252,16 @@ export class ReactPatchEmitter implements PatchEmitter {
         const diff = makeDiff(relativePath, oldLines, newLines);
         if (!diff) return [];
         
-        const rangeComment = range ? `// YAPPC-RANGE: ${JSON.stringify(range)}\n` : '';
-        return [{ relativePath, diff: rangeComment + diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
+        return [{
+          relativePath,
+          diff,
+          ranges: range ? [range] : [],
+          isAtomic: true,
+          sourceChangeOpId: op.id,
+          emitterId: this.id,
+          baseChecksum: checksumFor(source),
+          targetChecksum: checksumFor(newSource),
+        }];
       }
 
       default:

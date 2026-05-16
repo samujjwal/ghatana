@@ -82,29 +82,27 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     @Override
-    public Promise<ArtifactGraphResponse> ingestGraph(ArtifactGraphIngestRequest request) {
-        String cacheKey = cacheKey(request.tenantId(), request.productId());
+    public Promise<ArtifactGraphResponse> ingestGraph(ArtifactRequestScope scope, ArtifactGraphIngestRequest request) {
+        String cacheKey = cacheKey(scope.tenantId(), scope.productId());
         log.info("Ingesting artifact graph for product {} ({} nodes, {} edges)",
-                request.productId(), request.nodes().size(), request.edges().size());
+                scope.productId(), request.nodes().size(), request.edges().size());
 
-        // P4-2: Extract snapshotId and versionId from request metadata for tracking
-        // TODO: Add metadata field to ArtifactGraphIngestRequest DTO when available
-        String snapshotId = null;
-        String versionId = null;
-        String contentChecksum = null;
+        String snapshotId = extractStringMetadata(request, Set.of("snapshotId", "snapshot_id", "snapshotRef"));
+        String versionId = extractStringMetadata(request, Set.of("versionId", "version_id", "modelVersion"));
+        String contentChecksum = extractStringMetadata(request, Set.of("contentChecksum", "content_checksum", "graphChecksum"));
 
         // P4-2: Use incremental upsert instead of delete-then-insert
         // Only insert/update nodes that have changed based on checksum
-        return repository.upsertNodes(request.productId(), request.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
-                .then(saved -> repository.upsertEdges(request.productId(), request.tenantId(), request.edges(), snapshotId, versionId))
+        return repository.upsertNodes(scope.productId(), scope.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
+            .then(saved -> repository.upsertEdges(scope.productId(), scope.tenantId(), request.edges(), snapshotId, versionId))
                 .then(v -> {
                     nodeCache.invalidate(cacheKey);
                     edgeCache.invalidate(cacheKey);
                     if (versionRepository != null) {
                         ArtifactModelVersion version = new ArtifactModelVersion(
                                 java.util.UUID.randomUUID().toString(),
-                                request.productId(),
-                                request.tenantId(),
+                    scope.productId(),
+                    scope.tenantId(),
                                 snapshotId,
                                 "Incrementally upserted " + request.nodes().size() + " nodes and " + request.edges().size() + " edges",
                                 java.time.Instant.now(),
@@ -126,14 +124,43 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                             "Artifact graph incrementally upserted successfully"
                     ));
                 })
-                .whenException(e -> log.error("Failed to incrementally upsert artifact graph for product {}", request.productId(), e));
+                .whenException(e -> log.error("Failed to incrementally upsert artifact graph for product {}", scope.productId(), e));
+    }
+
+    private static String extractStringMetadata(ArtifactGraphIngestRequest request, Set<String> keys) {
+        for (ArtifactNodeDto node : request.nodes()) {
+            String value = readStringMetadata(node.properties(), keys);
+            if (value != null) {
+                return value;
+            }
+        }
+        for (ArtifactEdgeDto edge : request.edges()) {
+            String value = readStringMetadata(edge.properties(), keys);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static String readStringMetadata(Map<String, Object> metadata, Set<String> keys) {
+        if (metadata == null || metadata.isEmpty()) {
+            return null;
+        }
+        for (String key : keys) {
+            Object value = metadata.get(key);
+            if (value instanceof String text && !text.isBlank()) {
+                return text;
+            }
+        }
+        return null;
     }
 
     @Override
-    public Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactGraphAnalysisRequest request) {
-        String cacheKey = cacheKey(request.tenantId(), request.productId());
+    public Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactRequestScope scope, ArtifactGraphAnalysisRequest request) {
+        String cacheKey = cacheKey(scope.tenantId(), scope.productId());
         log.info("Analyzing artifact graph for product {} with algorithms {}",
-                request.productId(), request.algorithmTypes());
+                scope.productId(), request.algorithmTypes());
 
         Promise<List<ArtifactNodeDto>> nodesPromise;
         Promise<List<ArtifactEdgeDto>> edgesPromise;
@@ -145,8 +172,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             nodesPromise = Promise.of(cachedNodes);
             edgesPromise = Promise.of(cachedEdges);
         } else {
-            nodesPromise = repository.findNodesByProduct(request.productId(), request.tenantId(), 10000);
-            edgesPromise = repository.findEdgesByProduct(request.productId(), request.tenantId());
+            nodesPromise = repository.findNodesByProduct(scope.productId(), scope.tenantId(), 10000);
+            edgesPromise = repository.findEdgesByProduct(scope.productId(), scope.tenantId());
         }
 
         // P4-2: Move heavy JGraphT work to blocking executor to prevent event loop blocking
@@ -314,9 +341,9 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     @Override
-    public Promise<ArtifactGraphResponse> mergeModels(ArtifactGraphMergeRequest request) {
+    public Promise<ArtifactGraphResponse> mergeModels(ArtifactRequestScope scope, ArtifactGraphMergeRequest request) {
         log.info("Merging artifact models for product {} with strategy {}",
-                request.productId(), request.resolutionStrategy());
+                scope.productId(), request.resolutionStrategy());
 
         SemanticMergeEngine mergeEngine = new SemanticMergeEngine(request.resolutionStrategy());
         SemanticMergeEngine.MergeResult result = mergeEngine.merge(request);
@@ -330,8 +357,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         if (versionRepository != null) {
             ArtifactModelVersion mergeVersion = new ArtifactModelVersion(
                     java.util.UUID.randomUUID().toString(),
-                    request.productId(),
-                    request.tenantId(),
+                    scope.productId(),
+                    scope.tenantId(),
                     null,
                     "Merge with strategy " + request.resolutionStrategy() + " resulting in " + result.conflicts().size() + " conflicts",
                     java.time.Instant.now(),

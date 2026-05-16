@@ -191,6 +191,8 @@ export interface SourceScopeContext {
   principalId: string;
   /** Timestamp when the scope was granted */
   grantedAt: string;
+  /** Execution environment for credential governance. */
+  executionEnvironment?: 'browser' | 'server' | 'test';
 }
 
 export interface SourceProviderOptions {
@@ -215,6 +217,39 @@ export interface SourceProviderOptions {
    * Timeout in milliseconds for remote requests (e.g. GitHub API calls).
    */
   readonly requestTimeoutMs?: number;
+  /** Governed scope for this resolution request. */
+  readonly scope?: SourceScopeContext;
+}
+
+export type SourceProviderLocator = string | SourceLocator;
+
+export function sourceLocatorToString(locator: SourceProviderLocator): string {
+  if (typeof locator === 'string') {
+    return locator;
+  }
+
+  switch (locator.provider) {
+    case 'github':
+    case 'gitlab':
+      return locator.ref ? `${locator.repoId}@${locator.ref}` : locator.repoId;
+    case 'local-folder':
+    case 'zip':
+      return locator.repoId;
+    case 'artifact-registry':
+      return locator.ref ? `artifact:${locator.repoId}@${locator.ref}` : `artifact:${locator.repoId}`;
+    default:
+      return locator.repoId;
+  }
+}
+
+export function hasRawProviderCredentials(credentials: ProviderCredentials | undefined): boolean {
+  return Boolean(credentials?.token || credentials?.username || credentials?.password);
+}
+
+export function validateCredentialPolicy(scope: SourceScopeContext | undefined, credentials: ProviderCredentials | undefined): void {
+  if (scope?.executionEnvironment === 'browser' && hasRawProviderCredentials(credentials)) {
+    throw new Error('Browser source acquisition must use credentialRef instead of raw provider credentials.');
+  }
 }
 
 // ============================================================================
@@ -244,7 +279,7 @@ export interface SourceProvider {
    *   - zip: absolute path or URL to a .zip archive
    *   - artifact-registry: "urn:<registry>/<artifact>@<version>"
    */
-  resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot>;
+  resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot>;
 
   /**
    * Quickly determine whether this provider can handle a given locator
@@ -293,15 +328,18 @@ export class SourceProviderRegistry {
    * Returns the first snapshot from a provider that accepts the locator.
    * Throws SourceProviderError if no provider can handle the locator.
    */
-  async resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+  async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+    validateCredentialPolicy(options?.scope, options?.credentials);
+    const normalizedLocator = sourceLocatorToString(locator);
+
     for (const provider of this.providers.values()) {
-      if (provider.canHandle(locator)) {
+      if (provider.canHandle(normalizedLocator)) {
         return provider.resolve(locator, options);
       }
     }
     throw new SourceProviderError(
       'registry',
-      locator,
+      normalizedLocator,
       `No registered provider can handle this locator. Registered: [${[...this.providers.keys()].join(', ')}]`,
     );
   }

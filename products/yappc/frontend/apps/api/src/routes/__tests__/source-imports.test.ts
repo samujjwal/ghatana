@@ -1,14 +1,29 @@
 import fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { auditLogMock } = vi.hoisted(() => ({
+const { auditLogMock, resolveSnapshotMock, runFromSnapshotMock } = vi.hoisted(() => ({
   auditLogMock: vi.fn(),
+  resolveSnapshotMock: vi.fn(),
+  runFromSnapshotMock: vi.fn(),
 }));
 
 vi.mock('../../services/audit/audit.service', () => ({
   getAuditService: () => ({
     log: auditLogMock,
   }),
+}));
+
+vi.mock('../../database/client', () => ({
+  getPrismaClient: vi.fn(),
+}));
+
+vi.mock('yappc-artifact-compiler', () => ({
+  createDefaultProviderRegistry: () => ({
+    resolve: resolveSnapshotMock,
+  }),
+  SynthesisPipeline: class {
+    runFromSnapshot = runFromSnapshotMock;
+  },
 }));
 
 import sourceImportRoutes from '../source-imports';
@@ -18,6 +33,50 @@ describe('sourceImportRoutes', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    resolveSnapshotMock.mockResolvedValue({
+      snapshotRef: {
+        provider: 'github',
+        repoId: 'github.com/ghatana/example-repo',
+        commitSha: 'abc123',
+      },
+      localRootPath: '/tmp/example-repo',
+      files: [
+        {
+          relativePath: 'src/RepoCard.tsx',
+          materialized: true,
+          sizeBytes: 128,
+          lastModifiedAt: new Date().toISOString(),
+        },
+      ],
+      snapshotAt: new Date().toISOString(),
+      shallow: false,
+      diagnostics: [],
+    });
+    runFromSnapshotMock.mockResolvedValue({
+      graph: {
+        nodes: [
+          {
+            kind: 'component',
+            sourceLocation: { filePath: 'src/RepoCard.tsx' },
+          },
+        ],
+      },
+      model: { elements: [] },
+      residualIslands: [],
+      errors: [],
+      warnings: [],
+      stats: {
+        scannedFiles: 1,
+        eligibleArtifacts: 1,
+        extractedNodes: 1,
+        resolvedEdges: 0,
+        unresolvedEdges: 0,
+        ambiguousEdges: 0,
+        crossRepoEdges: 0,
+        modelElementsGenerated: 1,
+        residualIslandsGenerated: 0,
+      },
+    });
     app = fastify({ logger: false });
     await app.register(sourceImportRoutes, { prefix: '/api/v1' });
   });
@@ -179,6 +238,85 @@ describe('sourceImportRoutes', () => {
         }),
       }),
     );
+  });
+
+  it('accepts governed GitHub repository imports and records snapshot-backed job metadata', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/artifact/import-source',
+      headers: {
+        'x-tenant-id': 'tenant-1',
+        'x-workspace-id': 'workspace-1',
+        'x-project-id': 'project-1',
+      },
+      payload: {
+        sourceType: 'github',
+        source: 'ghatana/example-repo@main',
+        projectId: 'project-1',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(resolveSnapshotMock).toHaveBeenCalledWith('ghatana/example-repo@main', {
+      maxFiles: 10000,
+      maxFileSizeBytes: 524288,
+    });
+    expect(response.json()).toMatchObject({
+      success: true,
+      componentId: 'project-1/ExampleRepoMain',
+      metadata: {
+        sourceType: 'github',
+        fileCount: 1,
+        totalSize: 128,
+      },
+      files: [
+        expect.objectContaining({
+          path: 'src/RepoCard.tsx',
+          type: 'component',
+        }),
+      ],
+      job: {
+        status: 'REVIEW_REQUIRED',
+        snapshotRef: {
+          provider: 'github',
+          repoId: 'github.com/ghatana/example-repo',
+          commitSha: 'abc123',
+        },
+        summary: {
+          totalFiles: 1,
+          skippedFiles: 0,
+          totalSize: 128,
+          confidence: 1,
+        },
+      },
+    });
+  });
+
+  it('awaits rejected unsupported-type job updates before sending the response', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/artifact/import-source',
+      headers: {
+        'x-tenant-id': 'tenant-1',
+        'x-workspace-id': 'workspace-1',
+        'x-project-id': 'project-1',
+      },
+      payload: {
+        sourceType: 'invalid',
+        source: 'https://example.com/invalid.txt',
+        projectId: 'project-1',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      success: false,
+      job: {
+        id: expect.stringMatching(/^source-import-/),
+        status: 'REJECTED',
+        reason: 'unsupported_source_type',
+      },
+    });
   });
 
   it('prevents polling source import jobs from a different tenant workspace or project scope', async () => {

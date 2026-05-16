@@ -26,3 +26,10 @@ export type {
 } from "./pipeline";
 export { resolveSymbols } from "./symbol-resolver";
 export type { SymbolResolutionResult } from "./symbol-resolver";
+export {
+  buildSymbolIndex,
+  resolvePathAlias,
+  resolveRelativePath,
+  normalizeWorkspacePackageImport,
+} from './symbol-index';
+export type { SymbolResolverOptions } from './symbol-index';

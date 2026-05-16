@@ -9,12 +9,16 @@
 
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { createDefaultProviderRegistry, SynthesisPipeline, type GraphNode } from 'yappc-artifact-compiler';
 import { getAuditService } from '../services/audit/audit.service';
-import { getJobRepository, type SourceImportJob } from '../services/job-repository';
+import {
+  getJobRepository,
+  type SourceImportJob,
+  type SourceImportJobStatus,
+  type SourceImportType,
+} from '../services/job-repository';
 
-type SourceImportType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 type SourceImportFileType = 'component' | 'style' | 'test' | 'documentation' | 'other' | 'route';
-type SourceImportJobStatus = 'VALIDATING' | 'FETCHING_SOURCE' | 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED';
 type SourceImportProgressStepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 interface SourceImportRequest {
@@ -37,6 +41,17 @@ interface SourceImportFile {
   content: string;
   type: SourceImportFileType;
   source: string;
+}
+
+interface SourceImportResolution {
+  files: SourceImportFile[];
+  componentName: string;
+  totalSize: number;
+  warnings: string[];
+  summary?: SourceImportJob['summary'];
+  snapshotRef?: SourceImportJob['snapshotRef'];
+  residualIslandIds?: SourceImportJob['residualIslandIds'];
+  skippedArtifacts?: SourceImportJob['skippedArtifacts'];
 }
 
 interface SourceImportAuditContext {
@@ -81,10 +96,20 @@ interface SourceImportJobSnapshot {
   updatedAt: string;
 }
 
-const allowedSourceTypes: readonly SourceImportType[] = ['tsx', 'route', 'storybook', 'artifact', 'zip'];
+const allowedSourceTypes = [
+  'tsx',
+  'route',
+  'storybook',
+  'artifact',
+  'zip',
+  'github',
+  'gitlab',
+  'local-folder',
+] as const satisfies readonly SourceImportType[];
 const maxSourceLocatorLength = 4096;
 const maxFetchedBytes = 512 * 1024;
 const sourceImportJobTtlMs = 24 * 60 * 60 * 1000;
+const repoSlugPattern = /^[\w.-]+\/[\w.-]+(?:@.+)?$/;
 
 const sourceImportStepTemplates: readonly Omit<SourceImportProgressStep, 'status'>[] = [
   { id: 'validate_scope', label: 'Validate tenant workspace and project scope', percent: 20 },
@@ -105,10 +130,27 @@ function isAllowedSourceType(value: string): value is SourceImportType {
   return allowedSourceTypes.includes(value as SourceImportType);
 }
 
-function isTrustedLocator(source: string): boolean {
-  if (source.startsWith('artifact:')) {
+function isRepositorySourceType(sourceType: SourceImportType): sourceType is Extract<SourceImportType, 'github' | 'gitlab' | 'local-folder'> {
+  return sourceType === 'github' || sourceType === 'gitlab' || sourceType === 'local-folder';
+}
+
+function isTrustedLocator(sourceType: SourceImportType, source: string): boolean {
+  if (sourceType === 'artifact' && source.startsWith('artifact:')) {
     return true;
   }
+
+  if (sourceType === 'github') {
+    return source.includes('github.com') || source.startsWith('github:') || repoSlugPattern.test(source);
+  }
+
+  if (sourceType === 'gitlab') {
+    return source.includes('gitlab.com') || source.startsWith('gitlab:') || repoSlugPattern.test(source);
+  }
+
+  if (sourceType === 'local-folder') {
+    return source.startsWith('file://');
+  }
+
   try {
     const url = new URL(source);
     return url.protocol === 'https:';
@@ -136,6 +178,92 @@ function inferComponentName(source: string, fallback: string): string {
   return normalized.length > 0
     ? normalized.charAt(0).toUpperCase() + normalized.slice(1)
     : fallback;
+}
+
+async function resolveRepositoryImport(request: SourceImportRequest): Promise<SourceImportResolution> {
+  const registry = createDefaultProviderRegistry();
+  const locator = request.sourceType === 'gitlab' && !request.source.includes('gitlab.com')
+    ? `https://gitlab.com/${request.source}`
+    : request.source;
+  const snapshot = await registry.resolve(locator, {
+    maxFiles: 10_000,
+    maxFileSizeBytes: maxFetchedBytes,
+  });
+
+  const pipeline = new SynthesisPipeline({
+    extractors: [],
+    residualConfidenceThreshold: 0.5,
+  });
+  const result = await pipeline.runFromSnapshot(snapshot);
+  const unrecoverableErrors = result.errors
+    .filter((error) => !error.recoverable)
+    .map((error) => error.message);
+
+  if (unrecoverableErrors.length > 0) {
+    throw new Error(unrecoverableErrors.join('; '));
+  }
+
+  const componentNodes = result.graph.nodes.filter(
+    (node: GraphNode) => node.kind === 'component',
+  );
+  const totalSize = snapshot.files.reduce((sum, file) => sum + file.sizeBytes, 0);
+  const skippedArtifacts = snapshot.files
+    .filter((file) => !file.materialized)
+    .map((file) => ({
+      path: file.relativePath,
+      reason: 'not_materialized',
+    }));
+  const confidenceDenominator = result.stats.modelElementsGenerated + result.stats.residualIslandsGenerated;
+  const fallbackName = snapshot.snapshotRef.repoId.split('/').at(-1) ?? 'ImportedRepository';
+
+  return {
+    files: componentNodes.map((node: GraphNode) => ({
+      path: node.sourceLocation.filePath,
+      content: '',
+      type: 'component',
+      source: request.source,
+    })),
+    componentName: request.targetComponentName ?? inferComponentName(request.source, fallbackName),
+    totalSize,
+    warnings: [
+      ...result.warnings.map((warning) => warning.message),
+      ...result.errors.filter((error) => error.recoverable).map((error) => error.message),
+    ],
+    snapshotRef: snapshot.snapshotRef,
+    summary: {
+      totalFiles: snapshot.files.length,
+      skippedFiles: skippedArtifacts.length,
+      totalSize,
+      confidence: confidenceDenominator > 0
+        ? result.stats.modelElementsGenerated / confidenceDenominator
+        : 0,
+    },
+    residualIslandIds: result.residualIslands.map((island) => island.id),
+    skippedArtifacts,
+  };
+}
+
+async function resolveSourceImport(request: SourceImportRequest): Promise<SourceImportResolution> {
+  if (isRepositorySourceType(request.sourceType)) {
+    return resolveRepositoryImport(request);
+  }
+
+  const content = await readRemoteSource(request.source);
+  const componentName = request.targetComponentName ?? inferComponentName(request.source, 'ImportedSource');
+
+  return {
+    files: [
+      {
+        path: request.sourceType === 'artifact' ? `${componentName}.json` : `${componentName}.tsx`,
+        content,
+        type: inferFileType(request.sourceType),
+        source: request.source,
+      },
+    ],
+    componentName,
+    totalSize: content.length,
+    warnings: [],
+  };
 }
 
 async function createSourceImportJob(input: {
@@ -232,6 +360,10 @@ async function completeSourceImportJob(
     auditRecorded: boolean;
     failedStepId?: string;
     componentName?: string;
+    summary?: SourceImportJob['summary'];
+    snapshotRef?: SourceImportJob['snapshotRef'];
+    residualIslandIds?: SourceImportJob['residualIslandIds'];
+    skippedArtifacts?: SourceImportJob['skippedArtifacts'];
   },
 ): Promise<SourceImportJob> {
   const now = new Date().toISOString();
@@ -276,6 +408,10 @@ async function completeSourceImportJob(
     reason: input.reason,
     auditRecorded: input.auditRecorded,
     componentName: input.componentName ?? job.componentName,
+    summary: input.summary ?? job.summary,
+    snapshotRef: input.snapshotRef ?? job.snapshotRef,
+    residualIslandIds: input.residualIslandIds ?? job.residualIslandIds,
+    skippedArtifacts: input.skippedArtifacts ?? job.skippedArtifacts,
     percentComplete,
     currentStep,
     steps,
@@ -470,7 +606,7 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: completeSourceImportJob(sourceValidatedJob, {
+          job: await completeSourceImportJob(sourceValidatedJob, {
             status: 'REJECTED',
             reason: 'unsupported_source_type',
             auditRecorded,
@@ -479,7 +615,7 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
         });
       }
 
-      if (!body.source || body.source.length > maxSourceLocatorLength || !isTrustedLocator(body.source)) {
+      if (!body.source || body.source.length > maxSourceLocatorLength || !isTrustedLocator(body.sourceType, body.source)) {
         const auditRecorded = await logSourceImportAudit(request, {
           tenantId,
           workspaceId,
@@ -520,14 +656,7 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
           'fetch_source',
         );
         activeJob = fetchingJob;
-        const content = await readRemoteSource(body.source);
-        const componentName = body.targetComponentName ?? inferComponentName(body.source, 'ImportedSource');
-        const file: SourceImportFile = {
-          path: body.sourceType === 'artifact' ? `${componentName}.json` : `${componentName}.tsx`,
-          content,
-          type: inferFileType(body.sourceType),
-          source: body.source,
-        };
+        const resolution = await resolveSourceImport(body);
         const reviewJob = await startSourceImportJobStep(
           await updateSourceImportJobStep(fetchingJob, 'fetch_source', 'completed'),
           'prepare_review',
@@ -542,32 +671,39 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
           outcome: 'REVIEW_REQUIRED',
           status: 200,
           jobId: reviewJob.id,
-          componentName,
-          totalSize: content.length,
+          componentName: resolution.componentName,
+          totalSize: resolution.totalSize,
         });
         const completedJob = await completeSourceImportJob(
           await updateSourceImportJobStep(reviewJob, 'prepare_review', 'completed'),
           {
             status: 'REVIEW_REQUIRED',
             auditRecorded,
-            componentName,
+            componentName: resolution.componentName,
+            summary: resolution.summary,
+            snapshotRef: resolution.snapshotRef,
+            residualIslandIds: resolution.residualIslandIds,
+            skippedArtifacts: resolution.skippedArtifacts,
           },
         );
 
         return {
           success: true,
-          componentId: `${body.projectId}/${componentName}`,
-          files: [file],
-          warnings: ['Imported source requires operator review before applying generated page artifacts.'],
+          componentId: `${body.projectId}/${resolution.componentName}`,
+          files: resolution.files,
+          warnings: [
+            ...resolution.warnings,
+            'Imported source requires operator review before applying generated page artifacts.',
+          ],
           errors: [],
           metadata: {
             sourceType: body.sourceType,
             source: body.source,
             importedAt,
-            componentName,
+            componentName: resolution.componentName,
             dependencies: [],
-            fileCount: 1,
-            totalSize: content.length,
+            fileCount: resolution.files.length,
+            totalSize: resolution.totalSize,
           },
           job: completedJob,
         };
@@ -595,7 +731,7 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
             fileCount: 0,
             totalSize: 0,
           },
-          job: completeSourceImportJob(activeJob, {
+          job: await completeSourceImportJob(activeJob, {
             status: 'FAILED',
             reason: 'source_fetch_failed',
             auditRecorded,

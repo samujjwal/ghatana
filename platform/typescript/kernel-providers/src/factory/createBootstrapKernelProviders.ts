@@ -18,6 +18,34 @@ import { FileProvenanceProvider } from "../provenance/FileProvenanceProvider.js"
 import { FileRuntimeTruthProvider } from "../runtime-truth/FileRuntimeTruthProvider.js";
 import { GhatanaFileRegistryProvider } from "../registry/GhatanaFileRegistryProvider.js";
 
+/**
+ * Asserts that the current execution environment allows bootstrap mode.
+ *
+ * Bootstrap mode is intended for local development, CLI operations, and testing.
+ * Production deployments must use platform mode with Data Cloud-backed providers.
+ *
+ * @param environment - Current environment (e.g., 'development', 'production', 'test')
+ * @param allowBootstrapInProduction - If true, bypass the production guard (for testing only)
+ * @throws Error if bootstrap mode is used in production without explicit override
+ *
+ * @doc.type function
+ * @doc.purpose Guard against using bootstrap mode in production
+ * @doc.layer kernel-providers
+ * @doc.pattern Guard Function
+ */
+export function assertBootstrapOnly(
+  environment: string = process.env.NODE_ENV ?? process.env.GHATANA_ENV ?? 'development',
+  allowBootstrapInProduction: boolean = false
+): void {
+  const isProduction = environment === 'production' || environment === 'prod';
+  if (isProduction && !allowBootstrapInProduction) {
+    throw new Error(
+      'Bootstrap mode is not allowed in production environment. Use platform mode with Data Cloud-backed providers. ' +
+      'Set allowBootstrapInProduction=true to bypass this guard (for testing only).'
+    );
+  }
+}
+
 export interface BootstrapKernelProvidersOptions {
   readonly repoRoot: string;
   readonly outputRoot?: string;

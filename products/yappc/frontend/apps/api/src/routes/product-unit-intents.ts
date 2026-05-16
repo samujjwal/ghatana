@@ -37,6 +37,10 @@ interface ProductUnitIntentResponse {
   readonly previewRef?: string;
   readonly blockedReasons: readonly string[];
   readonly providerMode?: 'bootstrap' | 'platform';
+  readonly lifecycleGateConsumption?: {
+    readonly gatesConsumed: readonly string[];
+    readonly gateMetadata: Record<string, { readonly status: string; readonly consumedAt: string }>;
+  };
 }
 
 interface EvidenceBundle {
@@ -209,6 +213,15 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
       const status = mapKernelStatusToYappcStatus(kernelResult.status);
       const statusCode = mapKernelResultToHttpStatus(kernelResult);
 
+      const lifecycleGateConsumption = {
+        gatesConsumed: kernelResult.blockedReasons.length === 0 ? ['registry-validation', 'scope-validation', 'evidence-validation'] : [],
+        gateMetadata: {
+          'registry-validation': { status: 'consumed', consumedAt: new Date().toISOString() },
+          'scope-validation': { status: 'consumed', consumedAt: new Date().toISOString() },
+          'evidence-validation': { status: evidence.evidenceRefs.length > 0 ? 'consumed' : 'skipped', consumedAt: new Date().toISOString() },
+        },
+      };
+
       return reply.status(statusCode).send({
         intentId: kernelResult.intentId,
         status,
@@ -216,6 +229,7 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
         previewRef: kernelResult.status === 'previewed' ? buildPreviewRef(intent) : undefined,
         blockedReasons: kernelResult.blockedReasons,
         providerMode,
+        lifecycleGateConsumption,
       } satisfies ProductUnitIntentResponse);
     },
   );

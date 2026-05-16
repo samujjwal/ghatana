@@ -113,6 +113,83 @@ describe('KernelLifecycleService', () => {
     );
   });
 
+  it('emits lifecycle.plan.created event when creating a plan', async () => {
+    const providerContext = createBootstrapProviderContext();
+    const plan = createPlan(repoRoot);
+    const planner = {
+      plan: vi.fn().mockResolvedValue(plan),
+    } as unknown as ProductLifecyclePlanner;
+    const service = new KernelLifecycleService({
+      repoRoot,
+      planner,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext,
+      clock: () => '2026-05-14T00:00:00.000Z',
+    });
+
+    await service.createLifecyclePlan('digital-marketing', 'build', {
+      correlationId: 'corr-1',
+    });
+
+    expect(providerContext.events?.appendEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          eventType: 'lifecycle.plan.created',
+          productUnitId: 'digital-marketing',
+          runId: 'run-1',
+          phase: 'build',
+          correlationId: 'corr-1',
+        }),
+        payload: expect.objectContaining({
+          planRunId: 'run-1',
+          phase: 'build',
+          providerMode: 'bootstrap',
+          createdAt: '2026-05-14T00:00:00.000Z',
+        }),
+      }),
+      expect.objectContaining({ required: false, correlationId: 'corr-1' }),
+    );
+  });
+
+  it('logs structured info/warn/error for lifecycle events', async () => {
+    const providerContext = createBootstrapProviderContext();
+    const plan = createPlan(repoRoot);
+    const planner = {
+      plan: vi.fn().mockResolvedValue(plan),
+    } as unknown as ProductLifecyclePlanner;
+    const infoLogs: string[] = [];
+    const warnLogs: string[] = [];
+    const errorLogs: string[] = [];
+    const mockLogger = {
+      info: (message: string, meta?: Record<string, unknown>) => {
+        infoLogs.push(JSON.stringify({ level: 'info', message, ...meta }));
+      },
+      warn: (message: string, meta?: Record<string, unknown>) => {
+        warnLogs.push(JSON.stringify({ level: 'warn', message, ...meta }));
+      },
+      error: (message: string, meta?: Record<string, unknown>) => {
+        errorLogs.push(JSON.stringify({ level: 'error', message, ...meta }));
+      },
+    };
+
+    const service = new KernelLifecycleService({
+      repoRoot,
+      planner,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext,
+      logger: mockLogger,
+      clock: () => '2026-05-14T00:00:00.000Z',
+    });
+
+    await service.createLifecyclePlan('digital-marketing', 'build', {
+      correlationId: 'corr-1',
+    });
+
+    // Verify structured logs contain correlation ID and relevant metadata
+    expect(infoLogs.some((log) => log.includes('lifecycle.plan.creating') && log.includes('corr-1'))).toBe(true);
+    expect(infoLogs.some((log) => log.includes('lifecycle.plan.created') && log.includes('run-1'))).toBe(true);
+  });
+
   it('runs a dry-run build through the injected executor and writes latest pointers', async () => {
     const plan = createPlan(repoRoot);
     const result = createResult(repoRoot);

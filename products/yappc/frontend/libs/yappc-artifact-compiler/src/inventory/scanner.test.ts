@@ -3,12 +3,19 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { scanRepository, DEFAULT_SCANNER_CONFIG } from './scanner';
 
+const testDir = dirname(fileURLToPath(import.meta.url));
+const fixturesRoot = resolve(testDir, '../../test/fixtures');
+const smallReactAppRoot = resolve(fixturesRoot, 'small-react-app');
+const pnpmMonorepoRoot = resolve(fixturesRoot, 'pnpm-monorepo');
+
 describe('scanRepository', () => {
-  it('should scan the current repo and return an inventory', async () => {
+  it('should scan fixture repo and return deterministic inventory shape', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       excludeGlobs: [
         ...DEFAULT_SCANNER_CONFIG.excludeGlobs,
         '**/node_modules/**',
@@ -20,7 +27,7 @@ describe('scanRepository', () => {
 
     const inventory = await scanRepository(config);
 
-    expect(inventory.repositoryRoot).toBe(process.cwd());
+  expect(inventory.repositoryRoot).toBe(smallReactAppRoot);
     expect(inventory.scannedAt).toBeTruthy();
     expect(inventory.artifacts.length).toBeGreaterThan(0);
     expect(inventory.summary.totalFiles).toBeGreaterThan(0);
@@ -36,7 +43,7 @@ describe('scanRepository', () => {
 
   it('should classify package.json as configuration-build', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/package.json'],
       excludeGlobs: [],
     };
@@ -52,7 +59,7 @@ describe('scanRepository', () => {
 
   it('should compute checksums', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/package.json'],
       excludeGlobs: [],
     };
@@ -68,7 +75,7 @@ describe('scanRepository', () => {
 
   it('should detect TypeScript files', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/*.ts'],
       excludeGlobs: ['**/node_modules/**', '**/dist/**'],
     };
@@ -85,7 +92,7 @@ describe('scanRepository', () => {
 describe('scanRepository exclusions', () => {
   it('should respect excludeGlobs', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/*'],
       excludeGlobs: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     };
@@ -104,7 +111,7 @@ describe('scanRepository exclusions', () => {
 describe('Phase 1 enhancements', () => {
   it('should produce deterministic scan output ordering', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/*.json'],
       excludeGlobs: ['**/node_modules/**'],
     };
@@ -121,7 +128,7 @@ describe('Phase 1 enhancements', () => {
 
   it('should use SHA-256 for binary checksums', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/package.json'],
       excludeGlobs: [],
     };
@@ -136,27 +143,25 @@ describe('Phase 1 enhancements', () => {
     }
   });
 
-  it('should detect npm/pnpm package boundaries', async () => {
+  it('should detect npm/pnpm package boundaries from fixture monorepo', async () => {
     const config = {
-      rootPath: process.cwd(),
-      includeGlobs: ['**/package.json'],
+      rootPath: pnpmMonorepoRoot,
+      includeGlobs: ['**/*'],
       excludeGlobs: [],
     };
 
     const inventory = await scanRepository(config);
-    const pkgJsons = inventory.artifacts.filter(a => a.relativePath.endsWith('package.json'));
-
     // Package boundary detection should identify package roots
-    for (const pkg of pkgJsons) {
-      // Packages should have package.json at root
-      const parts = pkg.relativePath.split('/');
-      expect(parts[parts.length - 1]).toBe('package.json');
-    }
+    expect(inventory.packageBoundaries.length).toBe(2);
+    expect(inventory.packageBoundaries.map(boundary => boundary.relativePath).sort()).toEqual([
+      'packages/core',
+      'packages/web',
+    ]);
   });
 
   it('should protect against zip-slip attacks', async () => {
     const config = {
-      rootPath: process.cwd(),
+      rootPath: smallReactAppRoot,
       includeGlobs: ['**/*'],
       excludeGlobs: ['**/node_modules/**', '**/dist/**'],
     };

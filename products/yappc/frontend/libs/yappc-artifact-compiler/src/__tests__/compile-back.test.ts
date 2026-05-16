@@ -161,41 +161,47 @@ describe('preserveResidual — verbatim-preserve', () => {
 });
 
 describe('preserveResidual — best-effort-approximate', () => {
-  it('returns original source with a warning', () => {
+  it('blocks non-verbatim regeneration and flags manual review', () => {
     const island: ResidualIsland = { ...makeResidual('r2', []), regenerationStrategy: 'best-effort-approximate' };
     const result = preserveResidual(island, '');
-    expect(result.preserved).toBe(true);
+    expect(result.preserved).toBe(false);
+    expect(result.blocked).toBe(true);
+    expect(result.reviewRequired).toBe(true);
     expect(result.warning).toBeDefined();
-    expect(result.warning).toContain('Best-effort');
+    expect(result.content).toBe(island.originalSource);
   });
 });
 
 describe('preserveResidual — emit-warning', () => {
-  it('wraps original source in a warning comment', () => {
+  it('blocks warning-comment regeneration in production mode', () => {
     const island: ResidualIsland = { ...makeResidual('r3', []), regenerationStrategy: 'emit-warning' };
     const result = preserveResidual(island, '');
     expect(result.preserved).toBe(false);
-    expect(result.content).toContain('YAPPC-WARNING');
+    expect(result.blocked).toBe(true);
+    expect(result.reviewRequired).toBe(true);
+    expect(result.content).toBe(island.originalSource);
   });
 });
 
 describe('preserveResidual — require-manual-impl', () => {
-  it('emits a throw expression and TODO comment', () => {
+  it('blocks synthetic implementation output', () => {
     const island: ResidualIsland = { ...makeResidual('r4', []), regenerationStrategy: 'require-manual-impl' };
     const result = preserveResidual(island, '');
     expect(result.preserved).toBe(false);
-    expect(result.content).toContain('YAPPC-TODO');
-    expect(result.content).toContain('throw new Error');
+    expect(result.blocked).toBe(true);
+    expect(result.reviewRequired).toBe(true);
+    expect(result.content).toBe(island.originalSource);
   });
 });
 
 describe('preserveResidual — placeholder-stub', () => {
-  it('emits a stub with TODO comment', () => {
+  it('blocks placeholder stub generation', () => {
     const island: ResidualIsland = { ...makeResidual('r5', []), regenerationStrategy: 'placeholder-stub' };
     const result = preserveResidual(island, '');
     expect(result.preserved).toBe(false);
-    expect(result.content).toContain('YAPPC-STUB');
-    expect(result.content).toContain('TODO');
+    expect(result.blocked).toBe(true);
+    expect(result.reviewRequired).toBe(true);
+    expect(result.content).toBe(island.originalSource);
   });
 });
 

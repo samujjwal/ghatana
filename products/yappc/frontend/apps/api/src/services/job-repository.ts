@@ -11,9 +11,10 @@
  */
 
 import { randomUUID } from 'crypto';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
+import { getPrismaClient, type PrismaClient } from '../database/client';
 
 export type SourceImportType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip' | 'github' | 'gitlab' | 'local-folder';
 export type SourceImportJobStatus = 'VALIDATING' | 'FETCHING_SOURCE' | 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED';
@@ -78,7 +79,16 @@ export interface JobRepository {
   deleteExpired(ttlMs: number): Promise<number>;
 }
 
-class FileJobRepository implements JobRepository {
+interface SourceImportJobRow {
+  id: string;
+  job_data: SourceImportJob | string;
+}
+
+function parseStoredJob(jobData: SourceImportJob | string): SourceImportJob {
+  return typeof jobData === 'string' ? JSON.parse(jobData) as SourceImportJob : jobData;
+}
+
+export class FileJobRepository implements JobRepository {
   private readonly jobsDir: string;
   private readonly cache = new Map<string, SourceImportJob>();
 
@@ -117,7 +127,7 @@ class FileJobRepository implements JobRepository {
   async findByProject(projectId: string): Promise<SourceImportJob[]> {
     const jobs: SourceImportJob[] = [];
     try {
-      const files = await require('fs').promises.readdir(this.jobsDir);
+      const files = await readdir(this.jobsDir);
       for (const file of files) {
         if (!file.endsWith('.json')) continue;
         try {
@@ -157,7 +167,7 @@ class FileJobRepository implements JobRepository {
 
     this.cache.delete(id);
     try {
-      await require('fs').promises.unlink(join(this.jobsDir, `${id}.json`));
+      await unlink(join(this.jobsDir, `${id}.json`));
       return true;
     } catch {
       return false;
@@ -167,7 +177,7 @@ class FileJobRepository implements JobRepository {
   async deleteExpired(ttlMs: number): Promise<number> {
     const now = Date.now();
     let deleted = 0;
-    const files = await require('fs').promises.readdir(this.jobsDir);
+    const files = await readdir(this.jobsDir);
     for (const file of files) {
       if (!file.endsWith('.json')) continue;
       try {
@@ -189,12 +199,179 @@ class FileJobRepository implements JobRepository {
   }
 }
 
+export class DatabaseJobRepository implements JobRepository {
+  private readonly prisma: PrismaClient;
+  private ensureTablePromise: Promise<void> | null = null;
+
+  constructor(prisma?: PrismaClient) {
+    this.prisma = prisma ?? getPrismaClient();
+  }
+
+  async create(job: Omit<SourceImportJob, 'id' | 'createdAt' | 'updatedAt'>): Promise<SourceImportJob> {
+    await this.ensureTable();
+    const now = new Date().toISOString();
+    const newJob: SourceImportJob = {
+      ...job,
+      id: `source-import-${randomUUID()}`,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await this.upsertJob(newJob);
+    return newJob;
+  }
+
+  async findById(id: string): Promise<SourceImportJob | null> {
+    await this.ensureTable();
+    const rows = await this.prisma.$queryRaw<SourceImportJobRow[]>`
+      SELECT id, job_data
+      FROM source_import_jobs
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+    const row = rows[0];
+    return row ? parseStoredJob(row.job_data) : null;
+  }
+
+  async findByProject(projectId: string): Promise<SourceImportJob[]> {
+    await this.ensureTable();
+    const rows = await this.prisma.$queryRaw<SourceImportJobRow[]>`
+      SELECT id, job_data
+      FROM source_import_jobs
+      WHERE project_id = ${projectId}
+      ORDER BY updated_at DESC
+    `;
+    return rows.map((row) => parseStoredJob(row.job_data));
+  }
+
+  async update(id: string, updates: Partial<SourceImportJob>): Promise<SourceImportJob | null> {
+    const existing = await this.findById(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updated: SourceImportJob = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.upsertJob(updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    await this.ensureTable();
+    const deletedRows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      DELETE FROM source_import_jobs
+      WHERE id = ${id}
+      RETURNING id
+    `;
+    return deletedRows.length > 0;
+  }
+
+  async deleteExpired(ttlMs: number): Promise<number> {
+    await this.ensureTable();
+    const cutoff = new Date(Date.now() - ttlMs);
+    const deletedRows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      DELETE FROM source_import_jobs
+      WHERE updated_at < ${cutoff}
+      RETURNING id
+    `;
+    return deletedRows.length;
+  }
+
+  private async upsertJob(job: SourceImportJob): Promise<void> {
+    const jobData = JSON.stringify(job);
+    const createdAt = new Date(job.createdAt);
+    const updatedAt = new Date(job.updatedAt);
+
+    await this.prisma.$executeRaw`
+      INSERT INTO source_import_jobs (
+        id,
+        tenant_id,
+        workspace_id,
+        project_id,
+        source_type,
+        source_locator,
+        created_at,
+        updated_at,
+        job_data
+      )
+      VALUES (
+        ${job.id},
+        ${job.tenantId},
+        ${job.workspaceId},
+        ${job.projectId},
+        ${job.sourceType},
+        ${job.source},
+        ${createdAt},
+        ${updatedAt},
+        CAST(${jobData} AS JSONB)
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        tenant_id = EXCLUDED.tenant_id,
+        workspace_id = EXCLUDED.workspace_id,
+        project_id = EXCLUDED.project_id,
+        source_type = EXCLUDED.source_type,
+        source_locator = EXCLUDED.source_locator,
+        updated_at = EXCLUDED.updated_at,
+        job_data = EXCLUDED.job_data
+    `;
+  }
+
+  private async ensureTable(): Promise<void> {
+    if (!this.ensureTablePromise) {
+      this.ensureTablePromise = this.createTable();
+    }
+    await this.ensureTablePromise;
+  }
+
+  private async createTable(): Promise<void> {
+    await this.prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS source_import_jobs (
+        id TEXT PRIMARY KEY,
+        tenant_id TEXT,
+        workspace_id TEXT,
+        project_id TEXT,
+        source_type TEXT NOT NULL,
+        source_locator TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        job_data JSONB NOT NULL
+      )
+    `;
+    await this.prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS idx_source_import_jobs_project_updated
+      ON source_import_jobs (project_id, updated_at DESC)
+    `;
+    await this.prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS idx_source_import_jobs_updated_at
+      ON source_import_jobs (updated_at)
+    `;
+  }
+}
+
+export function shouldUseDatabaseJobRepository(): boolean {
+  const backend = process.env.YAPPC_SOURCE_IMPORT_JOB_BACKEND ?? process.env.SOURCE_IMPORT_JOB_BACKEND;
+  if (backend === 'file') {
+    return false;
+  }
+  if (backend === 'database') {
+    return true;
+  }
+
+  return process.env.NODE_ENV === 'production' && Boolean(process.env.DATABASE_URL);
+}
+
 // Singleton instance
 let repositoryInstance: JobRepository | null = null;
 
 export function getJobRepository(): JobRepository {
   if (!repositoryInstance) {
-    repositoryInstance = new FileJobRepository();
+    repositoryInstance = shouldUseDatabaseJobRepository()
+      ? new DatabaseJobRepository()
+      : new FileJobRepository();
   }
   return repositoryInstance;
 }

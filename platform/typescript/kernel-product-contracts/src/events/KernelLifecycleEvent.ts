@@ -16,6 +16,7 @@ export const KERNEL_LIFECYCLE_EVENT_TYPES = [
   "product-unit.intent.created",
   "product-unit.intent.validated",
   "product-unit.intent.applied",
+  "lifecycle.plan.created",
   "lifecycle.phase.started",
   "lifecycle.phase.completed",
   "lifecycle.step.started",
@@ -152,6 +153,15 @@ export interface ProductUnitIntentAppliedPayload {
   readonly changedFiles: readonly string[];
 }
 
+export interface LifecyclePlanCreatedPayload {
+  readonly planRunId: string;
+  readonly phase: ProductLifecyclePhase;
+  readonly providerMode: "bootstrap" | "platform";
+  readonly environment?: string;
+  readonly dryRun?: boolean;
+  readonly createdAt: string;
+}
+
 export interface LifecyclePhaseStartedPayload {
   readonly phase: ProductLifecyclePhase;
   readonly status: "running";
@@ -267,6 +277,7 @@ export type KernelLifecycleEventPayload =
   | ProductUnitIntentCreatedPayload
   | ProductUnitIntentValidatedPayload
   | ProductUnitIntentAppliedPayload
+  | LifecyclePlanCreatedPayload
   | LifecyclePhaseStartedPayload
   | LifecyclePhaseCompletedPayload
   | LifecycleStepStartedPayload
@@ -341,6 +352,17 @@ const ProductUnitIntentAppliedPayloadSchema = z
     productUnitId: z.string().trim().min(1),
     applied: z.boolean(),
     changedFiles: z.array(z.string().trim().min(1)),
+  })
+  .strict();
+
+const LifecyclePlanCreatedPayloadSchema = z
+  .object({
+    planRunId: z.string().trim().min(1),
+    phase: z.enum(PRODUCT_LIFECYCLE_PHASES),
+    providerMode: z.enum(["bootstrap", "platform"]),
+    environment: z.string().trim().min(1).optional(),
+    dryRun: z.boolean().optional(),
+    createdAt: z.string().datetime({ offset: true }),
   })
   .strict();
 
@@ -484,6 +506,7 @@ const payloadSchemasByEventType = {
   "product-unit.intent.created": ProductUnitIntentCreatedPayloadSchema,
   "product-unit.intent.validated": ProductUnitIntentValidatedPayloadSchema,
   "product-unit.intent.applied": ProductUnitIntentAppliedPayloadSchema,
+  "lifecycle.plan.created": LifecyclePlanCreatedPayloadSchema,
   "lifecycle.phase.started": LifecyclePhaseStartedPayloadSchema,
   "lifecycle.phase.completed": LifecyclePhaseCompletedPayloadSchema,
   "lifecycle.step.started": LifecycleStepStartedPayloadSchema,

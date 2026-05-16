@@ -16,8 +16,14 @@ import { mkdir, readFile, writeFile, mkdtemp } from 'fs/promises';
 import { join, basename, normalize, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'crypto';
-import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
-import { SourceProviderError } from './types';
+import type {
+  SourceProvider,
+  SourceProviderOptions,
+  SourceProviderLocator,
+  SnapshotFile,
+  RepositorySnapshot,
+} from './types';
+import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -150,30 +156,32 @@ export class ZipProvider implements SourceProvider {
     return lower.endsWith('.zip') || lower.includes('.zip?') || lower.includes('.zip#');
   }
 
-  async resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+  async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+    validateCredentialPolicy(options?.scope, options?.credentials);
+    const normalizedLocator = sourceLocatorToString(locator);
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 10 * 1024 * 1024;
     const maxFiles = options?.maxFiles ?? 20_000;
     const timeoutMs = options?.requestTimeoutMs ?? 60_000;
 
     let zipBuffer: Buffer;
 
-    if (locator.startsWith('http://') || locator.startsWith('https://')) {
+    if (normalizedLocator.startsWith('http://') || normalizedLocator.startsWith('https://')) {
       try {
-        zipBuffer = await downloadToBuffer(locator, timeoutMs);
+        zipBuffer = await downloadToBuffer(normalizedLocator, timeoutMs);
       } catch (err) {
-        throw new SourceProviderError(this.providerId, locator, 'Failed to download ZIP', err);
+        throw new SourceProviderError(this.providerId, normalizedLocator, 'Failed to download ZIP', err);
       }
     } else {
       try {
-        zipBuffer = await readFile(locator);
+        zipBuffer = await readFile(normalizedLocator);
       } catch (err) {
-        throw new SourceProviderError(this.providerId, locator, 'Failed to read ZIP file', err);
+        throw new SourceProviderError(this.providerId, normalizedLocator, 'Failed to read ZIP file', err);
       }
     }
 
     // Compute a stable content hash for the snapshotRef
     const contentSha = createHash('sha256').update(zipBuffer).digest('hex');
-    const archiveName = basename(locator).replace(/\.zip$/, '');
+    const archiveName = basename(normalizedLocator).replace(/\.zip$/, '');
 
     const snapshotRef: SnapshotRef = {
       provider: 'zip',
@@ -185,7 +193,7 @@ export class ZipProvider implements SourceProvider {
     try {
       entries = parseZipCentralDirectory(zipBuffer);
     } catch (err) {
-      throw new SourceProviderError(this.providerId, locator, 'Failed to parse ZIP central directory', err);
+      throw new SourceProviderError(this.providerId, normalizedLocator, 'Failed to parse ZIP central directory', err);
     }
 
     const tempRoot = await mkdtemp(join(options?.tempDir ?? tmpdir(), `yappc-zip-`));

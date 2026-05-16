@@ -49,6 +49,14 @@ const payloadsByType: Record<KernelLifecycleEventType, KernelLifecycleEvent["pay
     applied: true,
     changedFiles: ["config/canonical-product-registry.json"],
   },
+  "lifecycle.plan.created": {
+    planRunId: "run-1",
+    phase: "build",
+    providerMode: "bootstrap",
+    environment: "local",
+    dryRun: false,
+    createdAt: "2026-05-14T00:00:00.000Z",
+  },
   "lifecycle.phase.started": {
     phase: "build",
     status: "running",

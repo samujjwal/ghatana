@@ -21,6 +21,8 @@ export type StudioRouteOwnership =
 
 export type StudioRouteStatus = 'ready' | 'empty' | 'degraded' | 'blocked';
 
+export type RouteExposurePolicy = 'visible' | 'disabled' | 'hidden' | 'preview';
+
 export interface StudioNavItem {
   readonly id: StudioRouteId;
   readonly path: string;
@@ -30,6 +32,7 @@ export interface StudioNavItem {
   readonly requiredCapability: string;
   readonly status: StudioRouteStatus;
   readonly isCustomerVisible: boolean;
+  readonly exposure: RouteExposurePolicy;
 }
 
 export const STUDIO_NAV_ITEMS = [
@@ -42,6 +45,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'studio.shell.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
   {
     id: 'ideas',
@@ -52,6 +56,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'yappc.ideas.view',
     status: 'degraded',
     isCustomerVisible: true,
+    exposure: 'disabled',
   },
   {
     id: 'blueprints',
@@ -62,6 +67,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'yappc.blueprints.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
   {
     id: 'canvas',
@@ -72,6 +78,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'yappc.canvas.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
   {
     id: 'develop',
@@ -82,6 +89,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'kernel.development.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
   {
     id: 'lifecycle',
@@ -92,6 +100,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'kernel.lifecycle.view',
     status: 'degraded',
     isCustomerVisible: true,
+    exposure: 'disabled',
   },
   {
     id: 'agents',
@@ -102,6 +111,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'data-cloud.agent-evidence.view',
     status: 'degraded',
     isCustomerVisible: true,
+    exposure: 'disabled',
   },
   {
     id: 'artifacts',
@@ -112,6 +122,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'kernel.artifacts.view',
     status: 'empty',
     isCustomerVisible: true,
+    exposure: 'disabled',
   },
   {
     id: 'deployments',
@@ -122,6 +133,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'kernel.deployments.view',
     status: 'blocked',
     isCustomerVisible: true,
+    exposure: 'hidden',
   },
   {
     id: 'health',
@@ -132,6 +144,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'data-cloud.runtime-truth.view',
     status: 'degraded',
     isCustomerVisible: true,
+    exposure: 'disabled',
   },
   {
     id: 'learn',
@@ -142,6 +155,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'yappc.learning.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
   {
     id: 'settings',
@@ -152,6 +166,7 @@ export const STUDIO_NAV_ITEMS = [
     requiredCapability: 'studio.settings.view',
     status: 'ready',
     isCustomerVisible: true,
+    exposure: 'visible',
   },
 ] as const satisfies readonly StudioNavItem[];
 

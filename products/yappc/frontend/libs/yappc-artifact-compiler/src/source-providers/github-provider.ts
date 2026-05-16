@@ -17,8 +17,15 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
-import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
-import { SourceProviderError } from './types';
+import type {
+  SourceProvider,
+  SourceProviderOptions,
+  SourceProviderLocator,
+  SnapshotFile,
+  RepositorySnapshot,
+  ProviderDiagnostic,
+} from './types';
+import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -132,20 +139,22 @@ export class GitHubProvider implements SourceProvider {
     );
   }
 
-  async resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+  async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+    validateCredentialPolicy(options?.scope, options?.credentials);
+    const normalizedInput = sourceLocatorToString(locator);
     // Normalize github: prefix
-    const normalizedLocator = locator.startsWith('github:') ? locator.slice('github:'.length) : locator;
+    const normalizedLocator = normalizedInput.startsWith('github:') ? normalizedInput.slice('github:'.length) : normalizedInput;
     const parsed = parseLocator(normalizedLocator);
     if (!parsed) {
-      throw new SourceProviderError(this.providerId, locator, 'Cannot parse GitHub locator');
+      throw new SourceProviderError(this.providerId, normalizedInput, 'Cannot parse GitHub locator');
     }
 
     try {
-      return await this.doResolve(parsed, locator, options);
+      return await this.doResolve(parsed, normalizedInput, options);
     } catch (err) {
       if (err instanceof SourceProviderError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
-      throw new SourceProviderError(this.providerId, locator, msg, err);
+      throw new SourceProviderError(this.providerId, normalizedInput, msg, err);
     }
   }
 
@@ -199,12 +208,35 @@ export class GitHubProvider implements SourceProvider {
     };
 
     const files: SnapshotFile[] = [];
+    const diagnostics: ProviderDiagnostic[] = [];
     let fileCount = 0;
 
     for (const entry of treeResponse.tree) {
-      if (fileCount >= maxFiles) break;
+      if (fileCount >= maxFiles) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITHUB_MAX_FILES_REACHED',
+          message: `GitHub snapshot stopped after reaching maxFiles=${maxFiles}.`,
+          timestamp: new Date().toISOString(),
+          metadata: { maxFiles },
+        });
+        break;
+      }
       if (entry.type !== 'blob') continue;
-      if (entry.size !== undefined && entry.size > maxFileSizeBytes) continue;
+      if (entry.size !== undefined && entry.size > maxFileSizeBytes) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITHUB_FILE_SKIPPED_MAX_SIZE',
+          message: `Skipped oversized GitHub blob ${entry.path}.`,
+          timestamp: new Date().toISOString(),
+          resourcePath: entry.path,
+          metadata: {
+            sizeBytes: entry.size,
+            maxFileSizeBytes,
+          },
+        });
+        continue;
+      }
 
       // Materialize the blob
       try {
@@ -238,6 +270,16 @@ export class GitHubProvider implements SourceProvider {
           sizeBytes: entry.size ?? 0,
           lastModifiedAt: new Date().toISOString(),
         });
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITHUB_FILE_MATERIALIZATION_FAILED',
+          message: `Failed to materialize GitHub blob ${entry.path}; keeping metadata-only snapshot entry.`,
+          timestamp: new Date().toISOString(),
+          resourcePath: entry.path,
+          metadata: {
+            sizeBytes: entry.size ?? 0,
+          },
+        });
       }
     }
 
@@ -247,7 +289,7 @@ export class GitHubProvider implements SourceProvider {
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
-      diagnostics: [],
+      diagnostics,
     };
   }
 }

@@ -10,6 +10,7 @@ import {
   type ExtractorEligibility,
   type ImportExportSummary,
   type PackageBoundary,
+  type SkippedArtifact,
 } from './types';
 import { buildDeterministicNodeId, type SnapshotRef } from '../graph/types';
 
@@ -711,6 +712,38 @@ function matchesAnyGlob(relativePath: string, patterns: readonly string[]): bool
   return patterns.some(pattern => globToRegExp(pattern).test(relativePath));
 }
 
+function findFirstMatchingGlob(relativePath: string, patterns: readonly string[]): string | undefined {
+  return patterns.find(pattern => globToRegExp(pattern).test(relativePath));
+}
+
+function createSkippedArtifact(
+  relativePath: string,
+  source: SkippedArtifact['source'],
+  reason: string,
+  options: {
+    readonly matchedPattern?: string;
+    readonly sizeBytes?: number;
+  } = {},
+): SkippedArtifact {
+  const base = {
+    relativePath,
+    reason,
+    source,
+    detectedAt: new Date().toISOString(),
+  };
+
+  if (options.matchedPattern !== undefined && options.sizeBytes !== undefined) {
+    return { ...base, matchedPattern: options.matchedPattern, sizeBytes: options.sizeBytes };
+  }
+  if (options.matchedPattern !== undefined) {
+    return { ...base, matchedPattern: options.matchedPattern };
+  }
+  if (options.sizeBytes !== undefined) {
+    return { ...base, sizeBytes: options.sizeBytes };
+  }
+  return base;
+}
+
 // ============================================================================
 // File Walker
 // ============================================================================
@@ -720,7 +753,10 @@ async function* walkDirectory(
   root: string,
   config: ScannerConfig,
   gitignoreMatcher: (rel: string) => boolean,
-): AsyncGenerator<{ relativePath: string; absolutePath: string }> {
+): AsyncGenerator<
+  | { kind: 'file'; relativePath: string; absolutePath: string }
+  | { kind: 'skip'; skippedArtifact: SkippedArtifact }
+> {
   let entries: import('fs').Dirent[];
   try {
     entries = (await readdir(dir, { withFileTypes: true })) as import('fs').Dirent[];
@@ -735,18 +771,66 @@ async function* walkDirectory(
     const entryName = entry.name as string;
     const absolutePath = join(dir, entryName);
     const relativePath = relative(root, absolutePath).replace(/\\/g, '/');
+    const excludePattern = findFirstMatchingGlob(relativePath, config.excludeGlobs);
+    const ignoredByGitignore = config.respectGitignore !== false && gitignoreMatcher(relativePath);
 
     if (entry.isDirectory()) {
-      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs) ||
-        (config.respectGitignore !== false && gitignoreMatcher(relativePath));
-      if (isExcluded) continue;
+      if (excludePattern) {
+        yield {
+          kind: 'skip',
+          skippedArtifact: createSkippedArtifact(
+            relativePath,
+            'excludeGlobs',
+            'Excluded by configured glob pattern.',
+            { matchedPattern: excludePattern },
+          ),
+        };
+        continue;
+      }
+      if (ignoredByGitignore) {
+        yield {
+          kind: 'skip',
+          skippedArtifact: createSkippedArtifact(
+            relativePath,
+            'gitignore',
+            'Excluded by .gitignore rule.',
+          ),
+        };
+        continue;
+      }
       yield* walkDirectory(absolutePath, root, config, gitignoreMatcher);
+    } else if (entry.isSymbolicLink() && !config.followSymlinks) {
+      yield {
+        kind: 'skip',
+        skippedArtifact: createSkippedArtifact(
+          relativePath,
+          'symlink',
+          'Skipped symbolic link because followSymlinks is disabled.',
+        ),
+      };
     } else if (entry.isFile() || (entry.isSymbolicLink() && config.followSymlinks)) {
-      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs) ||
-        (config.respectGitignore !== false && gitignoreMatcher(relativePath));
       const isIncluded = matchesAnyGlob(relativePath, config.includeGlobs);
-      if (!isExcluded && isIncluded) {
-        yield { relativePath, absolutePath };
+      if (excludePattern) {
+        yield {
+          kind: 'skip',
+          skippedArtifact: createSkippedArtifact(
+            relativePath,
+            'excludeGlobs',
+            'Excluded by configured glob pattern.',
+            { matchedPattern: excludePattern },
+          ),
+        };
+      } else if (ignoredByGitignore) {
+        yield {
+          kind: 'skip',
+          skippedArtifact: createSkippedArtifact(
+            relativePath,
+            'gitignore',
+            'Excluded by .gitignore rule.',
+          ),
+        };
+      } else if (isIncluded) {
+        yield { kind: 'file', relativePath, absolutePath };
       }
     }
   }
@@ -761,13 +845,32 @@ async function scanFile(
   absolutePath: string,
   config: ScannerConfig,
   packageBoundaries: PackageBoundary[],
-): Promise<ArtifactRecord | null> {
+): Promise<{ record: ArtifactRecord | null; skippedArtifact?: SkippedArtifact }> {
   try {
     const stats = await stat(absolutePath);
-    if (!stats.isFile()) return null;
+    if (!stats.isFile()) {
+      return {
+        record: null,
+        skippedArtifact: createSkippedArtifact(
+          relativePath,
+          'readError',
+          'Path could not be scanned as a regular file.',
+        ),
+      };
+    }
 
     // Skip files larger than the configured limit
-    if (stats.size > config.maxFileSizeBytes) return null;
+    if (stats.size > config.maxFileSizeBytes) {
+      return {
+        record: null,
+        skippedArtifact: createSkippedArtifact(
+          relativePath,
+          'maxFileSize',
+          'Skipped file because it exceeds the configured size limit.',
+          { sizeBytes: stats.size },
+        ),
+      };
+    }
 
     const binary = isBinaryFile(absolutePath);
 
@@ -777,7 +880,7 @@ async function scanFile(
       const binaryContent = await readFile(absolutePath);
       const binaryChecksum = createHash('sha256').update(binaryContent).digest('hex');
 
-      return {
+      return { record: {
         id: buildArtifactId(config.snapshotRef, relativePath),
         relativePath,
         absolutePath,
@@ -792,7 +895,7 @@ async function scanFile(
         checksum: binaryChecksum,
         sizeBytes: stats.size,
         lastModifiedAt: stats.mtime.toISOString(),
-      };
+      } };
     }
 
     const content = await readFile(absolutePath, 'utf-8');
@@ -807,7 +910,7 @@ async function scanFile(
     const eligibility = generated ? [] : determineExtractorEligibility(kind, language, framework);
     const checksum = computeChecksum(content);
 
-    return {
+    return { record: {
       id: buildArtifactId(config.snapshotRef, relativePath),
       relativePath,
       absolutePath,
@@ -822,9 +925,16 @@ async function scanFile(
       checksum,
       sizeBytes: stats.size,
       lastModifiedAt: stats.mtime.toISOString(),
-    };
+    } };
   } catch (_err: unknown) {
-    return null;
+    return {
+      record: null,
+      skippedArtifact: createSkippedArtifact(
+        relativePath,
+        'readError',
+        'Skipped file because it could not be read.',
+      ),
+    };
   }
 }
 
@@ -837,7 +947,7 @@ export async function scanRepository(
 ): Promise<ArtifactInventory> {
   const mergedConfig: ScannerConfig = { ...DEFAULT_SCANNER_CONFIG, ...config };
   const artifacts: ArtifactRecord[] = [];
-  const skippedArtifacts: import('./types').SkippedArtifact[] = [];
+  const skippedArtifacts: SkippedArtifact[] = [];
   let ignoredFiles = 0;
 
   // Build .gitignore matcher once before walking
@@ -856,16 +966,24 @@ export async function scanRepository(
     mergedConfig,
     gitignoreMatcher,
   )) {
+    if (file.kind === 'skip') {
+      skippedArtifacts.push(file.skippedArtifact);
+      ignoredFiles++;
+      continue;
+    }
+
     const record = await scanFile(
       file.relativePath,
       file.absolutePath,
       mergedConfig,
       packageBoundaries,
     );
-    if (record) {
-      artifacts.push(record);
+    if (record.record) {
+      artifacts.push(record.record);
     } else {
-      // scanFile returns null for oversized or stat-failed files
+      if (record.skippedArtifact) {
+        skippedArtifacts.push(record.skippedArtifact);
+      }
       ignoredFiles++;
     }
   }

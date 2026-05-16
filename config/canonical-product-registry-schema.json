@@ -133,6 +133,10 @@
           "enum": ["disabled", "planned", "partial", "enabled"],
           "description": "Lifecycle rollout status for this product"
         },
+        "lifecycleExecutionAllowed": {
+          "type": "boolean",
+          "description": "Whether lifecycle execution is allowed for this product. When false, the product is in a NOT_READY state and lifecycle operations will be blocked."
+        },
         "lifecycleMigration": {
           "$ref": "#/definitions/ProductLifecycleMigration",
           "description": "Lifecycle migration status for this product"
@@ -416,6 +420,33 @@
           "type": "string",
           "enum": ["parallel", "sequential"],
           "description": "Execution mode for this phase"
+        },
+        "gateOutputs": {
+          "type": "object",
+          "description": "Gate output states for this phase",
+          "properties": {
+            "NOT_READY": {
+              "type": "object",
+              "description": "Output when the phase is NOT_READY",
+              "properties": {
+                "reasonCode": {
+                  "type": "string",
+                  "description": "Reason code for NOT_READY state"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Human-readable message explaining the NOT_READY state"
+                },
+                "blockedReasons": {
+                  "type": "array",
+                  "description": "Detailed reasons for the blocked state",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

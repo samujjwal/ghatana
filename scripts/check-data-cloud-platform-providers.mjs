@@ -105,6 +105,24 @@ requireIncludes(dataCloudExtensionPath, 'DataCloudMemoryProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudRuntimeTruthProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudPolicyEvidenceProvider');
 
+// Check for canonical envelope schema in kernel-bridge-providers
+// Client and gateway are aligned to use raw schemas as the canonical envelope
+const kernelBridgeProvidersPath = 'products/data-cloud/libs/kernel-bridge-providers/src/index.ts';
+requireFile(kernelBridgeProvidersPath);
+// Verify client sends raw body without wrapper (aligned with gateway)
+requireIncludes(kernelBridgeProvidersPath, 'body: JSON.stringify(body)', 'Kernel bridge providers must send raw body (no wrapper) to align with gateway');
+
+// Check gateway does not use in-memory Map for provider storage
+const gatewayAppPath = 'products/data-cloud/planes/action/gateway/src/app.ts';
+requireFile(gatewayAppPath);
+const gatewaySource = read(gatewayAppPath);
+if (gatewaySource.includes('providerStorage = new Map')) {
+  errors.push('Gateway must not use in-memory Map for provider storage; use injected Data Cloud provider service ports');
+}
+if (gatewaySource.includes('// In-memory storage for provider records')) {
+  errors.push('Gateway must replace in-memory provider storage comment with Data Cloud provider service ports');
+}
+
 const platformTypeScriptRoot = join(repoRoot, 'platform', 'typescript');
 const platformFiles = collectFiles(platformTypeScriptRoot, ['.ts', '.tsx', '.js', '.mjs']);
 for (const filePath of platformFiles) {

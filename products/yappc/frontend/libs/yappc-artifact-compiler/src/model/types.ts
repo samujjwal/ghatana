@@ -419,6 +419,7 @@ export type SemanticModelElement = z.infer<typeof SemanticModelElementSchema>;
 
 export const SemanticProductModelSchema = z.object({
   id: z.string().uuid(),
+  sourceModelRef: z.string().min(1).optional(),
   repositoryRoot: z.string().min(1),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

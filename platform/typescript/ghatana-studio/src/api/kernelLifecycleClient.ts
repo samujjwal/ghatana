@@ -261,6 +261,109 @@ export const KernelLifecycleApiErrorSchema = z
 
 export type KernelLifecycleApiError = z.infer<typeof KernelLifecycleApiErrorSchema>;
 
+/**
+ * Authentication context required for lifecycle mutations.
+ */
+export interface KernelLifecycleClientAuthContext {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
+  readonly authToken: string;
+}
+
+/**
+ * Base class for typed Kernel lifecycle client errors.
+ */
+export class KernelLifecycleClientError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode: number,
+    public readonly correlationId?: string,
+    public readonly details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = 'KernelLifecycleClientError';
+  }
+}
+
+/**
+ * Authentication error: missing or invalid auth token (401).
+ */
+export class KernelLifecycleAuthError extends KernelLifecycleClientError {
+  constructor(
+    message: string,
+    correlationId?: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message, 'AUTHENTICATION_REQUIRED', 401, correlationId, details);
+    this.name = 'KernelLifecycleAuthError';
+  }
+}
+
+/**
+ * Authorization error: insufficient permissions or scope mismatch (403).
+ */
+export class KernelLifecycleScopeError extends KernelLifecycleClientError {
+  constructor(
+    message: string,
+    correlationId?: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message, 'SCOPE_MISMATCH', 403, correlationId, details);
+    this.name = 'KernelLifecycleScopeError';
+  }
+}
+
+/**
+ * Provider mode error: platform mode requested without Data Cloud providers.
+ */
+export class KernelLifecycleProviderModeError extends KernelLifecycleClientError {
+  constructor(
+    message: string,
+    correlationId?: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message, 'PROVIDER_MODE_UNAVAILABLE', 503, correlationId, details);
+    this.name = 'KernelLifecycleProviderModeError';
+  }
+}
+
+/**
+ * Maps HTTP API errors to typed KernelLifecycleClientError subclasses.
+ */
+export function mapKernelLifecycleClientError(
+  error: unknown,
+  correlationId?: string,
+): KernelLifecycleClientError {
+  if (error instanceof KernelLifecycleClientError) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    const apiError = KernelLifecycleApiErrorSchema.safeParse(error);
+    if (apiError.success) {
+      const { statusCode, message, details } = apiError.data;
+      if (statusCode === 401) {
+        return new KernelLifecycleAuthError(message, correlationId, details);
+      }
+      if (statusCode === 403) {
+        return new KernelLifecycleScopeError(message, correlationId, details);
+      }
+      if (statusCode === 503) {
+        return new KernelLifecycleProviderModeError(message, correlationId, details);
+      }
+    }
+  }
+
+  return new KernelLifecycleClientError(
+    error instanceof Error ? error.message : 'Unknown Kernel lifecycle client error',
+    'UNKNOWN_ERROR',
+    500,
+    correlationId,
+  );
+}
+
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;
 export type LifecycleRun = z.infer<typeof LifecycleRunSchema>;
 export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;

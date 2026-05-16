@@ -22,6 +22,7 @@ import type {
   ProductLifecyclePhase,
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
+import type { StudioRuntimeContextState } from '../config/studioRuntimeContext';
 
 export type StudioLifecycleDataStatus = 'unconfigured' | 'loading' | 'ready' | 'degraded';
 
@@ -65,6 +66,8 @@ export interface StudioLifecycleDataContextValue {
   readonly selectedRunId: string | null;
   readonly selectedEnvironment: string;
   readonly selectedProviderMode: 'bootstrap' | 'platform';
+  /** Authenticated user ID resolved from the Studio runtime context. Undefined when Studio is unconfigured. */
+  readonly authenticatedUserId: string | undefined;
   selectProductUnit(productUnitId: string): void;
   selectRun(runId: string): void;
   setEnvironment(environment: string): void;
@@ -78,6 +81,7 @@ export interface StudioLifecycleDataContextValue {
 
 interface StudioLifecycleDataProviderProps {
   readonly client?: KernelLifecycleClient;
+  readonly runtimeContext?: StudioRuntimeContextState;
   readonly productUnitId?: string;
   readonly children: ReactNode;
 }
@@ -101,6 +105,7 @@ const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue
   selectedRunId: null,
   selectedEnvironment: 'local',
   selectedProviderMode: 'bootstrap',
+  authenticatedUserId: undefined,
   selectProductUnit: () => {},
   selectRun: () => {},
   setEnvironment: () => {},
@@ -115,7 +120,9 @@ const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue
 export function StudioLifecycleDataProvider(
   props: StudioLifecycleDataProviderProps,
 ): ReactElement {
-  const { client, productUnitId: initialProductUnitId = 'digital-marketing', children } = props;
+  const { client, runtimeContext, productUnitId: initialProductUnitId = 'digital-marketing', children } = props;
+  const authenticatedUserId =
+    runtimeContext?.status === 'configured' ? runtimeContext.identity.userId : undefined;
   
   const [selectedProductUnitId, setSelectedProductUnitId] = useState<string>(initialProductUnitId);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -302,6 +309,7 @@ export function StudioLifecycleDataProvider(
       selectedRunId,
       selectedEnvironment,
       selectedProviderMode,
+      authenticatedUserId,
       selectProductUnit,
       selectRun,
       setEnvironment,
@@ -318,6 +326,7 @@ export function StudioLifecycleDataProvider(
       selectedRunId,
       selectedEnvironment,
       selectedProviderMode,
+      authenticatedUserId,
       selectProductUnit,
       selectRun,
       setEnvironment,

@@ -151,5 +151,35 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
         );
       }
     });
+
+    it('should hide routes with exposure: hidden from navigation', () => {
+      renderApp();
+      const hiddenRoutes = STUDIO_NAV_ITEMS.filter((item) => item.exposure === 'hidden');
+      for (const route of hiddenRoutes) {
+        expect(screen.queryByRole('link', { name: new RegExp(route.label, 'i') })).not.toBeInTheDocument();
+      }
+    });
+
+    it('should render but disable routes with exposure: disabled', () => {
+      renderApp();
+      const disabledRoutes = STUDIO_NAV_ITEMS.filter((item) => item.exposure === 'disabled');
+      for (const route of disabledRoutes) {
+        const link = screen.getByRole('link', { name: new RegExp(route.label, 'i') });
+        expect(link).toBeInTheDocument();
+        expect(link).toHaveClass('cursor-not-allowed');
+        expect(link).toHaveAttribute('aria-disabled', 'true');
+      }
+    });
+
+    it('should render and enable routes with exposure: visible', () => {
+      renderApp();
+      const visibleRoutes = STUDIO_NAV_ITEMS.filter((item) => item.exposure === 'visible');
+      for (const route of visibleRoutes) {
+        const link = screen.getByRole('link', { name: new RegExp(route.label, 'i') });
+        expect(link).toBeInTheDocument();
+        expect(link).not.toHaveClass('cursor-not-allowed');
+        expect(link).not.toHaveAttribute('aria-disabled');
+      }
+    });
   });
 });

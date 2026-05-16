@@ -7,12 +7,19 @@ export {
   SourceProviderError,
   SnapshotFileSchema,
   RepositorySnapshotSchema,
+  SourceLocatorSchema,
+  sourceLocatorToString,
+  hasRawProviderCredentials,
+  validateCredentialPolicy,
 } from './types';
 
 export type {
   SourceProvider,
   SourceProviderOptions,
+  SourceProviderLocator,
   ProviderCredentials,
+  SourceLocator,
+  SourceScopeContext,
   SnapshotFile,
   RepositorySnapshot,
 } from './types';

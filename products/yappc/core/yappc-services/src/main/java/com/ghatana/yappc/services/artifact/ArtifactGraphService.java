@@ -21,17 +21,17 @@ public interface ArtifactGraphService {
     /**
      * Ingest artifact nodes and edges into the graph store.
      */
-    Promise<ArtifactGraphResponse> ingestGraph(ArtifactGraphIngestRequest request);
+    Promise<ArtifactGraphResponse> ingestGraph(ArtifactRequestScope scope, ArtifactGraphIngestRequest request);
 
     /**
      * Run graph analysis algorithms (centrality, cycles, communities, topological sort).
      */
-    Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactGraphAnalysisRequest request);
+    Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactRequestScope scope, ArtifactGraphAnalysisRequest request);
 
     /**
      * Perform three-way semantic merge of artifact models.
      */
-    Promise<ArtifactGraphResponse> mergeModels(ArtifactGraphMergeRequest request);
+    Promise<ArtifactGraphResponse> mergeModels(ArtifactRequestScope scope, ArtifactGraphMergeRequest request);
 
     /**
      * Query the artifact graph with pattern-based traversal.

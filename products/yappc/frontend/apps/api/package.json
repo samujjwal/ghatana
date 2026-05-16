@@ -24,6 +24,7 @@
         "@fastify/cors": "^11.2.0",
         "@ghatana/api": "workspace:*",
         "@ghatana/kernel-product-contracts": "workspace:*",
+        "yappc-artifact-compiler": "workspace:*",
         "@fastify/websocket": "^11.2.0",
         "@graphql-yoga/node": "^3.9.1",
         "@opentelemetry/api": "^1.9.1",

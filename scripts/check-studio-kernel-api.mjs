@@ -49,19 +49,48 @@ requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClien
 requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleApiErrorSchema', 'Studio Kernel API client');
 requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'providerMode', 'Studio Kernel API client');
 requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'authToken', 'Studio Kernel API client');
+requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleClientAuthContext', 'Studio Kernel API client auth context');
+requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleClientError', 'Studio Kernel API client error mapping');
+requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleAuthError', 'Studio Kernel API client auth error');
+requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleScopeError', 'Studio Kernel API client scope error');
 
-// Check Studio data context uses Kernel lifecycle client
+// Check Studio runtime context exists and is used
+requireFile('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'StudioRuntimeIdentity', 'Studio runtime context');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'StudioRuntimeContextState', 'Studio runtime context');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'resolveStudioRuntimeContext', 'Studio runtime context');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'VITE_STUDIO_TENANT_ID', 'Studio runtime context env vars');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'VITE_STUDIO_WORKSPACE_ID', 'Studio runtime context env vars');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'VITE_STUDIO_PROJECT_ID', 'Studio runtime context env vars');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'VITE_STUDIO_AUTH_TOKEN', 'Studio runtime context env vars');
+requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'VITE_STUDIO_USER_ID', 'Studio runtime context env vars');
+
+// Check Studio main.tsx wires runtime context
+requireFile('platform/typescript/ghatana-studio/src/main.tsx');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'resolveStudioRuntimeContext', 'Studio main entry point');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'runtimeContext', 'Studio main entry point');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'tenantId', 'Studio main entry point');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'workspaceId', 'Studio main entry point');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'projectId', 'Studio main entry point');
+requireIncludes('platform/typescript/ghatana-studio/src/main.tsx', 'authToken', 'Studio main entry point');
+
+// Check Studio data context uses Kernel lifecycle client and runtime context
 requireFile('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'KernelLifecycleClient', 'Studio data context');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'client?: KernelLifecycleClient', 'Studio data context');
+requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'runtimeContext', 'Studio data context');
+requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'authenticatedUserId', 'Studio data context');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'createPlan', 'Studio data context');
 requireIncludes('platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx', 'executePhase', 'Studio data context');
 
-// Check Studio LifecyclePage uses Kernel client for execute buttons
+// Check Studio LifecyclePage uses Kernel client for execute buttons and resolves approver
 requireFile('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'createPlan', 'Studio LifecyclePage');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'executePhase', 'Studio LifecyclePage');
 requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'useStudioLifecycleData', 'Studio LifecyclePage');
+requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'authenticatedUserId', 'Studio LifecyclePage');
+requireIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'runtimeContext', 'Studio LifecyclePage must use runtime context for session/scope');
+requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'studio-operator', 'Studio LifecyclePage must not hardcode approver');
 requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', "fetch('/api/kernel", 'Studio LifecyclePage must use typed client');
 requireNotIncludes('platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx', 'axios.get', 'Studio LifecyclePage must use typed client');
 

@@ -190,3 +190,75 @@ describe('resolveSymbols — resolution metadata', () => {
     expect(resolvedEdges[0]!.metadata['resolvedFromRef']).toBe('Target');
   });
 });
+
+describe('resolveSymbols — alias and workspace package resolution', () => {
+  it('resolves tsconfig-style aliases from resolver options', () => {
+    const source = makeNode({
+      id: 'node-source',
+      label: 'Source',
+      sourceLocation: {
+        filePath: 'src/pages/Home.tsx',
+        startLine: 0,
+        startColumn: 0,
+        endLine: 5,
+        endColumn: 0,
+      },
+    });
+    const target = makeNode({
+      id: 'node-card',
+      label: 'Card',
+      sourceLocation: {
+        filePath: 'src/components/Card.tsx',
+        startLine: 0,
+        startColumn: 0,
+        endLine: 10,
+        endColumn: 0,
+      },
+    });
+    const edge = makeUnresolved('e12', 'node-source', '@app/components/Card');
+
+    const { resolvedEdges, resolutionRecords } = resolveSymbols([edge], [source, target], {
+      pathAliases: {
+        '@app/*': 'src/*',
+      },
+    });
+
+    expect(resolvedEdges).toHaveLength(1);
+    expect(resolvedEdges[0]!.targetId).toBe('node-card');
+    expect(resolutionRecords[0]!.status).toBe('resolved');
+  });
+
+  it('resolves workspace package imports with configured package prefixes', () => {
+    const source = makeNode({
+      id: 'node-source',
+      label: 'Shell',
+      sourceLocation: {
+        filePath: 'apps/web/src/App.tsx',
+        startLine: 0,
+        startColumn: 0,
+        endLine: 5,
+        endColumn: 0,
+      },
+    });
+    const target = makeNode({
+      id: 'node-util',
+      label: 'formatPrice',
+      sourceLocation: {
+        filePath: 'packages/shared/src/utils/formatPrice.ts',
+        startLine: 0,
+        startColumn: 0,
+        endLine: 8,
+        endColumn: 0,
+      },
+    });
+    const edge = makeUnresolved('e13', 'node-source', '@workspace/shared/utils/formatPrice');
+
+    const { resolvedEdges, resolutionRecords } = resolveSymbols([edge], [source, target], {
+      workspacePackagePrefixes: ['@workspace'],
+    });
+
+    expect(resolvedEdges).toHaveLength(1);
+    expect(resolvedEdges[0]!.targetId).toBe('node-util');
+    expect(resolutionRecords[0]!.status).toBe('resolved');
+  });
+});

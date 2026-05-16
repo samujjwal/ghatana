@@ -6,12 +6,20 @@
  * Falls back to a content hash of the directory listing when git is unavailable.
  */
 
-import { readdir, stat } from 'fs/promises';
+import { readdir, readFile, stat } from 'fs/promises';
 import { join, relative, resolve as resolvePath } from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
-import { SourceProviderError } from './types';
+import { createHash } from 'crypto';
+import type {
+  SourceProvider,
+  SourceProviderOptions,
+  SourceProviderLocator,
+  SnapshotFile,
+  RepositorySnapshot,
+  ProviderDiagnostic,
+} from './types';
+import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
 import type { SnapshotRef } from '../graph/types';
 
 const execFileAsync = promisify(execFile);
@@ -39,6 +47,18 @@ async function tryGetGitRemoteUrl(rootPath: string): Promise<string | undefined>
       timeout: 5000,
     });
     return stdout.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function tryGetGitDirtyStatus(rootPath: string): Promise<boolean | undefined> {
+  try {
+    const { stdout } = await execFileAsync('git', ['status', '--porcelain', '--untracked-files=normal'], {
+      cwd: rootPath,
+      timeout: 5000,
+    });
+    return stdout.trim().length > 0;
   } catch {
     return undefined;
   }
@@ -109,6 +129,29 @@ async function* walkForSnapshot(
   }
 }
 
+async function buildContentSnapshotSha(files: readonly SnapshotFile[]): Promise<string> {
+  const hash = createHash('sha256');
+
+  for (const file of [...files].sort((left, right) => left.relativePath.localeCompare(right.relativePath))) {
+    hash.update(file.relativePath);
+    hash.update('\0');
+
+    if (file.absolutePath && file.materialized) {
+      try {
+        hash.update(await readFile(file.absolutePath));
+      } catch {
+        hash.update(`missing:${file.sizeBytes}:${file.lastModifiedAt}`);
+      }
+    } else {
+      hash.update(`unmaterialized:${file.sizeBytes}:${file.lastModifiedAt}`);
+    }
+
+    hash.update('\0');
+  }
+
+  return hash.digest('hex').slice(0, 40);
+}
+
 // ============================================================================
 // LocalFolder Provider
 // ============================================================================
@@ -126,9 +169,11 @@ export class LocalFolderProvider implements SourceProvider {
     return false;
   }
 
-  async resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+  async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+    validateCredentialPolicy(options?.scope, options?.credentials);
     const maxFiles = options?.maxFiles ?? 50_000;
-    const rawPath = locator.startsWith('file://') ? new URL(locator).pathname : locator;
+    const normalizedLocator = sourceLocatorToString(locator);
+    const rawPath = normalizedLocator.startsWith('file://') ? new URL(normalizedLocator).pathname : normalizedLocator;
     const rootPath = resolvePath(rawPath);
 
     // Verify the path exists and is a directory
@@ -138,7 +183,7 @@ export class LocalFolderProvider implements SourceProvider {
     } catch (err) {
       throw new SourceProviderError(
         this.providerId,
-        locator,
+        normalizedLocator,
         `Path does not exist or is not accessible: ${rootPath}`,
         err,
       );
@@ -146,23 +191,19 @@ export class LocalFolderProvider implements SourceProvider {
     if (!rootStat.isDirectory()) {
       throw new SourceProviderError(
         this.providerId,
-        locator,
+        normalizedLocator,
         `Path is not a directory: ${rootPath}`,
       );
     }
 
     // Attempt to get git metadata for a stable snapshotRef
-    const [commitSha, remoteUrl] = await Promise.all([
+    const [commitSha, remoteUrl, dirtyWorktree] = await Promise.all([
       tryGetGitCommitSha(rootPath),
       tryGetGitRemoteUrl(rootPath),
+      tryGetGitDirtyStatus(rootPath),
     ]);
 
     const repoId = deriveRepoId(rootPath, remoteUrl);
-    const snapshotRef: SnapshotRef = {
-      provider: 'local-folder',
-      repoId,
-      commitSha,
-    };
 
     // Walk the directory to collect file metadata
     const files: SnapshotFile[] = [];
@@ -171,13 +212,51 @@ export class LocalFolderProvider implements SourceProvider {
       files.push(file);
     }
 
+    const diagnostics: ProviderDiagnostic[] = [];
+    let resolvedCommitSha = commitSha;
+
+    if (dirtyWorktree === true || !commitSha) {
+      resolvedCommitSha = await buildContentSnapshotSha(files);
+    }
+
+    if (dirtyWorktree === true) {
+      diagnostics.push({
+        level: 'warning',
+        code: 'LOCAL_DIRTY_WORKTREE',
+        message: 'Local folder snapshot includes uncommitted changes and was pinned to a content hash.',
+        timestamp: new Date().toISOString(),
+        resourcePath: rootPath,
+        metadata: {
+          reviewRequired: true,
+          pinStrategy: 'content-hash',
+        },
+      });
+    } else if (!commitSha) {
+      diagnostics.push({
+        level: 'info',
+        code: 'LOCAL_CONTENT_HASH_FALLBACK',
+        message: 'Local folder snapshot is not backed by git metadata and was pinned to a content hash.',
+        timestamp: new Date().toISOString(),
+        resourcePath: rootPath,
+        metadata: {
+          pinStrategy: 'content-hash',
+        },
+      });
+    }
+
+    const snapshotRef: SnapshotRef = {
+      provider: 'local-folder',
+      repoId,
+      commitSha: resolvedCommitSha,
+    };
+
     return {
       snapshotRef,
       localRootPath: rootPath,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
-      diagnostics: [],
+      diagnostics,
     };
   }
 }

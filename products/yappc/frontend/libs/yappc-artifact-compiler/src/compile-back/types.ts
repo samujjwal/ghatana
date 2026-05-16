@@ -60,6 +60,25 @@ export const ChangeOpSchema = z.object({
 
 export type ChangeOp = z.infer<typeof ChangeOpSchema>;
 
+export const PatchRangeSchema = z.object({
+  startLine: z.number().int().nonnegative(),
+  startColumn: z.number().int().nonnegative(),
+  endLine: z.number().int().nonnegative(),
+  endColumn: z.number().int().nonnegative(),
+  nodeType: z.string().optional(),
+});
+
+export type PatchRange = z.infer<typeof PatchRangeSchema>;
+
+export const PatchValidationStatusSchema = z.enum([
+  'pending',
+  'validated',
+  'review-required',
+  'conflicted',
+]);
+
+export type PatchValidationStatus = z.infer<typeof PatchValidationStatusSchema>;
+
 // ============================================================================
 // Text Patch
 // ============================================================================
@@ -69,12 +88,18 @@ export const TextPatchSchema = z.object({
   relativePath: z.string().min(1),
   /** The patch content in unified diff format. */
   diff: z.string().min(1),
+  /** AST/range metadata captured at emission time. */
+  ranges: z.array(PatchRangeSchema).default([]),
   /** Whether this patch can be applied atomically without conflicts. */
   isAtomic: z.boolean().default(true),
   /** Source ChangeOp that generated this patch. */
   sourceChangeOpId: z.string().min(1),
   /** Emitter that produced this patch. */
   emitterId: z.string().min(1),
+  /** Checksum of the original file content before patch emission. */
+  baseChecksum: z.string().optional(),
+  /** Checksum of the target file content after patch emission. */
+  targetChecksum: z.string().optional(),
 });
 
 export type TextPatch = z.infer<typeof TextPatchSchema>;
@@ -142,6 +167,23 @@ export interface PatchContext {
   readonly residuals: ReadonlyMap<string, ResidualIsland>;
   /** Source paths of the elements being changed, for locating files. */
   readonly elementSourcePaths: ReadonlyMap<string, readonly string[]>;
+}
+
+interface ComponentPropLike {
+  readonly name: string;
+  readonly type?: string;
+}
+
+function isComponentPropLike(value: unknown): value is ComponentPropLike {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.name === 'string';
+}
+
+function toComponentPropMap(props: readonly unknown[]): Map<string, ComponentPropLike> {
+  return new Map(
+    props.filter(isComponentPropLike).map((prop) => [prop.name, prop]),
+  );
 }
 
 // ============================================================================
@@ -214,15 +256,63 @@ export function buildChangePlan(
       const beforeProps = (beforeElem as { props?: unknown[] }).props ?? [];
       const afterProps = (afterElem as { props?: unknown[] }).props ?? [];
       if (JSON.stringify(beforeProps) !== JSON.stringify(afterProps)) {
-        ops.push({
-          id: `op:update-props:${id}`,
-          kind: 'update-component-props',
-          targetElementId: id,
-          description: `Update props of component "${afterElem.name}"`,
-          before: beforeProps,
-          after: afterProps,
-          autoApplyConfidence: 0.75,
-        });
+        const beforePropMap = toComponentPropMap(beforeProps);
+        const afterPropMap = toComponentPropMap(afterProps);
+        let emittedSpecificPropOp = false;
+
+        for (const [propName, afterProp] of afterPropMap) {
+          const beforeProp = beforePropMap.get(propName);
+          if (!beforeProp) {
+            ops.push({
+              id: `op:add-prop:${id}:${propName}`,
+              kind: 'add-prop',
+              targetElementId: id,
+              description: `Add prop "${propName}" to component "${afterElem.name}"`,
+              after: afterProp,
+              autoApplyConfidence: 0.8,
+            });
+            emittedSpecificPropOp = true;
+            continue;
+          }
+
+          if (JSON.stringify(beforeProp) !== JSON.stringify(afterProp) && beforeProp.type !== afterProp.type) {
+            ops.push({
+              id: `op:update-prop-type:${id}:${propName}`,
+              kind: 'update-prop-type',
+              targetElementId: id,
+              description: `Update prop type for "${propName}" on component "${afterElem.name}"`,
+              before: beforeProp,
+              after: afterProp,
+              autoApplyConfidence: 0.75,
+            });
+            emittedSpecificPropOp = true;
+          }
+        }
+
+        for (const [propName, beforeProp] of beforePropMap) {
+          if (afterPropMap.has(propName)) continue;
+          ops.push({
+            id: `op:remove-prop:${id}:${propName}`,
+            kind: 'remove-prop',
+            targetElementId: id,
+            description: `Remove prop "${propName}" from component "${beforeElem.name}"`,
+            before: beforeProp,
+            autoApplyConfidence: 0.8,
+          });
+          emittedSpecificPropOp = true;
+        }
+
+        if (!emittedSpecificPropOp) {
+          ops.push({
+            id: `op:update-props:${id}`,
+            kind: 'update-component-props',
+            targetElementId: id,
+            description: `Update props of component "${afterElem.name}"`,
+            before: beforeProps,
+            after: afterProps,
+            autoApplyConfidence: 0.75,
+          });
+        }
       }
     }
   }
@@ -282,18 +372,18 @@ export const FilePatchSchema = z.object({
   /** Unified diff format for the patch. */
   diff: z.string().min(1),
   /** AST-based range information for precise patch application. */
-  ranges: z.array(z.object({
-    startLine: z.number().int().nonnegative(),
-    startColumn: z.number().int().nonnegative(),
-    endLine: z.number().int().nonnegative(),
-    endColumn: z.number().int().nonnegative(),
-    nodeType: z.string().optional(),
-  })).optional(),
+  ranges: z.array(PatchRangeSchema).default([]),
   /** Source model change that generated this patch. */
   sourceChangeId: z.string().uuid(),
   isAtomic: z.boolean().default(true),
   canAutoApply: z.boolean().default(true),
-  checksum: z.string().optional(), // Content checksum for verification
+  /** Checksum of the original file content before patch application. */
+  baseChecksum: z.string().optional(),
+  /** Checksum of the target file content after patch application. */
+  targetChecksum: z.string().optional(),
+  /** Validation state assigned by patch coordination and review flows. */
+  validationStatus: PatchValidationStatusSchema.default('pending'),
+  checksum: z.string().optional(), // Backward-compatible alias for older review bundles
 });
 
 export type FilePatch = z.infer<typeof FilePatchSchema>;

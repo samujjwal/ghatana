@@ -6,6 +6,7 @@ import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
+import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -75,7 +76,15 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.ingestGraph(ingestRequest)
+                        ArtifactGraphIngestRequest scopedRequest = new ArtifactGraphIngestRequest(
+                            ingestRequest.productId(),
+                            tenantId,
+                            ingestRequest.nodes(),
+                            ingestRequest.edges()
+                        );
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.productId(), tenantId);
+
+                        return artifactGraphService.ingestGraph(scope, scopedRequest)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -123,7 +132,15 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.analyzeGraph(analysisRequest)
+                        ArtifactGraphAnalysisRequest scopedRequest = new ArtifactGraphAnalysisRequest(
+                            analysisRequest.productId(),
+                            tenantId,
+                            analysisRequest.algorithmTypes(),
+                            analysisRequest.nodeIds()
+                        );
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.productId(), tenantId);
+
+                        return artifactGraphService.analyzeGraph(scope, scopedRequest)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -171,7 +188,17 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.mergeModels(mergeRequest)
+                        ArtifactGraphMergeRequest scopedRequest = new ArtifactGraphMergeRequest(
+                            mergeRequest.productId(),
+                            tenantId,
+                            mergeRequest.baseModel(),
+                            mergeRequest.leftModel(),
+                            mergeRequest.rightModel(),
+                            mergeRequest.resolutionStrategy()
+                        );
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.productId(), tenantId);
+
+                        return artifactGraphService.mergeModels(scope, scopedRequest)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));

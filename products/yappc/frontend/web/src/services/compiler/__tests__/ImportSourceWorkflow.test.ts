@@ -334,6 +334,75 @@ describe('ImportSourceWorkflow', () => {
     }
   });
 
+  it('normalizes governed server residual payloads to the compiler residual schema', async () => {
+    const originalFetch = globalThis.fetch;
+    const serverResponse = {
+      success: true,
+      componentId: 'proj-1/ResidualImport',
+      files: [],
+      warnings: [],
+      errors: [],
+      metadata: {
+        sourceType: 'tsx',
+        source: 'https://example.com/ResidualImport.tsx',
+        importedAt: new Date().toISOString(),
+        componentName: 'ResidualImport',
+        dependencies: [],
+        fileCount: 0,
+        totalSize: 0,
+      },
+      residuals: [
+        {
+          id: '4d6bf7db-6e0e-4ef4-a5e0-a4bdcb376d1f',
+          sourcePath: 'src/ResidualImport.tsx',
+          type: 'complex-pattern',
+          confidence: 0.2,
+          requiresReview: true,
+          description: 'Dynamic render branch requires manual review',
+          lineRange: [8, 13],
+        },
+      ],
+    };
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify(serverResponse), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+    try {
+      const result = await importFromSource({
+        sourceType: 'tsx',
+        source: 'https://example.com/ResidualImport.tsx',
+        projectId: 'proj-1',
+        options: {
+          requireServerImport: true,
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+        },
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.residuals).toEqual([
+        expect.objectContaining({
+          id: '4d6bf7db-6e0e-4ef4-a5e0-a4bdcb376d1f',
+          kind: 'code',
+          reviewRequired: true,
+          normalizedSummary: 'Dynamic render branch requires manual review',
+          reasonUnmodeled: 'complex-pattern',
+          sourceLocation: expect.objectContaining({
+            filePath: 'src/ResidualImport.tsx',
+            startLine: 8,
+            endLine: 13,
+          }),
+          regenerationStrategy: 'require-manual-impl',
+        }),
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('polls governed import jobs until the backend marks them ready for review', async () => {
     const originalFetch = globalThis.fetch;
     const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];

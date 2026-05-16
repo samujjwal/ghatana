@@ -16,6 +16,8 @@ import {
   type AgentLifecycleActionRequest,
 } from '@ghatana/kernel-product-contracts';
 import { z } from 'zod';
+import type { ProviderStorePort, ProviderRecord } from './provider-store.js';
+import { InMemoryProviderStore } from './provider-store.js';
 export type { GatewayMetricsSnapshot } from './metrics.js';
 export { GatewayMetrics } from './metrics.js';
 
@@ -406,6 +408,11 @@ export interface GatewayConfig {
    * When absent, /api/kernel routes fail closed instead of proxying to backendUrl.
    */
   kernelLifecycleApi?: KernelLifecycleApiPort;
+  /**
+   * Durable storage port for Kernel provider records (events, artifacts, health, approvals, etc.).
+   * When absent, provider endpoints fail closed. Production should use a Data Cloud-backed implementation.
+   */
+  providerStore?: ProviderStorePort;
 }
 
 export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> {
@@ -1046,8 +1053,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     dispatchKernelLifecycleApi('submitApprovalDecision', request, reply));
 
   // ── Kernel Provider Endpoints (explicit routes, not generic proxy) ───────────
-  // In-memory storage for provider records (replace with Data Cloud storage abstraction)
-  const providerStorage = new Map<string, { readonly data: unknown; readonly createdAt: string; readonly tenantId: string; readonly privacyClassification?: string; readonly expiresAt?: string }>();
+  // Durable storage for provider records (uses ProviderStorePort from config or in-memory fallback)
+  const providerStore = config.providerStore ?? new InMemoryProviderStore();
 
   function generateProviderRef(): string {
     return `ref-${randomUUID()}`;
@@ -1075,14 +1082,14 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     return redacted;
   }
 
-  function validateScopeForProvider(request: FastifyReply): { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string; readonly userId: string; readonly correlationId: string } | null {
-    const reply = request as FastifyRequest & { user: JwtPayload; correlationId?: string };
-    const user = reply.user;
+  function validateScopeForProvider(request: FastifyRequest): { readonly tenantId: string; readonly workspaceId: string; readonly projectId: string; readonly userId: string; readonly correlationId: string } | null {
+    const typedRequest = request as FastifyRequest & { user: JwtPayload; correlationId?: string };
+    const user = typedRequest.user;
     const tenantId = extractPayloadTenantId(user) ?? resolveHeaderTenantId(request.headers);
     const workspaceId = extractWorkspaceId(user) ?? extractHeaderWorkspaceId(request.headers);
     const projectId = extractProjectId(user) ?? extractHeaderProjectId(request.headers);
     const userId = extractUserId(user);
-    const correlationId = reply.correlationId ?? resolveCorrelationId(request);
+    const correlationId = typedRequest.correlationId ?? resolveCorrelationId(request);
 
     if (!tenantId || !workspaceId || !projectId || !userId) {
       return null;
@@ -1102,7 +1109,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedEvent.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'events',
+      providerRef: ref,
+      data: parsedEvent.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1114,12 +1134,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
-      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
-      .slice(0, limit)
-      .map(([ref, v]) => ({ ref, ...v.data }));
+    const filters: Record<string, unknown> = {};
+    if (query.productUnitId) filters.productUnitId = query.productUnitId;
+    if (query.runId) filters.runId = query.runId;
+    const records = await providerStore.listByProviderType(scope.tenantId, 'events', filters, limit);
+    const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
 
@@ -1135,7 +1154,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedArtifact.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'artifacts',
+      providerRef: ref,
+      data: parsedArtifact.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1147,12 +1179,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
-      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
-      .slice(0, limit)
-      .map(([ref, v]) => ({ ref, ...v.data }));
+    const filters: Record<string, unknown> = {};
+    if (query.productUnitId) filters.productUnitId = query.productUnitId;
+    if (query.runId) filters.runId = query.runId;
+    const records = await providerStore.listByProviderType(scope.tenantId, 'artifacts', filters, limit);
+    const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
 
@@ -1168,7 +1199,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedHealth.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'health',
+      providerRef: ref,
+      data: parsedHealth.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1179,15 +1223,12 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
     }
     const params = request.params as { productUnitId: string };
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => (v.data as { productUnitId?: string })?.productUnitId === params.productUnitId)
-      .sort((a, b) => b[1].createdAt.localeCompare(a[1].createdAt));
-    if (items.length === 0) {
+    const filters: Record<string, unknown> = { productUnitId: params.productUnitId };
+    const record = await providerStore.findLatestByProviderType(scope.tenantId, 'health', filters);
+    if (!record) {
       return reply.status(404).send({ success: false, error: 'No health snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
     }
-    const [ref, v] = items[0];
-    return reply.status(200).send({ success: true, ref, ...v.data, correlationId: scope.correlationId });
+    return reply.status(200).send({ success: true, ref: record.providerRef, ...(record.data as Record<string, unknown>), correlationId: scope.correlationId });
   });
 
   // POST /api/v1/kernel/providers/approvals/requests
@@ -1202,7 +1243,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedRequest.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'approvals-requests',
+      providerRef: ref,
+      data: parsedRequest.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1218,7 +1272,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedDecision.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'approvals-decisions',
+      providerRef: ref,
+      data: parsedDecision.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1234,7 +1301,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedProvenance.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'provenance',
+      providerRef: ref,
+      data: parsedProvenance.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1246,12 +1326,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
-      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
-      .slice(0, limit)
-      .map(([ref, v]) => ({ ref, ...v.data }));
+    const filters: Record<string, unknown> = {};
+    if (query.productUnitId) filters.productUnitId = query.productUnitId;
+    if (query.runId) filters.runId = query.runId;
+    const records = await providerStore.listByProviderType(scope.tenantId, 'provenance', filters, limit);
+    const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
 
@@ -1268,7 +1347,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
     const expiresAt = parsedMemory.data.retention?.expiresAt;
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedMemory.data), createdAt, tenantId: scope.tenantId, privacyClassification: parsedMemory.data.privacyClassification, expiresAt });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'memory',
+      providerRef: ref,
+      data: parsedMemory.data,
+      privacyClassification: parsedMemory.data.privacyClassification,
+      expiresAt,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1280,14 +1372,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
-    const now = new Date().toISOString();
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => !v.expiresAt || v.expiresAt > now)
-      .filter(([_, v]) => !query.productUnitId || (v.data as { productUnitId?: string })?.productUnitId === query.productUnitId)
-      .filter(([_, v]) => !query.runId || (v.data as { runId?: string })?.runId === query.runId)
-      .slice(0, limit)
-      .map(([ref, v]) => ({ ref, ...v.data }));
+    const filters: Record<string, unknown> = {};
+    if (query.productUnitId) filters.productUnitId = query.productUnitId;
+    if (query.runId) filters.runId = query.runId;
+    const records = await providerStore.listByProviderType(scope.tenantId, 'memory', filters, limit);
+    const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
 
@@ -1303,7 +1392,20 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     const ref = generateProviderRef();
     const createdAt = new Date().toISOString();
-    providerStorage.set(ref, { data: redactSensitiveFields(parsedRuntimeTruth.data), createdAt, tenantId: scope.tenantId });
+    const record: ProviderRecord = {
+      id: ref,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      projectId: scope.projectId,
+      providerType: 'runtime-truth',
+      providerRef: ref,
+      data: parsedRuntimeTruth.data,
+      privacyClassification: undefined,
+      expiresAt: undefined,
+      createdAt,
+      createdBy: scope.userId,
+    };
+    await providerStore.save(record);
     return reply.status(200).send({ success: true, ref, correlationId: scope.correlationId });
   });
 
@@ -1314,15 +1416,12 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
     }
     const params = request.params as { productUnitId: string };
-    const items = Array.from(providerStorage.entries())
-      .filter(([_, v]) => v.tenantId === scope.tenantId)
-      .filter(([_, v]) => (v.data as { productUnitId?: string })?.productUnitId === params.productUnitId)
-      .sort((a, b) => b[1].createdAt.localeCompare(a[1].createdAt));
-    if (items.length === 0) {
+    const filters: Record<string, unknown> = { productUnitId: params.productUnitId };
+    const record = await providerStore.findLatestByProviderType(scope.tenantId, 'runtime-truth', filters);
+    if (!record) {
       return reply.status(404).send({ success: false, error: 'No runtime truth snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
     }
-    const [ref, v] = items[0];
-    return reply.status(200).send({ success: true, ref, ...v.data, correlationId: scope.correlationId });
+    return reply.status(200).send({ success: true, ref: record.providerRef, ...(record.data as Record<string, unknown>), correlationId: scope.correlationId });
   });
 
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────

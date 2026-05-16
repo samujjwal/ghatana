@@ -1,169 +1,158 @@
 /**
- * @fileoverview E2E tests for import job flow.
- *
- * Phase 6 test: Validates that:
- * - Import job creates durable provider job
- * - Progress tracking works correctly
- * - Summary includes residuals
- * - Job completes successfully
+ * @fileoverview Integration tests for source acquisition + synthesis.
  */
 
-import { describe, it, expect } from 'vitest';
+import { execFile } from 'child_process';
+import { mkdtemp, mkdir, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { promisify } from 'util';
+import { afterEach, describe, expect, it } from 'vitest';
 
-describe('Import job E2E flow', () => {
-  it('should create a durable import job', () => {
-    const job = {
-      id: 'job-1',
-      status: 'pending' as const,
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
-        ref: 'main',
-      },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-    };
+import type { ArtifactExtractor, ExtractionResult } from '../extractors/types';
+import { LocalFolderProvider } from '../source-providers/local-folder-provider';
+import { SynthesisPipeline } from '../synthesis/pipeline';
 
-    expect(job.id).toBeTruthy();
-    expect(job.status).toBe('pending');
-    expect(job.sourceLocator.repoId).toBe('owner/repo');
-    expect(job.tenantId).toBe('tenant-1');
-  });
+const execFileAsync = promisify(execFile);
+const tempRoots: string[] = [];
 
-  it('should track job progress', () => {
-    const job = {
-      id: 'job-1',
-      status: 'in-progress' as const,
-      progress: {
-        phase: 'scanning' as const,
-        completed: 50,
-        total: 100,
-        message: 'Scanning files...',
-      },
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
-      },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-    };
+async function createTempRepo(): Promise<string> {
+  const rootPath = await mkdtemp(join(tmpdir(), 'yappc-import-flow-'));
+  tempRoots.push(rootPath);
+  return rootPath;
+}
 
-    expect(job.progress.phase).toBe('scanning');
-    expect(job.progress.completed).toBe(50);
-    expect(job.progress.total).toBe(100);
-  });
-
-  it('should complete job with summary', () => {
-    const job = {
-      id: 'job-1',
-      status: 'completed' as const,
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
-      },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      summary: {
-        totalFiles: 100,
-        processedFiles: 95,
-        skippedFiles: 5,
-        errors: 0,
-        warnings: 2,
-      },
-    };
-
-    expect(job.status).toBe('completed');
-    expect(job.summary.totalFiles).toBe(100);
-    expect(job.summary.processedFiles).toBe(95);
-    expect(job.summary.skippedFiles).toBe(5);
-  });
-
-  it('should include residual summary in job completion', () => {
-    const job = {
-      id: 'job-1',
-      status: 'completed' as const,
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
-      },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      summary: {
-        totalFiles: 100,
-        processedFiles: 95,
-        skippedFiles: 5,
-        errors: 0,
-        warnings: 2,
-        residualSummary: {
-          totalResiduals: 10,
-          byRisk: {
-            low: 5,
-            medium: 3,
-            high: 2,
-            critical: 0,
+const componentExtractor: ArtifactExtractor = {
+  identity: {
+    id: 'integration-extractor',
+    version: '1.0.0',
+    supportedKinds: ['component-implementation'],
+    supportedLanguages: ['tsx'],
+    supportedFrameworks: ['react'],
+  },
+  canExtract(record) {
+    return record.relativePath.endsWith('.tsx');
+  },
+  async extract(record): Promise<ExtractionResult> {
+    return {
+      extractorId: 'integration-extractor',
+      extractorVersion: '1.0.0',
+      artifact: record,
+      nodes: [],
+      edges: [],
+      unresolvedEdges: [],
+      modelElements: [
+        {
+          id: 'df9d0d6d-8ff4-4d20-b46d-eec8ec9dcbf2',
+          kind: 'component',
+          name: 'ExampleCard',
+          confidence: 0.2,
+          provenance: {
+            extractorId: 'integration-extractor',
+            extractorVersion: '1.0.0',
+            sourcePaths: [record.relativePath],
+            kind: 'exact',
+            extractedAt: '2026-05-15T00:00:00.000Z',
           },
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+          graphNodeIds: [],
+          sourceRefs: [record.relativePath],
+          residualIslandIds: [],
+          contractName: 'ExampleCard',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          storyIds: [],
+          builderCanvasHints: {},
         },
-      },
+      ],
+      residualIslands: [],
+      errors: [],
+      warnings: [],
+      durationMs: 1,
     };
+  },
+};
 
-    expect(job.summary.residualSummary).toBeDefined();
-    expect(job.summary.residualSummary.totalResiduals).toBe(10);
-    expect(job.summary.residualSummary.byRisk.high).toBe(2);
+describe('Import pipeline E2E flow', () => {
+  afterEach(async () => {
+    await Promise.all(
+      tempRoots.splice(0).map(async (rootPath) => {
+        const { rm } = await import('fs/promises');
+        await rm(rootPath, { recursive: true, force: true });
+      }),
+    );
   });
 
-  it('should handle job failure', () => {
-    const job = {
-      id: 'job-1',
-      status: 'failed' as const,
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
-      },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-      failedAt: new Date().toISOString(),
-      error: {
-        code: 'AUTH_FAILED',
-        message: 'Invalid credentials',
-      },
-    };
+  it('creates a content-pinned dirty snapshot and carries it through synthesis', async () => {
+    const rootPath = await createTempRepo();
+    await execFileAsync('git', ['init'], { cwd: rootPath });
+    await execFileAsync('git', ['config', 'user.email', 'copilot@example.com'], { cwd: rootPath });
+    await execFileAsync('git', ['config', 'user.name', 'GitHub Copilot'], { cwd: rootPath });
 
-    expect(job.status).toBe('failed');
-    expect(job.error.code).toBe('AUTH_FAILED');
-    expect(job.error.message).toBe('Invalid credentials');
-  });
+    await mkdir(join(rootPath, 'src'), { recursive: true });
+    const absolutePath = join(rootPath, 'src', 'ExampleCard.tsx');
+    await writeFile(
+      absolutePath,
+      [
+        "import React from 'react';",
+        '',
+        'export function ExampleCard(): JSX.Element {',
+        '  return <div>Example</div>;',
+        '}',
+        '',
+      ].join('\n'),
+    );
+    await execFileAsync('git', ['add', '.'], { cwd: rootPath });
+    await execFileAsync('git', ['commit', '-m', 'initial'], { cwd: rootPath });
+    await writeFile(
+      absolutePath,
+      [
+        "import React from 'react';",
+        '',
+        'export function ExampleCard(): JSX.Element {',
+        '  return <section>Example</section>;',
+        '}',
+        '',
+      ].join('\n'),
+    );
 
-  it('should support job cancellation', () => {
-    const job = {
-      id: 'job-1',
-      status: 'cancelled' as const,
-      sourceLocator: {
-        provider: 'github' as const,
-        repoId: 'owner/repo',
+    const provider = new LocalFolderProvider();
+    const snapshot = await provider.resolve(rootPath);
+
+    expect(snapshot.snapshotRef.provider).toBe('local-folder');
+    expect(snapshot.snapshotRef.commitSha).toBeDefined();
+    expect(snapshot.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'LOCAL_DIRTY_WORKTREE',
+        }),
+      ]),
+    );
+
+    const pipeline = new SynthesisPipeline({
+      extractors: [componentExtractor],
+      residualConfidenceThreshold: 0.5,
+      scannerConfig: {
+        includeGlobs: ['**/*.tsx'],
+        excludeGlobs: [],
       },
-      tenantId: 'tenant-1',
-      projectId: 'project-1',
-      principalId: 'user-1',
-      createdAt: new Date().toISOString(),
-      cancelledAt: new Date().toISOString(),
-      cancelledBy: 'user-1',
-      reason: 'User requested cancellation',
-    };
+    });
 
-    expect(job.status).toBe('cancelled');
-    expect(job.cancelledBy).toBe('user-1');
-    expect(job.reason).toBe('User requested cancellation');
+    const result = await pipeline.runFromSnapshot(snapshot);
+
+    expect(result.snapshot?.snapshotRef.commitSha).toBe(snapshot.snapshotRef.commitSha);
+    expect(result.stats.scannedFiles).toBeGreaterThan(0);
+    expect(result.stats.residualIslandsGenerated).toBe(1);
+    expect(result.model.residualIslandIds).toEqual(['df9d0d6d-8ff4-4d20-b46d-eec8ec9dcbf2']);
+    expect(result.residualIslands[0]?.sourceLocation.filePath).toBe('src/ExampleCard.tsx');
+    expect(result.residualIslands[0]?.reviewRequired).toBe(true);
+    expect(result.errors).toEqual([]);
   });
 });

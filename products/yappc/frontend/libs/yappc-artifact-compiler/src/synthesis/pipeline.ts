@@ -61,6 +61,7 @@ export interface SynthesisPipelineResult {
   readonly snapshot: RepositorySnapshot | null;
   readonly graph: ArtifactGraph;
   readonly model: SemanticProductModel;
+  readonly residualIslands: ResidualIsland[];
   readonly extractionResults: ExtractionResult[];
   readonly errors: PipelineError[];
   readonly warnings: PipelineWarning[];
@@ -117,6 +118,25 @@ function buildExtractionContext(
   };
   // Only include snapshotRef when defined to satisfy exactOptionalPropertyTypes
   return snapshotRef ? { ...base, snapshotRef } : base;
+}
+
+function buildFileSourceLocation(relativePath: string, source: string): {
+  filePath: string;
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+} {
+  const lines = source.split('\n');
+  const lastLine = lines.at(-1) ?? '';
+
+  return {
+    filePath: relativePath,
+    startLine: 0,
+    startColumn: 0,
+    endLine: Math.max(lines.length - 1, 0),
+    endColumn: lastLine.length,
+  };
 }
 
 // ============================================================================
@@ -189,13 +209,13 @@ function buildSemanticProductModel(
   // Collect residual island IDs
   const residualIslandIds = residualIslands.map(island => island.id);
 
-  // Deterministic model ID: hash of snapshotRef + element count
-  const modelId = snapshotRef
+  const sourceModelRef = snapshotRef
     ? buildDeterministicNodeId(snapshotRef, rootPath, 'model', `elements:${modelElements.length}`)
-    : randomUUID();
+    : undefined;
 
   return {
-    id: modelId,
+    id: randomUUID(),
+    sourceModelRef,
     repositoryRoot: rootPath,
     createdAt: now,
     updatedAt: now,
@@ -307,29 +327,30 @@ export class SynthesisPipeline {
               allModelElements.push(element);
               existingElements.set(element.id, element);
             } else {
+              const originalSource = await ctx.readFile(artifact.relativePath);
+              const sourceLocation = buildFileSourceLocation(artifact.relativePath, originalSource);
+
               // Convert low-confidence elements into residual islands
               allResidualIslands.push({
                 id: element.id,
                 kind: 'code',
-                originalSource: artifact.relativePath,
+                originalSource,
                 normalizedSummary: `Low-confidence extraction: ${element.name}`,
                 reasonUnmodeled: `Confidence ${element.confidence.toFixed(2)} below threshold ${residualThreshold}`,
                 reviewRequired: true,
+                reviewReason: 'Low-confidence extraction was preserved verbatim for manual review.',
                 regenerationStrategy: 'verbatim-preserve',
-                sourceLocation: {
-                  filePath: artifact.relativePath,
-                  startLine: 0,
-                  startColumn: 0,
-                  endLine: 0,
-                  endColumn: 0,
-                },
+                sourceLocation,
                 extractorId: result.extractorId,
                 extractorVersion: result.extractorVersion,
                 extractedAt: new Date().toISOString(),
                 confidence: element.confidence,
-                linkedModelElementIds: [],
+                linkedModelElementIds: [element.id],
                 tags: [],
-                relatedGraphNodeIds: [],
+                rawFragmentRef: `${artifact.relativePath}#full-file`,
+                checksum: artifact.checksum,
+                risk: element.confidence < 0.25 ? 'high' : 'medium',
+                relatedGraphNodeIds: element.graphNodeIds,
               });
             }
           }
@@ -445,6 +466,7 @@ export class SynthesisPipeline {
       snapshot,
       graph,
       model,
+      residualIslands: allResidualIslands,
       extractionResults,
       errors,
       warnings,
@@ -486,6 +508,7 @@ export class SynthesisPipeline {
       snapshot,
       graph: emptyGraph,
       model: emptyModel,
+      residualIslands: [],
       extractionResults: [],
       errors,
       warnings,

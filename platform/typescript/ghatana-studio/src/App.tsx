@@ -49,9 +49,10 @@ function Sidebar(): ReactElement {
       </div>
 
       <nav className="space-y-1" aria-label="Studio navigation">
-        {STUDIO_NAV_ITEMS.filter((item: StudioNavItem) => item.isCustomerVisible).map(
+        {STUDIO_NAV_ITEMS.filter((item: StudioNavItem) => item.isCustomerVisible && item.exposure !== 'hidden').map(
           (item: StudioNavItem) => {
             const isActive = location.pathname === item.path;
+            const isDisabled = item.exposure === 'disabled';
 
             return (
               <Link
@@ -61,15 +62,23 @@ function Sidebar(): ReactElement {
                 className={`flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                   isActive
                     ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : isDisabled
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-100'
                 }`}
+                {...(isDisabled ? { onClick: (e: React.MouseEvent) => e.preventDefault(), 'aria-disabled': true as const } : {})}
               >
                 <span>{t(item.labelKey)}</span>
-                {item.status !== 'ready' ? (
-                  <span className="text-xs font-normal text-gray-500">
-                    {t(`studio.status.${item.status}`)}
-                  </span>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  {item.exposure === 'preview' && (
+                    <span className="text-xs font-normal text-purple-600">Preview</span>
+                  )}
+                  {item.status !== 'ready' ? (
+                    <span className="text-xs font-normal text-gray-500">
+                      {t(`studio.status.${item.status}`)}
+                    </span>
+                  ) : null}
+                </div>
               </Link>
             );
           },

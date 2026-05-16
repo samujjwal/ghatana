@@ -68,6 +68,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),
     setEnvironment: vi.fn(),
@@ -94,13 +95,14 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByText('studio.route.lifecycle.noPendingApprovals')).toBeInTheDocument();
   });
 
-  it('submits approval decisions from the queue', async () => {
+  it('submits approval decisions from the queue with authenticated user ID', async () => {
     const submitApprovalDecision = vi.fn().mockResolvedValue(undefined);
     const refresh = vi.fn().mockResolvedValue(undefined);
     useStudioLifecycleDataMock.mockReturnValue(
       createContextValue({
         submitApprovalDecision,
         refresh,
+        authenticatedUserId: 'user-123',
         snapshot: {
           ...createContextValue().snapshot,
           pendingApprovals: [
@@ -128,7 +130,7 @@ describe('LifecyclePage approval queue', () => {
         expect.objectContaining({
           approvalId: 'approval-1',
           approved: true,
-          approvedBy: 'studio-operator',
+          approvedBy: 'user-123',
         }),
       );
     });
@@ -141,10 +143,52 @@ describe('LifecyclePage approval queue', () => {
         expect.objectContaining({
           approvalId: 'approval-1',
           approved: false,
-          approvedBy: 'studio-operator',
+          approvedBy: 'user-123',
         }),
       );
       expect(refresh).toHaveBeenCalled();
+    });
+  });
+
+  it('does not submit approval when authenticatedUserId is missing', async () => {
+    const submitApprovalDecision = vi.fn().mockResolvedValue(undefined);
+    const refresh = vi.fn().mockResolvedValue(undefined);
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        submitApprovalDecision,
+        refresh,
+        authenticatedUserId: undefined,
+        snapshot: {
+          ...createContextValue().snapshot,
+          pendingApprovals: [
+            {
+              approvalId: 'approval-1',
+              productUnitId: 'digital-marketing',
+              runId: 'run-1',
+              requestedBy: 'release-manager',
+              reason: 'Deploy',
+              requiredApprovers: ['alice'],
+              expiresAt: '2026-05-16T00:00:00.000Z',
+            },
+          ],
+        },
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    const approveButton = screen.getByRole('button', { name: 'studio.lifecycle.action.submitApproval' });
+    const rejectButton = screen.getByRole('button', { name: 'studio.lifecycle.action.rejectApproval' });
+
+    // Buttons should be disabled when authenticatedUserId is missing
+    expect(approveButton).toBeDisabled();
+    expect(rejectButton).toBeDisabled();
+
+    fireEvent.click(approveButton);
+    fireEvent.click(rejectButton);
+
+    await waitFor(() => {
+      expect(submitApprovalDecision).not.toHaveBeenCalled();
     });
   });
 

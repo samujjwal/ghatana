@@ -16,145 +16,22 @@ import type {
   EdgeResolutionRecord,
   EdgeResolutionStatus,
 } from '../graph/types';
+import {
+  buildSymbolIndex,
+  resolvePathAlias,
+  resolveRelativePath,
+  normalizeWorkspacePackageImport,
+  type SymbolIndex,
+  type SymbolResolverOptions,
+} from './symbol-index';
 
 // ============================================================================
 // Symbol Index
 // ============================================================================
 
-interface SymbolIndexEntry {
-  readonly nodeId: string;
-  readonly symbolRef: string | undefined;
-  readonly label: string;
-  readonly relativePath: string;
-  readonly kind: string;
-  readonly baseName: string; // filename without extension
-}
-
-type SymbolIndex = Map<string, SymbolIndexEntry[]>;
-
-function buildSymbolIndex(nodes: readonly GraphNode[]): SymbolIndex {
-  const index: SymbolIndex = new Map();
-
-  const add = (key: string, entry: SymbolIndexEntry): void => {
-    const existing = index.get(key);
-    if (existing) {
-      existing.push(entry);
-    } else {
-      index.set(key, [entry]);
-    }
-  };
-
-  for (const node of nodes) {
-    const filePath = node.sourceLocation.filePath;
-    const base = filePath.split('/').pop() ?? '';
-    const nameNoExt = base.includes('.') ? base.slice(0, base.lastIndexOf('.')) : base;
-
-    const entry: SymbolIndexEntry = {
-      nodeId: node.id,
-      symbolRef: node.symbolRef,
-      label: node.label,
-      relativePath: filePath,
-      kind: node.kind,
-      baseName: nameNoExt,
-    };
-
-    // Key 1: exact symbolRef (highest confidence match)
-    if (node.symbolRef) add(node.symbolRef, entry);
-
-    // Key 2: label (component name, function name, etc.)
-    add(node.label, entry);
-
-    // Key 3: relative path (for file-level references)
-    add(filePath, entry);
-
-    // Key 4: basename without extension (for import shorthand: 'Button' -> 'Button.tsx')
-    if (nameNoExt && nameNoExt !== node.label) add(nameNoExt, entry);
-
-    // Key 5: path with .ts extension (TypeScript imports)
-    if (!filePath.endsWith('.ts')) {
-      add(filePath + '.ts', entry);
-    }
-
-    // Key 6: path with .tsx extension (React imports)
-    if (!filePath.endsWith('.tsx')) {
-      add(filePath + '.tsx', entry);
-    }
-
-    // Key 7: path with .js extension (JavaScript imports)
-    if (!filePath.endsWith('.js')) {
-      add(filePath + '.js', entry);
-    }
-
-    // Key 8: path with .jsx extension (React JSX imports)
-    if (!filePath.endsWith('.jsx')) {
-      add(filePath + '.jsx', entry);
-    }
-
-    // Key 9: index file references (directory -> index.ts)
-    const dirPath = filePath.slice(0, filePath.lastIndexOf('/'));
-    if (dirPath && (nameNoExt === 'index' || nameNoExt === 'Index')) {
-      add(dirPath, entry);
-      add(dirPath + '/index', entry);
-      add(dirPath + '/index.ts', entry);
-      add(dirPath + '/index.tsx', entry);
-      add(dirPath + '/index.js', entry);
-      add(dirPath + '/index.jsx', entry);
-    }
-  }
-
-  return index;
-}
-
 // ============================================================================
 // Resolution logic
 // ============================================================================
-
-/**
- * Resolves a relative import path against a source file path.
- * e.g., './foo' from 'src/components/Button.tsx' -> 'src/components/foo'
- *      '../utils' from 'src/components/Button.tsx' -> 'src/utils'
- */
-function resolveRelativePath(importPath: string, sourcePath: string): string {
-  if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
-    return importPath; // Not a relative import
-  }
-
-  const sourceDir = sourcePath.slice(0, sourcePath.lastIndexOf('/'));
-  const segments = sourceDir.split('/');
-
-  const importSegments = importPath.split('/').filter(s => s !== '.');
-
-  for (const seg of importSegments) {
-    if (seg === '..') {
-      segments.pop();
-    } else {
-      segments.push(seg);
-    }
-  }
-
-  return segments.join('/');
-}
-
-/**
- * Resolves path aliases (e.g., @/components/Button -> src/components/Button).
- * This is a basic implementation; real-world usage would need configurable alias maps.
- */
-function resolvePathAlias(importPath: string): string {
-  // Common alias patterns
-  if (importPath.startsWith('@/')) {
-    return 'src/' + importPath.slice(2);
-  }
-  if (importPath.startsWith('~@/')) {
-    return 'src/' + importPath.slice(3);
-  }
-  if (importPath.startsWith('#/')) {
-    return 'src/' + importPath.slice(2);
-  }
-  if (importPath.startsWith('~/')) {
-    return importPath.slice(2);
-  }
-  return importPath;
-}
 
 function resolveRef(
   targetRef: string,
@@ -162,9 +39,11 @@ function resolveRef(
   sourcePath: string | undefined,
   kindHint: string | undefined,
   index: SymbolIndex,
+  options?: SymbolResolverOptions,
 ): { status: EdgeResolutionStatus; resolvedId?: string; candidateIds: string[] } {
   // Apply alias resolution first
-  let resolvedTarget = resolvePathAlias(targetRef);
+  let resolvedTarget = resolvePathAlias(targetRef, options);
+  resolvedTarget = normalizeWorkspacePackageImport(resolvedTarget, options);
 
   // Apply relative path resolution if sourcePath is available
   if (sourcePath && (resolvedTarget.startsWith('./') || resolvedTarget.startsWith('../'))) {
@@ -205,10 +84,13 @@ function resolveRef(
   }
 
   // No internal match — check if it looks like a node_modules import
+  const workspacePathPrefixes = ['src/', 'packages/', 'apps/', 'libs/', 'platform/', 'products/'];
+  const referencesWorkspacePath = workspacePathPrefixes.some(prefix => resolvedTarget.startsWith(prefix));
   const isCrossRepo =
     !resolvedTarget.startsWith('.') &&
     !resolvedTarget.startsWith('/') &&
     !resolvedTarget.includes('#') &&
+    !referencesWorkspacePath &&
     !resolvedTarget.endsWith('.tsx') &&
     !resolvedTarget.endsWith('.ts') &&
     !resolvedTarget.endsWith('.js') &&
@@ -240,6 +122,7 @@ export interface SymbolResolutionResult {
 export function resolveSymbols(
   unresolvedEdges: readonly UnresolvedGraphEdge[],
   nodes: readonly GraphNode[],
+  options?: SymbolResolverOptions,
 ): SymbolResolutionResult {
   const index = buildSymbolIndex(nodes);
 
@@ -258,6 +141,7 @@ export function resolveSymbols(
       sourcePath,
       edge.targetKindHint,
       index,
+      options,
     );
 
     const record: EdgeResolutionRecord = {

@@ -6,14 +6,21 @@ import App from './App';
 import { createKernelLifecycleClient } from './api/kernelLifecycleClient';
 import { StudioLifecycleDataProvider } from './data/StudioLifecycleDataContext';
 import { STUDIO_I18N_RESOURCES } from './i18n/studioTranslations';
+import { resolveStudioRuntimeContext } from './config/studioRuntimeContext';
 import './index.css';
 
-const studioEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-const kernelApiBaseUrl = studioEnv?.VITE_GHATANA_KERNEL_API_BASE_URL?.trim();
+const runtimeContext = resolveStudioRuntimeContext();
+
 const kernelLifecycleClient =
-  kernelApiBaseUrl === undefined || kernelApiBaseUrl.length === 0
-    ? undefined
-    : createKernelLifecycleClient({ baseUrl: kernelApiBaseUrl });
+  runtimeContext.status === 'configured'
+    ? createKernelLifecycleClient({
+        baseUrl: runtimeContext.identity.baseUrl,
+        tenantId: runtimeContext.identity.tenantId,
+        workspaceId: runtimeContext.identity.workspaceId,
+        projectId: runtimeContext.identity.projectId,
+        authToken: runtimeContext.identity.authToken,
+      })
+    : undefined;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -24,7 +31,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         resources: STUDIO_I18N_RESOURCES,
       }}
     >
-      <StudioLifecycleDataProvider client={kernelLifecycleClient}>
+      <StudioLifecycleDataProvider
+        client={kernelLifecycleClient}
+        runtimeContext={runtimeContext}
+      >
         <BrowserRouter>
           <App />
         </BrowserRouter>

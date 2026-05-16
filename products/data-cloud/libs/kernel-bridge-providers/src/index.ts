@@ -220,9 +220,10 @@ export class DataCloudKernelProviderClient {
     body: TBody,
     options: DataCloudRequestOptions = {},
   ): Promise<unknown> {
+    // Preserve payload for storage - redaction happens only at logging/telemetry layer
     return this.request(path, {
       method: 'POST',
-      body: JSON.stringify(redactSensitiveData(body)),
+      body: JSON.stringify(body),
       ...(options.correlationId ? { correlationId: options.correlationId } : {}),
     });
   }
@@ -366,7 +367,6 @@ abstract class DataCloudProviderBase {
   ): Promise<LifecycleProviderResult> {
     try {
       // Validate privacy and retention metadata if present
-      const writeBody = { ...body, writeOptions: options };
       if (options.privacyClassification || options.retention) {
         const privacyMetadata = PrivacyMetadataSchema.safeParse({
           privacyClassification: options.privacyClassification,
@@ -376,7 +376,8 @@ abstract class DataCloudProviderBase {
           throw new Error(`Invalid privacy or retention metadata: ${privacyMetadata.error.message}`);
         }
       }
-      const response = await this.client.post(path, writeBody, {
+      // Send raw body without writeOptions wrapper - gateway expects canonical envelope
+      const response = await this.client.post(path, body, {
         correlationId: options.correlationId,
       });
       return parseProviderResult(response);

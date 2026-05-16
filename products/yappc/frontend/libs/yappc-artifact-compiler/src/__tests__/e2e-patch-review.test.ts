@@ -1,202 +1,166 @@
 /**
- * @fileoverview E2E tests for patch review flow.
- *
- * Phase 6 test: Validates that:
- * - Review bundle is created for change plan
- * - Review includes validation results
- * - Review includes residual overlaps
- * - Review can be approved or rejected
- * - Rollback metadata is tracked
+ * @fileoverview Integration tests for the patch review flow.
  */
 
-import { describe, it, expect } from 'vitest';
+import { mkdtemp, mkdir, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { buildChangePlan } from '../compile-back/types';
+import { PatchCoordinator } from '../compile-back/patch-coordinator';
+import type { PatchContext } from '../compile-back/types';
+import type { SemanticModelElement } from '../model/types';
+
+const tempRoots: string[] = [];
+
+async function createTempRoot(): Promise<string> {
+  const rootPath = await mkdtemp(join(tmpdir(), 'yappc-patch-review-'));
+  tempRoots.push(rootPath);
+  return rootPath;
+}
+
+function buildComponentElement(name: string): SemanticModelElement {
+  return {
+    id: '91c394e7-d45f-4dd6-9f0c-c2a2cc0d18c0',
+    kind: 'component',
+    name,
+    confidence: 0.95,
+    provenance: {
+      extractorId: 'test-extractor',
+      extractorVersion: '1.0.0',
+      sourcePaths: ['src/Button.tsx'],
+      kind: 'exact',
+      extractedAt: '2026-05-15T00:00:00.000Z',
+    },
+    securityFlags: [],
+    privacyFlags: [],
+    tags: [],
+    graphNodeIds: [],
+    sourceRefs: ['src/Button.tsx'],
+    residualIslandIds: [],
+    contractName: name,
+    props: [],
+    slots: [],
+    events: [],
+    variants: [],
+    stateConnections: [],
+    dataDependencies: [],
+    styleDependencies: [],
+    storyIds: [],
+    builderCanvasHints: {},
+  };
+}
 
 describe('Patch review E2E flow', () => {
-  it('should create a review bundle', () => {
-    const reviewBundle = {
-      id: 'review-1',
-      changePlanId: 'plan-1',
-      status: 'pending' as const,
-      createdAt: new Date().toISOString(),
-      changes: [
-        {
-          id: 'change-1',
-          elementId: 'elem-1',
-          kind: 'rename-component' as const,
-          description: 'Rename Button to PrimaryButton',
-          before: 'Button',
-          after: 'PrimaryButton',
-        },
-      ],
-      patches: [
-        {
-          relativePath: 'Button.tsx',
-          diff: '@@ -1,3 +1,3 @@\n-Button\n+PrimaryButton',
-          isAtomic: true,
-        },
-      ],
-      validation: {
-        valid: true,
-        errors: [],
-        warnings: [],
-        validatorId: 'patch-coordinator',
-      },
-      residualOverlaps: [],
+  afterEach(async () => {
+    await Promise.all(
+      tempRoots.splice(0).map(async (rootPath) => {
+        const { rm } = await import('fs/promises');
+        await rm(rootPath, { recursive: true, force: true });
+      }),
+    );
+  });
+
+  it('builds, validates, and reviews a real rename patch end to end', async () => {
+    const rootPath = await createTempRoot();
+    const relativePath = 'src/Button.tsx';
+    const absolutePath = join(rootPath, relativePath);
+    await mkdir(join(rootPath, 'src'), { recursive: true });
+    await writeFile(
+      absolutePath,
+      [
+        'export function Button(): JSX.Element {',
+        '  return <Button />;',
+        '}',
+        '',
+      ].join('\n'),
+    );
+
+    const before = [buildComponentElement('Button')];
+    const after = [buildComponentElement('PrimaryButton')];
+    const changeOps = buildChangePlan(before, after);
+
+    expect(changeOps).toHaveLength(1);
+    expect(changeOps[0]?.kind).toBe('rename-component');
+
+    const context: PatchContext = {
+      readFile: async () => (await import('fs/promises')).readFile(absolutePath, 'utf-8'),
+      fileExists: async () => true,
+      residuals: new Map(),
+      elementSourcePaths: new Map([[before[0]!.id, [relativePath]]]),
     };
 
-    expect(reviewBundle.id).toBeTruthy();
-    expect(reviewBundle.status).toBe('pending');
-    expect(reviewBundle.changes).toHaveLength(1);
+    const coordinator = new PatchCoordinator();
+    const patchSet = await coordinator.buildPatchSet(
+      changeOps,
+      new Map([[before[0]!.id, before[0]!]]),
+      new Map(),
+      context,
+    );
+
+    expect(patchSet.patches).toHaveLength(1);
+    expect(patchSet.patches[0]?.diff).toContain('+export function PrimaryButton(): JSX.Element {');
+    expect(patchSet.patches[0]?.ranges).toHaveLength(1);
+    expect(patchSet.patches[0]?.baseChecksum).toBeDefined();
+    expect(patchSet.patches[0]?.targetChecksum).toBeDefined();
+
+    const changePlan = {
+      id: 'e6d6e4eb-f56c-463d-b82c-71de11cb4f92',
+      sourceModelId: '8f459e6c-7cbc-4c5f-9caa-f81c5728c04f',
+      targetModelId: 'b77aa68c-8eab-4d20-a355-cd05844f9b56',
+      changes: changeOps.map((op) => ({
+        id: '5a92bb68-1a11-4b42-a02f-3f2ac85a8180',
+        elementId: op.targetElementId,
+        kind: op.kind,
+        description: op.description,
+        before: op.before,
+        after: op.after,
+        changedAt: new Date().toISOString(),
+        autoApplyConfidence: op.autoApplyConfidence,
+        reviewRequired: false,
+      })),
+      createdAt: new Date().toISOString(),
+      estimatedImpact: {
+        addedElements: 0,
+        removedElements: 0,
+        modifiedElements: 1,
+        affectedFiles: 1,
+      },
+    };
+
+    const validation = await coordinator.validateChangePlan(
+      changePlan,
+      new Map([[before[0]!.id, before[0]!]]),
+      new Map(),
+    );
+    expect(validation.valid).toBe(true);
+
+    const dryRun = await coordinator.dryRunPatchSet(patchSet, context);
+    expect(dryRun.valid).toBe(true);
+
+    const reviewBundle = await coordinator.buildReviewBundle(
+      changePlan,
+      patchSet,
+      dryRun,
+      new Map(),
+      new Map([[before[0]!.id, before[0]!]]),
+    );
     expect(reviewBundle.patches).toHaveLength(1);
     expect(reviewBundle.validation.valid).toBe(true);
-  });
+    expect(reviewBundle.patches[0]?.ranges).toHaveLength(1);
+    expect(reviewBundle.patches[0]?.validationStatus).toBe('validated');
 
-  it('should include validation errors in review', () => {
-    const reviewBundle = {
-      id: 'review-1',
-      changePlanId: 'plan-1',
-      status: 'pending' as const,
-      createdAt: new Date().toISOString(),
-      changes: [],
-      patches: [],
-      validation: {
-        valid: false,
-        errors: [
-          {
-            code: 'ELEMENT_NOT_FOUND',
-            message: 'Element not found',
-            changeId: 'change-1',
-          },
-        ],
-        warnings: [],
-        validatorId: 'patch-coordinator',
-      },
-      residualOverlaps: [],
-    };
-
-    expect(reviewBundle.validation.valid).toBe(false);
-    expect(reviewBundle.validation.errors).toHaveLength(1);
-    expect(reviewBundle.validation.errors[0]?.code).toBe('ELEMENT_NOT_FOUND');
-  });
-
-  it('should include residual overlaps in review', () => {
-    const reviewBundle = {
-      id: 'review-1',
-      changePlanId: 'plan-1',
-      status: 'pending' as const,
-      createdAt: new Date().toISOString(),
-      changes: [],
-      patches: [],
-      validation: {
-        valid: false,
-        errors: [
-          {
-            code: 'RESIDUAL_OVERLAP',
-            message: 'Change overlaps with residual island',
-            changeId: 'change-1',
-          },
-        ],
-        warnings: [],
-        validatorId: 'patch-coordinator',
-      },
-      residualOverlaps: [
-        {
-          changeId: 'change-1',
-          residualId: 'residual-1',
-          overlapReason: 'Change targets residual island',
-        },
-      ],
-    };
-
-    expect(reviewBundle.residualOverlaps).toHaveLength(1);
-    expect(reviewBundle.residualOverlaps[0]?.changeId).toBe('change-1');
-    expect(reviewBundle.residualOverlaps[0]?.residualId).toBe('residual-1');
-  });
-
-  it('should allow review approval', () => {
-    const reviewBundle = {
-      id: 'review-1',
-      changePlanId: 'plan-1',
-      status: 'approved' as const,
-      createdAt: new Date().toISOString(),
-      approvedAt: new Date().toISOString(),
-      approvedBy: 'user-1',
-      approvalComment: 'Changes look good',
-      changes: [],
-      patches: [],
-      validation: {
-        valid: true,
-        errors: [],
-        warnings: [],
-        validatorId: 'patch-coordinator',
-      },
-      residualOverlaps: [],
-    };
-
-    expect(reviewBundle.status).toBe('approved');
-    expect(reviewBundle.approvedBy).toBe('user-1');
-    expect(reviewBundle.approvalComment).toBe('Changes look good');
-  });
-
-  it('should allow review rejection', () => {
-    const reviewBundle = {
-      id: 'review-1',
-      changePlanId: 'plan-1',
-      status: 'rejected' as const,
-      createdAt: new Date().toISOString(),
-      rejectedAt: new Date().toISOString(),
-      rejectedBy: 'user-1',
-      rejectionReason: 'Changes too risky',
-      changes: [],
-      patches: [],
-      validation: {
-        valid: true,
-        errors: [],
-        warnings: [],
-        validatorId: 'patch-coordinator',
-      },
-      residualOverlaps: [],
-    };
-
-    expect(reviewBundle.status).toBe('rejected');
-    expect(reviewBundle.rejectedBy).toBe('user-1');
-    expect(reviewBundle.rejectionReason).toBe('Changes too risky');
-  });
-
-  it('should track rollback metadata', () => {
-    const rollbackMetadata = {
-      id: 'rollback-1',
-      originalChangePlanId: 'plan-1',
-      originalPatchSetId: 'patch-set-1',
-      rollbackChangePlanId: 'rollback-plan-1',
-      rollbackPatchSetId: 'rollback-patch-set-1',
-      rolledBackBy: 'user-1',
-      rolledBackAt: new Date().toISOString(),
-      reason: 'Reverting incorrect rename',
-      success: true,
-    };
-
-    expect(rollbackMetadata.id).toBeTruthy();
-    expect(rollbackMetadata.originalChangePlanId).toBe('plan-1');
-    expect(rollbackMetadata.rolledBackBy).toBe('user-1');
-    expect(rollbackMetadata.success).toBe(true);
-  });
-
-  it('should track failed rollback', () => {
-    const rollbackMetadata = {
-      id: 'rollback-1',
-      originalChangePlanId: 'plan-1',
-      originalPatchSetId: 'patch-set-1',
-      rollbackChangePlanId: 'rollback-plan-1',
-      rollbackPatchSetId: 'rollback-patch-set-1',
-      rolledBackBy: 'user-1',
-      rolledBackAt: new Date().toISOString(),
-      reason: 'Reverting incorrect rename',
-      success: false,
-      failureReason: 'Could not apply rollback patch',
-    };
-
+    const rollbackMetadata = await coordinator.createRollbackMetadata(
+      changePlan.id,
+      patchSet.id,
+      '3a0e9c94-e315-4c20-b2c5-53db9aaf84db',
+      'ec2d22c6-1529-425b-8b4e-d041f79bf16c',
+      'Revert rename during review',
+      'user-1',
+    );
+    expect(rollbackMetadata.originalChangePlanId).toBe(changePlan.id);
     expect(rollbackMetadata.success).toBe(false);
-    expect(rollbackMetadata.failureReason).toBe('Could not apply rollback patch');
+    expect(rollbackMetadata.reason).toBe('Revert rename during review');
   });
 });

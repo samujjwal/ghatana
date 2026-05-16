@@ -14,6 +14,8 @@ import type { ResidualIsland, RegenerationStrategy } from '../residual/types';
 
 export interface PreservationResult {
   readonly preserved: boolean;
+  readonly blocked: boolean;
+  readonly reviewRequired: boolean;
   readonly strategy: RegenerationStrategy;
   readonly content: string;
   readonly warning?: string;
@@ -38,40 +40,50 @@ export function preserveResidual(
     case 'verbatim-preserve':
       return {
         preserved: true,
+        blocked: false,
+        reviewRequired: island.reviewRequired,
         strategy: 'verbatim-preserve',
         content: island.originalSource,
       };
 
     case 'best-effort-approximate':
       return {
-        preserved: true,
+        preserved: false,
+        blocked: true,
+        reviewRequired: true,
         strategy: 'best-effort-approximate',
         content: island.originalSource,
-        warning: `[YAPPC] Best-effort preservation of residual "${island.normalizedSummary}". Manual review recommended.`,
+        warning: `Residual island "${island.normalizedSummary}" requires manual review; non-verbatim regeneration is blocked in production mode.`,
       };
 
     case 'emit-warning':
       return {
         preserved: false,
+        blocked: true,
+        reviewRequired: true,
         strategy: 'emit-warning',
-        content: `/* [YAPPC-WARNING] Residual island "${island.normalizedSummary}" was not modeled and cannot be regenerated. Original source was:\n${island.originalSource}\n*/`,
-        warning: `Residual island "${island.normalizedSummary}" emitted as warning comment.`,
+        content: island.originalSource,
+        warning: `Residual island "${island.normalizedSummary}" requires manual review; warning-comment regeneration is blocked in production mode.`,
       };
 
     case 'require-manual-impl':
       return {
         preserved: false,
+        blocked: true,
+        reviewRequired: true,
         strategy: 'require-manual-impl',
-        content: `// [YAPPC-TODO] Residual island requires manual implementation:\n// ${island.normalizedSummary}\n// Reason: ${island.reasonUnmodeled}\nthrow new Error("Not implemented: ${island.normalizedSummary.replace(/"/g, '\\"')}");`,
-        warning: `Residual island "${island.normalizedSummary}" requires manual implementation.`,
+        content: island.originalSource,
+        warning: `Residual island "${island.normalizedSummary}" requires manual review; synthetic implementation stubs are blocked in production mode.`,
       };
 
     case 'placeholder-stub':
       return {
         preserved: false,
+        blocked: true,
+        reviewRequired: true,
         strategy: 'placeholder-stub',
-        content: `// [YAPPC-STUB] ${island.normalizedSummary}\n// TODO: Implement this section (was residual island ${island.id})\n`,
-        warning: `Residual island "${island.normalizedSummary}" emitted as placeholder stub.`,
+        content: island.originalSource,
+        warning: `Residual island "${island.normalizedSummary}" requires manual review; placeholder stub generation is blocked in production mode.`,
       };
 
     default: {
@@ -79,6 +91,8 @@ export function preserveResidual(
       const exhaustive: never = island.regenerationStrategy;
       return {
         preserved: true,
+        blocked: false,
+        reviewRequired: true,
         strategy: 'verbatim-preserve',
         content: island.originalSource,
         warning: `Unknown regeneration strategy: ${String(exhaustive)}. Defaulting to verbatim-preserve.`,

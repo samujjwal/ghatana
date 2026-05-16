@@ -16,8 +16,15 @@
 import { mkdir, writeFile, mkdtemp } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
-import { SourceProviderError } from './types';
+import type {
+  SourceProvider,
+  SourceProviderOptions,
+  SourceProviderLocator,
+  SnapshotFile,
+  RepositorySnapshot,
+  ProviderDiagnostic,
+} from './types';
+import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -138,20 +145,22 @@ export class GitLabProvider implements SourceProvider {
     );
   }
 
-  async resolve(locator: string, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+  async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
+    validateCredentialPolicy(options?.scope, options?.credentials);
+    const normalizedInput = sourceLocatorToString(locator);
     // Normalize gitlab: prefix
-    const normalizedLocator = locator.startsWith('gitlab:') ? locator.slice('gitlab:'.length) : locator;
+    const normalizedLocator = normalizedInput.startsWith('gitlab:') ? normalizedInput.slice('gitlab:'.length) : normalizedInput;
     const parsed = parseLocator(normalizedLocator);
     if (!parsed) {
-      throw new SourceProviderError(this.providerId, locator, 'Cannot parse GitLab locator');
+      throw new SourceProviderError(this.providerId, normalizedInput, 'Cannot parse GitLab locator');
     }
 
     try {
-      return await this.doResolve(parsed, locator, options);
+      return await this.doResolve(parsed, normalizedInput, options);
     } catch (err) {
       if (err instanceof SourceProviderError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
-      throw new SourceProviderError(this.providerId, locator, msg, err);
+      throw new SourceProviderError(this.providerId, normalizedInput, msg, err);
     }
   }
 
@@ -185,12 +194,22 @@ export class GitLabProvider implements SourceProvider {
 
     // Get repository tree (paginated)
     const files: SnapshotFile[] = [];
+    const diagnostics: ProviderDiagnostic[] = [];
     let fileCount = 0;
     let page = 1;
     const perPage = 100;
 
     while (true) {
-      if (fileCount >= maxFiles) break;
+      if (fileCount >= maxFiles) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITLAB_MAX_FILES_REACHED',
+          message: `GitLab snapshot stopped after reaching maxFiles=${maxFiles}.`,
+          timestamp: new Date().toISOString(),
+          metadata: { maxFiles },
+        });
+        break;
+      }
 
       const treeResponse = await gitlabApiFetch<GitLabTreeEntry[]>(
         this.apiHost,
@@ -221,6 +240,17 @@ export class GitLabProvider implements SourceProvider {
               sizeBytes: fileMeta.size,
               lastModifiedAt: new Date().toISOString(),
             });
+            diagnostics.push({
+              level: 'warning',
+              code: 'GITLAB_FILE_SKIPPED_MAX_SIZE',
+              message: `Skipped oversized GitLab file ${entry.path}.`,
+              timestamp: new Date().toISOString(),
+              resourcePath: entry.path,
+              metadata: {
+                sizeBytes: fileMeta.size,
+                maxFileSizeBytes,
+              },
+            });
             continue;
           }
 
@@ -248,6 +278,13 @@ export class GitLabProvider implements SourceProvider {
             sizeBytes: 0,
             lastModifiedAt: new Date().toISOString(),
           });
+          diagnostics.push({
+            level: 'warning',
+            code: 'GITLAB_FILE_MATERIALIZATION_FAILED',
+            message: `Failed to materialize GitLab file ${entry.path}; keeping metadata-only snapshot entry.`,
+            timestamp: new Date().toISOString(),
+            resourcePath: entry.path,
+          });
         }
       }
 
@@ -269,7 +306,7 @@ export class GitLabProvider implements SourceProvider {
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
-      diagnostics: [],
+      diagnostics,
     };
   }
 }

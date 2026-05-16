@@ -166,6 +166,18 @@
       "severity": "critical",
       "pattern": "\\bvi\\.fn\\(\\)|\\bvi\\.mock\\(|\\bvi\\.spyOn\\(",
       "description": "Vitest vi.fn/vi.mock/vi.spyOn in production file"
+    },
+    {
+      "id": "IN_MEMORY_MAP_STORAGE",
+      "severity": "critical",
+      "pattern": "\\b(new Map\\(\\)|providerStorage\\s*=\\s*Map)",
+      "description": "In-memory Map storage for providers — use durable Data Cloud storage instead"
+    },
+    {
+      "id": "IN_MEMORY_COMMENT",
+      "severity": "critical",
+      "pattern": "//\\s*(In-memory|TODO.*replace.*durable|placeholder.*storage|stub.*storage)",
+      "description": "Comment indicates in-memory or placeholder storage that must be replaced with durable storage"
     }
   ]
 }

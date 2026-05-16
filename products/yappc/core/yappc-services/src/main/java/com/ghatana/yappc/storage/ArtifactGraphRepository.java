@@ -90,6 +90,11 @@ public final class ArtifactGraphRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (ArtifactNodeDto node : nodes) {
+                    if ((node.tenantId() != null && !tenantId.equals(node.tenantId()))
+                            || (node.projectId() != null && !productId.equals(node.projectId()))) {
+                        log.warn("Ignoring node payload scope for nodeId={} and using server scope tenantId={}, productId={}",
+                                node.id(), tenantId, productId);
+                    }
                     statement.setString(1, node.id());
                     statement.setString(2, node.type());
                     statement.setString(3, node.name());
@@ -97,8 +102,8 @@ public final class ArtifactGraphRepository {
                     statement.setString(5, node.content());
                     statement.setString(6, writeJson(node.properties()));
                     statement.setString(7, writeJson(node.tags()));
-                    statement.setString(8, node.tenantId());
-                    statement.setString(9, node.projectId());
+                    statement.setString(8, tenantId);
+                    statement.setString(9, productId);
                     statement.setString(10, computeChecksum(node));
                     Instant now = Instant.now();
                     statement.setTimestamp(11, Timestamp.from(now));
@@ -419,7 +424,7 @@ public final class ArtifactGraphRepository {
             
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                       properties_json, tags_json, tenant_id, project_id
+                      properties_json, tags_json, tenant_id, project_id, updated_at
                 FROM artifact_nodes
                 WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """
@@ -463,7 +468,7 @@ public final class ArtifactGraphRepository {
             }
             
             String sql = """
-                SELECT source_node_id, target_node_id, relationship_type, properties_json
+                SELECT source_node_id, target_node_id, relationship_type, properties_json, updated_at
                 FROM artifact_edges
                 WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """

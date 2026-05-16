@@ -304,7 +304,10 @@ export const GraphQuerySchema = z.object({
   minConfidence: z.number().min(0).max(1).optional(),
   sourcePath: z.string().optional(),
   labelContains: z.string().optional(),
+  cursor: z.string().min(1).optional(),
   limit: z.number().int().nonnegative().optional(),
+  includeUnresolvedEdges: z.boolean().optional(),
+  unresolvedStatuses: z.array(EdgeResolutionStatusSchema).optional(),
 });
 
 export type GraphQuery = z.infer<typeof GraphQuerySchema>;

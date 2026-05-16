@@ -114,24 +114,266 @@ phases:
   dev:
     defaultSurfaces: [backend-api, web]
     mode: parallel
+    gates:
+      - dev-environment-check
+      - local-dependency-resolution
+    artifacts:
+      backend-api:
+        type: jvm-service
+        packaging: jar
+        required: false
+      web:
+        type: static-web-bundle
+        packaging: static-files
+        required: false
+    deployment:
+      local:
+        adapter: compose-local
+        target: compose-local
+        composeFile: products/digital-marketing/deploy/local.compose.yaml
+        envFile: products/digital-marketing/deploy/local.env
+        requireEnvFile: false
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 3
+        intervalMs: 2000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 3
+        intervalMs: 2000
   validate:
     defaultSurfaces: [backend-api, web]
     mode: parallel
+    gates:
+      - registry-validation
+      - manifest-validation
+      - lifecycle-contract-validation
+      - bridge-compliance
+      - dmos-boundary-workflow-coverage
+      - marketing-consent-boundary
+      - non-regulated-customer-data-minimization
+    artifacts:
+      backend-api:
+        type: validation-report
+        packaging: json
+        required: true
+      web:
+        type: validation-report
+        packaging: json
+        required: true
+    deployment: {}
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 3
+        intervalMs: 2000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 3
+        intervalMs: 2000
   test:
     defaultSurfaces: [backend-api, web]
     mode: parallel
+    gates:
+      - unit-test-coverage
+      - integration-test-coverage
+      - contract-test-coverage
+    artifacts:
+      backend-api:
+        type: test-report
+        packaging: json
+        required: true
+      web:
+        type: test-report
+        packaging: json
+        required: true
+    deployment: {}
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 3
+        intervalMs: 2000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 3
+        intervalMs: 2000
   build:
     defaultSurfaces: [backend-api, web]
     mode: sequential
+    gates:
+      - backend-check
+      - web-route-contract
+      - web-typecheck
+      - web-bundle-budget
+      - web-a11y-readiness
+      - web-i18n-readiness
+      - container-image-integrity
+    artifacts:
+      backend-api:
+        type: jvm-service
+        packaging: jar
+        required: true
+        paths:
+          - products/digital-marketing/dm-api/build/libs/*.jar
+      web:
+        type: static-web-bundle
+        packaging: static-files
+        required: true
+        paths:
+          - products/digital-marketing/ui/dist
+    deployment: {}
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 3
+        intervalMs: 2000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 3
+        intervalMs: 2000
   package:
     defaultSurfaces: [backend-api, web]
     mode: sequential
+    gates:
+      - container-scan
+      - image-vulnerability-scan
+    artifacts:
+      backend-api:
+        type: container-image
+        packaging: container
+        required: true
+      web:
+        type: container-image
+        packaging: container
+        required: true
+    deployment: {}
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 3
+        intervalMs: 2000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 3
+        intervalMs: 2000
   deploy:
     defaultEnvironment: local
+    gates:
+      - deployment-readiness
+      - environment-configuration-validation
+    artifacts:
+      backend-api:
+        type: deployment-manifest
+        packaging: json
+        required: true
+      web:
+        type: deployment-manifest
+        packaging: json
+        required: true
+    deployment:
+      local:
+        adapter: compose-local
+        target: compose-local
+        composeFile: products/digital-marketing/deploy/local.compose.yaml
+        envFile: products/digital-marketing/deploy/local.env
+        envExampleFile: products/digital-marketing/deploy/local.env.example
+        requireEnvFile: false
+        expectedServices:
+          - backend-api
+          - web
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 10
+        intervalMs: 3000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 5
+        intervalMs: 2000
   promote:
     defaultEnvironment: local
+    gates:
+      - promotion-readiness
+      - target-environment-validation
+      - data-migration-validation
+    artifacts:
+      backend-api:
+        type: promotion-manifest
+        packaging: json
+        required: true
+      web:
+        type: promotion-manifest
+        packaging: json
+        required: true
+    deployment:
+      local:
+        adapter: compose-local
+        target: compose-local
+        composeFile: products/digital-marketing/deploy/local.compose.yaml
+        envFile: products/digital-marketing/deploy/local.env
+        requireEnvFile: false
+        expectedServices:
+          - backend-api
+          - web
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 10
+        intervalMs: 3000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 5
+        intervalMs: 2000
   rollback:
     defaultEnvironment: local
+    gates:
+      - rollback-readiness
+      - rollback-impact-analysis
+    artifacts:
+      backend-api:
+        type: rollback-manifest
+        packaging: json
+        required: true
+      web:
+        type: rollback-manifest
+        packaging: json
+        required: true
+    deployment:
+      local:
+        adapter: compose-local
+        target: compose-local
+        composeFile: products/digital-marketing/deploy/local.compose.yaml
+        envFile: products/digital-marketing/deploy/local.env
+        requireEnvFile: false
+        expectedServices:
+          - backend-api
+          - web
+    health:
+      backend-api:
+        type: http
+        url: http://localhost:${DMOS_API_PORT:-8080}/health/ready
+        retries: 10
+        intervalMs: 3000
+      web:
+        type: http
+        url: http://localhost:${DMOS_WEB_PORT:-5173}/
+        retries: 5
+        intervalMs: 2000
 
 approvals:
   deploy:

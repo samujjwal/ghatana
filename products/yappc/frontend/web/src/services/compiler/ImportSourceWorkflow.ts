@@ -26,6 +26,8 @@ import {
   createDefaultProviderRegistry,
   SynthesisPipeline,
   type GraphNode,
+  type ResidualIsland as CompilerResidualIsland,
+  ResidualIslandSchema,
 } from 'yappc-artifact-compiler';
 
 import {
@@ -140,7 +142,7 @@ export interface ImportResult {
    * P6.1: Residual islands that could not be modeled.
    * Areas of code that require manual review or are unsupported by the synthesis pipeline.
    */
-  residuals?: ResidualIsland[];
+  residuals?: CompilerResidualIsland[];
 }
 
 /**
@@ -158,26 +160,6 @@ export interface ImportConfidenceMetrics {
   lowConfidenceCount: number;
   /** Per-element confidence mapping by element ID */
   elementConfidence: ReadonlyMap<string, number>;
-}
-
-/**
- * P6.1: Residual island representing code that could not be modeled.
- */
-export interface ResidualIsland {
-  /** Unique identifier for the residual island */
-  id: string;
-  /** Source file path */
-  sourcePath: string;
-  /** Type of residual (e.g., 'unsupported-language', 'complex-pattern', 'dynamic-import') */
-  type: string;
-  /** Confidence score for this residual */
-  confidence: number;
-  /** Whether this residual requires manual review */
-  requiresReview: boolean;
-  /** Human-readable description */
-  description: string;
-  /** Line numbers (if available) */
-  lineRange?: readonly [number, number];
 }
 
 export interface ImportToPageArtifactResult {
@@ -1221,7 +1203,7 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
       throw new Error('Server import returned an invalid response payload');
     }
 
-    return pollImportJobUntilTerminal(result as ImportResult, {
+    return pollImportJobUntilTerminal(normalizeImportResult(result as ImportResult), {
       tenantId: options.options?.tenantId ?? '',
       workspaceId: options.options?.workspaceId ?? '',
       projectId: options.projectId,
@@ -1281,8 +1263,127 @@ async function pollImportJobUntilTerminal(
   }
 
   return {
-    ...result,
+    ...normalizeImportResult(result),
     job: latestJob,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeResidualKind(value: unknown): CompilerResidualIsland['kind'] {
+  return value === 'code' || value === 'style' || value === 'query' || value === 'logic'
+    ? value
+    : 'code';
+}
+
+function normalizeResidualRisk(value: unknown): CompilerResidualIsland['risk'] {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'critical'
+    ? value
+    : undefined;
+}
+
+function normalizeLineRange(value: unknown): readonly [number, number] | undefined {
+  if (!Array.isArray(value) || value.length < 2) {
+    return undefined;
+  }
+
+  const start = typeof value[0] === 'number' ? value[0] : undefined;
+  const end = typeof value[1] === 'number' ? value[1] : undefined;
+  return start !== undefined && end !== undefined ? [start, end] : undefined;
+}
+
+function normalizeResidualIsland(value: unknown): CompilerResidualIsland | null {
+  const parsed = ResidualIslandSchema.safeParse(value);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  if (!isRecord(value) || typeof value.id !== 'string') {
+    return null;
+  }
+
+  const lineRange = normalizeLineRange(value.lineRange);
+  const sourcePath = typeof value.sourcePath === 'string'
+    ? value.sourcePath
+    : isRecord(value.sourceLocation) && typeof value.sourceLocation.filePath === 'string'
+      ? value.sourceLocation.filePath
+      : 'unknown';
+  const description = typeof value.description === 'string'
+    ? value.description
+    : typeof value.normalizedSummary === 'string'
+      ? value.normalizedSummary
+      : 'Unmodeled code fragment';
+  const confidence = typeof value.confidence === 'number' ? value.confidence : 0;
+  const reviewRequired = typeof value.requiresReview === 'boolean'
+    ? value.requiresReview
+    : typeof value.reviewRequired === 'boolean'
+      ? value.reviewRequired
+      : confidence < 0.5;
+
+  const normalized = {
+    id: value.id,
+    kind: normalizeResidualKind(value.kind ?? value.type),
+    originalSource: typeof value.originalSource === 'string' ? value.originalSource : description,
+    normalizedSummary: typeof value.normalizedSummary === 'string' ? value.normalizedSummary : description,
+    reasonUnmodeled: typeof value.reasonUnmodeled === 'string'
+      ? value.reasonUnmodeled
+      : typeof value.type === 'string'
+        ? value.type
+        : description,
+    reviewRequired,
+    reviewReason: typeof value.reviewReason === 'string' ? value.reviewReason : undefined,
+    regenerationStrategy: value.regenerationStrategy === 'verbatim-preserve'
+      || value.regenerationStrategy === 'best-effort-approximate'
+      || value.regenerationStrategy === 'emit-warning'
+      || value.regenerationStrategy === 'require-manual-impl'
+      || value.regenerationStrategy === 'placeholder-stub'
+      ? value.regenerationStrategy
+      : 'require-manual-impl',
+    sourceLocation: isRecord(value.sourceLocation)
+      ? {
+          filePath: typeof value.sourceLocation.filePath === 'string' ? value.sourceLocation.filePath : sourcePath,
+          startLine: typeof value.sourceLocation.startLine === 'number' ? value.sourceLocation.startLine : lineRange?.[0] ?? 0,
+          startColumn: typeof value.sourceLocation.startColumn === 'number' ? value.sourceLocation.startColumn : 0,
+          endLine: typeof value.sourceLocation.endLine === 'number' ? value.sourceLocation.endLine : lineRange?.[1] ?? lineRange?.[0] ?? 0,
+          endColumn: typeof value.sourceLocation.endColumn === 'number' ? value.sourceLocation.endColumn : 0,
+        }
+      : {
+          filePath: sourcePath,
+          startLine: lineRange?.[0] ?? 0,
+          startColumn: 0,
+          endLine: lineRange?.[1] ?? lineRange?.[0] ?? 0,
+          endColumn: 0,
+        },
+    extractorId: typeof value.extractorId === 'string' ? value.extractorId : 'import-source-workflow',
+    extractorVersion: typeof value.extractorVersion === 'string' ? value.extractorVersion : '1.0.0',
+    extractedAt: typeof value.extractedAt === 'string' ? value.extractedAt : new Date().toISOString(),
+    confidence,
+    linkedModelElementIds: Array.isArray(value.linkedModelElementIds)
+      ? value.linkedModelElementIds.filter((item): item is string => typeof item === 'string')
+      : [],
+    tags: Array.isArray(value.tags)
+      ? value.tags.filter((item): item is string => typeof item === 'string')
+      : [],
+    rawFragmentRef: typeof value.rawFragmentRef === 'string' ? value.rawFragmentRef : undefined,
+    checksum: typeof value.checksum === 'string' ? value.checksum : undefined,
+    risk: normalizeResidualRisk(value.risk),
+    relatedGraphNodeIds: Array.isArray(value.relatedGraphNodeIds)
+      ? value.relatedGraphNodeIds.filter((item): item is string => typeof item === 'string')
+      : [],
+  } satisfies CompilerResidualIsland;
+
+  const normalizedParsed = ResidualIslandSchema.safeParse(normalized);
+  return normalizedParsed.success ? normalizedParsed.data : null;
+}
+
+function normalizeImportResult(result: ImportResult): ImportResult {
+  return {
+    ...result,
+    residuals: result.residuals
+      ?.map((residual) => normalizeResidualIsland(residual))
+      .filter((residual): residual is CompilerResidualIsland => residual != null),
   };
 }
 
@@ -1380,12 +1481,12 @@ async function importFromRepo(
 /**
  * P6.1: Extract confidence metrics from synthesis pipeline result.
  */
-function extractConfidenceMetrics(result: any): ImportConfidenceMetrics | undefined {
-  if (!result || !result.semanticModel) {
+function extractConfidenceMetrics(result: unknown): ImportConfidenceMetrics | undefined {
+  if (!isRecord(result) || !isRecord(result.model) || !Array.isArray(result.model.elements)) {
     return undefined;
   }
 
-  const elements = result.semanticModel.elements || [];
+  const elements = result.model.elements;
   const elementConfidence = new Map<string, number>();
   let highCount = 0;
   let mediumCount = 0;
@@ -1393,7 +1494,11 @@ function extractConfidenceMetrics(result: any): ImportConfidenceMetrics | undefi
   let totalConfidence = 0;
 
   for (const element of elements) {
-    const confidence = element.confidence ?? 0.5;
+    if (!isRecord(element) || typeof element.id !== 'string') {
+      continue;
+    }
+
+    const confidence = typeof element.confidence === 'number' ? element.confidence : 0.5;
     elementConfidence.set(element.id, confidence);
     totalConfidence += confidence;
 
@@ -1420,20 +1525,14 @@ function extractConfidenceMetrics(result: any): ImportConfidenceMetrics | undefi
 /**
  * P6.1: Extract residual islands from synthesis pipeline result.
  */
-function extractResidualIslands(result: any): ResidualIsland[] | undefined {
-  if (!result || !result.residualIslands) {
+function extractResidualIslands(result: unknown): CompilerResidualIsland[] | undefined {
+  if (!isRecord(result) || !Array.isArray(result.residualIslands)) {
     return undefined;
   }
 
-  return result.residualIslands.map((island: any) => ({
-    id: island.id,
-    sourcePath: island.sourcePath || island.location?.filePath,
-    type: island.type || island.kind || 'unknown',
-    confidence: island.confidence ?? 0,
-    requiresReview: island.requiresReview ?? island.confidence < 0.5,
-    description: island.description || island.reason || 'Unmodeled code fragment',
-    lineRange: island.lineRange || island.location?.lineRange,
-  }));
+  return result.residualIslands
+    .map((island) => normalizeResidualIsland(island))
+    .filter((island): island is CompilerResidualIsland => island != null);
 }
 
 function shouldUseServerImport(options: ImportSourceOptions): boolean {

@@ -155,12 +155,16 @@ export default function LifecyclePage(): ReactElement {
   };
 
   const submitApproval = async (approvalId: string, approved: boolean): Promise<void> => {
+    const approvedBy = lifecycleData.authenticatedUserId;
+    if (approvedBy === undefined) {
+      return;
+    }
     setApprovalActionState((current) => ({ ...current, [approvalId]: approved ? 'approve' : 'reject' }));
     try {
       await lifecycleData.submitApprovalDecision(approvalId, {
         approvalId,
         approved,
-        approvedBy: 'studio-operator',
+        approvedBy,
         reason: approved ? 'Approved from Studio lifecycle queue' : 'Rejected from Studio lifecycle queue',
         decidedAt: new Date().toISOString(),
       });
@@ -448,7 +452,7 @@ export default function LifecyclePage(): ReactElement {
                   <Button
                     size="sm"
                     variant="primary"
-                    disabled={approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined}
+                    disabled={lifecycleData.authenticatedUserId === undefined || (approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined)}
                     onClick={() => {
                       void submitApproval(approval.approvalId, true);
                     }}
@@ -458,7 +462,7 @@ export default function LifecyclePage(): ReactElement {
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined}
+                    disabled={lifecycleData.authenticatedUserId === undefined || (approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined)}
                     onClick={() => {
                       void submitApproval(approval.approvalId, false);
                     }}

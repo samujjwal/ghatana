@@ -111,10 +111,16 @@ export interface PendingApprovalQuery extends KernelLifecycleScopeQuery {
   readonly runId?: string;
 }
 
-const fallbackLogger: KernelLifecycleLogger = {
-  info: () => undefined,
-  warn: () => undefined,
-  error: () => undefined,
+const structuredConsoleLogger: KernelLifecycleLogger = {
+  info: (message: string, meta?: Record<string, unknown>): void => {
+    console.info(JSON.stringify({ level: 'info', message, ...meta, ts: new Date().toISOString() }));
+  },
+  warn: (message: string, meta?: Record<string, unknown>): void => {
+    console.warn(JSON.stringify({ level: 'warn', message, ...meta, ts: new Date().toISOString() }));
+  },
+  error: (message: string, meta?: Record<string, unknown>): void => {
+    console.error(JSON.stringify({ level: 'error', message, ...meta, ts: new Date().toISOString() }));
+  },
 };
 
 export class KernelLifecycleService {
@@ -154,7 +160,7 @@ export class KernelLifecycleService {
       outputRoot: path.relative(this.repoRoot, this.outputRoot),
     });
     this.clock = options.clock ?? (() => new Date().toISOString());
-    this.logger = options.logger ?? fallbackLogger;
+    this.logger = options.logger ?? structuredConsoleLogger;
   }
 
   async listProductUnits(query: KernelLifecycleScopeQuery = {}): Promise<readonly ProductUnit[]> {
@@ -188,6 +194,12 @@ export class KernelLifecycleService {
     options: CreateLifecyclePlanOptions = {},
   ): Promise<ProductLifecyclePlan> {
     this.validateProviderContext(options.correlationId, options.providerMode);
+    this.logger.info('lifecycle.plan.creating', {
+      productUnitId,
+      phase,
+      providerMode: options.providerMode ?? this.providerContext.mode,
+      correlationId: options.correlationId,
+    });
     const plan = await this.planner.plan(productUnitId, phase, this.planOptions(options));
     await this.writeJson(path.join(plan.outputDirectory, 'lifecycle-plan.json'), this.safePlan(plan));
     await this.pointerStore.writeLatestPointers(plan.productId, plan.phase, {
@@ -199,20 +211,28 @@ export class KernelLifecycleService {
     await this.recordRuntimeTruth(plan, 'planned', [`lifecycle-plan:${plan.runId}`]);
     await this.recordProvenance(plan, [`lifecycle-plan:${plan.runId}`]);
 
-    // Append lifecycle event for plan creation
+    // Append lifecycle.plan.created event (distinct from phase execution start)
     if (this.providerContext.events !== undefined) {
       await this.providerContext.events.appendEvent(
-        this.createLifecyclePhaseStartedEvent(
+        this.createLifecyclePlanCreatedEvent(
           plan.productId,
           plan.runId,
           plan.phase,
           plan.correlationId,
+          plan.providerMode,
           this.clock(),
         ),
         { required: false, correlationId: plan.correlationId },
       );
     }
 
+    this.logger.info('lifecycle.plan.created', {
+      productUnitId: plan.productId,
+      runId: plan.runId,
+      phase: plan.phase,
+      providerMode: plan.providerMode,
+      correlationId: plan.correlationId,
+    });
     return plan;
   }
 
@@ -283,6 +303,12 @@ export class KernelLifecycleService {
         // Record runtime truth for approval required
         await this.recordRuntimeTruth(plan, 'approval-required', this.resultEvidenceRefs(result));
 
+        this.logger.warn('lifecycle.execution.approval-required', {
+          productUnitId: plan.productId,
+          runId: plan.runId,
+          phase: plan.phase,
+          correlationId: plan.correlationId,
+        });
         throw new ApprovalRequiredError(result.failure.message, {
           correlationId: plan.correlationId,
           productUnitId: plan.productId,
@@ -290,10 +316,19 @@ export class KernelLifecycleService {
           phase: plan.phase,
         });
       }
-      this.logger.warn('Lifecycle execution failed', {
+      this.logger.error('lifecycle.execution.failed', {
         productUnitId: plan.productId,
         runId: plan.runId,
+        phase: plan.phase,
         reasonCode: result.failure?.reasonCode,
+        correlationId: plan.correlationId,
+      });
+    } else {
+      this.logger.info('lifecycle.execution.succeeded', {
+        productUnitId: plan.productId,
+        runId: plan.runId,
+        phase: plan.phase,
+        correlationId: plan.correlationId,
       });
     }
     return result;
@@ -737,6 +772,35 @@ export class KernelLifecycleService {
         );
       }
     }
+  }
+
+  private createLifecyclePlanCreatedEvent(
+    productUnitId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    correlationId: string | undefined,
+    providerMode: 'bootstrap' | 'platform',
+    createdAt: string,
+  ): KernelLifecycleEvent {
+    return {
+      metadata: {
+        eventId: `plan-created:${runId}:${phase}`,
+        schemaVersion: '1.0.0',
+        eventType: 'lifecycle.plan.created',
+        productUnitId,
+        runId,
+        phase,
+        timestamp: createdAt,
+        source: 'kernel-lifecycle-service',
+        correlationId: correlationId ?? runId,
+      },
+      payload: {
+        planRunId: runId,
+        phase,
+        providerMode,
+        createdAt,
+      },
+    };
   }
 
   private createLifecyclePhaseStartedEvent(
