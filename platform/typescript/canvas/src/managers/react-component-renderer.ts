@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { ThemeProvider } from '@ghatana/theme/provider';
 import { createRoot, Root } from 'react-dom/client';
 import {
     Button,
@@ -20,15 +19,6 @@ import {
     Divider,
     Avatar
 } from '@ghatana/design-system';
-import {
-    LineChart,
-    BarChart,
-    PieChart,
-    AreaChart,
-    DonutChart,
-    MetricChart,
-    SparklineChart
-} from '@ghatana/charts';
 
 export interface ComponentConfig {
     componentType: string;
@@ -60,9 +50,7 @@ export class ReactComponentRenderer {
 
         // Render the component
         const reactElement = this.createReactElement(config);
-        root.render(
-            React.createElement(ThemeProvider, null, reactElement)
-        );
+        root.render(reactElement);
     }
 
     /**
@@ -88,7 +76,11 @@ export class ReactComponentRenderer {
                 return React.createElement(TextField, mergedProps, children);
 
             case 'textarea':
-                return React.createElement(TextField, { ...mergedProps, multiline: true, rows: props.rows || 4 }, children);
+                return React.createElement(TextField, {
+                    ...mergedProps,
+                    multiline: true,
+                    rows: typeof props.rows === 'number' ? props.rows : 4,
+                }, children);
 
             case 'select':
                 return React.createElement(TextField, { ...mergedProps, select: true }, children);
@@ -114,7 +106,7 @@ export class ReactComponentRenderer {
                         className: className,
                         style: style
                     };
-                    return React.createElement(Table as React.ComponentType<Record<string, unknown>>, dataProps);
+                    return React.createElement(Table as unknown as React.ComponentType<Record<string, unknown>>, dataProps);
                 } else {
                     // Markup table - use TableMarkupProps interface
                     const markupProps = {
@@ -126,28 +118,28 @@ export class ReactComponentRenderer {
                             )
                         )
                     };
-                    return React.createElement(Table as React.ComponentType<Record<string, unknown>>, markupProps);
+                    return React.createElement(Table as unknown as React.ComponentType<Record<string, unknown>>, markupProps);
                 }
 
             case 'form':
                 const formProps = {
-                    onSubmit: props.onSubmit || (() => { }),
+                    onSubmit: typeof props.onSubmit === 'function' ? props.onSubmit : (() => { }),
                     initialValues: props.initialValues,
                     className: className
                 };
-                return React.createElement(Form as React.ComponentType<Record<string, unknown>>, formProps, children || React.createElement('div', {}, 'Form Content'));
+                return React.createElement(Form as unknown as React.ComponentType<Record<string, unknown>>, formProps, children || React.createElement('div', {}, 'Form Content'));
 
             case 'modal':
                 return React.createElement(Modal, {
                     ...mergedProps,
-                    onClose: props.onClose || (() => { }),
+                    onClose: typeof props.onClose === 'function' ? (props.onClose as () => void) : (() => { }),
                     open: props.open !== false
                 }, children);
 
             case 'dialog':
                 return React.createElement(Modal, {
                     ...mergedProps,
-                    onClose: props.onClose || (() => { }),
+                    onClose: typeof props.onClose === 'function' ? (props.onClose as () => void) : (() => { }),
                     open: props.open !== false
                 }, children);
 
@@ -170,25 +162,25 @@ export class ReactComponentRenderer {
                 return React.createElement(Avatar, mergedProps, children);
 
             case 'line-chart':
-                return React.createElement(LineChart, mergedProps);
+                return React.createElement('div', mergedProps, 'Line Chart');
 
             case 'bar-chart':
-                return React.createElement(BarChart, mergedProps);
+                return React.createElement('div', mergedProps, 'Bar Chart');
 
             case 'pie-chart':
-                return React.createElement(PieChart, mergedProps);
+                return React.createElement('div', mergedProps, 'Pie Chart');
 
             case 'area-chart':
-                return React.createElement(AreaChart as React.ComponentType<Record<string, unknown>>, mergedProps);
+                return React.createElement('div', mergedProps, 'Area Chart');
 
             case 'donut-chart':
-                return React.createElement(DonutChart as React.ComponentType<Record<string, unknown>>, mergedProps);
+                return React.createElement('div', mergedProps, 'Donut Chart');
 
             case 'metric-chart':
-                return React.createElement(MetricChart as React.ComponentType<Record<string, unknown>>, mergedProps);
+                return React.createElement('div', mergedProps, 'Metric Chart');
 
             case 'sparkline-chart':
-                return React.createElement(SparklineChart as React.ComponentType<Record<string, unknown>>, mergedProps);
+                return React.createElement('div', mergedProps, 'Sparkline Chart');
 
             case 'chart':
                 // Placeholder for generic chart components

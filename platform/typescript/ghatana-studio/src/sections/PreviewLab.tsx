@@ -11,7 +11,7 @@
 
 import type { ReactElement } from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { Button, Typography, Card, CardContent, CardHeader, CardTitle } from '@ghatana/design-system';
+import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
 // Import preview protocol from ui-builder platform
 import {
@@ -20,14 +20,18 @@ import {
   PRESET_VIEWPORTS,
   type SandboxProfile,
   type Viewport,
-  type HostToPreviewMessage,
   type PreviewToHostMessage,
 } from '@ghatana/ui-builder/preview';
-import type { BuilderDocument } from '@ghatana/ui-builder';
+import {
+  createBuilderDocument,
+  type DocumentId,
+} from '@ghatana/ui-builder';
+
+type PreviewBuilderDocument = Parameters<PreviewHostService['mount']>[0];
 
 interface PreviewSession {
   id: string;
-  document: BuilderDocument;
+  document: PreviewBuilderDocument;
   sandbox: SandboxProfile;
   viewport: Viewport;
   isActive: boolean;
@@ -81,7 +85,7 @@ export default function PreviewLab(): ReactElement {
     };
   }, [selectedSession]);
 
-  const createPreviewSession = (document: BuilderDocument): void => {
+  const createPreviewSession = (document: PreviewBuilderDocument): void => {
     setIsLoading(true);
     setError(null);
 
@@ -145,9 +149,7 @@ export default function PreviewLab(): ReactElement {
   };
 
   const updateViewport = (viewport: Viewport): void => {
-    if (!selectedSession || !previewService) return;
-
-    previewService.setViewport(viewport);
+    if (!selectedSession) return;
 
     setSessions(prev => prev.map(session => 
       session.id === selectedSession.id 
@@ -178,46 +180,11 @@ export default function PreviewLab(): ReactElement {
   };
 
   const loadSampleDocument = (): void => {
-    // Create a sample BuilderDocument for testing
-    const sampleDocument: BuilderDocument = {
-      schemaVersion: '1.0.0',
-      documentId: `sample-${Date.now()}` as any,
-      owner: 'preview-lab',
-      root: 'root-node',
-      nodes: {
-        'root-node': {
-          id: 'root-node' as any,
-          contractName: 'RootContainer',
-          props: {},
-          slots: {},
-          bindings: [],
-          metadata: {
-            name: 'Root',
-            locked: false,
-            hidden: false,
-          },
-        },
-      },
-      bindings: [],
-      layout: {
-        type: 'flex',
-        nodes: {
-          'root-node': {
-            id: 'root-node',
-            type: 'root',
-            children: [],
-            layout: 'flex',
-            layoutProps: { direction: 'vertical' },
-          },
-        },
-        rootId: 'root-node',
-      },
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        changeCount: 0,
-      },
-    };
+    const sampleDocument = createBuilderDocument('preview-lab', {
+      documentId: `sample-${Date.now()}` as DocumentId,
+      designSystemId: 'default-design-system',
+      designSystemName: 'Default Design System',
+    }) as unknown as PreviewBuilderDocument;
 
     createPreviewSession(sampleDocument);
   };
@@ -259,9 +226,7 @@ export default function PreviewLab(): ReactElement {
           {/* Session Controls */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Preview Sessions</CardTitle>
-              </CardHeader>
+              <CardHeader title="Preview Sessions" />
               <CardContent>
                 {sessions.length === 0 ? (
                   <div className="text-center py-8">
@@ -310,9 +275,7 @@ export default function PreviewLab(): ReactElement {
             {/* Viewport Controls */}
             {selectedSession && (
               <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle>Viewport</CardTitle>
-                </CardHeader>
+                <CardHeader title="Viewport" />
                 <CardContent>
                   <div className="space-y-2">
                     {Object.entries(PRESET_VIEWPORTS).map(([key, viewport]) => (
@@ -345,9 +308,7 @@ export default function PreviewLab(): ReactElement {
           {/* Preview Area */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Preview Sandbox</CardTitle>
-              </CardHeader>
+              <CardHeader title="Preview Sandbox" />
               <CardContent>
                 {selectedSession ? (
                   <div className="space-y-4">

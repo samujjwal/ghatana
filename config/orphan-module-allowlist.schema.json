@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.io/schemas/orphan-module-allowlist.schema.json",
+  "title": "Orphan Module Allowlist Schema",
+  "description": "Schema for allowlisting known orphan module violations",
+  "type": "object",
+  "required": ["version", "allowlist"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "allowlist": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/allowlistEntry"
+      }
+    }
+  },
+  "definitions": {
+    "allowlistEntry": {
+      "type": "object",
+      "required": ["path", "missingFile", "reason", "owner", "reviewBy"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the module relative to repo root"
+        },
+        "missingFile": {
+          "type": "string",
+          "description": "Name of the missing required file"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Explanation for why this violation is allowlisted"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Team or individual responsible for this module"
+        },
+        "reviewBy": {
+          "type": "string",
+          "format": "date",
+          "description": "Date by which this allowlist entry should be reviewed"
+        },
+        "ticketRef": {
+          "type": "string",
+          "description": "Reference to tracking ticket for remediation"
+        }
+      }
+    }
+  }
+}

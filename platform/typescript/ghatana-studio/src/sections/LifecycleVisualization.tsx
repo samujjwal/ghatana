@@ -11,14 +11,33 @@
 
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Typography, Card, CardContent, CardHeader, CardTitle } from '@ghatana/design-system';
+import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
-// Import lifecycle event contracts from kernel-product-contracts
-import type {
-  KernelLifecycleEvent,
-  KernelLifecycleEventType,
-  LifecycleEventStatus,
-} from '@ghatana/kernel-product-contracts';
+type KernelLifecycleEventType =
+  | 'lifecycle.phase.started'
+  | 'lifecycle.phase.completed'
+  | 'lifecycle.phase.failed';
+
+interface KernelLifecycleEvent {
+  metadata: {
+    eventId: string;
+    schemaVersion: string;
+    eventType: KernelLifecycleEventType;
+    productUnitId: string;
+    runId: string;
+    phase: string;
+    timestamp: string;
+    source: string;
+    correlationId: string;
+  };
+  payload: {
+    phase: string;
+    status: string;
+    startedAt?: string;
+    completedAt?: string;
+    durationMs?: number;
+  };
+}
 
 interface LifecycleSession {
   id: string;
@@ -172,9 +191,7 @@ export default function LifecycleVisualization(): ReactElement {
           {/* Lifecycle Sessions List */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Event Sessions</CardTitle>
-              </CardHeader>
+              <CardHeader title="Event Sessions" />
               <CardContent>
                 {sessions.length === 0 ? (
                   <div className="text-center py-8">
@@ -219,9 +236,7 @@ export default function LifecycleVisualization(): ReactElement {
           <div className="lg:col-span-2">
             {selectedSession ? (
               <Card>
-                <CardHeader>
-                  <CardTitle>{selectedSession.productUnitId}</CardTitle>
-                </CardHeader>
+                <CardHeader title={selectedSession.productUnitId} />
                 <CardContent>
                   <div className="space-y-4">
                     <div>
@@ -229,7 +244,7 @@ export default function LifecycleVisualization(): ReactElement {
                         Event Timeline
                       </Typography>
                       <div className="space-y-3">
-                        {selectedSession.events.map((event, index) => (
+                        {selectedSession.events.map((event) => (
                           <div
                             key={event.metadata.eventId}
                             className="relative pl-6 pb-4 border-l-2 border-gray-200 last:border-0"

@@ -1,0 +1,39 @@
+{
+  "$schema": "./orphan-module-allowlist.schema.json",
+  "description": "Allowlist for known orphan module violations that are being addressed separately",
+  "version": "1.0.0",
+  "allowlist": [
+    {
+      "path": "platform/typescript/eslint-plugin",
+      "missingFile": "tsconfig.json",
+      "reason": "ESLint plugin uses JavaScript with JSDoc types; tsconfig.json optional for this module",
+      "owner": "Platform Team",
+      "reviewBy": "2026-06-30",
+      "ticketRef": "TECH-DEBT-001"
+    },
+    {
+      "path": "platform/typescript/product-manifest-contracts",
+      "missingFile": "tsconfig.json",
+      "reason": "Module uses plain JavaScript (.mjs); tsconfig.json not required",
+      "owner": "Platform Team",
+      "reviewBy": "2026-06-30",
+      "ticketRef": "TECH-DEBT-002"
+    },
+    {
+      "path": "platform/typescript/router-facade",
+      "missingFile": "package.json",
+      "reason": "Work-in-progress module - router facade implementation pending",
+      "owner": "Platform Team",
+      "reviewBy": "2026-05-30",
+      "ticketRef": "ROUTER-FACADE-001"
+    },
+    {
+      "path": "platform/typescript/router-facade",
+      "missingFile": "tsconfig.json",
+      "reason": "Work-in-progress module - router facade implementation pending",
+      "owner": "Platform Team",
+      "reviewBy": "2026-05-30",
+      "ticketRef": "ROUTER-FACADE-001"
+    }
+  ]
+}

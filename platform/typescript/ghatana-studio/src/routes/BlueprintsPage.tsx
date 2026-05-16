@@ -5,6 +5,8 @@ import { dependencyGraphEvidence, generatedChangeSetSummary, productShapeEvidenc
 
 export default function BlueprintsPage(): ReactElement {
   const t = useStudioTranslation();
+  const requestedLifecycle = yappcProductUnitIntentCandidate.requestedLifecycle;
+  const provenance = yappcProductUnitIntentCandidate.provenance;
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {
     if (confidence >= 0.9) return 'success';
@@ -49,12 +51,12 @@ export default function BlueprintsPage(): ReactElement {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">{t('studio.route.blueprints.lifecycleProfileLabel')}:</span>
-            <span className="font-medium text-gray-900">{yappcProductUnitIntentCandidate.requestedLifecycle.profile}</span>
+            <span className="font-medium text-gray-900">{requestedLifecycle?.profile ?? 'not set'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">{t('studio.route.blueprints.enableExecutionLabel')}:</span>
-            <Badge tone={yappcProductUnitIntentCandidate.requestedLifecycle.enableExecution ? 'success' : 'neutral'} variant="soft" className="text-xs">
-              {yappcProductUnitIntentCandidate.requestedLifecycle.enableExecution ? 'Enabled' : 'Disabled'}
+            <Badge tone={requestedLifecycle?.enableExecution === true ? 'success' : 'neutral'} variant="soft" className="text-xs">
+              {requestedLifecycle?.enableExecution === true ? 'Enabled' : 'Disabled'}
             </Badge>
           </div>
         </div>
@@ -74,8 +76,8 @@ export default function BlueprintsPage(): ReactElement {
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900">{t('studio.route.blueprints.provenanceTitle')}</h4>
           <ul className="space-y-1 text-xs text-gray-600">
-            <li className="font-mono">{yappcProductUnitIntentCandidate.provenance.sourceSystem}</li>
-            {yappcProductUnitIntentCandidate.provenance.evidenceRefs.map((ref) => (
+            <li className="font-mono">{provenance?.sourceSystem ?? 'unknown'}</li>
+            {(provenance?.evidenceRefs ?? []).map((ref) => (
               <li key={ref} className="font-mono">{ref}</li>
             ))}
           </ul>

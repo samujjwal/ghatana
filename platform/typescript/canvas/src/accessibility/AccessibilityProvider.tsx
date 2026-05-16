@@ -32,6 +32,9 @@ interface AccessibilityProviderProps {
   enableHighContrast?: boolean;
 }
 
+export type AccessibilityContextValue = AccessibilitySettings;
+export type { AccessibilityProviderProps };
+
 /**
  * Accessibility Provider Component
  *

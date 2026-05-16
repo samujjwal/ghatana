@@ -19,7 +19,9 @@
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ghatana/api": ["../api/src/index.ts"],
+      "@ghatana/i18n": ["../i18n/src/index.ts"]
     }
   },
   "include": ["src"]

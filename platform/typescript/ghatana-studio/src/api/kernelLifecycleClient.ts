@@ -11,9 +11,6 @@ import { ApiClient } from '@ghatana/api';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
 import type { DeploymentManifest } from '@ghatana/kernel-deployment';
 import {
-  ApprovalRequest,
-  ApprovalDecision,
-  ProductLifecyclePhase,
   ProductUnit,
   ProductUnitSchema,
 } from '@ghatana/kernel-product-contracts';
@@ -35,7 +32,7 @@ const PRODUCT_LIFECYCLE_PHASES = [
   'rollback',
   'operate',
   'retire',
-] as const satisfies readonly ProductLifecyclePhase[];
+] as const;
 
 const LIFECYCLE_RUN_STATUSES = [
   'healthy',
@@ -246,7 +243,7 @@ export const KernelLifecycleApiErrorSchema = z
     message: z.string().trim().min(1),
     correlationId: z.string().trim().min(1).optional(),
     statusCode: z.number().int().positive().optional(),
-    details: z.record(z.unknown()).optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
 

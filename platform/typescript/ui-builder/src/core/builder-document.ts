@@ -11,7 +11,7 @@
 
 import { z } from "zod";
 import { createNodeId, createDocumentId } from "./types.js";
-import type { NodeId, DocumentId, ComponentInstance, Binding } from "./types.js";
+import type { NodeId, DocumentId } from "./types.js";
 
 // ============================================================================
 // SCHEMA VERSION
@@ -668,20 +668,20 @@ export function deserializeBuilderDocument(
 export function getNode(
   document: BuilderDocument,
   nodeId: NodeId,
-): ComponentInstance | undefined {
+): BuilderDocument['nodes'][string] | undefined {
   return document.nodes[nodeId];
 }
 
 /**
  * Get all root-level nodes.
  */
-export function getRootNodes(document: BuilderDocument): ComponentInstance[] {
+export function getRootNodes(document: BuilderDocument): BuilderDocument['nodes'][string][] {
   const rootLayoutNode = document.layout.nodes[document.root];
   if (!rootLayoutNode?.children) return [];
 
   return rootLayoutNode.children
     .map((id) => document.nodes[id])
-    .filter((n): n is ComponentInstance => n !== undefined);
+    .filter((n): n is BuilderDocument['nodes'][string] => n !== undefined);
 }
 
 /**
@@ -690,7 +690,7 @@ export function getRootNodes(document: BuilderDocument): ComponentInstance[] {
 export function getNodeBindings(
   document: BuilderDocument,
   nodeId: NodeId,
-): Binding[] {
+): BuilderDocument['bindings'] {
   return document.bindings.filter((b) => {
     // Check if binding targets this node
     return b.target.startsWith(String(nodeId));

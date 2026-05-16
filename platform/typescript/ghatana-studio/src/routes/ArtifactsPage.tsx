@@ -11,13 +11,14 @@ import {
 export default function ArtifactsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
-  const artifacts = lifecycleData.artifactManifest?.artifacts ?? [];
+  const snapshot = lifecycleData.snapshot;
+  const artifacts = snapshot.artifactManifest?.artifacts ?? [];
 
   return (
     <section className="space-y-6" aria-labelledby="artifacts-title">
       <div className="space-y-2">
-        <Badge tone={lifecycleDataBadgeTone(lifecycleData.status)} variant="soft">
-          {describeLifecycleDataStatus(lifecycleData.status)}
+        <Badge tone={lifecycleDataBadgeTone(snapshot.status)} variant="soft">
+          {describeLifecycleDataStatus(snapshot.status)}
         </Badge>
         <h2 id="artifacts-title" className="text-2xl font-semibold text-gray-950">
           {t('studio.route.artifacts.title')}

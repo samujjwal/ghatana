@@ -10,6 +10,21 @@ import type {
 } from '@ghatana/kernel-product-contracts';
 
 const createdAt = '2026-05-14T00:00:00.000Z';
+const expiresAt = '2026-12-31T00:00:00.000Z';
+const tenantId = 'tenant-demo';
+const workspaceId = 'workspace-commerce';
+const projectId = 'commerce-studio';
+const createdBy = 'yappc-creator-ui';
+const baseEvidence = {
+  tenantId,
+  workspaceId,
+  projectId,
+  createdBy,
+  privacyClassification: 'internal' as const,
+  retention: {
+    expiresAt,
+  },
+};
 
 export const yappcProductUnitIntentCandidate: ProductUnitIntent = {
   schemaVersion: '1.0.0',
@@ -61,7 +76,7 @@ export const semanticArtifactReferences: readonly SemanticArtifactReference[] = 
     schemaVersion: '1.0.0',
     evidenceId: 'evidence:semantic-commerce-page',
     evidenceType: 'semantic-artifact-reference',
-    source: 'yappc-creator-ui',
+    ...baseEvidence,
     confidence: 0.91,
     provenanceRefs: ['prov:yappc:scan-commerce'],
     createdAt,
@@ -81,7 +96,7 @@ export const artifactGraphSummary: ArtifactGraphSummary = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:graph-commerce',
   evidenceType: 'artifact-graph-summary',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.88,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,
@@ -108,7 +123,7 @@ export const productShapeEvidence: ProductShapeEvidence = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:shape-commerce',
   evidenceType: 'product-shape-evidence',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.86,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,
@@ -125,7 +140,7 @@ export const dependencyGraphEvidence: DependencyGraphEvidence = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:dependency-commerce',
   evidenceType: 'dependency-graph-evidence',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.84,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,
@@ -143,7 +158,7 @@ export const residualIslandReport: ResidualIslandReport = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:residual-commerce',
   evidenceType: 'residual-island-report',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.82,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,
@@ -158,7 +173,7 @@ export const riskHotspotReport: RiskHotspotReport = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:risk-commerce',
   evidenceType: 'risk-hotspot-report',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.79,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,
@@ -180,7 +195,7 @@ export const generatedChangeSetSummary: GeneratedChangeSetSummary = {
   schemaVersion: '1.0.0',
   evidenceId: 'evidence:changes-commerce',
   evidenceType: 'generated-change-set-summary',
-  source: 'yappc-creator-ui',
+  ...baseEvidence,
   confidence: 0.87,
   provenanceRefs: ['prov:yappc:scan-commerce'],
   createdAt,

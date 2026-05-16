@@ -34,6 +34,7 @@ const JOURNEY_STEPS: readonly JourneyStep[] = [
 export default function HomePage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
+  const snapshot = lifecycleData.snapshot;
 
   return (
     <section className="space-y-6" aria-labelledby="studio-home-title">
@@ -90,14 +91,14 @@ export default function HomePage(): ReactElement {
             <h3 id="studio-health-summary-title" className="text-base font-semibold text-gray-950">
             {t('studio.route.home.healthSummaryTitle')}
             </h3>
-          <Badge tone={lifecycleDataBadgeTone(lifecycleData.status)} variant="soft">
-            {describeLifecycleDataStatus(lifecycleData.status)}
+          <Badge tone={lifecycleDataBadgeTone(snapshot.status)} variant="soft">
+            {describeLifecycleDataStatus(snapshot.status)}
           </Badge>
         </div>
         <p className="text-sm leading-6 text-gray-600">
-          {lifecycleData.selectedRun === undefined
+          {snapshot.selectedRun === undefined
             ? t('studio.route.home.healthSummaryEmpty')
-            : `Latest run ${lifecycleData.selectedRun.runId} is ${lifecycleData.selectedRun.status}.`}
+            : `Latest run ${snapshot.selectedRun.runId} is ${snapshot.selectedRun.status}.`}
         </p>
       </article>
     </section>

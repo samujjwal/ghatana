@@ -10,14 +10,15 @@ import {
 export default function DeploymentsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
-  const deploymentManifest = lifecycleData.deploymentManifest;
+  const snapshot = lifecycleData.snapshot;
+  const deploymentManifest = snapshot.deploymentManifest;
   const serviceNames = Object.keys(deploymentManifest?.services ?? {});
 
   return (
     <section className="space-y-6" aria-labelledby="deployments-title">
       <div className="space-y-2">
-        <Badge tone={lifecycleDataBadgeTone(lifecycleData.status)} variant="soft">
-          {describeLifecycleDataStatus(lifecycleData.status)}
+        <Badge tone={lifecycleDataBadgeTone(snapshot.status)} variant="soft">
+          {describeLifecycleDataStatus(snapshot.status)}
         </Badge>
         <h2 id="deployments-title" className="text-2xl font-semibold text-gray-950">
           {t('studio.route.deployments.title')}

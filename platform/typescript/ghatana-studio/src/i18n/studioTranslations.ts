@@ -146,6 +146,7 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.blueprints.lifecycleProfileLabel': 'Lifecycle profile',
   'studio.route.blueprints.enableExecutionLabel': 'Enable execution',
   'studio.route.blueprints.targetProvidersTitle': 'Target providers',
+  'studio.route.blueprints.provenanceTitle': 'Provenance',
   'studio.route.blueprints.registryProviderLabel': 'Registry provider',
   'studio.route.blueprints.sourceProviderLabel': 'Source provider',
   'studio.route.blueprints.kernelHandoffStatusLabel': 'Kernel handoff status',
@@ -163,6 +164,7 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.blueprints.changeSetIdLabel': 'Change set ID',
   'studio.route.blueprints.affectedArtifactsTitle': 'Affected artifacts',
   'studio.route.blueprints.validationEvidenceTitle': 'Validation evidence',
+  'studio.route.blueprints.evidenceRefTitle': 'Evidence reference',
   'studio.route.canvas.title': 'Canvas',
   'studio.route.canvas.description':
     'Artifact graph and residual review evidence from the YAPPC canvas.',
@@ -184,6 +186,8 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.learn.riskReductionImpactTitle': 'Risk reduction impact',
   'studio.route.learn.riskReductionTitle': 'Risk reduction',
   'studio.route.learn.riskReductionText': 'Following these recommendations can reduce risk by addressing {{count}} hotspot(s).',
+  'studio.route.learn.evidenceRefTitle': 'Evidence reference',
+  'studio.route.learn.provenanceTitle': 'Provenance',
   'studio.route.learn.privacyNoticeTitle': 'Privacy notice',
   'studio.route.learn.privacyNoticeText': 'All recommendations are based on artifact intelligence evidence. No raw AI output is displayed without supporting evidence references.',
   'studio.route.learn.privacyPoint1': 'Every recommendation includes evidence references for traceability.',
@@ -257,6 +261,7 @@ export const STUDIO_TRANSLATIONS = {
 } as const satisfies Record<string, string>;
 
 export type StudioTranslationKey = keyof typeof STUDIO_TRANSLATIONS;
+type StudioTranslationParams = Record<string, string | number>;
 
 export const STUDIO_I18N_RESOURCES = {
   en: {
@@ -264,11 +269,23 @@ export const STUDIO_I18N_RESOURCES = {
   },
 } as const;
 
-export function useStudioTranslation(): (key: StudioTranslationKey) => string {
+function interpolateTemplate(template: string, params?: StudioTranslationParams): string {
+  if (!params) {
+    return template;
+  }
+  return Object.entries(params).reduce((result, [token, value]) => {
+    return result.replaceAll(`{{${token}}}`, String(value));
+  }, template);
+}
+
+export function useStudioTranslation(): (key: StudioTranslationKey, params?: StudioTranslationParams) => string {
   const { t } = useTranslation('studio');
 
-  return (key: StudioTranslationKey): string => {
+  return (key: StudioTranslationKey, params?: StudioTranslationParams): string => {
     const translated = t(key);
-    return translated === key ? STUDIO_TRANSLATIONS[key] : translated;
+    if (translated === key) {
+      return interpolateTemplate(STUDIO_TRANSLATIONS[key], params);
+    }
+    return interpolateTemplate(translated, params);
   };
 }

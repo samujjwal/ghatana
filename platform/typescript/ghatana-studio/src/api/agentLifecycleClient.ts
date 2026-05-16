@@ -14,7 +14,6 @@ import {
   AgentLifecycleActionRequestSchema,
   AgentLifecycleActionResultSchema,
 } from '@ghatana/kernel-product-contracts';
-import { z } from 'zod';
 
 export interface AgentLifecycleClientOptions {
   readonly baseUrl?: string;

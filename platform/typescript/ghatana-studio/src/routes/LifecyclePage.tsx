@@ -16,12 +16,38 @@ type LifecyclePhase = (typeof LIFECYCLE_PHASES)[number];
 type Environment = (typeof ENVIRONMENTS)[number];
 type ProviderMode = (typeof PROVIDER_MODES)[number];
 
+function normalizeEnvironment(environment: string): Environment {
+  if ((ENVIRONMENTS as readonly string[]).includes(environment)) {
+    return environment as Environment;
+  }
+  if (environment === 'dev') {
+    return 'local';
+  }
+  return 'local';
+}
+
+function lifecycleRunTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
+  if (status === 'healthy' || status === 'ready') {
+    return 'success';
+  }
+  if (status === 'running' || status === 'loading') {
+    return 'info';
+  }
+  if (status === 'degraded' || status === 'pending approval' || status === 'requires verification') {
+    return 'warning';
+  }
+  if (status === 'failed' || status === 'blocked' || status === 'quarantined') {
+    return 'danger';
+  }
+  return 'neutral';
+}
+
 export default function LifecyclePage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
   
   const [selectedPhase, setSelectedPhase] = useState<LifecyclePhase>('build');
-  const [environment, setEnvironment] = useState<Environment>(lifecycleData.selectedEnvironment);
+  const [environment, setEnvironment] = useState<Environment>(normalizeEnvironment(lifecycleData.selectedEnvironment));
   const [providerMode, setProviderMode] = useState<ProviderMode>(lifecycleData.selectedProviderMode);
   const [dryRun, setDryRun] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(lifecycleData.selectedRunId);
@@ -201,7 +227,7 @@ export default function LifecyclePage(): ReactElement {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-gray-900">{run.phase ?? 'Unknown'}</span>
-                        <Badge tone={lifecycleDataBadgeTone(run.status)} variant="soft" className="text-xs">
+                        <Badge tone={lifecycleRunTone(run.status)} variant="soft" className="text-xs">
                           {run.status}
                         </Badge>
                       </div>

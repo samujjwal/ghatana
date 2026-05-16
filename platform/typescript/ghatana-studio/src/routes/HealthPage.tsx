@@ -10,34 +10,35 @@ import {
 export default function HealthPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
+  const snapshot = lifecycleData.snapshot;
   const healthSignals = [
     {
       label: 'Kernel lifecycle',
-      status: lifecycleData.selectedRun?.status ?? describeLifecycleDataStatus(lifecycleData.status),
+      status: snapshot.selectedRun?.status ?? describeLifecycleDataStatus(snapshot.status),
     },
     {
       label: 'Data Cloud provider mode',
-      status: lifecycleData.artifactManifest?.providerMode ?? 'unavailable',
+      status: snapshot.artifactManifest?.providerMode ?? 'unavailable',
     },
     {
       label: 'ProductUnit health',
-      status: lifecycleData.verifyHealthReport?.status ?? 'unknown',
+      status: snapshot.verifyHealthReport?.status ?? 'unknown',
     },
     {
       label: 'Plugin health',
-      status: lifecycleData.selectedRun?.manifestRefs?.pluginHealth ?? 'unknown',
+      status: snapshot.selectedRun?.manifestRefs?.pluginHealth ?? 'unknown',
     },
     {
       label: 'Toolchain health',
-      status: lifecycleData.selectedRun?.manifestRefs?.toolchainHealth ?? 'unknown',
+      status: snapshot.selectedRun?.manifestRefs?.toolchainHealth ?? 'unknown',
     },
   ] as const;
 
   return (
     <section className="space-y-6" aria-labelledby="health-title">
       <div className="space-y-2">
-        <Badge tone={lifecycleDataBadgeTone(lifecycleData.status)} variant="soft">
-          {describeLifecycleDataStatus(lifecycleData.status)}
+        <Badge tone={lifecycleDataBadgeTone(snapshot.status)} variant="soft">
+          {describeLifecycleDataStatus(snapshot.status)}
         </Badge>
         <h2 id="health-title" className="text-2xl font-semibold text-gray-950">
           {t('studio.route.health.title')}

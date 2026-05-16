@@ -11,7 +11,7 @@
 
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Typography, Card, CardContent, CardHeader, CardTitle } from '@ghatana/design-system';
+import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
 // Import public APIs from ui-builder platform
 import {
@@ -20,15 +20,15 @@ import {
   serializeBuilderDocument,
   deserializeBuilderDocument,
 } from '@ghatana/ui-builder';
-import type { BuilderDocument, DocumentId } from '@ghatana/ui-builder';
-import { ActionManager } from '@ghatana/ui-builder';
-import { PreviewHostService } from '@ghatana/ui-builder/preview';
+import type { DocumentId } from '@ghatana/ui-builder';
+
+type StudioBuilderDocument = ReturnType<typeof createBuilderDocument>;
 
 interface DocumentListItem {
   id: string;
   name: string;
   updatedAt: string;
-  document: BuilderDocument;
+  document: StudioBuilderDocument;
 }
 
 export default function BuilderStudio(): ReactElement {
@@ -201,9 +201,7 @@ export default function BuilderStudio(): ReactElement {
           {/* Document List */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Documents</CardTitle>
-              </CardHeader>
+              <CardHeader title="Documents" />
               <CardContent>
                 {documents.length === 0 ? (
                   <div className="text-center py-8">
@@ -267,9 +265,7 @@ export default function BuilderStudio(): ReactElement {
           <div className="lg:col-span-2">
             {selectedDocument ? (
               <Card>
-                <CardHeader>
-                  <CardTitle>{selectedDocument.name}</CardTitle>
-                </CardHeader>
+                <CardHeader title={selectedDocument.name} />
                 <CardContent>
                   <div className="space-y-4">
                     <div>

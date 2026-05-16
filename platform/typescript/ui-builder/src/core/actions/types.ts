@@ -9,8 +9,18 @@
  * @doc.layer platform
  */
 
-import type { BuilderDocument, NodeId, ComponentInstance, Binding } from '../builder-document.js';
-import type { Position, Size } from '../types.js';
+import type { BuilderDocument } from '../builder-document.js';
+import type { NodeId, ComponentInstance, Binding } from '../types.js';
+
+export interface Position {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface Size {
+  readonly width: number;
+  readonly height: number;
+}
 
 // ============================================================================
 // ACTION BASE TYPES
@@ -34,7 +44,7 @@ export interface ActionResult {
 
 /** Undo/redo stack entry. */
 export interface HistoryEntry {
-  readonly action: BaseAction;
+  readonly action: BuilderAction;
   readonly result: ActionResult;
   readonly timestamp: string;
 }
@@ -48,7 +58,7 @@ export interface AddNodeAction extends BaseAction {
   readonly type: 'add-node';
   readonly nodeId: NodeId;
   readonly parentId: NodeId;
-  readonly component: ComponentInstance;
+  readonly component: BuilderDocument['nodes'][string];
   readonly position?: Position;
   readonly size?: Size;
 }
@@ -57,7 +67,7 @@ export interface AddNodeAction extends BaseAction {
 export interface RemoveNodeAction extends BaseAction {
   readonly type: 'remove-node';
   readonly nodeId: NodeId;
-  readonly component: ComponentInstance;
+  readonly component: BuilderDocument['nodes'][string];
 }
 
 /** Move node action. */
@@ -112,6 +122,12 @@ export interface RedoAction extends BaseAction {
   readonly type: 'redo';
 }
 
+/** Batch action used to group multiple actions into one history entry. */
+export interface BatchAction extends BaseAction {
+  readonly type: 'batch';
+  readonly actionCount: number;
+}
+
 /** Union type for all builder actions. */
 export type BuilderAction =
   | AddNodeAction
@@ -123,7 +139,8 @@ export type BuilderAction =
   | UpdateLayoutAction
   | ValidateDocumentAction
   | UndoAction
-  | RedoAction;
+  | RedoAction
+  | BatchAction;
 
 // ============================================================================
 // ACTION EXECUTION CONTEXT
@@ -169,8 +186,8 @@ export interface ActionRegistration<T extends BuilderAction = BuilderAction> {
 
 /** Action manager configuration. */
 export interface ActionManagerConfig {
-  readonly maxHistorySize?: number;
-  readonly enableUndoRedo?: boolean;
-  readonly autoValidate?: boolean;
-  readonly trackChanges?: boolean;
+  maxHistorySize?: number;
+  enableUndoRedo?: boolean;
+  autoValidate?: boolean;
+  trackChanges?: boolean;
 }

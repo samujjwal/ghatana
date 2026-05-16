@@ -12,15 +12,16 @@ const SAFE_ACTIONS = ['create plan', 'validate', 'test', 'build', 'package'] as 
 export default function DevelopPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
-  const productUnit = lifecycleData.productUnit;
+  const snapshot = lifecycleData.snapshot;
+  const productUnit = snapshot.productUnit;
   const productUnitId = productUnit?.id ?? 'digital-marketing';
   const surfaces = productUnit?.surfaces ?? [];
 
   return (
     <section className="space-y-6" aria-labelledby="develop-title">
       <div className="space-y-2">
-        <Badge tone={lifecycleDataBadgeTone(lifecycleData.status)} variant="soft">
-          {describeLifecycleDataStatus(lifecycleData.status)}
+        <Badge tone={lifecycleDataBadgeTone(snapshot.status)} variant="soft">
+          {describeLifecycleDataStatus(snapshot.status)}
         </Badge>
         <h2 id="develop-title" className="text-2xl font-semibold text-gray-950">
           {t('studio.route.develop.title')}
@@ -38,12 +39,15 @@ export default function DevelopPage(): ReactElement {
           id="product-unit-selector"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
           value={productUnitId}
+          onChange={(event) => {
+            void event;
+          }}
           disabled
         >
           <option value={productUnitId}>{productUnit?.name ?? 'Digital Marketing'}</option>
         </select>
-        {lifecycleData.errorMessage !== undefined ? (
-          <p className="text-sm text-amber-700">{lifecycleData.errorMessage}</p>
+        {snapshot.errorMessage !== undefined ? (
+          <p className="text-sm text-amber-700">{snapshot.errorMessage}</p>
         ) : null}
       </div>
 
@@ -103,7 +107,14 @@ export default function DevelopPage(): ReactElement {
               {t('studio.route.develop.surfacesEmpty')}
             </p>
           ) : null}
-          {surfaces.map((surface) => (
+          {surfaces.map((surface: {
+            id: string;
+            type: string;
+            implementationStatus: string;
+            packagePath?: string;
+            gradleModule?: string;
+            sourceRef?: string;
+          }) => (
             <div key={surface.id} className="rounded-md border border-gray-200 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h4 className="text-sm font-semibold text-gray-950">{surface.type}</h4>

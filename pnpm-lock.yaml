@@ -709,6 +709,12 @@ importers:
       '@ghatana/platform-events':
         specifier: workspace:*
         version: link:../platform-events
+      '@ghatana/platform-utils':
+        specifier: workspace:*
+        version: link:../platform-utils
+      '@ghatana/theme':
+        specifier: workspace:*
+        version: link:../theme
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../tokens

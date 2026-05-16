@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Platform/product boundary enforcement rules",
+  "rules": [
+    {
+      "id": "platform-no-product-import",
+      "description": "Platform packages must not import from product packages",
+      "fromPattern": "platform/**",
+      "forbiddenImportPattern": "products/**",
+      "severity": "error"
+    },
+    {
+      "id": "kernel-no-yappc-internals",
+      "description": "Kernel packages must not import YAPPC internals",
+      "fromPattern": "platform/typescript/kernel-*/**",
+      "forbiddenImportPattern": "products/yappc/**",
+      "severity": "error"
+    },
+    {
+      "id": "kernel-no-data-cloud-internals",
+      "description": "Kernel packages must not import Data Cloud internals",
+      "fromPattern": "platform/typescript/kernel-*/**",
+      "forbiddenImportPattern": "products/data-cloud/**",
+      "severity": "error"
+    }
+  ],
+  "productNames": [
+    "yappc",
+    "data-cloud",
+    "phr",
+    "finance",
+    "flashit",
+    "tutorputor",
+    "dcmaar",
+    "audio-video",
+    "digital-marketing",
+    "aura",
+    "software-org",
+    "virtual-org",
+    "aep",
+    "security-gateway"
+  ],
+  "productNeutralContractExceptions": [
+    {
+      "path": "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+      "ruleId": "platform-no-product-import",
+      "reason": "Artifact intelligence contracts are product-neutral and consumed by YAPPC through bridge/provider contracts only",
+      "owner": "platform-kernel"
+    }
+  ],
+  "legalBridgeLocations": [
+    "products/data-cloud/extensions/kernel-bridge",
+    "products/data-cloud/planes/action/kernel-bridge",
+    "products/yappc/kernel-bridge",
+    "products/digital-marketing/dm-kernel-bridge"
+  ],
+  "allowlist": [],
+  "allowlistSchema": {
+    "path": "string, required - file path relative to repo root",
+    "ruleId": "string, required - which rule this overrides",
+    "reason": "string, required - justification",
+    "owner": "string, required - team or person owning this exception",
+    "expiresOn": "string, optional - ISO 8601 date",
+    "reviewBy": "string, required - ISO 8601 date for mandatory review"
+  },
+  "scanExtensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".java", ".kt", ".kts"]
+}

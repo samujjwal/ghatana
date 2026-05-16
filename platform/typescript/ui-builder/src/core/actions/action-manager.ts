@@ -159,7 +159,7 @@ export class ActionManager {
 
   /** Register a new action type. */
   registerAction<T extends BuilderAction>(registration: ActionRegistration<T>): void {
-    this.actionRegistrations.set(registration.type, registration as ActionRegistration);
+    this.actionRegistrations.set(registration.type, registration as unknown as ActionRegistration);
   }
 
   /** Get registered action types. */
@@ -315,12 +315,12 @@ export class ActionManager {
 
   /** Check if undo is available. */
   canUndo(): boolean {
-    return this.config.enableUndoRedo && this.undoStack.length > 0;
+    return !!this.config.enableUndoRedo && this.undoStack.length > 0;
   }
 
   /** Check if redo is available. */
   canRedo(): boolean {
-    return this.config.enableUndoRedo && this.redoStack.length > 0;
+    return !!this.config.enableUndoRedo && this.redoStack.length > 0;
   }
 
   /** Get undo history. */
@@ -408,7 +408,8 @@ export class ActionManager {
               type: 'batch',
               timestamp: new Date().toISOString(),
               description: `Batch of ${actions.length} actions`,
-            } as BuilderAction,
+              actionCount: actions.length,
+            },
             {
               success: true,
               document: this.currentDocument,

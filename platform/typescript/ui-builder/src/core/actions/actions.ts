@@ -24,7 +24,8 @@ import type {
   UndoAction,
   RedoAction,
 } from './types.js';
-import type { BuilderDocument, NodeId, ComponentInstance, Binding } from '../builder-document.js';
+import type { BuilderDocument } from '../builder-document.js';
+import type { NodeId, Binding } from '../types.js';
 import { validateBuilderDocument } from '../builder-document.js';
 import { createNodeId } from '../types.js';
 

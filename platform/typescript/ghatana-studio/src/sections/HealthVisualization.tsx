@@ -11,16 +11,28 @@
 
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Typography, Card, CardContent, CardHeader, CardTitle } from '@ghatana/design-system';
+import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
-// Import health contracts from kernel-product-contracts
-import type {
-  ProductUnitHealthSnapshot,
-  LifecycleHealthSnapshot,
-  DeploymentHealthSnapshot,
-  AgentGovernanceHealthSnapshot,
-  HealthStatus,
-} from '@ghatana/kernel-product-contracts';
+type HealthStatus = 'healthy' | 'degraded' | 'blocked' | 'failed' | 'unknown';
+
+interface ProductUnitHealthSnapshot {
+  productUnitId: string;
+  timestamp: string;
+  overallStatus: HealthStatus;
+  lifecycle?: {
+    phase: string;
+    status: HealthStatus;
+  };
+  deployment?: {
+    environment: string;
+    status: HealthStatus;
+  };
+  agentGovernance?: {
+    overallStatus: HealthStatus;
+    governedActions: number;
+    blockedActions: number;
+  };
+}
 
 interface HealthSession {
   id: string;
@@ -65,23 +77,15 @@ export default function HealthVisualization(): ReactElement {
         lifecycle: {
           phase: 'dev',
           status: 'healthy' as HealthStatus,
-          phases: {
-            dev: { status: 'healthy' as HealthStatus, lastChecked: new Date().toISOString() },
-            build: { status: 'healthy' as HealthStatus, lastChecked: new Date().toISOString() },
-            test: { status: 'healthy' as HealthStatus, lastChecked: new Date().toISOString() },
-          },
         },
         deployment: {
           environment: 'development',
           status: 'healthy' as HealthStatus,
-          endpoints: ['http://localhost:3000'],
-          lastChecked: new Date().toISOString(),
         },
         agentGovernance: {
           overallStatus: 'healthy' as HealthStatus,
           governedActions: 0,
           blockedActions: 0,
-          lastChecked: new Date().toISOString(),
         },
       };
 
@@ -145,9 +149,7 @@ export default function HealthVisualization(): ReactElement {
           {/* Health Sessions List */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Health Snapshots</CardTitle>
-              </CardHeader>
+              <CardHeader title="Health Snapshots" />
               <CardContent>
                 {sessions.length === 0 ? (
                   <div className="text-center py-8">
@@ -196,9 +198,7 @@ export default function HealthVisualization(): ReactElement {
           <div className="lg:col-span-2">
             {selectedSession ? (
               <Card>
-                <CardHeader>
-                  <CardTitle>{selectedSession.productUnitId}</CardTitle>
-                </CardHeader>
+                <CardHeader title={selectedSession.productUnitId} />
                 <CardContent>
                   <div className="space-y-6">
                     {/* Overall Status */}

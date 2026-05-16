@@ -11,20 +11,33 @@
 
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
-import { Button, Typography, Card, CardContent, CardHeader, CardTitle } from '@ghatana/design-system';
+import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
-// Import artifact contracts from kernel-product-contracts
-import type {
-  ProductArtifact,
-  ArtifactIntelligenceEvidenceBase,
-  ArtifactGraphSummary,
-} from '@ghatana/kernel-product-contracts';
+interface ProductArtifactView {
+  artifactId: string;
+  artifactType: string;
+  productUnitId: string;
+  phase: string;
+  path: string;
+  fingerprint: string;
+  size: number;
+  createdAt: string;
+  createdBy: string;
+  metadata?: Record<string, string>;
+}
+
+interface ArtifactIntelligenceView {
+  evidenceId: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  lifecycleReadiness: 'design-only' | 'testable' | 'executable';
+  productShapeKind: string;
+}
 
 interface ArtifactSession {
   id: string;
   productUnitId: string;
-  artifact: ProductArtifact;
-  intelligence?: ArtifactIntelligenceEvidenceBase;
+  artifact: ProductArtifactView;
+  intelligence?: ArtifactIntelligenceView;
   timestamp: string;
 }
 
@@ -57,7 +70,7 @@ export default function ArtifactsVisualization(): ReactElement {
 
     try {
       // Simulate fetching from artifact provider
-      const mockArtifact: ProductArtifact = {
+      const mockArtifact: ProductArtifactView = {
         artifactId: 'artifact-' + Date.now(),
         artifactType: 'build-artifact',
         productUnitId: 'sample-product-unit',
@@ -74,14 +87,11 @@ export default function ArtifactsVisualization(): ReactElement {
         },
       };
 
-      const mockIntelligence: ArtifactIntelligenceEvidenceBase = {
+      const mockIntelligence: ArtifactIntelligenceView = {
         evidenceId: 'evidence-' + Date.now(),
-        artifactId: mockArtifact.artifactId,
-        kind: 'build-artifact' as const,
-        productShapeKind: 'backend-service' as const,
-        lifecycleReadiness: 'executable' as const,
-        riskLevel: 'low' as const,
-        timestamp: new Date().toISOString(),
+        productShapeKind: 'backend-service',
+        lifecycleReadiness: 'executable',
+        riskLevel: 'low',
       };
 
       const newSession: ArtifactSession = {
@@ -159,9 +169,7 @@ export default function ArtifactsVisualization(): ReactElement {
           {/* Artifacts List */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Artifacts</CardTitle>
-              </CardHeader>
+              <CardHeader title="Artifacts" />
               <CardContent>
                 {sessions.length === 0 ? (
                   <div className="text-center py-8">
@@ -215,9 +223,7 @@ export default function ArtifactsVisualization(): ReactElement {
           <div className="lg:col-span-2">
             {selectedSession ? (
               <Card>
-                <CardHeader>
-                  <CardTitle>{selectedSession.artifact.artifactType}</CardTitle>
-                </CardHeader>
+                <CardHeader title={selectedSession.artifact.artifactType} />
                 <CardContent>
                   <div className="space-y-6">
                     {/* Artifact Information */}

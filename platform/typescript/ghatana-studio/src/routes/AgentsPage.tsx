@@ -7,7 +7,6 @@ import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
-import type { AgentLifecycleActionResult } from '@ghatana/kernel-product-contracts';
 
 const RISK_LEVELS = ['low', 'medium', 'high', 'critical'] as const;
 const GOVERNANCE_DECISIONS = ['allowed', 'denied', 'requires-approval'] as const;
@@ -39,8 +38,7 @@ interface ProposalCard {
 export default function AgentsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
-  const [selectedProposal, setSelectedProposal] = useState<ProposalCard | null>(null);
-  const [isGovernanceAvailable, setIsGovernanceAvailable] = useState(true);
+  const [isGovernanceAvailable] = useState(true);
 
   // Mock proposal data - in real implementation, this would come from the agent lifecycle client
   const mockProposals: ProposalCard[] = [

@@ -168,7 +168,6 @@ export {
 } from './ds-binding';
 
 export type {
-  BuilderDocument,
   ValidationIssue,
   ValidationIssueSeverity,
   DocumentValidationResult,

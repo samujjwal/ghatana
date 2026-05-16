@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Rules for current-state vs target-state document claim checking",
+  "claimPatterns": {
+    "executable": [
+      "is implemented",
+      "is production-ready",
+      "is enabled",
+      "owns runtime truth",
+      "executes lifecycle",
+      "validated end-to-end",
+      "fully implemented",
+      "production-ready",
+      "complete",
+      "enabled",
+      "executable",
+      "supports"
+    ],
+    "partial": [
+      "existing but partial",
+      "partial",
+      "in progress"
+    ],
+    "nonExecutable": [
+      "declared only",
+      "target architecture",
+      "anti-pattern"
+    ]
+  },
+  "requiredClassifications": [
+    "Existing and executable",
+    "Existing but partial",
+    "Declared only",
+    "Target architecture",
+    "Anti-pattern"
+  ],
+  "evidencePatterns": [
+    "evidence:",
+    "see:",
+    "test:",
+    "ci:",
+    "implementation:",
+    "ref:",
+    "reference:",
+    "validated by:",
+    "verified by:",
+    "checked by:",
+    "enforced by:"
+  ],
+  "scanScope": {
+    "includePaths": [
+      "docs",
+      "config"
+    ],
+    "includeExtensions": [
+      ".md",
+      ".markdown"
+    ],
+    "excludePathPatterns": [
+      "/adr/",
+      "/archive/"
+    ],
+    "excludeFilePatterns": [
+      "PLAN-*.md",
+      "CHECKLIST-*.md",
+      "TRACKER-*.md",
+      "IMPLEMENTATION-*.md",
+      "ADR-*.md"
+    ],
+    "includeFilePatterns": [
+      "DOMAIN_WORKSTREAM_MAP.md",
+      "*CURRENT_STATE*.md",
+      "*TRUTH*.md"
+    ]
+  },
+  "allowlist": [],
+  "allowlistSchema": {
+    "path": "string, required - file path relative to repo root",
+    "line": "number, optional - specific line number",
+    "reason": "string, required - justification for allowlisting",
+    "owner": "string, required - team or person owning this exception",
+    "reviewBy": "string, required - ISO 8601 date for mandatory review"
+  }
+}
