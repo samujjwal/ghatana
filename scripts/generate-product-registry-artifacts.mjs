@@ -295,7 +295,7 @@ function generatePackageScripts(registry, lifecycleExclusions) {
   scripts['typecheck'] = 'pnpm -r --parallel --filter \'./platform/typescript/**\' --filter \'./products/*/ui\' exec tsc --noEmit';
   scripts['product'] = 'node ./scripts/run-product-task.mjs';
   scripts['kernel'] = 'node ./scripts/kernel-product.mjs';
-  scripts['build:kernel-lifecycle-platform'] = 'pnpm --dir platform/typescript/kernel-product-contracts build && pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build';
+  scripts['build:kernel-lifecycle-platform'] = 'pnpm --dir platform/typescript/kernel-product-contracts build && pnpm --dir platform/typescript/kernel-providers build && pnpm --dir platform/typescript/kernel-artifacts build && pnpm --dir platform/typescript/kernel-lifecycle build && pnpm --dir platform/typescript/kernel-toolchains build && pnpm --dir platform/typescript/kernel-deployment build && pnpm --dir platform/typescript/kernel-release build';
   scripts['check:affected-products'] = 'node ./scripts/resolve-affected-products.test.mjs';
   scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
   scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';

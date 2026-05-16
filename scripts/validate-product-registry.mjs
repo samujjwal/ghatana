@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Authoritative Source: config/canonical-product-registry.json
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -159,6 +160,10 @@ export function validateProductRegistryDocument(registry, options = {}) {
 
     if ((productId === 'data-cloud' || productId === 'yappc') && (lifecycleEnabled || lifecycleStatus === 'enabled')) {
       issues.push(issue(productId, 'lifecycle', 'Data Cloud and YAPPC must not be treated as ordinary lifecycle-enabled products', 'Keep these products fail-closed until platform-provider bootstrap/provider rules are implemented.'));
+    }
+
+    if ((productId === 'phr' || productId === 'finance' || productId === 'flashit') && (lifecycleEnabled || lifecycleStatus === 'enabled')) {
+      issues.push(issue(productId, 'lifecycle', `${productId} must not be lifecycle-enabled until readiness gates are satisfied`, `Complete lifecycleReadiness requirements for ${productId} before enabling lifecycle execution.`));
     }
 
     if (product.conformance?.bridge === true) {

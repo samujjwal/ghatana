@@ -1,7 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-15T06:04:22.399Z",
-  "authoritativeSource": "config/canonical-product-registry.json",
+  "generated": "2026-05-16T00:08:40.747Z",
   "matrix": [
     {
       "productId": "audio-video",
@@ -30,6 +29,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -92,6 +98,20 @@
           ],
           "evidenceRefs": []
         },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
         "enablementGuardrail": {
           "status": "blocked",
           "reasonCodes": [],
@@ -151,6 +171,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -210,6 +237,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -273,6 +314,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -332,6 +380,20 @@
           "status": "provider-owned",
           "reasonCodes": [
             "platform-provider-owned"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -396,6 +458,13 @@
         "threat-model"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -455,6 +524,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -546,6 +629,11 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "profile-backed",
           "reasonCodes": [],
@@ -601,6 +689,18 @@
           "reasonCodes": [
             "data-cloud-bridge-required"
           ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "ready",
+          "reasonCodes": [],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -668,6 +768,11 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "profile-backed",
           "reasonCodes": [],
@@ -723,6 +828,23 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready",
+            "missing-adapter:operator",
+            "missing-adapter:portal",
+            "missing-adapter:sdk"
           ],
           "evidenceRefs": []
         },
@@ -823,6 +945,11 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "profile-backed",
           "reasonCodes": [],
@@ -880,6 +1007,22 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready",
+            "missing-adapter:mobile",
+            "missing-adapter:web"
           ],
           "evidenceRefs": []
         },
@@ -986,6 +1129,11 @@
         "tenant-data-sovereignty"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "profile-backed",
           "reasonCodes": [],
@@ -1041,6 +1189,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -1107,6 +1269,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -1166,6 +1335,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -1219,6 +1402,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -1278,6 +1468,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -1356,6 +1560,11 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "profile-backed",
           "reasonCodes": [],
@@ -1411,6 +1620,20 @@
           "status": "requires-data-cloud-bridge",
           "reasonCodes": [
             "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },
@@ -1473,6 +1696,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -1535,6 +1765,20 @@
           ],
           "evidenceRefs": []
         },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
         "enablementGuardrail": {
           "status": "blocked",
           "reasonCodes": [],
@@ -1588,6 +1832,13 @@
         "security"
       ],
       "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
         "apiReadiness": {
           "status": "blocked",
           "reasonCodes": [
@@ -1647,6 +1898,20 @@
           "status": "provider-owned",
           "reasonCodes": [
             "platform-provider-owned"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
           ],
           "evidenceRefs": []
         },

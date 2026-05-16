@@ -5,9 +5,15 @@
   "type": "object",
   "required": ["version", "exceptions"],
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
     },
     "exceptions": {
       "type": "array",
