@@ -64,7 +64,13 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>((props, ref) 
           ? undefined
           : (color as BadgeTone);
 
-  const { resolvedTheme } = useTheme();
+  let resolvedTheme: 'light' | 'dark' = 'light';
+  try {
+    resolvedTheme = useTheme().resolvedTheme;
+  } catch {
+    // Some host apps mount Badge outside ThemeProvider; fail safe with light tokens.
+    resolvedTheme = 'light';
+  }
   const paletteEntry = tonePalette[mappedToneFromColor ?? mappedTone] ?? palette.gray;
   const isDark = resolvedTheme === 'dark';
   const surface = isDark ? darkColors : lightColors;

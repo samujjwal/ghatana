@@ -27,6 +27,10 @@ interface StoredRuntimeTruthSnapshots {
 
 const RUNTIME_TRUTH_STATUSES = [
   "planned",
+  "execution-started",
+  "execution-succeeded",
+  "execution-failed",
+  "approval-required",
   "running",
   "pending approval",
   "approval-pending",

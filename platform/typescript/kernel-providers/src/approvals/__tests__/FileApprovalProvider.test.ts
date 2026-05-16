@@ -118,9 +118,7 @@ describe("FileApprovalProvider", () => {
     await expect(
       provider.recordDecision(buildDecision("approval-1", "alice", true))
     ).resolves.toBeUndefined();
-    await expect(provider.requestApproval(request)).rejects.toThrow(
-      "approval request already exists: approval-1"
-    );
+    await expect(provider.requestApproval(request)).resolves.toBeUndefined();
   });
 
   it("throws through the existing decision API on failed decisions", async () => {

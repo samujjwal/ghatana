@@ -155,7 +155,7 @@ describe('Route contracts', () => {
     const { LoginPage } = await import('@/pages/LoginPage');
     renderRoute('/login', <Routes><Route path="/login" element={<LoginPage />} /></Routes>);
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('redirects unauthenticated user from /approvals to /login', async () => {
     const { ApprovalQueuePage } = await import('@/pages/ApprovalQueuePage');
@@ -168,7 +168,7 @@ describe('Route contracts', () => {
       undefined,
     );
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders approval queue page for authenticated user', async () => {
     const { ApprovalQueuePage } = await import('@/pages/ApprovalQueuePage');

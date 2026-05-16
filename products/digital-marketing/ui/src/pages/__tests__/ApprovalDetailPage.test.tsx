@@ -11,6 +11,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { ApprovalDetailPage } from '@/pages/ApprovalDetailPage';
 import type { ApprovalRecordResponse, ApprovalSnapshot } from '@/types/approval';
@@ -105,26 +106,28 @@ function renderPage(
   token: string | null = 'test-token',
 ): void {
   render(
-    <QueryClientProvider client={buildQueryClient()}>
-      <AuthProvider
-        initialToken={token}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialRoles={roles}
-      >
-        <MemoryRouter
-          initialEntries={[`/workspaces/ws-1/approvals/${requestId}`]}
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken={token}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialRoles={roles}
         >
-          <Routes>
-            <Route path="/login" element={<div data-testid="login-page" />} />
-            <Route
-              path="/workspaces/:workspaceId/approvals/:requestId"
-              element={<ApprovalDetailPage />}
-            />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+          <MemoryRouter
+            initialEntries={[`/workspaces/ws-1/approvals/${requestId}`]}
+          >
+            <Routes>
+              <Route path="/login" element={<div data-testid="login-page" />} />
+              <Route
+                path="/workspaces/:workspaceId/approvals/:requestId"
+                element={<ApprovalDetailPage />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 

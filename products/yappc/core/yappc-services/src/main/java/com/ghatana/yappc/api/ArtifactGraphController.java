@@ -311,7 +311,7 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.queryGraph(productId, tenantId, queryType, seedIds)
+                        return artifactGraphService.queryGraph(productId, tenantId, queryType, seedIds, null, 100)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));

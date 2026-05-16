@@ -4,6 +4,7 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisResult;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
+import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import io.activej.promise.Promise;
 
@@ -35,8 +36,10 @@ public interface ArtifactGraphService {
 
     /**
      * Query the artifact graph with pattern-based traversal.
+     * P1-13: Added cursor-based pagination support for large graph queries.
+     * P3-1: Returns typed response with items, nextCursor, totalEstimate, and scope metadata.
      */
-    Promise<Map<String, Object>> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds);
+    Promise<ArtifactGraphQueryResponse> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize);
 
     /**
      * Analyze residual islands (unextractable blocks flagged by the TS scanner).

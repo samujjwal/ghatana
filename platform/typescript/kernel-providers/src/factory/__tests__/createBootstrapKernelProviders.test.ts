@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   FileApprovalProvider,
   FileArtifactProvider,
+  FileBootstrapGateProvider,
   FileHealthProvider,
   FileLifecycleEventProvider,
   FileMemoryProvider,
@@ -25,6 +26,7 @@ describe("createBootstrapKernelProviders", () => {
     expect(providers.artifacts).toBeInstanceOf(FileArtifactProvider);
     expect(providers.health).toBeInstanceOf(FileHealthProvider);
     expect(providers.approvals).toBeInstanceOf(FileApprovalProvider);
+    expect(providers.gates["registry-validation"]).toBeInstanceOf(FileBootstrapGateProvider);
     expect(providers.provenance).toBeInstanceOf(FileProvenanceProvider);
     expect(providers.memory).toBeInstanceOf(FileMemoryProvider);
     expect(providers.runtimeTruth).toBeInstanceOf(FileRuntimeTruthProvider);
@@ -34,6 +36,7 @@ describe("createBootstrapKernelProviders", () => {
       artifacts: providers.artifacts,
       health: providers.health,
       approvals: providers.approvals,
+      gates: providers.gates,
       provenance: providers.provenance,
       memory: providers.memory,
       runtimeTruth: providers.runtimeTruth,

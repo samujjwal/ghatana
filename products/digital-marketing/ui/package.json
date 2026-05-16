@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run test:route-contract && tsc --noEmit && vite build && node ./scripts/check-bundle-budget.mjs",
+    "build:docker": "vite build && node ./scripts/check-bundle-budget.mjs",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "type-check": "tsc --noEmit",

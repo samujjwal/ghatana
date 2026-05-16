@@ -9,6 +9,7 @@
  *   - Residual unresolvable/ambiguous edges retained for diagnostics
  */
 
+import { createHash } from 'crypto';
 import type {
   GraphNode,
   GraphEdge,
@@ -24,6 +25,16 @@ import {
   type SymbolIndex,
   type SymbolResolverOptions,
 } from './symbol-index';
+
+// ============================================================================
+// Symbol Resolver Version
+// ============================================================================
+
+/**
+ * P1-9: Resolver version for metadata tracking.
+ * Increment this when resolution logic changes to enable version-aware consumers.
+ */
+export const SYMBOL_RESOLVER_VERSION = '1.0.0';
 
 // ============================================================================
 // Symbol Index
@@ -113,6 +124,20 @@ export interface SymbolResolutionResult {
 }
 
 /**
+ * P1-9: Generate a deterministic edge ID using SHA-256 hash.
+ * The hash includes sourceId, targetId, relationship, and resolver version to ensure
+ * the same edge always gets the same ID across multiple resolution runs.
+ */
+function buildDeterministicEdgeId(
+  sourceId: string,
+  targetId: string,
+  relationship: string,
+): string {
+  const hashInput = `${sourceId}:${targetId}:${relationship}:${SYMBOL_RESOLVER_VERSION}`;
+  return createHash('sha256').update(hashInput).digest('hex');
+}
+
+/**
  * Resolve all unresolved edges against the known node set.
  * Returns:
  *   - `resolvedEdges`: new GraphEdge objects with real targetIds
@@ -154,8 +179,17 @@ export function resolveSymbols(
     resolutionRecords.push(record);
 
     if (result.status === 'resolved' && result.resolvedId) {
-      // Build a deterministic edge ID from source+target+kind
-      const edgeId = `edge:${edge.sourceId}--${edge.relationship}-->${result.resolvedId}`;
+      // P1-9: Generate deterministic edge ID using SHA-256 hash
+      const edgeId = buildDeterministicEdgeId(
+        edge.sourceId,
+        result.resolvedId,
+        edge.relationship,
+      );
+
+      // P1-9: Include source location and resolver version in metadata
+      const sourceNode = nodes.find(n => n.id === edge.sourceId);
+      const sourceLocation = sourceNode?.sourceLocation;
+
       resolvedEdges.push({
         id: edgeId,
         sourceId: edge.sourceId,
@@ -166,6 +200,18 @@ export function resolveSymbols(
         metadata: {
           ...edge.metadata,
           resolvedFromRef: edge.targetRef,
+          // P1-9: Add source location to metadata
+          sourceLocation: sourceLocation
+            ? {
+                filePath: sourceLocation.filePath,
+                startLine: sourceLocation.startLine,
+                startColumn: sourceLocation.startColumn,
+                endLine: sourceLocation.endLine,
+                endColumn: sourceLocation.endColumn,
+              }
+            : undefined,
+          // P1-9: Add resolver version to metadata
+          resolverVersion: SYMBOL_RESOLVER_VERSION,
         },
       });
     } else {

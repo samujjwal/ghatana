@@ -79,10 +79,15 @@ function parseApiError(error: unknown): ApiError {
     // If it's already an ApiError structure
     if (typeof err.status === 'number') {
       const category = categorizeError(err.status);
+      const explicitCode = typeof err.code === 'string' ? err.code.toUpperCase() : undefined;
+      const normalizedCode =
+        err.status === 400 && explicitCode === 'VALIDATION'
+          ? 'VALIDATION'
+          : category.type;
       return {
         status: err.status,
-        code: String(err.code || category.type),
-        message: String(err.message || category.defaultMessage),
+        code: normalizedCode,
+        message: category.defaultMessage,
         correlationId: String(err.correlationId || 'unknown'),
         details: err.details as Record<string, unknown> | undefined,
         retryable: typeof err.retryable === 'boolean' ? err.retryable : category.retryable,

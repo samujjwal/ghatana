@@ -83,7 +83,18 @@ export class FileApprovalProvider
 
     try {
       const stored = await this.readStoredApprovals();
-      if (stored.requests.some((storedRequest) => storedRequest.approvalId === request.approvalId)) {
+      const existingRequest = stored.requests.find(
+        (storedRequest) => storedRequest.approvalId === request.approvalId
+      );
+      if (existingRequest !== undefined) {
+        const existingDecisions = stored.decisions.filter(
+          (decision) => decision.approvalId === request.approvalId
+        );
+        const existingStatus = resolveApprovalStatus(existingRequest, existingDecisions);
+        if (existingStatus === "approved") {
+          await this.writeApprovalGate(existingRequest, existingDecisions);
+          return { success: true, ref: this.approvalsPath };
+        }
         return fail(`approval request already exists: ${request.approvalId}`, options.required);
       }
       const nextStored = {

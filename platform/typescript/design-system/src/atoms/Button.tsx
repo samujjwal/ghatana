@@ -391,7 +391,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
           ? 'primary'
           : tone;
 
-  const { resolvedTheme } = useTheme();
+  let resolvedTheme: 'light' | 'dark' = 'light';
+  try {
+    resolvedTheme = useTheme().resolvedTheme;
+  } catch {
+    // Host integrations may render Button outside ThemeProvider; keep behavior stable.
+    resolvedTheme = 'light';
+  }
   const { focusProps, isFocusVisible } = useFocusRing<HTMLElement>({ onFocus, onBlur });
 
   const [isHovered, setIsHovered] = React.useState(false);

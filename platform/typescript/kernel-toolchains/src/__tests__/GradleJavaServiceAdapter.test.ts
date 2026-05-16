@@ -256,6 +256,33 @@ describe('GradleJavaServiceAdapter', () => {
     expect(result.status).toBe('succeeded');
   });
 
+  it('accepts a module declared in a settings file loaded via apply(from=...)', async () => {
+    await fs.mkdir(path.join(repoRoot, 'config', 'generated'), { recursive: true });
+    await fs.writeFile(
+      path.join(repoRoot, 'settings.gradle.kts'),
+      'apply(from = file("config/generated/settings-gradle-includes.kts"))',
+    );
+    await fs.writeFile(
+      path.join(repoRoot, 'config', 'generated', 'settings-gradle-includes.kts'),
+      'include(":products:digital-marketing:backend")',
+    );
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs'), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(repoRoot, 'products', 'digital-marketing', 'backend', 'build', 'libs', 'digital-marketing.jar'),
+      'jar-content',
+    );
+
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'BUILD SUCCESSFUL', stderr: '', durationMs: 10 },
+    ]);
+    const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });
+
+    const result = await adapter.execute(createContext(repoRoot));
+    expect(result.status).toBe('succeeded');
+  });
+
   it('fails output validation when wildcard search root is missing', async () => {
     await fs.writeFile(path.join(repoRoot, 'settings.gradle.kts'), 'include(":products:digital-marketing:backend")');
 

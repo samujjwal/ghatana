@@ -129,15 +129,27 @@ describe("FileRuntimeTruthProvider", () => {
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("rejects unsupported runtime truth statuses", async () => {
+  it("accepts lifecycle execution statuses used by KernelLifecycleService", async () => {
     const result = await provider.recordRuntimeTruth(
       buildSnapshot("run-1", "build", "approval-required"),
       { required: true, correlationId: "corr-1" }
     );
 
+    expect(result.success).toBe(true);
+    await expect(provider.getRuntimeTruth("digital-marketing")).resolves.toEqual(
+      expect.objectContaining({ status: "approval-required" })
+    );
+  });
+
+  it("rejects unsupported runtime truth statuses", async () => {
+    const result = await provider.recordRuntimeTruth(
+      buildSnapshot("run-1", "build", "definitely-invalid-status"),
+      { required: true, correlationId: "corr-1" }
+    );
+
     expect(result).toEqual({
       success: false,
-      error: "unsupported runtime truth status approval-required",
+      error: "unsupported runtime truth status definitely-invalid-status",
     });
   });
 

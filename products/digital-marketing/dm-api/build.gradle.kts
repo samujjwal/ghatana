@@ -106,6 +106,21 @@ tasks.register<JavaExec>("runDmosApiServer") {
     mainClass.set("com.ghatana.digitalmarketing.api.DmosApiServer")
 }
 
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "com.ghatana.digitalmarketing.api.DmosApiServer",
+            "Implementation-Title" to "dm-api",
+            "Implementation-Version" to version,
+        )
+    }
+}
+
+tasks.register<Copy>("copyDependencies") {
+    from(configurations.runtimeClasspath)
+    into(layout.buildDirectory.dir("libs/dependencies"))
+}
+
 // P0-009: Validate OpenAPI spec is up-to-date
 tasks.register("validateOpenApiSpec") {
     group = "verification"
@@ -132,5 +147,9 @@ tasks.named("check").configure {
 tasks.register("kernelBuild") { dependsOn("build") }
 tasks.register("kernelValidate") { dependsOn("check") }
 tasks.register("kernelTest") { dependsOn("test") }
+
+tasks.named("build") {
+    dependsOn("copyDependencies")
+}
 
 // dm-api tests are enabled to enforce servlet/API validation coverage.

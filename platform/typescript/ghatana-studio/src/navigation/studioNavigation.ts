@@ -35,6 +35,13 @@ export interface StudioNavItem {
   readonly exposure: RouteExposurePolicy;
 }
 
+export interface StudioRouteCapabilityState {
+  readonly runtimeConfigured: boolean;
+  readonly lifecycleConfigured: boolean;
+  readonly lifecycleExecutionAllowed: boolean;
+  readonly dataCloudEvidenceReady: boolean;
+}
+
 export const STUDIO_NAV_ITEMS = [
   {
     id: 'home',
@@ -170,6 +177,80 @@ export const STUDIO_NAV_ITEMS = [
   },
 ] as const satisfies readonly StudioNavItem[];
 
+export function resolveStudioRouteCapabilityState(input: {
+  readonly runtimeConfigured: boolean;
+  readonly lifecycleStatus: 'unconfigured' | 'loading' | 'ready' | 'degraded';
+  readonly productUnit?: {
+    readonly lifecycleExecutionAllowed?: boolean;
+    readonly metadata?: {
+      readonly lifecycleExecutionAllowed?: boolean;
+    };
+  };
+}): StudioRouteCapabilityState {
+  const lifecycleConfigured = input.lifecycleStatus !== 'unconfigured';
+  const lifecycleExecutionAllowed =
+    input.productUnit?.lifecycleExecutionAllowed ??
+    input.productUnit?.metadata?.lifecycleExecutionAllowed ??
+    false;
+
+  return {
+    runtimeConfigured: input.runtimeConfigured,
+    lifecycleConfigured,
+    lifecycleExecutionAllowed,
+    dataCloudEvidenceReady: lifecycleConfigured && lifecycleExecutionAllowed,
+  };
+}
+
+function resolveRouteExposure(
+  route: StudioNavItem,
+  capabilityState: StudioRouteCapabilityState,
+): RouteExposurePolicy {
+  if (route.id === 'home' || route.id === 'blueprints' || route.id === 'canvas' || route.id === 'learn' || route.id === 'settings') {
+    return 'visible';
+  }
+
+  if (!capabilityState.runtimeConfigured) {
+    if (route.id === 'deployments') {
+      return 'hidden';
+    }
+    return 'disabled';
+  }
+
+  if (route.id === 'develop') {
+    return capabilityState.lifecycleConfigured ? 'visible' : 'disabled';
+  }
+
+  if (route.id === 'lifecycle') {
+    return capabilityState.lifecycleConfigured ? 'visible' : 'disabled';
+  }
+
+  if (route.id === 'agents' || route.id === 'artifacts' || route.id === 'health') {
+    return capabilityState.dataCloudEvidenceReady ? 'visible' : 'disabled';
+  }
+
+  if (route.id === 'deployments') {
+    return capabilityState.lifecycleExecutionAllowed ? 'preview' : 'hidden';
+  }
+
+  return route.exposure;
+}
+
+export function resolveStudioNavItems(
+  capabilityState: StudioRouteCapabilityState,
+): readonly StudioNavItem[] {
+  return STUDIO_NAV_ITEMS.map((route: StudioNavItem) => ({
+    ...route,
+    exposure: resolveRouteExposure(route, capabilityState),
+  }));
+}
+
 export function findStudioNavItem(pathname: string): StudioNavItem | undefined {
   return STUDIO_NAV_ITEMS.find((item: StudioNavItem) => item.path === pathname);
+}
+
+export function findStudioNavItemFromItems(
+  pathname: string,
+  items: readonly StudioNavItem[],
+): StudioNavItem | undefined {
+  return items.find((item: StudioNavItem) => item.path === pathname);
 }

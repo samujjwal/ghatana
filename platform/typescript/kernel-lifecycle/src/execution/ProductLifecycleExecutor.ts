@@ -238,6 +238,7 @@ export class ProductLifecycleExecutor {
     }
 
     const approvalRefs: ProductLifecycleApprovalRef[] = [];
+    const pendingApprovalIds: string[] = [];
     for (const approval of requiredApprovals) {
       const request = this.buildApprovalRequest(plan, approval, options);
       if (request === undefined) {
@@ -264,19 +265,47 @@ export class ProductLifecycleExecutor {
           },
         };
       }
+      const approvalStatusProvider = approvalProvider as {
+        getApprovalStatus?: (approvalId: string) => Promise<{ status: string; decision: unknown }>;
+      };
+      const approvalStatus =
+        typeof approvalStatusProvider.getApprovalStatus === 'function'
+          ? await approvalStatusProvider.getApprovalStatus(approval.approvalId)
+          : { status: 'pending' as const, decision: null };
+      const status =
+        approvalStatus.status === 'approved' || approvalStatus.status === 'rejected'
+          ? approvalStatus.status
+          : 'pending';
       approvalRefs.push({
         approvalId: approval.approvalId,
-        status: 'pending',
+        status,
         ref: result.ref ?? `approval:${approval.approvalId}`,
       });
+
+      if (status === 'rejected') {
+        return {
+          approvalRefs,
+          failure: {
+            stepId: `approval:${approval.approvalId}`,
+            message: `Lifecycle approval rejected: ${approval.approvalId}`,
+          },
+        };
+      }
+
+      if (status === 'pending') {
+        pendingApprovalIds.push(approval.approvalId);
+      }
+    }
+
+    if (pendingApprovalIds.length === 0) {
+      return { approvalRefs };
     }
 
     return {
       approvalRefs,
       failure: {
         stepId: 'approval-required',
-        message: `Lifecycle approval required before ${plan.phase}: ${requiredApprovals
-          .map((approval) => approval.approvalId)
+        message: `Lifecycle approval required before ${plan.phase}: ${pendingApprovalIds
           .join(', ')}`,
       },
     };

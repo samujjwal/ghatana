@@ -23,6 +23,7 @@ import type {
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
 import type { StudioRuntimeContextState } from '../config/studioRuntimeContext';
+import { studioLogger } from '../logging/studioLogger';
 
 export type StudioLifecycleDataStatus = 'unconfigured' | 'loading' | 'ready' | 'degraded';
 
@@ -47,6 +48,7 @@ interface StudioLifecycleManifestLoadState {
 
 export interface StudioLifecycleSnapshot {
   readonly status: StudioLifecycleDataStatus;
+  readonly runtimeMode: 'configured' | 'unconfigured';
   readonly productUnit?: ProductUnit;
   readonly availableProductUnits: readonly ProductUnit[];
   readonly lifecycleRuns: readonly LifecycleRun[];
@@ -88,6 +90,7 @@ interface StudioLifecycleDataProviderProps {
 
 const EMPTY_SNAPSHOT: StudioLifecycleSnapshot = {
   status: 'unconfigured',
+  runtimeMode: 'unconfigured',
   availableProductUnits: [],
   lifecycleRuns: [],
   pendingApprovals: [],
@@ -135,6 +138,10 @@ export function StudioLifecycleDataProvider(
 
   const loadSnapshot = useCallback(async () => {
     if (client === undefined) {
+      studioLogger.error('Studio lifecycle client is unconfigured', {
+        status: runtimeContext?.status ?? 'unconfigured',
+        missingFields: runtimeContext?.status === 'unconfigured' ? runtimeContext.missingFields : [],
+      });
       setSnapshot(EMPTY_SNAPSHOT);
       return;
     }
@@ -148,6 +155,7 @@ export function StudioLifecycleDataProvider(
 
     setSnapshot({
       status: 'loading',
+      runtimeMode: 'configured',
       availableProductUnits: [],
       lifecycleRuns: [],
       pendingApprovals: [],
@@ -164,6 +172,7 @@ export function StudioLifecycleDataProvider(
         if (!signal.aborted) {
           setSnapshot({
             status: 'degraded',
+            runtimeMode: 'configured',
             availableProductUnits: [],
             lifecycleRuns: [],
             pendingApprovals: [],
@@ -190,6 +199,7 @@ export function StudioLifecycleDataProvider(
       if (!signal.aborted) {
         setSnapshot({
           status: 'ready',
+          runtimeMode: 'configured',
           productUnit: selectedProductUnit,
           availableProductUnits: productUnits,
           lifecycleRuns,
@@ -216,6 +226,7 @@ export function StudioLifecycleDataProvider(
       if (!signal.aborted) {
         setSnapshot({
           status: 'degraded',
+          runtimeMode: 'configured',
           availableProductUnits: [],
           lifecycleRuns: [],
           pendingApprovals: [],
@@ -224,7 +235,7 @@ export function StudioLifecycleDataProvider(
         });
       }
     }
-  }, [client, selectedProductUnitId, selectedRunId]);
+  }, [client, selectedProductUnitId, selectedRunId, runtimeContext]);
 
   useEffect(() => {
     void loadSnapshot();

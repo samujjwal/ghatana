@@ -19,36 +19,34 @@ COPY gradle/ gradle/
 COPY build-logic/ build-logic/
 COPY settings.gradle.kts build.gradle.kts ./
 
-# Resolve dependencies before copying full source to maximise cache hits
-RUN ./gradlew :products:digital-marketing:dm-api:dependencies --no-daemon --quiet || true
-
-# Copy product and platform source (everything needed for this module)
-COPY platform/ platform/
-COPY platform-kernel/ platform-kernel/
-COPY platform-plugins/ platform-plugins/
-COPY shared-services/ shared-services/
-COPY products/ products/
-COPY config/ config/
+# Copy full monorepo source required by root settings/includes
+COPY . .
 
 # Build the shadow/fat JAR (Gradle task: shadowJar or jar; depends on plugin)
 # Tests run during build to ensure lifecycle correctness
-RUN ./gradlew :products:digital-marketing:dm-api:build \
-      --no-daemon \
-      --parallel \
-      --build-cache
+RUN ./gradlew \
+  -Dorg.gradle.jvmargs="-Xms512m -Xmx2g -XX:MaxMetaspaceSize=512m -XX:+UseG1GC" \
+  -Dorg.gradle.workers.max=2 \
+  :products:digital-marketing:dm-api:build \
+  --no-daemon \
+  --build-cache
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre AS runtime
+
+# Runtime diagnostics and container health checks depend on curl.
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 # Run as a dedicated non-root system user
 RUN groupadd --system dmos && useradd --system --gid dmos --no-create-home dmos
 
 WORKDIR /app
 
-# Copy the assembled artifact from the build stage
+# Copy the assembled artifact and runtime dependencies from the build stage
 COPY --from=builder /workspace/products/digital-marketing/dm-api/build/libs/*.jar app.jar
+COPY --from=builder /workspace/products/digital-marketing/dm-api/build/libs/dependencies/ /app/dependencies/
 
-RUN chown dmos:dmos app.jar
+RUN chown -R dmos:dmos /app
 
 USER dmos
 
@@ -59,8 +57,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
   CMD curl -sf http://localhost:8080/health/ready || exit 1
 
-ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
-  "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -cp /app/app.jar:/app/dependencies/* com.ghatana.digitalmarketing.api.DmosApiServer"]

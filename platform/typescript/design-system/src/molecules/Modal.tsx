@@ -82,7 +82,13 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>((props, ref) =
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const mergedRef = useMergeRefs(ref, contentRef);
 
-  const { resolvedTheme } = useTheme();
+  let resolvedTheme: 'light' | 'dark' = 'light';
+  try {
+    resolvedTheme = useTheme().resolvedTheme;
+  } catch {
+    // Modal may be mounted in app/tests without ThemeProvider; use stable light fallback.
+    resolvedTheme = 'light';
+  }
   const isDark = resolvedTheme === 'dark';
   const surface = isDark ? darkColors : lightColors;
   const shadow = isDark ? darkShadows[12] : lightShadows[12];

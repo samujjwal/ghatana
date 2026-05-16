@@ -42,3 +42,7 @@ export {
   FileRuntimeTruthProvider,
   type FileRuntimeTruthProviderOptions,
 } from "./runtime-truth/FileRuntimeTruthProvider.js";
+export {
+  FileBootstrapGateProvider,
+  type FileBootstrapGateProviderOptions,
+} from "./gates/FileBootstrapGateProvider.js";

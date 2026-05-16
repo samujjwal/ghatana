@@ -290,8 +290,8 @@ phases:
         envExampleFile: products/digital-marketing/deploy/local.env.example
         requireEnvFile: false
         expectedServices:
-          - backend-api
-          - web
+          - digital-marketing-api
+          - digital-marketing-web
     health:
       backend-api:
         type: http
@@ -326,8 +326,8 @@ phases:
         envFile: products/digital-marketing/deploy/local.env
         requireEnvFile: false
         expectedServices:
-          - backend-api
-          - web
+          - digital-marketing-api
+          - digital-marketing-web
     health:
       backend-api:
         type: http
@@ -361,8 +361,8 @@ phases:
         envFile: products/digital-marketing/deploy/local.env
         requireEnvFile: false
         expectedServices:
-          - backend-api
-          - web
+          - digital-marketing-api
+          - digital-marketing-web
     health:
       backend-api:
         type: http
@@ -448,16 +448,18 @@ package:
   backend-api:
     adapter: docker-buildx
     dockerfile: products/digital-marketing/dm-api/Dockerfile
-    context: products/digital-marketing/dm-api
+    context: .
     image: ghatana/digital-marketing-api
     tag: local
+    timeoutMs: 2700000
     buildArgs: {}
   web:
     adapter: docker-buildx
     dockerfile: products/digital-marketing/ui/Dockerfile
-    context: products/digital-marketing/ui
+    context: .
     image: ghatana/digital-marketing-web
     tag: local
+    timeoutMs: 2700000
     buildArgs: {}
 
 deployment:
@@ -469,8 +471,8 @@ deployment:
     envExampleFile: products/digital-marketing/deploy/local.env.example
     requireEnvFile: false
     expectedServices:
-      - backend-api
-      - web
+      - digital-marketing-api
+      - digital-marketing-web
     healthChecks:
       backend-api:
         type: http
@@ -494,6 +496,9 @@ retentionPolicyId: digital-marketing-lifecycle-evidence
 verify:
   local:
     adapter: compose-local
+    expectedServices:
+      - digital-marketing-api
+      - digital-marketing-web
     expectedReportFields:
       - schemaVersion
       - productUnitId

@@ -554,7 +554,7 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
   private recordComposeService(services: Record<string, string>, value: unknown): void {
     if (!value || typeof value !== 'object') return;
     const entry = value as Record<string, unknown>;
-    const name = String(entry.Name ?? entry.Service ?? '');
+    const name = String(entry.Service ?? entry.Name ?? '');
     const state = this.classifyComposeState(String(entry.State ?? entry.Status ?? 'unknown'));
     if (name.length > 0) {
       services[name] = state;

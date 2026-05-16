@@ -29,6 +29,8 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.settings.title': 'Settings',
   'studio.route.settings.description':
     'Workspace, provider mode, approvals, and capability settings appear here when their contracts are available.',
+  'studio.route.guard.accessDisabled': 'Route access is disabled in this runtime mode.',
+  'studio.route.guard.reasonPrefix': 'Required capability:',
   'studio.route.agents.badge.fallback': 'requires approval',
   'studio.route.agents.title': 'Agents',
   'studio.route.agents.description':
@@ -62,6 +64,17 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.develop.productUnitLabel': 'ProductUnit',
   'studio.route.develop.productShapeTitle': 'Product shape',
   'studio.route.develop.safeActionsTitle': 'Safe actions',
+  'studio.route.develop.kindLabel': 'Kind',
+  'studio.route.develop.lifecycleLabel': 'Lifecycle',
+  'studio.route.develop.ownerLabel': 'Owner',
+  'studio.route.develop.conformanceLabel': 'Conformance',
+  'studio.route.develop.runningActionLabel': 'Running...',
+  'studio.route.develop.actionErrorFallback': 'Failed to run lifecycle action.',
+  'studio.route.develop.action.create-plan': 'create plan',
+  'studio.route.develop.action.validate': 'validate',
+  'studio.route.develop.action.test': 'test',
+  'studio.route.develop.action.build': 'build',
+  'studio.route.develop.action.package': 'package',
   'studio.route.develop.safeActionNote':
     'Deploy actions stay hidden here until approval, policy, and verification models are wired.',
   'studio.route.develop.surfacesTitle': 'Surfaces',

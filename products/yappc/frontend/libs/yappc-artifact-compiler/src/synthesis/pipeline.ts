@@ -250,9 +250,9 @@ function buildSemanticProductModel(
 
 export class SynthesisPipeline {
   private readonly config: SynthesisPipelineConfig;
-  private readonly extractorRegistry?: ExtractorRegistry;
+  private readonly extractorRegistry?: ExtractorRegistry | undefined;
 
-  constructor(config: SynthesisPipelineConfig, extractorRegistry?: ExtractorRegistry) {
+  constructor(config: SynthesisPipelineConfig, extractorRegistry?: ExtractorRegistry | undefined) {
     this.config = config;
     this.extractorRegistry = extractorRegistry;
 

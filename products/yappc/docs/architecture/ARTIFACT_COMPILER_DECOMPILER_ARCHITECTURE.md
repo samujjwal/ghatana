@@ -1,8 +1,8 @@
 # Artifact Compiler/Decompiler Architecture
 
-> **Package**: `@yappc/artifact-compiler` (TypeScript) + `products/yappc/core/knowledge-graph` (Java)
-> **Location**: `products/yappc/frontend/libs/yappc-artifact-compiler` + `products/yappc/core/knowledge-graph/`
-> **Principle**: TypeScript handles lightweight extraction and orchestration; Java handles computation-heavy graph, merge, and indexing workloads using the existing Knowledge Graph infrastructure.
+> **Package**: `@yappc/artifact-compiler` (TypeScript) + `products/yappc/core/yappc-services` (Java)
+> **Location**: `products/yappc/frontend/libs/yappc-artifact-compiler` + `products/yappc/core/yappc-services/`
+> **Principle**: TypeScript handles lightweight extraction and orchestration; Java handles computation-heavy graph, merge, and indexing workloads using the ArtifactGraphService in yappc-services module.
 
 ---
 
@@ -20,22 +20,31 @@
 │  • Residual Island Tagger — flags for KG analysis                              │
 │  • TS Client — reuses platform/typescript/api ApiClient                          │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│  Java Layer (products/yappc/core/knowledge-graph/) — EXTEND EXISTING MODULE     │
+│  Java Layer (products/yappc/core/yappc-services/) — DEDICATED ARTIFACT MODULE │
 │  ─────────────────────────────────────────────────────────────────────────────  │
-│  Existing:                                                                      │
-│    • KnowledgeGraph, YAPPCGraphService, KGQueryService                          │
-│    • KGNodeRepository, KGEdgeRepository (JDBC + Jackson persistence)             │
-│    • KGConflictResolver (entity dedup/merge)                                    │
-│    • KGUpdatePipeline (event → extract → resolve → embed → persist)             │
-│    • EntityExtractor (AI-based text extraction)                                 │
-│                                                                                 │
-│  New additions within this module:                                             │
-│    • ArtifactGraphMapper — maps TS extraction results to YAPPCGraphNode/Edge    │
+│  Core Services:                                                                  │
+│    • ArtifactGraphService — ingest, analyze, merge, query, residual analysis   │
+│    • ArtifactGraphRepository — JDBC persistence with checksum-based upsert      │
 │    • ArtifactGraphController — HTTP routes for artifact-specific operations     │
-│    • JGraphTAlgorithmService — centrality, SCC, community detection             │
-│    • ThreeWayMergeEngine — extends KGConflictResolver for semantic models       │
-│    • Protobuf service definitions (optional) for high-volume streaming           │
-│    • Flyway migrations for artifact-specific node/edge types                      │
+│    • ArtifactRequestScope — tenant/project scope resolution                    │
+│                                                                                 │
+│  Persistence:                                                                   │
+│    • V15 migration — repository_snapshots, artifact_inventory_items,            │
+│      artifact_unresolved_edges, artifact_edge_resolution_records,              │
+│      residual_islands, patch_sets, review_bundles tables                        │
+│    • Checksum-based incremental upsert to skip unchanged nodes                   │
+│    • Paginated query API with cursor support                                     │
+│                                                                                 │
+│  Graph Analysis:                                                                │
+│    • JGraphT integration for centrality, SCC, community detection              │
+│    • Three-way merge for semantic models                                        │
+│    • Graph validation with structural integrity checks                           │
+│                                                                                 │
+│  Frontend Integration:                                                           │
+│    • ArtifactCompilerClient — typed HTTP client for import, query, review      │
+│    • SourceImportPanel — provider selector, progress tracking                   │
+│    • ImportSummaryPanel — understood/skipped/residual metrics                  │
+│    • PatchReviewPanel — diff display, validation, approve/reject                 │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -114,33 +123,34 @@
 - `products/yappc/core/services-lifecycle/src/main/java/com/ghatana/yappc/services/lifecycle/YappcLifecycleService.java` — extends `UnifiedApplicationLauncher`
 - `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/YappcHttpServer.java` — ActiveJ `HttpServerLauncher` + `RoutingServlet`
 
-### HTTP API Extension (Phase 1)
+### HTTP API Extension (Phase 1 - COMPLETED)
 
-**Location**: `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/api/`
-
-**Deliverables**:
-- `ArtifactGraphController` — ActiveJ HTTP routes:
-  - `POST /api/v1/artifact/graph/ingest` — ingest `ArtifactGraph` from TS scanner
-  - `POST /api/v1/artifact/graph/analyze` — run JGraphT algorithms (centrality, cycles, communities)
-  - `POST /api/v1/artifact/graph/merge` — three-way merge for `SemanticProductModel`
-  - `GET /api/v1/artifact/graph/query` — graph traversal query
-  - `POST /api/v1/artifact/residual/analyze` — analyze residual islands
-- Reuse `YappcHttpServer` routing pattern from `core/yappc-services/`
-
-**Dependencies**: Existing `YAPPCGraphService`, `KGQueryService`
-
-### Artifact-to-Graph Mapper
-
-**Location**: `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/mapper/ArtifactGraphMapper.java`
+**Location**: `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/`
 
 **Deliverables**:
-- Map `ComponentModel` → `YAPPCGraphNode` (type: `CODE_MODULE`)
-- Map `PageModel` → `YAPPCGraphNode` (type: `CODE_MODULE`)
-- Map `DataModel` (Prisma) → `YAPPCGraphNode` (type: new `DATA_MODEL`)
-- Map import relationships → `YAPPCGraphEdge` (type: `USES`)
-- Map component-to-page usage → `YAPPCGraphEdge` (type: new `RENDERS_IN`)
+- `ArtifactGraphController` — ActiveJ HTTP routes with tenant/project scope enforcement:
+  - `POST /api/v1/yappc/artifact/graph/ingest` — ingest `ArtifactGraphIngestRequest` with validation
+  - `POST /api/v1/yappc/artifact/graph/analyze` — run graph analysis algorithms
+  - `POST /api/v1/yappc/artifact/graph/merge` — three-way semantic merge
+  - `POST /api/v1/yappc/artifact/graph/query` — paginated graph queries with cursor
+  - `POST /api/v1/yappc/artifact/residual/analyze` — analyze residual islands
+- Uses `YappcHttpServer` routing pattern from `core/yappc-services/`
+- Principal-derived tenant/project scope enforcement (rejects payload scope manipulation)
 
-**Dependencies**: Existing `YAPPCGraphMapper.java`
+**Dependencies**: `ArtifactGraphService`, `ArtifactGraphRepository`
+
+### Artifact-to-Graph Mapper (COMPLETED)
+
+**Location**: `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/`
+
+**Deliverables**:
+- `ArtifactNodeDto` — typed node with sourceLocation, extractorId, confidence, provenance
+- `ArtifactEdgeDto` — typed edge with edgeId, confidence, bidirectional, metadata
+- `ArtifactGraphIngestRequest` — includes snapshotRef, snapshotId, versionId, contentChecksum
+- `ArtifactGraphResponse` — response with success status and metadata
+- Graph validation before ingestion (structural integrity checks)
+
+**Dependencies**: Jackson for JSON serialization
 
 ### Graph Algorithms (JGraphT Integration)
 
@@ -179,19 +189,22 @@
 - Complex pattern query completes in <200ms on 5,000-node graph
 - Cache hit rate >80% for repeated queries
 
-### Persistence: JDBC + Jackson (NOT Neo4j or JSONB Adapter)
+### Persistence: JDBC + Jackson (COMPLETED)
 
-**Critical Decision**: The knowledge-graph module uses **plain JDBC** with `PreparedStatement`, raw SQL with text blocks, and **Jackson `ObjectMapper`** for serializing `properties`, `tags`, and `labels` to VARCHAR/JSON-like columns. There is no Neo4j dependency and no explicit JSONB type usage.
+**Critical Decision**: ArtifactGraphRepository uses **plain JDBC** with `PreparedStatement`, raw SQL with text blocks, and **Jackson `ObjectMapper`** for serializing `properties`, `tags`, and `labels` to VARCHAR/JSON-like columns. There is no Neo4j dependency and no explicit JSONB type usage.
 
-**Evidence**: `KGNodeRepository.java` uses:
+**Evidence**: `ArtifactGraphRepository.java` uses:
 - `java.sql.Connection`, `PreparedStatement`, `ResultSet`
 - `com.fasterxml.jackson.databind.ObjectMapper` for `writeJson()` / `readJson()`
 - `ON CONFLICT (tenant_id, node_id) DO UPDATE SET` (PostgreSQL-specific upsert)
+- Executor injection to avoid blocking event loops
 
 **Deliverables**:
-- Extend `KGNodeRepository` for artifact-specific queries (by framework, by language, by kind)
-- Add GIN index on `properties_json` for PostgreSQL (via Flyway migration)
-- Batch insert optimization for large artifact ingestion
+- `ArtifactGraphRepository` with JDBC persistence for nodes and edges
+- Checksum-based incremental upsert (skip unchanged nodes)
+- Persistence for unresolved edges, edge resolution records, residual islands
+- Paginated query API with cursor support
+- V15 Flyway migration for artifact-specific tables
 
 ---
 
@@ -280,38 +293,44 @@
 
 ## Cross-Cutting Concerns
 
-### Source Providers
+### Source Providers (COMPLETED)
 
-**Location**: `src/source-providers/{github-provider,gitlab-provider,zip-provider,local-folder-provider}.ts`
+**Location**: `src/source-providers/{github-provider,gitlab-provider,zip-provider,archive-provider}.ts`
 
 **Deliverables**:
-- GitHubProvider: GitHub Contents API integration with truncation detection
-- GitLabProvider: GitLab API integration with paginated tree fetching
-- ZipProvider: ZIP archive extraction with path containment guards (zip-slip prevention)
-- LocalFolderProvider: Direct filesystem access
-- Provider diagnostics for observability (ProviderDiagnosticSchema)
-- Typed source locators (SourceLocatorSchema) for governed source acquisition
+- `GitHubProvider`: GitHub Contents API with commit pinning, retry/backoff, rate-limit diagnostics
+- `GitLabProvider`: GitLab API with nested groups support, typed locator dispatch
+- `ZipProvider`: ZIP extraction with diagnostics for skipped/unsafe/unsupported compression
+- `ArchiveProvider`: Facade for zip/tar/tgz with shared safety rules
+- `CredentialResolver`: Credential reference resolver for governed source acquisition
+- Provider diagnostics for observability
 
 **Security Features**:
 - GitHub: Fails closed on tree API truncation (>500k entries)
 - ZIP: Path containment guards prevent zip-slip attacks
 - All providers: Structured diagnostics without exposing credentials
+- Typed SourceLocator.provider dispatch with credentialRef support
 
-### Compile-Back Layer
+### Compile-Back Layer (COMPLETED)
 
-**Location**: `src/compile-back/{patch-coordinator,react-patch-emitter,residual-preserver}.ts`
+**Location**: `src/compile-back/{patch-coordinator,react-patch-emitter,prisma-patch-emitter,workflow-patch-emitter,residual-preserver,apply-patch}.ts`
 
 **Deliverables**:
-- PatchCoordinator: Orchestrates patch emitters, validates change plans, detects residual overlaps
-- ReactPatchEmitter: AST/range-based minimal diffs with range metadata in patches
-- ResidualPreserver: Applies regeneration strategies to residual islands
+- `PatchCoordinator`: Orchestrates patch emitters, validates change plans, detects residual overlaps
+- `ReactPatchEmitter`: AST/range-based minimal diffs with range metadata, TS Compiler API
+- `PrismaPatchEmitter`: Prisma schema patch emitter
+- `WorkflowPatchEmitter`: Workflow YAML patch emitter
+- `ResidualPreserver`: Applies regeneration strategies to residual islands
+- `apply-patch`: Dry-run/apply interface with checksum guard, residual guard, rollback metadata
 - Full patch lifecycle types: ModelChange, ChangePlan, FilePatch, ReviewBundle, ValidationResult, RollbackMetadata
+- Extended ChangeOpKind for page route, layout, token, API, data entity, workflow, manual-review
 
 **Features**:
 - AST/range-based minimal diffs (vs full-file replacements)
 - Residual overlap detection and blocking
 - Validation and review bundle generation
 - Rollback metadata for audit trails
+- Checksum guard for concurrent modification prevention
 
 ### Observability & Metrics
 
@@ -376,22 +395,54 @@
 
 ---
 
-## Implementation Status (2026-03-27)
+## Implementation Status (2026-05-16)
 
-### Completed (High Priority)
-- Phase 1 Foundation Hardening: Scanner API exports, public subpath exports, skipped artifact schema, binary checksum, package boundary detection, deterministic scan ordering, GitLab materialization root fix, GitHub truncation fail-closed, ZIP path containment guard, provider diagnostics and typed source locator
-- Phase 2 Canonical Repository IR: Graph validator, URN ID query schema support, reference index with relative import support, extractor instance exposure, pipeline graph validation
-- Phase 3 Semantic Model: Model graph node IDs and source refs, model diff/version metadata (ModelChangeSchema, ModelVersionMetadataSchema), residual enhancements (rawFragmentRef, checksum, risk, relatedGraphNodeIds)
-- Phase 4 Backend Production Hardening: DB migration V14 columns, principal-derived tenant/project scope enforcement, executor defaults removal, cursor pagination, proto alignment with TS schema (V12 additions)
-- Phase 5 Compile-Back: Full patch lifecycle types, AST/range-based React patch emitter, validation and review bundle, residual overlap blocking
-- Capability Registry: Runtime discovery of providers/extractors/emitters/validators with support levels and metadata
+### Completed (P0 - High Priority)
+- P0-1: Repository import extractor registry enforcement
+- P0-2: Graph validation exports from graph barrel
+- P0-3: Enhanced graph validation with resolved edge targets, raw label edges, resolution records, source ranges
+- P0-4: Extended ArtifactGraphIngestRequest with snapshotRef, snapshotId, versionId, contentChecksum, unresolvedEdges, edgeResolutionRecords, residualIslandIds
+- P0-5: Extended ArtifactNodeDto with sourceLocation, extractorId, extractorVersion, confidence, provenance, privacySecurityFlags, residualFragmentIds, sourceRef, symbolRef
+- P0-6: Extended ArtifactEdgeDto with edgeId, confidence, bidirectional, metadata, snapshotId, versionId
+- P0-7: Enforced workspace/project scope server-side in ArtifactGraphController
+- P0-8: Removed/flagged production parser stubs with feature gate
+- P0-9: Restricted React patch emitter canEmit to implemented ops
+- P0-10: Added UnsupportedPatchOperation result to patch-coordinator
 
-### Remaining (Medium Priority)
-- Durable Job Service: Replace in-memory job Map with durable repository; integrate canonical source providers for GitHub/GitLab/local/archive locators; route through synthesis job service
-- ImportWizard Full Lifecycle: Update for provider selection, repo/ref/archive fields, progress tracking, summary display, residuals, skipped files, confidence metrics, job API integration, typed DTOs, model element mapping to canvas/page builder
+### Completed (P1 - Medium Priority)
+- P1-1: Added CredentialResolver to source-providers/types.ts
+- P1-2: Hardened GitHub provider with credentialRef resolver, retry/backoff, rate-limit diagnostics
+- P1-3: Hardened GitLab provider with nested groups, typed locator dispatch, retry/backoff
+- P1-4: Hardened ZIP provider with diagnostics for skipped/unsafe/unsupported compression
+- P1-5: Added archive-provider.ts facade for zip/tar/tgz
+- P1-6: Extended inventory types with skip sources, sourceFileRef, contentChecksum, classificationConfidence
+- P1-7: Hardened scanner with battle-tested ignore parser, bounded concurrency, deterministic scan mode
+- P1-8: Made synthesis pipeline deterministic with SHA-256 hashed IDs and extractor registry enforcement
+- P1-9: Fixed symbol resolver with deterministic hashed edge IDs, source location, resolver version metadata
+- P1-10: Fixed symbol index with alias derivation from tsconfig/package boundaries and scanner workspace metadata
+- P1-11: Added V15 migration for repository_snapshots, artifact_inventory_items, artifact_unresolved_edges, artifact_edge_resolution_records, residual_islands, patch_sets, review_bundles
+- P1-12: Fixed ArtifactGraphRepository (removed default blocking constructor, checksum-based skipping, persisted unresolved/residual tables, paginated query API)
+- P1-13: Fixed ArtifactGraphServiceImpl with repository pagination routing and query cursor response
+- P1-14: Extended compile-back types with ModelChange coverage for page route, layout, token, API, data entity, workflow, manual-review operation type
+- P1-15: Added apply-patch.ts module with dry-run/apply interface, checksum guard, residual guard, rollback metadata, validation hook
 
-### Remaining (Low Priority)
-- Architecture documentation updates (in progress)
+### Completed (P2 - Medium Priority)
+- P2-1: Added typed client artifactCompilerClient.ts for import job, graph summary, residual review, patch review
+- P2-2: Added SourceImportPanel.tsx with provider selector, repo/ref/archive input, progress, job polling, unsupported-state display
+- P2-3: Added ImportSummaryPanel.tsx showing understood vs skipped vs residual, confidence, review requirements
+- P2-4: Added PatchReviewPanel.tsx with unified diff, validation results, residual overlaps, approve/reject
+
+### Remaining (P2 - Medium Priority)
+- P2-5: Write P2 tests (artifactCompilerClient.test.ts, Playwright import flow, component + E2E for ImportSummaryPanel, Playwright patch review)
+
+### Remaining (P2 - Low Priority)
+- P2-6: Document/consolidate V11/V14 duplicate snapshot columns (not applicable - V11/V14 migrations don't exist)
+- P2-7: Update ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md (in progress)
+- P2-8: Archive/consolidate platform/comp-decomp-todo.md
+
+### Remaining (P3 - Low Priority)
+- P3-1: Improve graph query response ergonomics
+- P3-2: Write P3 test for graph query pagination
 
 ---
 
@@ -436,11 +487,12 @@
 
 | File | Why |
 |---|---|
-| `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/YAPPCGraphService.java` | Existing graph operations facade |
-| `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/query/KGQueryService.java` | Traversal and path discovery patterns |
-| `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/persistence/KGNodeRepository.java` | JDBC + Jackson persistence pattern |
-| `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/pipeline/KGUpdatePipeline.java` | Event-driven ingestion pipeline |
-| `products/yappc/core/knowledge-graph/src/main/java/com/ghatana/yappc/knowledge/pipeline/KGConflictResolver.java` | Existing merge/dedup logic |
+| `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphService.java` | Artifact graph operations facade |
+| `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java` | JDBC + Jackson persistence pattern with pagination |
+| `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactGraphController.java` | HTTP routing pattern with scope enforcement |
+| `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/` | Source provider implementations |
+| `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/pipeline.ts` | Synthesis orchestrator with deterministic ID generation |
+| `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/apply-patch.ts` | Patch application with safety guards |
 | `platform/java/runtime/src/main/java/com/ghatana/core/activej/launcher/UnifiedApplicationLauncher.java` | Service bootstrap pattern |
 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/YappcHttpServer.java` | HTTP routing pattern |
 | `platform/typescript/api/src/client.ts` | Canonical TS HTTP client |

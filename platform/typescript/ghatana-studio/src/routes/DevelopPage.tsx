@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { useState } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { useStudioTranslation } from '../i18n/studioTranslations';
@@ -7,15 +8,49 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
-const SAFE_ACTIONS = ['create plan', 'validate', 'test', 'build', 'package'] as const;
+const SAFE_ACTIONS = ['create-plan', 'validate', 'test', 'build', 'package'] as const;
+type SafeAction = (typeof SAFE_ACTIONS)[number];
+
+function toPhase(action: SafeAction): 'validate' | 'test' | 'build' | 'package' {
+  if (action === 'create-plan') {
+    return 'build';
+  }
+  return action;
+}
 
 export default function DevelopPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
+  const [actionError, setActionError] = useState<string | undefined>(undefined);
+  const [runningAction, setRunningAction] = useState<SafeAction | undefined>(undefined);
   const snapshot = lifecycleData.snapshot;
   const productUnit = snapshot.productUnit;
   const productUnitId = productUnit?.id ?? 'digital-marketing';
   const surfaces = productUnit?.surfaces ?? [];
+
+  const runAction = async (action: SafeAction): Promise<void> => {
+    setActionError(undefined);
+    setRunningAction(action);
+    try {
+      const phase = toPhase(action);
+      if (action === 'create-plan') {
+        await lifecycleData.createPlan(phase, {
+          dryRun: true,
+          environment: lifecycleData.selectedEnvironment,
+        });
+      } else {
+        await lifecycleData.executePhase(phase, {
+          dryRun: false,
+          environment: lifecycleData.selectedEnvironment,
+        });
+      }
+      await lifecycleData.refresh();
+    } catch (error: unknown) {
+      setActionError(error instanceof Error ? error.message : t('studio.route.develop.actionErrorFallback'));
+    } finally {
+      setRunningAction(undefined);
+    }
+  };
 
   return (
     <section className="space-y-6" aria-labelledby="develop-title">
@@ -40,14 +75,23 @@ export default function DevelopPage(): ReactElement {
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
           value={productUnitId}
           onChange={(event) => {
-            void event;
+            lifecycleData.selectProductUnit(event.target.value);
           }}
-          disabled
+          disabled={snapshot.status === 'loading' || snapshot.availableProductUnits.length === 0}
         >
-          <option value={productUnitId}>{productUnit?.name ?? 'Digital Marketing'}</option>
+          {snapshot.availableProductUnits.length > 0
+            ? snapshot.availableProductUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </option>
+              ))
+            : <option value={productUnitId}>{productUnit?.name ?? 'Digital Marketing'}</option>}
         </select>
         {snapshot.errorMessage !== undefined ? (
           <p className="text-sm text-amber-700">{snapshot.errorMessage}</p>
+        ) : null}
+        {actionError !== undefined ? (
+          <p className="text-sm text-red-700">{actionError}</p>
         ) : null}
       </div>
 
@@ -58,19 +102,19 @@ export default function DevelopPage(): ReactElement {
           </h3>
           <dl className="grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
             <div>
-              <dt className="font-medium text-gray-900">Kind</dt>
+              <dt className="font-medium text-gray-900">{t('studio.route.develop.kindLabel')}</dt>
               <dd>{productUnit?.kind ?? 'awaiting ProductUnit contract'}</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-900">Lifecycle</dt>
+              <dt className="font-medium text-gray-900">{t('studio.route.develop.lifecycleLabel')}</dt>
               <dd>{productUnit?.lifecycleStatus ?? 'unavailable'}</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-900">Owner</dt>
+              <dt className="font-medium text-gray-900">{t('studio.route.develop.ownerLabel')}</dt>
               <dd>{productUnit?.owner ?? 'unassigned'}</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-900">Conformance</dt>
+              <dt className="font-medium text-gray-900">{t('studio.route.develop.conformanceLabel')}</dt>
               <dd>{productUnit?.conformance?.level ?? 'not reported'}</dd>
             </div>
           </dl>
@@ -81,13 +125,17 @@ export default function DevelopPage(): ReactElement {
               {t('studio.route.develop.safeActionsTitle')}
           </h3>
           <div className="flex flex-wrap gap-2">
-            {SAFE_ACTIONS.map((action: string) => (
+            {SAFE_ACTIONS.map((action: SafeAction) => (
               <button
                 key={action}
                 type="button"
                 className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800"
+                onClick={() => {
+                  void runAction(action);
+                }}
+                disabled={runningAction !== undefined || snapshot.status === 'unconfigured' || snapshot.status === 'degraded'}
               >
-                {action}
+                {runningAction === action ? t('studio.route.develop.runningActionLabel') : t(`studio.route.develop.action.${action}`)}
               </button>
             ))}
           </div>

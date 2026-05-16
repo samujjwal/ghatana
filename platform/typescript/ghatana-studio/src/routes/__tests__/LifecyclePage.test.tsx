@@ -18,6 +18,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
   return {
     snapshot: {
       status: 'ready',
+      runtimeMode: 'configured',
       availableProductUnits: [
         {
           schemaVersion: '1.0.0',
@@ -106,6 +107,7 @@ describe('LifecyclePage approval queue', () => {
         authenticatedUserId: 'user-123',
         snapshot: {
           ...createContextValue().snapshot,
+          runtimeMode: 'configured',
           pendingApprovals: [
             {
               approvalId: 'approval-1',
@@ -161,6 +163,7 @@ describe('LifecyclePage approval queue', () => {
         authenticatedUserId: undefined,
         snapshot: {
           ...createContextValue().snapshot,
+          runtimeMode: 'configured',
           pendingApprovals: [
             {
               approvalId: 'approval-1',
@@ -198,6 +201,7 @@ describe('LifecyclePage approval queue', () => {
       createContextValue({
         snapshot: {
           ...createContextValue().snapshot,
+          runtimeMode: 'configured',
           gateResultManifest: {
             schemaVersion: '1.0.0',
             productUnitId: 'digital-marketing',
@@ -290,6 +294,7 @@ describe('LifecyclePage approval queue', () => {
         selectedProviderMode: 'platform',
         snapshot: {
           ...createContextValue().snapshot,
+          runtimeMode: 'configured',
           status: 'degraded',
           productUnit: {
             ...createContextValue().snapshot.productUnit!,

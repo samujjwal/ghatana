@@ -26,7 +26,8 @@ services:
       start_period: 60s
     labels:
       ghatana.kernel.productUnit: digital-marketing
-      ghatana.kernel.surface: backend-api
+      ghatana.kernel.surface: local
+      ghatana.kernel.component: backend-api
       ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
       ghatana.kernel.artifactRef: "kernel://artifacts/digital-marketing/backend-api:local"
@@ -56,7 +57,8 @@ services:
       start_period: 15s
     labels:
       ghatana.kernel.productUnit: digital-marketing
-      ghatana.kernel.surface: web
+      ghatana.kernel.surface: local
+      ghatana.kernel.component: web
       ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
       ghatana.kernel.artifactRef: "kernel://artifacts/digital-marketing/web:local"

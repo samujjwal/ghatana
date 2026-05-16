@@ -556,9 +556,9 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /** Provides the durable {@link ArtifactGraphRepository} for artifact graph persistence. */
     @Provides
-    ArtifactGraphRepository artifactGraphRepository(DataSource dataSource) {
+    ArtifactGraphRepository artifactGraphRepository(DataSource dataSource, ObjectMapper objectMapper, Executor executor) {
         logger.info("Creating ArtifactGraphRepository (YAPPC-ArtifactCompiler)");
-        return new ArtifactGraphRepository(dataSource);
+        return new ArtifactGraphRepository(dataSource, objectMapper, executor);
     }
 
     /** Provides {@link ArtifactModelVersionRepository} for artifact model version history. */

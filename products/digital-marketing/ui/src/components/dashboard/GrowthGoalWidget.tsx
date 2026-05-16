@@ -19,7 +19,7 @@ export const GrowthGoalWidget: React.FC = () => {
         testId="growth-goal-widget"
         title="Growth Goals"
         state="unavailable"
-        message="Unavailable"
+        message="Currently unavailable"
         stateMessageTestId="growth-goal-unavailable"
       />
     );

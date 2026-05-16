@@ -42,6 +42,47 @@ export const ChangeOpKindSchema = z.enum([
    * Requires manual review or emitter implementation.
    */
   'unsupported-operation',
+  /**
+   * P1-14: Page route operations for routing configuration changes.
+   */
+  'add-page-route',
+  'remove-page-route',
+  'update-page-route',
+  /**
+   * P1-14: Layout operations for layout component changes.
+   */
+  'add-layout',
+  'remove-layout',
+  'update-layout',
+  /**
+   * P1-14: Token operations for design token changes.
+   */
+  'add-token',
+  'remove-token',
+  'update-token',
+  /**
+   * P1-14: API operations for API endpoint changes.
+   */
+  'add-api',
+  'remove-api',
+  'update-api',
+  /**
+   * P1-14: Data entity operations for data model changes.
+   */
+  'add-data-entity',
+  'remove-data-entity',
+  'update-data-entity',
+  /**
+   * P1-14: Workflow operations for workflow configuration changes.
+   */
+  'add-workflow',
+  'remove-workflow',
+  'update-workflow',
+  /**
+   * P1-14: Operation that requires manual review before application.
+   * Used for complex or risky changes that need human oversight.
+   */
+  'manual-review',
 ]);
 
 export type ChangeOpKind = z.infer<typeof ChangeOpKindSchema>;

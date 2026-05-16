@@ -6,7 +6,7 @@
 #   docker buildx build --load \
 #     -f products/digital-marketing/ui/Dockerfile \
 #     -t ghatana/digital-marketing-web:local \
-#     products/digital-marketing/ui
+#     .
 
 # ── Build stage ──────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
@@ -14,18 +14,16 @@ FROM node:22-alpine AS builder
 # Enable pnpm via corepack (matches packageManager field in package.json)
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
-WORKDIR /app
+WORKDIR /workspace
 
-# Copy workspace manifests first for layer caching
-COPY package.json pnpm-lock.yaml ./
+# Copy full monorepo workspace for deterministic filtered build
+COPY . .
 
 # Install all dependencies (frozen for reproducibility)
 RUN pnpm install --frozen-lockfile
 
-# Copy source and build
-COPY . .
 ENV NODE_ENV=production
-RUN pnpm run build
+RUN pnpm --dir products/digital-marketing/ui run build:docker
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runtime
@@ -34,10 +32,10 @@ FROM nginx:1.27-alpine AS runtime
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /workspace/products/digital-marketing/ui/dist /usr/share/nginx/html
 
-# Copy product nginx config (must exist alongside this Dockerfile)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy product nginx config from repository path
+COPY products/digital-marketing/ui/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

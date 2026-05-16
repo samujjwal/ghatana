@@ -5,18 +5,25 @@
  * @doc.purpose Verify session expiry, logout, and refresh behavior
  * @doc.layer frontend
  */
-import { render, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { act, fireEvent, render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import React from 'react';
 
 describe('AuthContext - Session Management (DMOS-P1-013)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     sessionStorage.clear();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should automatically logout on session expiry', async () => {
+    vi.useFakeTimers();
+
     const TestComponent = () => {
       const { isAuthenticated } = useAuth();
       return <div>{isAuthenticated ? 'authenticated' : 'not authenticated'}</div>;
@@ -30,15 +37,13 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
 
     expect(getByText('authenticated')).toBeInTheDocument();
 
-    // Fast-forward time to beyond session expiry
-    vi.useFakeTimers();
-    vi.advanceTimersByTime(31 * 60 * 1000); // 31 minutes
-
-    await waitFor(() => {
-      expect(getByText('not authenticated')).toBeInTheDocument();
+    // Fast-forward time to beyond session expiry.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31 * 60 * 1000);
     });
 
-    vi.useRealTimers();
+    expect(getByText('not authenticated')).toBeInTheDocument();
+
   });
 
   it('should clear all session data on logout', () => {
@@ -61,14 +66,14 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
       </AuthProvider>,
     );
 
-    getByText('Login').click();
+    fireEvent.click(getByText('Login'));
 
     expect(sessionStorage.getItem('dmos_workspace_id')).toBe('ws-1');
     expect(sessionStorage.getItem('dmos_tenant_id')).toBe('tenant-1');
     expect(sessionStorage.getItem('dmos_principal_id')).toBe('user-1');
     expect(sessionStorage.getItem('dmos_session_id')).toBe('session-1');
 
-    getByText('Logout').click();
+    fireEvent.click(getByText('Logout'));
 
     expect(sessionStorage.getItem('dmos_workspace_id')).toBeNull();
     expect(sessionStorage.getItem('dmos_tenant_id')).toBeNull();
@@ -77,6 +82,8 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
   });
 
   it('should refresh session periodically', async () => {
+    vi.useFakeTimers();
+
     const TestComponent = () => {
       const { isAuthenticated } = useAuth();
       return <div>{isAuthenticated ? 'authenticated' : 'not authenticated'}</div>;
@@ -90,16 +97,14 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
 
     expect(getByText('authenticated')).toBeInTheDocument();
 
-    // Fast-forward time to 5 minutes (before expiry)
-    vi.useFakeTimers();
-    vi.advanceTimersByTime(5 * 60 * 1000); // 5 minutes
-
-    // Session should still be authenticated (refreshed)
-    await waitFor(() => {
-      expect(getByText('authenticated')).toBeInTheDocument();
+    // Fast-forward time to 5 minutes (before expiry).
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     });
 
-    vi.useRealTimers();
+    // Session should still be authenticated (refreshed)
+    expect(getByText('authenticated')).toBeInTheDocument();
+
   });
 
   it('should not store sensitive token in localStorage', () => {
@@ -116,7 +121,7 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
       </AuthProvider>,
     );
 
-    getByText('Login').click();
+    fireEvent.click(getByText('Login'));
 
     // Token should NOT be in localStorage or sessionStorage
     expect(localStorage.getItem('auth_token')).toBeNull();
@@ -137,7 +142,7 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
       </AuthProvider>,
     );
 
-    getByText('Login').click();
+    fireEvent.click(getByText('Login'));
 
     // Session data should be in sessionStorage (cleared on tab close)
     expect(sessionStorage.getItem('dmos_workspace_id')).toBe('ws-1');

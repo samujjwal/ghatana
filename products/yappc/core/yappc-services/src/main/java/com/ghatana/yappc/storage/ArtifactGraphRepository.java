@@ -44,10 +44,10 @@ public final class ArtifactGraphRepository {
     private final ObjectMapper objectMapper;
     private final Executor executor;
 
-    public ArtifactGraphRepository(DataSource dataSource) {
-        this(dataSource, new ObjectMapper(), Runnable::run);
-    }
-
+    /**
+     * P1-12: Removed default blocking constructor.
+     * Requires explicit executor injection to avoid blocking the event loop.
+     */
     public ArtifactGraphRepository(DataSource dataSource, ObjectMapper objectMapper, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
@@ -62,12 +62,31 @@ public final class ArtifactGraphRepository {
      * P4-4: Save nodes with snapshot/version ID tracking for incremental upsert.
      * Snapshot ID identifies which repository scan produced these nodes.
      * Version ID enables tracking of graph evolution over time.
+     * P1-12: Skip unchanged nodes by checksum comparison to reduce database writes.
      */
     public Promise<Void> saveNodes(String productId, String tenantId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId) {
         if (nodes == null || nodes.isEmpty()) {
             return Promise.of(null);
         }
         return Promise.ofBlocking(executor, () -> {
+            // P1-12: Fetch existing checksums to skip unchanged nodes
+            Map<String, String> existingChecksums = new HashMap<>();
+            String checksumQuery = """
+                SELECT node_id, content_checksum
+                FROM artifact_nodes
+                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(checksumQuery)) {
+                stmt.setString(1, tenantId);
+                stmt.setString(2, productId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        existingChecksums.put(rs.getString("node_id"), rs.getString("content_checksum"));
+                    }
+                }
+            }
+
             String sql = """
                 INSERT INTO artifact_nodes (
                     node_id, node_type, node_name, file_path, content_snippet,
@@ -89,12 +108,22 @@ public final class ArtifactGraphRepository {
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
+                int skipped = 0;
                 for (ArtifactNodeDto node : nodes) {
                     if ((node.tenantId() != null && !tenantId.equals(node.tenantId()))
                             || (node.projectId() != null && !productId.equals(node.projectId()))) {
                         log.warn("Ignoring node payload scope for nodeId={} and using server scope tenantId={}, productId={}",
                                 node.id(), tenantId, productId);
                     }
+                    
+                    // P1-12: Skip unchanged nodes by checksum
+                    String newChecksum = computeChecksum(node);
+                    String existingChecksum = existingChecksums.get(node.id());
+                    if (existingChecksum != null && existingChecksum.equals(newChecksum)) {
+                        skipped++;
+                        continue;
+                    }
+                    
                     statement.setString(1, node.id());
                     statement.setString(2, node.type());
                     statement.setString(3, node.name());
@@ -104,7 +133,7 @@ public final class ArtifactGraphRepository {
                     statement.setString(7, writeJson(node.tags()));
                     statement.setString(8, tenantId);
                     statement.setString(9, productId);
-                    statement.setString(10, computeChecksum(node));
+                    statement.setString(10, newChecksum);
                     Instant now = Instant.now();
                     statement.setTimestamp(11, Timestamp.from(now));
                     statement.setTimestamp(12, Timestamp.from(now));
@@ -114,13 +143,10 @@ public final class ArtifactGraphRepository {
                     statement.addBatch();
                 }
                 statement.executeBatch();
+                log.info("Saved {} artifact nodes for product {} (snapshotId={}, versionId={}, skipped={})", 
+                    nodes.size() - skipped, productId, snapshotId, versionId, skipped);
             }
             return null;
-        }).whenComplete((result, e) -> {
-            if (e == null) {
-                log.info("Saved {} artifact nodes for product {} (snapshotId={}, versionId={})", 
-                    nodes.size(), productId, snapshotId, versionId);
-            }
         }).map(v -> null);
     }
 
@@ -532,7 +558,16 @@ public final class ArtifactGraphRepository {
                             readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
                             readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
                             resultSet.getString("tenant_id"),
-                            resultSet.getString("project_id")
+                            resultSet.getString("project_id"),
+                            null, // sourceLocation
+                            null, // extractorId
+                            null, // extractorVersion
+                            null, // confidence
+                            null, // provenance
+                            null, // privacySecurityFlags
+                            null, // residualFragmentIds
+                            null, // sourceRef
+                            null  // symbolRef
                         );
                         
                         if (snapshotId.equals(fromSnapshotId)) {
@@ -587,6 +622,158 @@ public final class ArtifactGraphRepository {
         List<ArtifactEdgeDto> modifiedEdges
     ) {}
 
+    // ============================================================================
+    // P1-12: Unresolved Edges and Residual Islands Persistence
+    // ============================================================================
+
+    /**
+     * P1-12: Save unresolved edges to the artifact_unresolved_edges table.
+     */
+    public Promise<Void> saveUnresolvedEdges(
+            String productId, String tenantId, String snapshotId,
+            List<UnresolvedEdgeRecord> unresolvedEdges) {
+        if (unresolvedEdges == null || unresolvedEdges.isEmpty()) {
+            return Promise.of(null);
+        }
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                INSERT INTO artifact_unresolved_edges (
+                    id, snapshot_id, source_node_id, target_ref, relationship,
+                    target_kind_hint, confidence, metadata, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (UnresolvedEdgeRecord edge : unresolvedEdges) {
+                    statement.setString(1, edge.id());
+                    statement.setString(2, snapshotId);
+                    statement.setString(3, edge.sourceNodeId());
+                    statement.setString(4, edge.targetRef());
+                    statement.setString(5, edge.relationship());
+                    statement.setString(6, edge.targetKindHint());
+                    if (edge.confidence() != null) {
+                        statement.setBigDecimal(7, java.math.BigDecimal.valueOf(edge.confidence()));
+                    } else {
+                        statement.setNull(7, java.sql.Types.NUMERIC);
+                    }
+                    statement.setString(8, writeJson(edge.metadata()));
+                    statement.setTimestamp(9, Timestamp.from(Instant.now()));
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+                log.info("Saved {} unresolved edges for product {} (snapshotId={})", 
+                    unresolvedEdges.size(), productId, snapshotId);
+            }
+            return null;
+        }).map(v -> null);
+    }
+
+    /**
+     * P1-12: Save edge resolution records to the artifact_edge_resolution_records table.
+     */
+    public Promise<Void> saveEdgeResolutionRecords(
+            String productId, String tenantId, List<EdgeResolutionRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return Promise.of(null);
+        }
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                INSERT INTO artifact_edge_resolution_records (
+                    id, unresolved_edge_id, status, resolved_target_id,
+                    candidate_ids, review_required, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (EdgeResolutionRecord record : records) {
+                    statement.setString(1, record.id());
+                    statement.setString(2, record.unresolvedEdgeId());
+                    statement.setString(3, record.status());
+                    statement.setString(4, record.resolvedTargetId());
+                    statement.setString(5, writeJson(record.candidateIds()));
+                    statement.setBoolean(6, record.reviewRequired());
+                    statement.setTimestamp(7, Timestamp.from(Instant.now()));
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+                log.info("Saved {} edge resolution records for product {}", records.size(), productId);
+            }
+            return null;
+        }).map(v -> null);
+    }
+
+    /**
+     * P1-12: Save residual islands to the residual_islands table.
+     */
+    public Promise<Void> saveResidualIslands(
+            String productId, String tenantId, String snapshotId,
+            List<ResidualIslandRecord> islands) {
+        if (islands == null || islands.isEmpty()) {
+            return Promise.of(null);
+        }
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                INSERT INTO residual_islands (
+                    id, snapshot_id, island_type, summary, file_count,
+                    confidence, metadata, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (ResidualIslandRecord island : islands) {
+                    statement.setString(1, island.id());
+                    statement.setString(2, snapshotId);
+                    statement.setString(3, island.islandType());
+                    statement.setString(4, island.summary());
+                    statement.setInt(5, island.fileCount());
+                    if (island.confidence() != null) {
+                        statement.setBigDecimal(6, java.math.BigDecimal.valueOf(island.confidence()));
+                    } else {
+                        statement.setNull(6, java.sql.Types.NUMERIC);
+                    }
+                    statement.setString(7, writeJson(island.metadata()));
+                    statement.setTimestamp(8, Timestamp.from(Instant.now()));
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+                log.info("Saved {} residual islands for product {} (snapshotId={})", 
+                    islands.size(), productId, snapshotId);
+            }
+            return null;
+        }).map(v -> null);
+    }
+
+    /**
+     * P1-12: Record types for unresolved edges and residual islands.
+     */
+    public record UnresolvedEdgeRecord(
+        String id,
+        String sourceNodeId,
+        String targetRef,
+        String relationship,
+        String targetKindHint,
+        Double confidence,
+        Map<String, Object> metadata
+    ) {}
+
+    public record EdgeResolutionRecord(
+        String id,
+        String unresolvedEdgeId,
+        String status,
+        String resolvedTargetId,
+        List<String> candidateIds,
+        boolean reviewRequired
+    ) {}
+
+    public record ResidualIslandRecord(
+        String id,
+        String islandType,
+        String summary,
+        int fileCount,
+        Double confidence,
+        Map<String, Object> metadata
+    ) {}
+
     /**
      * Compute checksum for a node to enable incremental upsert.
      * Uses SHA-256 hash of node content + properties + tags.
@@ -622,16 +809,31 @@ public final class ArtifactGraphRepository {
             readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
             readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
             resultSet.getString("tenant_id"),
-            resultSet.getString("project_id")
+            resultSet.getString("project_id"),
+            null, // sourceLocation
+            null, // extractorId
+            null, // extractorVersion
+            null, // confidence
+            null, // provenance
+            null, // privacySecurityFlags
+            null, // residualFragmentIds
+            null, // sourceRef
+            null  // symbolRef
         );
     }
 
     private ArtifactEdgeDto mapEdge(ResultSet resultSet) throws SQLException {
         return new ArtifactEdgeDto(
+            null, // edgeId
             resultSet.getString("source_node_id"),
             resultSet.getString("target_node_id"),
             resultSet.getString("relationship_type"),
-            readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of())
+            readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
+            null, // confidence
+            null, // bidirectional
+            null, // metadata
+            null, // snapshotId
+            null  // versionId
         );
     }
 

@@ -5,6 +5,7 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisResult;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
+import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
@@ -378,23 +379,31 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                 "Three-way merge completed with " + result.conflicts().size() + " conflicts"));
     }
 
+    /**
+     * P1-13: Query the artifact graph with cursor-based pagination.
+     * Routes graph queries through repository pagination and returns cursor for next page.
+     * P3-1: Returns typed ArtifactGraphQueryResponse with items, nextCursor, totalEstimate, and scope metadata.
+     */
     @Override
-    public Promise<Map<String, Object>> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds) {
+    public Promise<ArtifactGraphQueryResponse> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize) {
         String cacheKey = cacheKey(tenantId, productId);
-        List<ArtifactNodeDto> cachedNodes = nodeCache.getIfPresent(cacheKey);
-        List<ArtifactEdgeDto> cachedEdges = edgeCache.getIfPresent(cacheKey);
+        
+        // P1-13: Use repository pagination instead of full fetch
+        int effectivePageSize = pageSize > 0 ? pageSize : 100;
+        
+        Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = repository.findNodesPaginated(productId, tenantId, cursor, effectivePageSize);
+        Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = repository.findEdgesPaginated(productId, tenantId, cursor, effectivePageSize);
 
-        Promise<List<ArtifactNodeDto>> nodesPromise = cachedNodes != null
-                ? Promise.of(cachedNodes)
-                : repository.findNodesByProduct(productId, tenantId, 10000);
-        Promise<List<ArtifactEdgeDto>> edgesPromise = cachedEdges != null
-                ? Promise.of(cachedEdges)
-                : repository.findEdgesByProduct(productId, tenantId);
-
-        return nodesPromise.combine(edgesPromise, (nodes, edges) -> {
+        return nodesPromise.combine(edgesPromise, (nodesPageResult, edgesPageResult) -> {
+            List<ArtifactNodeDto> nodes = nodesPageResult.items();
+            List<ArtifactEdgeDto> edges = edgesPageResult.items();
+            
+            // Update cache with current page
             nodeCache.put(cacheKey, nodes);
             edgeCache.put(cacheKey, edges);
-            Map<String, Object> result = new HashMap<>();
+            
+            // Build query-specific items
+            Map<String, Object> items = new HashMap<>();
 
             switch (queryType.toLowerCase()) {
                 case "orphaned" -> {
@@ -405,7 +414,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                     List<String> orphaned = allNodeIds.stream()
                             .filter(id -> !referencedIds.contains(id))
                             .collect(Collectors.toList());
-                    result.put("orphanedNodes", orphaned);
+                    items.put("orphanedNodes", orphaned);
                 }
                 case "dependencies" -> {
                     Map<String, List<String>> deps = new HashMap<>();
@@ -414,7 +423,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                             deps.computeIfAbsent(edge.sourceNodeId(), k -> new ArrayList<>()).add(edge.targetNodeId());
                         }
                     }
-                    result.put("dependencies", deps);
+                    items.put("dependencies", deps);
                 }
                 case "dependents" -> {
                     Map<String, List<String>> dependents = new HashMap<>();
@@ -423,18 +432,36 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                             dependents.computeIfAbsent(edge.targetNodeId(), k -> new ArrayList<>()).add(edge.sourceNodeId());
                         }
                     }
-                    result.put("dependents", dependents);
+                    items.put("dependents", dependents);
                 }
                 case "stats" -> {
-                    result.put("nodeCount", nodes.size());
-                    result.put("edgeCount", edges.size());
+                    items.put("nodeCount", nodes.size());
+                    items.put("edgeCount", edges.size());
                     Map<String, Long> typeCounts = nodes.stream()
                             .collect(Collectors.groupingBy(ArtifactNodeDto::type, Collectors.counting()));
-                    result.put("nodeTypeDistribution", typeCounts);
+                    items.put("nodeTypeDistribution", typeCounts);
                 }
-                default -> result.put("error", "Unknown query type: " + queryType);
+                default -> items.put("error", "Unknown query type: " + queryType);
             }
-            return result;
+            
+            // P3-1: Build typed response with scope metadata
+            boolean hasMore = nodesPageResult.nextCursor() != null;
+            ArtifactGraphQueryResponse.ScopeMetadata scope = new ArtifactGraphQueryResponse.ScopeMetadata(
+                tenantId,
+                productId,
+                queryType,
+                effectivePageSize,
+                hasMore
+            );
+            
+            // Estimate total (this is approximate - for accurate counts, a separate count query would be needed)
+            Long totalEstimate = hasMore ? (long) effectivePageSize * 2 : (long) nodes.size();
+            
+            if (hasMore) {
+                return ArtifactGraphQueryResponse.withNextPage(items, nodesPageResult.nextCursor(), totalEstimate, scope);
+            } else {
+                return ArtifactGraphQueryResponse.lastPage(items, totalEstimate, scope);
+            }
         });
     }
 

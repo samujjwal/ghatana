@@ -80,6 +80,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {
     const startedAt = Date.now();
     const [step] = await this.plan(context);
+    const timeoutMs = this.resolveTimeoutMs(context.surfaceConfig);
 
     if (context.dryRun) {
       context.logger.info(`[DRY-RUN] Would execute: ${this.safeCommand(step.command)}`);
@@ -116,7 +117,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
       {
         cwd: step.workingDirectory,
         env: { ...process.env, ...step.env },
-        timeoutMs: 900_000, // 15 min â€” image builds can be slow
+        timeoutMs,
         commandId: step.id,
         redact: (value) => this.redactCommandText(value),
       },
@@ -323,6 +324,14 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
       missingArtifacts: errors.map((error) => error.path),
       unexpectedArtifacts: warnings,
     };
+  }
+
+  private resolveTimeoutMs(surfaceConfig: Record<string, unknown>): number {
+    const configured = surfaceConfig.timeoutMs;
+    if (typeof configured === 'number' && Number.isFinite(configured) && configured >= 60_000) {
+      return configured;
+    }
+    return 900_000;
   }
 
   private async expectPath(

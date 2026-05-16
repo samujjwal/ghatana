@@ -224,6 +224,32 @@ describe('kernelLifecycleClient', () => {
     });
   });
 
+  it('adds authorization and scope headers for lifecycle mutations when auth context is configured', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(lifecycleRun));
+    const client = createKernelLifecycleClient({
+      baseUrl: 'https://studio.test',
+      tenantId: 'tenant-secure',
+      workspaceId: 'workspace-secure',
+      projectId: 'project-secure',
+      authToken: 'test-token',
+      correlationIdFactory: () => 'corr-secure',
+    });
+
+    await expect(
+      client.executeLifecyclePhase('digital-marketing', 'validate', {
+        environment: 'local',
+      }),
+    ).resolves.toEqual(lifecycleRun);
+
+    const [call] = getFetchCalls(mockFetch);
+    const headers = new Headers(call.init.headers);
+    expect(headers.get('Authorization')).toBe('Bearer test-token');
+    expect(headers.get('X-Ghatana-Tenant-Id')).toBe('tenant-secure');
+    expect(headers.get('X-Ghatana-Workspace-Id')).toBe('workspace-secure');
+    expect(headers.get('X-Ghatana-Project-Id')).toBe('project-secure');
+    expect(headers.get('X-Correlation-Id')).toBe('corr-secure');
+  });
+
   it('creates lifecycle plans with generated correlation id and no optional body fields', async () => {
     mockFetch.mockResolvedValueOnce(
       jsonResponse({ ...lifecyclePlan, correlationId: 'corr-generated' }),

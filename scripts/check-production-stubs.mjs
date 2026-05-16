@@ -94,12 +94,14 @@ const changedFiles = getChangedFiles();
 // Patterns — each entry describes one category of violation
 // ---------------------------------------------------------------------------
 
-/** @type {{ id: string; severity: 'critical' | 'warning'; pattern: RegExp; description: string }[]} */
+/** @type {{ id: string; severity: 'critical' | 'warning'; pattern: RegExp; description: string; includePaths?: RegExp[]; excludePaths?: RegExp[] }[]} */
 const PATTERNS = scanConfig.scanPatterns.map((p) => ({
   id: p.id,
   severity: p.severity,
   pattern: new RegExp(p.pattern, 'i'),
   description: p.description,
+  includePaths: Array.isArray(p.includePaths) ? p.includePaths.map((value) => new RegExp(value, 'i')) : undefined,
+  excludePaths: Array.isArray(p.excludePaths) ? p.excludePaths.map((value) => new RegExp(value, 'i')) : undefined,
 }));
 
 // ---------------------------------------------------------------------------
@@ -236,7 +238,13 @@ for (const root of scanRoots) {
     const lines = source.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      for (const { id, severity, pattern, description } of PATTERNS) {
+      for (const { id, severity, pattern, description, includePaths, excludePaths } of PATTERNS) {
+        if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {
+          continue;
+        }
+        if (excludePaths && excludePaths.length > 0 && excludePaths.some((pathPattern) => pathPattern.test(rel))) {
+          continue;
+        }
         const match = pattern.exec(line);
         if (match) {
           violations.push({

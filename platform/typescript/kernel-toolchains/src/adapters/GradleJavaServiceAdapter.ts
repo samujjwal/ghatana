@@ -319,10 +319,13 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       path.join(this.repoRoot, 'settings.gradle'),
     ];
     const settingsContents: string[] = [];
+    const visitedSettingsFiles = new Set<string>();
     for (const settingsFile of settingsFiles) {
-      if (await this.exists(settingsFile)) {
-        settingsContents.push(await fs.readFile(settingsFile, 'utf-8'));
-      }
+      const discoveredContents = await this.readSettingsWithAppliedFiles(
+        settingsFile,
+        visitedSettingsFiles,
+      );
+      settingsContents.push(...discoveredContents);
     }
 
     if (settingsContents.some((content) => this.settingsIncludeModule(content, gradleModule))) {
@@ -332,6 +335,52 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     throw new Error(
       `gradle-module-not-found: Gradle module ${gradleModule} is not declared in settings.gradle(.kts).`,
     );
+  }
+
+  private async readSettingsWithAppliedFiles(
+    settingsFile: string,
+    visited: Set<string>,
+  ): Promise<string[]> {
+    const absolutePath = path.resolve(settingsFile);
+    if (visited.has(absolutePath)) {
+      return [];
+    }
+    visited.add(absolutePath);
+
+    if (!(await this.exists(absolutePath))) {
+      return [];
+    }
+
+    const content = await fs.readFile(absolutePath, 'utf-8');
+    const contents = [content];
+    const appliedFiles = this.extractAppliedSettingsFiles(content, path.dirname(absolutePath));
+    for (const appliedFile of appliedFiles) {
+      const nestedContents = await this.readSettingsWithAppliedFiles(appliedFile, visited);
+      contents.push(...nestedContents);
+    }
+
+    return contents;
+  }
+
+  private extractAppliedSettingsFiles(settingsContent: string, baseDir: string): string[] {
+    const matches = new Set<string>();
+    const patterns = [
+      /apply\s*\(\s*from\s*=\s*file\(\s*["']([^"']+)["']\s*\)\s*\)/g,
+      /apply\s+from\s*:\s*["']([^"']+)["']/g,
+    ];
+
+    for (const pattern of patterns) {
+      let match: RegExpExecArray | null;
+      // eslint-disable-next-line no-cond-assign
+      while ((match = pattern.exec(settingsContent)) !== null) {
+        const candidate = match[1]?.trim();
+        if (candidate && candidate.length > 0) {
+          matches.add(path.resolve(baseDir, candidate));
+        }
+      }
+    }
+
+    return [...matches];
   }
 
   private settingsIncludeModule(settingsContent: string, gradleModule: string): boolean {

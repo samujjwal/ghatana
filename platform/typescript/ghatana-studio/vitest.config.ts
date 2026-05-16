@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@ghatana/design-system': path.resolve(__dirname, '../design-system/src/index.ts'),

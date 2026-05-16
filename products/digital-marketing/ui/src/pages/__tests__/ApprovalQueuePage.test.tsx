@@ -11,6 +11,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
 import type { ApprovalRecordResponse } from '@/types/approval';
@@ -91,49 +92,53 @@ function buildQueryClient(): QueryClient {
 
 function renderPage(token: string | null = 'test-token'): void {
   render(
-    <QueryClientProvider client={buildQueryClient()}>
-      <AuthProvider
-        initialToken={token}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialPrincipalId="reviewer-1"
-        initialRoles={['brand-manager']}
-      >
-        <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
-          <Routes>
-            <Route path="/login" element={<div data-testid="login-page" />} />
-            <Route
-              path="/workspaces/:workspaceId/approvals"
-              element={<ApprovalQueuePage />}
-            />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken={token}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialPrincipalId="reviewer-1"
+          initialRoles={['brand-manager']}
+        >
+          <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
+            <Routes>
+              <Route path="/login" element={<div data-testid="login-page" />} />
+              <Route
+                path="/workspaces/:workspaceId/approvals"
+                element={<ApprovalQueuePage />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 
 function renderPageWithRoles(roles: string[], token: string | null = 'test-token'): void {
   render(
-    <QueryClientProvider client={buildQueryClient()}>
-      <AuthProvider
-        initialToken={token}
-        initialWorkspaceId="ws-1"
-        initialTenantId="tenant-1"
-        initialPrincipalId="reviewer-1"
-        initialRoles={roles}
-      >
-        <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
-          <Routes>
-            <Route path="/login" element={<div data-testid="login-page" />} />
-            <Route
-              path="/workspaces/:workspaceId/approvals"
-              element={<ApprovalQueuePage />}
-            />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </QueryClientProvider>,
+    <ThemeProvider defaultTheme="light" enableStorage={false} enableSystem={false}>
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken={token}
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialPrincipalId="reviewer-1"
+          initialRoles={roles}
+        >
+          <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
+            <Routes>
+              <Route path="/login" element={<div data-testid="login-page" />} />
+              <Route
+                path="/workspaces/:workspaceId/approvals"
+                element={<ApprovalQueuePage />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>,
   );
 }
 

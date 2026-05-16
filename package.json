@@ -51,6 +51,8 @@
     "check:kernel-boundaries": "node ./scripts/check-kernel-boundaries.mjs",
     "check:kernel-provider-mode": "node ./scripts/check-kernel-provider-mode.mjs",
     "check:data-cloud-platform-providers": "node ./scripts/check-data-cloud-platform-providers.mjs",
+    "check:kernel-lifecycle-service": "pnpm -w run check:kernel-lifecycle-truth",
+    "check:kernel-api-contracts": "pnpm -w run check:studio-kernel-api && pnpm -w run check:openapi-canonical",
     "check:kernel-product-unit-provider-contracts": "node ./scripts/check-kernel-product-unit-provider-contracts.mjs",
     "check:kernel-lifecycle-truth": "node ./scripts/check-kernel-lifecycle-truth.mjs",
     "check:agentic-lifecycle-action-contracts": "node ./scripts/check-agentic-lifecycle-action-contracts.mjs",

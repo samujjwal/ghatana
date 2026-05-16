@@ -14,6 +14,7 @@ import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
+import { resolveStudioRouteCapabilityState } from '../navigation/studioNavigation';
 
 const LIFECYCLE_PHASES = ['validate', 'test', 'build', 'package', 'deploy', 'verify'] as const;
 const DEFAULT_ENVIRONMENTS = ['local'] as const;
@@ -179,6 +180,11 @@ export default function LifecyclePage(): ReactElement {
   const selectedRun = selectedRunId
     ? lifecycleData.snapshot.lifecycleRuns.find((run) => run.runId === selectedRunId)
     : lifecycleData.snapshot.selectedRun;
+  const capabilityState = resolveStudioRouteCapabilityState({
+    runtimeConfigured: lifecycleData.authenticatedUserId !== undefined,
+    lifecycleStatus: lifecycleData.snapshot.status,
+    productUnit: lifecycleData.snapshot.productUnit,
+  });
   const activeEnvironment = environmentOptions.includes(environment)
     ? environment
     : environmentOptions[0] ?? DEFAULT_ENVIRONMENTS[0];
@@ -186,7 +192,7 @@ export default function LifecyclePage(): ReactElement {
   const phaseSupported = supportedPhases.includes(selectedPhase);
 
   // Platform mode is disabled unless Data Cloud provider context is ready
-  const platformModeDisabled = lifecycleData.snapshot.status === 'degraded' || lifecycleData.snapshot.status === 'unconfigured';
+  const platformModeDisabled = !capabilityState.dataCloudEvidenceReady;
   const blockedReasonCodes: LifecycleBlockedReasonCode[] = [];
   if (lifecycleData.snapshot.productUnit === undefined) {
     blockedReasonCodes.push('product-unit-unavailable');
