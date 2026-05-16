@@ -171,9 +171,9 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
             when(client.read(any(), any(), eq(opts)))
                 .thenReturn(CompletableFuture.completedFuture(expected));
 
-            runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", opts)));
+            runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.ds", "r1", opts)));
 
-            verify(client).read("ds", "r1", opts);
+            verify(client).read("tenant-a.ds", "r1", opts);
         }
 
         @Test
@@ -184,7 +184,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(expected));
 
             DataResult result = runPromise(() ->
-                adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", null)));
+                adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.ds", "r1", null)));
 
             assertThat(result).isNotNull();
         }
@@ -201,13 +201,13 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         void allWriteFieldsForwardedToClient() {
             byte[] payload = "event-payload".getBytes();
             Map<String, String> meta = Map.of("tenant", "tenant-b");
-            when(client.write(eq("tenant-b.events"), eq("evt-1"), eq(payload), eq(meta)))
+            when(client.write(eq("tenant-a.events"), eq("evt-1"), eq(payload), eq(meta)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
             runPromise(() ->
-                adapter.writeData(new DataWriteRequest(bridgeContext, "tenant-b.events", "evt-1", payload, meta)));
+                adapter.writeData(new DataWriteRequest(bridgeContext, "tenant-a.events", "evt-1", payload, meta)));
 
-            verify(client).write("tenant-b.events", "evt-1", payload, meta);
+            verify(client).write("tenant-a.events", "evt-1", payload, meta);
         }
     }
 
@@ -220,13 +220,13 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @Test
         @DisplayName("dataset ID and record ID are forwarded to client")
         void deleteFieldsForwardedToClient() {
-            when(client.delete(eq("tenant-c.entities"), eq("ent-99")))
+            when(client.delete(eq("tenant-a.entities"), eq("ent-99")))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
             runPromise(() ->
-                adapter.deleteData(new DataDeleteRequest(bridgeContext, "tenant-c.entities", "ent-99")));
+                adapter.deleteData(new DataDeleteRequest(bridgeContext, "tenant-a.entities", "ent-99")));
 
-            verify(client).delete("tenant-c.entities", "ent-99");
+            verify(client).delete("tenant-a.entities", "ent-99");
         }
     }
 
@@ -244,7 +244,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(List.of(r1)));
 
             var result = runPromise(() ->
-                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 10, 0)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "tenant-a.ds", "SELECT *", Map.of(), 10, 0)));
 
             assertThat(result.hasMore()).isFalse();
             assertThat(result.getTotalCount()).isEqualTo(1);
@@ -259,7 +259,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.completedFuture(List.of(r1, r2)));
 
             var result = runPromise(() ->
-                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 2, 0)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "tenant-a.ds", "SELECT *", Map.of(), 2, 0)));
 
             assertThat(result.hasMore()).isTrue();
             assertThat(result.getTotalCount()).isEqualTo(2);
@@ -269,13 +269,13 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @DisplayName("query parameters are forwarded to client")
         void queryParametersForwardedToClient() {
             Map<String, Object> params = Map.of("tenantId", "t1", "since", "2026-01-01");
-            when(client.query(eq("ds"), eq("SELECT *"), eq(params), eq(5), eq(10)))
+            when(client.query(eq("tenant-a.ds"), eq("SELECT *"), eq(params), eq(5), eq(10)))
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
 
             runPromise(() ->
-                adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", params, 5, 10)));
+                adapter.queryData(new DataQueryRequest(bridgeContext, "tenant-a.ds", "SELECT *", params, 5, 10)));
 
-            verify(client).query("ds", "SELECT *", params, 5, 10);
+            verify(client).query("tenant-a.ds", "SELECT *", params, 5, 10);
         }
     }
 
@@ -293,7 +293,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(cause));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "ds", "r1", Map.of()))))
+                runPromise(() -> adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.ds", "r1", Map.of()))))
                 .hasMessageContaining("storage unavailable");
         }
 
@@ -305,7 +305,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
 
             assertThatThrownBy(() ->
                 runPromise(() ->
-                    adapter.writeData(new DataWriteRequest(bridgeContext, "ds", "r1", new byte[0], Map.of()))))
+                    adapter.writeData(new DataWriteRequest(bridgeContext, "tenant-a.ds", "r1", new byte[0], Map.of()))))
                 .hasMessageContaining("write failed");
         }
 
@@ -316,7 +316,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("delete failed")));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.deleteData(new DataDeleteRequest(bridgeContext, "ds", "r1"))))
+                runPromise(() -> adapter.deleteData(new DataDeleteRequest(bridgeContext, "tenant-a.ds", "r1"))))
                 .hasMessageContaining("delete failed");
         }
 
@@ -328,7 +328,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
 
             assertThatThrownBy(() ->
                 runPromise(() ->
-                    adapter.queryData(new DataQueryRequest(bridgeContext, "ds", "SELECT *", Map.of(), 10, 0))))
+                    adapter.queryData(new DataQueryRequest(bridgeContext, "tenant-a.ds", "SELECT *", Map.of(), 10, 0))))
                 .hasMessageContaining("query timeout");
         }
 
@@ -339,7 +339,7 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("schema not found")));
 
             assertThatThrownBy(() ->
-                runPromise(() -> adapter.getSchema(bridgeContext, "missing-dataset")))
+                runPromise(() -> adapter.getSchema(bridgeContext, "tenant-a.missing-dataset")))
                 .hasMessageContaining("schema not found");
         }
     }
@@ -504,25 +504,22 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
     class TenantSafeIsolation {
 
         @Test
-        @DisplayName("dataset ID for tenant-A is never mutated to tenant-B's namespace")
-        void datasetIdIsNeverMutated() {
+        @DisplayName("cross-tenant dataset access fails closed")
+        void crossTenantDatasetAccessFailsClosed() {
             DataResult resultA = new DataResult("r1", new byte[0], Map.of(), 0L);
-            DataResult resultB = new DataResult("r2", new byte[0], Map.of(), 0L);
 
             when(client.read(eq("tenant-a.entities"), any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(resultA));
-            when(client.read(eq("tenant-b.entities"), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(resultB));
 
             DataResult a = runPromise(() ->
                 adapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "r1", Map.of())));
-            DataResult b = runPromise(() ->
-                adapter.readData(new DataReadRequest(bridgeContext, "tenant-b.entities", "r2", Map.of())));
+            assertThatThrownBy(() -> runPromise(() ->
+                adapter.readData(new DataReadRequest(bridgeContext, "tenant-b.entities", "r2", Map.of()))))
+                .isInstanceOf(DataCloudProviderException.class)
+                .hasMessageContaining("outside tenant scope");
 
             assertThat(a.getRecordId()).isEqualTo("r1");
-            assertThat(b.getRecordId()).isEqualTo("r2");
             verify(client).read("tenant-a.entities", "r1", Map.of());
-            verify(client).read("tenant-b.entities", "r2", Map.of());
         }
 
         @Test
@@ -541,14 +538,14 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         @Test
         @DisplayName("schema lookup passes dataset ID verbatim — no tenant-prefix injection")
         void schemaLookupPassesDatasetIdVerbatim() {
-            SchemaInfo schema = new SchemaInfo("tenant-x.schema", Map.of(), 0L, 0L);
-            when(client.getSchema(eq("tenant-x.schema")))
+            SchemaInfo schema = new SchemaInfo("tenant-a.schema", Map.of(), 0L, 0L);
+            when(client.getSchema(eq("tenant-a.schema")))
                 .thenReturn(CompletableFuture.completedFuture(schema));
 
-            SchemaInfo result = runPromise(() -> adapter.getSchema(bridgeContext, "tenant-x.schema"));
+            SchemaInfo result = runPromise(() -> adapter.getSchema(bridgeContext, "tenant-a.schema"));
 
-            assertThat(result.getDatasetId()).isEqualTo("tenant-x.schema");
-            verify(client).getSchema("tenant-x.schema");
+            assertThat(result.getDatasetId()).isEqualTo("tenant-a.schema");
+            verify(client).getSchema("tenant-a.schema");
         }
     }
 

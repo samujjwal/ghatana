@@ -2,7 +2,7 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.platform.shared-services"
+group = "com.ghatana.products.datacloud"
 description = "Data-Cloud Kernel Bridge - KernelExtension that registers Data-Cloud adapter into kernel context"
 
 dependencies {

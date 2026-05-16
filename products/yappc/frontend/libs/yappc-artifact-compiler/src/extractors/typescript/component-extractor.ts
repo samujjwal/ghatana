@@ -12,10 +12,15 @@ import * as ts from 'typescript';
 import type {
   ArtifactRecord,
 } from '../../inventory/types';
+import {
+  buildDeterministicNodeId,
+} from '../../graph/types';
 import type {
   GraphNode,
   GraphEdge,
   GraphNodeKind,
+  UnresolvedGraphEdge,
+  SnapshotRef,
 } from '../../graph/types';
 import type {
   ComponentModel,
@@ -683,35 +688,47 @@ export function extractComponentsFromSource(
 
 export async function extractComponentArtifact(
   record: ArtifactRecord,
-  _context: ExtractionContext,
+  context: ExtractionContext,
 ): Promise<ExtractionResult> {
   const startTime = Date.now();
 
   try {
-    const content = await _context.readFile(record.relativePath);
+    const content = await context.readFile(record.relativePath);
     const extracted = extractComponentsFromSource(content, record.relativePath);
 
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
+    const unresolvedEdges: UnresolvedGraphEdge[] = [];
     const modelElements: ComponentModel[] = [];
     const residualIslands: ResidualIsland[] = [];
     const errors: ExtractionResult['errors'] = [];
     const warnings: Array<ExtractionResult['warnings'][number]> = [];
 
+    const snapshotRef: SnapshotRef | undefined = context.snapshotRef;
     const now = new Date().toISOString();
 
     for (const comp of extracted) {
-      const componentId = crypto.randomUUID();
+      // Phase 1: build deterministic node ID from snapshot ref + relative path + symbol
+      const componentId = buildDeterministicNodeId(
+        snapshotRef,
+        record.relativePath,
+        'component',
+        comp.name,
+      );
 
-      // Graph node
+      const symbolRef = `${record.relativePath}#component:${comp.name}`;
+
+      // Graph node with stable sourceRef and symbolRef
       nodes.push({
         id: componentId,
         kind: 'component' as GraphNodeKind,
         label: comp.name,
+        sourceRef: snapshotRef ? componentId : undefined,
+        symbolRef,
         sourceLocation: comp.sourceLocation,
         extractorId: EXTRACTOR_ID,
         extractorVersion: EXTRACTOR_VERSION,
-        confidence: 0.92, // AST-based extraction is high confidence
+        confidence: 0.92,
         provenance: 'exact',
         privacySecurityFlags: [],
         residualFragmentIds: [],
@@ -721,19 +738,21 @@ export async function extractComponentArtifact(
           slotsCount: comp.slots.length,
           eventsCount: comp.events.length,
           hooksUsed: comp.hooksUsed,
+          props: comp.props,
+          tags: [],
         },
       });
 
-      // Edges for JSX usage (component renders other components)
+      // Phase 1: emit UnresolvedGraphEdge for JSX usage — NEVER fake targetId
       for (const usage of comp.jsxUsage) {
-        edges.push({
-          id: crypto.randomUUID(),
+        unresolvedEdges.push({
           sourceId: componentId,
-          targetId: usage, // Will be resolved to actual node IDs in graph builder
-          kind: 'renders',
+          targetRef: usage,          // component name string — resolved in Phase 2
+          targetKindHint: 'component',
+          relationship: 'renders',
+          sourceLocation: comp.sourceLocation,
           confidence: 0.85,
-          bidirectional: false,
-          metadata: { targetName: usage },
+          metadata: { targetComponentName: usage, extractedFrom: record.relativePath },
         });
       }
 
@@ -768,7 +787,6 @@ export async function extractComponentArtifact(
       });
     }
 
-    // Warn about imperative logic that can't be modeled
     if (content.includes('useEffect') && content.includes('setTimeout')) {
       warnings.push({
         message: `File ${record.relativePath} contains useEffect with setTimeout - side effects may not be fully modeled`,
@@ -782,6 +800,7 @@ export async function extractComponentArtifact(
       artifact: record,
       nodes,
       edges,
+      unresolvedEdges,
       modelElements,
       residualIslands,
       errors,
@@ -796,6 +815,7 @@ export async function extractComponentArtifact(
       artifact: record,
       nodes: [],
       edges: [],
+      unresolvedEdges: [],
       modelElements: [],
       residualIslands: [],
       errors: [{ message, recoverable: false }],

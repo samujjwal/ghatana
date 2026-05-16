@@ -3,27 +3,83 @@ import { useState } from 'react';
 import { Badge, Button, Select, Switch } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { useStudioTranslation } from '../i18n/studioTranslations';
+import type {
+  GateResultManifest,
+  VerifyHealthReport,
+} from '../api/kernelLifecycleClient';
+import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
+import type { DeploymentManifest } from '@ghatana/kernel-deployment';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
 const LIFECYCLE_PHASES = ['validate', 'test', 'build', 'package', 'deploy', 'verify'] as const;
-const ENVIRONMENTS = ['local', 'dev', 'staging', 'production'] as const;
+const DEFAULT_ENVIRONMENTS = ['local'] as const;
 const PROVIDER_MODES = ['bootstrap', 'platform'] as const;
 
 type LifecyclePhase = (typeof LIFECYCLE_PHASES)[number];
-type Environment = (typeof ENVIRONMENTS)[number];
 type ProviderMode = (typeof PROVIDER_MODES)[number];
+type LifecycleBlockedReasonCode =
+  | 'product-unit-unavailable'
+  | 'phase-not-supported'
+  | 'environment-not-supported'
+  | 'provider-mode-unavailable';
 
-function normalizeEnvironment(environment: string): Environment {
-  if ((ENVIRONMENTS as readonly string[]).includes(environment)) {
-    return environment as Environment;
+function resolveEnvironmentOptions(metadata: unknown): readonly string[] {
+  if (typeof metadata !== 'object' || metadata === null) {
+    return DEFAULT_ENVIRONMENTS;
   }
-  if (environment === 'dev') {
-    return 'local';
+  const record = metadata as {
+    readonly environments?: unknown;
+    readonly lifecycle?: { readonly environments?: unknown };
+  };
+  const fromRoot = coerceEnvironmentArray(record.environments);
+  if (fromRoot.length > 0) {
+    return fromRoot;
   }
-  return 'local';
+  const fromLifecycle = coerceEnvironmentArray(record.lifecycle?.environments);
+  if (fromLifecycle.length > 0) {
+    return fromLifecycle;
+  }
+  return DEFAULT_ENVIRONMENTS;
+}
+
+function coerceEnvironmentArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const filtered = value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
+  return filtered.length > 0 ? filtered : [];
+}
+
+function resolveSupportedPhases(metadata: unknown): readonly LifecyclePhase[] {
+  if (typeof metadata !== 'object' || metadata === null) {
+    return LIFECYCLE_PHASES;
+  }
+  const record = metadata as {
+    readonly phases?: unknown;
+    readonly lifecycle?: { readonly phases?: unknown };
+  };
+  const fromRoot = coercePhaseArray(record.phases);
+  if (fromRoot.length > 0) {
+    return fromRoot;
+  }
+  const fromLifecycle = coercePhaseArray(record.lifecycle?.phases);
+  if (fromLifecycle.length > 0) {
+    return fromLifecycle;
+  }
+  return LIFECYCLE_PHASES;
+}
+
+function coercePhaseArray(value: unknown): readonly LifecyclePhase[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((entry): entry is LifecyclePhase =>
+      typeof entry === 'string' && (LIFECYCLE_PHASES as readonly string[]).includes(entry),
+    );
 }
 
 function lifecycleRunTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' {
@@ -45,34 +101,71 @@ function lifecycleRunTone(status: string): 'success' | 'warning' | 'danger' | 'n
 export default function LifecyclePage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
+  const environmentOptions = resolveEnvironmentOptions(lifecycleData.snapshot.productUnit?.metadata);
+  const supportedPhases = resolveSupportedPhases(lifecycleData.snapshot.productUnit?.metadata);
   
   const [selectedPhase, setSelectedPhase] = useState<LifecyclePhase>('build');
-  const [environment, setEnvironment] = useState<Environment>(normalizeEnvironment(lifecycleData.selectedEnvironment));
+  const [environment, setEnvironment] = useState<string>(lifecycleData.selectedEnvironment);
   const [providerMode, setProviderMode] = useState<ProviderMode>(lifecycleData.selectedProviderMode);
   const [dryRun, setDryRun] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(lifecycleData.selectedRunId);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [approvalActionState, setApprovalActionState] = useState<Record<string, 'approve' | 'reject' | null>>({});
 
   const selectedRun = selectedRunId
     ? lifecycleData.snapshot.lifecycleRuns.find((run) => run.runId === selectedRunId)
     : lifecycleData.snapshot.selectedRun;
+  const activeEnvironment = environmentOptions.includes(environment)
+    ? environment
+    : environmentOptions[0] ?? DEFAULT_ENVIRONMENTS[0];
+  const environmentSupported = environmentOptions.includes(environment);
+  const phaseSupported = supportedPhases.includes(selectedPhase);
 
   // Platform mode is disabled unless Data Cloud provider context is ready
   const platformModeDisabled = lifecycleData.snapshot.status === 'degraded' || lifecycleData.snapshot.status === 'unconfigured';
+  const blockedReasonCodes: LifecycleBlockedReasonCode[] = [];
+  if (lifecycleData.snapshot.productUnit === undefined) {
+    blockedReasonCodes.push('product-unit-unavailable');
+  }
+  if (!phaseSupported) {
+    blockedReasonCodes.push('phase-not-supported');
+  }
+  if (!environmentSupported) {
+    blockedReasonCodes.push('environment-not-supported');
+  }
+  if (providerMode === 'platform' && platformModeDisabled) {
+    blockedReasonCodes.push('provider-mode-unavailable');
+  }
 
   const runSelectedPhase = async (): Promise<void> => {
     setIsExecuting(true);
-    lifecycleData.setEnvironment(environment);
+    lifecycleData.setEnvironment(activeEnvironment);
     lifecycleData.setProviderMode(providerMode);
     try {
       if (dryRun) {
-        await lifecycleData.createPlan(selectedPhase, { dryRun: true, environment });
+        await lifecycleData.createPlan(selectedPhase, { dryRun: true, environment: activeEnvironment });
       } else {
-        await lifecycleData.executePhase(selectedPhase, { dryRun: false, environment });
+        await lifecycleData.executePhase(selectedPhase, { dryRun: false, environment: activeEnvironment });
       }
       await lifecycleData.refresh();
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const submitApproval = async (approvalId: string, approved: boolean): Promise<void> => {
+    setApprovalActionState((current) => ({ ...current, [approvalId]: approved ? 'approve' : 'reject' }));
+    try {
+      await lifecycleData.submitApprovalDecision(approvalId, {
+        approvalId,
+        approved,
+        approvedBy: 'studio-operator',
+        reason: approved ? 'Approved from Studio lifecycle queue' : 'Rejected from Studio lifecycle queue',
+        decidedAt: new Date().toISOString(),
+      });
+      await lifecycleData.refresh();
+    } finally {
+      setApprovalActionState((current) => ({ ...current, [approvalId]: null }));
     }
   };
 
@@ -104,12 +197,15 @@ export default function LifecyclePage(): ReactElement {
               id="product-unit-select"
               value={lifecycleData.snapshot.productUnit?.id ?? 'digital-marketing'}
               onChange={(event) => {
-                void event;
+                lifecycleData.selectProductUnit(event.target.value);
               }}
               disabled={lifecycleData.snapshot.status === 'loading'}
             >
-              <option value="digital-marketing">Digital Marketing</option>
-              {/* Additional product units would be loaded from the API */}
+              {lifecycleData.snapshot.availableProductUnits.map((productUnit) => (
+                <option key={productUnit.id} value={productUnit.id}>
+                  {productUnit.name}
+                </option>
+              ))}
             </Select>
           </div>
 
@@ -151,14 +247,14 @@ export default function LifecyclePage(): ReactElement {
             </label>
             <Select
               id="environment-select"
-              value={environment}
+              value={activeEnvironment}
               onChange={(e) => {
-                const nextEnvironment = e.target.value as Environment;
+                const nextEnvironment = e.target.value;
                 setEnvironment(nextEnvironment);
                 lifecycleData.setEnvironment(nextEnvironment);
               }}
             >
-              {ENVIRONMENTS.map((env) => (
+              {environmentOptions.map((env) => (
                 <option key={env} value={env}>
                   {env.charAt(0).toUpperCase() + env.slice(1)}
                 </option>
@@ -198,7 +294,8 @@ export default function LifecyclePage(): ReactElement {
             disabled={
               isExecuting ||
               lifecycleData.snapshot.status === 'loading' ||
-              lifecycleData.snapshot.status === 'degraded'
+              lifecycleData.snapshot.status === 'degraded' ||
+              blockedReasonCodes.length > 0
             }
             onClick={() => {
               void runSelectedPhase();
@@ -206,6 +303,17 @@ export default function LifecyclePage(): ReactElement {
           >
             {t('studio.route.lifecycle.executePhaseButton')}
           </Button>
+
+          {blockedReasonCodes.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3" aria-label="lifecycle-blocked-reasons">
+              <div className="text-xs font-semibold text-amber-800">Blocked reason codes</div>
+              <ul className="mt-2 space-y-1 text-xs text-amber-900">
+                {blockedReasonCodes.map((code) => (
+                  <li key={code}>{code}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </article>
 
         {/* Lifecycle run list */}
@@ -261,12 +369,54 @@ export default function LifecyclePage(): ReactElement {
         <div className="space-y-4">
           {selectedRun && (
             <>
-              <ManifestTab title="Lifecycle Plan" content={JSON.stringify({ runId: selectedRun.runId, phase: selectedRun.phase }, null, 2)} />
-              <ManifestTab title="Lifecycle Result" content={JSON.stringify(selectedRun, null, 2)} />
-              <ManifestTab title="Gate Result Manifest" content={JSON.stringify(lifecycleData.snapshot.gateResultManifest, null, 2)} />
-              <ManifestTab title="Artifact Manifest" content={JSON.stringify(lifecycleData.snapshot.artifactManifest, null, 2)} />
-              <ManifestTab title="Deployment Manifest" content={JSON.stringify(lifecycleData.snapshot.deploymentManifest, null, 2)} />
-              <ManifestTab title="Verify Health Report" content={JSON.stringify(lifecycleData.snapshot.verifyHealthReport, null, 2)} />
+              <ManifestTab
+                title="Lifecycle Plan"
+                content={
+                  <pre className="overflow-auto whitespace-pre-wrap text-gray-100">
+                    {JSON.stringify({ runId: selectedRun.runId, phase: selectedRun.phase }, null, 2)}
+                  </pre>
+                }
+              />
+              <ManifestTab
+                title="Lifecycle Result"
+                content={
+                  <pre className="overflow-auto whitespace-pre-wrap text-gray-100">
+                    {JSON.stringify(selectedRun, null, 2)}
+                  </pre>
+                }
+              />
+              <ManifestTab
+                title="Gate Result Manifest"
+                status={lifecycleData.snapshot.manifestLoadState.gateResultManifest.status}
+                message={lifecycleData.snapshot.manifestLoadState.gateResultManifest.message}
+                content={
+                  <GateManifestPanel manifest={lifecycleData.snapshot.gateResultManifest} />
+                }
+              />
+              <ManifestTab
+                title="Artifact Manifest"
+                status={lifecycleData.snapshot.manifestLoadState.artifactManifest.status}
+                message={lifecycleData.snapshot.manifestLoadState.artifactManifest.message}
+                content={
+                  <ArtifactManifestPanel manifest={lifecycleData.snapshot.artifactManifest} />
+                }
+              />
+              <ManifestTab
+                title="Deployment Manifest"
+                status={lifecycleData.snapshot.manifestLoadState.deploymentManifest.status}
+                message={lifecycleData.snapshot.manifestLoadState.deploymentManifest.message}
+                content={
+                  <DeploymentManifestPanel manifest={lifecycleData.snapshot.deploymentManifest} />
+                }
+              />
+              <ManifestTab
+                title="Verify Health Report"
+                status={lifecycleData.snapshot.manifestLoadState.verifyHealthReport.status}
+                message={lifecycleData.snapshot.manifestLoadState.verifyHealthReport.message}
+                content={
+                  <VerifyHealthPanel manifest={lifecycleData.snapshot.verifyHealthReport} />
+                }
+              />
             </>
           )}
         </div>
@@ -277,7 +427,49 @@ export default function LifecyclePage(): ReactElement {
         <h3 id="approval-queue-title" className="text-base font-semibold text-gray-950">
           {t('studio.route.lifecycle.approvalQueueTitle')}
         </h3>
-        <p className="text-sm text-gray-600">{t('studio.route.lifecycle.noPendingApprovals')}</p>
+        {lifecycleData.snapshot.pendingApprovals.length === 0 ? (
+          <p className="text-sm text-gray-600">{t('studio.route.lifecycle.noPendingApprovals')}</p>
+        ) : (
+          <ul className="space-y-2">
+            {lifecycleData.snapshot.pendingApprovals.map((approval) => (
+              <li key={approval.approvalId} className="space-y-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-900">{approval.approvalId}</span>
+                  <Badge tone="warning" variant="soft">{t('studio.lifecycle.approval.pending')}</Badge>
+                </div>
+                <div className="grid gap-1 text-xs text-gray-700">
+                  <div>Product: {approval.productUnitId}</div>
+                  <div>Run: {approval.runId ?? 'n/a'}</div>
+                  <div>Requested by: {approval.requestedBy}</div>
+                  <div>Reason: {approval.reason}</div>
+                  <div>Approvers: {approval.requiredApprovers.join(', ')}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined}
+                    onClick={() => {
+                      void submitApproval(approval.approvalId, true);
+                    }}
+                  >
+                    {t('studio.lifecycle.action.submitApproval')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={approvalActionState[approval.approvalId] !== null && approvalActionState[approval.approvalId] !== undefined}
+                    onClick={() => {
+                      void submitApproval(approval.approvalId, false);
+                    }}
+                  >
+                    {t('studio.lifecycle.action.rejectApproval')}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </article>
 
       {/* Failure diagnostics */}
@@ -317,16 +509,86 @@ export default function LifecyclePage(): ReactElement {
 
 interface ManifestTabProps {
   readonly title: string;
-  readonly content: string;
+  readonly status?: string;
+  readonly message?: string;
+  readonly content: ReactElement;
 }
 
 function ManifestTab(props: ManifestTabProps): ReactElement {
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-gray-900">{props.title}</h4>
-      <pre className="overflow-auto rounded-md bg-gray-950 p-4 text-xs leading-5 text-gray-100">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-medium text-gray-900">{props.title}</h4>
+        {props.status && <Badge tone={props.status === 'loaded' ? 'success' : 'warning'} variant="soft">{props.status}</Badge>}
+      </div>
+      {props.message && <p className="text-xs text-amber-700">{props.message}</p>}
+      <div className="rounded-md bg-gray-950 p-4 text-xs leading-5 text-gray-100">
         {props.content}
-      </pre>
+      </div>
+    </div>
+  );
+}
+
+function GateManifestPanel(props: { readonly manifest?: GateResultManifest }): ReactElement {
+  const gates = props.manifest?.gates ?? [];
+  if (gates.length === 0) {
+    return <p className="text-gray-300">No gate evidence available.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {gates.map((gate) => (
+        <li key={gate.gateId} className="flex items-center justify-between gap-2 rounded bg-gray-900 px-2 py-1">
+          <span>{gate.gateId}</span>
+          <span>{gate.status}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ArtifactManifestPanel(props: { readonly manifest?: ArtifactManifest }): ReactElement {
+  const artifacts = props.manifest?.artifacts ?? [];
+  if (artifacts.length === 0) {
+    return <p className="text-gray-300">No artifact evidence available.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {artifacts.map((artifact) => (
+        <li key={artifact.id} className="rounded bg-gray-900 px-2 py-1">
+          <div className="font-medium">{artifact.id}</div>
+          <div className="text-gray-300">{artifact.metadata.type} | {artifact.metadata.packaging}</div>
+          <div className="text-gray-300">{artifact.found ? 'found' : 'missing'}</div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DeploymentManifestPanel(props: { readonly manifest?: DeploymentManifest }): ReactElement {
+  const manifest = props.manifest;
+  if (manifest === undefined) {
+    return <p className="text-gray-300">No deployment evidence available.</p>;
+  }
+  return (
+    <div className="space-y-1">
+      <div>Environment: {manifest.environment}</div>
+      <div>Deployment ID: {manifest.deploymentId}</div>
+      <div>Target: {'target' in manifest && typeof manifest.target === 'string' ? manifest.target : 'n/a'}</div>
+      <div>Surfaces: {Array.isArray(manifest.surfaces) ? String(manifest.surfaces.length) : '0'}</div>
+    </div>
+  );
+}
+
+function VerifyHealthPanel(props: { readonly manifest?: VerifyHealthReport }): ReactElement {
+  const manifest = props.manifest;
+  if (manifest === undefined) {
+    return <p className="text-gray-300">No verification evidence available.</p>;
+  }
+  return (
+    <div className="space-y-1">
+      <div>Status: {manifest.status}</div>
+      <div>Run: {manifest.runId}</div>
+      <div>Checked: {manifest.checkedAt ?? 'n/a'}</div>
     </div>
   );
 }

@@ -23,6 +23,9 @@ import {
   type ExtractedComponent,
   type ExtractedPage,
   type ExtractedCsfData,
+  createDefaultProviderRegistry,
+  SynthesisPipeline,
+  type GraphNode,
 } from 'yappc-artifact-compiler';
 
 import {
@@ -43,7 +46,15 @@ const assessComponentSafetySafe = assessComponentSafety as (
   filePath: string,
 ) => unknown;
 
-export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
+export type ImportSourceType =
+  | 'tsx'
+  | 'route'
+  | 'storybook'
+  | 'artifact'
+  | 'zip'
+  | 'github'
+  | 'gitlab'
+  | 'local-folder';
 
 export interface ImportSourceOptions {
   /** Source type */
@@ -89,6 +100,14 @@ export interface ImportOptions {
   maxJobPollAttempts?: number;
   /** Delay between import job polling attempts. */
   jobPollIntervalMs?: number;
+  /** GitHub/GitLab token for authenticated repo imports. */
+  repoToken?: string;
+  /** Maximum number of files to materialize when importing a repository. */
+  repoMaxFiles?: number;
+  /** Maximum individual file size to materialize when importing a repository. */
+  repoMaxFileSizeBytes?: number;
+  /** Confidence threshold below which extracted elements are sent to residuals. */
+  residualConfidenceThreshold?: number;
 }
 
 export interface ImportResult {
@@ -112,6 +131,53 @@ export interface ImportResult {
   extractedComponents?: readonly ExtractedComponent[];
   /** Governed server import job progress and audit status, when server orchestration is used. */
   job?: SourceImportJobSnapshot;
+  /**
+   * P6.1: Confidence metrics for repository imports.
+   * Provides overall confidence score and per-element confidence for synthesis results.
+   */
+  confidence?: ImportConfidenceMetrics;
+  /**
+   * P6.1: Residual islands that could not be modeled.
+   * Areas of code that require manual review or are unsupported by the synthesis pipeline.
+   */
+  residuals?: ResidualIsland[];
+}
+
+/**
+ * P6.1: Confidence metrics for repository import synthesis.
+ * Tracks overall confidence and per-element confidence scores.
+ */
+export interface ImportConfidenceMetrics {
+  /** Overall confidence score (0-1) for the entire import */
+  overallConfidence: number;
+  /** Number of elements with high confidence */
+  highConfidenceCount: number;
+  /** Number of elements with medium confidence */
+  mediumConfidenceCount: number;
+  /** Number of elements with low confidence (sent to residuals) */
+  lowConfidenceCount: number;
+  /** Per-element confidence mapping by element ID */
+  elementConfidence: ReadonlyMap<string, number>;
+}
+
+/**
+ * P6.1: Residual island representing code that could not be modeled.
+ */
+export interface ResidualIsland {
+  /** Unique identifier for the residual island */
+  id: string;
+  /** Source file path */
+  sourcePath: string;
+  /** Type of residual (e.g., 'unsupported-language', 'complex-pattern', 'dynamic-import') */
+  type: string;
+  /** Confidence score for this residual */
+  confidence: number;
+  /** Whether this residual requires manual review */
+  requiresReview: boolean;
+  /** Human-readable description */
+  description: string;
+  /** Line numbers (if available) */
+  lineRange?: readonly [number, number];
 }
 
 export interface ImportToPageArtifactResult {
@@ -172,6 +238,10 @@ export async function importFromSource(options: ImportSourceOptions): Promise<Im
         return await importFromArtifact(source, projectId, targetComponentName, importOptions);
       case 'zip':
         return await importFromZip(source, projectId, targetComponentName, importOptions);
+      case 'github':
+      case 'gitlab':
+      case 'local-folder':
+        return await importFromRepo(source, sourceType, projectId, importOptions);
       default:
         throw new Error('Unsupported source type');
     }
@@ -1207,12 +1277,165 @@ function delay(ms: number): Promise<void> {
   });
 }
 
+/**
+ * Import from a repository source (GitHub, GitLab, or local folder).
+ * P6.1: Enhanced with progress tracking and confidence display.
+ * Uses the SourceProviderRegistry to acquire the snapshot and the SynthesisPipeline
+ * to extract components. Returns an ImportResult with extracted component metadata,
+ * confidence metrics, and residual islands.
+ */
+async function importFromRepo(
+  source: string,
+  sourceType: 'github' | 'gitlab' | 'local-folder',
+  projectId: string,
+  options?: ImportOptions,
+): Promise<ImportResult> {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  try {
+    const registry = createDefaultProviderRegistry();
+
+    // For GitLab, remap the locator to the GitLab API domain if it's a plain slug
+    const locator = sourceType === 'gitlab' && !source.includes('gitlab.com')
+      ? `https://gitlab.com/${source}`
+      : source;
+
+    const snapshot = await registry.resolve(locator, {
+      credentials: options?.repoToken ? { token: options.repoToken } : undefined,
+      maxFiles: options?.repoMaxFiles,
+      maxFileSizeBytes: options?.repoMaxFileSizeBytes,
+    });
+
+    const pipeline = new SynthesisPipeline({
+      extractors: [],
+      residualConfidenceThreshold: options?.residualConfidenceThreshold ?? 0.5,
+    });
+
+    const result = await pipeline.runFromSnapshot(snapshot);
+
+    for (const warn of result.warnings) {
+      warnings.push(warn.message);
+    }
+    for (const err of result.errors) {
+      if (!err.recoverable) {
+        errors.push(err.message);
+      } else {
+        warnings.push(err.message);
+      }
+    }
+
+    const componentNodes = result.graph.nodes.filter((n: GraphNode) => n.kind === 'component');
+    const files: ImportedFile[] = componentNodes.map((node: GraphNode) => ({
+      path: node.sourceLocation.filePath,
+      content: '',
+      type: 'component' as const,
+      source: locator,
+    }));
+
+    // P6.1: Extract confidence metrics from synthesis result
+    const confidenceMetrics = extractConfidenceMetrics(result);
+
+    // P6.1: Extract residual islands from synthesis result
+    const residualIslands = extractResidualIslands(result);
+
+    return {
+      success: errors.length === 0,
+      componentId: `${projectId}/${snapshot.snapshotRef.repoId}`,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType,
+        source,
+        importedAt: new Date().toISOString(),
+        dependencies: [],
+        fileCount: result.stats.scannedFiles,
+        totalSize: 0,
+      },
+      confidence: confidenceMetrics,
+      residuals: residualIslands,
+    };
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+    return buildFailedImportResult(sourceType, source, warnings, errors, []);
+  }
+}
+
+/**
+ * P6.1: Extract confidence metrics from synthesis pipeline result.
+ */
+function extractConfidenceMetrics(result: any): ImportConfidenceMetrics | undefined {
+  if (!result || !result.semanticModel) {
+    return undefined;
+  }
+
+  const elements = result.semanticModel.elements || [];
+  const elementConfidence = new Map<string, number>();
+  let highCount = 0;
+  let mediumCount = 0;
+  let lowCount = 0;
+  let totalConfidence = 0;
+
+  for (const element of elements) {
+    const confidence = element.confidence ?? 0.5;
+    elementConfidence.set(element.id, confidence);
+    totalConfidence += confidence;
+
+    if (confidence >= 0.8) {
+      highCount++;
+    } else if (confidence >= 0.5) {
+      mediumCount++;
+    } else {
+      lowCount++;
+    }
+  }
+
+  const overallConfidence = elements.length > 0 ? totalConfidence / elements.length : 0;
+
+  return {
+    overallConfidence,
+    highConfidenceCount: highCount,
+    mediumConfidenceCount: mediumCount,
+    lowConfidenceCount: lowCount,
+    elementConfidence,
+  };
+}
+
+/**
+ * P6.1: Extract residual islands from synthesis pipeline result.
+ */
+function extractResidualIslands(result: any): ResidualIsland[] | undefined {
+  if (!result || !result.residualIslands) {
+    return undefined;
+  }
+
+  return result.residualIslands.map((island: any) => ({
+    id: island.id,
+    sourcePath: island.sourcePath || island.location?.filePath,
+    type: island.type || island.kind || 'unknown',
+    confidence: island.confidence ?? 0,
+    requiresReview: island.requiresReview ?? island.confidence < 0.5,
+    description: island.description || island.reason || 'Unmodeled code fragment',
+    lineRange: island.lineRange || island.location?.lineRange,
+  }));
+}
+
 function shouldUseServerImport(options: ImportSourceOptions): boolean {
   if (options.source.startsWith('inline:')) {
     return false;
   }
 
   if (options.options?.allowLocalFileAccess) {
+    return false;
+  }
+
+  // Repo source types use the SourceProviderRegistry directly, not the server import endpoint
+  if (
+    options.sourceType === 'github' ||
+    options.sourceType === 'gitlab' ||
+    options.sourceType === 'local-folder'
+  ) {
     return false;
   }
 

@@ -2,25 +2,31 @@ import { describe, expect, it } from "vitest";
 import {
   ARTIFACT_INTELLIGENCE_SCHEMA_VERSION,
   ArtifactGraphSummarySchema,
+  ArtifactIntelligenceEvidenceEnvelopeSchema,
   DependencyGraphEvidenceSchema,
   GeneratedChangeSetSummarySchema,
   ProductShapeEvidenceSchema,
   ResidualIslandReportSchema,
   RiskHotspotReportSchema,
+  SemanticArtifactEvidenceBundleSchema,
   SemanticArtifactReferenceSchema,
   isArtifactGraphSummary,
+  isArtifactIntelligenceEvidenceEnvelope,
   isDependencyGraphEvidence,
   isGeneratedChangeSetSummary,
   isProductShapeEvidence,
   isResidualIslandReport,
   isRiskHotspotReport,
+  isSemanticArtifactEvidenceBundle,
   isSemanticArtifactReference,
   type ArtifactGraphSummary,
+  type ArtifactIntelligenceEvidenceEnvelope,
   type DependencyGraphEvidence,
   type GeneratedChangeSetSummary,
   type ProductShapeEvidence,
   type ResidualIslandReport,
   type RiskHotspotReport,
+  type SemanticArtifactEvidenceBundle,
   type SemanticArtifactReference,
 } from "../ArtifactIntelligence";
 
@@ -149,6 +155,33 @@ const generatedChangeSet: GeneratedChangeSetSummary = {
   validationEvidenceRefs: ["prov:test:route"],
 };
 
+const semanticBundleFixture: SemanticArtifactEvidenceBundle = {
+  bundleId: "bundle-1",
+  productUnitId: "product-1",
+  semanticArtifactRefs: ["artifact://product-1/routes/ideas"],
+  graphSummaryRef: "evidence://artifact-graph/evidence-graph-1",
+  dependencyGraphRef: "evidence://dependency-graph/evidence-dependencies-1",
+  productShapeRef: "evidence://product-shape/evidence-shape-1",
+  residualIslandRef: "evidence://residual-islands/evidence-islands-1",
+  riskHotspotRef: "evidence://risk-hotspots/evidence-risk-1",
+  generatedChangeSetRef: "evidence://change-set/evidence-changes-1",
+  bundleCreatedAt: "2026-05-14T00:00:00.000Z",
+  correlationId: "corr-1",
+};
+
+const envelopeFixture: ArtifactIntelligenceEvidenceEnvelope = {
+  envelopeId: "envelope-1",
+  tenantId: "tenant-1",
+  workspaceId: "workspace-1",
+  projectId: "project-1",
+  productUnitId: "product-1",
+  evidenceType: "artifact-graph-summary",
+  evidenceId: "evidence-graph-1",
+  evidenceRef: "evidence://artifact-graph/evidence-graph-1",
+  envelopeCreatedAt: "2026-05-14T00:00:00.000Z",
+  correlationId: "corr-1",
+};
+
 describe("artifact intelligence contracts", () => {
   it("accepts all required evidence contract families", () => {
     expect(isSemanticArtifactReference(semanticArtifact)).toBe(true);
@@ -158,6 +191,17 @@ describe("artifact intelligence contracts", () => {
     expect(isResidualIslandReport(residualIslandReport)).toBe(true);
     expect(isRiskHotspotReport(riskHotspotReport)).toBe(true);
     expect(isGeneratedChangeSetSummary(generatedChangeSet)).toBe(true);
+    expect(isSemanticArtifactEvidenceBundle(semanticBundleFixture)).toBe(true);
+    expect(isArtifactIntelligenceEvidenceEnvelope(envelopeFixture)).toBe(true);
+  });
+
+  it("accepts generated evidence fixtures for bundle and envelope schemas", () => {
+    expect(SemanticArtifactEvidenceBundleSchema.safeParse(semanticBundleFixture).success).toBe(
+      true
+    );
+    expect(
+      ArtifactIntelligenceEvidenceEnvelopeSchema.safeParse(envelopeFixture).success
+    ).toBe(true);
   });
 
   it("rejects evidence with missing common identity fields", () => {
@@ -214,6 +258,33 @@ describe("artifact intelligence contracts", () => {
     expect(ArtifactGraphSummarySchema.safeParse(invalidGraph).success).toBe(false);
   });
 
+  it("rejects graph summaries when counts do not match node and edge arrays", () => {
+    const invalidGraph = {
+      ...graphSummary,
+      nodeCount: 99,
+      edgeCount: 77,
+    };
+
+    const result = ArtifactGraphSummarySchema.safeParse(invalidGraph);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects graph summaries when edge references unknown node ids", () => {
+    const invalidGraph = {
+      ...graphSummary,
+      edges: [
+        {
+          fromArtifactId: "artifact:missing-from",
+          toArtifactId: "artifact:api-client",
+          relationship: "uses",
+        },
+      ],
+    };
+
+    const result = ArtifactGraphSummarySchema.safeParse(invalidGraph);
+    expect(result.success).toBe(false);
+  });
+
   it("rejects unsupported product shape and lifecycle readiness values", () => {
     const invalidShape = {
       ...productShape,
@@ -234,6 +305,18 @@ describe("artifact intelligence contracts", () => {
     expect(DependencyGraphEvidenceSchema.safeParse(invalidDependencyGraph).success).toBe(
       false
     );
+  });
+
+  it("rejects dependency graph evidence when aggregate counts are inconsistent", () => {
+    const invalidDependencyGraph = {
+      ...dependencyGraph,
+      dependencyCount: 100,
+      cycleCount: 2,
+      cycleRefs: ["cycle://a"],
+    };
+
+    const result = DependencyGraphEvidenceSchema.safeParse(invalidDependencyGraph);
+    expect(result.success).toBe(false);
   });
 
   it("rejects invalid residual island reports", () => {
@@ -263,6 +346,17 @@ describe("artifact intelligence contracts", () => {
     expect(RiskHotspotReportSchema.safeParse(invalidReport).success).toBe(false);
   });
 
+  it("rejects risk hotspot reports when highestRiskLevel does not match hotspots", () => {
+    const invalidReport = {
+      ...riskHotspotReport,
+      highestRiskLevel: "critical",
+      hotspotCount: 2,
+    };
+
+    const result = RiskHotspotReportSchema.safeParse(invalidReport);
+    expect(result.success).toBe(false);
+  });
+
   it("rejects invalid generated change-set summaries", () => {
     const invalidSummary = {
       ...generatedChangeSet,
@@ -283,5 +377,7 @@ describe("artifact intelligence contracts", () => {
     expect(isResidualIslandReport(riskHotspotReport)).toBe(false);
     expect(isRiskHotspotReport(residualIslandReport)).toBe(false);
     expect(isGeneratedChangeSetSummary(residualIslandReport)).toBe(false);
+    expect(isSemanticArtifactEvidenceBundle(riskHotspotReport)).toBe(false);
+    expect(isArtifactIntelligenceEvidenceEnvelope(semanticArtifact)).toBe(false);
   });
 });

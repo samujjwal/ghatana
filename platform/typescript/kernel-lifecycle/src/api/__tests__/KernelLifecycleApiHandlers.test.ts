@@ -130,6 +130,40 @@ describe('KernelLifecycleApiHandlers', () => {
     });
   });
 
+  it('lists pending approvals via the approval queue endpoint', async () => {
+    const service = createService({
+      listPendingApprovals: vi.fn().mockResolvedValue([
+        {
+          approvalId: 'approval-1',
+          productUnitId: 'digital-marketing',
+          runId: 'run-1',
+          requestedBy: 'release-manager',
+          reason: 'Deploy',
+          requiredApprovers: ['alice'],
+          expiresAt: '2026-05-16T00:00:00.000Z',
+        },
+      ]),
+    });
+    const handlers = new KernelLifecycleApiHandlers({ service });
+
+    const response = await handlers.listPendingApprovals({
+      headers: scopedHeaders('corr-7'),
+      query: { productUnitId: 'digital-marketing', runId: 'run-1' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual([
+      expect.objectContaining({ approvalId: 'approval-1', productUnitId: 'digital-marketing' }),
+    ]);
+    expect(service.listPendingApprovals).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productUnitId: 'digital-marketing',
+        runId: 'run-1',
+        correlationId: 'corr-7',
+      }),
+    );
+  });
+
   it('rejects invalid lifecycle phase requests before calling service', async () => {
     const service = createService();
     const handlers = new KernelLifecycleApiHandlers({ service });
@@ -189,6 +223,7 @@ function createService(overrides: Partial<ServiceShape> = {}): ServiceShape {
       status: 'succeeded',
     }),
     getManifest: vi.fn().mockResolvedValue({ manifest: true }),
+    listPendingApprovals: vi.fn().mockResolvedValue([]),
     requestApproval: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'pending' }),
     submitApprovalDecision: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'approved' }),
     normalizeError: vi.fn(),
@@ -204,6 +239,7 @@ type ServiceShape = KernelLifecycleService & {
   readonly listLifecycleRuns: ReturnType<typeof vi.fn>;
   readonly getLifecycleRun: ReturnType<typeof vi.fn>;
   readonly getManifest: ReturnType<typeof vi.fn>;
+  readonly listPendingApprovals: ReturnType<typeof vi.fn>;
   readonly requestApproval: ReturnType<typeof vi.fn>;
   readonly submitApprovalDecision: ReturnType<typeof vi.fn>;
   readonly normalizeError: ReturnType<typeof vi.fn>;

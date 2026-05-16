@@ -6,7 +6,7 @@
  */
 
 import type { ArtifactRecord } from '../inventory/types';
-import type { GraphNode, GraphEdge } from '../graph/types';
+import type { GraphNode, GraphEdge, UnresolvedGraphEdge, SnapshotRef } from '../graph/types';
 import type { SemanticModelElement } from '../model/types';
 import type { ResidualIsland } from '../residual/types';
 
@@ -31,7 +31,13 @@ export interface ExtractionResult {
   readonly extractorVersion: string;
   readonly artifact: ArtifactRecord;
   readonly nodes: readonly GraphNode[];
+  /** Fully resolved edges — all targetIds are valid node IDs. */
   readonly edges: readonly GraphEdge[];
+  /**
+   * Phase-1 unresolved edges — targetRef is a string name/path, not yet resolved to a node ID.
+   * Passed to the Phase-2 symbol resolver; never entered directly into the resolved edge table.
+   */
+  readonly unresolvedEdges: readonly UnresolvedGraphEdge[];
   readonly modelElements: readonly SemanticModelElement[];
   readonly residualIslands: readonly ResidualIsland[];
   readonly errors: readonly ExtractionError[];
@@ -75,4 +81,10 @@ export interface ExtractionContext {
   readonly readFile: (relativePath: string) => Promise<string>;
   readonly existingGraphNodes: ReadonlyMap<string, GraphNode>;
   readonly existingModelElements: ReadonlyMap<string, SemanticModelElement>;
+  /**
+   * Snapshot reference for deterministic node ID generation.
+   * When present, extractors build deterministic URN-based IDs stable across repeat scans.
+   * When absent, extractors fall back to random UUIDs (e.g. for user-created artifacts).
+   */
+  readonly snapshotRef?: SnapshotRef;
 }

@@ -41,7 +41,7 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
 
     it('should display header with version', () => {
       renderApp();
-      expect(screen.getByText('v1.0.0')).toBeTruthy();
+      expect(screen.getByText('dev')).toBeTruthy();
     });
 
     it('should render a route-aware page title', () => {

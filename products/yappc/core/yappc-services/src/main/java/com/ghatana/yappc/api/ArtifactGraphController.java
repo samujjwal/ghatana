@@ -44,14 +44,37 @@ public class ArtifactGraphController {
     /**
      * POST /api/v1/yappc/artifact/graph/ingest
      * Ingest artifact nodes and edges extracted by the TypeScript scanner.
+     *
+     * <p>Tenant and product scope are resolved from the authenticated principal.
+     * Any tenantId/productId in the payload that conflicts with the principal is rejected.
      */
     public Promise<HttpResponse> ingest(HttpRequest request) {
-        log.info("Artifact graph ingest request");
+        // Require authenticated principal — tenant scope resolved from principal, not payload
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            log.warn("Ingest request without authenticated principal");
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+        String tenantId = principal.getTenantId();
+
+        log.info("Artifact graph ingest request for tenant={}", tenantId);
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
                         ArtifactGraphIngestRequest ingestRequest = JsonMapper.fromJson(json, ArtifactGraphIngestRequest.class);
+
+                        // Reject if payload tenantId conflicts with principal tenant
+                        if (ingestRequest.tenantId() != null && !ingestRequest.tenantId().equals(tenantId)) {
+                            log.warn("Tenant scope mismatch in ingest: principalTenant={}, requestTenant={}",
+                                tenantId, ingestRequest.tenantId());
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                                .build());
+                        }
+
                         return artifactGraphService.ingestGraph(ingestRequest)
                                 .map(result -> {
                                     try {
@@ -66,20 +89,40 @@ public class ArtifactGraphController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error ingesting artifact graph", e));
+                .whenException(e -> log.error("Error ingesting artifact graph for tenant={}", tenantId, e));
     }
 
     /**
      * POST /api/v1/yappc/artifact/graph/analyze
      * Run graph analysis algorithms (centrality, cycles, communities, build-order).
+     *
+     * <p>Tenant scope resolved from authenticated principal.
      */
     public Promise<HttpResponse> analyze(HttpRequest request) {
-        log.info("Artifact graph analyze request");
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            log.warn("Analyze request without authenticated principal");
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+        String tenantId = principal.getTenantId();
+
+        log.info("Artifact graph analyze request for tenant={}", tenantId);
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
                         ArtifactGraphAnalysisRequest analysisRequest = JsonMapper.fromJson(json, ArtifactGraphAnalysisRequest.class);
+
+                        if (analysisRequest.tenantId() != null && !analysisRequest.tenantId().equals(tenantId)) {
+                            log.warn("Tenant scope mismatch in analyze: principalTenant={}, requestTenant={}",
+                                tenantId, analysisRequest.tenantId());
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                                .build());
+                        }
+
                         return artifactGraphService.analyzeGraph(analysisRequest)
                                 .map(result -> {
                                     try {
@@ -94,20 +137,40 @@ public class ArtifactGraphController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error analyzing artifact graph", e));
+                .whenException(e -> log.error("Error analyzing artifact graph for tenant={}", tenantId, e));
     }
 
     /**
      * POST /api/v1/yappc/artifact/graph/merge
      * Three-way semantic merge of artifact models.
+     *
+     * <p>Tenant scope resolved from authenticated principal.
      */
     public Promise<HttpResponse> merge(HttpRequest request) {
-        log.info("Artifact graph merge request");
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            log.warn("Merge request without authenticated principal");
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
+        String tenantId = principal.getTenantId();
+
+        log.info("Artifact graph merge request for tenant={}", tenantId);
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
                         ArtifactGraphMergeRequest mergeRequest = JsonMapper.fromJson(json, ArtifactGraphMergeRequest.class);
+
+                        if (mergeRequest.tenantId() != null && !mergeRequest.tenantId().equals(tenantId)) {
+                            log.warn("Tenant scope mismatch in merge: principalTenant={}, requestTenant={}",
+                                tenantId, mergeRequest.tenantId());
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
+                                .build());
+                        }
+
                         return artifactGraphService.mergeModels(mergeRequest)
                                 .map(result -> {
                                     try {
@@ -122,7 +185,7 @@ public class ArtifactGraphController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error merging artifact models", e));
+                .whenException(e -> log.error("Error merging artifact models for tenant={}", tenantId, e));
     }
 
     /**

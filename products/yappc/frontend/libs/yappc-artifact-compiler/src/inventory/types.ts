@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { SnapshotRefSchema } from '../graph/types';
 
 // ============================================================================
 // Artifact Kind
@@ -120,16 +121,39 @@ export const ExtractorEligibilitySchema = z.object({
 export type ExtractorEligibility = z.infer<typeof ExtractorEligibilitySchema>;
 
 // ============================================================================
+// Package Boundary
+// ============================================================================
+
+export const PackageBoundarySchema = z.object({
+  name: z.string().min(1),
+  relativePath: z.string().min(1),
+  system: z.enum(["pnpm", "npm", "yarn", "gradle", "maven", "cargo", "unknown"]),
+  manifestFile: z.string().min(1),
+});
+
+export type PackageBoundary = z.infer<typeof PackageBoundarySchema>;
+
+// ============================================================================
 // Artifact Record
 // ============================================================================
 
 export const ArtifactRecordSchema = z.object({
-  id: z.string().uuid(),
+  /**
+   * Deterministic URN (artifact://<provider>/…#file:<path>) when snapshotRef is available,
+   * or a random UUID for ad-hoc scans without a stable source anchor.
+   */
+  id: z.string().min(1),
   relativePath: z.string().min(1),
   absolutePath: z.string().min(1),
   kind: ArtifactKindSchema,
   language: ArtifactLanguageSchema,
   framework: ArtifactFrameworkSchema.default("unknown"),
+  /** True when the file is auto-generated (e.g. .d.ts, compiled output, lockfiles). */
+  isGenerated: z.boolean().default(false),
+  /** True when the file is a binary (image, font, archive, etc.) and should not be parsed. */
+  isBinary: z.boolean().default(false),
+  /** Package boundary this artifact belongs to, if detected. */
+  packageBoundary: PackageBoundarySchema.optional(),
   extractorEligibility: z.array(ExtractorEligibilitySchema).default([]),
   importExportSummary: ImportExportSummarySchema.default({
     imports: [],
@@ -150,13 +174,25 @@ export type ArtifactRecord = z.infer<typeof ArtifactRecordSchema>;
 export const ArtifactInventorySchema = z.object({
   repositoryRoot: z.string().min(1),
   scannedAt: z.string().datetime(),
+  /**
+   * Snapshot reference used to produce deterministic artifact IDs.
+   * Present when the scan was performed against a known provider/commit.
+   */
+  snapshotRef: SnapshotRefSchema.optional(),
   artifacts: z.array(ArtifactRecordSchema),
+  /** Detected package boundaries (package.json, build.gradle, Cargo.toml, etc.). */
+  packageBoundaries: z.array(PackageBoundarySchema).default([]),
+  /** Workspace-level boundaries (pnpm-workspace.yaml, nx.json, etc.). */
+  workspaceBoundaries: z.array(PackageBoundarySchema).default([]),
   summary: z.object({
     totalFiles: z.number().int().nonnegative(),
     byKind: z.record(z.string(), z.number().int().nonnegative()),
     byLanguage: z.record(z.string(), z.number().int().nonnegative()),
     byFramework: z.record(z.string(), z.number().int().nonnegative()),
     eligibleForExtraction: z.number().int().nonnegative(),
+    generatedFiles: z.number().int().nonnegative(),
+    binaryFiles: z.number().int().nonnegative(),
+    ignoredFiles: z.number().int().nonnegative(),
   }),
 });
 

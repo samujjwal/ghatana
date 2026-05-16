@@ -1,6 +1,7 @@
 import { useTranslation } from '@ghatana/i18n';
 
 export const STUDIO_TRANSLATIONS = {
+  'studio.app.retryStudio': 'Retry Studio',
   'studio.navigation.home': 'Home',
   'studio.navigation.ideas': 'Ideas',
   'studio.navigation.blueprints': 'Blueprints',

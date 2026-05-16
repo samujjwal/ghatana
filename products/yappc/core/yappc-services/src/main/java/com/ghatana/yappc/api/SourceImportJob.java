@@ -159,6 +159,7 @@ public final class SourceImportJob {
 
     /**
      * Job status enum representing the lifecycle states.
+     * P2.6: Added CANCELLED status for job cancellation support.
      */
     public enum JobStatus {
         SUBMITTED,
@@ -167,7 +168,8 @@ public final class SourceImportJob {
         MAPPING,
         RESIDUAL_REVIEW_REQUIRED,
         COMPLETED,
-        FAILED
+        FAILED,
+        CANCELLED
     }
 
     /**

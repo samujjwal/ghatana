@@ -9,7 +9,9 @@ import {
   type ArtifactFramework,
   type ExtractorEligibility,
   type ImportExportSummary,
+  type PackageBoundary,
 } from './types';
+import { buildDeterministicNodeId, type SnapshotRef } from '../graph/types';
 
 // ============================================================================
 // Scanner Configuration
@@ -21,6 +23,16 @@ export interface ScannerConfig {
   readonly excludeGlobs: readonly string[];
   readonly maxFileSizeBytes: number;
   readonly followSymlinks: boolean;
+  /**
+   * Snapshot reference for deterministic artifact ID generation.
+   * When supplied, every artifact ID is a stable URN across repeated scans of the same commit.
+   */
+  readonly snapshotRef?: SnapshotRef;
+  /**
+   * Whether to parse .gitignore files found in the repository and honour them.
+   * Defaults to true.
+   */
+  readonly respectGitignore?: boolean;
 }
 
 export const DEFAULT_SCANNER_CONFIG: ScannerConfig = {
@@ -38,10 +50,300 @@ export const DEFAULT_SCANNER_CONFIG: ScannerConfig = {
     '**/target/**',
     '**/.gradle/**',
     '**/out/**',
+    '**/.turbo/**',
+    '**/.cache/**',
+    '**/__pycache__/**',
+    '**/vendor/**',
   ],
   maxFileSizeBytes: 10 * 1024 * 1024, // 10MB
   followSymlinks: false,
+  respectGitignore: true,
 };
+
+// ============================================================================
+// Binary / Generated file classification
+// ============================================================================
+
+const BINARY_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.svg',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot',
+  '.mp3', '.mp4', '.wav', '.ogg', '.avi', '.mov', '.webm',
+  '.zip', '.tar', '.gz', '.bz2', '.7z', '.rar',
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx',
+  '.exe', '.dll', '.so', '.dylib', '.class', '.jar',
+  '.bin', '.dat', '.db', '.sqlite',
+]);
+
+/**
+ * Returns true if the file should be treated as binary (not parsed for AST/imports).
+ */
+function isBinaryFile(filePath: string): boolean {
+  return BINARY_EXTENSIONS.has(extname(filePath).toLowerCase());
+}
+
+/**
+ * Returns true if the file is auto-generated and should not be reverse-engineered.
+ * Heuristics: .d.ts files, generated comment markers, lockfile extensions, build outputs.
+ */
+function isGeneratedFile(filePath: string, firstBytes: string): boolean {
+  const name = basename(filePath);
+  const ext = extname(filePath).toLowerCase();
+  const dir = filePath.replace(/\\/g, '/');
+
+  // Declaration files emitted by tsc
+  if (name.endsWith('.d.ts') || name.endsWith('.d.mts') || name.endsWith('.d.cts')) return true;
+
+  // Lockfiles
+  if (name === 'package-lock.json' || name === 'yarn.lock' || name === 'pnpm-lock.yaml' ||
+      name === 'Cargo.lock' || name === 'Gemfile.lock' || name === 'go.sum') return true;
+
+  // Build artifact directories (belt-and-suspenders beyond excludeGlobs)
+  if (dir.includes('/.next/') || dir.includes('/dist/') || dir.includes('/out/') ||
+      dir.includes('/build/') || dir.includes('/coverage/') || dir.includes('/__generated__/') ||
+      dir.includes('/generated/') || dir.includes('/stubs/')) return true;
+
+  // Map files
+  if (ext === '.map') return true;
+
+  // Explicit generated comment markers in first 512 bytes
+  const header = firstBytes.slice(0, 512);
+  if (
+    header.includes('// @generated') ||
+    header.includes('/* @generated */') ||
+    header.includes('// DO NOT EDIT') ||
+    header.includes('// Code generated') ||
+    header.includes('// GENERATED CODE') ||
+    header.includes('// AUTO-GENERATED') ||
+    header.includes('# AUTO-GENERATED') ||
+    header.includes('# DO NOT EDIT')
+  ) return true;
+
+  return false;
+}
+
+// ============================================================================
+// Package / Workspace boundary detection
+// ============================================================================
+
+/**
+ * Manifest file name -> package system mapping.
+ */
+const MANIFEST_SYSTEM_MAP: ReadonlyMap<string, PackageBoundary['system']> = new Map([
+  ['package.json', 'npm'],
+  ['pnpm-workspace.yaml', 'pnpm'],
+  ['build.gradle', 'gradle'],
+  ['build.gradle.kts', 'gradle'],
+  ['pom.xml', 'maven'],
+  ['Cargo.toml', 'cargo'],
+]);
+
+const WORKSPACE_MANIFESTS = new Set(['pnpm-workspace.yaml', 'nx.json', 'turbo.json', 'lerna.json']);
+
+/**
+ * Scans the repository root once to collect all package and workspace boundary manifests.
+ * Returns two lists: package boundaries and workspace boundaries.
+ */
+async function detectPackageBoundaries(
+  rootPath: string,
+  maxDepth: number = 8,
+): Promise<{ packageBoundaries: PackageBoundary[]; workspaceBoundaries: PackageBoundary[] }> {
+  const packageBoundaries: PackageBoundary[] = [];
+  const workspaceBoundaries: PackageBoundary[] = [];
+
+  async function walk(dir: string, depth: number): Promise<void> {
+    if (depth > maxDepth) return;
+    let entries: import('fs').Dirent[];
+    try {
+      entries = (await readdir(dir, { withFileTypes: true })) as import('fs').Dirent[];
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const entryName = entry.name as string;
+      if (entry.isDirectory()) {
+        if (entryName === 'node_modules' || entryName === '.git' || entryName === 'dist' ||
+            entryName === 'build' || entryName === 'target' || entryName === '.next') continue;
+        await walk(join(dir, entryName), depth + 1);
+      } else if (entry.isFile()) {
+        const system = MANIFEST_SYSTEM_MAP.get(entryName);
+        if (system) {
+          const absoluteManifest = join(dir, entryName);
+          const relManifest = relative(rootPath, absoluteManifest).replace(/\\/g, '/');
+          const relDir = relative(rootPath, dir).replace(/\\/g, '/') || '.';
+          let pkgName = relDir;
+          if (entryName === 'package.json') {
+            try {
+              const raw = await readFile(absoluteManifest, 'utf-8');
+              const parsed = JSON.parse(raw) as { name?: string };
+              if (parsed.name) pkgName = parsed.name;
+            } catch { /* keep relDir */ }
+          } else if (entryName === 'build.gradle' || entryName === 'build.gradle.kts' || entryName === 'Cargo.toml') {
+            try {
+              const raw = await readFile(absoluteManifest, 'utf-8');
+              const nameMatch = /^name\s*=\s*["']?([\w-]+)["']?/m.exec(raw);
+              if (nameMatch?.[1]) pkgName = nameMatch[1];
+            } catch { /* keep relDir */ }
+          }
+          const boundary: PackageBoundary = {
+            name: pkgName,
+            relativePath: relDir,
+            system: entryName === 'package.json' ? detectNpmSystem(dir) : system,
+            manifestFile: relManifest,
+          };
+          if (WORKSPACE_MANIFESTS.has(entryName)) {
+            workspaceBoundaries.push(boundary);
+          } else {
+            packageBoundaries.push(boundary);
+          }
+        }
+      }
+    }
+  }
+
+  await walk(rootPath, 0);
+  return { packageBoundaries, workspaceBoundaries };
+}
+
+function detectNpmSystem(dir: string): PackageBoundary['system'] {
+  // Check for pnpm-workspace.yaml walking upwards (simple heuristic)
+  const parts = dir.split(/[\\/]/);
+  for (let i = parts.length; i > 0; i--) {
+    const candidate = parts.slice(0, i).join('/') + '/pnpm-workspace.yaml';
+    // We can't async here; use a synchronous existence check via the name convention.
+    // In this heuristic: if any ancestor has 'pnpm' in its package manager marker file name, use pnpm.
+    if (candidate.includes('pnpm-workspace')) return 'pnpm';
+  }
+  return 'npm';
+}
+
+// ============================================================================
+// .gitignore parsing
+// ============================================================================
+
+/**
+ * Parses a .gitignore file into a list of RegExp matchers.
+ * Supports the most common patterns: negation (!), directory anchors, wildcards.
+ */
+function parseGitignorePatterns(content: string, baseRelPath: string): Array<{ pattern: RegExp; negated: boolean }> {
+  const results: Array<{ pattern: RegExp; negated: boolean }> = [];
+  const base = baseRelPath ? baseRelPath + '/' : '';
+
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const negated = line.startsWith('!');
+    const pat = negated ? line.slice(1) : line;
+    if (!pat) continue;
+
+    // Convert gitignore glob to regex
+    const anchored = pat.startsWith('/');
+    const dirOnly = pat.endsWith('/');
+    const clean = pat.replace(/^\//,'').replace(/\/$/,'');
+
+    let regexStr = base + (anchored ? '' : '(?:.*/)?' );
+    regexStr += clean
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*\*\//g, '(?:.*/)?')
+      .replace(/\*\*/g, '.*')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]');
+    if (dirOnly) {
+      regexStr += '(?:/.*)?';
+    } else {
+      regexStr += '(?:/.*)?';
+    }
+
+    try {
+      results.push({ pattern: new RegExp(`^${regexStr}$`), negated });
+    } catch {
+      // Skip malformed patterns
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Collects all .gitignore files in the repository and returns a combined matcher function.
+ * The matcher returns true if a relative path should be ignored.
+ */
+async function buildGitignoreMatcher(
+  rootPath: string,
+): Promise<(relativePath: string) => boolean> {
+  const allPatterns: Array<{ pattern: RegExp; negated: boolean }> = [];
+
+  async function collect(dir: string): Promise<void> {
+    const gitignorePath = join(dir, '.gitignore');
+    const relDir = relative(rootPath, dir).replace(/\\/g, '/');
+    try {
+      const content = await readFile(gitignorePath, 'utf-8');
+      const patterns = parseGitignorePatterns(content, relDir);
+      allPatterns.push(...patterns);
+    } catch {
+      // No .gitignore in this directory — fine
+    }
+    let collectEntries: import('fs').Dirent[];
+    try {
+      collectEntries = (await readdir(dir, { withFileTypes: true })) as import('fs').Dirent[];
+    } catch {
+      return;
+    }
+    for (const entry of collectEntries) {
+      if (entry.isDirectory()) {
+        const n = entry.name as string;
+        if (n === '.git' || n === 'node_modules' || n === 'dist' || n === 'build' || n === 'target') continue;
+        await collect(join(dir, n));
+      }
+    }
+  }
+
+  await collect(rootPath);
+
+  return (relativePath: string): boolean => {
+    const normalized = relativePath.replace(/\\/g, '/');
+    let ignored = false;
+    for (const { pattern, negated } of allPatterns) {
+      if (pattern.test(normalized)) {
+        ignored = !negated;
+      }
+    }
+    return ignored;
+  };
+}
+
+// ============================================================================
+// Deterministic artifact ID
+// ============================================================================
+
+function buildArtifactId(snapshotRef: SnapshotRef | undefined, relativePath: string): string {
+  return buildDeterministicNodeId(snapshotRef, relativePath, 'file', relativePath);
+}
+
+// ============================================================================
+// Resolve package boundary for a given relative path
+// ============================================================================
+
+function resolvePackageBoundary(
+  relativePath: string,
+  packageBoundaries: PackageBoundary[],
+): PackageBoundary | undefined {
+  const normalized = relativePath.replace(/\\/g, '/');
+  // Find the deepest (longest path) matching package boundary
+  let best: PackageBoundary | undefined;
+  let bestLen = -1;
+  for (const boundary of packageBoundaries) {
+    const bp = boundary.relativePath === '.' ? '' : boundary.relativePath + '/';
+    if (bp === '' || normalized.startsWith(bp) || boundary.relativePath === '.' ) {
+      const len = bp.length;
+      if (len > bestLen) {
+        bestLen = len;
+        best = boundary;
+      }
+    }
+  }
+  return best;
+}
 
 // ============================================================================
 // Language Detection
@@ -393,21 +695,28 @@ async function* walkDirectory(
   dir: string,
   root: string,
   config: ScannerConfig,
+  gitignoreMatcher: (rel: string) => boolean,
 ): AsyncGenerator<{ relativePath: string; absolutePath: string }> {
-  const entries = await readdir(dir, { withFileTypes: true });
+  let entries: import('fs').Dirent[];
+  try {
+    entries = (await readdir(dir, { withFileTypes: true })) as import('fs').Dirent[];
+  } catch {
+    return;
+  }
 
   for (const entry of entries) {
-    const absolutePath = join(dir, entry.name);
-    const relativePath = relative(root, absolutePath);
+    const entryName = entry.name as string;
+    const absolutePath = join(dir, entryName);
+    const relativePath = relative(root, absolutePath).replace(/\\/g, '/');
 
     if (entry.isDirectory()) {
-      // Check exclusion patterns
-      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs);
+      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs) ||
+        (config.respectGitignore !== false && gitignoreMatcher(relativePath));
       if (isExcluded) continue;
-
-      yield* walkDirectory(absolutePath, root, config);
+      yield* walkDirectory(absolutePath, root, config, gitignoreMatcher);
     } else if (entry.isFile() || (entry.isSymbolicLink() && config.followSymlinks)) {
-      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs);
+      const isExcluded = matchesAnyGlob(relativePath, config.excludeGlobs) ||
+        (config.respectGitignore !== false && gitignoreMatcher(relativePath));
       const isIncluded = matchesAnyGlob(relativePath, config.includeGlobs);
       if (!isExcluded && isIncluded) {
         yield { relativePath, absolutePath };
@@ -424,27 +733,59 @@ async function scanFile(
   relativePath: string,
   absolutePath: string,
   config: ScannerConfig,
+  packageBoundaries: PackageBoundary[],
 ): Promise<ArtifactRecord | null> {
   try {
     const stats = await stat(absolutePath);
     if (!stats.isFile()) return null;
+
+    // Skip files larger than the configured limit
     if (stats.size > config.maxFileSizeBytes) return null;
 
+    const binary = isBinaryFile(absolutePath);
+
+    // Binary files: record metadata only, skip content parsing
+    if (binary) {
+      return {
+        id: buildArtifactId(config.snapshotRef, relativePath),
+        relativePath,
+        absolutePath,
+        kind: 'unknown-manual',
+        language: 'unknown',
+        framework: 'unknown',
+        isGenerated: false,
+        isBinary: true,
+        packageBoundary: resolvePackageBoundary(relativePath, packageBoundaries),
+        extractorEligibility: [],
+        importExportSummary: { imports: [], exports: [] },
+        checksum: stats.size.toString(16), // size-based checksum for binaries
+        sizeBytes: stats.size,
+        lastModifiedAt: stats.mtime.toISOString(),
+      };
+    }
+
     const content = await readFile(absolutePath, 'utf-8');
+    const generated = isGeneratedFile(absolutePath, content);
     const language = detectLanguage(absolutePath);
     const framework = detectFramework(absolutePath, content, language);
     const kind = classifyArtifact(absolutePath, content, language, framework);
-    const importExport = extractImportExportSummary(content, language);
-    const eligibility = determineExtractorEligibility(kind, language, framework);
+    // Skip import/export extraction for generated files to avoid polluting the graph
+    const importExport = generated
+      ? { imports: [], exports: [] }
+      : extractImportExportSummary(content, language);
+    const eligibility = generated ? [] : determineExtractorEligibility(kind, language, framework);
     const checksum = computeChecksum(content);
 
     return {
-      id: crypto.randomUUID(),
+      id: buildArtifactId(config.snapshotRef, relativePath),
       relativePath,
       absolutePath,
       kind,
       language,
       framework,
+      isGenerated: generated,
+      isBinary: false,
+      packageBoundary: resolvePackageBoundary(relativePath, packageBoundaries),
       extractorEligibility: eligibility,
       importExportSummary: importExport,
       checksum,
@@ -463,13 +804,37 @@ async function scanFile(
 export async function scanRepository(
   config: Partial<ScannerConfig> = {},
 ): Promise<ArtifactInventory> {
-  const mergedConfig = { ...DEFAULT_SCANNER_CONFIG, ...config };
+  const mergedConfig: ScannerConfig = { ...DEFAULT_SCANNER_CONFIG, ...config };
   const artifacts: ArtifactRecord[] = [];
+  let ignoredFiles = 0;
 
-  for await (const file of walkDirectory(mergedConfig.rootPath, mergedConfig.rootPath, mergedConfig)) {
-    const record = await scanFile(file.relativePath, file.absolutePath, mergedConfig);
+  // Build .gitignore matcher once before walking
+  const gitignoreMatcher = mergedConfig.respectGitignore !== false
+    ? await buildGitignoreMatcher(mergedConfig.rootPath)
+    : (_rel: string) => false;
+
+  // Detect package + workspace boundaries once before walking
+  const { packageBoundaries, workspaceBoundaries } = await detectPackageBoundaries(
+    mergedConfig.rootPath,
+  );
+
+  for await (const file of walkDirectory(
+    mergedConfig.rootPath,
+    mergedConfig.rootPath,
+    mergedConfig,
+    gitignoreMatcher,
+  )) {
+    const record = await scanFile(
+      file.relativePath,
+      file.absolutePath,
+      mergedConfig,
+      packageBoundaries,
+    );
     if (record) {
       artifacts.push(record);
+    } else {
+      // scanFile returns null for oversized or stat-failed files
+      ignoredFiles++;
     }
   }
 
@@ -478,6 +843,8 @@ export async function scanRepository(
   const byLanguage: Record<string, number> = {};
   const byFramework: Record<string, number> = {};
   let eligibleForExtraction = 0;
+  let generatedFiles = 0;
+  let binaryFiles = 0;
 
   for (const artifact of artifacts) {
     byKind[artifact.kind] = (byKind[artifact.kind] ?? 0) + 1;
@@ -486,18 +853,26 @@ export async function scanRepository(
     if (artifact.extractorEligibility.some((e: { eligible: boolean }) => e.eligible)) {
       eligibleForExtraction++;
     }
+    if (artifact.isGenerated) generatedFiles++;
+    if (artifact.isBinary) binaryFiles++;
   }
 
   return {
     repositoryRoot: mergedConfig.rootPath,
     scannedAt: new Date().toISOString(),
+    snapshotRef: mergedConfig.snapshotRef,
     artifacts,
+    packageBoundaries,
+    workspaceBoundaries,
     summary: {
       totalFiles: artifacts.length,
       byKind,
       byLanguage,
       byFramework,
       eligibleForExtraction,
+      generatedFiles,
+      binaryFiles,
+      ignoredFiles,
     },
   };
 }

@@ -15,6 +15,13 @@ import {
   type PageArtifactGraphSnapshot,
 } from './pageArtifactDocument';
 
+// P6.3: Import SemanticProductModel from synthesis engine for provenance tracking
+import type {
+  SemanticProductModel,
+  SemanticModelElement,
+  ModelElementBase,
+} from 'yappc-artifact-compiler';
+
 export interface ImportedSourceArtifactInput {
   readonly projectId: string;
   readonly componentName?: string;
@@ -110,16 +117,45 @@ function resolveBuilderDocument(page: SemanticPageLike, createdBy: string): Buil
   return createEmptyBuilderDocument(page.name ?? 'Generated Page', createdBy);
 }
 
+/**
+ * P6.3: Enhanced provenance tracking interface for page artifacts.
+ * Preserves source file/symbol information from the synthesis pipeline.
+ */
+interface EnhancedProvenance {
+  readonly createdBy: string;
+  readonly compiler: string;
+  readonly confidence: number;
+  readonly residualIslandIds: readonly string[];
+  // P6.3: Additional provenance from SemanticProductModel
+  readonly extractorId?: string;
+  readonly extractorVersion?: string;
+  readonly sourcePaths?: readonly string[];
+  readonly extractionKind?: 'exact' | 'inferred' | 'synthesized' | 'manual' | 'assumed';
+  readonly extractedAt?: string;
+}
+
+/**
+ * P6.3: Compile SemanticProductModel to PageArtifacts with full provenance tracking.
+ * Consumes the full SemanticProductModel from the synthesis engine and preserves
+ * provenance information from source file/symbol back to page artifacts.
+ */
 export function compileSemanticModelToPageArtifacts(
-  model: SemanticProductModelLike,
+  model: SemanticProductModel,
   createdBy: string,
 ): readonly PageArtifactDocument[] {
-  const pages = model.pages ?? [];
-  if (pages.length === 0) {
+  // P6.3: The actual SemanticProductModel uses 'elements' array, not 'pages'
+  const elements = model.elements ?? [];
+  
+  // Filter for page-like elements (kind === 'page')
+  const pageElements = elements.filter((el): el is SemanticModelElement => 
+    'kind' in el && el.kind === 'page'
+  ) as SemanticModelElement[];
+  
+  if (pageElements.length === 0) {
     return [
       createPageArtifactDocument({
         artifactId: model.id ?? 'generated-page-artifact',
-        name: model.name ?? 'Generated Page',
+        name: model.repositoryRoot ?? 'Generated Page',
         createdBy,
         source: 'generated',
       }),
@@ -127,20 +163,28 @@ export function compileSemanticModelToPageArtifacts(
   }
 
   const productId = model.id ?? 'semantic-model';
-  const productName = model.name ?? productId;
+  const productName = model.repositoryRoot ?? productId;
   const graphId = `${productId}:graph`;
   const importedAt = new Date().toISOString();
-  const pageSummaries: readonly SemanticPageGraphSummary[] = pages.map((page, index) => ({
+  const pageSummaries: readonly SemanticPageGraphSummary[] = pageElements.map((page, index) => ({
     artifactId: page.id ?? `${productId}-page-${index + 1}`,
     name: page.name ?? `Page ${index + 1}`,
     index,
   }));
 
-  return pages.map((page, index) => {
+  // P6.3: Extract provenance from the model
+  const modelProvenance = extractProvenanceFromModel(model);
+
+  return pageElements.map((page, index) => {
     const pageSummary = pageSummaries[index];
     const artifactId = pageSummary?.artifactId ?? `${productId}-page-${index + 1}`;
     const document = resolveBuilderDocument(page, createdBy);
-    const residualIslandIds = (page.residualIslands ?? []).map((island) => island.id);
+    
+    // P6.3: residualIslands may not exist on elements, default to empty array
+    const residualIslandIds: readonly string[] = [];
+
+    // P6.3: Extract page-level provenance
+    const pageProvenance = extractProvenanceFromElement(page);
 
     return {
       ...createPageArtifactDocument({
@@ -166,18 +210,92 @@ export function compileSemanticModelToPageArtifacts(
         residualIslandIds,
         createdBy,
         confidence: typeof page.confidence === 'number' ? page.confidence : 0.9,
+        // P6.3: Pass enhanced provenance
+        provenance: {
+          ...modelProvenance,
+          ...pageProvenance,
+          createdBy,
+          compiler: 'yappc-artifact-compiler',
+          confidence: typeof page.confidence === 'number' ? page.confidence : 0.9,
+          residualIslandIds,
+        },
       }),
     } satisfies PageArtifactDocument;
   });
 }
 
+/**
+ * P6.3: Extract provenance information from a SemanticModelElement.
+ */
+function extractProvenanceFromElement(element: SemanticModelElement): Partial<EnhancedProvenance> {
+  if (!element.provenance) {
+    return {};
+  }
+
+  return {
+    extractorId: element.provenance.extractorId,
+    extractorVersion: element.provenance.extractorVersion,
+    sourcePaths: element.provenance.sourcePaths,
+    extractionKind: element.provenance.kind,
+    extractedAt: element.provenance.extractedAt,
+  };
+}
+
+/**
+ * P6.3: Extract provenance information from the SemanticProductModel.
+ * The actual model uses an 'elements' array, not 'pages' or 'components'.
+ */
+function extractProvenanceFromModel(model: SemanticProductModel): Partial<EnhancedProvenance> {
+  // Extract provenance from the first element with provenance metadata
+  const firstElementWithProvenance = model.elements?.find((el): el is SemanticModelElement => 
+    'provenance' in el && el.provenance != null
+  );
+  
+  if (firstElementWithProvenance?.provenance) {
+    return extractProvenanceFromElement(firstElementWithProvenance);
+  }
+
+  return {};
+}
+
+/**
+ * P6.3: Keep backward compatibility with SemanticProductModelLike.
+ * This function parses JSON and converts to the full SemanticProductModel structure.
+ */
 export function importPageArtifactsFromCode(
   serializedSemanticModel: string,
   createdBy: string,
 ): readonly PageArtifactDocument[] {
   try {
     const parsed = JSON.parse(serializedSemanticModel) as SemanticProductModelLike;
-    return compileSemanticModelToPageArtifacts(parsed, createdBy);
+    // P6.3: For backward compatibility, convert SemanticProductModelLike to SemanticProductModel
+    // by adding the required fields with defaults
+    const model: SemanticProductModel = {
+      id: parsed.id ?? 'semantic-model',
+      repositoryRoot: parsed.name ?? 'unknown',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1,
+      elementIndex: {},
+      residualIslandIds: [],
+      elements: [],
+      // Convert pages to elements if present
+      ...(parsed.pages ? {
+        elements: parsed.pages.map((page, idx) => ({
+          id: page.id ?? `page-${idx}`,
+          name: page.name ?? `Page ${idx}`,
+          confidence: page.confidence ?? 0.9,
+          provenance: {
+            extractorId: 'yappc-artifact-compiler',
+            extractorVersion: '1.0.0',
+            sourcePaths: [],
+            kind: 'inferred' as const,
+            extractedAt: new Date().toISOString(),
+          },
+        })) as unknown as SemanticProductModel['elements'],
+      } : {}),
+    };
+    return compileSemanticModelToPageArtifacts(model, createdBy);
   } catch (error: unknown) {
     if (error instanceof SyntaxError) {
       throw new Error('Invalid JSON - could not parse semantic model.', { cause: error });
@@ -350,6 +468,7 @@ function buildSemanticModelGraphSnapshot(params: {
   readonly residualIslandIds: readonly string[];
   readonly createdBy: string;
   readonly confidence: number;
+  readonly provenance?: EnhancedProvenance;
 }): PageArtifactGraphSnapshot {
   const productNodeId = `${params.productId}:product`;
   const pageNodeId = `${params.artifactId}:page`;

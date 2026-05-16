@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import type { KernelLifecycleClient, LifecycleRun } from '../../api/kernelLifecycleClient';
 import {
@@ -52,7 +52,36 @@ function SnapshotProbe(): ReactElement {
       <p>{snapshot.productUnit?.name ?? 'no product'}</p>
       <p>{snapshot.selectedRun?.runId ?? 'no run'}</p>
       <p>{snapshot.artifactManifest?.artifacts[0]?.id ?? 'no artifact'}</p>
+      <p>{snapshot.manifestLoadState.artifactManifest.status}</p>
+      <p>{String(snapshot.pendingApprovals.length)}</p>
       <p>{snapshot.errorMessage ?? 'no error'}</p>
+    </div>
+  );
+}
+
+function ActionProbe(): ReactElement {
+  const lifecycle = useStudioLifecycleData();
+
+  return (
+    <div>
+      <p>{lifecycle.selectedProviderMode}</p>
+      <button
+        type="button"
+        onClick={() => {
+          lifecycle.setEnvironment('local');
+          lifecycle.setProviderMode('platform');
+        }}
+      >
+        configure-provider
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void lifecycle.createPlan('build');
+        }}
+      >
+        run-create-plan
+      </button>
     </div>
   );
 }
@@ -148,6 +177,18 @@ function createClient(overrides: Partial<KernelLifecycleClient> = {}): KernelLif
       status: 'healthy',
       checkedAt: '2026-05-14T00:00:00.000Z',
     }),
+    listPendingApprovals: vi.fn().mockResolvedValue([
+      {
+        approvalId: 'approval-1',
+        productUnitId: 'digital-marketing',
+        runId: 'run-1',
+        requestedBy: 'release-manager',
+        requestedAt: '2026-05-14T00:00:00.000Z',
+        reason: 'Deploy',
+        requiredApprovers: ['alice'],
+        expiresAt: '2026-05-14T00:00:00.000Z',
+      },
+    ]),
     requestApproval: vi.fn(),
     submitApprovalDecision: vi.fn(),
     ...overrides,
@@ -177,6 +218,41 @@ describe('StudioLifecycleDataProvider', () => {
     expect(screen.getByText('Digital Marketing')).toBeInTheDocument();
     expect(screen.getByText('run-1')).toBeInTheDocument();
     expect(screen.getByText('web-dist')).toBeInTheDocument();
+    expect(screen.getByText('loaded')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  it('propagates selected provider mode and environment into plan creation', async () => {
+    const createLifecyclePlan = vi.fn().mockResolvedValue({
+      runId: 'run-plan',
+      correlationId: 'corr-plan',
+      productUnitId: 'digital-marketing',
+      phase: 'build',
+      status: 'planned',
+    });
+
+    render(
+      <StudioLifecycleDataProvider
+        client={createClient({
+          createLifecyclePlan,
+          listLifecycleRuns: vi.fn().mockResolvedValue([]),
+        })}
+      >
+        <ActionProbe />
+      </StudioLifecycleDataProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('configure-provider')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('configure-provider'));
+    await waitFor(() => expect(screen.getByText('platform')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('run-create-plan'));
+
+    await waitFor(() =>
+      expect(createLifecyclePlan).toHaveBeenCalledWith('digital-marketing', 'build', {
+        providerMode: 'platform',
+        environment: 'local',
+      }),
+    );
   });
 
   it('supports product selection and ready state without a run manifest', async () => {
@@ -233,6 +309,21 @@ describe('StudioLifecycleDataProvider', () => {
 
     await waitFor(() => expect(screen.getByText('degraded')).toBeInTheDocument());
     expect(screen.getByText('provider unavailable')).toBeInTheDocument();
+  });
+
+  it('classifies manifest load errors instead of swallowing them', async () => {
+    render(
+      <StudioLifecycleDataProvider
+        client={createClient({
+          getArtifactManifest: vi.fn().mockRejectedValue({ statusCode: 401, message: 'unauthorized' }),
+        })}
+      >
+        <SnapshotProbe />
+      </StudioLifecycleDataProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('ready')).toBeInTheDocument());
+    expect(screen.getByText('unauthorized')).toBeInTheDocument();
   });
 
   it('does not commit empty ProductUnit state after unmount', async () => {

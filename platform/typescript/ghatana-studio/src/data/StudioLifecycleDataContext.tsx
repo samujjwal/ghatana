@@ -25,11 +25,33 @@ import type {
 
 export type StudioLifecycleDataStatus = 'unconfigured' | 'loading' | 'ready' | 'degraded';
 
+export type StudioManifestLoadStatus =
+  | 'loaded'
+  | 'missing'
+  | 'corrupt'
+  | 'unauthorized'
+  | 'unavailable';
+
+interface StudioManifestLoadState {
+  readonly status: StudioManifestLoadStatus;
+  readonly message?: string;
+}
+
+interface StudioLifecycleManifestLoadState {
+  readonly gateResultManifest: StudioManifestLoadState;
+  readonly artifactManifest: StudioManifestLoadState;
+  readonly deploymentManifest: StudioManifestLoadState;
+  readonly verifyHealthReport: StudioManifestLoadState;
+}
+
 export interface StudioLifecycleSnapshot {
   readonly status: StudioLifecycleDataStatus;
   readonly productUnit?: ProductUnit;
+  readonly availableProductUnits: readonly ProductUnit[];
   readonly lifecycleRuns: readonly LifecycleRun[];
   readonly selectedRun?: LifecycleRun;
+  readonly pendingApprovals: readonly ApprovalRequest[];
+  readonly manifestLoadState: StudioLifecycleManifestLoadState;
   readonly gateResultManifest?: GateResultManifest;
   readonly artifactManifest?: ArtifactManifest;
   readonly deploymentManifest?: DeploymentManifest;
@@ -62,7 +84,15 @@ interface StudioLifecycleDataProviderProps {
 
 const EMPTY_SNAPSHOT: StudioLifecycleSnapshot = {
   status: 'unconfigured',
+  availableProductUnits: [],
   lifecycleRuns: [],
+  pendingApprovals: [],
+  manifestLoadState: {
+    gateResultManifest: { status: 'missing' },
+    artifactManifest: { status: 'missing' },
+    deploymentManifest: { status: 'missing' },
+    verifyHealthReport: { status: 'missing' },
+  },
 };
 
 const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue>({
@@ -109,7 +139,13 @@ export function StudioLifecycleDataProvider(
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
 
-    setSnapshot({ status: 'loading', lifecycleRuns: [] });
+    setSnapshot({
+      status: 'loading',
+      availableProductUnits: [],
+      lifecycleRuns: [],
+      pendingApprovals: [],
+      manifestLoadState: EMPTY_SNAPSHOT.manifestLoadState,
+    });
 
     try {
       const productUnits = await lifecycleClient.listProductUnits();
@@ -121,7 +157,10 @@ export function StudioLifecycleDataProvider(
         if (!signal.aborted) {
           setSnapshot({
             status: 'degraded',
+            availableProductUnits: [],
             lifecycleRuns: [],
+            pendingApprovals: [],
+            manifestLoadState: EMPTY_SNAPSHOT.manifestLoadState,
             errorMessage: 'Kernel returned no ProductUnits for Studio.',
           });
         }
@@ -136,13 +175,20 @@ export function StudioLifecycleDataProvider(
         selectedRun === undefined
           ? undefined
           : await loadRunManifests(lifecycleClient, selectedProductUnit.id, selectedRun.runId, signal);
+      const pendingApprovals = await lifecycleClient.listPendingApprovals({
+        productUnitId: selectedProductUnit.id,
+        ...(selectedRun?.runId === undefined ? {} : { runId: selectedRun.runId }),
+      });
 
       if (!signal.aborted) {
         setSnapshot({
           status: 'ready',
           productUnit: selectedProductUnit,
+          availableProductUnits: productUnits,
           lifecycleRuns,
           selectedRun,
+          pendingApprovals,
+          manifestLoadState: manifests?.manifestLoadState ?? EMPTY_SNAPSHOT.manifestLoadState,
           ...(manifests ?? {}),
         });
       }
@@ -163,7 +209,10 @@ export function StudioLifecycleDataProvider(
       if (!signal.aborted) {
         setSnapshot({
           status: 'degraded',
+          availableProductUnits: [],
           lifecycleRuns: [],
+          pendingApprovals: [],
+          manifestLoadState: EMPTY_SNAPSHOT.manifestLoadState,
           errorMessage: error instanceof Error ? error.message : 'Kernel lifecycle data failed to load.',
         });
       }
@@ -204,19 +253,27 @@ export function StudioLifecycleDataProvider(
     if (client === undefined) {
       throw new Error('Kernel lifecycle client is not configured');
     }
-    const plan: LifecyclePlan = await client.createLifecyclePlan(selectedProductUnitId, phase, options);
+    const plan: LifecyclePlan = await client.createLifecyclePlan(selectedProductUnitId, phase, {
+      providerMode: selectedProviderMode,
+      environment: options?.environment ?? selectedEnvironment,
+      ...(options?.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+    });
     setSelectedRunId(plan.runId);
     await loadSnapshot();
-  }, [client, selectedProductUnitId, loadSnapshot]);
+  }, [client, selectedProductUnitId, selectedProviderMode, selectedEnvironment, loadSnapshot]);
 
   const executePhase = useCallback(async (phase: ProductLifecyclePhase, options?: { dryRun?: boolean; environment?: string }) => {
     if (client === undefined) {
       throw new Error('Kernel lifecycle client is not configured');
     }
-    const run: LifecycleRun = await client.executeLifecyclePhase(selectedProductUnitId, phase, options);
+    const run: LifecycleRun = await client.executeLifecyclePhase(selectedProductUnitId, phase, {
+      providerMode: selectedProviderMode,
+      environment: options?.environment ?? selectedEnvironment,
+      ...(options?.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+    });
     setSelectedRunId(run.runId);
     await loadSnapshot();
-  }, [client, selectedProductUnitId, loadSnapshot]);
+  }, [client, selectedProductUnitId, selectedProviderMode, selectedEnvironment, loadSnapshot]);
 
   const requestApproval = useCallback(async (actionRequest: ApprovalRequest) => {
     if (client === undefined) {
@@ -292,25 +349,93 @@ async function loadRunManifests(
 ): Promise<
   Pick<
     StudioLifecycleSnapshot,
-    'gateResultManifest' | 'artifactManifest' | 'deploymentManifest' | 'verifyHealthReport'
+    'gateResultManifest' | 'artifactManifest' | 'deploymentManifest' | 'verifyHealthReport' | 'manifestLoadState'
   >
 > {
-  const [gateResultManifest, artifactManifest, deploymentManifest, verifyHealthReport] =
-    await Promise.all([
-      client.getGateResultManifest(productUnitId, runId).catch(() => undefined),
-      client.getArtifactManifest(productUnitId, runId).catch(() => undefined),
-      client.getDeploymentManifest(productUnitId, runId).catch(() => undefined),
-      client.getVerifyHealthReport(productUnitId, runId).catch(() => undefined),
-    ]);
+  const [gateResultManifest, artifactManifest, deploymentManifest, verifyHealthReport] = await Promise.all([
+    loadManifest(() => client.getGateResultManifest(productUnitId, runId)),
+    loadManifest(() => client.getArtifactManifest(productUnitId, runId)),
+    loadManifest(() => client.getDeploymentManifest(productUnitId, runId)),
+    loadManifest(() => client.getVerifyHealthReport(productUnitId, runId)),
+  ]);
 
   if (signal.aborted) {
     throw new Error('Load cancelled');
   }
 
   return {
-    gateResultManifest,
-    artifactManifest,
-    deploymentManifest,
-    verifyHealthReport,
+    ...(gateResultManifest.data === undefined ? {} : { gateResultManifest: gateResultManifest.data }),
+    ...(artifactManifest.data === undefined ? {} : { artifactManifest: artifactManifest.data }),
+    ...(deploymentManifest.data === undefined ? {} : { deploymentManifest: deploymentManifest.data }),
+    ...(verifyHealthReport.data === undefined ? {} : { verifyHealthReport: verifyHealthReport.data }),
+    manifestLoadState: {
+      gateResultManifest: {
+        status: gateResultManifest.status,
+        ...(gateResultManifest.message === undefined ? {} : { message: gateResultManifest.message }),
+      },
+      artifactManifest: {
+        status: artifactManifest.status,
+        ...(artifactManifest.message === undefined ? {} : { message: artifactManifest.message }),
+      },
+      deploymentManifest: {
+        status: deploymentManifest.status,
+        ...(deploymentManifest.message === undefined ? {} : { message: deploymentManifest.message }),
+      },
+      verifyHealthReport: {
+        status: verifyHealthReport.status,
+        ...(verifyHealthReport.message === undefined ? {} : { message: verifyHealthReport.message }),
+      },
+    },
   };
+}
+
+async function loadManifest<TValue>(
+  load: () => Promise<TValue>,
+): Promise<{ readonly status: StudioManifestLoadStatus; readonly data?: TValue; readonly message?: string }> {
+  try {
+    return { status: 'loaded', data: await load() };
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
+      return { status: 'missing' };
+    }
+    if (isUnauthorizedError(error)) {
+      return { status: 'unauthorized', message: errorMessage(error) };
+    }
+    if (isCorruptManifestError(error)) {
+      return { status: 'corrupt', message: errorMessage(error) };
+    }
+    return { status: 'unavailable', message: errorMessage(error) };
+  }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  const code = extractStatusCode(error);
+  return code === 404;
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  const code = extractStatusCode(error);
+  return code === 401 || code === 403;
+}
+
+function isCorruptManifestError(error: unknown): boolean {
+  return errorMessage(error).toLowerCase().includes('corrupt');
+}
+
+function extractStatusCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const candidate = error as { readonly statusCode?: unknown; readonly status?: unknown };
+  if (typeof candidate.statusCode === 'number') {
+    return candidate.statusCode;
+  }
+  if (typeof candidate.status === 'number') {
+    return candidate.status;
+  }
+  return undefined;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Manifest unavailable';
 }

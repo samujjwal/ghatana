@@ -157,6 +157,7 @@ export class KernelLifecycleApiHandlers {
     { routeId: 'kernel.lifecycle.manifest.artifacts', method: 'GET', path: '/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/artifact-manifest', handler: 'getArtifactManifest' },
     { routeId: 'kernel.lifecycle.manifest.deployment', method: 'GET', path: '/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/deployment-manifest', handler: 'getDeploymentManifest' },
     { routeId: 'kernel.lifecycle.manifest.verify', method: 'GET', path: '/api/kernel/product-units/:productUnitId/lifecycle/runs/:runId/verify-health-report', handler: 'getVerifyHealthReport' },
+    { routeId: 'kernel.approvals.list', method: 'GET', path: '/api/kernel/approvals', handler: 'listPendingApprovals' },
     { routeId: 'kernel.approvals.request', method: 'POST', path: '/api/kernel/approvals', handler: 'requestApproval' },
     { routeId: 'kernel.approvals.decide', method: 'POST', path: '/api/kernel/approvals/:approvalId/decisions', handler: 'submitApprovalDecision' },
   ];
@@ -284,6 +285,23 @@ export class KernelLifecycleApiHandlers {
       const approvalRequest: ApprovalRequest = toApprovalRequest(parsed, context.correlationId);
       const result = await this.service.requestApproval(approvalRequest);
       return this.created(result, context.correlationId);
+    });
+  }
+
+  async listPendingApprovals(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const productUnitId = optionalString(context.query.productUnitId);
+      const runId = optionalString(context.query.runId);
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', {
+        ...(productUnitId === undefined ? {} : { productUnitId }),
+      });
+      const approvals = await this.service.listPendingApprovals({
+        ...(context.scope === undefined ? {} : { scope: context.scope }),
+        ...(productUnitId === undefined ? {} : { productUnitId }),
+        ...(runId === undefined ? {} : { runId }),
+        correlationId: context.correlationId,
+      });
+      return this.ok(approvals, context.correlationId);
     });
   }
 

@@ -299,7 +299,7 @@ export class ArtifactManifestGenerator {
           ...artifact.metadata,
           buildNumber: artifact.metadata.buildNumber || '0',
         },
-        found: true,
+        found: false,
       })),
     };
   }

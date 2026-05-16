@@ -17,6 +17,7 @@ export interface ArtifactPolicyRule {
   requireAttestation?: boolean;
   requireDigestForContainers?: boolean;
   maxUnverifiedCount?: number;
+  minArtifactCount?: number;
 }
 
 /**
@@ -37,7 +38,8 @@ export interface ArtifactPolicyViolation {
     | 'signature-required'
     | 'sbom-required'
     | 'attestation-required'
-    | 'container-digest-required';
+    | 'container-digest-required'
+    | 'artifact-count-below-policy';
   readonly message: string;
 }
 
@@ -194,6 +196,15 @@ export class ProductArtifactValidator {
     const violatingIds = new Set<string>();
     let compliantCount = 0;
 
+    const requiredArtifactCount = this.resolveRequiredArtifactCount(policy);
+    if (manifest.artifacts.length < requiredArtifactCount) {
+      violations.push({
+        artifactId: '__manifest__',
+        reasonCode: 'artifact-count-below-policy',
+        message: `Manifest has ${manifest.artifacts.length} artifacts but policy requires at least ${requiredArtifactCount}`,
+      });
+    }
+
     const allowedTrustStates = policy.requireTrustState;
     let unverifiedCount = 0;
 
@@ -277,6 +288,21 @@ export class ProductArtifactValidator {
       compliantCount,
       violatingArtifactIds: [...violatingIds],
     };
+  }
+
+  private resolveRequiredArtifactCount(policy: ArtifactPolicyRule): number {
+    if (policy.minArtifactCount !== undefined) {
+      return policy.minArtifactCount;
+    }
+
+    const hasStrictRequirement =
+      policy.requireSignature === true ||
+      policy.requireSbom === true ||
+      policy.requireAttestation === true ||
+      policy.requireDigestForContainers === true ||
+      (policy.requireTrustState !== undefined && policy.requireTrustState.length > 0);
+
+    return hasStrictRequirement ? 1 : 0;
   }
 
   validateExpectedArtifacts(params: {

@@ -11,6 +11,8 @@
 
 export * from "./inventory/index";
 export * from "./graph/index";
+export * from "./source-providers/index";
+export * from "./compile-back/index";
 export * from "./model/index";
 export * from "./provenance/index";
 export * from "./residual/index";

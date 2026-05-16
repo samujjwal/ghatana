@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import {
+  type ApprovalProvider,
   type ApprovalDecision,
   type ApprovalRequest,
   type KernelLifecycleEvent,
@@ -31,6 +32,7 @@ import {
   KernelLifecycleError,
   LifecycleManifestCorruptError,
   LifecycleRunIndexUnavailableError,
+  ManifestNotFoundError,
   ProductUnitNotFoundError,
   ProviderUnavailableError,
 } from './KernelLifecycleErrors.js';
@@ -102,6 +104,11 @@ export interface ApprovalResult {
   readonly ref?: string;
   readonly reasonCode?: string;
   readonly message?: string;
+}
+
+export interface PendingApprovalQuery extends KernelLifecycleScopeQuery {
+  readonly productUnitId?: string;
+  readonly runId?: string;
 }
 
 const fallbackLogger: KernelLifecycleLogger = {
@@ -356,7 +363,73 @@ export class KernelLifecycleService {
       resolvedPhase,
       manifestType,
     );
-    return this.readJson(manifestPath);
+    try {
+      return await this.readJson(manifestPath);
+    } catch (error: unknown) {
+      if (this.isNodeFileNotFound(error)) {
+        throw new ManifestNotFoundError(`Manifest not found at ${manifestPath}`, {
+          productUnitId,
+          runId,
+          phase: resolvedPhase,
+          manifestType,
+          correlationId: query.correlationId,
+        });
+      }
+      if (error instanceof SyntaxError) {
+        throw new LifecycleManifestCorruptError({
+          filePath: manifestPath,
+          operation: 'getManifest',
+          cause: error,
+        });
+      }
+      throw error;
+    }
+  }
+
+  async listPendingApprovals(query: PendingApprovalQuery = {}): Promise<readonly ApprovalRequest[]> {
+    this.validateProviderContext(query.correlationId, query.providerMode);
+    const provider = this.providerContext.approvals;
+    if (provider === undefined) {
+      throw new ProviderUnavailableError('Approval provider is not configured', {
+        ...(query.correlationId === undefined ? {} : { correlationId: query.correlationId }),
+        ...(query.productUnitId === undefined ? {} : { productUnitId: query.productUnitId }),
+        ...(query.runId === undefined ? {} : { runId: query.runId }),
+      });
+    }
+    if (!hasPendingApprovalReader(provider)) {
+      throw new ProviderUnavailableError('Approval provider does not support pending approval listing', {
+        ...(query.correlationId === undefined ? {} : { correlationId: query.correlationId }),
+        ...(query.productUnitId === undefined ? {} : { productUnitId: query.productUnitId }),
+        ...(query.runId === undefined ? {} : { runId: query.runId }),
+      });
+    }
+
+    const pendingApprovals = await provider.listPendingApprovals();
+    const filteredById = pendingApprovals.filter((approval) => {
+      if (query.productUnitId !== undefined && approval.productUnitId !== query.productUnitId) {
+        return false;
+      }
+      if (query.runId !== undefined && approval.runId !== query.runId) {
+        return false;
+      }
+      return true;
+    });
+
+    if (query.scope === undefined) {
+      return filteredById;
+    }
+
+    const scopeFiltered = await Promise.all(
+      filteredById.map(async (approval) => {
+        const productUnit = await this.registryProvider.getProductUnit(approval.productUnitId);
+        if (productUnit === null) {
+          return null;
+        }
+        return this.scopeMatches(productUnit.scope, query.scope) ? approval : null;
+      }),
+    );
+
+    return scopeFiltered.filter((approval): approval is ApprovalRequest => approval !== null);
   }
 
   async requestApproval(request: ApprovalRequest): Promise<ApprovalResult> {
@@ -593,11 +666,22 @@ export class KernelLifecycleService {
   private validateProviderContext(correlationId?: string, requestedMode?: 'bootstrap' | 'platform'): void {
     const validation = validateKernelLifecycleProviderContext(this.providerContext);
     if (!validation.valid) {
+      const missingProviders = [...validation.missingProviders];
+      const invalidBackingStores = [...validation.invalidBackingStores];
+      const missingProvidersMessage = missingProviders.length > 0
+        ? `missing lifecycle providers: ${missingProviders.join(', ')}`
+        : undefined;
+      const invalidBackingStoresMessage = invalidBackingStores.length > 0
+        ? `invalid backing stores: ${invalidBackingStores.map((entry) => `${entry.providerName}=${entry.backingStore}`).join(', ')}`
+        : undefined;
+      const reasons = [missingProvidersMessage, invalidBackingStoresMessage].filter(
+        (reason): reason is string => reason !== undefined,
+      );
       throw new ProviderUnavailableError(
-        `Kernel ${this.providerContext.mode} mode is missing lifecycle providers: ${validation.missingProviders.join(', ')}`,
+        `Kernel ${this.providerContext.mode} mode provider context is invalid${reasons.length > 0 ? ` (${reasons.join('; ')})` : ''}`,
         {
           ...(correlationId === undefined ? {} : { correlationId }),
-          safeDetails: { missingProviders: validation.missingProviders },
+          safeDetails: { missingProviders, invalidBackingStores },
         },
       );
     }
@@ -987,4 +1071,11 @@ export class KernelLifecycleService {
       (error as { code: unknown }).code === 'ENOENT'
     );
   }
+}
+
+function hasPendingApprovalReader(provider: unknown): provider is ApprovalProvider {
+  return typeof provider === 'object' &&
+    provider !== null &&
+    'listPendingApprovals' in provider &&
+    typeof (provider as { readonly listPendingApprovals?: unknown }).listPendingApprovals === 'function';
 }

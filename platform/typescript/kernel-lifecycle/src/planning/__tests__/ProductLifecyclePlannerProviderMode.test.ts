@@ -32,6 +32,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
   let profilesPath: string;
   let toolchainPath: string;
   let planner: ProductLifecyclePlanner;
+  let warn: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "planner-test-"));
@@ -102,7 +103,8 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
       "utf-8"
     );
 
-    planner = new ProductLifecyclePlanner(tempDir, configDir);
+    warn = vi.fn();
+    planner = new ProductLifecyclePlanner(tempDir, configDir, undefined, { warn });
   });
 
   function createRegistryProviderStub(): RegistryProvider {
@@ -297,19 +299,13 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         correlationId: "test-corr-123",
       };
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
       const plan = await planner.plan("test-product", "dev", options);
 
       expect(plan.providerMode).toBe("bootstrap");
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Platform mode requested but provider context not available")
+      expect(warn).toHaveBeenCalledWith(
+        'Platform provider context unavailable; falling back to bootstrap mode',
+        expect.objectContaining({ reasonCode: 'platform-provider-context-missing' }),
       );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("allowBootstrapFallback: true")
-      );
-
-      warnSpy.mockRestore();
     });
 
     it("should fall back to bootstrap when allowBootstrapFallback: true and context mode wrong", async () => {
@@ -317,26 +313,20 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         mode: "bootstrap",
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, wrongContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, wrongContext, { warn });
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: true,
         correlationId: "test-corr-123",
       };
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
       const plan = await plannerWithContext.plan("test-product", "dev", options);
 
       expect(plan.providerMode).toBe("bootstrap");
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("provider context mode is bootstrap")
+      expect(warn).toHaveBeenCalledWith(
+        'Platform mode requested with non-platform provider context; using bootstrap fallback',
+        expect.objectContaining({ reasonCode: 'platform-provider-context-mode-mismatch' }),
       );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("allowBootstrapFallback: true")
-      );
-
-      warnSpy.mockRestore();
     });
 
     it("should fall back to bootstrap when allowBootstrapFallback: true and providers missing", async () => {
@@ -346,26 +336,20 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         // Missing: sourceProvider, artifacts, events, health, approvals, provenance, runtimeTruth
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext, { warn });
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: true,
         correlationId: "test-corr-123",
       };
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
       const plan = await plannerWithContext.plan("test-product", "dev", options);
 
       expect(plan.providerMode).toBe("bootstrap");
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("required providers are missing")
+      expect(warn).toHaveBeenCalledWith(
+        'Missing required platform providers; using bootstrap fallback',
+        expect.objectContaining({ reasonCode: 'platform-required-providers-missing' }),
       );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("allowBootstrapFallback: true")
-      );
-
-      warnSpy.mockRestore();
     });
 
     it("should not fall back when allowBootstrapFallback: false and context missing", async () => {
@@ -374,14 +358,11 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         allowBootstrapFallback: false,
       };
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
       await expect(planner.plan("test-product", "dev", options)).rejects.toThrow(
         "Kernel platform provider mode requires a provider context"
       );
 
-      expect(warnSpy).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(warn).not.toHaveBeenCalled();
     });
 
     it("should not fall back when allowBootstrapFallback: false and providers missing", async () => {
@@ -390,20 +371,17 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
         registryProvider: createRegistryProviderStub(),
       };
 
-      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext);
+      const plannerWithContext = new ProductLifecyclePlanner(tempDir, configDir, incompleteContext, { warn });
       const options: ProductLifecyclePlanOptions = {
         providerMode: "platform",
         allowBootstrapFallback: false,
       };
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
       await expect(plannerWithContext.plan("test-product", "dev", options)).rejects.toThrow(
         "Kernel platform provider mode requires all providers to be available"
       );
 
-      expect(warnSpy).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 

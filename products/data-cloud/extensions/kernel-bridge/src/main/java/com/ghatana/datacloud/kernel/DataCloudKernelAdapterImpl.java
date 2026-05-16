@@ -94,7 +94,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
         requireStarted();
 
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, READ_MODE)
             .then(() -> executeWithRetry("readData", request.getContext(), resource, READ_MODE, () ->
                 dataCloudClient.read(request.getDatasetId(), request.getRecordId(), request.getOptions())));
@@ -105,7 +105,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
         requireStarted();
 
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, WRITE_MODE)
             .then(() -> executeWithRetry("writeData", request.getContext(), resource, WRITE_MODE, () ->
                 dataCloudClient.write(request.getDatasetId(), request.getRecordId(), request.getData(), request.getMetadata())));
@@ -116,7 +116,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
         requireStarted();
 
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, "delete")
             .then(() -> executeWithRetry("deleteData", request.getContext(), resource, "delete", () ->
                 dataCloudClient.delete(request.getDatasetId(), request.getRecordId())));
@@ -127,7 +127,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
         requireStarted();
 
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, "query")
             .then(() -> executeWithRetry("queryData", request.getContext(), resource, "query", () ->
                 dataCloudClient.query(
@@ -148,7 +148,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
         requireStarted();
 
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, "schema:create")
             .then(() -> executeWithRetry("createSchema", request.getContext(), resource, "schema:create", () ->
                 dataCloudClient.createDataset(request.getDatasetId(), request.getSchema(), request.getOptions())));
@@ -160,7 +160,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         Objects.requireNonNull(datasetId, "datasetId cannot be null");
         requireStarted();
 
-        String resource = datasetResource(datasetId);
+        String resource = datasetResource(context, datasetId);
         return authorize(context, resource, "schema:read")
             .then(() -> executeWithRetry("getSchema", context, resource, "schema:read", () ->
                 dataCloudClient.getSchema(datasetId)));
@@ -242,7 +242,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         requireStarted();
 
         String streamId = "stream-read-" + streamCounter.incrementAndGet();
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, "stream:read")
             .then(() -> executeWithRetry("openReadStream", request.getContext(), resource, "stream:read", () ->
                 dataCloudClient.openReadStream(request.getDatasetId(), request.getOptions()).thenApply(innerStream -> {
@@ -262,7 +262,7 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
         requireStarted();
 
         String streamId = "stream-write-" + streamCounter.incrementAndGet();
-        String resource = datasetResource(request.getDatasetId());
+        String resource = datasetResource(request.getContext(), request.getDatasetId());
         return authorize(request.getContext(), resource, "stream:write")
             .then(() -> executeWithRetry("openWriteStream", request.getContext(), resource, "stream:write", () ->
                 dataCloudClient.openWriteStream(request.getDatasetId(), request.getOptions()).thenApply(innerStream -> {
@@ -359,8 +359,46 @@ public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements 
                 : Promise.ofException(new SecurityException("Not authorized for " + action + " on " + resource)));
     }
 
-    private static String datasetResource(String datasetId) {
-        return "dataset:" + Objects.requireNonNull(datasetId, DATASET_ID_CANNOT_BE_NULL);
+    private static String datasetResource(BridgeContext context, String datasetId) {
+        Objects.requireNonNull(context, "context cannot be null");
+        String normalizedDatasetId = Objects.requireNonNull(datasetId, DATASET_ID_CANNOT_BE_NULL).trim();
+        if (normalizedDatasetId.isEmpty()) {
+            throw new DataCloudProviderException(
+                "data-cloud-kernel-bridge",
+                "validateDatasetScope",
+                "datasetId cannot be blank",
+                DataCloudProviderException.ReasonCode.INVALID_REQUEST);
+        }
+        validateDatasetScope(context, normalizedDatasetId);
+        return "dataset:" + normalizedDatasetId;
+    }
+
+    private static void validateDatasetScope(BridgeContext context, String datasetId) {
+        String tenantId = Objects.requireNonNull(context.getTenantId(), "context tenantId cannot be null").trim();
+        if (tenantId.isEmpty()) {
+            throw new DataCloudProviderException(
+                "data-cloud-kernel-bridge",
+                "validateDatasetScope",
+                "context tenantId cannot be blank",
+                DataCloudProviderException.ReasonCode.TENANT_CONTEXT_INVALID);
+        }
+        if (!isTenantScopedDataset(datasetId, tenantId)) {
+            throw new DataCloudProviderException(
+                "data-cloud-kernel-bridge",
+                "validateDatasetScope",
+                "Dataset " + datasetId + " is outside tenant scope " + tenantId,
+                DataCloudProviderException.ReasonCode.TENANT_CONTEXT_INVALID);
+        }
+    }
+
+    private static boolean isTenantScopedDataset(String datasetId, String tenantId) {
+        String[] segments = datasetId.split("\\.");
+        for (String segment : segments) {
+            if (tenantId.equals(segment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String tenantResource(BridgeContext context) {

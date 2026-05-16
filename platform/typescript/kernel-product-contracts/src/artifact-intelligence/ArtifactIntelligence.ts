@@ -120,7 +120,65 @@ export const ArtifactGraphSummarySchema = ArtifactIntelligenceEvidenceBaseSchema
   edges: z.array(ArtifactGraphEdgeSchema),
   rootArtifactIds: z.array(NonEmptyStringSchema),
   orphanArtifactIds: z.array(NonEmptyStringSchema),
-}).strict();
+})
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.nodeCount !== value.nodes.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["nodeCount"],
+        message: `nodeCount must equal nodes.length (${value.nodes.length})`,
+      });
+    }
+    if (value.edgeCount !== value.edges.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["edgeCount"],
+        message: `edgeCount must equal edges.length (${value.edges.length})`,
+      });
+    }
+
+    const nodeIds = new Set(value.nodes.map((node) => node.artifactId));
+    for (let index = 0; index < value.edges.length; index += 1) {
+      const edge = value.edges[index];
+      if (!nodeIds.has(edge.fromArtifactId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["edges", index, "fromArtifactId"],
+          message: `fromArtifactId '${edge.fromArtifactId}' must reference an existing node`,
+        });
+      }
+      if (!nodeIds.has(edge.toArtifactId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["edges", index, "toArtifactId"],
+          message: `toArtifactId '${edge.toArtifactId}' must reference an existing node`,
+        });
+      }
+    }
+
+    for (let index = 0; index < value.rootArtifactIds.length; index += 1) {
+      const rootArtifactId = value.rootArtifactIds[index];
+      if (!nodeIds.has(rootArtifactId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["rootArtifactIds", index],
+          message: `rootArtifactId '${rootArtifactId}' must reference an existing node`,
+        });
+      }
+    }
+
+    for (let index = 0; index < value.orphanArtifactIds.length; index += 1) {
+      const orphanArtifactId = value.orphanArtifactIds[index];
+      if (!nodeIds.has(orphanArtifactId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["orphanArtifactIds", index],
+          message: `orphanArtifactId '${orphanArtifactId}' must reference an existing node`,
+        });
+      }
+    }
+  });
 
 export const ProductShapeEvidenceSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("product-shape-evidence"),
@@ -139,7 +197,26 @@ export const DependencyGraphEvidenceSchema = ArtifactIntelligenceEvidenceBaseSch
   cycleCount: z.number().int().nonnegative(),
   cycleRefs: z.array(NonEmptyStringSchema),
   vulnerableDependencyRefs: z.array(NonEmptyStringSchema),
-}).strict();
+})
+  .strict()
+  .superRefine((value, ctx) => {
+    const expectedDependencyCount =
+      value.internalDependencyCount + value.externalDependencyCount;
+    if (value.dependencyCount !== expectedDependencyCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dependencyCount"],
+        message: `dependencyCount must equal internalDependencyCount + externalDependencyCount (${expectedDependencyCount})`,
+      });
+    }
+    if (value.cycleCount !== value.cycleRefs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cycleCount"],
+        message: `cycleCount must equal cycleRefs.length (${value.cycleRefs.length})`,
+      });
+    }
+  });
 
 export const ResidualIslandReportSchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("residual-island-report"),
@@ -162,7 +239,32 @@ export const RiskHotspotReportSchema = ArtifactIntelligenceEvidenceBaseSchema.ex
       })
       .strict()
   ),
-}).strict();
+})
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.hotspotCount !== value.hotspots.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hotspotCount"],
+        message: `hotspotCount must equal hotspots.length (${value.hotspots.length})`,
+      });
+    }
+    if (value.hotspots.length === 0) {
+      return;
+    }
+    const highestRisk = value.hotspots.reduce<RiskLevel>((current, hotspot) => {
+      return compareRiskLevel(hotspot.riskLevel, current) > 0
+        ? hotspot.riskLevel
+        : current;
+    }, value.hotspots[0].riskLevel);
+    if (value.highestRiskLevel !== highestRisk) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["highestRiskLevel"],
+        message: `highestRiskLevel must match max hotspot risk level (${highestRisk})`,
+      });
+    }
+  });
 
 export const GeneratedChangeSetSummarySchema = ArtifactIntelligenceEvidenceBaseSchema.extend({
   evidenceType: z.literal("generated-change-set-summary"),
@@ -264,4 +366,15 @@ export function isArtifactIntelligenceEvidenceEnvelope(
   value: unknown
 ): value is ArtifactIntelligenceEvidenceEnvelope {
   return ArtifactIntelligenceEvidenceEnvelopeSchema.safeParse(value).success;
+}
+
+const RISK_LEVEL_ORDER: Readonly<Record<RiskLevel, number>> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
+
+function compareRiskLevel(left: RiskLevel, right: RiskLevel): number {
+  return RISK_LEVEL_ORDER[left] - RISK_LEVEL_ORDER[right];
 }

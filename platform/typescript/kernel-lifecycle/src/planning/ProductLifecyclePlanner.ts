@@ -56,6 +56,14 @@ export interface ProductLifecyclePlanOptions {
   readonly semanticArtifactRefs?: readonly string[];
 }
 
+export interface ProductLifecyclePlannerLogger {
+  warn(message: string, meta?: Record<string, unknown>): void;
+}
+
+const fallbackPlannerLogger: ProductLifecyclePlannerLogger = {
+  warn: () => undefined,
+};
+
 
 /**
  * @doc.type class
@@ -72,11 +80,13 @@ export class ProductLifecyclePlanner {
   private readonly toolchainPath: string;
   private readonly repoRoot: string;
   private readonly providerContext: ProductLifecyclePlannerProviderContext | undefined;
+  private readonly logger: ProductLifecyclePlannerLogger;
 
   constructor(
     repoRoot: string = process.cwd(),
     configDir?: string,
     providerContext?: ProductLifecyclePlannerProviderContext,
+    logger: ProductLifecyclePlannerLogger = fallbackPlannerLogger,
   ) {
     this.repoRoot = repoRoot;
     const actualConfigDir = configDir ?? path.join(repoRoot, 'config');
@@ -85,6 +95,7 @@ export class ProductLifecyclePlanner {
     this.profilesPath = path.join(actualConfigDir, 'product-lifecycle-profiles.json');
     this.toolchainPath = path.join(actualConfigDir, 'toolchain-adapter-registry.json');
     this.providerContext = providerContext;
+    this.logger = logger;
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -99,8 +110,11 @@ export class ProductLifecyclePlanner {
       try {
         return await this.providerContext.registryProvider.getProductUnit(productId);
       } catch (error) {
-        // Fall back to file-based approach if provider fails
-        console.warn(`Provider failed to load ProductUnit for ${productId}, falling back to file-based validation:`, error);
+        this.logger.warn('Provider lookup failed; falling back to file-based ProductUnit validation', {
+          reasonCode: 'registry-provider-fallback',
+          productId,
+          cause: error instanceof Error ? error.message : String(error),
+        });
       }
     }
     return null; // Provider not available, will use file-based validation
@@ -158,7 +172,8 @@ export class ProductLifecyclePlanner {
       );
     }
 
-    const config = yaml.parse(configContent) as Record<string, unknown>;
+    const config = this.parseYamlObject(configContent, configPath);
+    this.assertKernelProductConfigShape(config, productId, configPath);
 
     return {
       productId: String(config.productId ?? productId),
@@ -188,13 +203,18 @@ export class ProductLifecyclePlanner {
 
   /** Load the lifecycle profile by ID. */
   async loadLifecycleProfile(profileId: string): Promise<Record<string, unknown>> {
-    const raw = JSON.parse(await fs.readFile(this.profilesPath, 'utf-8'));
-    const profile = (raw.profiles as Record<string, unknown>)[profileId];
+    const raw = JSON.parse(await fs.readFile(this.profilesPath, 'utf-8')) as unknown;
+    this.assertObject(raw, this.profilesPath, 'profiles root');
+    this.assertRecordProperty(raw, 'profiles', this.profilesPath);
+    const profiles = raw.profiles as Record<string, unknown>;
+    const profile = profiles[profileId];
     if (!profile) {
       throw new Error(
         `Lifecycle profile "${profileId}" not found in product-lifecycle-profiles.json.`,
       );
     }
+    this.assertObject(profile, this.profilesPath, `profiles.${profileId}`);
+    this.assertLifecycleProfileShape(profile, profileId, this.profilesPath);
     return profile as Record<string, unknown>;
   }
 
@@ -825,6 +845,26 @@ export class ProductLifecyclePlanner {
       );
     }
 
+    const readiness = typeof adapter.readiness === 'string' ? adapter.readiness : undefined;
+    if (
+      readiness !== undefined &&
+      readiness !== 'execution-ready' &&
+      readiness !== 'production-ready' &&
+      !shapeOnly
+    ) {
+      throw new Error(
+        `Adapter "${adapterId}" has readiness "${readiness}" and cannot be used for executable planning. ` +
+          'Use shapeOnly planning to inspect planning-only or declared adapters without executing them.',
+      );
+    }
+
+    if (adapter.lifecycleEnabled === false && !shapeOnly) {
+      throw new Error(
+        `Adapter "${adapterId}" is not lifecycleEnabled in toolchain-adapter-registry.json and cannot be used for executable planning. ` +
+          'Enable lifecycle only after adapter contract and readiness checks pass.',
+      );
+    }
+
     if (!config.allowExperimentalAdapters && !Boolean(adapter.safeForDefault)) {
       throw new Error(
         `Adapter "${adapterId}" is not marked safeForDefault in toolchain-adapter-registry.json. ` +
@@ -849,9 +889,11 @@ export class ProductLifecyclePlanner {
     if (providerMode === 'platform') {
       if (this.providerContext === undefined) {
         if (allowBootstrapFallback) {
-          console.warn(
-            `[${correlationId ?? 'planner'}] Platform mode requested but provider context not available. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
-          );
+          this.logger.warn('Platform provider context unavailable; falling back to bootstrap mode', {
+            reasonCode: 'platform-provider-context-missing',
+            correlationId,
+            allowBootstrapFallback,
+          });
           return 'bootstrap';
         }
         throw new Error('Kernel platform provider mode requires a provider context. Set allowBootstrapFallback: true to fall back to bootstrap mode.');
@@ -859,9 +901,12 @@ export class ProductLifecyclePlanner {
 
       if (this.providerContext.mode !== 'platform') {
         if (allowBootstrapFallback) {
-          console.warn(
-            `[${correlationId ?? 'planner'}] Platform mode requested but provider context mode is ${this.providerContext.mode}. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
-          );
+          this.logger.warn('Platform mode requested with non-platform provider context; using bootstrap fallback', {
+            reasonCode: 'platform-provider-context-mode-mismatch',
+            correlationId,
+            providerContextMode: this.providerContext.mode,
+            allowBootstrapFallback,
+          });
           return 'bootstrap';
         }
         throw new Error(
@@ -898,9 +943,12 @@ export class ProductLifecyclePlanner {
 
       if (missingProviders.length > 0) {
         if (allowBootstrapFallback) {
-          console.warn(
-            `[${correlationId ?? 'planner'}] Platform mode requested but required providers are missing: ${missingProviders.join(', ')}. Falling back to bootstrap mode due to allowBootstrapFallback: true.`,
-          );
+          this.logger.warn('Missing required platform providers; using bootstrap fallback', {
+            reasonCode: 'platform-required-providers-missing',
+            correlationId,
+            missingProviders,
+            allowBootstrapFallback,
+          });
           return 'bootstrap';
         }
         throw new Error(
@@ -919,13 +967,19 @@ export class ProductLifecyclePlanner {
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private async loadRegistry(): Promise<Record<string, Record<string, unknown>>> {
-    const raw = JSON.parse(await fs.readFile(this.registryPath, 'utf-8'));
+    const raw = JSON.parse(await fs.readFile(this.registryPath, 'utf-8')) as unknown;
+    this.assertObject(raw, this.registryPath, 'registry root');
+    this.assertRecordProperty(raw, 'registry', this.registryPath);
     return raw.registry as Record<string, Record<string, unknown>>;
   }
 
   private async loadToolchains(): Promise<ToolchainRegistry> {
-    const raw = JSON.parse(await fs.readFile(this.toolchainPath, 'utf-8'));
-    return raw.adapters as ToolchainRegistry;
+    const raw = JSON.parse(await fs.readFile(this.toolchainPath, 'utf-8')) as unknown;
+    this.assertObject(raw, this.toolchainPath, 'toolchain registry root');
+    this.assertRecordProperty(raw, 'adapters', this.toolchainPath);
+    const adapters = raw.adapters as ToolchainRegistry;
+    this.assertToolchainRegistryShape(adapters, this.toolchainPath);
+    return adapters;
   }
 
   private async loadExclusions(): Promise<Set<string>> {
@@ -980,6 +1034,94 @@ export class ProductLifecyclePlanner {
       return 'worker';
     }
     return 'backend-api';
+  }
+
+  private parseYamlObject(content: string, filePath: string): Record<string, unknown> {
+    try {
+      const parsed = yaml.parse(content) as unknown;
+      this.assertObject(parsed, filePath, 'kernel product config');
+      return parsed;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid YAML in ${filePath}: ${message}`);
+    }
+  }
+
+  private assertKernelProductConfigShape(
+    config: Record<string, unknown>,
+    productId: string,
+    configPath: string,
+  ): void {
+    if (typeof config.lifecycleProfile !== 'string' || config.lifecycleProfile.trim().length === 0) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare a non-empty lifecycleProfile (${configPath}).`,
+      );
+    }
+    this.assertRecordProperty(config, 'phases', configPath);
+  }
+
+  private assertRecordProperty(
+    value: Record<string, unknown>,
+    propertyName: string,
+    filePath: string,
+  ): void {
+    const property = value[propertyName];
+    if (typeof property !== 'object' || property === null || Array.isArray(property)) {
+      throw new Error(`Expected object property "${propertyName}" in ${filePath}.`);
+    }
+  }
+
+  private assertObject(value: unknown, filePath: string, context: string): asserts value is Record<string, unknown> {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new Error(`Expected ${context} object in ${filePath}.`);
+    }
+  }
+
+  private assertLifecycleProfileShape(
+    profile: Record<string, unknown>,
+    profileId: string,
+    filePath: string,
+  ): void {
+    const defaultSurfaces = profile.defaultSurfaces;
+    if (defaultSurfaces === undefined) {
+      return;
+    }
+    if (typeof defaultSurfaces !== 'object' || defaultSurfaces === null || Array.isArray(defaultSurfaces)) {
+      throw new Error(
+        `Lifecycle profile "${profileId}" must declare defaultSurfaces as an object in ${filePath}.`,
+      );
+    }
+
+    for (const [phase, surfaces] of Object.entries(defaultSurfaces)) {
+      if (!Array.isArray(surfaces) || surfaces.some((surface) => typeof surface !== 'string' || surface.trim().length === 0)) {
+        throw new Error(
+          `Lifecycle profile "${profileId}" must declare defaultSurfaces.${phase} as a non-empty string array in ${filePath}.`,
+        );
+      }
+    }
+  }
+
+  private assertToolchainRegistryShape(adapters: ToolchainRegistry, filePath: string): void {
+    for (const [adapterId, adapterValue] of Object.entries(adapters)) {
+      if (typeof adapterValue !== 'object' || adapterValue === null || Array.isArray(adapterValue)) {
+        throw new Error(`Adapter "${adapterId}" in ${filePath} must be an object.`);
+      }
+
+      const adapter = adapterValue as Record<string, unknown>;
+      const supportedPhases = adapter.supportedPhases;
+      if (!Array.isArray(supportedPhases) || supportedPhases.some((phase) => typeof phase !== 'string' || phase.trim().length === 0)) {
+        throw new Error(
+          `Adapter "${adapterId}" in ${filePath} must declare supportedPhases as a non-empty string array.`,
+        );
+      }
+
+      const supportedSurfaceTypes = adapter.supportedSurfaceTypes;
+      if (!Array.isArray(supportedSurfaceTypes) || supportedSurfaceTypes.some((surfaceType) => typeof surfaceType !== 'string' || surfaceType.trim().length === 0)) {
+        throw new Error(
+          `Adapter "${adapterId}" in ${filePath} must declare supportedSurfaceTypes as a non-empty string array.`,
+        );
+      }
+    }
   }
 
   private resolveOutputDirectory(

@@ -57,6 +57,11 @@ const FAILURE_REASON_CODES = [
   'approval-required',
   'policy-denied',
   'provider-unavailable',
+  'run-not-found',
+  'manifest-not-found',
+  'execution-failed',
+  'scope-headers-required',
+  'authorization-failed',
 ] as const;
 
 const ProductUnitListSchema = z.array(ProductUnitSchema);
@@ -200,8 +205,15 @@ export const ApprovalRequestSchema = z
   .object({
     approvalId: z.string().trim().min(1),
     productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1).optional(),
+    correlationId: z.string().trim().min(1).optional(),
     requestedBy: z.string().trim().min(1),
+    requestedAt: z.string().datetime({ offset: true }).optional(),
     reason: z.string().trim().min(1),
+    environment: z.string().trim().min(1).optional(),
+    action: z.string().trim().min(1).optional(),
+    riskLevel: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
     requiredApprovers: z.array(z.string().trim().min(1)).min(1),
     expiresAt: z.string().datetime({ offset: true }),
   })
@@ -288,6 +300,11 @@ export interface DeploymentManifestQuery {
   readonly environment?: string;
 }
 
+export interface PendingApprovalQuery {
+  readonly productUnitId?: string;
+  readonly runId?: string;
+}
+
 export interface KernelLifecycleClient {
   listProductUnits(): Promise<readonly ProductUnit[]>;
   getProductUnit(productUnitId: string): Promise<ProductUnit>;
@@ -311,6 +328,7 @@ export interface KernelLifecycleClient {
     query?: DeploymentManifestQuery,
   ): Promise<DeploymentManifest>;
   getVerifyHealthReport(productUnitId: string, runId: string): Promise<VerifyHealthReport>;
+  listPendingApprovals(query?: PendingApprovalQuery): Promise<readonly ApprovalRequest[]>;
   requestApproval(actionRequest: ApprovalRequest): Promise<ProductApprovalGate>;
   submitApprovalDecision(
     approvalId: string,
@@ -485,6 +503,21 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
       {
         headers: this.buildHeaders(),
         schema: VerifyHealthReportSchema,
+      },
+    );
+    return response.data;
+  }
+
+  async listPendingApprovals(query: PendingApprovalQuery = {}): Promise<readonly ApprovalRequest[]> {
+    const response = await this.apiClient.get<readonly ApprovalRequest[]>(
+      '/api/kernel/approvals',
+      {
+        headers: this.buildHeaders(),
+        query: {
+          ...(query.productUnitId === undefined ? {} : { productUnitId: query.productUnitId }),
+          ...(query.runId === undefined ? {} : { runId: query.runId }),
+        },
+        schema: z.array(ApprovalRequestSchema),
       },
     );
     return response.data;

@@ -182,7 +182,7 @@ describe('ProductLifecyclePlanner', () => {
   });
 
   it('should fall back to file planning when registry provider lookup fails', async () => {
-    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.fn();
     const context: ProductLifecyclePlannerProviderContext = {
       ...createFullPlatformProviderContext(),
       registryProvider: {
@@ -197,18 +197,16 @@ describe('ProductLifecyclePlanner', () => {
         validateProductUnit: async () => ({ valid: false, errors: ['registry unavailable'] }),
       },
     };
-    const planner = new ProductLifecyclePlanner(REPO_ROOT, undefined, context);
+    const planner = new ProductLifecyclePlanner(REPO_ROOT, undefined, context, { warn });
 
     await expect(planner.plan('digital-marketing', 'build')).resolves.toMatchObject({
       productId: 'digital-marketing',
       providerMode: 'platform',
     });
-    expect(consoleWarn).toHaveBeenCalledWith(
-      expect.stringContaining('Provider failed to load ProductUnit for digital-marketing'),
-      expect.any(Error),
+    expect(warn).toHaveBeenCalledWith(
+      'Provider lookup failed; falling back to file-based ProductUnit validation',
+      expect.objectContaining({ reasonCode: 'registry-provider-fallback' }),
     );
-
-    consoleWarn.mockRestore();
   });
 
   it('should plan package phase through package adapters', async () => {
@@ -260,6 +258,51 @@ describe('ProductLifecyclePlanner', () => {
     );
 
     await expect(planner.plan('shape-product', 'test', { shapeOnly: true })).resolves.toMatchObject({
+      productId: 'shape-product',
+      steps: [expect.objectContaining({ adapter: 'vitest' })],
+    });
+  });
+
+  it('should block non-execution adapter readiness and lifecycle-disabled adapters for executable planning', async () => {
+    const nonExecutionReadinessPlanner = new ProductLifecyclePlanner(
+      await createPlannerFixtureRepo({
+        adapters: {
+          vitest: {
+            supportedSurfaceTypes: ['web'],
+            supportedPhases: ['test'],
+            status: 'implemented',
+            safeForDefault: true,
+            readiness: 'planning-only',
+            lifecycleEnabled: true,
+          },
+        },
+      }),
+    );
+
+    await expect(nonExecutionReadinessPlanner.plan('shape-product', 'test')).rejects.toThrow(
+      'has readiness "planning-only"',
+    );
+
+    const lifecycleDisabledPlanner = new ProductLifecyclePlanner(
+      await createPlannerFixtureRepo({
+        adapters: {
+          vitest: {
+            supportedSurfaceTypes: ['web'],
+            supportedPhases: ['test'],
+            status: 'implemented',
+            safeForDefault: true,
+            readiness: 'execution-ready',
+            lifecycleEnabled: false,
+          },
+        },
+      }),
+    );
+
+    await expect(lifecycleDisabledPlanner.plan('shape-product', 'test')).rejects.toThrow(
+      'is not lifecycleEnabled',
+    );
+
+    await expect(nonExecutionReadinessPlanner.plan('shape-product', 'test', { shapeOnly: true })).resolves.toMatchObject({
       productId: 'shape-product',
       steps: [expect.objectContaining({ adapter: 'vitest' })],
     });
@@ -381,6 +424,50 @@ describe('ProductLifecyclePlanner', () => {
     await fs.rm(path.join(missingFileRepoRoot, 'products', 'shape-product', 'kernel-product.yaml'));
     await expect(new ProductLifecyclePlanner(missingFileRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
       'kernel-product.yaml not found',
+    );
+
+    const malformedYamlRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        'phases: [',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(malformedYamlRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'Invalid YAML',
+    );
+
+    const invalidProfileShapeRepoRoot = await createPlannerFixtureRepo({
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: {
+            test: 'web',
+          },
+          requiredGates: {},
+          defaultAdapters: {},
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidProfileShapeRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare defaultSurfaces.test as a non-empty string array',
+    );
+
+    const invalidToolchainShapeRepoRoot = await createPlannerFixtureRepo({
+      adapters: {
+        vitest: {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: 'test',
+          status: 'implemented',
+          safeForDefault: true,
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidToolchainShapeRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare supportedPhases as a non-empty string array',
     );
   });
 

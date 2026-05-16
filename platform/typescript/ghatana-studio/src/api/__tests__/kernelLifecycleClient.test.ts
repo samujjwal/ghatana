@@ -114,6 +114,19 @@ const approvalGate = {
   requiredApprovals: 1,
 };
 
+const pendingApprovals = [
+  {
+    approvalId: 'approval-1',
+    productUnitId: 'digital-marketing',
+    runId: 'run-1',
+    requestedBy: 'release-manager',
+    requestedAt: '2026-05-14T00:00:00.000Z',
+    reason: 'Deploy',
+    requiredApprovers: ['alice'],
+    expiresAt: '2026-05-14T00:00:00.000Z',
+  },
+];
+
 interface FetchCall {
   readonly url: string;
   readonly init: RequestInit;
@@ -321,6 +334,7 @@ describe('kernelLifecycleClient', () => {
   it('requests approvals and submits approval decisions', async () => {
     mockFetch
       .mockResolvedValueOnce(jsonResponse(approvalGate))
+      .mockResolvedValueOnce(jsonResponse(pendingApprovals))
       .mockResolvedValueOnce(
         jsonResponse({
           ...approvalGate,
@@ -352,6 +366,9 @@ describe('kernelLifecycleClient', () => {
       }),
     ).resolves.toEqual(approvalGate);
     await expect(
+      client.listPendingApprovals({ productUnitId: 'digital-marketing', runId: 'run-1' }),
+    ).resolves.toEqual(pendingApprovals);
+    await expect(
       client.submitApprovalDecision('approval-1', {
         approvalId: 'approval-1',
         approved: true,
@@ -364,6 +381,9 @@ describe('kernelLifecycleClient', () => {
     const calls = getFetchCalls(mockFetch);
     expect(calls[0].url).toBe('https://studio.test/api/kernel/approvals');
     expect(calls[1].url).toBe(
+      'https://studio.test/api/kernel/approvals?productUnitId=digital-marketing&runId=run-1',
+    );
+    expect(calls[2].url).toBe(
       'https://studio.test/api/kernel/approvals/approval-1/decisions',
     );
   });

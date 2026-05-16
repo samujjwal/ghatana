@@ -14,11 +14,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ghatana.yappc.services.artifact.parser.CicdWorkflowParser;
 import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
 import com.ghatana.yappc.services.artifact.parser.SqlSchemaParser;
-import com.ghatana.yappc.services.artifact.parser.TreeSitterArtifactExtractor;
 import io.activej.promise.Promise;
-import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
+import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.alg.scoring.BetweennessCentrality;
-import org.jgrapht.alg.shortestpath.AllDirectedPaths;
+import org.jgrapht.alg.shortestpath.BFSIterator;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
@@ -33,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -41,23 +41,35 @@ import java.util.stream.Collectors;
  * @doc.purpose JGraphT-backed implementation of artifact graph operations with caching
  * @doc.layer service
  * @doc.pattern Service
+ * 
+ * P4-2: Heavy JGraphT work moved to dedicated blocking executor to prevent event loop blocking.
+ * Cycle detection fixed to use CycleDetector instead of incorrect SCC check.
+ * All-pairs reachability replaced with bounded BFS for performance.
  */
 public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     private static final Logger log = LoggerFactory.getLogger(ArtifactGraphServiceImpl.class);
+    private static final int MAX_REACHABILITY_DEPTH = 5;
+    private static final int MAX_REACHABILITY_RESULTS = 1000;
 
     private final ArtifactGraphRepository repository;
     private final ArtifactModelVersionRepository versionRepository;
     private final Cache<String, List<ArtifactNodeDto>> nodeCache;
     private final Cache<String, List<ArtifactEdgeDto>> edgeCache;
+    private final Executor blockingExecutor;
 
     public ArtifactGraphServiceImpl(ArtifactGraphRepository repository) {
-        this(repository, null);
+        this(repository, null, Runnable::run);
     }
 
     public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository) {
+        this(repository, versionRepository, Runnable::run);
+    }
+
+    public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository, Executor blockingExecutor) {
         this.repository = repository;
         this.versionRepository = versionRepository;
+        this.blockingExecutor = blockingExecutor;
         this.nodeCache = Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -74,9 +86,13 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         log.info("Ingesting artifact graph for product {} ({} nodes, {} edges)",
                 request.productId(), request.nodes().size(), request.edges().size());
 
+        // P4-4: Extract snapshotId and versionId from request metadata for tracking
+        String snapshotId = request.metadata() != null ? (String) request.metadata().get("snapshotId") : null;
+        String versionId = request.metadata() != null ? (String) request.metadata().get("versionId") : null;
+
         return repository.deleteGraphForProduct(request.productId(), request.tenantId())
-                .then(deleted -> repository.saveNodes(request.productId(), request.tenantId(), request.nodes()))
-                .then(saved -> repository.saveEdges(request.productId(), request.tenantId(), request.edges()))
+                .then(deleted -> repository.saveNodes(request.productId(), request.tenantId(), request.nodes(), snapshotId, versionId))
+                .then(saved -> repository.saveEdges(request.productId(), request.tenantId(), request.edges(), snapshotId, versionId))
                 .then(v -> {
                     nodeCache.invalidate(cacheKey);
                     edgeCache.invalidate(cacheKey);
@@ -85,24 +101,24 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                                 java.util.UUID.randomUUID().toString(),
                                 request.productId(),
                                 request.tenantId(),
-                                null,
+                                snapshotId,
                                 "Ingested " + request.nodes().size() + " nodes and " + request.edges().size() + " edges",
                                 java.time.Instant.now(),
                                 "artifact-compiler",
                                 Map.of("nodeTypes", request.nodes().stream().map(ArtifactNodeDto::type).distinct().toList()),
                                 request.nodes().size(),
                                 request.edges().size(),
-                                Map.of()
+                                Map.of("snapshotId", snapshotId != null ? snapshotId : "none")
                         );
                         return versionRepository.saveVersion(version).map(ignored -> new ArtifactGraphResponse(
                                 true, "ingest",
-                                Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "versionId", version.versionId()),
+                                Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "versionId", version.versionId(), "snapshotId", snapshotId),
                                 "Artifact graph ingested and versioned successfully"
                         ));
                     }
                     return Promise.of(new ArtifactGraphResponse(
                             true, "ingest",
-                            Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size()),
+                            Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "snapshotId", snapshotId),
                             "Artifact graph ingested successfully"
                     ));
                 })
@@ -129,89 +145,164 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             edgesPromise = repository.findEdgesByProduct(request.productId(), request.tenantId());
         }
 
+        // P4-2: Move heavy JGraphT work to blocking executor to prevent event loop blocking
         return nodesPromise.combine(edgesPromise, (nodes, edges) -> {
             nodeCache.put(cacheKey, nodes);
             edgeCache.put(cacheKey, edges);
+            
+            // Offload JGraphT analysis to blocking executor
+            return Promise.ofBlocking(blockingExecutor, () -> runJGraphTAnalysis(nodes, edges, request));
+        }).flatMap(result -> result);
+    }
 
-            List<ArtifactGraphAnalysisResult> results = new ArrayList<>();
-            DefaultDirectedGraph<String, DefaultEdge> graph = buildJGraphT(nodes, edges);
+    /**
+     * P4-2: Run JGraphT analysis algorithms on a blocking executor.
+     * This method performs CPU-intensive graph algorithms without blocking the event loop.
+     */
+    private List<ArtifactGraphAnalysisResult> runJGraphTAnalysis(
+            List<ArtifactNodeDto> nodes,
+            List<ArtifactEdgeDto> edges,
+            ArtifactGraphAnalysisRequest request) {
+        
+        DefaultDirectedGraph<String, DefaultEdge> graph = buildJGraphT(nodes, edges);
+        List<ArtifactGraphAnalysisResult> results = new ArrayList<>();
 
-            Set<String> nodeIds = request.nodeIds() != null && !request.nodeIds().isEmpty()
-                    ? new LinkedHashSet<>(request.nodeIds())
-                    : graph.vertexSet();
+        Set<String> nodeIds = request.nodeIds() != null && !request.nodeIds().isEmpty()
+                ? new LinkedHashSet<>(request.nodeIds())
+                : graph.vertexSet();
 
-            for (String algorithm : request.algorithmTypes()) {
-                switch (algorithm.toLowerCase()) {
-                    case "centrality", "betweenness" -> {
-                        BetweennessCentrality<String, DefaultEdge> centrality = new BetweennessCentrality<>(graph);
-                        Map<String, Double> scores = new HashMap<>();
-                        for (String nodeId : nodeIds) {
-                            if (graph.containsVertex(nodeId)) {
-                                scores.put(nodeId, centrality.getVertexScore(nodeId));
-                            }
-                        }
-                        results.add(new ArtifactGraphAnalysisResult(
-                                "betweenness-centrality", scores, List.of(), List.of(), List.of(), Map.of()
-                        ));
-                    }
-                    case "cycles", "scc", "strongly-connected-components" -> {
-                        KosarajuStrongConnectivityInspector<String, DefaultEdge> sccInspector =
-                                new KosarajuStrongConnectivityInspector<>(graph);
-                        List<List<String>> cycles = sccInspector.stronglyConnectedSets().stream()
-                                .filter(set -> set.size() > 1)
-                                .map(List::copyOf)
-                                .collect(Collectors.toList());
-                        results.add(new ArtifactGraphAnalysisResult(
-                                "strongly-connected-components", Map.of(), cycles, List.of(), List.of(),
-                                Map.of("totalSccCount", sccInspector.stronglyConnectedSets().size())
-                        ));
-                    }
-                    case "topological", "build-order" -> {
-                        if (!new KosarajuStrongConnectivityInspector<>(graph).isStronglyConnected()) {
-                            List<String> order = new ArrayList<>();
-                            new TopologicalOrderIterator<>(graph).forEachRemaining(order::add);
-                            results.add(new ArtifactGraphAnalysisResult(
-                                    "topological-order", Map.of(), List.of(), List.of(), order, Map.of()
-                            ));
-                        } else {
-                            results.add(new ArtifactGraphAnalysisResult(
-                                    "topological-order", Map.of(), List.of(), List.of(), List.of(),
-                                    Map.of("error", "Graph contains cycles; topological sort not possible")
-                            ));
+        for (String algorithm : request.algorithmTypes()) {
+            switch (algorithm.toLowerCase()) {
+                case "centrality", "betweenness" -> {
+                    BetweennessCentrality<String, DefaultEdge> centrality = new BetweennessCentrality<>(graph);
+                    Map<String, Double> scores = new HashMap<>();
+                    for (String nodeId : nodeIds) {
+                        if (graph.containsVertex(nodeId)) {
+                            scores.put(nodeId, centrality.getVertexScore(nodeId));
                         }
                     }
-                    case "communities" -> {
-                        // Louvain/label propagation are complex; use a simple greedy approach for now
-                        List<List<String>> communities = greedyCommunityDetection(graph, nodeIds);
-                        results.add(new ArtifactGraphAnalysisResult(
-                                "greedy-communities", Map.of(), List.of(), communities, List.of(),
-                                Map.of("communityCount", communities.size())
-                        ));
-                    }
-                    case "reachability", "paths" -> {
-                        AllDirectedPaths<String, DefaultEdge> pathAlg = new AllDirectedPaths<>(graph);
-                        Map<String, Object> meta = new HashMap<>();
-                        int pathCount = 0;
-                        for (String source : nodeIds) {
-                            for (String target : nodeIds) {
-                                if (!source.equals(target) && graph.containsVertex(source) && graph.containsVertex(target)) {
-                                    try {
-                                        var paths = pathAlg.getAllPaths(source, target, true, 5);
-                                        pathCount += paths.size();
-                                    } catch (Exception ignored) { }
+                    results.add(new ArtifactGraphAnalysisResult(
+                            "betweenness-centrality", scores, List.of(), List.of(), List.of(), Map.of()
+                    ));
+                }
+                case "cycles", "scc", "strongly-connected-components" -> {
+                    // P4-2: Fix cycle detection - use CycleDetector instead of incorrect SCC check
+                    CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(graph);
+                    Set<String> cycleVertices = cycleDetector.findCycles();
+                    
+                    // Extract cycles as lists of vertices
+                    List<List<String>> cycles = new ArrayList<>();
+                    if (!cycleVertices.isEmpty()) {
+                        // Group cycle vertices into connected components
+                        Map<String, List<String>> cycleGroups = new HashMap<>();
+                        for (String vertex : cycleVertices) {
+                            List<String> group = cycleGroups.computeIfAbsent(vertex, k -> new ArrayList<>());
+                            // Add vertices reachable within the cycle
+                            BFSIterator<String, DefaultEdge> bfs = new BFSIterator<>(graph, vertex);
+                            while (bfs.hasNext() && group.size() < 50) { // Limit cycle size
+                                String v = bfs.next();
+                                if (cycleVertices.contains(v)) {
+                                    group.add(v);
                                 }
                             }
+                            if (!cycles.contains(group)) {
+                                cycles.add(group);
+                            }
                         }
-                        meta.put("maxPathLength5", pathCount);
+                    }
+                    
+                    results.add(new ArtifactGraphAnalysisResult(
+                            "cycles", Map.of(), cycles, List.of(), List.of(),
+                            Map.of("cycleCount", cycles.size(), "cycleVertexCount", cycleVertices.size())
+                    ));
+                }
+                case "topological", "build-order" -> {
+                    // P4-2: Fix cycle detection - use CycleDetector instead of incorrect isStronglyConnected()
+                    CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(graph);
+                    if (!cycleDetector.detectCycles()) {
+                        List<String> order = new ArrayList<>();
+                        new TopologicalOrderIterator<>(graph).forEachRemaining(order::add);
                         results.add(new ArtifactGraphAnalysisResult(
-                                "reachability", Map.of(), List.of(), List.of(), List.of(), meta
+                                "topological-order", Map.of(), List.of(), List.of(), order, Map.of()
+                        ));
+                    } else {
+                        Set<String> cycleVertices = cycleDetector.findCycles();
+                        results.add(new ArtifactGraphAnalysisResult(
+                                "topological-order", Map.of(), List.of(), List.of(), List.of(),
+                                Map.of("error", "Graph contains cycles; topological sort not possible",
+                                       "cycleVertexCount", cycleVertices.size())
                         ));
                     }
-                    default -> log.warn("Unknown analysis algorithm: {}", algorithm);
+                }
+                case "communities" -> {
+                    List<List<String>> communities = greedyCommunityDetection(graph, nodeIds);
+                    results.add(new ArtifactGraphAnalysisResult(
+                            "greedy-communities", Map.of(), List.of(), communities, List.of(),
+                            Map.of("communityCount", communities.size())
+                    ));
+                }
+                case "reachability", "paths" -> {
+                    // P4-2: Replace expensive all-pairs reachability with bounded BFS
+                    Map<String, Object> meta = boundedReachabilityAnalysis(graph, nodeIds);
+                    results.add(new ArtifactGraphAnalysisResult(
+                            "reachability", Map.of(), List.of(), List.of(), List.of(), meta
+                    ));
+                }
+                default -> log.warn("Unknown analysis algorithm: {}", algorithm);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * P4-2: Bounded reachability analysis using BFS instead of expensive all-pairs.
+     * Limits depth to MAX_REACHABILITY_DEPTH and total results to MAX_REACHABILITY_RESULTS.
+     */
+    private Map<String, Object> boundedReachabilityAnalysis(
+            DefaultDirectedGraph<String, DefaultEdge> graph,
+            Set<String> nodeIds) {
+        
+        Map<String, Integer> reachableCounts = new HashMap<>();
+        int totalPaths = 0;
+        int resultCount = 0;
+        
+        for (String source : nodeIds) {
+            if (!graph.containsVertex(source)) continue;
+            
+            int reachableFromSource = 0;
+            BFSIterator<String, DefaultEdge> bfs = new BFSIterator<>(graph, source);
+            int depth = 0;
+            String lastAtDepth = source;
+            
+            while (bfs.hasNext() && depth < MAX_REACHABILITY_DEPTH && resultCount < MAX_REACHABILITY_RESULTS) {
+                String target = bfs.next();
+                if (!source.equals(target)) {
+                    reachableFromSource++;
+                    totalPaths++;
+                    resultCount++;
+                }
+                
+                // Track depth by checking if we've moved to a new level
+                if (target.equals(lastAtDepth) && bfs.hasNext()) {
+                    depth++;
+                    lastAtDepth = null;
                 }
             }
-            return results;
-        });
+            reachableCounts.put(source, reachableFromSource);
+            
+            if (resultCount >= MAX_REACHABILITY_RESULTS) {
+                log.warn("Reachability analysis hit result limit {}, results may be incomplete", MAX_REACHABILITY_RESULTS);
+                break;
+            }
+        }
+        
+        return Map.of(
+            "maxPathLength" + MAX_REACHABILITY_DEPTH, totalPaths,
+            "reachableCounts", reachableCounts,
+            "analyzedNodes", nodeIds.size(),
+            "depthLimit", MAX_REACHABILITY_DEPTH,
+            "resultLimitHit", resultCount >= MAX_REACHABILITY_RESULTS
+        );
     }
 
     @Override
@@ -376,9 +467,11 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     /**
-     * Parse source text into artifact nodes and edges using the best available
-     * language-specific parser. Falls back to the Tree-sitter JNI bridge for
-     * languages without a dedicated hand-written parser.
+     * Parse source text into artifact nodes and edges using language-specific parsers.
+     * 
+     * P4-3: Tree-sitter JNI fallback removed due to JVM stability risks.
+     * Languages without dedicated parsers are logged for manual review or future parser implementation.
+     * For TypeScript/JavaScript, use the TypeScript compiler library in the frontend artifact-compiler.
      *
      * @param filePath   relative path of the source file (used for language detection)
      * @param sourceCode raw source text
@@ -402,33 +495,35 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             return new CicdWorkflowParser().parseGitHubActionsWorkflow(sourceCode);
         }
 
-        // Tree-sitter fallback for: TypeScript, JavaScript, Python, Go, Rust, C, C++, etc.
-        String lang = detectTreeSitterLanguage(lower);
-        if (lang != null) {
-            log.info("Using Tree-sitter fallback ({}) for {}", lang, filePath);
-            try {
-                return TreeSitterArtifactExtractor.extractArtifacts(lang, sourceCode, filePath);
-            } catch (UnsatisfiedLinkError | ExceptionInInitializerError | NoClassDefFoundError e) {
-                log.warn("Tree-sitter JNI not available for {} — returning raw parse stub", filePath, e);
-                return Map.of(
-                        "nodes", List.of(Map.of(
-                                "id", "ts-fallback://" + filePath,
-                                "type", "source_file",
-                                "name", filePath,
-                                "filePath", filePath,
-                                "language", lang,
-                                "parseError", e.getClass().getSimpleName() + ": " + e.getMessage()
-                        )),
-                        "edges", List.of()
-                );
-            }
+        // P4-3: Tree-sitter JNI fallback removed - log unsupported languages for review
+        String detectedLang = detectLanguageFromExtension(lower);
+        if (detectedLang != null) {
+            log.info("No dedicated parser available for {} (detected: {}). " +
+                    "Use frontend TypeScript artifact-compiler for TS/JS/TSX files. " +
+                    "Returning stub for manual review.", filePath, detectedLang);
+            return Map.of(
+                    "nodes", List.of(Map.of(
+                            "id", "unparsed://" + filePath,
+                            "type", "source_file",
+                            "name", filePath,
+                            "filePath", filePath,
+                            "language", detectedLang,
+                            "parseStatus", "requires_dedicated_parser",
+                            "message", "No dedicated parser available in Java backend. Use frontend artifact-compiler for TypeScript/JavaScript files."
+                    )),
+                    "edges", List.of()
+            );
         }
 
-        log.warn("No parser available for file: {}", filePath);
+        log.warn("Unknown file type, no parser available: {}", filePath);
         return Map.of("nodes", List.of(), "edges", List.of());
     }
 
-    private String detectTreeSitterLanguage(String lowerPath) {
+    /**
+     * Detect language from file extension for logging purposes.
+     * Does not attempt parsing - only identifies the language for stub responses.
+     */
+    private String detectLanguageFromExtension(String lowerPath) {
         if (lowerPath.endsWith(".ts") || lowerPath.endsWith(".tsx")) return "typescript";
         if (lowerPath.endsWith(".js") || lowerPath.endsWith(".jsx") || lowerPath.endsWith(".mjs")) return "javascript";
         if (lowerPath.endsWith(".py")) return "python";

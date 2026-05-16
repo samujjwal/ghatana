@@ -8,6 +8,8 @@
  * - Graph merge conflicts: Testing conflict resolution in graph merges
  * - Generated builder document: Verifying builder document generation
  * - Re-export fidelity: Ensuring artifacts can be re-exported with minimal changes
+ * - Idempotent compile: Compiling the same source multiple times produces identical results
+ * - Decompile→modify→compile: Full round-trip from source to model back to source
  *
  * @doc.type test
  * @doc.purpose Round-trip golden tests for compiler/decompiler pipeline
@@ -17,7 +19,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { extractComponentsFromSource } from '../extractors';
+import { buildChangePlan } from '../compile-back/types';
 import type { ExtractedComponent } from '../extractors';
+import type { SemanticModelElement } from '../model/types';
 
 describe('Compiler/Decompiler Round-Trip Golden Tests', () => {
   describe('Source Import Fidelity', () => {
@@ -276,6 +280,386 @@ describe('Compiler/Decompiler Round-Trip Golden Tests', () => {
       expect(component.sourceLocation.filePath).toBe('LocatedComponent.tsx');
       expect(component.sourceLocation.startLine).toBeGreaterThan(0);
       expect(component.sourceLocation.startColumn).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Milestone: Idempotent Compile', () => {
+    it('compiling the same source multiple times produces identical component extractions', () => {
+      const source = `
+        import React from 'react';
+        import { useState } from 'react';
+
+        interface CounterProps {
+          initial?: number;
+          step?: number;
+        }
+
+        export function Counter({ initial = 0, step = 1 }: CounterProps) {
+          const [count, setCount] = useState(initial);
+          return (
+            <div>
+              <button onClick={() => setCount(c => c - step)}>-</button>
+              <span>{count}</span>
+              <button onClick={() => setCount(c => c + step)}>+</button>
+            </div>
+          );
+        }
+      `;
+
+      // Compile the same source 3 times
+      const extraction1 = extractComponentsFromSource(source, 'Counter.tsx');
+      const extraction2 = extractComponentsFromSource(source, 'Counter.tsx');
+      const extraction3 = extractComponentsFromSource(source, 'Counter.tsx');
+
+      // All extractions should be identical
+      expect(extraction1).toEqual(extraction2);
+      expect(extraction2).toEqual(extraction3);
+
+      // Verify component structure is stable across compilations
+      const component = extraction1[0];
+      expect(component.name).toBe('Counter');
+      expect(component.props.length).toBe(2);
+      expect(component.hooksUsed).toContain('useState');
+    });
+
+    it('compiling with same snapshotRef produces deterministic artifact IDs', () => {
+      const source = `
+        export const Button = ({ label }: { label: string }) => <button>{label}</button>;
+      `;
+
+      const extraction1 = extractComponentsFromSource(source, 'Button.tsx');
+      const extraction2 = extractComponentsFromSource(source, 'Button.tsx');
+
+      // Component metadata should be identical
+      expect(extraction1[0].name).toBe(extraction2[0].name);
+      expect(extraction1[0].props).toEqual(extraction2[0].props);
+      expect(extraction1[0].jsxUsage).toEqual(extraction2[0].jsxUsage);
+    });
+  });
+
+  describe('Milestone: Decompile → Modify → Compile Patch Cycle', () => {
+    it('buildChangePlan detects prop additions correctly', () => {
+      const before: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Button',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Button.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Button',
+          props: [
+            { name: 'label', type: 'string', required: true, examples: [] },
+          ],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const after: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Button',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Button.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Button',
+          props: [
+            { name: 'label', type: 'string', required: true, examples: [] },
+            { name: 'variant', type: 'string', required: false, examples: [] },
+            { name: 'size', type: 'string', required: false, examples: [] },
+          ],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const changeOps = buildChangePlan(before, after);
+
+      // Should detect prop additions
+      const addPropOps = changeOps.filter(op => op.kind === 'add-prop');
+      expect(addPropOps.length).toBe(2);
+      expect(addPropOps.some(op => op.description.includes('variant'))).toBe(true);
+      expect(addPropOps.some(op => op.description.includes('size'))).toBe(true);
+    });
+
+    it('buildChangePlan detects prop removals correctly', () => {
+      const before: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Card',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Card.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Card',
+          props: [
+            { name: 'title', type: 'string', required: true, examples: [] },
+            { name: 'subtitle', type: 'string', required: false, examples: [] },
+            { name: 'footer', type: 'string', required: false, examples: [] },
+          ],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const after: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Card',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Card.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Card',
+          props: [
+            { name: 'title', type: 'string', required: true, examples: [] },
+          ],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const changeOps = buildChangePlan(before, after);
+
+      // Should detect prop removals
+      const removePropOps = changeOps.filter(op => op.kind === 'remove-prop');
+      expect(removePropOps.length).toBe(2);
+      expect(removePropOps.some(op => op.description.includes('subtitle'))).toBe(true);
+      expect(removePropOps.some(op => op.description.includes('footer'))).toBe(true);
+    });
+
+    it('buildChangePlan detects component renames correctly', () => {
+      const before: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'OldName',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/OldName.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'OldName',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const after: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'NewName',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/OldName.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'NewName',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const changeOps = buildChangePlan(before, after);
+
+      // Should detect rename
+      const renameOp = changeOps.find(op => op.kind === 'rename-component');
+      expect(renameOp).toBeDefined();
+      expect(renameOp!.description).toContain('OldName');
+      expect(renameOp!.description).toContain('NewName');
+    });
+
+    it('buildChangePlan detects component additions and removals correctly', () => {
+      const before: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Existing',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Existing.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Existing',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const after: SemanticModelElement[] = [
+        {
+          id: 'comp-1',
+          name: 'Existing',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/Existing.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'Existing',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+        {
+          id: 'comp-2',
+          name: 'NewComponent',
+          confidence: 0.9,
+          provenance: {
+            extractorId: 'typescript-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/NewComponent.tsx'],
+            kind: 'exact',
+            extractedAt: new Date().toISOString(),
+          },
+          kind: 'component',
+          contractName: 'NewComponent',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          accessibility: undefined,
+          storyIds: [],
+          builderCanvasHints: {},
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+        },
+      ];
+
+      const changeOps = buildChangePlan(before, after);
+
+      // Should detect addition
+      const addOp = changeOps.find(op => op.kind === 'add-component');
+      expect(addOp).toBeDefined();
+      expect(addOp!.description).toContain('NewComponent');
+
+      // Test removal
+      const removalOps = buildChangePlan(after, before);
+      const removeOp = removalOps.find(op => op.kind === 'remove-component');
+      expect(removeOp).toBeDefined();
+      expect(removeOp!.description).toContain('NewComponent');
     });
   });
 });

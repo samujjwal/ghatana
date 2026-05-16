@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
     }
   },
   "scripts": {
@@ -25,11 +29,11 @@
     "yaml": "^2.3.4"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "catalog:",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
-    "eslint": "^8.56.0",
-    "typescript": "^5.3.3",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "files": [

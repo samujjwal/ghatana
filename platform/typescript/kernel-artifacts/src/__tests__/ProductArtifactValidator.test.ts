@@ -262,16 +262,32 @@ describe('ProductArtifactValidator', () => {
   });
 
   describe('validateArtifactPolicy', () => {
-    it('returns compliant when manifest is empty', () => {
+    it('fails closed when manifest is empty and policy requires trust evidence', () => {
       const result = validator.validateArtifactPolicy(createManifest([]), {
         requireTrustState: ['verified', 'signed'],
         requireSignature: true,
       });
 
-      expect(result.compliant).toBe(true);
-      expect(result.violations).toHaveLength(0);
+      expect(result.compliant).toBe(false);
+      expect(result.violations).toEqual([
+        expect.objectContaining({
+          artifactId: '__manifest__',
+          reasonCode: 'artifact-count-below-policy',
+        }),
+      ]);
       expect(result.checkedCount).toBe(0);
       expect(result.compliantCount).toBe(0);
+    });
+
+    it('supports explicit minArtifactCount policy', () => {
+      const result = validator.validateArtifactPolicy(createManifest([]), {
+        minArtifactCount: 2,
+      });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0]).toMatchObject({
+        reasonCode: 'artifact-count-below-policy',
+      });
     });
 
     it('returns compliant when all artifacts satisfy trust-state policy', () => {

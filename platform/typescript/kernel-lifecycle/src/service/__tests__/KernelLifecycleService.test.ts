@@ -178,6 +178,108 @@ describe('KernelLifecycleService', () => {
       safeDetails: { missingProviders: ['memory'] },
     });
   });
+
+  it('allows bootstrap mode with file-backed runtime truth and provenance providers', async () => {
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: {
+        ...createBootstrapProviderContext(),
+        provenance: {
+          ...createBootstrapProviderContext().provenance!,
+          backingStore: 'file',
+        },
+        runtimeTruth: {
+          ...createBootstrapProviderContext().runtimeTruth!,
+          backingStore: 'file',
+        },
+      },
+    });
+
+    await expect(service.listProductUnits({ providerMode: 'bootstrap' })).resolves.toEqual([productUnit]);
+  });
+
+  it('fails closed in platform mode when runtime truth and provenance are file-backed', async () => {
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: {
+        ...createBootstrapProviderContext(),
+        mode: 'platform',
+        provenance: {
+          ...createBootstrapProviderContext().provenance!,
+          backingStore: 'file',
+        },
+        runtimeTruth: {
+          ...createBootstrapProviderContext().runtimeTruth!,
+          backingStore: 'file',
+        },
+      },
+    });
+
+    await expect(service.listProductUnits({ providerMode: 'platform' })).rejects.toMatchObject<Partial<ProviderUnavailableError>>({
+      reasonCode: 'provider-unavailable',
+      safeDetails: {
+        invalidBackingStores: expect.arrayContaining([
+          expect.objectContaining({ providerName: 'provenance', backingStore: 'file' }),
+          expect.objectContaining({ providerName: 'runtimeTruth', backingStore: 'file' }),
+        ]),
+      },
+    });
+  });
+
+  it('lists pending approvals from approval provider and filters by product/run', async () => {
+    const listPendingApprovals = vi.fn().mockResolvedValue([
+      {
+        approvalId: 'approval-1',
+        productUnitId: 'digital-marketing',
+        runId: 'run-1',
+        requestedBy: 'release-manager',
+        reason: 'Deploy',
+        requiredApprovers: ['alice'],
+        expiresAt: '2026-05-16T00:00:00.000Z',
+      },
+      {
+        approvalId: 'approval-2',
+        productUnitId: 'other-product',
+        runId: 'run-2',
+        requestedBy: 'release-manager',
+        reason: 'Deploy',
+        requiredApprovers: ['alice'],
+        expiresAt: '2026-05-16T00:00:00.000Z',
+      },
+    ]);
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: {
+        ...createBootstrapProviderContext(),
+        approvals: {
+          ...createBootstrapProviderContext().approvals!,
+          listPendingApprovals,
+        } as unknown as KernelLifecycleProviderContext['approvals'],
+      },
+    });
+
+    await expect(
+      service.listPendingApprovals({ productUnitId: 'digital-marketing', runId: 'run-1' }),
+    ).resolves.toEqual([
+      expect.objectContaining({ approvalId: 'approval-1', productUnitId: 'digital-marketing' }),
+    ]);
+    expect(listPendingApprovals).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails approval queue listing when provider does not support listPendingApprovals', async () => {
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: createBootstrapProviderContext(),
+    });
+
+    await expect(service.listPendingApprovals()).rejects.toMatchObject<Partial<ProviderUnavailableError>>({
+      reasonCode: 'provider-unavailable',
+    });
+  });
 });
 
 function createRegistryProvider(productUnits: readonly ProductUnit[]): RegistryProvider {

@@ -1,1250 +1,570 @@
-# Kernel Platform - Detailed Implementation Plan
+# Full End-to-End Ghatana World-Class Product Audit
 
-## Overview
+Target commit: `5f49f8677e1934f73793dfae9d6df3a008377f85`
 
-**Product**: Platform Kernel (`platform/java/kernel`)  
-**Current Status**: Production-Ready Core Platform Module (~85% test coverage)  
-**Target**: 100% test coverage with performance benchmarking  
-**Timeline**: Week 2 of comprehensive implementation plan
+Audit basis:
+- Repo snapshot at the target commit, inspected through GitHub connector.
+- `.github/copilot-instructions.md`
+- Hardened Ghatana Unified Product Development Blueprint
+- Ghatana Domain Workstream Map
 
----
-
-## Current State Analysis
-
-### Source Files Inventory (32 files)
-
-#### Core Kernel Components
-
-| Component              | Files | Test Status      |
-| ---------------------- | ----- | ---------------- |
-| Registry               | 2     | Well tested      |
-| Context                | 2     | Well tested      |
-| Descriptors            | 2     | Well tested      |
-| Lifecycle              | 1     | Well tested      |
-| Adapters               | 17    | Partially tested |
-| AI Framework           | 4     | Partially tested |
-| Boundary/Communication | 4     | Partially tested |
-
-### Test Files Inventory (29 files)
-
-#### Existing Test Coverage
-
-```
-Unit Tests:
-- KernelRegistryTest.java
-- KernelDescriptorTest.java
-- KernelCapabilityTest.java
-- DefaultKernelContextTest.java
-- TypedDataSerializerTest.java
-
-Integration Tests:
-- KernelLifecycleIntegrationTest.java
-- KernelModuleIntegrationTest.java
-- AIFrameworkIntegrationTest.java
-- SecurityFrameworkIntegrationTest.java
-- ObservabilityFrameworkIntegrationTest.java
-- ContractValidationIntegrationTest.java
-- KernelCrossProductEventIntegrationTest.java
-
-Registry Tests:
-- KernelRegistryImplTest.java
-- KernelRegistryBoundaryClasspathTest.java
-
-Validation Tests:
-- KernelPurityValidationTest.java
-- KernelPurityEnforcementTest.java
-- KernelArchitectureDriftTest.java
-- RegulatoryComplianceTest.java
-
-End-to-End Tests:
-- KernelEndToEndTest.java
-
-Performance Tests:
-- KernelPerformanceBenchmark.java
-
-Contract Tests:
-- KernelAdapterClientContractTest.java
-- CrossScopeAuditServiceTest.java
-- ContractValidatorValidationResultTest.java
-```
-
-### Coverage Gaps Identified
-
-1. **Concurrency Testing** (Critical)
-   - Concurrent module registration
-   - Race conditions in capability discovery
-   - Thread-safety of registry operations
-
-2. **Edge Cases** (High Priority)
-   - Circular dependency detection
-   - Partial initialization failure handling
-   - Graceful shutdown with hanging modules
-
-3. **Performance at Scale** (Medium Priority)
-   - Health check aggregation with 100+ modules
-   - Event bus throughput under load
-   - Dependency resolution latency with complex graphs
-
-4. **Adapter Testing** (Medium Priority)
-   - AepKernelAdapter edge cases
-   - DataCloudKernelAdapter error handling
-   - Cross-product communication failure scenarios
+Important limitation:
+- This is a static source/config audit. I did not execute `pnpm`, `gradle`, Playwright, Vitest, Docker, or lifecycle commands in a checked-out repository runtime. Validation commands below are required next-step commands, not completed runtime evidence.
 
 ---
 
-## Implementation Tasks
+## A. Executive Summary
 
-### Task 1: Concurrency Test Suite
+### What is close to world-class
 
-**File**: `src/test/java/com/ghatana/kernel/concurrency/KernelConcurrencyTest.java`
+1. **Platform governance is materially stronger than a normal monorepo.**
+   The root `package.json` contains many production-readiness, boundary, lifecycle, registry, product-shape, security, observability, design-system, and cleanup checks. This shows the repo is moving toward an executable architecture governance model rather than relying only on documents.
 
-```java
-/**
- * @doc.type test
- * @doc.purpose Validates thread-safety of kernel registry operations
- * @doc.layer platform
- * @doc.scenario concurrent access
- */
-@DisplayName("Kernel Registry Concurrency Tests")
-class KernelConcurrencyTest extends EventloopTestBase {
+2. **The canonical product registry is the right central source of truth.**
+   `config/canonical-product-registry.json` classifies products, surfaces, lifecycle status, migration readiness, conformance, toolchains, artifacts, deployments, environments, gates, and future work. This is the correct pattern for preventing products from independently inventing lifecycle concepts.
 
-    private KernelRegistry registry;
-    private ExecutorService executor;
+3. **Digital Marketing is correctly treated as the lifecycle pilot.**
+   It is the only product marked `lifecycleStatus: enabled` with `lifecycle.enabled: true`, and it is explicitly scoped as the validated lifecycle pilot. Its `kernel-product.yaml` includes required manifests, surfaces, phases, approvals, artifacts, gates, package config, local deployment config, provider modes, retention policy, and verify health checks.
 
-    @BeforeEach
-    void setup() {
-        registry = KernelRegistry.create();
-        executor = Executors.newFixedThreadPool(10);
-    }
+4. **Product Development Kernel packages exist and are wired.**
+   The repo has concrete TypeScript packages for `kernel-product-contracts`, `kernel-lifecycle`, `kernel-providers`, `kernel-toolchains`, `kernel-artifacts`, `kernel-deployment`, and `kernel-release`, plus Java `platform-kernel` modules.
 
-    /**
-     * @doc.test_type stress
-     * @doc.coverage line, branch
-     */
-    @Test
-    void testConcurrentModuleRegistration() {
-        int moduleCount = 100;
-        CountDownLatch latch = new CountDownLatch(moduleCount);
-        List<Future<KernelModuleDescriptor>> futures = new ArrayList<>();
+5. **Kernel lifecycle execution has real fail-closed behavior.**
+   `KernelLifecycleService`, `ProductLifecyclePlanner`, `ProductLifecycleExecutor`, and `ProductLifecycleStepRunner` have real plan, execute, manifest, provider-mode, event, approval, gate, artifact, runtime-truth, provenance, and failure handling concepts.
 
-        for (int i = 0; i < moduleCount; i++) {
-            final int index = i;
-            Future<KernelModuleDescriptor> future = executor.submit(() -> {
-                try {
-                    TestModule module = new TestModule("module-" + index);
-                    KernelModuleDescriptor descriptor = KernelModuleDescriptor.builder()
-                        .id("module-" + index)
-                        .name("Test Module " + index)
-                        .version("1.0.0")
-                        .capabilities(Set.of("capability-" + index))
-                        .build();
+6. **Toolchain execution is not merely a script placeholder.**
+   Toolchain contracts model adapter capability, phase, surface, output validation, duration, artifacts, tests, coverage, evidence, and observability. `SpawnCommandRunner` avoids shell execution and supports timeout, output limits, process-tree termination, and redaction.
 
-                    return runPromise(() -> registry.register(descriptor, module));
-                } finally {
-                    latch.countDown();
-                }
-            });
-            futures.add(future);
-        }
+7. **Studio has the right unified navigation skeleton.**
+   `@ghatana/ghatana-studio` exists and declares the intended unified experience. Navigation metadata assigns ownership to Studio, YAPPC, Kernel, Data Cloud, or shared areas and tracks current-state route status.
 
-        awaitLatch(latch, 30, TimeUnit.SECONDS);
+8. **Data Cloud bridge implementation has real adapter infrastructure.**
+   The Data Cloud kernel bridge uses authorization, audit, health, retries, and ActiveJ Promise wrapping through `AbstractKernelBridge`, with tests for mapping, failure propagation, null guards, tenant-safe isolation, transaction lifecycle, and query result mapping.
 
-        // Verify all registrations succeeded
-        assertThat(futures).allMatch(f -> {
-            try {
-                return f.get(5, TimeUnit.SECONDS) != null;
-            } catch (Exception e) {
-                return false;
-            }
-        });
+### What is missing or incoherent
 
-        // Verify registry state
-        assertThat(registry.getAllModules()).hasSize(moduleCount);
-    }
+1. **Studio Lifecycle UI is still too static.**
+   It hardcodes Digital Marketing as the only product, uses a no-op product selector, uses a local/dev/staging/production environment list that does not match the Digital Marketing registry/config, renders a static approval queue, and shows manifests as raw JSON.
 
-    /**
-     * @doc.test_type stress
-     * @doc.coverage line, branch, path
-     */
-    @Test
-    void testConcurrentCapabilityDiscovery() {
-        // Setup modules with overlapping capabilities
-        Set<String> sharedCapability = Set.of("shared-capability");
+2. **Studio provider mode is not fully wired from UI state to execution calls.**
+   The client supports `providerMode`, but `StudioLifecycleDataContext` does not pass selected provider mode into `createPlan` or `executePhase`.
 
-        List<KernelModuleDescriptor> descriptors = IntStream.range(0, 50)
-            .mapToObj(i -> KernelModuleDescriptor.builder()
-                .id("cap-module-" + i)
-                .name("Capability Module " + i)
-                .version("1.0.0")
-                .capabilities(i % 2 == 0 ? sharedCapability : Set.of("unique-" + i))
-                .build())
-            .toList();
+3. **Manifest failures are hidden in Studio.**
+   `loadRunManifests` catches manifest-load errors and returns `undefined`. This hides partial/corrupt lifecycle truth instead of surfacing an actionable degraded/partial-manifest state.
 
-        CountDownLatch registerLatch = new CountDownLatch(descriptors.size());
-        CountDownLatch discoverLatch = new CountDownLatch(100);
+4. **Kernel product YAML parsing is not strict enough.**
+   `ProductLifecyclePlanner.loadProductConfig` parses YAML and casts objects into kernel config types without a strict schema validation boundary.
 
-        // Register modules concurrently
-        descriptors.forEach(desc -> executor.submit(() -> {
-            try {
-                runPromise(() -> registry.register(desc, new TestModule(desc.id())));
-            } finally {
-                registerLatch.countDown();
-            }
-        }));
+5. **Planner fallback uses console warnings.**
+   Provider fallback paths in `ProductLifecyclePlanner` use `console.warn`, not structured logger/events/diagnostic reason codes. This weakens observability and can hide degraded platform-provider behavior.
 
-        awaitLatch(registerLatch, 10, TimeUnit.SECONDS);
+6. **Fake command execution is exported from the public toolchain package index.**
+   `FakeCommandRunner` is exported from `platform/typescript/kernel-toolchains/src/index.ts`. Even if it is used only in tests today, it should move to a test-only subpath or shared testing package to avoid production-path misuse.
 
-        // Concurrent capability discovery
-        List<Future<Set<KernelModuleDescriptor>>> discoveryFutures = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            Future<Set<KernelModuleDescriptor>> future = executor.submit(() -> {
-                try {
-                    return runPromise(() -> registry.findByCapability("shared-capability"));
-                } finally {
-                    discoverLatch.countDown();
-                }
-            });
-            discoveryFutures.add(future);
-        }
+7. **Several adapters are exported but not execution-ready.**
+   The toolchain registry correctly marks Kubernetes, Helm, Terraform, Xcode iOS, Gradle Android, Playwright, and Vitest as partial/planning-only or declared-only. The public package exports should reinforce this and prevent consumers from accidentally treating them as executable.
 
-        awaitLatch(discoverLatch, 30, TimeUnit.SECONDS);
+8. **Artifact policy validation has a no-artifact blind spot.**
+   `validateArtifactPolicy` reports compliance when `manifest.artifacts` is empty unless a separate expected-artifact validation is called. In required build/package contexts, an empty manifest must fail closed.
 
-        // All discoveries should return same result
-        Set<KernelModuleDescriptor> expected = registry.findByCapability("shared-capability");
-        assertThat(discoveryFutures).allMatch(f -> {
-            try {
-                return f.get(5, TimeUnit.SECONDS).equals(expected);
-            } catch (Exception e) {
-                return false;
-            }
-        });
-    }
+9. **Data Cloud and YAPPC are platform-provider products, not ordinary lifecycle products yet.**
+   Their registry entries have implemented surfaces, but conformance flags are false and lifecycle readiness requires platform-provider/bootstrap separation work. They must not be presented as currently executable lifecycle products.
 
-    /**
-     * @doc.test_type stress
-     * @doc.coverage path
-     */
-    @Test
-    void testDependencyResolutionUnderConcurrentLoad() {
-        // Create module graph with dependencies
-        KernelModuleDescriptor root = createDescriptor("root", Set.of(), Set.of());
-        List<KernelModuleDescriptor> children = IntStream.range(0, 20)
-            .mapToObj(i -> createDescriptor("child-" + i, Set.of(), Set.of("root")))
-            .toList();
-        List<KernelModuleDescriptor> grandchildren = IntStream.range(0, 40)
-            .mapToObj(i -> createDescriptor("grandchild-" + i, Set.of(),
-                Set.of("child-" + (i % 20))))
-            .toList();
-
-        CountDownLatch latch = new CountDownLatch(61);
-        List<Future<?>> futures = new ArrayList<>();
-
-        // Register all concurrently
-        Stream.of(Stream.of(root), children.stream(), grandchildren.stream())
-            .flatMap(Function.identity())
-            .forEach(desc -> {
-                Future<?> future = executor.submit(() -> {
-                    try {
-                        runPromise(() -> registry.register(desc, new TestModule(desc.id())));
-                    } finally {
-                        latch.countDown();
-                    }
-                });
-                futures.add(future);
-            });
-
-        awaitLatch(latch, 30, TimeUnit.SECONDS);
-
-        // Resolve dependencies concurrently
-        List<Future<List<KernelModuleDescriptor>>> resolutionFutures = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
-            Future<List<KernelModuleDescriptor>> future = executor.submit(() ->
-                runPromise(() -> registry.resolveDependencies("grandchild-" + new Random().nextInt(40)))
-            );
-            resolutionFutures.add(future);
-        }
-
-        // Verify all resolutions succeed
-        assertThat(resolutionFutures).allSatisfy(f -> {
-            try {
-                List<KernelModuleDescriptor> resolved = f.get(5, TimeUnit.SECONDS);
-                assertThat(resolved).isNotNull();
-                assertThat(resolved.size()).isGreaterThanOrEqualTo(2); // At least parent and grandparent
-            } catch (Exception e) {
-                fail("Resolution failed: " + e.getMessage());
-            }
-        });
-    }
-
-    private KernelModuleDescriptor createDescriptor(String id, Set<String> capabilities, Set<String> dependencies) {
-        return KernelModuleDescriptor.builder()
-            .id(id)
-            .name("Test " + id)
-            .version("1.0.0")
-            .capabilities(capabilities)
-            .dependencies(dependencies)
-            .build();
-    }
-
-    private void awaitLatch(CountDownLatch latch, long timeout, TimeUnit unit) {
-        try {
-            assertThat(latch.await(timeout, unit)).isTrue();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            fail("Test interrupted");
-        }
-    }
-
-    @AfterEach
-    void cleanup() {
-        executor.shutdown();
-    }
-}
-```
-
-**Additional Concurrency Tests:**
-
-1. `ConcurrentLifecycleTest.java` - Tests concurrent start/stop operations
-2. `ConcurrentEventBusTest.java` - Tests concurrent event publishing/subscribing
-3. `ConcurrentAdapterTest.java` - Tests concurrent adapter client operations
+10. **Dependency versioning is inconsistent.**
+    The root workspace uses a catalog, but several TypeScript packages pin local dependency versions such as `zod`, `typescript`, `eslint`, and Vitest. This creates drift against the workspace-level governance model.
 
 ---
 
-### Task 2: Circular Dependency Detection
+## B. Current-State Classification
 
-**File**: `src/test/java/com/ghatana/kernel/dependency/CircularDependencyDetectionTest.java`
-
-```java
-/**
- * @doc.type test
- * @doc.purpose Validates circular dependency detection and handling
- * @doc.layer platform
- * @doc.scenario error condition
- */
-@DisplayName("Circular Dependency Detection Tests")
-class CircularDependencyDetectionTest extends EventloopTestBase {
-
-    private KernelRegistry registry;
-
-    @BeforeEach
-    void setup() {
-        registry = KernelRegistry.create();
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testSimpleCircularDependency() {
-        // A -> B -> A
-        KernelModuleDescriptor moduleA = createDescriptorWithDeps("module-A", Set.of("module-B"));
-        KernelModuleDescriptor moduleB = createDescriptorWithDeps("module-B", Set.of("module-A"));
-
-        runPromise(() -> registry.register(moduleA, new TestModule("module-A")));
-        runPromise(() -> registry.register(moduleB, new TestModule("module-B")));
-
-        assertThatThrownBy(() ->
-            runPromise(() -> registry.resolveDependencies("module-A"))
-        )
-            .isInstanceOf(KernelException.class)
-            .hasMessageContaining("circular dependency detected")
-            .hasMessageContaining("module-A")
-            .hasMessageContaining("module-B");
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage path
-     */
-    @Test
-    void testComplexCircularDependency() {
-        // A -> B -> C -> D -> B (cycle through B)
-        KernelModuleDescriptor moduleA = createDescriptorWithDeps("module-A", Set.of("module-B"));
-        KernelModuleDescriptor moduleB = createDescriptorWithDeps("module-B", Set.of("module-C"));
-        KernelModuleDescriptor moduleC = createDescriptorWithDeps("module-C", Set.of("module-D"));
-        KernelModuleDescriptor moduleD = createDescriptorWithDeps("module-D", Set.of("module-B")); // Creates cycle
-
-        runPromise(() -> registry.register(moduleA, new TestModule("module-A")));
-        runPromise(() -> registry.register(moduleB, new TestModule("module-B")));
-        runPromise(() -> registry.register(moduleC, new TestModule("module-C")));
-        runPromise(() -> registry.register(moduleD, new TestModule("module-D")));
-
-        assertThatThrownBy(() ->
-            runPromise(() -> registry.resolveAllDependencies())
-        )
-            .isInstanceOf(KernelException.class)
-            .hasMessageContaining("circular dependency");
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage path
-     */
-    @Test
-    void testSelfDependency() {
-        // A -> A (self-reference)
-        KernelModuleDescriptor moduleA = createDescriptorWithDeps("module-A", Set.of("module-A"));
-
-        runPromise(() -> registry.register(moduleA, new TestModule("module-A")));
-
-        assertThatThrownBy(() ->
-            runPromise(() -> registry.resolveDependencies("module-A"))
-        )
-            .isInstanceOf(KernelException.class)
-            .hasMessageContaining("circular dependency")
-            .hasMessageContaining("self-reference");
-    }
-
-    /**
-     * @doc.test_type positive
-     * @doc.coverage path
-     */
-    @Test
-    void testDiamondDependencyPattern() {
-        //     A
-        //    / \
-        //   B   C
-        //    \ /
-        //     D
-        // This is NOT circular - should resolve correctly
-
-        KernelModuleDescriptor moduleA = createDescriptorWithDeps("module-A", Set.of());
-        KernelModuleDescriptor moduleB = createDescriptorWithDeps("module-B", Set.of("module-A"));
-        KernelModuleDescriptor moduleC = createDescriptorWithDeps("module-C", Set.of("module-A"));
-        KernelModuleDescriptor moduleD = createDescriptorWithDeps("module-D", Set.of("module-B", "module-C"));
-
-        runPromise(() -> registry.register(moduleA, new TestModule("module-A")));
-        runPromise(() -> registry.register(moduleB, new TestModule("module-B")));
-        runPromise(() -> registry.register(moduleC, new TestModule("module-C")));
-        runPromise(() -> registry.register(moduleD, new TestModule("module-D")));
-
-        List<KernelModuleDescriptor> resolved = runPromise(() ->
-            registry.resolveDependencies("module-D")
-        );
-
-        // Should contain D, B, C, A (order matters for dependencies)
-        assertThat(resolved).extracting(KernelModuleDescriptor::id)
-            .containsExactly("module-D", "module-B", "module-C", "module-A");
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testCircularDependencyWithOptionalDeps() {
-        // Test with optional dependencies that form cycle
-        KernelModuleDescriptor moduleA = createDescriptorWithOptionalDeps("module-A",
-            Set.of("module-B"), Set.of("module-C"));
-        KernelModuleDescriptor moduleB = createDescriptorWithDeps("module-B", Set.of("module-C"));
-        KernelModuleDescriptor moduleC = createDescriptorWithDeps("module-C", Set.of("module-A"));
-
-        runPromise(() -> registry.register(moduleA, new TestModule("module-A")));
-        runPromise(() -> registry.register(moduleB, new TestModule("module-B")));
-        runPromise(() -> registry.register(moduleC, new TestModule("module-C")));
-
-        assertThatThrownBy(() ->
-            runPromise(() -> registry.resolveDependencies("module-A"))
-        )
-            .isInstanceOf(KernelException.class)
-            .hasMessageContaining("circular dependency");
-    }
-
-    private KernelModuleDescriptor createDescriptorWithDeps(String id, Set<String> deps) {
-        return KernelModuleDescriptor.builder()
-            .id(id)
-            .name("Test " + id)
-            .version("1.0.0")
-            .dependencies(deps)
-            .build();
-    }
-
-    private KernelModuleDescriptor createDescriptorWithOptionalDeps(String id,
-            Set<String> required, Set<String> optional) {
-        return KernelModuleDescriptor.builder()
-            .id(id)
-            .name("Test " + id)
-            .version("1.0.0")
-            .dependencies(required)
-            .optionalDependencies(optional)
-            .build();
-    }
-}
-```
-
-**Note**: If circular dependency detection is not implemented, this requires a feature implementation in `KernelRegistryImpl`:
-
-```java
-// Implementation addition to KernelRegistryImpl
-private void detectCircularDependencies(Map<String, Set<String>> dependencyGraph) {
-    Set<String> visiting = new HashSet<>();
-    Set<String> visited = new HashSet<>();
-
-    for (String module : dependencyGraph.keySet()) {
-        if (!visited.contains(module)) {
-            dfsDetectCycle(module, dependencyGraph, visiting, visited, new ArrayList<>());
-        }
-    }
-}
-
-private void dfsDetectCycle(String current, Map<String, Set<String>> graph,
-        Set<String> visiting, Set<String> visited, List<String> path) {
-    visiting.add(current);
-    path.add(current);
-
-    for (String dependency : graph.getOrDefault(current, Set.of())) {
-        if (visiting.contains(dependency)) {
-            int cycleStart = path.indexOf(dependency);
-            List<String> cycle = path.subList(cycleStart, path.size());
-            throw new KernelException("Circular dependency detected: " + String.join(" -> ", cycle) + " -> " + dependency);
-        }
-
-        if (!visited.contains(dependency)) {
-            dfsDetectCycle(dependency, graph, visiting, visited, path);
-        }
-    }
-
-    path.remove(path.size() - 1);
-    visiting.remove(current);
-    visited.add(current);
-}
-```
+| Capability | Current state | Evidence / reason |
+|---|---|---|
+| Root governance checks | Existing but partial | Many scripts exist, but audit still finds UI/API/adapter gaps and hardcoded package versions. |
+| Canonical product registry | Existing and executable | Registry drives pnpm workspace and Gradle generated includes. |
+| Digital Marketing lifecycle pilot | Existing and closest to executable | Registry marks lifecycle enabled/ready and `kernel-product.yaml` is detailed. Runtime commands were not executed in this audit. |
+| PHR lifecycle | Existing but partial / planned | Registry has lifecycle config and gates, but lifecycle disabled. |
+| Finance lifecycle | Existing but partial / planned | Registry has large module graph and lifecycle metadata, but lifecycle disabled. |
+| FlashIt lifecycle | Existing but partial / planned | Mobile adapters and mobile artifact contracts are missing/disabled. |
+| Data Cloud platform-provider lifecycle | Target / partial | Surfaces and modules exist, but manifest/conformance false and provider-mode work remains. |
+| YAPPC platform-provider lifecycle | Target / partial | Surfaces/modules exist, but manifest/conformance false and creator/Kernel boundary still needs enforcement. |
+| Studio shell | Existing but partial | Navigation and routes exist; several routes are degraded/blocked/empty. |
+| Studio Lifecycle UI | Existing but partial | UI exists but product/env/provider/approval flows are incomplete. |
+| Kernel lifecycle planning | Existing but partial | Planner exists; strict config validation and structured fallback diagnostics are missing. |
+| Kernel lifecycle execution | Existing but partial | Executor exists with gates/approvals/artifacts/manifests; runtime command validation must be proven with E2E. |
+| Toolchain adapters | Mixed | Gradle, pnpm, Docker, Compose are execution-ready; several others are planning-only/declared. |
+| Artifact manifests | Existing but partial | Artifact trust/signature/SBOM/attestation fields exist; policy must fail closed for required empty manifests. |
+| Data Cloud bridge | Existing but partial | Java bridge is real; runtime truth provider integration and provider context still need full end-to-end proof. |
+| Agentic product development | Declared / partial | AEP modules and checks exist; Kernel-mediated agent lifecycle execution still needs end-to-end proof. |
+| Future product shape matrix | Existing but partial | Registry has shape readiness reason codes; products must remain disabled until required adapters/gates/manifests are executable. |
 
 ---
 
-### Task 3: Lifecycle Edge Cases
+## C. Top 10 Fixes
 
-**File**: `src/test/java/com/ghatana/kernel/lifecycle/KernelLifecycleEdgeCaseTest.java`
+1. Make Studio Lifecycle product, environment, phase, and provider controls fully registry/API-driven.
+2. Pass `providerMode`, `environment`, and selected product ID from `StudioLifecycleDataContext` into all plan/execute calls.
+3. Replace silent manifest `.catch(() => undefined)` handling with typed partial-manifest/degraded state and visible diagnostics.
+4. Implement real approval queue/read/decision flow in Studio instead of the static “no pending approvals” panel.
+5. Add strict schema validation for `kernel-product.yaml`, lifecycle profiles, and toolchain registry before planning.
+6. Move `FakeCommandRunner` out of the production public package export path.
+7. Enforce artifact policy against expected artifacts so empty required manifests fail closed.
+8. Implement Data Cloud-backed Kernel providers and prove bootstrap mode remains independent.
+9. Create a Digital Marketing end-to-end lifecycle smoke/e2e proof: validate → test → build → package → deploy → verify.
+10. Normalize TypeScript package dependencies to workspace/catalog policy and remove local hardcoded version drift.
 
-```java
-/**
- * @doc.type test
- * @doc.purpose Validates kernel lifecycle edge cases and error handling
- * @doc.layer platform
- * @doc.scenario error condition, edge case
- */
-@DisplayName("Kernel Lifecycle Edge Case Tests")
-class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
+---
 
-    private KernelContext context;
-    private KernelRegistry registry;
+## D. Journey-by-Journey Findings
 
-    @BeforeEach
-    void setup() {
-        registry = KernelRegistry.create();
-        context = DefaultKernelContext.create(registry);
-    }
+### Journey 1 — Product Ideation to ProductUnitIntent
 
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testPartialInitializationFailure() {
-        // Create modules where one fails to initialize
-        FailingModule failingModule = new FailingModule("failing-module", true, false);
-        HealthyModule healthyModule1 = new HealthyModule("healthy-1");
-        HealthyModule healthyModule2 = new HealthyModule("healthy-2");
+Current state: **Existing but partial**
 
-        registerAll(failingModule, healthyModule1, healthyModule2);
+What works:
+- `KernelLifecycleService.applyProductUnitIntent` validates intent, supports preview/apply, rejects invalid provider mode, fails when the registry provider cannot apply ProductUnitIntent, emits lifecycle events, and records runtime truth/provenance when providers exist.
 
-        // Attempt initialization
-        KernelInitializationResult result = runPromise(() -> context.initialize());
+Gaps:
+- Studio/YAPPC visible handoff is not yet proven end-to-end.
+- Product selector and route state in Studio are not enough to support a real imported/generated ProductUnit.
+- YAPPC remains a platform-provider product with manifest/conformance false in the registry.
+- Data Cloud semantic graph/provenance/memory storage for generated intent evidence is not proven.
 
-        // Verify partial failure handling
-        assertThat(result.status()).isEqualTo(InitializationStatus.PARTIAL_FAILURE);
-        assertThat(result.successfulModules()).containsExactlyInAnyOrder("healthy-1", "healthy-2");
-        assertThat(result.failedModules()).containsExactly("failing-module");
-        assertThat(result.failureReason("failing-module"))
-            .contains("Initialization failed");
+Required fixes:
+- Add an explicit ProductUnitIntent export API/route in YAPPC.
+- Add an apply/preview ProductUnitIntent UI in Studio.
+- Add contract tests for ProductUnitIntent preview/apply in bootstrap and platform modes.
+- Add Data Cloud provenance/memory recording test for intent application.
 
-        // Healthy modules should be initialized
-        assertThat(healthyModule1.isInitialized()).isTrue();
-        assertThat(healthyModule2.isInitialized()).isTrue();
-        assertThat(failingModule.isInitialized()).isFalse();
-    }
+### Journey 2 — Direct Product Development Kernel Usage
 
-    /**
-     * @doc.test_type stress
-     * @doc.coverage branch, path
-     */
-    @Test
-    void testGracefulShutdownWithHangingModules() {
-        HangingModule hangingModule = new HangingModule("hanging-module", 5000);
-        HealthyModule healthyModule = new HealthyModule("healthy-module");
+Current state: **Existing but partial**
 
-        registerAll(hangingModule, healthyModule);
-        runPromise(() -> context.initialize()).assertComplete();
+What works:
+- Kernel can list/get ProductUnits, create plans, execute plans if an executor is configured, write lifecycle manifests, store pointers, emit events, and record runtime truth/provenance.
+- Digital Marketing is enabled as the pilot.
+- Studio has a Lifecycle page with phase, environment, provider mode, dry-run, run list, manifest panels, and failure diagnostics.
 
-        // Start shutdown with timeout
-        long startTime = System.currentTimeMillis();
-        KernelShutdownResult result = runPromise(() ->
-            context.shutdown(Duration.ofSeconds(2))
-        );
-        long shutdownTime = System.currentTimeMillis() - startTime;
+Gaps:
+- Product selector is hardcoded/no-op.
+- Environment options are not registry-derived.
+- Provider mode state is not passed from data context into lifecycle client calls.
+- Approval queue is static.
+- Manifest rendering is raw JSON rather than domain-specific panels.
+- Deployments route is marked blocked, so lifecycle delivery is not fully customer-ready.
 
-        // Should complete within timeout (not wait for hanging module)
-        assertThat(shutdownTime).isLessThan(3000);
-        assertThat(result.status()).isEqualTo(ShutdownStatus.TIMEOUT);
-        assertThat(result.timedOutModules()).contains("hanging-module");
-        assertThat(result.successfullyStoppedModules()).contains("healthy-module");
-    }
+Required fixes:
+- Make LifecyclePage consume ProductUnit lifecycle metadata from API.
+- Replace hardcoded environment constants with product config environments.
+- Surface gates, artifacts, deployments, approvals, and verify health using shared domain components.
 
-    /**
-     * @doc.test_type positive
-     * @doc.coverage path
-     */
-    @Test
-    void testStartStopStartCycle() {
-        HealthyModule module = new HealthyModule("restartable-module");
-        registerAll(module);
+### Journey 3 — Agentic Product Development
 
-        // First cycle
-        runPromise(() -> context.initialize()).assertComplete();
-        assertThat(module.getInitCount()).isEqualTo(1);
-        assertThat(module.getStartCount()).isEqualTo(1);
+Current state: **Declared / partial**
 
-        runPromise(() -> context.shutdown()).assertComplete();
-        assertThat(module.getStopCount()).isEqualTo(1);
+What works:
+- AEP/Data Cloud Action Plane modules exist in registry.
+- Root scripts include `check:agentic-lifecycle-action-contracts`.
+- Kernel contracts and service layer include agentic lifecycle and provider-mode concepts.
 
-        // Second cycle - should be allowed
-        runPromise(() -> context.initialize()).assertComplete();
-        assertThat(module.getInitCount()).isEqualTo(2);
-        assertThat(module.getStartCount()).isEqualTo(2);
+Gaps:
+- No proven agentic UI flow in Studio.
+- No visible end-to-end proof that agents must invoke Kernel lifecycle action contracts instead of raw Gradle/pnpm/Docker.
+- Mastery, risk, approval, verification, and trace ledger integration are not proven end-to-end.
 
-        runPromise(() -> context.shutdown()).assertComplete();
-        assertThat(module.getStopCount()).isEqualTo(2);
-    }
+Required fixes:
+- Add `AgentLifecycleActionRequest` contract tests.
+- Add agent tool-catalog enforcement.
+- Add Action Plane → Kernel → Data Cloud evidence integration tests.
+- Add Studio agent proposal/review/approval UX.
 
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testInitializationTimeout() {
-        SlowModule slowModule = new SlowModule("slow-module", 10000);
-        registerAll(slowModule);
+### Journey 4 — Digital Marketing Lifecycle Pilot
 
-        KernelInitializationResult result = runPromise(() ->
-            context.initialize(Duration.ofSeconds(2))
-        );
+Current state: **Closest to executable**
 
-        assertThat(result.status()).isEqualTo(InitializationStatus.TIMEOUT);
-        assertThat(result.timedOutModules()).contains("slow-module");
-    }
+What works:
+- Registry marks Digital Marketing as lifecycle enabled and ready.
+- `kernel-product.yaml` defines manifests, plugins, policy packs, local environment, surfaces, phases, approvals, artifacts, gates, Docker packaging, Compose deployment, provider modes, retention, and verify health.
+- Gradle and pnpm adapters are execution-ready in the toolchain registry.
+- Docker Buildx and Compose Local adapters are execution-ready in the toolchain registry.
 
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testModuleDependencyFailureCascade() {
-        // A depends on B, B depends on C, C fails
-        // Should fail A and B as well
+Gaps:
+- Runtime execution was not run in this audit.
+- Studio still does not honor Digital Marketing’s local-only environment model.
+- Approval handling must become real before deploy/promote/rollback are production-safe.
+- Manifest UI is raw JSON and does not yet provide customer-grade explanation.
 
-        FailingModule failingModule = new FailingModule("module-C", true, false);
-        DependentModule moduleB = new DependentModule("module-B", Set.of("module-C"));
-        DependentModule moduleA = new DependentModule("module-A", Set.of("module-B"));
+Required fixes:
+- Add a no-mock lifecycle smoke suite for Digital Marketing.
+- Assert generated manifests against schema and registry.
+- Add Playwright Studio lifecycle pilot test.
+- Add approval provider fixture/integration test and UI.
 
-        registerAll(moduleA, moduleB, failingModule);
+### Journey 5 — Artifact Intelligence
 
-        KernelInitializationResult result = runPromise(() -> context.initialize());
+Current state: **Existing but partial / target integration**
 
-        assertThat(result.status()).isEqualTo(InitializationStatus.PARTIAL_FAILURE);
-        assertThat(result.failedModules()).contains("module-C");
-        assertThat(result.skippedModules())
-            .contains("module-B", "module-A"); // Skipped due to dependency failure
-    }
+What works:
+- YAPPC has module graph for AI, agents, scaffold, knowledge graph, refactorer, and kernel bridge.
+- Registry explicitly references artifact-intelligence evidence contracts as required for YAPPC readiness.
+- Kernel artifact contracts model artifact references, manifests, trust, signatures, SBOM, attestations, retention, and deployment links.
 
-    // Helper classes for testing
-    private static class FailingModule extends TestKernelModule {
-        private final boolean failInit;
-        private final boolean failStart;
+Gaps:
+- YAPPC artifact compiler/decompiler output is not proven as Data Cloud provenance/graph evidence.
+- Kernel consumption of semantic artifact references is not yet proven.
+- Studio residual island/risk/recommendation panels are not proven.
 
-        FailingModule(String id, boolean failInit, boolean failStart) {
-            super(id);
-            this.failInit = failInit;
-            this.failStart = failStart;
-        }
+Required fixes:
+- Define and enforce `ArtifactGraphSummary`, `ProductShapeEvidence`, `ResidualIslandReport`, and `RiskHotspotReport`.
+- Store artifact intelligence evidence in Data Cloud.
+- Keep Kernel consuming references only, not YAPPC internals.
+- Add Studio/YAPPC visualization for semantic evidence.
 
-        @Override
-        public Promise<Void> initialize() {
-            if (failInit) {
-                return Promise.ofException(new KernelException("Initialization failed for " + id()));
-            }
-            return Promise.complete();
-        }
+### Journey 6 — Data Cloud Foundation
 
-        @Override
-        public Promise<Void> start() {
-            if (failStart) {
-                return Promise.ofException(new KernelException("Start failed for " + id()));
-            }
-            return Promise.complete();
-        }
-    }
+Current state: **Existing but partial**
 
-    private static class HangingModule extends TestKernelModule {
-        private final long hangDurationMs;
+What works:
+- Kernel service supports bootstrap mode and platform mode.
+- Platform mode validates required Data Cloud-backed providers such as events, artifacts, health, approvals, provenance, memory, and runtime truth.
+- Data Cloud has broad plane/module coverage.
+- Data Cloud bridge implementation has authorization, audit, health, retry, Promise wrapping, and tests.
 
-        HangingModule(String id, long hangDurationMs) {
-            super(id);
-            this.hangDurationMs = hangDurationMs;
-        }
+Gaps:
+- Data Cloud registry conformance is false for manifest, observability, security, data access, bridge, agent definitions, mastery bindings, evaluation packs, and runtime module.
+- Data Cloud lifecycle readiness explicitly requires bootstrap/platform separation and runtime truth provider.
+- The bridge is Java-side and does not prove complete TypeScript Kernel provider context integration.
 
-        @Override
-        public Promise<Void> stop() {
-            return Promise.ofBlocking(() -> {
-                Thread.sleep(hangDurationMs);
-                return null;
-            });
-        }
-    }
+Required fixes:
+- Implement Data Cloud-backed TypeScript provider context for Kernel lifecycle.
+- Prove Kernel can bootstrap/build/deploy Data Cloud without depending on Data Cloud providers.
+- Add provider-mode contract tests and runtime truth evidence tests.
 
-    // Additional helper methods...
-    private void registerAll(KernelModule... modules) {
-        for (KernelModule module : modules) {
-            KernelModuleDescriptor desc = createDescriptor(module.id());
-            runPromise(() -> registry.register(desc, module));
-        }
-    }
-}
+### Journey 7 — Future Product Shape Readiness
+
+Current state: **Planned / partial**
+
+Findings:
+- PHR, Finance, FlashIt, TutorPutor, Audio-Video, DCMAAR, Aura, Data Cloud, and YAPPC have useful registry entries and readiness reason codes.
+- They must remain disabled or partial until required adapters, gates, manifests, and product-specific evidence are executable.
+- FlashIt must not enable mobile lifecycle until Xcode iOS and Gradle Android adapters are execution-ready and mobile IPA/AAB artifacts exist.
+- Finance must not enable lifecycle until regulatory gates, promotion approval, multi-module build validation, and portal/operator/SDK adapters are proven.
+- PHR must not enable lifecycle until consent, PII classification, audit evidence, FHIR validation, and data sovereignty gates are proven.
+
+---
+
+## E. Capability Ownership Matrix
+
+| Capability | Correct owner | Current location | Problem | Required move/fix | Tests |
+|---|---|---|---|---|---|
+| ProductUnit contracts | Kernel | `platform/typescript/kernel-product-contracts` | Correct location | Harden schemas and API compatibility | Contract tests |
+| Lifecycle planning/execution | Kernel | `platform/typescript/kernel-lifecycle` | YAML boundary too weak; fallback diagnostics weak | Add strict schema validation and structured diagnostics | Planner/service tests |
+| Toolchain adapters | Kernel Toolchains | `platform/typescript/kernel-toolchains` | Fake runner exported; planning-only adapters public | Move fake runner to test subpath; enforce readiness gating | Adapter contract tests |
+| Artifact manifests | Kernel Artifacts | `platform/typescript/kernel-artifacts` | Empty required manifest can pass artifact policy | Fail closed when expected artifacts are required | Artifact policy tests |
+| Deployment manifests | Kernel Deployment | `platform/typescript/kernel-deployment` | Needs DM E2E proof | Validate deploy/verify manifests from Compose Local | Deployment contract tests |
+| Digital Marketing lifecycle | Product + Kernel bridge | `products/digital-marketing/**` | Good pilot; UI not aligned | Add e2e smoke and Studio flow | Gradle/pnpm/docker/compose smoke |
+| Data Cloud provider bridge | Data Cloud | `products/data-cloud/extensions/kernel-bridge` | Java bridge exists; full provider-mode proof missing | Implement TS provider context and runtime truth tests | Provider-mode integration tests |
+| YAPPC artifact intelligence | YAPPC | `products/yappc/**`; contracts target in Kernel | Integration not proven | Publish evidence contracts; store in Data Cloud | Contract + graph tests |
+| Studio shell | Studio/shared | `platform/typescript/ghatana-studio` | Good skeleton; hardcoded gaps | Make registry/API-driven and i18n complete | Vitest + Playwright |
+| Product shape readiness | Platform Coherence | `config/canonical-product-registry.json` | Good metadata; needs automated enforcement | Keep disabled products disabled until checks pass | Product-shape matrix checks |
+
+---
+
+## F. File-by-File Implementation Plan
+
+### Workstream 1 — Ghatana Studio UI/UX and API contracts
+
+#### `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx`
+- Issue: Hardcodes only Digital Marketing; product selector is no-op; environments are static and include values not supported by Digital Marketing.
+- Change: Load ProductUnits and lifecycle metadata from context/API; use selected product ID; derive supported environments from registry/config; show unsupported phase/env as blocked with reason codes.
+- Add: Real approval queue, approval decision actions, manifest-specific panels, gate/artifact/deployment health cards.
+- Tests: Vitest route interaction tests; Playwright Studio lifecycle pilot flow.
+- Validation: `pnpm --dir platform/typescript/ghatana-studio test`, `pnpm check:studio-kernel-api`.
+
+#### `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx`
+- Issue: Selected provider mode is stored but not passed into create/execute calls; manifest load errors are swallowed.
+- Change: Pass `selectedProviderMode`, `selectedEnvironment`, and selected product ID into lifecycle client calls. Replace `.catch(() => undefined)` with typed manifest load result: `loaded | missing | corrupt | unauthorized | unavailable`.
+- Tests: Data context tests for provider-mode propagation and manifest failure states.
+- Validation: `pnpm --dir platform/typescript/ghatana-studio test`.
+
+#### `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`
+- Issue: Client supports providerMode, but schemas omit some service reason codes and API compatibility needs server-backed proof.
+- Change: Expand error/failure codes; add scope query support where backend supports it; add typed approval listing when API exists.
+- Tests: API client schema tests and contract fixtures.
+- Validation: `pnpm check:studio-kernel-api`.
+
+#### `platform/typescript/ghatana-studio/src/App.tsx`
+- Issue: Some strings/config values are hardcoded (`Retry Studio`, docs URL, version).
+- Change: Move to i18n/config; route error logging should use structured app logger instead of raw `console.error`.
+- Tests: i18n/a11y navigation tests.
+- Validation: `pnpm check:shared-product-shells`, `pnpm check:design-system-conformance`.
+
+### Workstream 2 — Product Development Kernel backend/lifecycle/providers/plugins
+
+#### `platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts`
+- Issue: YAML config is parsed and cast without strict schema validation; `console.warn` fallback weakens observability.
+- Change: Add strict schema validation for `kernel-product.yaml`, lifecycle profiles, and toolchain registry. Replace console warnings with injectable logger/diagnostic event. Make `allowBootstrapFallback` explicit in returned plan evidence.
+- Tests: Invalid config, disabled product, missing adapter, missing platform provider, fallback disabled/enabled tests.
+- Validation: `pnpm --dir platform/typescript/kernel-lifecycle test`.
+
+#### `platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts`
+- Issue: Strong core service exists, but manifest reads return unknown and UI-facing APIs need typed manifest errors.
+- Change: Validate manifests on read, return typed errors, include provider mode/environment/scope consistently, add approval-list API support.
+- Tests: Corrupt/missing manifest tests, runtimeTruth/provenance failure tests, approval provider tests.
+- Validation: `pnpm check:kernel-lifecycle-truth`.
+
+#### `platform/typescript/kernel-lifecycle/src/execution/ProductLifecycleExecutor.ts`
+- Issue: Execution writes required manifests and fail-closes gates/approvals/artifacts, but E2E proof is needed.
+- Change: Add DM golden lifecycle tests for required manifest production and approval-required behavior.
+- Tests: Golden run test with fake filesystem and real adapters in dry run; integration smoke with real commands where feasible.
+- Validation: `pnpm check:digital-marketing-lifecycle-pilot`.
+
+### Workstream 3 — Toolchain Adapter & Execution Runtime
+
+#### `platform/typescript/kernel-toolchains/src/index.ts`
+- Issue: `FakeCommandRunner` is exported from the main production package API.
+- Change: Move fake runner to `src/testing` and expose only through `./testing` export or `@ghatana/platform-testing`.
+- Tests: Import-boundary tests that production code cannot import fake runner.
+- Validation: `pnpm check:production-stubs`.
+
+#### `platform/typescript/kernel-toolchains/src/adapters/*.ts`
+- Issue: Real adapters exist for core pilot path, but OTel metrics/traces and streaming evidence are incomplete.
+- Change: Add adapter telemetry port, command safety policy, structured log events, stdout/stderr stream event normalization, and per-adapter contract tests.
+- Tests: Gradle/pnpm/docker/compose tests; planned adapters must fail planning/execution unless feature flag and registry readiness allow it.
+- Validation: `pnpm check:toolchain-adapter-contracts`.
+
+#### `config/toolchain-adapter-registry.json`
+- Issue: Correctly marks many adapters partial/planned, but package exports must reflect readiness.
+- Change: Enforce status/readiness/safeForDefault/lifecycleEnabled consistency and block planned adapters from executable plans.
+- Tests: Registry schema drift and lifecycle registry compatibility tests.
+- Validation: `pnpm check:toolchain-adapter-registry-schema`.
+
+### Workstream 4 — Artifact, Supply Chain & Provenance
+
+#### `platform/typescript/kernel-artifacts/src/domain/ArtifactManifest.ts`
+- Issue: Rich manifest fields exist, but generated artifacts default `found: true`.
+- Change: Separate discovered artifact entries from expected artifact declarations; avoid marking artifacts found without filesystem/provider evidence.
+- Tests: Manifest generation tests for discovered vs expected artifacts.
+- Validation: `pnpm check:product-artifact-contracts`.
+
+#### `platform/typescript/kernel-artifacts/src/validator/ProductArtifactValidator.ts`
+- Issue: `validateArtifactPolicy` can pass an empty manifest when required artifacts are expected.
+- Change: Add policy field such as `minArtifactCount` or require callers to pass expected declarations; fail closed when required expected artifacts are missing.
+- Tests: Empty manifest with signature/SBOM/digest policy must fail.
+- Validation: `pnpm --dir platform/typescript/kernel-artifacts test`.
+
+### Workstream 5 — Data Cloud foundation providers/runtime truth/memory
+
+#### `products/data-cloud/extensions/kernel-bridge/build.gradle.kts`
+- Issue: Group is `com.ghatana.platform.shared-services`, which blurs ownership for a product-owned bridge.
+- Change: Rename group to product-owned namespace such as `com.ghatana.products.datacloud` or repo-standard product group.
+- Tests: Gradle module check.
+- Validation: `./gradlew :products:data-cloud:extensions:kernel-bridge:check`.
+
+#### `products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImpl.java`
+- Issue: Bridge is strong, but tenant scoping depends on caller-provided dataset IDs and full provider-mode runtime truth integration is not yet proven.
+- Change: Add dataset scope validation, metrics/traces per operation, provider IDs, Testcontainers or integration proof against a real store.
+- Tests: Tenant spoofing tests, retry/timeout tests, provider integration tests.
+- Validation: `pnpm check:data-cloud-platform-providers`, `pnpm check:data-access-contract`.
+
+### Workstream 6 — YAPPC creator/artifact intelligence/visibility
+
+#### `products/yappc/kernel-bridge/**`
+- Issue: YAPPC is a platform-provider product with conformance false; Kernel must consume only ProductUnitIntent and semantic evidence references.
+- Change: Add explicit bridge contracts for ProductUnitIntent export and artifact intelligence evidence publication.
+- Tests: Boundary tests that Kernel does not import YAPPC internals.
+- Validation: `pnpm check:yappc-product-unit-intent-handoff`, `pnpm check:yappc-artifact-intelligence-boundary`.
+
+#### `platform/typescript/kernel-product-contracts/src/artifact-intelligence/**`
+- Issue: Artifact evidence contracts are required for Journey 5.
+- Change: Stabilize `SemanticArtifactReference`, `ArtifactGraphSummary`, `ProductShapeEvidence`, `ResidualIslandReport`, and `RiskHotspotReport`.
+- Tests: Schema compatibility tests and fixture-based generated evidence tests.
+- Validation: `pnpm --dir platform/typescript/kernel-product-contracts test`.
+
+### Workstream 7 — Digital Marketing pilot
+
+#### `products/digital-marketing/kernel-product.yaml`
+- Issue: Strong config exists; must be proven with commands and Studio.
+- Change: Add missing explicit `verify` phase if profile/planner expects it consistently; ensure approval requirements work in local deploy; ensure all required gates have executable providers.
+- Tests: End-to-end validate/test/build/package/deploy/verify smoke.
+- Validation: `pnpm check:digital-marketing-lifecycle-pilot`.
+
+#### `products/digital-marketing/dm-kernel-bridge/**`
+- Issue: Registry claims bridge true with adapter/tests. Keep it the pilot bridge.
+- Change: Add lifecycle evidence integration tests for Digital Marketing bridge.
+- Tests: Adapter tests, retry/DLQ tests, lifecycle bridge smoke.
+- Validation: `./gradlew :products:digital-marketing:dm-kernel-bridge:check`.
+
+### Workstream 8 — CI/CD, checks, docs cleanup
+
+#### `package.json`
+- Issue: Many checks exist, but individual package versions drift from catalog in package-local manifests.
+- Change: Add check that all workspace packages use `catalog:` for approved shared dependencies or a documented exception.
+- Tests: dependency metadata check.
+- Validation: `pnpm check:platform-package-governance`.
+
+#### `platform/typescript/*/package.json`
+- Issue: Several packages hardcode versions for zod/typescript/eslint/vitest while root catalog exists.
+- Change: Convert to `catalog:` where appropriate.
+- Tests: package governance test.
+- Validation: `pnpm check:deprecated-packages`, `pnpm check:platform-package-governance`.
+
+#### `docs/**`
+- Issue: Need prevent target-state claims being treated as current implementation.
+- Change: Add current-state labels to docs and fail docs with unclassified implementation claims.
+- Tests: doc-claims evidence check.
+- Validation: `pnpm check:current-state-claims`, `pnpm check:doc-claims-evidence`.
+
+---
+
+## G. Release Plan
+
+### Release 0 — Unified shell, terminology, navigation, and core checks
+Goal: Make Studio honest, coherent, and registry-driven.
+
+Exit criteria:
+- Studio nav uses ownership and status vocabulary.
+- Lifecycle page product/env/phase/provider controls are API-driven.
+- No hardcoded unsupported environments.
+- Manifest failures are visible.
+
+Validation:
+```bash
+pnpm check:studio-kernel-api
+pnpm check:shared-product-shells
+pnpm check:design-system-conformance
+pnpm --dir platform/typescript/ghatana-studio test
+```
+
+### Release 1 — Digital Marketing lifecycle pilot E2E
+Goal: Prove Digital Marketing validate → test → build → package → deploy → verify.
+
+Exit criteria:
+- All required manifests are generated and schema-valid.
+- Approvals block deploy/promote/rollback when required.
+- Artifacts fail closed when missing.
+- Studio displays run, gates, artifacts, deployment, verify health, and failures.
+
+Validation:
+```bash
+pnpm build:kernel-lifecycle-platform
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:kernel-lifecycle-truth
+pnpm check:product-artifact-contracts
+pnpm check:product-deployment-contracts
+```
+
+### Release 2 — Agentic development support
+Goal: Route agentic product-development through Kernel contracts.
+
+Exit criteria:
+- Agents cannot run raw lifecycle commands directly.
+- `AgentLifecycleActionRequest` is enforced.
+- Risk/mastery/approval/evidence are visible in Studio.
+
+Validation:
+```bash
+pnpm check:agentic-lifecycle-action-contracts
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:data-cloud-platform-providers
+```
+
+### Release 3 — Data Cloud platform-mode providers
+Goal: Implement Data Cloud-backed providers while preserving bootstrap independence.
+
+Exit criteria:
+- Kernel bootstrap can build/deploy Data Cloud without Data Cloud providers.
+- Platform mode requires Data Cloud-backed events/artifacts/health/approval/provenance/memory/runtimeTruth.
+- Runtime truth and provenance are queryable.
+
+Validation:
+```bash
+pnpm check:kernel-provider-mode
+pnpm check:data-cloud-platform-providers
+pnpm check:data-access-contract
+./gradlew :products:data-cloud:extensions:kernel-bridge:check
+```
+
+### Release 4 — Artifact intelligence integration
+Goal: Connect YAPPC semantic artifact evidence to Data Cloud and Kernel references.
+
+Exit criteria:
+- YAPPC emits semantic evidence contracts.
+- Data Cloud stores provenance/graph/memory.
+- Kernel consumes references only.
+- Studio visualizes residual islands, risks, and recommendations.
+
+Validation:
+```bash
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm --dir platform/typescript/kernel-product-contracts test
+pnpm check:kernel-boundaries
+```
+
+### Release 5 — Product shape expansion readiness
+Goal: Enable future products only when their required gates/adapters/manifests are executable.
+
+Exit criteria:
+- PHR, Finance, FlashIt, TutorPutor, DCMAAR, Audio-Video, Aura remain disabled until checks pass.
+- Product shape matrix is authoritative.
+- Registry statuses match actual executable readiness.
+
+Validation:
+```bash
+pnpm check:product-shape-capability-matrix
+pnpm check:lifecycle-registry-config-drift
+pnpm check:product-registry-drift
 ```
 
 ---
 
-### Task 4: Health Check Performance
+## H. Validation Command Suite
 
-**File**: `src/test/java/com/ghatana/kernel/health/HealthCheckPerformanceTest.java`
+Run this after implementation work, not as proof of this static audit:
 
-```java
-/**
- * @doc.type test
- * @doc.purpose Validates health check performance at scale
- * @doc.layer platform
- * @doc.scenario performance
- */
-@DisplayName("Health Check Performance Tests")
-class HealthCheckPerformanceTest extends EventloopTestBase {
-
-    private KernelRegistry registry;
-    private KernelContext context;
-
-    @BeforeEach
-    void setup() {
-        registry = KernelRegistry.create();
-        context = DefaultKernelContext.create(registry);
-    }
-
-    /**
-     * @doc.test_type performance
-     * @doc.coverage path
-     */
-    @Test
-    void testHealthCheckWith100Modules() {
-        // Create 100 modules with varying health check latencies
-        List<KernelModule> modules = IntStream.range(0, 100)
-            .mapToObj(i -> new HealthCheckableModule("module-" + i, i % 10))
-            .collect(Collectors.toList());
-
-        modules.forEach(m -> {
-            KernelModuleDescriptor desc = createDescriptor(m.id());
-            runPromise(() -> registry.register(desc, m));
-        });
-
-        runPromise(() -> context.initialize()).assertComplete();
-
-        // Measure health check aggregation time
-        long startTime = System.nanoTime();
-        KernelHealth health = runPromise(() -> context.checkHealth());
-        long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-
-        // Should complete in reasonable time (not sequential sum of all checks)
-        assertThat(durationMs).isLessThan(500); // 500ms max for 100 modules
-        assertThat(health.status()).isEqualTo(HealthStatus.HEALTHY);
-        assertThat(health.moduleHealth()).hasSize(100);
-    }
-
-    /**
-     * @doc.test_type performance
-     * @doc.coverage path
-     */
-    @Test
-    void testParallelHealthCheckAggregation() {
-        // Ensure health checks run in parallel, not sequentially
-        List<SlowHealthCheckModule> modules = IntStream.range(0, 20)
-            .mapToObj(i -> new SlowHealthCheckModule("slow-module-" + i, 100))
-            .collect(Collectors.toList());
-
-        modules.forEach(m -> {
-            KernelModuleDescriptor desc = createDescriptor(m.id());
-            runPromise(() -> registry.register(desc, m));
-        });
-
-        runPromise(() -> context.initialize()).assertComplete();
-
-        long startTime = System.nanoTime();
-        runPromise(() -> context.checkHealth());
-        long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-
-        // If run sequentially: 20 * 100ms = 2000ms
-        // If run in parallel: ~100ms + overhead
-        assertThat(durationMs).isLessThan(500); // Must be parallel
-    }
-
-    /**
-     * @doc.test_type stress
-     * @doc.coverage path
-     */
-    @Test
-    void testHealthCheckUnderConcurrentLoad() {
-        // Simulate multiple health check requests concurrently
-        IntStream.range(0, 50).forEach(i -> {
-            KernelModuleDescriptor desc = createDescriptor("concurrent-module-" + i);
-            runPromise(() -> registry.register(desc, new HealthyModule("concurrent-module-" + i)));
-        });
-
-        runPromise(() -> context.initialize()).assertComplete();
-
-        // Fire 100 concurrent health check requests
-        ExecutorService executor = Executors.newFixedThreadPool(20);
-        CountDownLatch latch = new CountDownLatch(100);
-        List<Future<KernelHealth>> futures = new ArrayList<>();
-
-        for (int i = 0; i < 100; i++) {
-            Future<KernelHealth> future = executor.submit(() -> {
-                try {
-                    return runPromise(() -> context.checkHealth());
-                } finally {
-                    latch.countDown();
-                }
-            });
-            futures.add(future);
-        }
-
-        try {
-            assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            fail("Test interrupted");
-        }
-
-        // All should succeed
-        assertThat(futures).allMatch(f -> {
-            try {
-                KernelHealth health = f.get(5, TimeUnit.SECONDS);
-                return health.status() == HealthStatus.HEALTHY;
-            } catch (Exception e) {
-                return false;
-            }
-        });
-
-        executor.shutdown();
-    }
-
-    private static class SlowHealthCheckModule extends TestKernelModule {
-        private final long checkDurationMs;
-
-        SlowHealthCheckModule(String id, long checkDurationMs) {
-            super(id);
-            this.checkDurationMs = checkDurationMs;
-        }
-
-        @Override
-        public Promise<ModuleHealth> checkHealth() {
-            return Promise.ofBlocking(() -> {
-                Thread.sleep(checkDurationMs);
-                return ModuleHealth.healthy();
-            });
-        }
-    }
-}
+```bash
+pnpm build
+pnpm test
+pnpm typecheck
+pnpm build:platform
+pnpm build:kernel-lifecycle-platform
+pnpm check:kernel-platform-lifecycle
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:product-shape-capability-matrix
+pnpm check:lifecycle-registry-config-drift
+pnpm check:design-system-conformance
+pnpm check:shared-product-shells
+pnpm check:shared-layout-primitives
+pnpm check:shared-ui-state-coverage
+pnpm check:production-readiness
+pnpm check:secret-default-credentials
+pnpm check:observability-conformance
+pnpm check:data-access-contract
+pnpm check:kernel-boundaries
+pnpm check:kernel-provider-mode
+pnpm check:data-cloud-platform-providers
+pnpm check:toolchain-adapter-contracts
+pnpm check:toolchain-adapter-registry-schema
+pnpm check:product-artifact-contracts
+pnpm check:product-deployment-contracts
+pnpm check:product-environment-contracts
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:yappc-artifact-intelligence-boundary
+./gradlew build
+./gradlew check
 ```
 
----
-
-### Task 5: Adapter Comprehensive Tests
-
-**File**: `src/test/java/com/ghatana/kernel/adapter/DataCloudKernelAdapterTest.java`
-
-```java
-/**
- * @doc.type test
- * @doc.purpose Comprehensive tests for DataCloud kernel adapter
- * @doc.layer platform
- * @doc.scenario happy path, error condition
- */
-@DisplayName("DataCloud Kernel Adapter Tests")
-class DataCloudKernelAdapterTest extends EventloopTestBase {
-
-    private DataCloudKernelAdapter adapter;
-    private MockDataCloudService mockService;
-
-    @BeforeEach
-    void setup() {
-        mockService = new MockDataCloudService();
-        adapter = new DataCloudKernelAdapterImpl(mockService);
-    }
-
-    /**
-     * @doc.test_type positive
-     * @doc.coverage line, branch
-     */
-    @Test
-    void testDataReadSuccess() {
-        DataReadRequest request = DataReadRequest.builder()
-            .dataset("patients")
-            .recordId("patient-123")
-            .build();
-
-        mockService.setupSuccessResponse("patient-123", Map.of(
-            "id", "patient-123",
-            "name", "John Doe",
-            "age", 45
-        ));
-
-        DataResult result = runPromise(() -> adapter.read(request));
-
-        assertThat(result.success()).isTrue();
-        assertThat(result.data()).containsEntry("id", "patient-123");
-        assertThat(result.data()).containsEntry("name", "John Doe");
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testDataReadNotFound() {
-        DataReadRequest request = DataReadRequest.builder()
-            .dataset("patients")
-            .recordId("non-existent")
-            .build();
-
-        mockService.setupNotFoundResponse("non-existent");
-
-        DataResult result = runPromise(() -> adapter.read(request));
-
-        assertThat(result.success()).isFalse();
-        assertThat(result.errorCode()).isEqualTo(ErrorCode.NOT_FOUND);
-        assertThat(result.errorMessage()).contains("not found");
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testDataReadServiceUnavailable() {
-        DataReadRequest request = DataReadRequest.builder()
-            .dataset("patients")
-            .recordId("patient-123")
-            .build();
-
-        mockService.setupServiceUnavailable();
-
-        assertThatThrownBy(() -> runPromise(() -> adapter.read(request)))
-            .isInstanceOf(KernelAdapterException.class)
-            .hasMessageContaining("service unavailable");
-    }
-
-    /**
-     * @doc.test_type positive
-     * @doc.coverage line, branch
-     */
-    @Test
-    void testDataWriteWithTransaction() {
-        TransactionHandle txn = adapter.beginTransaction();
-
-        try {
-            DataWriteRequest request1 = DataWriteRequest.builder()
-                .dataset("patients")
-                .record(Map.of("id", "patient-456", "name", "Jane Doe"))
-                .transaction(txn)
-                .build();
-
-            DataWriteRequest request2 = DataWriteRequest.builder()
-                .dataset("appointments")
-                .record(Map.of("patientId", "patient-456", "date", "2026-04-10"))
-                .transaction(txn)
-                .build();
-
-            DataResult result1 = runPromise(() -> adapter.write(request1));
-            DataResult result2 = runPromise(() -> adapter.write(request2));
-
-            assertThat(result1.success()).isTrue();
-            assertThat(result2.success()).isTrue();
-
-            runPromise(() -> adapter.commit(txn)).assertComplete();
-
-        } catch (Exception e) {
-            runPromise(() -> adapter.rollback(txn)).assertComplete();
-            throw e;
-        }
-    }
-
-    /**
-     * @doc.test_type negative
-     * @doc.coverage branch
-     */
-    @Test
-    void testTransactionRollbackOnFailure() {
-        TransactionHandle txn = adapter.beginTransaction();
-
-        DataWriteRequest request = DataWriteRequest.builder()
-            .dataset("patients")
-            .record(Map.of("id", "patient-789"))
-            .transaction(txn)
-            .build();
-
-        mockService.setupWriteFailure("patient-789");
-
-        assertThatThrownBy(() -> {
-            runPromise(() -> adapter.write(request));
-            runPromise(() -> adapter.commit(txn));
-        });
-
-        // Verify rollback was called
-        assertThat(mockService.wasRollbackCalled(txn)).isTrue();
-    }
-
-    /**
-     * @doc.test_type positive
-     * @doc.coverage line
-     */
-    @Test
-    void testQueryWithFiltering() {
-        DataQueryRequest request = DataQueryRequest.builder()
-            .dataset("patients")
-            .filter(Filter.builder()
-                .field("age")
-                .operator(FilterOperator.GREATER_THAN)
-                .value(30)
-                .build())
-            .sort(Sort.by("name", SortOrder.ASCENDING))
-            .limit(10)
-            .build();
-
-        mockService.setupQueryResponse(List.of(
-            Map.of("id", "p1", "name", "Alice", "age", 45),
-            Map.of("id", "p2", "name", "Bob", "age", 50)
-        ));
-
-        QueryResult result = runPromise(() -> adapter.query(request));
-
-        assertThat(result.success()).isTrue();
-        assertThat(result.records()).hasSize(2);
-        assertThat(result.records().get(0)).containsEntry("name", "Alice");
-    }
-
-    /**
-     * @doc.test_type positive
-     * @doc.coverage line
-     */
-    @Test
-    void testStreamingDataRead() {
-        DataStreamRequest request = DataStreamRequest.builder()
-            .dataset("large_dataset")
-            .batchSize(100)
-            .build();
-
-        List<Map<String, Object>> batches = List.of(
-            IntStream.range(0, 100).mapToObj(i -> Map.of("id", "r" + i)).collect(Collectors.toList()),
-            IntStream.range(100, 200).mapToObj(i -> Map.of("id", "r" + i)).collect(Collectors.toList())
-        );
-
-        mockService.setupStreamingResponse(batches);
-
-        DataStream stream = runPromise(() -> adapter.stream(request));
-
-        List<Map<String, Object>> allRecords = new ArrayList<>();
-        stream.forEach(allRecords::addAll);
-
-        assertThat(allRecords).hasSize(200);
-    }
-
-    // Additional test cases for edge cases...
-}
+Targeted module commands:
+```bash
+pnpm --dir platform/typescript/kernel-product-contracts build
+pnpm --dir platform/typescript/kernel-product-contracts test
+pnpm --dir platform/typescript/kernel-lifecycle build
+pnpm --dir platform/typescript/kernel-lifecycle test
+pnpm --dir platform/typescript/kernel-toolchains build
+pnpm --dir platform/typescript/kernel-toolchains test
+pnpm --dir platform/typescript/kernel-artifacts build
+pnpm --dir platform/typescript/kernel-artifacts test
+pnpm --dir platform/typescript/ghatana-studio build
+pnpm --dir platform/typescript/ghatana-studio test
+./gradlew :products:digital-marketing:dm-kernel-bridge:check
+./gradlew :products:data-cloud:extensions:kernel-bridge:check
 ```
-
----
-
-## Performance Benchmark Suite
-
-**File**: `src/test/java/com/ghatana/kernel/performance/KernelBenchmarkSuite.java`
-
-```java
-/**
- * @doc.type benchmark
- * @doc.purpose JMH benchmarks for kernel performance characteristics
- * @doc.layer platform
- */
-@State(Scope.Benchmark)
-public class KernelBenchmarkSuite {
-
-    private KernelRegistry registry;
-    private Eventloop eventloop;
-
-    @Setup
-    public void setup() {
-        eventloop = Eventloop.create();
-        registry = KernelRegistry.create();
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void testSingleModuleRegistration() {
-        KernelModuleDescriptor descriptor = KernelModuleDescriptor.builder()
-            .id("test-module")
-            .name("Test Module")
-            .version("1.0.0")
-            .build();
-
-        eventloop.submit(() -> registry.register(descriptor, new TestModule("test-module")));
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void testDependencyResolution() {
-        // Setup complex dependency graph
-        List<KernelModuleDescriptor> descriptors = createComplexDependencyGraph(50);
-
-        eventloop.submit(() -> {
-            descriptors.forEach(desc ->
-                registry.register(desc, new TestModule(desc.id()))
-            );
-            return registry.resolveAllDependencies();
-        });
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void testEventPublishingThroughput() {
-        KernelEventBus eventBus = new KernelEventBus(eventloop);
-
-        eventloop.submit(() -> {
-            IntStream.range(0, 1000).forEach(i ->
-                eventBus.publish("test-event", Map.of("index", i))
-            );
-        });
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.SampleTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void testHealthCheckLatency() {
-        // Setup 100 modules
-        IntStream.range(0, 100).forEach(i -> {
-            KernelModuleDescriptor desc = KernelModuleDescriptor.builder()
-                .id("health-module-" + i)
-                .name("Health Module " + i)
-                .build();
-            registry.register(desc, new TestModule("health-module-" + i));
-        });
-
-        KernelContext context = DefaultKernelContext.create(registry);
-        eventloop.submit(() -> context.checkHealth());
-    }
-
-    private List<KernelModuleDescriptor> createComplexDependencyGraph(int size) {
-        List<KernelModuleDescriptor> descriptors = new ArrayList<>();
-
-        // Root
-        descriptors.add(createDescriptor("root", Set.of()));
-
-        // Children
-        for (int i = 0; i < size / 2; i++) {
-            descriptors.add(createDescriptor("child-" + i, Set.of("root")));
-        }
-
-        // Grandchildren with multiple parents
-        for (int i = size / 2; i < size; i++) {
-            Set<String> deps = Set.of(
-                "child-" + (i % (size / 2)),
-                "child-" + ((i + 1) % (size / 2))
-            );
-            descriptors.add(createDescriptor("grandchild-" + i, deps));
-        }
-
-        return descriptors;
-    }
-
-    private KernelModuleDescriptor createDescriptor(String id, Set<String> deps) {
-        return KernelModuleDescriptor.builder()
-            .id(id)
-            .name("Benchmark " + id)
-            .version("1.0.0")
-            .dependencies(deps)
-            .build();
-    }
-}
-```
-
----
-
-## Test Execution Plan
-
-### Week 2 Schedule
-
-| Day   | Focus Area                                     | Deliverables                                     |
-| ----- | ---------------------------------------------- | ------------------------------------------------ |
-| Day 1 | Concurrency tests                              | `KernelConcurrencyTest.java`                     |
-| Day 2 | Concurrency + Circular dependency              | `Concurrent*Test.java` files                     |
-| Day 3 | Circular dependency implementation + Lifecycle | `CircularDependencyDetectionTest.java`           |
-| Day 4 | Lifecycle edge cases                           | `KernelLifecycleEdgeCaseTest.java`               |
-| Day 5 | Health check + Adapter tests                   | `HealthCheckPerformanceTest.java`, adapter tests |
-| Day 6 | Performance benchmarks                         | JMH benchmark suite                              |
-| Day 7 | Coverage verification                          | JaCoCo 100% coverage report                      |
-
-### Coverage Targets
-
-| Component     | Current | Target   |
-| ------------- | ------- | -------- |
-| Registry      | 90%     | 100%     |
-| Context       | 85%     | 100%     |
-| Descriptors   | 95%     | 100%     |
-| Adapters      | 70%     | 100%     |
-| AI Framework  | 75%     | 100%     |
-| Boundary      | 80%     | 100%     |
-| Communication | 78%     | 100%     |
-| **Overall**   | **85%** | **100%** |
-
----
-
-## Success Criteria
-
-1. **Line Coverage**: 100% of executable lines covered
-2. **Branch Coverage**: 100% of branches covered
-3. **Test Count**: 29 → 40+ test files
-4. **Concurrency**: All race conditions tested
-5. **Performance**: Benchmarks establish baselines
-6. **Documentation**: All tests have `@doc.*` annotations
-
----
-
-## Appendix: Implementation Checklist
-
-- [ ] Create `KernelConcurrencyTest.java`
-- [ ] Create `ConcurrentLifecycleTest.java`
-- [ ] Create `ConcurrentEventBusTest.java`
-- [ ] Create `CircularDependencyDetectionTest.java`
-- [ ] Implement circular dependency detection in `KernelRegistryImpl`
-- [ ] Create `KernelLifecycleEdgeCaseTest.java`
-- [ ] Create `HealthCheckPerformanceTest.java`
-- [ ] Verify parallel health check execution
-- [ ] Create `DataCloudKernelAdapterTest.java`
-- [ ] Create `AepKernelAdapterTest.java`
-- [ ] Create JMH benchmark suite
-- [ ] Run JaCoCo coverage report
-- [ ] Address any remaining coverage gaps
-- [ ] Document performance baselines
-- [ ] Update `TEST_COVERAGE_REPORT.md`
-
----
-
-_Document Version: 1.0_  
-_Last Updated: April 4, 2026_

@@ -15,3 +15,14 @@ export {
   type AnalysisResult,
   type QueryResult,
 } from './engine';
+
+export { SynthesisPipeline } from "./pipeline";
+export type {
+  SynthesisPipelineConfig,
+  SynthesisPipelineResult,
+  PipelineError,
+  PipelineWarning,
+  PipelineStats,
+} from "./pipeline";
+export { resolveSymbols } from "./symbol-resolver";
+export type { SymbolResolutionResult } from "./symbol-resolver";
