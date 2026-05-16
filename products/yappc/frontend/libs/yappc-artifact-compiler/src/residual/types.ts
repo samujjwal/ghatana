@@ -47,7 +47,7 @@ export type RiskLevel = z.infer<typeof RiskLevelSchema>;
 // ============================================================================
 
 export const ResidualIslandSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   kind: ResidualIslandKindSchema,
   originalSource: z.string().min(1),
   normalizedSummary: z.string().min(1),
@@ -62,32 +62,32 @@ export const ResidualIslandSchema = z.object({
     endLine: z.number().int().nonnegative(),
     endColumn: z.number().int().nonnegative(),
   }),
-  extractorId: z.string().min(1),
-  extractorVersion: z.string().min(1),
-  extractedAt: z.string().datetime(),
-  confidence: z.number().min(0).max(1),
+  extractorId: z.string().min(1).default('unknown-extractor'),
+  extractorVersion: z.string().min(1).default('0.0.0'),
+  extractedAt: z.string().datetime().default(() => new Date().toISOString()),
+  confidence: z.number().min(0).max(1).default(0.5),
   linkedModelElementIds: z.array(z.string().uuid()).default([]),
   tags: z.array(z.string()).default([]),
   /**
    * Reference to the raw source fragment (e.g., a specific code block).
    * Enables precise round-trip reconstruction of unmodelable content.
    */
-  rawFragmentRef: z.string().optional(),
+  rawFragmentRef: z.string().min(1),
   /**
    * Checksum of the raw fragment content for verification.
    * Ensures round-trip integrity and detects accidental modifications.
    */
-  checksum: z.string().optional(),
+  checksum: z.string().min(1),
   /**
    * Risk assessment for this residual island.
    * Indicates the impact of losing or incorrectly modifying this content.
    */
-  risk: RiskLevelSchema.optional(),
+  risk: RiskLevelSchema,
   /**
    * Related graph node IDs that this residual island references or is referenced by.
    * Enables tracing relationships between modeled and unmodeled content.
    */
-  relatedGraphNodeIds: z.array(z.string()).default([]),
+  relatedGraphNodeIds: z.array(z.string()),
 });
 
 export type ResidualIsland = z.infer<typeof ResidualIslandSchema>;

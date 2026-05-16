@@ -120,6 +120,14 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
 
   // Check required fields
   for (const node of graph.nodes) {
+    if (!node.id || node.id.trim() === '') {
+      errors.push({
+        code: 'MISSING_REQUIRED_FIELD',
+        message: 'Node missing required field: id',
+        severity: 'error',
+        context: { nodeId: node.id, field: 'id' },
+      });
+    }
     if (!node.kind) {
       errors.push({
         code: 'MISSING_REQUIRED_FIELD',

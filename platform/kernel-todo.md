@@ -555,3 +555,11 @@ Deliver:
     * `ArtifactGraphMergeRequest.java`
   * Done when: artifact graph API and service contract consistently use `projectId` for project scope and reject payload-body scope drift.
   * Test: `./gradlew :products:yappc:core:yappc-services:compileJava -x test`.
+
+### Validation Update (2026-05-16)
+
+* [x] Artifact compiler package test health is fully green after compatibility and contract fixes.
+
+  * Scope: scanner classification, residual/schema contracts, model mapping/schema contracts, graph query/validation contracts, compile-back emitter/coordinator compatibility, GitLab provider matcher.
+  * Test: `pnpm vitest run` in `products/yappc/frontend/libs/yappc-artifact-compiler`.
+  * Result: 32/32 test files passed, 262/262 tests passed.

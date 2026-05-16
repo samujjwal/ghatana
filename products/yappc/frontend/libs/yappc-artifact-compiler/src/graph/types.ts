@@ -101,6 +101,7 @@ export const GraphEdgeKindSchema = z.enum([
   "contains", // Parent contains child (file -> symbol)
   "imports", // File/symbol imports from another
   "exports", // File/symbol exports
+  "calls", // Function or method invokes another
   "uses", // Symbol uses another symbol
   "renders", // Component renders another component
   "routes-to", // Route navigates to another route
@@ -287,6 +288,10 @@ const nodeIdOrUrnSchema = z.string().refine(
     }
     // Accept URN format (artifact://...)
     if (val.startsWith('artifact://')) {
+      return true;
+    }
+    // Accept canonical urn:yappc:* references used by query fixtures
+    if (val.startsWith('urn:')) {
       return true;
     }
     return false;

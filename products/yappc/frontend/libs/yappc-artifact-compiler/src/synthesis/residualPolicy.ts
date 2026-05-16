@@ -38,8 +38,10 @@ export class ResidualPolicy {
    * Classify a residual island based on its content and context.
    */
   classify(island: ResidualIsland): ResidualPolicyResult {
+    const searchableText = this.describeIsland(island);
+
     // Check for known unsafe patterns
-    if (this.isUnsafe(island)) {
+    if (this.isUnsafe(searchableText)) {
       return {
         classification: ResidualClassification.UNSAFE,
         confidence: 0.9,
@@ -48,23 +50,23 @@ export class ResidualPolicy {
       };
     }
 
-    // Check for patterns requiring review
-    if (this.requiresReview(island)) {
-      return {
-        classification: ResidualClassification.REQUIRES_REVIEW,
-        confidence: 0.8,
-        reason: 'Contains complex logic requiring manual review',
-        suggestedAction: 'review',
-      };
-    }
-
     // Check for verbatim-safe patterns (comments, formatting)
-    if (this.isVerbatimSafe(island)) {
+    if (this.isVerbatimSafe(searchableText)) {
       return {
         classification: ResidualClassification.PRESERVE_VERBATIM,
         confidence: 0.95,
         reason: 'Safe to preserve verbatim',
         suggestedAction: 'preserve',
+      };
+    }
+
+    // Check for patterns requiring review
+    if (this.requiresReview(island, searchableText)) {
+      return {
+        classification: ResidualClassification.REQUIRES_REVIEW,
+        confidence: 0.8,
+        reason: 'Contains complex logic requiring manual review',
+        suggestedAction: 'review',
       };
     }
 
@@ -80,8 +82,9 @@ export class ResidualPolicy {
   /**
    * Check if a residual island contains unsafe patterns.
    */
-  private isUnsafe(island: ResidualIsland): boolean {
+  private isUnsafe(searchableText: string): boolean {
     const unsafePatterns = [
+      'unsafe',
       'eval(',
       'new Function(',
       'innerHTML',
@@ -93,7 +96,7 @@ export class ResidualPolicy {
     ];
 
     for (const pattern of unsafePatterns) {
-      if (island.kind.includes(pattern) || island.sourceLocation.filePath.includes(pattern)) {
+      if (searchableText.includes(pattern)) {
         return true;
       }
     }
@@ -104,7 +107,7 @@ export class ResidualPolicy {
   /**
    * Check if a residual island requires manual review.
    */
-  private requiresReview(island: ResidualIsland): boolean {
+  private requiresReview(island: ResidualIsland, searchableText: string): boolean {
     const complexPatterns = [
       'try {',
       'catch (',
@@ -118,26 +121,40 @@ export class ResidualPolicy {
     ];
 
     for (const pattern of complexPatterns) {
-      if (island.kind.includes(pattern)) {
+      if (searchableText.includes(pattern)) {
         return true;
       }
     }
 
-    return island.confidence < 0.7;
+    return island.confidence >= 0.55 && island.confidence < 0.7;
   }
 
   /**
    * Check if a residual island is safe to preserve verbatim.
    */
-  private isVerbatimSafe(island: ResidualIsland): boolean {
+  private isVerbatimSafe(searchableText: string): boolean {
     const verbatimSafeKinds = [
       'comment',
       'whitespace',
       'formatting',
       'documentation',
+      'verbatim-preserve',
     ];
 
-    return verbatimSafeKinds.some(kind => island.kind.includes(kind));
+    return verbatimSafeKinds.some(kind => searchableText.includes(kind));
+  }
+
+  private describeIsland(island: ResidualIsland): string {
+    return [
+      island.id,
+      island.kind,
+      island.originalSource ?? '',
+      island.normalizedSummary ?? '',
+      island.reasonUnmodeled ?? '',
+      island.reviewReason ?? '',
+      island.sourceLocation.filePath,
+      island.regenerationStrategy,
+    ].join(' ').toLowerCase();
   }
 
   /**

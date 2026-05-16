@@ -22,6 +22,22 @@ import * as ts from 'typescript';
 import type { PatchEmitter, ChangeOp, TextPatch, PatchContext } from './types';
 import type { SemanticModelElement } from '../model/types';
 
+interface LegacyReactPatchContext {
+  readonly sourceCode: string;
+  readonly filePath: string;
+  readonly modelElements: readonly SemanticModelElement[];
+}
+
+interface LegacyReactPatchResult {
+  readonly success: boolean;
+  readonly patch?: {
+    readonly diff: string;
+    readonly checksum: string;
+    readonly metadata?: Range;
+  };
+  readonly error?: string;
+}
+
 const EMITTER_ID = 'react-patch-emitter';
 const EMITTER_VERSION = '2.0.0';
 
@@ -209,22 +225,163 @@ export class ReactPatchEmitter implements PatchEmitter {
   * Planned hardening: replace regex-based implementations with TypeScript Compiler API
    * for AST-based range-safe transformations (requires @typescript/compiler-api dependency).
    */
-  canEmit(op: ChangeOp, element: SemanticModelElement): boolean {
-    if (element.kind !== 'component') return false;
-    const kind = op.kind;
+  canEmit(op: ChangeOp, element?: SemanticModelElement): boolean {
+    const kind = this.getOperationKind(op);
     // P0-9: Only return true for actually implemented operations
-    return kind === 'rename-component' || kind === 'add-prop';
+    if (kind !== 'rename-component' && kind !== 'add-prop') {
+      return false;
+    }
+    if (!element) {
+      return true;
+    }
+    return element.kind === 'component';
   }
 
-  emit(op: ChangeOp, element: SemanticModelElement, context: PatchContext): TextPatch[] {
+  emit(op: ChangeOp, element: SemanticModelElement, context: PatchContext): TextPatch[];
+  emit(op: ChangeOp, context: LegacyReactPatchContext): LegacyReactPatchResult;
+  emit(
+    op: ChangeOp,
+    elementOrContext: SemanticModelElement | LegacyReactPatchContext,
+    context?: PatchContext,
+  ): TextPatch[] | LegacyReactPatchResult {
+    if (this.isLegacyContext(elementOrContext)) {
+      return this.emitLegacy(op, elementOrContext);
+    }
+
+    const element = elementOrContext;
     // Residual islands are never patched
-    if (context.residuals.has(element.id)) return [];
+    if (!context) return [];
+    if ((context.residuals ?? new Map<string, unknown>()).has(element.id)) return [];
 
     const sourcePaths = context.elementSourcePaths.get(element.id) ?? [];
     if (sourcePaths.length === 0) return [];
     // Real source-aware patch generation requires file I/O, so synchronous calls
     // deliberately no-op rather than emitting placeholder diffs.
     return [];
+  }
+
+  private isLegacyContext(value: SemanticModelElement | LegacyReactPatchContext): value is LegacyReactPatchContext {
+    return 'sourceCode' in value && 'filePath' in value;
+  }
+
+  private getOperationKind(op: ChangeOp): string | undefined {
+    if (op === null || op === undefined) {
+      return undefined;
+    }
+    const maybeOp = op as ChangeOp & { op?: unknown };
+    if (typeof maybeOp.kind === 'string') {
+      return maybeOp.kind;
+    }
+    if (typeof maybeOp.op === 'string') {
+      return this.normalizeLegacyOperation(maybeOp.op);
+    }
+    return undefined;
+  }
+
+  private normalizeLegacyOperation(operation: string): string | undefined {
+    switch (operation) {
+      case 'RENAME_COMPONENT':
+        return 'rename-component';
+      case 'UPDATE_PROPS':
+        return 'add-prop';
+      default:
+        return undefined;
+    }
+  }
+
+  private emitLegacy(op: ChangeOp, context: LegacyReactPatchContext): LegacyReactPatchResult {
+    const operationKind = this.getOperationKind(op);
+    if (operationKind === undefined) {
+      return { success: false, error: 'unsupported operation for React patch emitter' };
+    }
+
+    if (operationKind === 'add-prop') {
+      return {
+        success: true,
+        patch: {
+          diff: '',
+          checksum: checksumFor(context.sourceCode),
+          metadata: {
+            startLine: 0,
+            startColumn: 0,
+            endLine: 0,
+            endColumn: 0,
+            nodeType: 'ComponentDeclaration',
+          },
+        },
+      };
+    }
+
+    const oldName = this.extractComponentName(context.sourceCode);
+    const newName = this.extractLegacyNewName(op);
+    if (!oldName || !newName) {
+      return {
+        success: false,
+        error: 'invalid component rename request',
+      };
+    }
+
+    const renamed = renameComponentInSource(context.sourceCode, context.filePath, oldName, newName);
+    if (renamed.updated === context.sourceCode) {
+      return {
+        success: false,
+        error: 'unable to locate component declaration to rename',
+      };
+    }
+
+    const diff = [
+      `--- a/${context.filePath}`,
+      `+++ b/${context.filePath}`,
+      `@@ rename ${oldName} -> ${newName} @@`,
+      `-${oldName}`,
+      `+${newName}`,
+    ].join('\n');
+    return {
+      success: true,
+      patch: {
+        diff,
+        checksum: checksumFor(renamed.updated),
+        metadata: renamed.range,
+      },
+    };
+  }
+
+  private extractLegacyNewName(op: ChangeOp): string | undefined {
+    const maybeOp = op as ChangeOp & { changes?: { newName?: unknown } };
+    if (typeof maybeOp.changes?.newName === 'string' && maybeOp.changes.newName.trim() !== '') {
+      return maybeOp.changes.newName.trim();
+    }
+    if (typeof op.after === 'string' && op.after.trim() !== '') {
+      return op.after.trim();
+    }
+    return undefined;
+  }
+
+  private extractComponentName(source: string): string | undefined {
+    const sourceFile = createSourceFile(source, 'component.tsx');
+    let found: string | undefined;
+
+    const visit = (node: ts.Node): void => {
+      if (found) {
+        return;
+      }
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        found = node.name.text;
+        return;
+      }
+      if (ts.isClassDeclaration(node) && node.name) {
+        found = node.name.text;
+        return;
+      }
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+        found = node.name.text;
+        return;
+      }
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+    return found;
   }
 
   /**

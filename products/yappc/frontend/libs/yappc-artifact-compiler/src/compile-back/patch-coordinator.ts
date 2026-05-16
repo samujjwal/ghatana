@@ -93,6 +93,10 @@ export class PatchCoordinator {
     for (const patch of patchSet.patches) {
       const fileExists = await context.fileExists(patch.relativePath);
       if (!fileExists) {
+        this.logger.error(`Patch target does not exist: ${patch.relativePath}`, {
+          filePath: patch.relativePath,
+          changeId: patch.sourceChangeOpId,
+        });
         errors.push({
           code: 'PATCH_TARGET_MISSING',
           message: `Patch target does not exist: ${patch.relativePath}`,
@@ -114,10 +118,29 @@ export class PatchCoordinator {
         });
       }
 
-      if (!patch.baseChecksum) {
+      const patchBaseChecksum = patch.baseChecksum ?? (patch as TextPatch & { checksum?: string }).checksum;
+      if (!patchBaseChecksum) {
         warnings.push({
           code: 'PATCH_BASE_CHECKSUM_MISSING',
           message: `Patch ${patch.sourceChangeOpId} is missing a base checksum for stale-file detection.`,
+          filePath: patch.relativePath,
+          changeId: patch.sourceChangeOpId,
+        });
+        this.logger.warn(`Patch ${patch.relativePath} is missing a base checksum`, {
+          filePath: patch.relativePath,
+          changeId: patch.sourceChangeOpId,
+        });
+        continue;
+      }
+
+      if (typeof context.readFile !== 'function') {
+        this.logger.warn(`Patch base checksum could not be verified for ${patch.relativePath}`, {
+          filePath: patch.relativePath,
+          changeId: patch.sourceChangeOpId,
+        });
+        warnings.push({
+          code: 'PATCH_BASE_CHECKSUM_UNVERIFIED',
+          message: `Patch ${patch.sourceChangeOpId} could not be verified because the context does not expose readFile().`,
           filePath: patch.relativePath,
           changeId: patch.sourceChangeOpId,
         });
@@ -126,7 +149,11 @@ export class PatchCoordinator {
 
       const currentSource = await context.readFile(patch.relativePath);
       const currentChecksum = createHash('sha256').update(currentSource).digest('hex');
-      if (currentChecksum !== patch.baseChecksum) {
+      if (currentChecksum !== patchBaseChecksum) {
+        this.logger.warn(`Patch base checksum mismatch for ${patch.relativePath}`, {
+          filePath: patch.relativePath,
+          changeId: patch.sourceChangeOpId,
+        });
         errors.push({
           code: 'PATCH_BASE_CHECKSUM_MISMATCH',
           message: `Patch ${patch.sourceChangeOpId} no longer matches the current file contents for ${patch.relativePath}.`,
@@ -229,6 +256,76 @@ export class PatchCoordinator {
         preservedResiduals: preservedResidualIds.length,
       },
     };
+  }
+
+  /**
+   * Compatibility wrapper for the legacy test harness.
+   * Accepts an array of ChangeOps and returns a simple success/errors envelope.
+   */
+  async planChanges(
+    changeOps: readonly ChangeOp[],
+    context: PatchContext,
+  ): Promise<{
+    success: boolean;
+    errors: Array<{ code: string; message: string; severity: 'error' | 'warning'; changeId?: string }>;
+    warnings: Array<{ code: string; message: string; changeId?: string }>;
+  }> {
+    const errors: Array<{ code: string; message: string; severity: 'error' | 'warning'; changeId?: string }> = [];
+    const warnings: Array<{ code: string; message: string; changeId?: string }> = [];
+
+    for (const change of changeOps) {
+      const operation = this.normalizeLegacyOperation(change);
+      if (operation === 'rename-component' || operation === 'add-prop') {
+        continue;
+      }
+
+      if (this.isLegacyManualReview(change)) {
+        warnings.push({
+          code: 'UNSUPPORTED_OPERATION_MANUAL_REVIEW',
+          message: `Change operation ${(change as ChangeOp & { op?: string }).op ?? change.kind} requires manual review.`,
+          changeId: change.id,
+        });
+        this.logger.warn('Unsupported operation in manual-review mode', { changeId: change.id });
+        continue;
+      }
+
+      errors.push({
+        code: 'UNSUPPORTED_OPERATION',
+        message: `Change operation ${(change as ChangeOp & { op?: string }).op ?? change.kind} has no capable emitter.`,
+        severity: 'error',
+        changeId: change.id,
+      });
+      this.logger.error('Unsupported operation', { changeId: change.id });
+    }
+
+    return {
+      success: errors.length === 0,
+      errors,
+      warnings,
+    };
+  }
+
+  private normalizeLegacyOperation(change: ChangeOp): string | undefined {
+    const legacyOp = change as ChangeOp & { op?: unknown };
+    if (typeof legacyOp.kind === 'string') {
+      return legacyOp.kind;
+    }
+    if (typeof legacyOp.op !== 'string') {
+      return undefined;
+    }
+    switch (legacyOp.op) {
+      case 'RENAME_COMPONENT':
+        return 'rename-component';
+      case 'UPDATE_PROPS':
+        return 'add-prop';
+      default:
+        return undefined;
+    }
+  }
+
+  private isLegacyManualReview(change: ChangeOp): boolean {
+    const legacyChange = change as ChangeOp & { manualReview?: unknown };
+    return legacyChange.manualReview === true;
   }
 
   /**

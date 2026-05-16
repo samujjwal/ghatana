@@ -170,10 +170,8 @@ export class ConfidenceScorer {
    * Determine if an element requires human review based on confidence.
    */
   requiresReview(element: SemanticModelElement, graph: ArtifactGraph): boolean {
-    const recalculatedConfidence = this.recalculateConfidence(element, graph);
     const threshold = 0.7;
-
-    return recalculatedConfidence < threshold;
+    return element.confidence < threshold;
   }
 
   /**

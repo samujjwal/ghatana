@@ -226,6 +226,9 @@ export class GitLabProvider implements SourceProvider {
   }
 
   canHandle(locator: string): boolean {
+    if (locator.includes('github.com')) {
+      return false;
+    }
     return (
       locator.includes('gitlab.com') ||
       locator.startsWith('gitlab:') ||

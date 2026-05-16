@@ -9,12 +9,23 @@
 
 import { z } from 'zod';
 
+export const SourceRefSchema = z.union([
+  z.string().min(1),
+  z.object({
+    filePath: z.string().min(1),
+    startLine: z.number().int().nonnegative(),
+    startColumn: z.number().int().nonnegative(),
+    endLine: z.number().int().nonnegative(),
+    endColumn: z.number().int().nonnegative(),
+  }),
+]);
+
 // ============================================================================
 // Base Model Element (all models extend this)
 // ============================================================================
 
 export const ModelElementBaseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
   confidence: z.number().min(0).max(1),
@@ -37,17 +48,17 @@ export const ModelElementBaseSchema = z.object({
    * Graph node IDs that this model element is derived from or associated with.
    * Enables tracing from semantic model back to source graph nodes.
    */
-  graphNodeIds: z.array(z.string()).default([]),
+  graphNodeIds: z.array(z.string().min(1)),
   /**
    * Source references (e.g., file paths, symbol refs) that contributed to this element.
    * Provides provenance tracking back to original source locations.
    */
-  sourceRefs: z.array(z.string()).default([]),
+  sourceRefs: z.array(SourceRefSchema),
   /**
    * Residual island IDs that are related to this model element.
    * Enables linking modeled content to its unmodelable parts.
    */
-  residualIslandIds: z.array(z.string().uuid()).default([]),
+  residualIslandIds: z.array(z.string().min(1)),
 });
 
 export type ModelElementBase = z.infer<typeof ModelElementBaseSchema>;
