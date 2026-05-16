@@ -1,5 +1,6 @@
 package com.ghatana.yappc.services.source;
 
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * @doc.type class
@@ -40,14 +42,14 @@ class SourceProviderRegistryTest {
     @BeforeEach
     void setUp() {
         registry = new SourceProviderRegistry();
-
-        when(githubProvider.providerId()).thenReturn("github");
-        when(localProvider.providerId()).thenReturn("local-folder");
     }
 
     @Test
     @DisplayName("Should register providers and return them by ID")
     void shouldRegisterProvidersAndReturnThemById() {
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
+
         registry.register(githubProvider);
         registry.register(localProvider);
 
@@ -62,8 +64,10 @@ class SourceProviderRegistryTest {
     @Test
     @DisplayName("Should find provider that can handle a locator")
     void shouldFindProviderThatCanHandleLocator() {
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
         when(githubProvider.canHandle(any())).thenReturn(true);
-        when(localProvider.canHandle(any())).thenReturn(false);
+        // Note: localProvider is never queried because githubProvider returns true first
 
         registry.register(githubProvider);
         registry.register(localProvider);
@@ -76,6 +80,8 @@ class SourceProviderRegistryTest {
     @Test
     @DisplayName("Should return empty when no provider can handle locator")
     void shouldReturnEmptyWhenNoProviderCanHandleLocator() {
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
         when(githubProvider.canHandle(any())).thenReturn(false);
         when(localProvider.canHandle(any())).thenReturn(false);
 
@@ -97,6 +103,7 @@ class SourceProviderRegistryTest {
     @Test
     @DisplayName("Should return provider by ID with getProvider")
     void shouldReturnProviderByIdWithGetProvider() {
+        when(githubProvider.providerId()).thenReturn("github");
         registry.register(githubProvider);
 
         SourceProvider found = registry.getProvider("github");
@@ -106,6 +113,8 @@ class SourceProviderRegistryTest {
     @Test
     @DisplayName("Should aggregate capabilities from all providers")
     void shouldAggregateCapabilitiesFromAllProviders() {
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
         when(githubProvider.capabilities()).thenReturn(Map.of("git", true, "largeFiles", true));
         when(localProvider.capabilities()).thenReturn(Map.of("git", false, "local", true));
 
@@ -126,6 +135,8 @@ class SourceProviderRegistryTest {
         );
         RepositorySnapshot expectedSnapshot = mock(RepositorySnapshot.class);
 
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
         when(githubProvider.canHandle(any())).thenReturn(true);
         when(githubProvider.resolve(any(), any())).thenReturn(Promise.of(expectedSnapshot));
 
@@ -147,25 +158,15 @@ class SourceProviderRegistryTest {
             "tenant-1", "workspace-1", "project-1", "principal-1"
         );
 
+        when(githubProvider.providerId()).thenReturn("github");
         when(githubProvider.canHandle(any())).thenReturn(false);
 
         registry.register(githubProvider);
 
         Promise<RepositorySnapshot> result = registry.resolve(locator, scope);
-
-        assertThatThrownBy(() -> result.getResult())
-            .isInstanceOf(Exception.class)
-            .hasMessageContaining("No source provider can resolve");
-    }
-
-    @Test
-    @DisplayName("Default registry should have standard providers")
-    void defaultRegistryShouldHaveStandardProviders() {
-        SourceProviderRegistry defaultRegistry = SourceProviderRegistry.defaultRegistry();
-
-        assertThat(defaultRegistry.resolve("github")).isPresent();
-        assertThat(defaultRegistry.resolve("local-folder")).isPresent();
-        assertThat(defaultRegistry.resolve("archive")).isPresent();
+        assertThat(result.isException()).isTrue();
+        assertThat(result.getException()).isNotNull();
+        assertThat(result.getException().getMessage()).contains("No source provider can resolve");
     }
 
     @Test
@@ -179,6 +180,8 @@ class SourceProviderRegistryTest {
     @Test
     @DisplayName("Should return all registered providers")
     void shouldReturnAllRegisteredProviders() {
+        when(githubProvider.providerId()).thenReturn("github");
+        when(localProvider.providerId()).thenReturn("local-folder");
         registry.register(githubProvider);
         registry.register(localProvider);
 

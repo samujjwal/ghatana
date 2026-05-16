@@ -249,7 +249,71 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
       expect.objectContaining({ correlationId: 'corr-ctx' }),
     );
   });
+
+  it('uses authorizeLifecycleExecute for apply ProductUnitIntent mutations', async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeLifecycleExecute: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.mutateProductUnitIntent({
+      headers: { 'X-Correlation-Id': 'corr-intent-apply' },
+      body: {
+        requestedAction: 'apply',
+        intent: validIntent(),
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalled();
+  });
 });
+
+function validIntent(): Record<string, unknown> {
+  return {
+    schemaVersion: '1.0.0',
+    intentId: 'intent:yappc:commerce-studio:corr-1',
+    intentType: 'promote-candidate',
+    scope: {
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+    },
+    producer: {
+      id: 'yappc-ui',
+      type: 'yappc',
+      correlationId: 'corr-1',
+    },
+    target: {
+      registryProvider: 'kernel-product-registry',
+      sourceProvider: 'yappc-creator',
+    },
+    productUnit: {
+      id: 'commerce-studio',
+      name: 'Commerce Studio',
+      kind: 'business-product',
+      surfaces: [
+        {
+          id: 'web',
+          type: 'web',
+          implementationStatus: 'implemented',
+        },
+      ],
+    },
+    provenance: {
+      sourceSystem: 'yappc',
+      sourceArtifactRefs: ['artifact://candidate/commerce-studio'],
+      createdBy: 'yappc-ui',
+      createdAt: '2026-05-16T00:00:00.000Z',
+      evidenceRefs: ['evidence://candidate/commerce-studio'],
+    },
+  };
+}
 
 function request(correlationId: string): KernelLifecycleApiRequest {
   return { headers: { 'X-Correlation-Id': correlationId } };

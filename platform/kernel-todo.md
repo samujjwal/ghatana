@@ -26,10 +26,19 @@ I could not run the repository build locally in this environment. This is a sour
 * LearnPage now renders translated highest-risk labels in the recommendations and risk summary view.
 * DeploymentsPage now renders translated verifier status labels, and ArtifactsPage now renders translated found/missing badges.
 * Combined Studio route regression pass is green across Lifecycle, Health, Agents, Home, Develop, Canvas, Learn, Deployments, and Artifacts.
+* YAPPC artifact compiler deterministic ID schemas now accept deterministic non-empty IDs (not UUID-only), and residual/model mapping contract tests are green.
+* Compile-back change-op kind contract tests now align with the canonical kind-aware operation set (`add-component`, `remove-component`, `update-component-props`, `rename-component`, `manual-review`, `unsupported-operation`).
+* SourceProviderRegistry Java tests are hardened with strict Mockito-safe stubbing and pass.
+* ArtifactGraphRepository workspace scope Java tests are hardened to use ActiveJ async test execution patterns and pass.
+* Full non-watch YAPPC artifact compiler test suite is green: 35/35 files and 296/296 tests passed.
+* Kernel lifecycle API now accepts ProductUnitIntent preview/apply mutation metadata (`providerMode`, `correlationId`, `evidenceRefs`) and preserves auth + correlation behavior through the mutation path.
+* Studio lifecycle client now has typed `previewProductUnitIntent` and `applyProductUnitIntent` regression coverage against `/api/kernel/lifecycle/product-unit-intents` for both preview and apply actions.
+* Studio Ideas and Blueprints routes now have focused tests proving ProductUnitIntent preview/apply handoff actions are wired and callable from the UI layer.
+* Focused post-change validation is green: kernel-lifecycle API handler/auth suites (266/266 tests) and ghatana-studio focused suites (94/94 tests).
 
-**Current focus:** continue Release 0 with the Studio terminology and route-surface cleanup, then validate each change in isolation
+**Current focus:** continue Release 0 by expanding Studio lifecycle journey depth (route behavior and evidence surfacing) while keeping ProductUnitIntent handoff and compiler/decompiler stabilization green
 
-**Next measurable milestone:** finish the remaining Release 0 UI/route work and keep the tracker synchronized after every validated slice
+**Next measurable milestone:** extend ProductUnitIntent handoff beyond focused route/client tests into broader Studio lifecycle route integration coverage and follow-on Kernel/Data Cloud evidence-path validations
 
 **Notes:** this file is now the live tracker for progress updates; code changes should be recorded here only after the corresponding slice is implemented and validated
 

@@ -20,25 +20,11 @@ export function toModelElementId(raw: string): ModelElementId {
   return raw as ModelElementId;
 }
 
-/** Schema accepting deterministic artifact:// URNs or UUIDs. */
-export const ModelElementIdSchema = z.string().refine(
-  (val) => {
-    // Accept UUID format
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
-      return true;
-    }
-    // Accept URN format (artifact://...)
-    if (val.startsWith('artifact://')) {
-      return true;
-    }
-    // Accept other urn: formats
-    if (val.startsWith('urn:')) {
-      return true;
-    }
-    return false;
-  },
-  { message: 'Model element ID must be a UUID or artifact:// URN' }
-);
+/**
+ * IDs are deterministic non-empty strings generated from source identity.
+ * UUID/URN values remain valid, but are no longer the only accepted shapes.
+ */
+export const ModelElementIdSchema = z.string().min(1, 'Model element ID must be a non-empty string');
 
 export const SourceRefSchema = z.union([
   z.string().min(1),

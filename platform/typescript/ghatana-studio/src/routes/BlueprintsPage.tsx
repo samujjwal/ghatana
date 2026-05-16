@@ -1,12 +1,56 @@
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
+import type { ProductUnitIntentApplicationResult } from '@ghatana/kernel-product-contracts';
 import { useStudioTranslation } from '../i18n/studioTranslations';
+import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { dependencyGraphEvidence, generatedChangeSetSummary, productShapeEvidence, yappcProductUnitIntentCandidate } from './yappcWorkflowData';
 
 export default function BlueprintsPage(): ReactElement {
   const t = useStudioTranslation();
+  const lifecycleData = useStudioLifecycleData();
   const requestedLifecycle = yappcProductUnitIntentCandidate.requestedLifecycle;
   const provenance = yappcProductUnitIntentCandidate.provenance;
+  const [handoffResult, setHandoffResult] = useState<ProductUnitIntentApplicationResult | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function previewIntent(): Promise<void> {
+    if (lifecycleData.previewProductUnitIntent === undefined) {
+      setHandoffError(t('studio.route.blueprints.handoffUnavailable'));
+      return;
+    }
+    setHandoffError(null);
+    setIsSubmitting(true);
+    try {
+      const result = await lifecycleData.previewProductUnitIntent(yappcProductUnitIntentCandidate, {
+        providerMode: lifecycleData.selectedProviderMode,
+      });
+      setHandoffResult(result);
+    } catch (error: unknown) {
+      setHandoffError(error instanceof Error ? error.message : t('studio.route.blueprints.handoffFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function applyIntent(): Promise<void> {
+    if (lifecycleData.applyProductUnitIntent === undefined) {
+      setHandoffError(t('studio.route.blueprints.handoffUnavailable'));
+      return;
+    }
+    setHandoffError(null);
+    setIsSubmitting(true);
+    try {
+      const result = await lifecycleData.applyProductUnitIntent(yappcProductUnitIntentCandidate, {
+        providerMode: lifecycleData.selectedProviderMode,
+      });
+      setHandoffResult(result);
+    } catch (error: unknown) {
+      setHandoffError(error instanceof Error ? error.message : t('studio.route.blueprints.handoffFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {
     if (confidence >= 0.9) return 'success';
@@ -88,6 +132,39 @@ export default function BlueprintsPage(): ReactElement {
             {t('studio.route.blueprints.handoffStatusPending')}
           </Badge>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+            onClick={() => {
+              void previewIntent();
+            }}
+            disabled={isSubmitting}
+          >
+            {t('studio.route.blueprints.exportPreview')}
+          </button>
+          <button
+            type="button"
+            className="rounded border border-blue-700 px-3 py-2 text-xs font-medium text-blue-700 disabled:opacity-60"
+            onClick={() => {
+              void applyIntent();
+            }}
+            disabled={isSubmitting}
+          >
+            {t('studio.route.blueprints.exportApply')}
+          </button>
+        </div>
+        {handoffError !== null ? (
+          <p className="text-xs text-red-700">{handoffError}</p>
+        ) : null}
+        {handoffResult !== null ? (
+          <div className="rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-700">
+            <p>{t('studio.route.blueprints.handoffResultLabel')} {handoffResult.status}</p>
+            {handoffResult.blockedReasons.length > 0 ? (
+              <p>{t('studio.route.blueprints.blockedReasonsLabel')} {handoffResult.blockedReasons.join(', ')}</p>
+            ) : null}
+          </div>
+        ) : null}
       </article>
 
       <div className="grid gap-4 lg:grid-cols-3">

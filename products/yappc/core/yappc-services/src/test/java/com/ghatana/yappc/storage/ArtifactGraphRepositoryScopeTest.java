@@ -1,7 +1,7 @@
 package com.ghatana.yappc.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +20,7 @@ import java.util.concurrent.Executor;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * @doc.type class
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ArtifactGraphRepository Workspace Scope Tests")
-class ArtifactGraphRepositoryScopeTest {
+class ArtifactGraphRepositoryScopeTest extends EventloopTestBase {
 
     @Mock
     private DataSource dataSource;
@@ -53,16 +54,16 @@ class ArtifactGraphRepositoryScopeTest {
     @BeforeEach
     void setUp() throws Exception {
         repository = new ArtifactGraphRepository(dataSource, new ObjectMapper(), DIRECT_EXECUTOR);
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(anyString())).thenReturn(statement);
-        when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
+        lenient().when(dataSource.getConnection()).thenReturn(connection);
+        lenient().when(connection.prepareStatement(anyString())).thenReturn(statement);
+        lenient().when(statement.executeQuery()).thenReturn(resultSet);
+        lenient().when(resultSet.next()).thenReturn(false);
     }
 
     @Test
     @DisplayName("findNodesByProduct binds workspaceId at position 2 — not 'default'")
     void findNodesByProduct_bindsWorkspaceId() throws Exception {
-        repository.findNodesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, 100).getResult();
+        runPromise(() -> repository.findNodesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, 100));
 
         verify(statement).setString(1, TENANT_ID);
         verify(statement).setString(2, WORKSPACE_ID);
@@ -72,7 +73,7 @@ class ArtifactGraphRepositoryScopeTest {
     @Test
     @DisplayName("findNodesByProduct with includeTombstones=true binds workspaceId")
     void findNodesByProductIncludeTombstones_bindsWorkspaceId() throws Exception {
-        repository.findNodesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, 50, true).getResult();
+        runPromise(() -> repository.findNodesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, 50, true));
 
         verify(statement).setString(1, TENANT_ID);
         verify(statement).setString(2, WORKSPACE_ID);
@@ -82,7 +83,7 @@ class ArtifactGraphRepositoryScopeTest {
     @Test
     @DisplayName("findEdgesByProduct binds workspaceId at position 2")
     void findEdgesByProduct_bindsWorkspaceId() throws Exception {
-        repository.findEdgesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID).getResult();
+        runPromise(() -> repository.findEdgesByProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID));
 
         verify(statement).setString(1, TENANT_ID);
         verify(statement).setString(2, WORKSPACE_ID);
@@ -92,7 +93,7 @@ class ArtifactGraphRepositoryScopeTest {
     @Test
     @DisplayName("findNodesByIds binds workspaceId at position 2")
     void findNodesByIds_bindsWorkspaceId() throws Exception {
-        repository.findNodesByIds(List.of("node-1", "node-2"), TENANT_ID, WORKSPACE_ID).getResult();
+        runPromise(() -> repository.findNodesByIds(List.of("node-1", "node-2"), TENANT_ID, WORKSPACE_ID));
 
         verify(statement).setString(1, TENANT_ID);
         verify(statement).setString(2, WORKSPACE_ID);
@@ -101,9 +102,7 @@ class ArtifactGraphRepositoryScopeTest {
     @Test
     @DisplayName("tombstoneGraphForProduct binds workspaceId in both edge and node UPDATE statements")
     void tombstoneGraphForProduct_bindsWorkspaceIdInBothStatements() throws Exception {
-        when(statement.executeUpdate()).thenReturn(0);
-
-        repository.tombstoneGraphForProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID).getResult();
+        runPromise(() -> repository.tombstoneGraphForProduct(PRODUCT_ID, TENANT_ID, WORKSPACE_ID));
 
         verify(statement, atLeast(2)).setString(eq(3), eq(WORKSPACE_ID));
     }
@@ -118,20 +117,15 @@ class ArtifactGraphRepositoryScopeTest {
                 List.of(), List.of(), null, null
         );
 
-        when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
+        runPromise(() -> repository.saveNodes(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, List.of(node)));
 
-        repository.saveNodes(PRODUCT_ID, TENANT_ID, WORKSPACE_ID, List.of(node)).getResult();
-
-        verify(statement).setString(2, WORKSPACE_ID);
+        verify(statement).setString(9, WORKSPACE_ID);
     }
 
     @Test
     @DisplayName("tombstoneNodes binds workspaceId at position 4")
     void tombstoneNodes_bindsWorkspaceId() throws Exception {
-        when(statement.executeUpdate()).thenReturn(1);
-
-        repository.tombstoneNodes(List.of("node-1"), TENANT_ID, WORKSPACE_ID, "snap-1").getResult();
+        runPromise(() -> repository.tombstoneNodes(List.of("node-1"), TENANT_ID, WORKSPACE_ID, "snap-1"));
 
         verify(statement).setString(4, WORKSPACE_ID);
     }

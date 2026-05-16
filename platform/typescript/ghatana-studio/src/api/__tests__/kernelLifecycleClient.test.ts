@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValidationError } from '@ghatana/api';
+import type { ProductUnitIntent } from '@ghatana/kernel-product-contracts';
 import {
   createKernelLifecycleClient,
   mapKernelLifecycleClientError,
@@ -128,6 +129,45 @@ const pendingApprovals = [
     expiresAt: '2026-05-14T00:00:00.000Z',
   },
 ];
+
+const productUnitIntent: ProductUnitIntent = {
+  schemaVersion: '1.0.0',
+  intentId: 'intent:yappc:commerce-studio:corr-1',
+  intentType: 'promote-candidate',
+  scope: {
+    tenantId: 'tenant-1',
+    workspaceId: 'workspace-1',
+    projectId: 'project-1',
+  },
+  producer: {
+    id: 'yappc-ui',
+    type: 'yappc',
+    correlationId: 'corr-1',
+  },
+  target: {
+    registryProvider: 'kernel-product-registry',
+    sourceProvider: 'yappc-creator',
+  },
+  productUnit: {
+    id: 'commerce-studio',
+    name: 'Commerce Studio',
+    kind: 'business-product',
+    surfaces: [
+      {
+        id: 'web',
+        type: 'web',
+        implementationStatus: 'implemented',
+      },
+    ],
+  },
+  provenance: {
+    sourceSystem: 'yappc',
+    sourceArtifactRefs: ['artifact://candidate/commerce-studio'],
+    createdBy: 'yappc-ui',
+    createdAt: '2026-05-16T00:00:00.000Z',
+    evidenceRefs: ['evidence://candidate/commerce-studio'],
+  },
+};
 
 interface FetchCall {
   readonly url: string;
@@ -357,6 +397,77 @@ describe('kernelLifecycleClient', () => {
     expect(getFetchCalls(mockFetch)[0].url).toBe(
       'https://studio.test/api/kernel/product-units/digital-marketing/lifecycle/runs/run-1/deployment-manifest',
     );
+  });
+
+  it('previews and applies ProductUnitIntent through the kernel mutation endpoint', async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse({
+        schemaVersion: '1.0.0',
+        intentId: productUnitIntent.intentId,
+        status: 'previewed',
+        productUnitId: 'commerce-studio',
+        correlationId: 'corr-intent-preview',
+        providerMode: 'bootstrap',
+        registryProviderId: 'kernel-product-registry',
+        sourceProviderId: 'yappc-creator',
+        previewRef: 'registry://preview/commerce-studio',
+        lifecycleEventRefs: [],
+        provenanceRefs: [],
+        runtimeTruthRefs: [],
+        blockedReasons: [],
+        errors: [],
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        schemaVersion: '1.0.0',
+        intentId: productUnitIntent.intentId,
+        status: 'applied',
+        productUnitId: 'commerce-studio',
+        correlationId: 'corr-intent-apply',
+        providerMode: 'platform',
+        registryProviderId: 'kernel-product-registry',
+        sourceProviderId: 'yappc-creator',
+        applicationRef: 'registry://apply/commerce-studio',
+        lifecycleEventRefs: ['event://1'],
+        provenanceRefs: ['provenance://1'],
+        runtimeTruthRefs: ['truth://1'],
+        blockedReasons: [],
+        errors: [],
+      }));
+
+    const client = createKernelLifecycleClient({
+      baseUrl: 'https://studio.test',
+      correlationIdFactory: () => 'corr-intent-default',
+    });
+
+    await expect(
+      client.previewProductUnitIntent?.(productUnitIntent, {
+        providerMode: 'bootstrap',
+        correlationId: 'corr-intent-preview',
+        evidenceRefs: ['evidence://intent/preview'],
+      }),
+    ).resolves.toMatchObject({ status: 'previewed' });
+
+    await expect(
+      client.applyProductUnitIntent?.(productUnitIntent, {
+        providerMode: 'platform',
+        correlationId: 'corr-intent-apply',
+        evidenceRefs: ['evidence://intent/apply'],
+      }),
+    ).resolves.toMatchObject({ status: 'applied' });
+
+    const calls = getFetchCalls(mockFetch);
+    expect(calls[0].url).toBe('https://studio.test/api/kernel/lifecycle/product-unit-intents');
+    expect(calls[1].url).toBe('https://studio.test/api/kernel/lifecycle/product-unit-intents');
+    expect(JSON.parse(String(calls[0].init.body))).toMatchObject({
+      requestedAction: 'preview',
+      providerMode: 'bootstrap',
+      correlationId: 'corr-intent-preview',
+    });
+    expect(JSON.parse(String(calls[1].init.body))).toMatchObject({
+      requestedAction: 'apply',
+      providerMode: 'platform',
+      correlationId: 'corr-intent-apply',
+    });
   });
 
   it('requests approvals and submits approval decisions', async () => {

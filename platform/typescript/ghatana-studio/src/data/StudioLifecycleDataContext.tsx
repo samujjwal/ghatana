@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
 import type { DeploymentManifest } from '@ghatana/kernel-deployment';
-import type { ProductUnit } from '@ghatana/kernel-product-contracts';
+import type { ProductUnit, ProductUnitIntent, ProductUnitIntentApplicationResult } from '@ghatana/kernel-product-contracts';
 import type {
   ApprovalDecision,
   ApprovalRequest,
@@ -20,6 +20,7 @@ import type {
   LifecyclePlan,
   LifecycleRun,
   ProductLifecyclePhase,
+  ProductUnitIntentMutationOptions,
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
 import type { StudioRuntimeContextState } from '../config/studioRuntimeContext';
@@ -78,6 +79,14 @@ export interface StudioLifecycleDataContextValue {
   executePhase(phase: ProductLifecyclePhase, options?: { dryRun?: boolean; environment?: string }): Promise<void>;
   requestApproval(actionRequest: ApprovalRequest): Promise<void>;
   submitApprovalDecision(approvalId: string, decision: ApprovalDecision): Promise<void>;
+  previewProductUnitIntent?: (
+    intent: ProductUnitIntent,
+    options?: ProductUnitIntentMutationOptions,
+  ) => Promise<ProductUnitIntentApplicationResult>;
+  applyProductUnitIntent?: (
+    intent: ProductUnitIntent,
+    options?: ProductUnitIntentMutationOptions,
+  ) => Promise<ProductUnitIntentApplicationResult>;
   refresh(): Promise<void>;
 }
 
@@ -309,6 +318,28 @@ export function StudioLifecycleDataProvider(
     await loadSnapshot();
   }, [client, loadSnapshot]);
 
+  const previewProductUnitIntent = useCallback(async (
+    intent: ProductUnitIntent,
+    options: ProductUnitIntentMutationOptions = {},
+  ): Promise<ProductUnitIntentApplicationResult> => {
+    if (client?.previewProductUnitIntent === undefined) {
+      throw new Error('Kernel lifecycle client does not support ProductUnitIntent preview');
+    }
+    return client.previewProductUnitIntent(intent, options);
+  }, [client]);
+
+  const applyProductUnitIntent = useCallback(async (
+    intent: ProductUnitIntent,
+    options: ProductUnitIntentMutationOptions = {},
+  ): Promise<ProductUnitIntentApplicationResult> => {
+    if (client?.applyProductUnitIntent === undefined) {
+      throw new Error('Kernel lifecycle client does not support ProductUnitIntent apply');
+    }
+    const result = await client.applyProductUnitIntent(intent, options);
+    await loadSnapshot();
+    return result;
+  }, [client, loadSnapshot]);
+
   const refresh = useCallback(async () => {
     await loadSnapshot();
   }, [loadSnapshot]);
@@ -330,6 +361,8 @@ export function StudioLifecycleDataProvider(
       requestApproval,
       submitApprovalDecision,
       refresh,
+      previewProductUnitIntent,
+      applyProductUnitIntent,
     }),
     [
       snapshot,
@@ -347,6 +380,8 @@ export function StudioLifecycleDataProvider(
       requestApproval,
       submitApprovalDecision,
       refresh,
+      previewProductUnitIntent,
+      applyProductUnitIntent,
     ],
   );
 

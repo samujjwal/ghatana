@@ -11,7 +11,11 @@ import { z } from 'zod';
 import type {
   ApprovalDecision,
   ApprovalRequest,
+  ProductUnitIntent,
   ProductUnitScope,
+} from '@ghatana/kernel-product-contracts';
+import {
+  ProductUnitIntentSchema,
 } from '@ghatana/kernel-product-contracts';
 import type {
   ProductLifecycleManifestType,
@@ -123,6 +127,14 @@ const ApprovalDecisionBodySchema = z.object({
   evidenceRefs: z.array(z.string().trim().min(1)).optional(),
 });
 
+const ProductUnitIntentMutationBodySchema = z.object({
+  intent: ProductUnitIntentSchema,
+  requestedAction: z.enum(['preview', 'apply']).default('preview'),
+  providerMode: z.enum(['bootstrap', 'platform']).optional(),
+  correlationId: z.string().trim().min(1).optional(),
+  evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+});
+
 export interface KernelLifecycleApiRequest {
   readonly params?: Record<string, string | undefined>;
   readonly query?: Record<string, string | number | boolean | undefined>;
@@ -192,6 +204,7 @@ export class KernelLifecycleApiHandlers {
     { routeId: 'kernel.approvals.list', method: 'GET', path: '/api/kernel/approvals', handler: 'listPendingApprovals' },
     { routeId: 'kernel.approvals.request', method: 'POST', path: '/api/kernel/approvals', handler: 'requestApproval' },
     { routeId: 'kernel.approvals.decide', method: 'POST', path: '/api/kernel/approvals/:approvalId/decisions', handler: 'submitApprovalDecision' },
+    { routeId: 'kernel.lifecycle.productUnitIntent.mutate', method: 'POST', path: '/api/kernel/lifecycle/product-unit-intents', handler: 'mutateProductUnitIntent' },
   ];
 
   private readonly service: KernelLifecycleService;
@@ -352,6 +365,28 @@ export class KernelLifecycleApiHandlers {
       }
       const result = await this.service.submitApprovalDecision(approvalId, decision);
       return this.ok(result, context.correlationId);
+    });
+  }
+
+  async mutateProductUnitIntent(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const body = ProductUnitIntentMutationBodySchema.parse(request.body ?? {});
+      const correlationId = body.correlationId ?? context.correlationId;
+      await this.enforceAuth(
+        request,
+        context,
+        body.requestedAction === 'apply' ? 'authorizeLifecycleExecute' : 'authorizeLifecyclePlan',
+        {
+          productUnitId: body.intent.productUnit.id,
+          correlationId,
+          phase: 'create',
+        },
+      );
+      const result = await this.service.applyProductUnitIntent(body.intent as ProductUnitIntent, {
+        allowWrite: body.requestedAction === 'apply',
+        ...(body.providerMode === undefined ? {} : { mode: body.providerMode }),
+      });
+      return this.ok(result, correlationId);
     });
   }
 

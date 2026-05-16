@@ -182,6 +182,81 @@ describe('KernelLifecycleApiHandlers', () => {
     });
     expect(service.createLifecyclePlan).not.toHaveBeenCalled();
   });
+
+  it('mutates ProductUnitIntent in preview mode through the kernel API route', async () => {
+    const service = createService({
+      applyProductUnitIntent: vi.fn().mockResolvedValue({
+        schemaVersion: '1.0.0',
+        intentId: 'intent:yappc:commerce-studio:corr-1',
+        status: 'previewed',
+        productUnitId: 'commerce-studio',
+        correlationId: 'corr-1',
+        providerMode: 'bootstrap',
+        registryProviderId: 'kernel-product-registry',
+        sourceProviderId: 'yappc-creator',
+        previewRef: 'registry://preview/commerce-studio',
+        lifecycleEventRefs: [],
+        provenanceRefs: [],
+        runtimeTruthRefs: [],
+        blockedReasons: [],
+        errors: [],
+      }),
+    });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
+
+    const response = await handlers.mutateProductUnitIntent({
+      headers: scopedHeaders('corr-1'),
+      body: {
+        requestedAction: 'preview',
+        providerMode: 'bootstrap',
+        intent: {
+          schemaVersion: '1.0.0',
+          intentId: 'intent:yappc:commerce-studio:corr-1',
+          intentType: 'promote-candidate',
+          scope: {
+            tenantId: 'tenant-1',
+            workspaceId: 'workspace-1',
+            projectId: 'project-1',
+          },
+          producer: {
+            id: 'yappc-ui',
+            type: 'yappc',
+            correlationId: 'corr-1',
+          },
+          target: {
+            registryProvider: 'kernel-product-registry',
+            sourceProvider: 'yappc-creator',
+          },
+          productUnit: {
+            id: 'commerce-studio',
+            name: 'Commerce Studio',
+            kind: 'business-product',
+            surfaces: [
+              {
+                id: 'web',
+                type: 'web',
+                implementationStatus: 'implemented',
+              },
+            ],
+          },
+          provenance: {
+            sourceSystem: 'yappc',
+            sourceArtifactRefs: ['artifact://candidate/commerce-studio'],
+            createdBy: 'yappc-ui',
+            createdAt: '2026-05-16T00:00:00.000Z',
+            evidenceRefs: ['evidence://candidate/commerce-studio'],
+          },
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({ status: 'previewed' });
+    expect(service.applyProductUnitIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ intentId: 'intent:yappc:commerce-studio:corr-1' }),
+      { mode: 'bootstrap', allowWrite: false },
+    );
+  });
 });
 
 const productUnit: ProductUnit = {
@@ -227,6 +302,7 @@ function createService(overrides: Partial<ServiceShape> = {}): ServiceShape {
     listPendingApprovals: vi.fn().mockResolvedValue([]),
     requestApproval: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'pending' }),
     submitApprovalDecision: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'approved' }),
+    applyProductUnitIntent: vi.fn(),
     normalizeError: vi.fn(),
     ...overrides,
   } as unknown as ServiceShape;
@@ -243,6 +319,7 @@ type ServiceShape = KernelLifecycleService & {
   readonly listPendingApprovals: ReturnType<typeof vi.fn>;
   readonly requestApproval: ReturnType<typeof vi.fn>;
   readonly submitApprovalDecision: ReturnType<typeof vi.fn>;
+  readonly applyProductUnitIntent: ReturnType<typeof vi.fn>;
   readonly normalizeError: ReturnType<typeof vi.fn>;
 };
 

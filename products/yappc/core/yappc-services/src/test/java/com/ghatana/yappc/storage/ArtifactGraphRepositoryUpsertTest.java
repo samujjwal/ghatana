@@ -78,6 +78,7 @@ class ArtifactGraphRepositoryUpsertTest {
         when(repository.upsertNodes(
             eq("project-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(List.of(node2)),
             eq("snapshot-123"),
             eq("version-1"),
@@ -90,6 +91,7 @@ class ArtifactGraphRepositoryUpsertTest {
         repository.upsertNodes(
             "project-456",
             "tenant-123",
+            "workspace-123",
             List.of(node2),
             "snapshot-123",
             "version-1",
@@ -99,6 +101,7 @@ class ArtifactGraphRepositoryUpsertTest {
         verify(repository).upsertNodes(
             eq("project-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(List.of(node2)),
             eq("snapshot-123"),
             eq("version-1"),
@@ -134,6 +137,7 @@ class ArtifactGraphRepositoryUpsertTest {
         when(repository.upsertNodes(
             eq("project-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(List.of(node)),
             eq("snapshot-123"),
             eq("version-1"),
@@ -143,6 +147,7 @@ class ArtifactGraphRepositoryUpsertTest {
         repository.upsertNodes(
             "project-456",
             "tenant-123",
+            "workspace-123",
             List.of(node),
             "snapshot-123",
             "version-1",
@@ -152,6 +157,7 @@ class ArtifactGraphRepositoryUpsertTest {
         verify(repository).upsertNodes(
             eq("project-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(List.of(node)),
             eq("snapshot-123"),
             eq("version-1"),

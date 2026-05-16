@@ -17,6 +17,10 @@ import {
   PRODUCT_LIFECYCLE_PHASES,
 } from '@ghatana/kernel-lifecycle';
 import {
+  ProductUnitIntent,
+  ProductUnitIntentApplicationResult,
+  ProductUnitIntentApplicationResultSchema,
+  ProductUnitIntentSchema,
   ProductUnit,
   ProductUnitSchema,
 } from '@ghatana/kernel-product-contracts';
@@ -371,6 +375,12 @@ export interface PendingApprovalQuery {
   readonly runId?: string;
 }
 
+export interface ProductUnitIntentMutationOptions {
+  readonly providerMode?: 'bootstrap' | 'platform';
+  readonly evidenceRefs?: readonly string[];
+  readonly correlationId?: string;
+}
+
 export interface KernelLifecycleClient {
   listProductUnits(): Promise<readonly ProductUnit[]>;
   getProductUnit(productUnitId: string): Promise<ProductUnit>;
@@ -400,6 +410,14 @@ export interface KernelLifecycleClient {
     approvalId: string,
     decision: ApprovalDecision,
   ): Promise<ProductApprovalGate>;
+  previewProductUnitIntent?(
+    intent: ProductUnitIntent,
+    options?: ProductUnitIntentMutationOptions,
+  ): Promise<ProductUnitIntentApplicationResult>;
+  applyProductUnitIntent?(
+    intent: ProductUnitIntent,
+    options?: ProductUnitIntentMutationOptions,
+  ): Promise<ProductUnitIntentApplicationResult>;
 }
 
 export function createKernelLifecycleClient(
@@ -617,6 +635,52 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
         headers: this.buildHeaders(safeApprovalId),
         body: parsedDecision,
         schema: ProductApprovalGateSchema,
+      },
+    );
+    return response.data;
+  }
+
+  async previewProductUnitIntent(
+    intent: ProductUnitIntent,
+    options: ProductUnitIntentMutationOptions = {},
+  ): Promise<ProductUnitIntentApplicationResult> {
+    const parsedIntent = ProductUnitIntentSchema.parse(intent);
+    const correlationId = options.correlationId ?? this.correlationIdFactory();
+    const response = await this.apiClient.post<ProductUnitIntentApplicationResult>(
+      '/api/kernel/lifecycle/product-unit-intents',
+      {
+        headers: this.buildHeaders(correlationId),
+        body: {
+          intent: parsedIntent,
+          requestedAction: 'preview',
+          correlationId,
+          ...(options.providerMode === undefined ? {} : { providerMode: options.providerMode }),
+          ...(options.evidenceRefs === undefined ? {} : { evidenceRefs: options.evidenceRefs }),
+        },
+        schema: ProductUnitIntentApplicationResultSchema,
+      },
+    );
+    return response.data;
+  }
+
+  async applyProductUnitIntent(
+    intent: ProductUnitIntent,
+    options: ProductUnitIntentMutationOptions = {},
+  ): Promise<ProductUnitIntentApplicationResult> {
+    const parsedIntent = ProductUnitIntentSchema.parse(intent);
+    const correlationId = options.correlationId ?? this.correlationIdFactory();
+    const response = await this.apiClient.post<ProductUnitIntentApplicationResult>(
+      '/api/kernel/lifecycle/product-unit-intents',
+      {
+        headers: this.buildHeaders(correlationId),
+        body: {
+          intent: parsedIntent,
+          requestedAction: 'apply',
+          correlationId,
+          ...(options.providerMode === undefined ? {} : { providerMode: options.providerMode }),
+          ...(options.evidenceRefs === undefined ? {} : { evidenceRefs: options.evidenceRefs }),
+        },
+        schema: ProductUnitIntentApplicationResultSchema,
       },
     );
     return response.data;
