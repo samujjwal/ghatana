@@ -82,11 +82,11 @@ Important limitation:
 | Root governance checks | Existing but partial | Many scripts exist, but audit still finds UI/API/adapter gaps and hardcoded package versions. |
 | Canonical product registry | Existing and executable | Registry drives pnpm workspace and Gradle generated includes. |
 | Digital Marketing lifecycle pilot | Existing and closest to executable | Registry marks lifecycle enabled/ready and `kernel-product.yaml` is detailed. Runtime commands were not executed in this audit. |
-| PHR lifecycle | Existing but partial / planned | Registry has lifecycle config and gates, but lifecycle disabled. |
-| Finance lifecycle | Existing but partial / planned | Registry has large module graph and lifecycle metadata, but lifecycle disabled. |
-| FlashIt lifecycle | Existing but partial / planned | Mobile adapters and mobile artifact contracts are missing/disabled. |
-| Data Cloud platform-provider lifecycle | Target / partial | Surfaces and modules exist, but manifest/conformance false and provider-mode work remains. |
-| YAPPC platform-provider lifecycle | Target / partial | Surfaces/modules exist, but manifest/conformance false and creator/Kernel boundary still needs enforcement. |
+| Healthcare product lifecycle | Existing but partial / planned | Registry has lifecycle config and gates, but lifecycle disabled. |
+| Financial product lifecycle | Existing but partial / planned | Registry has large module graph and lifecycle metadata, but lifecycle disabled. |
+| Mobile product lifecycle | Existing but partial / planned | Mobile adapters and mobile artifact contracts are missing/disabled. |
+| Platform-provider product lifecycle (data platform) | Target / partial | Surfaces and modules exist, but manifest/conformance false and provider-mode work remains. |
+| Platform-provider product lifecycle (creator) | Target / partial | Surfaces/modules exist, but manifest/conformance false and creator/Kernel boundary still needs enforcement. |
 | Studio shell | Existing but partial | Navigation and routes exist; several routes are degraded/blocked/empty. |
 | Studio Lifecycle UI | Existing but partial | UI exists but product/env/provider/approval flows are incomplete. |
 | Kernel lifecycle planning | Existing but partial | Planner exists; strict config validation and structured fallback diagnostics are missing. |
@@ -244,11 +244,11 @@ Required fixes:
 Current state: **Planned / partial**
 
 Findings:
-- PHR, Finance, FlashIt, TutorPutor, Audio-Video, DCMAAR, Aura, Data Cloud, and YAPPC have useful registry entries and readiness reason codes.
+- Healthcare, financial, mobile, tutoring, audio-video, document management, AI agent, data platform, and creator products have useful registry entries and readiness reason codes.
 - They must remain disabled or partial until required adapters, gates, manifests, and product-specific evidence are executable.
-- FlashIt must not enable mobile lifecycle until Xcode iOS and Gradle Android adapters are execution-ready and mobile IPA/AAB artifacts exist.
-- Finance must not enable lifecycle until regulatory gates, promotion approval, multi-module build validation, and portal/operator/SDK adapters are proven.
-- PHR must not enable lifecycle until consent, PII classification, audit evidence, FHIR validation, and data sovereignty gates are proven.
+- Mobile products must not enable lifecycle until Xcode iOS and Gradle Android adapters are execution-ready and mobile IPA/AAB artifacts exist.
+- Financial products must not enable lifecycle until regulatory gates, promotion approval, multi-module build validation, and portal/operator/SDK adapters are proven.
+- Healthcare products must not enable lifecycle until consent, PII classification, audit evidence, FHIR validation, and data sovereignty gates are proven.
 
 ---
 
@@ -356,7 +356,7 @@ Findings:
 
 #### `products/data-cloud/extensions/kernel-bridge/build.gradle.kts`
 - Issue: Group is `com.ghatana.platform.shared-services`, which blurs ownership for a product-owned bridge.
-- Change: Rename group to product-owned namespace such as `com.ghatana.products.datacloud` or repo-standard product group.
+- Change: Rename group to product-owned namespace such as `com.ghatana.products.<product>` or repo-standard product group.
 - Tests: Gradle module check.
 - Validation: `./gradlew :products:data-cloud:extensions:kernel-bridge:check`.
 
@@ -504,7 +504,7 @@ pnpm check:kernel-boundaries
 Goal: Enable future products only when their required gates/adapters/manifests are executable.
 
 Exit criteria:
-- PHR, Finance, FlashIt, TutorPutor, DCMAAR, Audio-Video, Aura remain disabled until checks pass.
+- Healthcare, financial, mobile, tutoring, document management, audio-video, AI agent products remain disabled until checks pass.
 - Product shape matrix is authoritative.
 - Registry statuses match actual executable readiness.
 
