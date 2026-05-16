@@ -395,7 +395,7 @@ describe('ProductLifecyclePlanner', () => {
       },
     });
     await expect(new ProductLifecyclePlanner(disabledRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
-      'does not have lifecycle execution enabled',
+      'is not ready for lifecycle execution',
     );
 
     const missingPathRepoRoot = await createPlannerFixtureRepo({

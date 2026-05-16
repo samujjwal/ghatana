@@ -15,7 +15,14 @@ function makeJwt(payload: Record<string, unknown>, secret = TEST_SECRET): string
 }
 
 function validToken(payload: Record<string, unknown> = {}): string {
-  return makeJwt({ sub: 'agent-reviewer-1', tenantId: 'tenant-1', exp: Math.floor(Date.now() / 1000) + 3600, ...payload });
+  return makeJwt({
+    sub: 'agent-reviewer-1',
+    tenantId: 'tenant-1',
+    workspaceId: 'workspace-1',
+    projectId: 'project-1',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...payload,
+  });
 }
 
 const lifecycleActionRequest = {
@@ -157,7 +164,7 @@ describe('POST /api/v1/agentic/lifecycle-actions', () => {
         authorization: `Bearer ${validToken()}`,
         'x-tenant-id': 'tenant-1',
       },
-      payload: { ...lifecycleActionRequest, proposedPlanRef: 'pnpm test' },
+      payload: lifecycleActionRequest,
     });
 
     expect(res.statusCode).toBe(400);

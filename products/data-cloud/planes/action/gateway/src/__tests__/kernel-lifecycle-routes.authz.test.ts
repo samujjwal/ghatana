@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { createHmac } from "node:crypto";
 import { buildApp } from "../app.js";
 import type { KernelLifecycleApiHandlers } from "@ghatana/kernel-lifecycle";
+
+const TEST_SECRET = "test-secret";
 
 describe("Kernel lifecycle routes authz", () => {
   it("requires workspace and project scope for lifecycle operations", async () => {
     const mockKernelApi = createMockKernelApi();
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -33,7 +36,7 @@ describe("Kernel lifecycle routes authz", () => {
   it("allows lifecycle operations with workspace and project scope from headers", async () => {
     const mockKernelApi = createMockKernelApi();
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -58,7 +61,7 @@ describe("Kernel lifecycle routes authz", () => {
   it("allows lifecycle operations with workspace and project scope from JWT", async () => {
     const mockKernelApi = createMockKernelApi();
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -85,7 +88,7 @@ describe("Kernel lifecycle routes authz", () => {
   it("passes user ID and roles from JWT to Kernel API request headers", async () => {
     const mockKernelApi = createMockKernelApi();
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -115,7 +118,7 @@ describe("Kernel lifecycle routes authz", () => {
   it("rejects requests when JWT tenant does not match header tenant", async () => {
     const mockKernelApi = createMockKernelApi();
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -160,9 +163,10 @@ function createMockKernelApi(): KernelLifecycleApiHandlers {
 }
 
 function createTestJwt(payload: Record<string, unknown>): string {
-  const header = { alg: "HS256" };
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url");
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = "test-signature";
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const encodedPayload = Buffer.from(
+    JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, ...payload }),
+  ).toString("base64url");
+  const signature = createHmac("sha256", TEST_SECRET).update(`${header}.${encodedPayload}`).digest("base64url");
+  return `${header}.${encodedPayload}.${signature}`;
 }

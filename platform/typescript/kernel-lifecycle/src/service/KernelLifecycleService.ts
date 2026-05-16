@@ -37,6 +37,7 @@ import {
   ProviderUnavailableError,
 } from './KernelLifecycleErrors.js';
 import { ManifestPointerStore, type ManifestPointers } from './ManifestPointerStore.js';
+import { ProductLifecycleNotReadyError } from '../planning/ProductLifecyclePlanner.js';
 
 export interface KernelLifecycleLogger {
   info(message: string, meta?: Record<string, unknown>): void;
@@ -147,9 +148,9 @@ export class KernelLifecycleService {
       this.repoRoot,
       options.outputRoot ?? path.join('.kernel', 'out'),
     );
-    this.registryProvider = options.registryProvider ?? new GhatanaFileRegistryProvider({
+    this.registryProvider = options.registryProvider ?? (new GhatanaFileRegistryProvider({
       registryPath: path.join(this.repoRoot, 'config', 'canonical-product-registry.json'),
-    });
+    }) as unknown as RegistryProvider);
     this.planner = options.planner ?? new ProductLifecyclePlanner(this.repoRoot, undefined, {
       ...this.providerContext,
       registryProvider: this.registryProvider,
@@ -200,7 +201,23 @@ export class KernelLifecycleService {
       providerMode: options.providerMode ?? this.providerContext.mode,
       correlationId: options.correlationId,
     });
-    const plan = await this.planner.plan(productUnitId, phase, this.planOptions(options));
+    let plan: ProductLifecyclePlan;
+    try {
+      plan = await this.planner.plan(productUnitId, phase, this.planOptions(options));
+    } catch (error) {
+      if (error instanceof ProductLifecycleNotReadyError) {
+        throw new KernelLifecycleError({
+          reasonCode: error.reasonCode,
+          message: error.message,
+          ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
+          productUnitId,
+          phase,
+          safeDetails: error.toSafeDetails(),
+          cause: error,
+        });
+      }
+      throw error;
+    }
     await this.writeJson(path.join(plan.outputDirectory, 'lifecycle-plan.json'), this.safePlan(plan));
     await this.pointerStore.writeLatestPointers(plan.productId, plan.phase, {
       lifecyclePlan: path.join(plan.outputDirectory, 'lifecycle-plan.json'),

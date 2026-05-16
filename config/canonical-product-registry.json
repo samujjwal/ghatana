@@ -149,7 +149,8 @@
           "staging",
           "prod"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "finance": {
       "id": "finance",
@@ -349,7 +350,8 @@
           "staging",
           "prod"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "digital-marketing": {
       "id": "digital-marketing",
@@ -494,7 +496,8 @@
         "supported": [
           "local"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": true
     },
     "flashit": {
       "id": "flashit",
@@ -664,7 +667,8 @@
           "staging",
           "prod"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "data-cloud": {
       "id": "data-cloud",
@@ -784,7 +788,8 @@
           "products/data-cloud/extensions/kernel-bridge",
           "products/data-cloud/planes/action/kernel-bridge"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "yappc": {
       "id": "yappc",
@@ -898,7 +903,8 @@
           "products/yappc/kernel-bridge",
           "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "audio-video": {
       "id": "audio-video",
@@ -976,7 +982,8 @@
         "evidenceRefs": [
           "products/audio-video/docs-generated/01-vision-plan-requirements/02-capability-map.md"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "dcmaar": {
       "id": "dcmaar",
@@ -1050,7 +1057,8 @@
         "evidenceRefs": [
           "products/dcmaar/libs/java/guardian-threat-service"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "tutorputor": {
       "id": "tutorputor",
@@ -1197,7 +1205,8 @@
           "staging",
           "prod"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "aura": {
       "id": "aura",
@@ -1272,7 +1281,8 @@
         "evidenceRefs": [
           "products/aura/platform/api"
         ]
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "software-org": {
       "id": "software-org",
@@ -1324,7 +1334,8 @@
         "created": "2026-03-19",
         "documentation": "products/software-org/README.md",
         "status": "active"
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "virtual-org": {
       "id": "virtual-org",
@@ -1375,7 +1386,8 @@
         "created": "2026-03-19",
         "documentation": "products/virtual-org/README.md",
         "status": "active"
-      }
+      },
+      "lifecycleExecutionAllowed": false
     },
     "security-gateway": {
       "id": "security-gateway",
@@ -1419,7 +1431,8 @@
         "created": "2026-03-19",
         "documentation": "products/security-gateway/README.md",
         "status": "active"
-      }
+      },
+      "lifecycleExecutionAllowed": false
     }
   }
 }

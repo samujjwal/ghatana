@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   type KernelLifecycleProviderContext,
   type LifecycleProviderWriteOptions,
+  LifecycleArtifactManifestRefSchema,
+  LifecycleHealthSnapshotRefSchema,
+  LifecycleMemoryRecordSchema,
+  LifecycleProvenanceRecordSchema,
+  LifecycleRuntimeTruthSnapshotSchema,
   requireLifecycleProviderSet,
   validateKernelLifecycleProviderContext,
   validateProviderBackingForMode,
@@ -86,6 +91,79 @@ describe("LifecycleProviders", () => {
         ["events", "artifacts", "health"]
       )
     ).toThrow(/artifacts, health/);
+  });
+
+  it("exports canonical provider record schemas", () => {
+    expect(
+      LifecycleArtifactManifestRefSchema.parse({
+        productUnitId: "product-unit-1",
+        runId: "run-1",
+        manifestPath: ".kernel/out/run-1/artifact-manifest.json",
+        artifactCount: 3,
+        correlationId: "corr-1",
+        digestStatus: "complete",
+      }),
+    ).toMatchObject({
+      productUnitId: "product-unit-1",
+      artifactCount: 3,
+    });
+
+    expect(
+      LifecycleHealthSnapshotRefSchema.parse({
+        productUnitId: "product-unit-1",
+        runId: "run-1",
+        status: "healthy",
+        snapshotPath: ".kernel/out/run-1/health.json",
+        snapshotAt: "2026-01-01T00:00:00.000Z",
+        correlationId: "corr-1",
+      }),
+    ).toMatchObject({
+      status: "healthy",
+      snapshotPath: ".kernel/out/run-1/health.json",
+    });
+
+    expect(
+      LifecycleProvenanceRecordSchema.parse({
+        provenanceId: "prov-1",
+        productUnitId: "product-unit-1",
+        runId: "run-1",
+        source: "kernel-lifecycle",
+        evidenceRefs: ["evidence://run-1"],
+        recordedAt: "2026-01-01T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      provenanceId: "prov-1",
+      source: "kernel-lifecycle",
+    });
+
+    expect(
+      LifecycleMemoryRecordSchema.parse({
+        memoryId: "mem-1",
+        productUnitId: "product-unit-1",
+        runId: "run-1",
+        kind: "runtime-truth",
+        contentRef: "memory://run-1",
+        recordedAt: "2026-01-01T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      memoryId: "mem-1",
+      kind: "runtime-truth",
+    });
+
+    expect(
+      LifecycleRuntimeTruthSnapshotSchema.parse({
+        productUnitId: "product-unit-1",
+        runId: "run-1",
+        phase: "build",
+        status: "healthy",
+        observedAt: "2026-01-01T00:00:00.000Z",
+        evidenceRefs: ["evidence://run-1"],
+        providerMode: "platform",
+      }),
+    ).toMatchObject({
+      phase: "build",
+      providerMode: "platform",
+    });
   });
 
   describe("validateProviderBackingForMode", () => {

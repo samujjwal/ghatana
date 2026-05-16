@@ -80,7 +80,10 @@ export {
   type KernelLifecycleErrorOptions,
 } from './service/KernelLifecycleErrors.js';
 export {
+  FAILURE_REASON_CODES,
   KernelLifecycleApiHandlers,
+  LIFECYCLE_RUN_STATUSES,
+  PRODUCT_LIFECYCLE_PHASES,
   createKernelLifecycleApiHandlers,
   type KernelLifecycleApiHandlersOptions,
   type KernelLifecycleApiRequest,

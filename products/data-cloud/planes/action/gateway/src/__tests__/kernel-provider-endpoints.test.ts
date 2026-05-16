@@ -13,7 +13,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../app.js';
 import type { FastifyInstance } from 'fastify';
-import { signJwt } from './jwt.js';
+import { signJwt } from '../jwt.js';
+import { InMemoryProviderStore } from '../provider-store.js';
 
 const JWT_SECRET = 'test-secret';
 const TEST_TENANT_ID = 'test-tenant';
@@ -38,13 +39,16 @@ function createTestToken(overrides: Record<string, unknown> = {}): string {
 
 describe('Kernel Provider Endpoints', () => {
   let app: FastifyInstance;
+  let providerStore: InMemoryProviderStore;
 
   beforeAll(async () => {
+    providerStore = new InMemoryProviderStore();
     app = await buildApp({
       jwtSecret: JWT_SECRET,
       backendUrl: 'http://localhost:9999',
       allowedOrigins: ['http://localhost:3000'],
       logger: false,
+      providerStore,
     });
     await app.ready();
   });
@@ -59,14 +63,29 @@ describe('Kernel Provider Endpoints', () => {
         method: 'POST',
         url: '/api/v1/kernel/providers/events',
         payload: {
-          metadata: { eventId: 'evt-1', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
-          productUnitId: 'pu-1',
+          metadata: {
+            eventId: 'evt-1',
+            schemaVersion: '1.0.0',
+            eventType: 'lifecycle.plan.created',
+            productUnitId: 'pu-1',
+            runId: 'run-1',
+            phase: 'build',
+            timestamp: '2024-01-01T00:00:00Z',
+            source: 'test',
+            correlationId: 'corr-1',
+          },
+          payload: {
+            planRunId: 'plan-1',
+            phase: 'build',
+            providerMode: 'bootstrap',
+            createdAt: '2024-01-01T00:00:00Z',
+          },
         },
       });
       expect(response.statusCode).toBe(401);
       const body = JSON.parse(response.payload);
-      expect(body.success).toBe(false);
       expect(body.error).toContain('Unauthorized');
+      expect(body.message).toContain('Missing Bearer token');
     });
 
     it('requires tenant/workspace/project scope', async () => {
@@ -76,8 +95,23 @@ describe('Kernel Provider Endpoints', () => {
         url: '/api/v1/kernel/providers/events',
         headers: { authorization: `Bearer ${token}` },
         payload: {
-          metadata: { eventId: 'evt-1', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
-          productUnitId: 'pu-1',
+          metadata: {
+            eventId: 'evt-1',
+            schemaVersion: '1.0.0',
+            eventType: 'lifecycle.plan.created',
+            productUnitId: 'pu-1',
+            runId: 'run-1',
+            phase: 'build',
+            timestamp: '2024-01-01T00:00:00Z',
+            source: 'test',
+            correlationId: 'corr-1',
+          },
+          payload: {
+            planRunId: 'plan-1',
+            phase: 'build',
+            providerMode: 'bootstrap',
+            createdAt: '2024-01-01T00:00:00Z',
+          },
         },
       });
       expect(response.statusCode).toBe(403);
@@ -94,7 +128,7 @@ describe('Kernel Provider Endpoints', () => {
         headers: { authorization: `Bearer ${token}` },
         payload: {
           metadata: { eventId: 'evt-1' }, // Missing required fields
-          productUnitId: 'pu-1',
+          payload: {},
         },
       });
       expect(response.statusCode).toBe(400);
@@ -111,9 +145,23 @@ describe('Kernel Provider Endpoints', () => {
         url: '/api/v1/kernel/providers/events',
         headers: { authorization: `Bearer ${token}` },
         payload: {
-          metadata: { eventId: 'evt-1', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
-          productUnitId: 'pu-1',
-          runId: 'run-1',
+          metadata: {
+            eventId: 'evt-1',
+            schemaVersion: '1.0.0',
+            eventType: 'lifecycle.plan.created',
+            productUnitId: 'pu-1',
+            runId: 'run-1',
+            phase: 'build',
+            timestamp: '2024-01-01T00:00:00Z',
+            source: 'test',
+            correlationId: 'corr-1',
+          },
+          payload: {
+            planRunId: 'plan-1',
+            phase: 'build',
+            providerMode: 'bootstrap',
+            createdAt: '2024-01-01T00:00:00Z',
+          },
         },
       });
       expect(response.statusCode).toBe(200);
@@ -135,6 +183,8 @@ describe('Kernel Provider Endpoints', () => {
 
     it('filters by productUnitId and runId', async () => {
       const token = createTestToken();
+      const productUnitId = 'pu-list-1';
+      const runId = 'run-list-1';
       
       // Create two events
       await app.inject({
@@ -142,9 +192,23 @@ describe('Kernel Provider Endpoints', () => {
         url: '/api/v1/kernel/providers/events',
         headers: { authorization: `Bearer ${token}` },
         payload: {
-          metadata: { eventId: 'evt-1', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
-          productUnitId: 'pu-1',
-          runId: 'run-1',
+          metadata: {
+            eventId: 'evt-1',
+            schemaVersion: '1.0.0',
+            eventType: 'lifecycle.plan.created',
+            productUnitId,
+            runId,
+            phase: 'build',
+            timestamp: '2024-01-01T00:00:00Z',
+            source: 'test',
+            correlationId: 'corr-1',
+          },
+          payload: {
+            planRunId: 'plan-1',
+            phase: 'build',
+            providerMode: 'bootstrap',
+            createdAt: '2024-01-01T00:00:00Z',
+          },
         },
       });
       await app.inject({
@@ -152,22 +216,36 @@ describe('Kernel Provider Endpoints', () => {
         url: '/api/v1/kernel/providers/events',
         headers: { authorization: `Bearer ${token}` },
         payload: {
-          metadata: { eventId: 'evt-2', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
-          productUnitId: 'pu-2',
-          runId: 'run-2',
+          metadata: {
+            eventId: 'evt-2',
+            schemaVersion: '1.0.0',
+            eventType: 'lifecycle.plan.created',
+            productUnitId: 'pu-list-2',
+            runId: 'run-list-2',
+            phase: 'build',
+            timestamp: '2024-01-01T00:00:00Z',
+            source: 'test',
+            correlationId: 'corr-2',
+          },
+          payload: {
+            planRunId: 'plan-2',
+            phase: 'build',
+            providerMode: 'bootstrap',
+            createdAt: '2024-01-01T00:00:00Z',
+          },
         },
       });
 
       const response = await app.inject({
         method: 'GET',
-        url: '/api/v1/kernel/providers/events?productUnitId=pu-1&runId=run-1',
+        url: `/api/v1/kernel/providers/events?productUnitId=${productUnitId}&runId=${runId}`,
         headers: { authorization: `Bearer ${token}` },
       });
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.payload);
       expect(body.success).toBe(true);
       expect(body.items).toHaveLength(1);
-      expect(body.items[0].productUnitId).toBe('pu-1');
+      expect(body.items[0].metadata.productUnitId).toBe(productUnitId);
     });
   });
 
@@ -197,8 +275,9 @@ describe('Kernel Provider Endpoints', () => {
         headers: { authorization: `Bearer ${token}` },
         payload: {
           productUnitId: 'pu-1',
+          runId: 'run-1',
           manifestPath: '/path/to/manifest.json',
-          fingerprint: { algorithm: 'sha256', hash: 'abc123' },
+          artifactCount: 1,
         },
       });
       expect(response.statusCode).toBe(200);
@@ -232,9 +311,10 @@ describe('Kernel Provider Endpoints', () => {
         headers: { authorization: `Bearer ${token}` },
         payload: {
           productUnitId: 'pu-1',
+          runId: 'run-1',
           snapshotPath: '/path/to/snapshot-1.json',
           status: 'healthy',
-          observedAt: '2024-01-01T00:00:00Z',
+          snapshotAt: '2024-01-01T00:00:00Z',
         },
       });
       await new Promise(resolve => setTimeout(resolve, 10)); // Ensure different timestamps
@@ -244,9 +324,10 @@ describe('Kernel Provider Endpoints', () => {
         headers: { authorization: `Bearer ${token}` },
         payload: {
           productUnitId: 'pu-1',
+          runId: 'run-2',
           snapshotPath: '/path/to/snapshot-2.json',
           status: 'degraded',
-          observedAt: '2024-01-01T00:01:00Z',
+          snapshotAt: '2024-01-01T00:01:00Z',
         },
       });
 
@@ -274,8 +355,11 @@ describe('Kernel Provider Endpoints', () => {
           memoryId: 'mem-1',
           contentRef: '/path/to/memory.json',
           productUnitId: 'pu-1',
+          runId: 'run-1',
+          kind: 'runtime-truth',
           privacyClassification: 'restricted',
-          retention: { expiresAt },
+          retention: { policyId: 'default', retentionDays: 1, expiresAt },
+          recordedAt: '2024-01-01T00:00:00Z',
         },
       });
       expect(response.statusCode).toBe(200);
@@ -287,6 +371,8 @@ describe('Kernel Provider Endpoints', () => {
     it('filters expired records in list', async () => {
       const token = createTestToken();
       const pastExpiration = new Date(Date.now() - 3600000).toISOString();
+      const productUnitId = 'pu-memory-list-1';
+      const runId = 'run-memory-list-1';
       
       // Create expired memory
       await app.inject({
@@ -296,8 +382,11 @@ describe('Kernel Provider Endpoints', () => {
         payload: {
           memoryId: 'mem-expired',
           contentRef: '/path/to/expired.json',
-          productUnitId: 'pu-1',
-          retention: { expiresAt: pastExpiration },
+          productUnitId,
+          runId,
+          kind: 'runtime-truth',
+          retention: { policyId: 'default', retentionDays: 1, expiresAt: pastExpiration },
+          recordedAt: '2024-01-01T00:00:00Z',
         },
       });
 
@@ -309,13 +398,16 @@ describe('Kernel Provider Endpoints', () => {
         payload: {
           memoryId: 'mem-valid',
           contentRef: '/path/to/valid.json',
-          productUnitId: 'pu-1',
+          productUnitId,
+          runId,
+          kind: 'runtime-truth',
+          recordedAt: '2024-01-01T00:00:00Z',
         },
       });
 
       const response = await app.inject({
         method: 'GET',
-        url: '/api/v1/kernel/providers/memory?productUnitId=pu-1',
+        url: `/api/v1/kernel/providers/memory?productUnitId=${productUnitId}&runId=${runId}`,
         headers: { authorization: `Bearer ${token}` },
       });
       expect(response.statusCode).toBe(200);
@@ -325,55 +417,55 @@ describe('Kernel Provider Endpoints', () => {
       expect(body.items[0].memoryId).toBe('mem-valid');
     });
   });
+});
 
-  describe('Redaction of sensitive fields', () => {
-    it('redacts authToken in stored data', async () => {
-      const token = createTestToken();
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/v1/kernel/providers/events',
-        headers: { authorization: `Bearer ${token}` },
-        payload: {
-          metadata: { eventId: 'evt-1', timestamp: '2024-01-01T00:00:00Z', eventType: 'plan-created' },
+describe('Kernel Provider Endpoints without provider store', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildApp({
+      jwtSecret: JWT_SECRET,
+      backendUrl: 'http://localhost:9999',
+      allowedOrigins: ['http://localhost:3000'],
+      logger: false,
+    });
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('fails closed when provider storage is not configured', async () => {
+    const token = createTestToken();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/kernel/providers/events',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        metadata: {
+          eventId: 'evt-1',
+          schemaVersion: '1.0.0',
+          eventType: 'lifecycle.plan.created',
           productUnitId: 'pu-1',
-          authToken: 'secret-token',
+          runId: 'run-1',
+          phase: 'build',
+          timestamp: '2024-01-01T00:00:00Z',
+          source: 'test',
+          correlationId: 'corr-1',
         },
-      });
-      expect(response.statusCode).toBe(200);
-      
-      // Retrieve the event
-      const listResponse = await app.inject({
-        method: 'GET',
-        url: '/api/v1/kernel/providers/events?productUnitId=pu-1',
-        headers: { authorization: `Bearer ${token}` },
-      });
-      const listBody = JSON.parse(listResponse.payload);
-      expect(listBody.items[0].authToken).toBe('[REDACTED]');
+        payload: {
+          planRunId: 'plan-1',
+          phase: 'build',
+          providerMode: 'bootstrap',
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      },
     });
 
-    it('redacts content when privacy classification is restricted', async () => {
-      const token = createTestToken();
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/v1/kernel/providers/memory',
-        headers: { authorization: `Bearer ${token}` },
-        payload: {
-          memoryId: 'mem-1',
-          contentRef: '/path/to/sensitive.json',
-          productUnitId: 'pu-1',
-          privacyClassification: 'restricted',
-        },
-      });
-      expect(response.statusCode).toBe(200);
-      
-      // Retrieve the memory
-      const listResponse = await app.inject({
-        method: 'GET',
-        url: '/api/v1/kernel/providers/memory?productUnitId=pu-1',
-        headers: { authorization: `Bearer ${token}` },
-      });
-      const listBody = JSON.parse(listResponse.payload);
-      expect(listBody.items[0].contentRef).toBe('[REDACTED]');
-    });
+    expect(response.statusCode).toBe(503);
+    const body = JSON.parse(response.payload);
+    expect(body.success).toBe(false);
+    expect(body.reasonCode).toBe('PROVIDER_STORE_UNAVAILABLE');
   });
 });

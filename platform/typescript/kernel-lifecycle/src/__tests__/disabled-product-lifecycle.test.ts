@@ -26,7 +26,7 @@ describe('PHR disabled lifecycle plan', () => {
   it('should reject lifecycle execution for PHR', async () => {
     const planner = new ProductLifecyclePlanner(REPO_ROOT);
     await expect(planner.loadProductConfig('phr')).rejects.toThrow(
-      'does not have lifecycle execution enabled',
+      'is not ready for lifecycle execution',
     );
   });
 
@@ -57,7 +57,7 @@ describe('Finance disabled lifecycle plan', () => {
   it('should reject lifecycle execution for Finance', async () => {
     const planner = new ProductLifecyclePlanner(REPO_ROOT);
     await expect(planner.loadProductConfig('finance')).rejects.toThrow(
-      'does not have lifecycle execution enabled',
+      'is not ready for lifecycle execution',
     );
   });
 
@@ -87,7 +87,7 @@ describe('FlashIt disabled lifecycle plan', () => {
   it('should reject lifecycle execution for FlashIt', async () => {
     const planner = new ProductLifecyclePlanner(REPO_ROOT);
     await expect(planner.loadProductConfig('flashit')).rejects.toThrow(
-      'does not have lifecycle execution enabled',
+      'is not ready for lifecycle execution',
     );
   });
 

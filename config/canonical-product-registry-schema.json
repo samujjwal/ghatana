@@ -30,7 +30,8 @@
         "type",
         "metadata",
         "gradleModules",
-        "surfaces"
+        "surfaces",
+        "lifecycleExecutionAllowed"
       ],
       "properties": {
         "id": {
@@ -221,8 +222,24 @@
           "then": {
             "required": ["lifecycleProfile", "lifecycleConfigPath", "lifecycle", "toolchain", "artifacts", "deployment", "environments"],
             "properties": {
+              "lifecycleExecutionAllowed": { "const": true },
               "lifecycleProfile": { "type": "string", "minLength": 1 },
               "lifecycleConfigPath": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lifecycleStatus": {
+                "enum": ["disabled", "planned", "partial"]
+              }
+            },
+            "required": ["lifecycleStatus"]
+          },
+          "then": {
+            "properties": {
+              "lifecycleExecutionAllowed": { "const": false }
             }
           }
         },

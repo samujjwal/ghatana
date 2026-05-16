@@ -60,6 +60,38 @@ export interface ProductLifecyclePlannerLogger {
   warn(message: string, meta?: Record<string, unknown>): void;
 }
 
+export class ProductLifecycleNotReadyError extends Error {
+  readonly reasonCode = 'not-ready';
+
+  constructor(
+    readonly productId: string,
+    readonly lifecycleStatus: string,
+    readonly lifecycleExecutionAllowed: boolean | undefined,
+    readonly readinessReasonCodes: readonly string[] = [],
+    readonly readinessRequiredGates: readonly string[] = [],
+  ) {
+    super(
+      `Product "${productId}" is not ready for lifecycle execution: ` +
+        `lifecycleStatus="${lifecycleStatus}", lifecycleExecutionAllowed=${String(lifecycleExecutionAllowed)}.`,
+    );
+    this.name = 'ProductLifecycleNotReadyError';
+  }
+
+  toSafeDetails(): Record<string, unknown> {
+    return {
+      productId: this.productId,
+      lifecycleStatus: this.lifecycleStatus,
+      lifecycleExecutionAllowed: this.lifecycleExecutionAllowed,
+      ...(this.readinessReasonCodes.length > 0
+        ? { readinessReasonCodes: this.readinessReasonCodes }
+        : {}),
+      ...(this.readinessRequiredGates.length > 0
+        ? { readinessRequiredGates: this.readinessRequiredGates }
+        : {}),
+    };
+  }
+}
+
 const fallbackPlannerLogger: ProductLifecyclePlannerLogger = {
   warn: () => undefined,
 };
@@ -144,12 +176,41 @@ export class ProductLifecyclePlanner {
 
     const lifecycleStatus = product.lifecycleStatus;
     const lifecycle = (product.lifecycle ?? {}) as { enabled?: boolean };
+    const lifecycleExecutionAllowed =
+      typeof product.lifecycleExecutionAllowed === 'boolean'
+        ? product.lifecycleExecutionAllowed
+        : undefined;
+    const lifecycleReadiness =
+      typeof product.lifecycleReadiness === 'object' && product.lifecycleReadiness !== null
+        ? (product.lifecycleReadiness as {
+            readonly reasonCodes?: readonly string[];
+            readonly requiredGates?: readonly string[];
+          })
+        : undefined;
+    const readinessReasonCodes = Array.isArray(lifecycleReadiness?.reasonCodes)
+      ? lifecycleReadiness.reasonCodes.filter((value): value is string => typeof value === 'string')
+      : [];
+    const readinessRequiredGates = Array.isArray(lifecycleReadiness?.requiredGates)
+      ? lifecycleReadiness.requiredGates.filter((value): value is string => typeof value === 'string')
+      : [];
+
+    if (lifecycleExecutionAllowed === false) {
+      throw new ProductLifecycleNotReadyError(
+        productId,
+        typeof lifecycleStatus === 'string' ? lifecycleStatus : 'unknown',
+        lifecycleExecutionAllowed,
+        readinessReasonCodes,
+        readinessRequiredGates,
+      );
+    }
 
     if (lifecycleStatus !== 'enabled' || lifecycle.enabled !== true) {
-      throw new Error(
-        `Product "${productId}" does not have lifecycle execution enabled. ` +
-          `lifecycleStatus="${String(lifecycleStatus)}", lifecycle.enabled=${String(lifecycle.enabled)}. ` +
-          'Set lifecycleStatus: "enabled" and lifecycle.enabled: true to proceed.',
+      throw new ProductLifecycleNotReadyError(
+        productId,
+        typeof lifecycleStatus === 'string' ? lifecycleStatus : 'unknown',
+        lifecycleExecutionAllowed,
+        readinessReasonCodes,
+        readinessRequiredGates,
       );
     }
 

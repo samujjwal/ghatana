@@ -16,6 +16,8 @@
 
 package com.ghatana.yappc.domain.pageartifact;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Exception thrown when a page artifact save detects a version conflict.
  * <p>
@@ -48,5 +50,11 @@ public final class PageArtifactConflictException extends RuntimeException {
 
     public String remoteVersion() {
         return remoteVersion;
+    }
+
+    @Override
+    @JsonIgnore
+    public Throwable getCause() {
+        return super.getCause();
     }
 }

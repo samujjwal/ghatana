@@ -21,23 +21,29 @@ export interface ProviderRecord {
   readonly createdBy: string;
 }
 
+export interface ProviderScope {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
+}
+
 export interface ProviderStorePort {
   save(record: ProviderRecord): Promise<ProviderRecord>;
-  findByRef(tenantId: string, providerRef: string): Promise<ProviderRecord | null>;
+  findByRef(scope: ProviderScope, providerRef: string): Promise<ProviderRecord | null>;
   findLatestByProviderType(
-    tenantId: string,
+    scope: ProviderScope,
     providerType: string,
     filters: Record<string, unknown>
   ): Promise<ProviderRecord | null>;
   listByProviderType(
-    tenantId: string,
+    scope: ProviderScope,
     providerType: string,
     filters: Record<string, unknown>,
     limit: number
   ): Promise<readonly ProviderRecord[]>;
-  deleteExpired(tenantId: string): Promise<number>;
-  deleteByRef(tenantId: string, providerRef: string): Promise<boolean>;
-  countByProviderType(tenantId: string, providerType: string): Promise<number>;
+  deleteExpired(scope: ProviderScope): Promise<number>;
+  deleteByRef(scope: ProviderScope, providerRef: string): Promise<boolean>;
+  countByProviderType(scope: ProviderScope, providerType: string): Promise<number>;
 }
 
 /**
@@ -51,49 +57,48 @@ export class InMemoryProviderStore implements ProviderStorePort {
     return record;
   }
 
-  async findByRef(tenantId: string, providerRef: string): Promise<ProviderRecord | null> {
+  async findByRef(scope: ProviderScope, providerRef: string): Promise<ProviderRecord | null> {
     const record = this.storage.get(providerRef);
     if (!record) return null;
-    if (record.tenantId !== tenantId) return null;
+    if (!this.matchesScope(record, scope)) return null;
     if (this.isExpired(record)) return null;
     return record;
   }
 
   async findLatestByProviderType(
-    tenantId: string,
+    scope: ProviderScope,
     providerType: string,
     filters: Record<string, unknown>
   ): Promise<ProviderRecord | null> {
-    const records = await this.listByProviderType(tenantId, providerType, filters, 100);
+    const records = await this.listByProviderType(scope, providerType, filters, 100);
     return records.length > 0 ? records[0] : null;
   }
 
   async listByProviderType(
-    tenantId: string,
+    scope: ProviderScope,
     providerType: string,
     filters: Record<string, unknown>,
     limit: number
   ): Promise<readonly ProviderRecord[]> {
     const result: ProviderRecord[] = [];
     for (const record of this.storage.values()) {
-      if (record.tenantId !== tenantId) continue;
+      if (!this.matchesScope(record, scope)) continue;
       if (record.providerType !== providerType) continue;
       if (this.isExpired(record)) continue;
       if (this.matchesFilters(record.data, filters)) {
         result.push(record);
-        if (result.length >= limit) break;
       }
     }
     // Sort by creation time descending (newest first)
     result.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return result;
+    return result.slice(0, limit);
   }
 
-  async deleteExpired(tenantId: string): Promise<number> {
+  async deleteExpired(scope: ProviderScope): Promise<number> {
     let count = 0;
     const now = new Date().toISOString();
     for (const [ref, record] of this.storage.entries()) {
-      if (record.tenantId === tenantId && record.expiresAt && record.expiresAt < now) {
+      if (this.matchesScope(record, scope) && record.expiresAt && record.expiresAt < now) {
         this.storage.delete(ref);
         count++;
       }
@@ -101,18 +106,18 @@ export class InMemoryProviderStore implements ProviderStorePort {
     return count;
   }
 
-  async deleteByRef(tenantId: string, providerRef: string): Promise<boolean> {
+  async deleteByRef(scope: ProviderScope, providerRef: string): Promise<boolean> {
     const record = this.storage.get(providerRef);
     if (!record) return false;
-    if (record.tenantId !== tenantId) return false;
+    if (!this.matchesScope(record, scope)) return false;
     this.storage.delete(providerRef);
     return true;
   }
 
-  async countByProviderType(tenantId: string, providerType: string): Promise<number> {
+  async countByProviderType(scope: ProviderScope, providerType: string): Promise<number> {
     let count = 0;
     for (const record of this.storage.values()) {
-      if (record.tenantId === tenantId && record.providerType === providerType && !this.isExpired(record)) {
+      if (this.matchesScope(record, scope) && record.providerType === providerType && !this.isExpired(record)) {
         count++;
       }
     }
@@ -127,12 +132,25 @@ export class InMemoryProviderStore implements ProviderStorePort {
     return record.expiresAt !== undefined && new Date(record.expiresAt) < new Date();
   }
 
+  private matchesScope(record: ProviderRecord, scope: ProviderScope): boolean {
+    return (
+      record.tenantId === scope.tenantId &&
+      record.workspaceId === scope.workspaceId &&
+      record.projectId === scope.projectId
+    );
+  }
+
   private matchesFilters(data: unknown, filters: Record<string, unknown>): boolean {
     if (Object.keys(filters).length === 0) return true;
     if (typeof data !== 'object' || data === null) return false;
     const record = data as Record<string, unknown>;
     for (const [key, value] of Object.entries(filters)) {
-      if (record[key] !== value) return false;
+      const directValue = record[key];
+      const metadataValue =
+        typeof record.metadata === 'object' && record.metadata !== null
+          ? (record.metadata as Record<string, unknown>)[key]
+          : undefined;
+      if (directValue !== value && metadataValue !== value) return false;
     }
     return true;
   }

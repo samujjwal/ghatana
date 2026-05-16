@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { createHmac } from "node:crypto";
 import { buildApp } from "../app.js";
 import type { KernelLifecycleApiHandlers } from "@ghatana/kernel-lifecycle";
+
+const TEST_SECRET = "test-secret";
 
 describe("Kernel lifecycle routes error mapping", () => {
   it("returns 503 when kernelLifecycleApi is not configured", async () => {
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: undefined,
@@ -30,7 +33,7 @@ describe("Kernel lifecycle routes error mapping", () => {
   it("returns 500 when Kernel API handler throws unexpected error", async () => {
     const mockKernelApi = createMockKernelApiThatThrows(new Error("Unexpected error"));
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -64,7 +67,7 @@ describe("Kernel lifecycle routes error mapping", () => {
       },
     });
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -91,7 +94,7 @@ describe("Kernel lifecycle routes error mapping", () => {
     const mockKernelApi = createMockKernelApi();
     const metrics = await import("../metrics.js").then((m) => new m.GatewayMetrics());
     const app = await buildApp({
-      jwtSecret: "test-secret",
+      jwtSecret: TEST_SECRET,
       backendUrl: "http://localhost:8080",
       allowedOrigins: ["http://localhost:3000"],
       kernelLifecycleApi: mockKernelApi,
@@ -155,7 +158,7 @@ function createMockKernelApiWithError(errorResponse: {
 }): KernelLifecycleApiHandlers {
   return {
     listProductUnits: async () => errorResponse,
-    getProductUnit: async () => ({ statusCode: 200, headers: {}, body: {} }),
+    getProductUnit: async () => errorResponse,
     createLifecyclePlan: async () => ({ statusCode: 201, headers: {}, body: {} }),
     executeLifecyclePhase: async () => ({ statusCode: 200, headers: {}, body: {} }),
     listLifecycleRuns: async () => ({ statusCode: 200, headers: {}, body: [] }),
@@ -170,9 +173,10 @@ function createMockKernelApiWithError(errorResponse: {
 }
 
 function createTestJwt(payload: Record<string, unknown>): string {
-  const header = { alg: "HS256" };
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url");
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = "test-signature";
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const encodedPayload = Buffer.from(
+    JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, ...payload }),
+  ).toString("base64url");
+  const signature = createHmac("sha256", TEST_SECRET).update(`${header}.${encodedPayload}`).digest("base64url");
+  return `${header}.${encodedPayload}.${signature}`;
 }

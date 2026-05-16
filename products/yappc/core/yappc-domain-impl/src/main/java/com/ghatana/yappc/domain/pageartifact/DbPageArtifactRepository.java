@@ -443,6 +443,14 @@ public final class DbPageArtifactRepository implements PageArtifactRepository, P
             if (obj == null) {
                 return null;
             }
+            // Handle Throwable objects specially to avoid serialization cycles
+            if (obj instanceof Throwable) {
+                Throwable t = (Throwable) obj;
+                return objectMapper.writeValueAsString(java.util.Map.of(
+                    "class", t.getClass().getName(),
+                    "message", t.getMessage()
+                ));
+            }
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
             LOG.error("Failed to serialize object to JSON", e);

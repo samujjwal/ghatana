@@ -8,6 +8,44 @@ export interface JwtPayload {
   [key: string]: unknown;
 }
 
+function parseExpiresIn(expiresIn: string | number): number {
+  if (typeof expiresIn === 'number') {
+    return expiresIn;
+  }
+
+  const match = expiresIn.trim().match(/^(\d+)([smhd])$/u);
+  if (!match) {
+    throw new Error(`Unsupported JWT expiration format: ${expiresIn}`);
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2];
+  const unitSeconds = {
+    s: 1,
+    m: 60,
+    h: 60 * 60,
+    d: 24 * 60 * 60,
+  }[unit];
+  return amount * unitSeconds;
+}
+
+export function signJwt(
+  payload: Record<string, unknown>,
+  secret: string,
+  expiresIn: string | number = '1h',
+): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const bodyPayload: JwtPayload = {
+    ...payload,
+    iat: now,
+    exp: now + parseExpiresIn(expiresIn),
+  };
+  const body = Buffer.from(JSON.stringify(bodyPayload)).toString('base64url');
+  const signature = createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
 // ── JWT helper (node:crypto — no external JWT library) ────────────────────────
 export function verifyJwt(token: string, secret: string): JwtPayload {
   const parts = token.split('.');

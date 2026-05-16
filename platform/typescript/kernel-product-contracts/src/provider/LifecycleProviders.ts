@@ -14,6 +14,7 @@ import type { GateProvider } from "./GateProvider.js";
 import type { KernelProvider } from "./KernelProvider.js";
 import type { RegistryProvider } from "./RegistryProvider.js";
 import type { SourceProvider } from "./SourceProvider.js";
+import { z } from "zod";
 
 export const KERNEL_PROVIDER_MODES = ["bootstrap", "platform"] as const;
 
@@ -109,6 +110,130 @@ export interface LifecycleRuntimeTruthSnapshot {
   readonly privacyClassification?: LifecycleEvidencePrivacyClassification;
   readonly retention?: LifecycleRetentionMetadata;
 }
+
+const LIFECYCLE_PROVIDER_PHASES = [
+  "create",
+  "bootstrap",
+  "dev",
+  "validate",
+  "test",
+  "build",
+  "package",
+  "release",
+  "deploy",
+  "verify",
+  "promote",
+  "rollback",
+  "operate",
+  "retire",
+] as const satisfies readonly ProductLifecyclePhase[];
+
+export const LifecycleArtifactManifestRefSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    manifestPath: z.string().trim().min(1),
+    artifactCount: z.number().int().nonnegative(),
+    correlationId: z.string().trim().min(1).optional(),
+    digestStatus: z.enum(["complete", "partial", "missing"]).optional(),
+  })
+  .strict();
+
+export const LifecycleHealthSnapshotRefSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    status: z.string().trim().min(1),
+    snapshotPath: z.string().trim().min(1),
+    snapshotAt: z.string().datetime({ offset: true }).optional(),
+    correlationId: z.string().trim().min(1).optional(),
+    reasonCode: z.string().trim().min(1).optional(),
+    privacyClassification: z
+      .enum(["public", "internal", "confidential", "restricted"])
+      .optional(),
+    retention: z
+      .object({
+        policyId: z.string().trim().min(1),
+        retentionDays: z.number().int().nonnegative(),
+        expiresAt: z.string().datetime({ offset: true }).optional(),
+        legalHold: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export const LifecycleProvenanceRecordSchema = z
+  .object({
+    provenanceId: z.string().trim().min(1),
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    source: z.string().trim().min(1),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+    correlationId: z.string().trim().min(1).optional(),
+    privacyClassification: z
+      .enum(["public", "internal", "confidential", "restricted"])
+      .optional(),
+    retention: z
+      .object({
+        policyId: z.string().trim().min(1),
+        retentionDays: z.number().int().nonnegative(),
+        expiresAt: z.string().datetime({ offset: true }).optional(),
+        legalHold: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+    recordedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const LifecycleMemoryRecordSchema = z
+  .object({
+    memoryId: z.string().trim().min(1),
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    kind: z.string().trim().min(1),
+    contentRef: z.string().trim().min(1),
+    privacyClassification: z
+      .enum(["public", "internal", "confidential", "restricted"])
+      .optional(),
+    retention: z
+      .object({
+        policyId: z.string().trim().min(1),
+        retentionDays: z.number().int().nonnegative(),
+        expiresAt: z.string().datetime({ offset: true }).optional(),
+        legalHold: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+    recordedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const LifecycleRuntimeTruthSnapshotSchema = z
+  .object({
+    productUnitId: z.string().trim().min(1),
+    runId: z.string().trim().min(1),
+    phase: z.enum(LIFECYCLE_PROVIDER_PHASES),
+    status: z.string().trim().min(1),
+    observedAt: z.string().datetime({ offset: true }),
+    evidenceRefs: z.array(z.string().trim().min(1)),
+    correlationId: z.string().trim().min(1).optional(),
+    providerMode: z.enum(["bootstrap", "platform"]).optional(),
+    privacyClassification: z
+      .enum(["public", "internal", "confidential", "restricted"])
+      .optional(),
+    retention: z
+      .object({
+        policyId: z.string().trim().min(1),
+        retentionDays: z.number().int().nonnegative(),
+        expiresAt: z.string().datetime({ offset: true }).optional(),
+        legalHold: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
 
 export interface LifecycleEventProvider extends KernelProvider {
   appendEvent(

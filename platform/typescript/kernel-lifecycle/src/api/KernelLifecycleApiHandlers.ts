@@ -27,7 +27,7 @@ import type {
   LifecycleRunSummary,
 } from '../service/KernelLifecycleService.js';
 
-const PRODUCT_LIFECYCLE_PHASES = [
+export const PRODUCT_LIFECYCLE_PHASES = [
   'create',
   'bootstrap',
   'dev',
@@ -43,6 +43,38 @@ const PRODUCT_LIFECYCLE_PHASES = [
   'operate',
   'retire',
 ] as const satisfies readonly ProductLifecyclePhase[];
+
+export const LIFECYCLE_RUN_STATUSES = [
+  'healthy',
+  'degraded',
+  'blocked',
+  'failed',
+  'skipped',
+  'planned',
+  'running',
+  'pending approval',
+  'requires verification',
+  'obsolete',
+  'quarantined',
+  'unknown',
+] as const;
+
+export const FAILURE_REASON_CODES = [
+  'adapter-failed',
+  'gate-failed',
+  'artifact-missing',
+  'manifest-write-failed',
+  'approval-required',
+  'policy-denied',
+  'provider-unavailable',
+  'run-not-found',
+  'manifest-not-found',
+  'execution-failed',
+  'scope-headers-required',
+  'authorization-failed',
+  'not-ready',
+  'lifecycle-not-enabled',
+] as const;
 
 const ParamsSchema = z.object({
   productUnitId: z.string().trim().min(1).optional(),
@@ -563,6 +595,9 @@ function statusCodeForReason(reasonCode: string): number {
     return 400;
   }
   if (reasonCode === 'approval-required') {
+    return 409;
+  }
+  if (reasonCode === 'not-ready' || reasonCode === 'lifecycle-not-enabled') {
     return 409;
   }
   if (reasonCode === 'authentication-required') {

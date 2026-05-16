@@ -14,40 +14,17 @@ import type {
 import {
   AgentLifecycleActionRequestSchema,
   type AgentLifecycleActionRequest,
+  KernelLifecycleEventSchema,
+  LifecycleArtifactManifestRefSchema,
+  LifecycleHealthSnapshotRefSchema,
+  LifecycleMemoryRecordSchema,
+  LifecycleProvenanceRecordSchema,
+  LifecycleRuntimeTruthSnapshotSchema,
 } from '@ghatana/kernel-product-contracts';
 import { z } from 'zod';
-import type { ProviderStorePort, ProviderRecord } from './provider-store.js';
-import { InMemoryProviderStore } from './provider-store.js';
+import type { ProviderRecord, ProviderStorePort } from './provider-store.js';
 export type { GatewayMetricsSnapshot } from './metrics.js';
 export { GatewayMetrics } from './metrics.js';
-
-// Zod schemas for provider endpoint validation
-const KernelLifecycleEventSchema = z.object({
-  metadata: z.object({
-    eventId: z.string(),
-    timestamp: z.string(),
-    eventType: z.string(),
-  }),
-  productUnitId: z.string(),
-  runId: z.string().optional(),
-});
-
-const ArtifactManifestRefSchema = z.object({
-  productUnitId: z.string(),
-  manifestPath: z.string(),
-  fingerprint: z.object({
-    algorithm: z.string(),
-    hash: z.string(),
-  }),
-});
-
-const HealthSnapshotRefSchema = z.object({
-  productUnitId: z.string(),
-  snapshotPath: z.string(),
-  status: z.string(),
-  observedAt: z.string(),
-});
-
 const ApprovalRequestSchema = z.object({
   requestId: z.string(),
   productUnitId: z.string(),
@@ -61,29 +38,6 @@ const ApprovalDecisionSchema = z.object({
   approved: z.boolean(),
   userId: z.string(),
   decisionReason: z.string().optional(),
-});
-
-const ProvenanceRecordSchema = z.object({
-  provenanceId: z.string(),
-  productUnitId: z.string(),
-  runId: z.string().optional(),
-  evidenceRefs: z.array(z.unknown()),
-});
-
-const MemoryRecordSchema = z.object({
-  memoryId: z.string(),
-  contentRef: z.string(),
-  productUnitId: z.string(),
-  privacyClassification: z.string().optional(),
-  retention: z.object({
-    expiresAt: z.string().optional(),
-  }).optional(),
-});
-
-const RuntimeTruthSnapshotSchema = z.object({
-  productUnitId: z.string(),
-  observedAt: z.string(),
-  state: z.record(z.unknown()),
 });
 
 /**
@@ -752,8 +706,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       return reply.status(400).send({
         error: 'Bad Request',
         message: 'Invalid agent lifecycle action request',
-        issues: parsedRequest.error.issues.map((issue: { readonly path: readonly (string | number)[]; readonly message: string }) => ({
-          path: issue.path.join('.'),
+        issues: parsedRequest.error.issues.map((issue) => ({
+          path: issue.path.map((segment) => String(segment)).join('.'),
           message: issue.message,
         })),
         correlationId,
@@ -1053,8 +1007,17 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     dispatchKernelLifecycleApi('submitApprovalDecision', request, reply));
 
   // ── Kernel Provider Endpoints (explicit routes, not generic proxy) ───────────
-  // Durable storage for provider records (uses ProviderStorePort from config or in-memory fallback)
-  const providerStore = config.providerStore ?? new InMemoryProviderStore();
+  // Durable storage for provider records must be injected; production must fail closed otherwise.
+  const providerStore = config.providerStore;
+
+  function sendProviderStoreUnavailable(reply: FastifyReply, correlationId: string): FastifyReply {
+    return reply.status(503).send({
+      success: false,
+      error: 'Kernel provider store is not configured',
+      reasonCode: 'PROVIDER_STORE_UNAVAILABLE',
+      correlationId,
+    });
+  }
 
   function generateProviderRef(): string {
     return `ref-${randomUUID()}`;
@@ -1101,7 +1064,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/events', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const parsedEvent = KernelLifecycleEventSchema.safeParse(request.body);
     if (!parsedEvent.success) {
@@ -1130,14 +1097,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/events', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
     const filters: Record<string, unknown> = {};
     if (query.productUnitId) filters.productUnitId = query.productUnitId;
     if (query.runId) filters.runId = query.runId;
-    const records = await providerStore.listByProviderType(scope.tenantId, 'events', filters, limit);
+    const records = await providerStore.listByProviderType(scope, 'events', filters, limit);
     const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
@@ -1146,9 +1117,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/artifacts', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
     }
-    const parsedArtifact = ArtifactManifestRefSchema.safeParse(request.body);
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
+    }
+    const parsedArtifact = LifecycleArtifactManifestRefSchema.safeParse(request.body);
     if (!parsedArtifact.success) {
       return reply.status(400).send({ success: false, error: 'Invalid artifact manifest schema', reasonCode: 'INVALID_SCHEMA', issues: parsedArtifact.error.issues, correlationId: scope.correlationId });
     }
@@ -1175,14 +1150,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/artifacts', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
     const filters: Record<string, unknown> = {};
     if (query.productUnitId) filters.productUnitId = query.productUnitId;
     if (query.runId) filters.runId = query.runId;
-    const records = await providerStore.listByProviderType(scope.tenantId, 'artifacts', filters, limit);
+    const records = await providerStore.listByProviderType(scope, 'artifacts', filters, limit);
     const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
@@ -1191,9 +1170,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/health', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
     }
-    const parsedHealth = HealthSnapshotRefSchema.safeParse(request.body);
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
+    }
+    const parsedHealth = LifecycleHealthSnapshotRefSchema.safeParse(request.body);
     if (!parsedHealth.success) {
       return reply.status(400).send({ success: false, error: 'Invalid health snapshot schema', reasonCode: 'INVALID_SCHEMA', issues: parsedHealth.error.issues, correlationId: scope.correlationId });
     }
@@ -1220,11 +1203,15 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/health/:productUnitId/latest', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const params = request.params as { productUnitId: string };
     const filters: Record<string, unknown> = { productUnitId: params.productUnitId };
-    const record = await providerStore.findLatestByProviderType(scope.tenantId, 'health', filters);
+    const record = await providerStore.findLatestByProviderType(scope, 'health', filters);
     if (!record) {
       return reply.status(404).send({ success: false, error: 'No health snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
     }
@@ -1235,7 +1222,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/approvals/requests', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const parsedRequest = ApprovalRequestSchema.safeParse(request.body);
     if (!parsedRequest.success) {
@@ -1264,7 +1255,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/approvals/decisions', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const parsedDecision = ApprovalDecisionSchema.safeParse(request.body);
     if (!parsedDecision.success) {
@@ -1293,9 +1288,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/provenance', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
     }
-    const parsedProvenance = ProvenanceRecordSchema.safeParse(request.body);
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
+    }
+    const parsedProvenance = LifecycleProvenanceRecordSchema.safeParse(request.body);
     if (!parsedProvenance.success) {
       return reply.status(400).send({ success: false, error: 'Invalid provenance record schema', reasonCode: 'INVALID_SCHEMA', issues: parsedProvenance.error.issues, correlationId: scope.correlationId });
     }
@@ -1322,14 +1321,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/provenance', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
     const filters: Record<string, unknown> = {};
     if (query.productUnitId) filters.productUnitId = query.productUnitId;
     if (query.runId) filters.runId = query.runId;
-    const records = await providerStore.listByProviderType(scope.tenantId, 'provenance', filters, limit);
+    const records = await providerStore.listByProviderType(scope, 'provenance', filters, limit);
     const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
@@ -1338,9 +1341,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/memory', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
     }
-    const parsedMemory = MemoryRecordSchema.safeParse(request.body);
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
+    }
+    const parsedMemory = LifecycleMemoryRecordSchema.safeParse(request.body);
     if (!parsedMemory.success) {
       return reply.status(400).send({ success: false, error: 'Invalid memory record schema', reasonCode: 'INVALID_SCHEMA', issues: parsedMemory.error.issues, correlationId: scope.correlationId });
     }
@@ -1368,14 +1375,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/memory', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const query = request.query as { productUnitId?: string; runId?: string; limit?: string; cursor?: string };
     const limit = query.limit ? parseInt(query.limit, 10) : 100;
     const filters: Record<string, unknown> = {};
     if (query.productUnitId) filters.productUnitId = query.productUnitId;
     if (query.runId) filters.runId = query.runId;
-    const records = await providerStore.listByProviderType(scope.tenantId, 'memory', filters, limit);
+    const records = await providerStore.listByProviderType(scope, 'memory', filters, limit);
     const items = records.map((r) => ({ ref: r.providerRef, ...(r.data as Record<string, unknown>) }));
     return reply.status(200).send({ success: true, items, correlationId: scope.correlationId });
   });
@@ -1384,9 +1395,13 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.post('/api/v1/kernel/providers/runtime-truth', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
     }
-    const parsedRuntimeTruth = RuntimeTruthSnapshotSchema.safeParse(request.body);
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
+    }
+    const parsedRuntimeTruth = LifecycleRuntimeTruthSnapshotSchema.safeParse(request.body);
     if (!parsedRuntimeTruth.success) {
       return reply.status(400).send({ success: false, error: 'Invalid runtime truth snapshot schema', reasonCode: 'INVALID_SCHEMA', issues: parsedRuntimeTruth.error.issues, correlationId: scope.correlationId });
     }
@@ -1413,11 +1428,15 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   fastify.get('/api/v1/kernel/providers/runtime-truth/:productUnitId/latest', { preHandler: [authenticate] }, async (request, reply) => {
     const scope = validateScopeForProvider(request);
     if (!scope) {
-      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId: scope?.correlationId });
+      const correlationId = resolveCorrelationId(request);
+      return reply.status(403).send({ success: false, error: 'Tenant, workspace, project scope required', reasonCode: 'SCOPE_DENIED', correlationId });
+    }
+    if (providerStore === undefined) {
+      return sendProviderStoreUnavailable(reply, scope.correlationId);
     }
     const params = request.params as { productUnitId: string };
     const filters: Record<string, unknown> = { productUnitId: params.productUnitId };
-    const record = await providerStore.findLatestByProviderType(scope.tenantId, 'runtime-truth', filters);
+    const record = await providerStore.findLatestByProviderType(scope, 'runtime-truth', filters);
     if (!record) {
       return reply.status(404).send({ success: false, error: 'No runtime truth snapshot found', reasonCode: 'NOT_FOUND', correlationId: scope.correlationId });
     }
