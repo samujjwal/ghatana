@@ -26,3 +26,8 @@ tasks.test {
     // which requires more heap than the convention's 768m default.
     maxHeapSize = "1536m"
 }
+
+// Ensure YAPPC services module is compiled before integration tests
+tasks.compileTestJava {
+    dependsOn(":products:yappc:core:yappc-services:compileJava")
+}
