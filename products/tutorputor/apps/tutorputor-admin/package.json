@@ -19,8 +19,8 @@
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
     "@ghatana/theme": "workspace:*",
-    "@tanstack/query-core": "^5.99.0",
-    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/query-core": "^5.100.10",
+    "@tanstack/react-query": "^5.100.10",
     "@tiptap/extension-link": "^3.22.3",
     "@tiptap/extension-placeholder": "^3.22.3",
     "@tiptap/react": "^3.22.3",

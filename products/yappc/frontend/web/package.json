@@ -56,7 +56,7 @@
     "@mui/material": "^9.0.0",
     "@react-router/fs-routes": "^7.14.0",
     "@react-router/node": "^7.14.0",
-    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/react-query": "^5.100.10",
     "@types/dagre": "^0.7.54",
     "@xyflow/react": "^12.10.2",
     "yappc-ai": "workspace:*",

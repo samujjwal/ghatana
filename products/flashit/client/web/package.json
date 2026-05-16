@@ -32,7 +32,7 @@
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
     "@flashit/shared": "workspace:*",
-    "@tanstack/query-core": "^5.90.21",
+    "@tanstack/query-core": "^5.100.10",
     "@tanstack/react-query": "catalog:",
     "date-fns": "catalog:",
     "jotai": "catalog:",
