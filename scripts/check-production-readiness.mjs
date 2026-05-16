@@ -154,6 +154,90 @@ function getLineViolations(content, regex) {
 
 const violations = [];
 
+function requireIncludes(relativePath, needle, message) {
+  const absolutePath = path.join(repoRoot, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    violations.push({
+      type: 'MISSING_REQUIRED_FILE',
+      file: relativePath,
+      line: 1,
+      snippet: `Missing required file: ${relativePath}`,
+    });
+    return;
+  }
+  const content = fs.readFileSync(absolutePath, 'utf8');
+  if (!content.includes(needle)) {
+    violations.push({
+      type: 'MISSING_REQUIRED_GUARD',
+      file: relativePath,
+      line: 1,
+      snippet: message,
+    });
+  }
+}
+
+function requireNotIncludes(relativePath, needle, message) {
+  const absolutePath = path.join(repoRoot, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    return;
+  }
+  const content = fs.readFileSync(absolutePath, 'utf8');
+  if (content.includes(needle)) {
+    violations.push({
+      type: 'FORBIDDEN_LITERAL_IN_PRODUCTION',
+      file: relativePath,
+      line: 1,
+      snippet: message,
+    });
+  }
+}
+
+// Provider schema drift and in-memory fallback hardening checks
+requireIncludes(
+  'products/data-cloud/planes/action/gateway/src/app.ts',
+  'LifecycleRuntimeTruthSnapshotSchema',
+  'Gateway must validate runtime-truth payloads with LifecycleRuntimeTruthSnapshotSchema',
+);
+requireIncludes(
+  'products/data-cloud/planes/action/gateway/src/app.ts',
+  'LifecycleMemoryRecordSchema',
+  'Gateway must validate memory payloads with LifecycleMemoryRecordSchema',
+);
+requireIncludes(
+  'products/data-cloud/planes/action/gateway/src/app.ts',
+  'sendProviderStoreUnavailable',
+  'Gateway must fail closed when provider store is unavailable',
+);
+requireNotIncludes(
+  'products/data-cloud/planes/action/gateway/src/app.ts',
+  'new InMemoryProviderStore(',
+  'Gateway production path must not instantiate InMemoryProviderStore',
+);
+
+// Studio lifecycle hardcoded string drift checks (must use translation keys)
+requireNotIncludes(
+  'platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx',
+  'Blocked reason codes',
+  'LifecyclePage must not hardcode user-facing "Blocked reason codes" text',
+);
+requireNotIncludes(
+  'platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx',
+  'No gate evidence available.',
+  'LifecyclePage must not hardcode gate evidence empty-state text',
+);
+
+// Disabled-product execution safeguards
+requireIncludes(
+  'platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts',
+  'lifecycleExecutionAllowed === false',
+  'Planner must enforce lifecycleExecutionAllowed guard',
+);
+requireIncludes(
+  'platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts',
+  'ProductLifecycleNotReadyError',
+  'KernelLifecycleService must return NOT_READY behavior for blocked products',
+);
+
 for (const root of SCAN_ROOTS) {
   const absoluteRoot = path.join(repoRoot, root);
   const files = [];

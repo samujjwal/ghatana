@@ -13,6 +13,7 @@ export default function ArtifactsPage(): ReactElement {
   const t = useStudioTranslation();
   const snapshot = lifecycleData.snapshot;
   const artifacts = snapshot.artifactManifest?.artifacts ?? [];
+  const intelligence = resolveArtifactIntelligence(snapshot.productUnit?.metadata);
 
   return (
     <section className="space-y-6" aria-labelledby="artifacts-title">
@@ -68,6 +69,103 @@ export default function ArtifactsPage(): ReactElement {
           </article>
         ))}
       </div>
+
+      {(intelligence.residualIslands.length > 0 ||
+        intelligence.riskHotspots.length > 0 ||
+        intelligence.recommendations.length > 0 ||
+        intelligence.evidenceRefs.length > 0) && (
+        <article className="studio-card space-y-3" aria-labelledby="artifact-intelligence-title">
+          <h3 id="artifact-intelligence-title" className="text-base font-semibold text-gray-950">
+            {t('studio.route.artifacts.intelligenceTitle')}
+          </h3>
+          {intelligence.residualIslands.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">{t('studio.route.artifacts.residualIslandsTitle')}</h4>
+              <ul className="mt-1 space-y-1 text-sm text-gray-600">
+                {intelligence.residualIslands.map((island) => (
+                  <li key={island}>{island}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {intelligence.riskHotspots.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">{t('studio.route.artifacts.riskHotspotsTitle')}</h4>
+              <ul className="mt-1 space-y-1 text-sm text-gray-600">
+                {intelligence.riskHotspots.map((hotspot) => (
+                  <li key={hotspot}>{hotspot}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {intelligence.recommendations.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">{t('studio.route.artifacts.recommendationsTitle')}</h4>
+              <ul className="mt-1 space-y-1 text-sm text-gray-600">
+                {intelligence.recommendations.map((recommendation) => (
+                  <li key={recommendation}>{recommendation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {intelligence.evidenceRefs.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">{t('studio.route.artifacts.evidenceRefsTitle')}</h4>
+              <ul className="mt-1 space-y-1 text-xs text-gray-600">
+                {intelligence.evidenceRefs.map((evidenceRef) => (
+                  <li key={evidenceRef} className="font-mono">{evidenceRef}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </article>
+      )}
     </section>
   );
+}
+
+interface ArtifactIntelligenceView {
+  readonly residualIslands: readonly string[];
+  readonly riskHotspots: readonly string[];
+  readonly recommendations: readonly string[];
+  readonly evidenceRefs: readonly string[];
+}
+
+function resolveArtifactIntelligence(metadata: unknown): ArtifactIntelligenceView {
+  if (typeof metadata !== 'object' || metadata === null) {
+    return {
+      residualIslands: [],
+      riskHotspots: [],
+      recommendations: [],
+      evidenceRefs: [],
+    };
+  }
+
+  const record = metadata as {
+    readonly artifactIntelligence?: {
+      readonly residualIslands?: unknown;
+      readonly riskHotspots?: unknown;
+      readonly recommendations?: unknown;
+      readonly evidenceRefs?: unknown;
+    };
+    readonly residualIslands?: unknown;
+    readonly riskHotspots?: unknown;
+    readonly recommendations?: unknown;
+    readonly evidenceRefs?: unknown;
+  };
+
+  const source = record.artifactIntelligence;
+  return {
+    residualIslands: coerceStringArray(source?.residualIslands ?? record.residualIslands),
+    riskHotspots: coerceStringArray(source?.riskHotspots ?? record.riskHotspots),
+    recommendations: coerceStringArray(source?.recommendations ?? record.recommendations),
+    evidenceRefs: coerceStringArray(source?.evidenceRefs ?? record.evidenceRefs),
+  };
+}
+
+function coerceStringArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
 }

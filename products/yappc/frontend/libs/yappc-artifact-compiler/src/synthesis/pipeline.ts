@@ -31,6 +31,7 @@ import type { RepositorySnapshot } from '../source-providers/types';
 import type { SemanticModelElement, SemanticProductModel } from '../model';
 import type { ResidualIsland } from '../residual/types';
 import { validateGraph } from '../graph/validateGraph';
+import type { ExtractorRegistry } from '../extractors/extractor-registry';
 
 // ============================================================================
 // Pipeline configuration
@@ -41,6 +42,12 @@ export interface SynthesisPipelineConfig {
   readonly scannerConfig?: Partial<ScannerConfig>;
   /** Registered extractors to run against eligible artifacts. */
   readonly extractors: readonly ArtifactExtractor[];
+  /**
+   * P1-8: Enforce extractor registry capability.
+   * When true, only extractors registered in the canonical registry are allowed.
+   * Defaults to true in production.
+   */
+  readonly enforceExtractorRegistry?: boolean;
   /**
    * Confidence threshold below which extracted elements are sent to residuals
    * instead of the main model. Defaults to 0.5.
@@ -213,8 +220,19 @@ function buildSemanticProductModel(
     ? buildDeterministicNodeId(snapshotRef, rootPath, 'model', `elements:${modelElements.length}`)
     : undefined;
 
+  // P1-8: Deterministic SemanticProductModel.id from snapshot + element checksum
+  // Compute a deterministic hash of all element IDs and snapshot info
+  const { createHash } = require('crypto');
+  const hashInput = [
+    snapshotRef ? `${snapshotRef.provider}:${snapshotRef.repoId}:${snapshotRef.commitSha}` : 'no-snapshot',
+    rootPath,
+    ...modelElements.map(e => e.id).sort(),
+    ...residualIslandIds.sort(),
+  ].join('|');
+  const deterministicId = createHash('sha256').update(hashInput).digest('hex');
+
   return {
-    id: randomUUID(),
+    id: deterministicId,
     sourceModelRef,
     repositoryRoot: rootPath,
     createdAt: now,
@@ -232,9 +250,32 @@ function buildSemanticProductModel(
 
 export class SynthesisPipeline {
   private readonly config: SynthesisPipelineConfig;
+  private readonly extractorRegistry?: ExtractorRegistry;
 
-  constructor(config: SynthesisPipelineConfig) {
+  constructor(config: SynthesisPipelineConfig, extractorRegistry?: ExtractorRegistry) {
     this.config = config;
+    this.extractorRegistry = extractorRegistry;
+
+    // P1-8: Enforce extractor registry capability when enabled
+    if (this.config.enforceExtractorRegistry !== false && this.extractorRegistry) {
+      for (const extractor of this.config.extractors) {
+        const extractorId = extractor.identity.id;
+        const registered = this.extractorRegistry.get(extractorId);
+        if (!registered) {
+          throw new Error(
+            `Extractor "${extractorId}" is not registered in the canonical registry. ` +
+            'Only registered extractors are allowed when enforceExtractorRegistry is enabled.'
+          );
+        }
+        // Verify version compatibility
+        if (registered.identity.version !== extractor.identity.version) {
+          throw new Error(
+            `Extractor "${extractorId}" version mismatch: ` +
+            `registered version "${registered.identity.version}" vs provided version "${extractor.identity.version}"`
+          );
+        }
+      }
+    }
   }
 
   /**

@@ -1,8 +1,15 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge, Button } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { useStudioTranslation } from '../i18n/studioTranslations';
+import { createAgentLifecycleClient } from '../api/agentLifecycleClient';
+import { resolveStudioRuntimeContext } from '../config/studioRuntimeContext';
+import type {
+  AgentLifecycleActionRequest,
+  AgentLifecycleActionResult,
+  ProductLifecyclePhase,
+} from '@ghatana/kernel-product-contracts';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
@@ -38,25 +45,109 @@ interface ProposalCard {
 export default function AgentsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
-  const [isGovernanceAvailable] = useState(true);
+  const runtimeContext = useMemo(() => resolveStudioRuntimeContext(), []);
+  const agentLifecycleClient = useMemo(() => {
+    if (runtimeContext.status !== 'configured') {
+      return undefined;
+    }
+    return createAgentLifecycleClient({
+      baseUrl: runtimeContext.identity.baseUrl,
+      tenantId: runtimeContext.identity.tenantId,
+      workspaceId: runtimeContext.identity.workspaceId,
+      projectId: runtimeContext.identity.projectId,
+      authToken: runtimeContext.identity.authToken,
+    });
+  }, [runtimeContext]);
+  const [executionResultByCorrelationId, setExecutionResultByCorrelationId] =
+    useState<Record<string, AgentLifecycleActionResult>>({});
+  const [activeExecutionCorrelationId, setActiveExecutionCorrelationId] = useState<string | null>(null);
 
-  // Mock proposal data - in real implementation, this would come from the agent lifecycle client
-  const mockProposals: ProposalCard[] = [
-    {
-      requestedAction: 'deploy-local',
-      productUnitId: 'digital-marketing',
-      phase: 'deploy',
-      riskLevel: 'medium',
-      policyDecision: 'allowed',
-      masteryDecision: 'requires-approval',
-      approvalDecision: 'pending',
-      requiredNextAction: 'request-approval',
-      evidenceRefs: ['evidence:graph-summary-123', 'evidence:risk-hotspot-456'],
-      rollbackReadiness: 'ready',
-      healthStatus: 'unknown',
-      correlationId: 'studio-agent-123',
-    },
-  ];
+  const isGovernanceAvailable =
+    runtimeContext.status === 'configured' && lifecycleData.snapshot.status !== 'unconfigured';
+
+  const proposals: readonly ProposalCard[] = useMemo(() => {
+    const selectedRun = lifecycleData.snapshot.selectedRun;
+    const selectedProductUnit = lifecycleData.snapshot.productUnit;
+    if (!selectedRun || !selectedProductUnit) {
+      return [];
+    }
+
+    const correlationId = selectedRun.correlationId;
+    const existingResult = executionResultByCorrelationId[correlationId];
+
+    return [
+      {
+        requestedAction: 'execute-lifecycle-phase',
+        productUnitId: selectedProductUnit.id,
+        phase: selectedRun.phase ?? 'build',
+        riskLevel: 'medium',
+        policyDecision: existingResult?.policyDecision ?? 'allowed',
+        masteryDecision: existingResult?.masteryDecision ?? 'requires-approval',
+        approvalDecision: existingResult?.approvalDecision ?? 'pending',
+        requiredNextAction: existingResult?.requiredNextAction ?? 'request-approval',
+        evidenceRefs:
+          existingResult?.evidenceRefs ??
+          [
+            selectedRun.eventsRef ?? 'evidence:lifecycle-events-unavailable',
+            selectedRun.healthSnapshotRef ?? 'evidence:health-snapshot-unavailable',
+          ],
+        rollbackReadiness: existingResult?.rollbackReadiness ?? 'ready',
+        healthStatus: existingResult?.healthStatus ?? 'unknown',
+        correlationId,
+      },
+    ];
+  }, [lifecycleData.snapshot.productUnit, lifecycleData.snapshot.selectedRun, executionResultByCorrelationId]);
+
+  const executeProposal = async (proposal: ProposalCard): Promise<void> => {
+    if (!agentLifecycleClient || runtimeContext.status !== 'configured') {
+      return;
+    }
+
+    const lifecyclePhase = (proposal.phase || 'build') as ProductLifecyclePhase;
+    const request: AgentLifecycleActionRequest = {
+      schemaVersion: '1.0.0',
+      requestId: `studio-agent-${Date.now()}`,
+      correlationId: proposal.correlationId,
+      productUnitId: proposal.productUnitId,
+      scope: {
+        tenantId: runtimeContext.identity.tenantId,
+        workspaceId: runtimeContext.identity.workspaceId,
+        projectId: runtimeContext.identity.projectId,
+      },
+      requestedByAgent: 'studio-governed-agent',
+      requestedAction: 'execute-lifecycle-phase',
+      lifecyclePhase,
+      proposedPlanRef: `lifecycle-plan:${proposal.productUnitId}:${lifecyclePhase}`,
+      riskLevel: proposal.riskLevel,
+      requiredApprovals: [
+        {
+          approvalId: `${proposal.productUnitId}-${lifecyclePhase}-approval`,
+          approverRole: 'release-manager',
+          required: proposal.approvalDecision === 'pending',
+        },
+      ],
+      requiredVerification: [
+        {
+          verificationId: `${proposal.productUnitId}-${lifecyclePhase}-verification`,
+          kind: 'health',
+          required: true,
+        },
+      ],
+      evidenceRefs: proposal.evidenceRefs,
+      rollbackPlanRef: `rollback-plan:${proposal.productUnitId}:${lifecyclePhase}`,
+    };
+
+    setActiveExecutionCorrelationId(proposal.correlationId);
+    try {
+      const result = await agentLifecycleClient.submitAction(request);
+      setExecutionResultByCorrelationId((current) => ({
+        ...current,
+        [proposal.correlationId]: result,
+      }));
+    } finally {
+      setActiveExecutionCorrelationId(null);
+    }
+  };
 
   const canExecute = (proposal: ProposalCard): boolean => {
     return (
@@ -112,7 +203,7 @@ export default function AgentsPage(): ReactElement {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {mockProposals.map((proposal) => (
+        {proposals.map((proposal) => (
           <article
             key={proposal.correlationId}
             className="studio-card space-y-4"
@@ -213,11 +304,25 @@ export default function AgentsPage(): ReactElement {
               <Button
                 variant={canExecute(proposal) ? 'primary' : 'outline'}
                 size="sm"
-                disabled={!canExecute(proposal)}
+                disabled={!canExecute(proposal) || activeExecutionCorrelationId === proposal.correlationId || agentLifecycleClient === undefined}
+                onClick={() => {
+                  void executeProposal(proposal);
+                }}
               >
-                Execute
+                {activeExecutionCorrelationId === proposal.correlationId ? t('studio.route.agents.executing') : t('studio.route.agents.execute')}
               </Button>
             </div>
+
+            {executionResultByCorrelationId[proposal.correlationId] && (
+              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <h4 className="text-sm font-medium text-gray-900">{t('studio.route.agents.executionResultTitle')}</h4>
+                <div className="grid gap-1 text-xs text-gray-700">
+                  <div>{t('studio.route.agents.executionStatusLabel')}: {executionResultByCorrelationId[proposal.correlationId].approvalDecision}</div>
+                  <div>{t('studio.route.agents.executionRunRefLabel')}: {executionResultByCorrelationId[proposal.correlationId].lifecycleRunRef}</div>
+                  <div>{t('studio.route.agents.executionNextActionLabel')}: {executionResultByCorrelationId[proposal.correlationId].requiredNextAction ?? 'none'}</div>
+                </div>
+              </div>
+            )}
           </article>
         ))}
       </div>

@@ -252,7 +252,7 @@ const SAMPLE_MEMORY_ITEMS = [
     tenantId: 'tenant-a',
     agentId: 'agent-456',
     type: 'EPISODIC' as const,
-    content: 'Failed to process order #12345',
+    content: 'Failed to process order 12345',
     tags: ['order', 'failure'],
     salience: 0.62,
     createdAt: new Date().toISOString(),
@@ -290,7 +290,7 @@ describe('MemoryPlaneViewerPage', () => {
     render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
     await waitFor(() => {
       expect(screen.getByText('User asked about refund policy')).toBeDefined();
-      expect(screen.getByText('Failed to process order #12345')).toBeDefined();
+      expect(screen.getByText('Failed to process order 12345')).toBeDefined();
     });
   });
 
@@ -309,7 +309,7 @@ describe('MemoryPlaneViewerPage', () => {
     const searchInput = screen.getByLabelText('Search memory items');
     fireEvent.change(searchInput, { target: { value: 'refund' } });
 
-    expect(screen.queryByText('Failed to process order #12345')).toBeNull();
+    expect(screen.queryByText('Failed to process order 12345')).toBeNull();
     expect(screen.getByText('User asked about refund policy')).toBeDefined();
   });
 

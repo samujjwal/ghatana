@@ -1,6 +1,8 @@
 /**
  * @fileoverview ZIP archive source provider.
  *
+ * P1-4: Hardened with diagnostics for skipped/unsafe/unsupported compression, cleanup contract.
+ *
  * Resolves a ZIP archive (local path or HTTP/HTTPS URL) into a RepositorySnapshot
  * by extracting it to a temp directory.
  *
@@ -12,7 +14,7 @@
  *   - http:// or https:// URL pointing to a .zip file
  */
 
-import { mkdir, readFile, writeFile, mkdtemp } from 'fs/promises';
+import { mkdir, readFile, writeFile, rm } from 'fs/promises';
 import { join, basename, normalize, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'crypto';
@@ -22,6 +24,7 @@ import type {
   SourceProviderLocator,
   SnapshotFile,
   RepositorySnapshot,
+  ProviderDiagnostic,
 } from './types';
 import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
 import type { SnapshotRef } from '../graph/types';
@@ -122,7 +125,8 @@ function inflateEntry(buf: Buffer, entry: ZipEntry): Buffer {
     const { inflateRawSync } = require('zlib') as typeof import('zlib');
     return inflateRawSync(compressed);
   }
-  throw new Error(`Unsupported compression method: ${entry.compressionMethod}`);
+  // P1-4: Throw error for unsupported compression methods (will be caught and diagnosed)
+  throw new Error(`Unsupported ZIP compression method: ${entry.compressionMethod} (only DEFLATE and STORED are supported)`);
 }
 
 // ============================================================================
@@ -162,6 +166,7 @@ export class ZipProvider implements SourceProvider {
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 10 * 1024 * 1024;
     const maxFiles = options?.maxFiles ?? 20_000;
     const timeoutMs = options?.requestTimeoutMs ?? 60_000;
+    const diagnostics: ProviderDiagnostic[] = [];
 
     let zipBuffer: Buffer;
 
@@ -196,7 +201,13 @@ export class ZipProvider implements SourceProvider {
       throw new SourceProviderError(this.providerId, normalizedLocator, 'Failed to parse ZIP central directory', err);
     }
 
-    const tempRoot = await mkdtemp(join(options?.tempDir ?? tmpdir(), `yappc-zip-`));
+    // P1-4: Deterministic temp directory using content hash
+    const tempRoot = join(
+      options?.tempDir ?? tmpdir(),
+      `yappc-zip-${archiveName}-${contentSha.slice(0, 8)}`
+    );
+    await mkdir(tempRoot, { recursive: true });
+
     const files: SnapshotFile[] = [];
     let fileCount = 0;
 
@@ -209,9 +220,61 @@ export class ZipProvider implements SourceProvider {
     const stripPrefix = topLevelDirs.size === 1 ? ([...topLevelDirs][0]! + '/') : '';
 
     for (const entry of entries) {
-      if (fileCount >= maxFiles) break;
+      if (fileCount >= maxFiles) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'ZIP_MAX_FILES_REACHED',
+          message: `ZIP snapshot stopped after reaching maxFiles=${maxFiles}.`,
+          timestamp: new Date().toISOString(),
+          metadata: { maxFiles },
+        });
+        break;
+      }
+      
       if (entry.isDirectory) continue;
-      if (entry.uncompressedSize > maxFileSizeBytes) continue;
+      
+      // P1-4: Diagnose oversized files
+      if (entry.uncompressedSize > maxFileSizeBytes) {
+        files.push({
+          relativePath: entry.name,
+          materialized: false,
+          sizeBytes: entry.uncompressedSize,
+          lastModifiedAt: new Date().toISOString(),
+        });
+        diagnostics.push({
+          level: 'warning',
+          code: 'ZIP_FILE_SKIPPED_MAX_SIZE',
+          message: `Skipped oversized ZIP entry ${entry.name}.`,
+          timestamp: new Date().toISOString(),
+          resourcePath: entry.name,
+          metadata: {
+            sizeBytes: entry.uncompressedSize,
+            maxFileSizeBytes,
+          },
+        });
+        continue;
+      }
+
+      // P1-4: Diagnose unsupported compression methods
+      if (entry.compressionMethod !== DEFLATE && entry.compressionMethod !== STORED) {
+        files.push({
+          relativePath: entry.name,
+          materialized: false,
+          sizeBytes: entry.uncompressedSize,
+          lastModifiedAt: new Date().toISOString(),
+        });
+        diagnostics.push({
+          level: 'warning',
+          code: 'ZIP_UNSUPPORTED_COMPRESSION',
+          message: `Skipped ZIP entry ${entry.name} with unsupported compression method ${entry.compressionMethod}.`,
+          timestamp: new Date().toISOString(),
+          resourcePath: entry.name,
+          metadata: {
+            compressionMethod: entry.compressionMethod,
+          },
+        });
+        continue;
+      }
 
       const rawName = entry.name;
       const relativePath = (stripPrefix && rawName.startsWith(stripPrefix)
@@ -229,7 +292,24 @@ export class ZipProvider implements SourceProvider {
 
         // Enforce path containment: reject if the resolved path escapes tempRoot
         if (!resolvedPath.startsWith(resolvedTempRoot + (process.platform === 'win32' ? '\\' : '/'))) {
-          // Skip unsafe entry (zip-slip attempt)
+          // P1-4: Diagnose zip-slip attempt
+          files.push({
+            relativePath,
+            materialized: false,
+            sizeBytes: entry.uncompressedSize,
+            lastModifiedAt: new Date().toISOString(),
+          });
+          diagnostics.push({
+            level: 'warning',
+            code: 'ZIP_UNSAFE_PATH',
+            message: `Skipped ZIP entry ${entry.name} due to unsafe path (zip-slip attempt).`,
+            timestamp: new Date().toISOString(),
+            resourcePath: entry.name,
+            metadata: {
+              resolvedPath,
+              intendedPath: relativePath,
+            },
+          });
           continue;
         }
 
@@ -245,23 +325,48 @@ export class ZipProvider implements SourceProvider {
           lastModifiedAt: new Date().toISOString(),
         });
         fileCount++;
-      } catch {
+      } catch (err) {
+        // P1-4: Diagnose materialization failures
         files.push({
           relativePath,
           materialized: false,
           sizeBytes: entry.uncompressedSize,
           lastModifiedAt: new Date().toISOString(),
         });
+        diagnostics.push({
+          level: 'warning',
+          code: 'ZIP_FILE_MATERIALIZATION_FAILED',
+          message: `Failed to materialize ZIP entry ${entry.name}; keeping metadata-only snapshot entry.`,
+          timestamp: new Date().toISOString(),
+          resourcePath: entry.name,
+          metadata: {
+            sizeBytes: entry.uncompressedSize,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
       }
     }
 
-    return {
+    const snapshot = {
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
-      diagnostics: [],
+      diagnostics,
     };
+
+    // P1-4: Cleanup temp files unless keepTempFiles is true
+    if (!options?.keepTempFiles) {
+      setImmediate(async () => {
+        try {
+          await rm(tempRoot, { recursive: true, force: true });
+        } catch (err) {
+          console.warn(`[ZipProvider] Failed to cleanup temp directory: ${tempRoot}`, err);
+        }
+      });
+    }
+
+    return snapshot;
   }
 }

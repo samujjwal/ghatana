@@ -9,7 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { createDefaultProviderRegistry, SynthesisPipeline, type GraphNode } from 'yappc-artifact-compiler';
+import { createDefaultProviderRegistry, SynthesisPipeline, type GraphNode, getCanonicalExtractors } from 'yappc-artifact-compiler';
 import { getAuditService } from '../services/audit/audit.service';
 import {
   getJobRepository,
@@ -190,26 +190,39 @@ async function resolveRepositoryImport(request: SourceImportRequest): Promise<So
     maxFileSizeBytes: maxFetchedBytes,
   });
 
+  // P0-1: Use canonical extractors instead of empty array
+  // This ensures repository import produces meaningful extraction results
+  const canonicalExtractors = getCanonicalExtractors();
+  if (canonicalExtractors.length === 0) {
+    throw new Error('UNSUPPORTED_EXTRACTION_PIPELINE: No extractors registered. Cannot perform repository import without extraction capabilities.');
+  }
+
   const pipeline = new SynthesisPipeline({
-    extractors: [],
+    extractors: canonicalExtractors,
     residualConfidenceThreshold: 0.5,
   });
   const result = await pipeline.runFromSnapshot(snapshot);
   const unrecoverableErrors = result.errors
-    .filter((error) => !error.recoverable)
-    .map((error) => error.message);
+    .filter((error: { recoverable: boolean }) => !error.recoverable)
+    .map((error: { message: string }) => error.message);
 
   if (unrecoverableErrors.length > 0) {
     throw new Error(unrecoverableErrors.join('; '));
   }
 
+  // P0-1: Validate that extraction produced meaningful results
+  // If no nodes were extracted, this indicates the extractors could not handle the repository
+  if (result.stats.extractedNodes === 0 && result.stats.modelElementsGenerated === 0) {
+    throw new Error('UNSUPPORTED_EXTRACTION_PIPELINE: Repository import produced no extracted artifacts. The repository may contain unsupported file types or require additional extractors.');
+  }
+
   const componentNodes = result.graph.nodes.filter(
     (node: GraphNode) => node.kind === 'component',
   );
-  const totalSize = snapshot.files.reduce((sum, file) => sum + file.sizeBytes, 0);
+  const totalSize = snapshot.files.reduce((sum: number, file: { sizeBytes: number }) => sum + file.sizeBytes, 0);
   const skippedArtifacts = snapshot.files
-    .filter((file) => !file.materialized)
-    .map((file) => ({
+    .filter((file: { materialized: boolean }) => !file.materialized)
+    .map((file: { relativePath: string }) => ({
       path: file.relativePath,
       reason: 'not_materialized',
     }));
@@ -226,8 +239,8 @@ async function resolveRepositoryImport(request: SourceImportRequest): Promise<So
     componentName: request.targetComponentName ?? inferComponentName(request.source, fallbackName),
     totalSize,
     warnings: [
-      ...result.warnings.map((warning) => warning.message),
-      ...result.errors.filter((error) => error.recoverable).map((error) => error.message),
+      ...result.warnings.map((warning: { message: string }) => warning.message),
+      ...result.errors.filter((error: { recoverable: boolean }) => error.recoverable).map((error: { message: string }) => error.message),
     ],
     snapshotRef: snapshot.snapshotRef,
     summary: {
@@ -238,7 +251,7 @@ async function resolveRepositoryImport(request: SourceImportRequest): Promise<So
         ? result.stats.modelElementsGenerated / confidenceDenominator
         : 0,
     },
-    residualIslandIds: result.residualIslands.map((island) => island.id),
+    residualIslandIds: result.residualIslands.map((island: { id: string }) => island.id),
     skippedArtifacts,
   };
 }

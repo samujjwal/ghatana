@@ -1,6 +1,9 @@
 /**
  * @fileoverview PatchCoordinator — orchestrates emitters into a PatchSet.
  *
+ * P0-10: Validates operations have capable emitters, fails unless manual-review.
+ * Uses injected structured logger for diagnostics.
+ *
  * Accepts a list of ChangeOps + a list of PatchEmitters, routes each op to
  * capable emitters, collects TextPatch objects, and assembles a PatchSet.
  * Residual islands are explicitly preserved and never patched.
@@ -31,17 +34,13 @@ import { ReactPatchEmitter } from './react-patch-emitter';
 export interface PatchCoordinatorLogger {
   error(message: string, meta?: Record<string, unknown>): void;
   warn(message: string, meta?: Record<string, unknown>): void;
+  info?(message: string, meta?: Record<string, unknown>): void;
 }
 
-export interface PatchCoordinatorValidator {
-  readonly id: string;
-  validate(
-    changePlan: ChangePlan,
-    elementMap: ReadonlyMap<string, SemanticModelElement>,
-    residuals: ReadonlyMap<string, ResidualIsland>,
-  ): Promise<Pick<ValidationResult, 'errors' | 'warnings'>>;
-}
-
+/**
+ * P0-10: Default structured logger implementation using stderr.
+ * In production, inject a proper observability logger (e.g., Winston, Pino).
+ */
 const defaultLogger: PatchCoordinatorLogger = {
   error(message: string, meta?: Record<string, unknown>): void {
     const payload = meta ? `${message} ${JSON.stringify(meta)}` : message;
@@ -233,7 +232,8 @@ export class PatchCoordinator {
   }
 
   /**
-   * Validate a change plan for structural integrity and residual overlaps.
+   * P0-10: Validate a change plan for structural integrity and residual overlaps.
+   * Fails validation when op has no emitter unless marked as manual-review.
    */
   async validateChangePlan(
     changePlan: ChangePlan,
@@ -253,6 +253,27 @@ export class PatchCoordinator {
           changeId: change.id,
         });
         continue;
+      }
+
+      // P0-10: Check if operation has a capable emitter
+      const hasCapableEmitter = this.emitters.some(emitter => emitter.canEmit(change, element));
+      if (!hasCapableEmitter && change.autoApplyConfidence < 1.0) {
+        // P0-10: Fail validation unless marked as manual-review (confidence < 1.0 indicates requires review)
+        errors.push({
+          code: 'UNSUPPORTED_OPERATION',
+          message: `Change operation ${change.kind} has no capable emitter. Requires emitter implementation or manual review.`,
+          severity: 'error',
+          changeId: change.id,
+        });
+        this.logger.error(`Unsupported operation: ${change.kind}`, { changeId: change.id, elementId: change.elementId });
+      } else if (!hasCapableEmitter) {
+        // P0-10: If confidence is 1.0 (manual-review mode), warn but don't fail
+        warnings.push({
+          code: 'UNSUPPORTED_OPERATION_MANUAL_REVIEW',
+          message: `Change operation ${change.kind} has no capable emitter but is marked for manual review.`,
+          changeId: change.id,
+        });
+        this.logger.warn(`Unsupported operation in manual-review mode: ${change.kind}`, { changeId: change.id, elementId: change.elementId });
       }
 
       // Check for residual overlap

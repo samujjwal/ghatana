@@ -1,714 +1,512 @@
-# Artifact Compiler/Decompiler Production-Readiness Audit and Implementation Plan
+# Artifact Compiler/Decompiler Production-Readiness Audit — `samujjwal/ghatana`
 
-Repository: `samujjwal/ghatana`  
-Target commit: `0a4b71042b7751969195645b231005b3671f4351`
+**Target commit:** `8d05e45efc19a70821778fca554e402863feab3a`
 
-## Implementation Progress
+The target commit exists and is a merge commit whose visible diff only updates `products/yappc/CHANGELOG.md`; this audit treats the repository state at that commit as the source of truth, not the commit diff.  The uploaded prompt requires objective current status first, followed by prescriptive file-by-file TODOs with exact validation. 
 
-Last updated: 2026-05-15
-
-Completed in current workspace state:
-
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/scanner.ts`
-	- Added structured `skippedArtifacts` emission for `.gitignore`, `excludeGlobs`, `maxFileSize`, `symlink`, and `readError` paths.
-	- Added focused regression coverage in `src/inventory/scanner.skipped-artifacts.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/model/types.ts`
-	- Kept `SemanticProductModel.id` as UUID and added `sourceModelRef` for deterministic source identity.
-	- Added focused schema regression coverage in `src/model/__tests__/semantic-product-model-schema.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/pipeline.ts`
-	- Low-confidence model elements now become source-faithful residuals with raw source, checksum, raw fragment ref, review reason, risk, and full-file span metadata.
-	- Exposed assembled `residualIslands` on pipeline results and added focused coverage in `src/synthesis/__tests__/pipeline.low-confidence-residual.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/residual-preserver.ts`
-	- Non-verbatim regeneration strategies are now blocked for production use instead of emitting warning comments, TODO stubs, or throwing placeholders.
-	- Updated compile-back regression expectations accordingly.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/react-patch-emitter.ts`
-	- Removed placeholder sync diffs; real patch generation stays on the async source-aware path.
-	- Added focused regression coverage in `src/compile-back/react-patch-emitter.test.ts`.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactGraphController.java`
-	- Ingest, analyze, and merge requests are now normalized to the authenticated principal tenant before entering the service layer.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactRequestScope.java`
-	- Added an explicit service-layer scope object so ingest/analyze/merge no longer rely on body DTO scope for tenant/product routing.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphService.java`
-	- Ingest, analyze, and merge now accept explicit `ArtifactRequestScope` alongside the request payload.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java`
-	- Service cache, persistence, and versioning flows now read tenant/product scope from `ArtifactRequestScope` instead of the request DTO.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java`
-	- Node persistence now writes server-provided tenant/product scope instead of trusting node payload scope fields.
-	- Repository logs when incoming node payload scope is ignored.
-- `products/yappc/frontend/apps/api/src/routes/source-imports.ts`
-	- Governed source-import route now accepts repository-backed `github` imports, routes repo sources through `yappc-artifact-compiler` provider registry + synthesis pipeline, persists snapshot/summary/residual metadata onto jobs, and awaits all rejection/failure job updates before responding.
-	- Added focused route regressions in `src/routes/__tests__/source-imports.test.ts` for repo import success and awaited unsupported-type rejection state.
-- `products/yappc/frontend/web/src/services/compiler/ImportSourceWorkflow.ts`
-	- Removed the duplicate frontend residual shape in favor of the canonical compiler `ResidualIsland` type.
-	- Normalized governed server residual payloads into the compiler schema and fixed repo confidence extraction to read canonical pipeline `model.elements` instead of a non-existent `semanticModel` field.
-	- Added focused workflow regression coverage in `src/services/compiler/__tests__/ImportSourceWorkflow.test.ts`.
-- `products/yappc/frontend/web/src/services/compiler/__tests__/import-source-flow.spec.ts`
-	- Added a governed async import flow integration test that exercises server start + job polling, verifies terminal review status, and asserts canonical residual normalization under scoped import headers.
-- `products/yappc/frontend/web/src/services/compiler/__tests__/patch-review-flow.spec.ts`
-	- Added a frontend-facing patch review integration test that exercises `buildChangePlan`, `PatchCoordinator.buildPatchSet`, `validateChangePlan`, `dryRunPatchSet`, and `buildReviewBundle` against a real temporary TSX source file.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/types.ts`
-	- Provider contracts now accept typed `SourceLocator` inputs through the registry/providers, support governed `SourceScopeContext` on options, and reject raw token/username/password credentials for browser-scoped resolution.
-	- Exported typed locator helpers through the source-provider barrel and added focused contract regressions in `src/__tests__/source-providers.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/local-folder-provider.ts`
-	- Local folder snapshots now detect dirty git worktrees, fall back to content-hash pinning when the worktree is dirty or git metadata is unavailable, and emit structured diagnostics when manual review is required.
-	- Added focused provider regressions in `src/__tests__/source-providers.test.ts` for dirty-worktree review diagnostics and deterministic non-git content pinning.
-- `products/yappc/frontend/apps/api/src/services/job-repository.ts`
-	- Added a database-backed `DatabaseJobRepository` using the existing Prisma raw-SQL pattern for auxiliary tables, with lazy table/index creation and JSONB job payload storage.
-	- Kept `FileJobRepository` as the default for test/dev and added explicit backend selection via `YAPPC_SOURCE_IMPORT_JOB_BACKEND`/`SOURCE_IMPORT_JOB_BACKEND` or production `DATABASE_URL` detection.
-	- Added focused durability/selector coverage in `src/services/__tests__/job-repository.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/types.ts`
-	- Added first-class patch metadata for `ranges`, `baseChecksum`, `targetChecksum`, and `validationStatus`, and aligned emitted `TextPatch` objects with the structured metadata contract.
-	- `buildChangePlan(...)` now emits explicit `add-prop`, `remove-prop`, and `update-prop-type` operations for component prop diffs instead of collapsing every prop change into a generic update.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/react-patch-emitter.ts`
-	- Async React patch emission now writes structured `ranges`, `baseChecksum`, and `targetChecksum` metadata directly onto emitted patches instead of embedding range JSON into diff comments.
-	- Added focused emitter regressions in `src/compile-back/react-patch-emitter.test.ts` for structured range and checksum emission.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/patch-coordinator.ts`
-	- Added injectable logger and validator hooks, conflict-aware review metadata, validation-status assignment on generated review patches, structured range/checksum pass-through into review bundles, and dry-run workspace validation for missing targets, diff-header mismatches, and stale base checksums.
-	- Replaced default console logger usage with structured `stderr` output to keep library logging explicit and injectable in production flows.
-	- Added focused coordinator regressions in `src/compile-back/patch-coordinator.test.ts`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/symbol-index.ts`
-	- Split symbol indexing and path normalization into a dedicated module.
-	- Added configurable alias/workspace package normalization helpers used by the resolver.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/symbol-resolver.ts`
-	- Resolver now consumes the dedicated symbol-index module and accepts configurable resolver options (`pathAliases`, `workspacePackagePrefixes`) for monorepo/tsconfig-style import resolution.
-	- Hardened unresolved-vs-cross-repo classification to avoid misclassifying normalized internal workspace paths.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/types.ts`
-	- Added first-class graph query pagination/filter controls (`cursor`, `includeUnresolvedEdges`, `unresolvedStatuses`).
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java`
-	- Removed null/TODO ingest metadata placeholders by extracting `snapshotId`, `versionId`, and `contentChecksum` from incoming node/edge metadata for repository/version persistence.
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java`
-	- Fixed cursor pagination SQL by selecting `updated_at` in paginated node/edge queries before building `nextCursor`.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/symbol-resolver.test.ts`
-	- Added alias + workspace-package regression coverage for resolver options.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/__tests__/graph-query-schema.test.ts`
-	- Added schema regression coverage for graph query cursor and unresolved-edge filters.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/scanner.test.ts`
-	- Replaced current-workspace smoke assertions with deterministic fixture-backed scanner tests.
-	- Added fixture-backed monorepo package-boundary coverage using scanner `packageBoundaries` output.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/test/fixtures/small-react-app/*`
-	- Added deterministic React fixture inputs for scanner regression coverage.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/test/fixtures/pnpm-monorepo/*`
-	- Added deterministic pnpm workspace fixture inputs for package-boundary detection coverage.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/github-provider.ts`
-	- GitHub snapshots now emit structured diagnostics for oversized skipped files, metadata-only fallback entries after blob materialization failures, and max-file cutoffs.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/gitlab-provider.ts`
-	- GitLab snapshots now emit structured diagnostics for oversized skipped files, metadata-only fallback entries after materialization failures, and max-file cutoffs.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-patch-review.test.ts`
-	- Replaced object-literal “e2e” assertions with a real compile-back review flow that exercises `buildChangePlan`, `PatchCoordinator.buildPatchSet`, `validateChangePlan`, `dryRunPatchSet`, `buildReviewBundle`, and rollback metadata creation against a real temporary source file.
-- `products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-import-job.test.ts`
-	- Replaced object-literal “e2e” assertions with a real source acquisition + synthesis flow that exercises `LocalFolderProvider.resolve(...)` and `SynthesisPipeline.runFromSnapshot(...)` through a dirty-worktree snapshot.
-
-Already satisfied in current source, not reimplemented:
-
-- `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java`
-	- The previously-audited malformed `analyzeGraph` blocking-executor call is already fixed in the workspace snapshot. The current implementation uses `Promise.ofBlocking(blockingExecutor, ...)` correctly.
-
-Remaining high-priority work from this plan:
-
-- No remaining high-priority items are open in the current workspace slice; broader end-to-end product/UI validation remains a future expansion area rather than an outstanding implementation defect in this tranche.
-
-Validation executed in this workspace:
-
-- `pnpm vitest run src/inventory/scanner.skipped-artifacts.test.ts src/model/__tests__/semantic-product-model-schema.test.ts src/__tests__/compile-back.test.ts src/synthesis/__tests__/pipeline.low-confidence-residual.test.ts src/compile-back/react-patch-emitter.test.ts`
-	- Result: 5 test files passed, 20 tests passed.
-- `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon`
-	- Result: BUILD SUCCESSFUL.
-- `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon` (after introducing `ArtifactRequestScope`)
-	- Result: BUILD SUCCESSFUL.
-- `cd products/yappc/frontend/apps/api && pnpm vitest run src/routes/__tests__/source-imports.test.ts`
-	- Result: 1 test file passed, 6 tests passed.
-- `cd products/yappc/frontend/web && pnpm vitest run src/services/compiler/__tests__/ImportSourceWorkflow.test.ts`
-	- Result: 1 test file passed, 15 tests passed.
-- `cd products/yappc/frontend/web && pnpm vitest run src/services/compiler/__tests__/import-source-flow.spec.ts src/services/compiler/__tests__/patch-review-flow.spec.ts`
-	- Result: 2 test files passed, 2 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/__tests__/source-providers.test.ts`
-	- Result: 1 test file passed, 21 tests passed.
-- `cd products/yappc/frontend/apps/api && pnpm vitest run src/services/__tests__/job-repository.test.ts`
-	- Result: 1 test file passed, 2 tests passed.
-- `cd products/yappc/frontend/apps/api && pnpm vitest run src/routes/__tests__/source-imports.test.ts src/services/__tests__/job-repository.test.ts`
-	- Result: 2 test files passed, 8 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/compile-back/patch-coordinator.test.ts`
-	- Result: 1 test file passed, 2 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/compile-back/react-patch-emitter.test.ts src/compile-back/patch-coordinator.test.ts`
-	- Result: 2 test files passed, 4 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/__tests__/source-providers.test.ts`
-	- Result: 1 test file passed, 24 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/compile-back/patch-coordinator.test.ts`
-	- Result: 1 test file passed, 3 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/__tests__/compile-back.test.ts src/__tests__/round-trip-golden.test.ts src/__tests__/e2e-patch-review.test.ts src/__tests__/e2e-import-job.test.ts src/__tests__/source-providers.test.ts`
-	- Result: 5 test files passed, 54 tests passed.
-- `cd products/yappc/frontend/apps/api && pnpm vitest run src/routes/__tests__/source-imports.test.ts src/services/__tests__/job-repository.test.ts`
-	- Result: 2 test files passed, 8 tests passed.
-- `cd products/yappc/frontend/web && pnpm vitest run src/services/compiler/__tests__/ImportSourceWorkflow.test.ts`
-	- Result: 1 test file passed, 15 tests passed.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/__tests__/symbol-resolver.test.ts src/graph/__tests__/graph-query-schema.test.ts src/compile-back/patch-coordinator.test.ts`
-	- Result: 3 test files passed, 18 tests passed.
-- `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon` (after ingest metadata extraction + pagination query fixes)
-	- Result: BUILD SUCCESSFUL.
-- `cd products/yappc/frontend/libs/yappc-artifact-compiler && pnpm vitest run src/inventory/scanner.test.ts src/__tests__/symbol-resolver.test.ts src/graph/__tests__/graph-query-schema.test.ts src/compile-back/patch-coordinator.test.ts`
-	- Result: 4 test files passed, 27 tests passed.
-
-Execution boundary: This implementation log includes locally executed Vitest and Gradle validations listed above, and evaluates the codebase snapshot at the referenced target SHA (whose merge diff only updated the YAPPC changelog). :contentReference[oaicite:0]{index=0}
+I inspected the high-leverage artifact compiler/decompiler paths at the target ref. Areas not directly inspected are marked `UNVERIFIED` instead of assumed.
 
 ---
 
 ## Section A: Objective Current Status
 
-| Area | Status | Evidence from current code | Objective conclusion | Production impact |
-|---|---:|---|---|---|
-| Artifact compiler package boundary | `PARTIALLY_IMPLEMENTED` | `src/index.ts` exports inventory, graph, source-providers, compile-back, model, provenance, residual, extractors, synthesis, merge, and builder. :contentReference[oaicite:1]{index=1} | A coherent package boundary exists. | Good foundation, but package content is uneven and not yet production round-trip safe. |
-| Source provider abstraction | `PARTIALLY_IMPLEMENTED` | `SourceProvider`, `SourceLocatorSchema`, `RepositorySnapshotSchema`, and `SourceProviderRegistry` exist. :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3} | Provider abstraction exists, but `SourceScopeContext` is not part of `SourceProvider.resolve`, and raw credentials are still accepted. | Needs governed scope and secret-reference-only acquisition before production use. |
-| GitHub source provider | `PARTIALLY_IMPLEMENTED` | GitHub provider resolves commit SHA, reads recursive tree, fails closed on truncated tree, and materializes files. :contentReference[oaicite:4]{index=4} | Repo import is technically possible for GitHub, but skip diagnostics, retry/resume, durable job binding, credential governance, and large-repo fallback are incomplete. | Foundation is useful but not production-grade for enterprise repos. |
-| GitLab source provider | `PARTIALLY_IMPLEMENTED` | GitLab provider resolves commits, pages tree entries, materializes files, and records non-materialized files. :contentReference[oaicite:5]{index=5} :contentReference[oaicite:6]{index=6} | GitLab support exists, but raw token handling, missing diagnostics, and registry ambiguity remain. | Needs hardening and tests. |
-| Local folder provider | `PARTIALLY_IMPLEMENTED` | Local provider resolves a directory, tries Git commit SHA and remote URL, and walks files. :contentReference[oaicite:7]{index=7} | Local import exists but does not prove immutable dirty-worktree snapshots and does not record skip diagnostics. | Unsafe for trusted reproducible repository snapshots. |
-| ZIP source provider | `PARTIALLY_IMPLEMENTED` | ZIP provider parses central directory, protects against zip-slip, computes archive hash, and materializes entries. :contentReference[oaicite:8]{index=8} | ZIP support exists, but tar support is absent and unsupported/oversized/skipped entries are not surfaced through diagnostics. | Good starting point, incomplete archive acquisition. |
-| Durable source import jobs | `PARTIALLY_IMPLEMENTED` | Fastify route creates jobs and records progress; repository is file-based under `~/.yappc/jobs`, “designed to be replaceable with database.” :contentReference[oaicite:9]{index=9} :contentReference[oaicite:10]{index=10} | Jobs exist, but are not DB-backed production durable jobs and route supports only `tsx`, `route`, `storybook`, `artifact`, and `zip`. | Not sufficient for repo-scale governed acquisition. |
-| Frontend/API source type consistency | `DUPLICATED_OR_CONFLICTING` | Frontend workflow exposes `github`, `gitlab`, and `local-folder`; API route allowed types exclude those, while job repository type includes them. :contentReference[oaicite:11]{index=11} :contentReference[oaicite:12]{index=12} :contentReference[oaicite:13]{index=13} | Source import contracts are inconsistent across frontend, API route, and job repository. | Users can select/import paths that server orchestration rejects. |
-| Deterministic inventory scanner | `PARTIALLY_IMPLEMENTED` | Scanner has snapshotRef, sorted traversal, checksums, `.gitignore` matcher, generated/binary classifiers, package/workspace detection. :contentReference[oaicite:14]{index=14} :contentReference[oaicite:15]{index=15} | Scanner has real functionality. | Needs skip-reason fidelity, stable timestamp strategy, real gitignore semantics, and fixture tests. |
-| Skipped artifact reporting | `UNSAFE_FOR_PRODUCTION` | Schema defines `SkippedArtifactSchema`, but `scanRepository` initializes and sorts `skippedArtifacts` without ever pushing skipped/excluded/oversized/read-error records. :contentReference[oaicite:16]{index=16} :contentReference[oaicite:17]{index=17} | Current skip visibility is effectively broken. | Source fidelity and auditability are blocked. |
-| Artifact IDs | `PARTIALLY_IMPLEMENTED` | `buildDeterministicNodeId` returns deterministic URNs when `snapshotRef` exists and `crypto.randomUUID()` when absent. :contentReference[oaicite:18]{index=18} | IDs are conditionally deterministic, not universally deterministic. | No-op round-trip and diff stability require enforced snapshotRef for source-derived scans. |
-| Artifact graph schema | `PARTIALLY_IMPLEMENTED` | Graph schema includes file/symbol/component/route/style/API/state/workflow node kinds, resolved edges, unresolved edges, resolution records, indexes, source locations, provenance, confidence, flags, and residual refs. :contentReference[oaicite:19]{index=19} :contentReference[oaicite:20]{index=20} | Schema is strong, but runtime lifecycle is incomplete. | Good IR foundation, needs persistence/version/query hardening. |
-| Edge resolution lifecycle | `PARTIALLY_IMPLEMENTED` | Resolver builds an in-memory index by symbolRef, label, file path, basename, extensions, and hardcoded aliases. :contentReference[oaicite:21]{index=21} | Resolver exists, but alias handling is not based on `tsconfig`, no persistent/exported symbol index, and no per-package boundary resolution. | Works for simple cases, not complex monorepos. |
-| Graph validation | `PARTIALLY_IMPLEMENTED` | `validateGraph` checks duplicate node IDs, edge endpoint existence, confidence, required fields, and index consistency. :contentReference[oaicite:22]{index=22} | Structural validation exists. | Needs unresolved-edge policy validation and schema/runtime enforcement in backend ingest. |
-| Semantic model schema | `PARTIALLY_IMPLEMENTED` | Model schema covers components, pages, layouts, tokens, themes, styles, data entities, APIs, state stores, interactions, cache, workflows, provenance, confidence, flags, graph links, and residual IDs. :contentReference[oaicite:23]{index=23} :contentReference[oaicite:24]{index=24} | Broad model schema exists. | Actual synthesis completeness depends on extractors and has schema mismatch risk. |
-| Semantic synthesis pipeline | `PARTIALLY_IMPLEMENTED` | `SynthesisPipeline` scans, extracts, resolves symbols, validates graph, and builds model. :contentReference[oaicite:25]{index=25} :contentReference[oaicite:26]{index=26} | Pipeline exists but does not perform provider acquisition internally and relies entirely on registered extractors. | Foundation exists; not complete product-model synthesis. |
-| Semantic model ID validity | `UNSAFE_FOR_PRODUCTION` | `SemanticProductModelSchema.id` requires UUID, but pipeline uses `buildDeterministicNodeId`, which returns `artifact://...` URNs when snapshotRef exists. :contentReference[oaicite:27]{index=27} :contentReference[oaicite:28]{index=28} | Schema and pipeline are inconsistent. | Model validation can fail for deterministic source-derived models. |
-| Residual island schema | `PARTIALLY_IMPLEMENTED` | Residual schema includes source span, original source, reason, confidence, review, raw fragment ref, checksum, risk, related graph nodes. :contentReference[oaicite:29]{index=29} | Schema is strong. | Extraction/preservation logic is weaker than schema. |
-| Residual preservation | `PARTIALLY_IMPLEMENTED` | Low-confidence pipeline residuals use `originalSource: artifact.relativePath` and zero source span; preserver can emit warnings, TODO stubs, or throwing code. :contentReference[oaicite:30]{index=30} :contentReference[oaicite:31]{index=31} | Residuals are modeled but not source-faithful enough. | Round-trip safety is blocked for unsupported source. |
-| Compile-back / patch generation | `STUB_OR_PLACEHOLDER` | Compile-back types exist, and coordinator defaults to `ReactPatchEmitter`; emitter has placeholder comment diffs in sync path and regex-based async edits for rename/add-prop only. :contentReference[oaicite:32]{index=32} :contentReference[oaicite:33]{index=33} :contentReference[oaicite:34]{index=34} | Not true decompiler/round-trip patch generation. | Major blocker for world-class round-trip capability. |
-| Backend graph APIs | `PARTIALLY_IMPLEMENTED` | ActiveJ controller exposes ingest/analyze/merge/query/residual endpoints and checks principal presence and tenant mismatch. :contentReference[oaicite:35]{index=35} | APIs exist, but scope propagation is incomplete for typed ingest/analyze/merge objects. | Tenant isolation must be fixed before production. |
-| Backend graph service build correctness | `UNSAFE_FOR_PRODUCTION` | `ArtifactGraphServiceImpl.analyzeGraph` contains an apparent malformed `g(blockingExecutor, ...)` call in the inspected source. :contentReference[oaicite:36]{index=36} | Source appears compile-broken or corrupted. | P0 build blocker. |
-| Backend persistence | `PARTIALLY_IMPLEMENTED` | JDBC repository supports node/edge upsert, tombstones, snapshot/version columns, pagination methods, and snapshot diff. :contentReference[oaicite:37]{index=37} :contentReference[oaicite:38]{index=38} | Persistence exists, but `snapshotId`/`versionId` are not supplied by service and pagination SQL appears broken. | Needs migration/API/service alignment. |
-| Source import UX/backend contract | `PARTIALLY_IMPLEMENTED` | Frontend workflow has server import fallback and local fallback; API route returns review-required imports, progress job, and polling. :contentReference[oaicite:39]{index=39} :contentReference[oaicite:40]{index=40} :contentReference[oaicite:41]{index=41} | UX contract exists for single remote files, not full governed repo snapshots. | Repo import UX remains disconnected. |
-| Tests | `PARTIALLY_IMPLEMENTED` | Scanner tests cover basic scan, classification, checksums, exclusion, ordering, package boundary, and zip-slip path assertions. :contentReference[oaicite:42]{index=42} | Tests are mostly current-repo smoke tests, not golden fixtures or round-trip tests. | Missing tests block safe refactor and production confidence. |
+| Area                               |                                                   Status | Evidence from current code                                                                                                                                                                                                                                                  | Objective conclusion                                                                                                                                                                        | Production impact                                            |
+| ---------------------------------- | -------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Artifact compiler package          |                                  `PARTIALLY_IMPLEMENTED` | Package exports inventory, graph, model, extractors, provenance, residual, merge, synthesis, source-providers, compile-back, builder.  Root barrel re-exports these modules.                                                                                                | Real package exists, but production capability depends on actual extractor, backend, UX, persistence, and patch integration.                                                                | Good foundation, not enough for world-class round-trip.      |
+| Source provider abstraction        |                                  `PARTIALLY_IMPLEMENTED` | `SourceProvider`, `SourceLocator`, `RepositorySnapshot`, registry, credential policy exist.                                                                                                                                                                                 | Abstraction exists, but registry dispatch ignores typed provider intent and uses `canHandle` on normalized strings.                                                                         | Provider ambiguity and governance gaps.                      |
+| GitHub source acquisition          |                                  `PARTIALLY_IMPLEMENTED` | GitHub provider resolves commit SHA, fetches recursive tree, materializes files, fails on truncated tree.                                                                                                                                                                   | Repo snapshot support exists, but uses raw token option, random temp roots, no durable backend job integration, no retry/rate-limit governance.                                             | Repo import possible, but not production-governed.           |
+| GitLab source acquisition          |                                  `PARTIALLY_IMPLEMENTED` | GitLab provider resolves commit, paginates repository tree, materializes files.                                                                                                                                                                                             | Basic support exists, but nested GitLab groups, credentialRef resolution, retry/rate limits, and typed dispatch are weak.                                                                   | Partial provider readiness.                                  |
+| Local folder source acquisition    |                                  `PARTIALLY_IMPLEMENTED` | Local provider reads git metadata, remote URL, dirty status, file metadata, and content hash fallback.                                                                                                                                                                      | Useful local snapshot support exists, but trust boundary and server runtime policy are not fully modeled.                                                                                   | Unsafe if exposed beyond trusted runtime.                    |
+| ZIP source acquisition             |                                  `PARTIALLY_IMPLEMENTED` | ZIP provider parses central directory, content-hashes archive, extracts with zip-slip containment guard.                                                                                                                                                                    | ZIP exists, but tar archive support, skipped-entry diagnostics, unsupported compression diagnostics, and credential governance are missing.                                                 | Archive import is incomplete.                                |
+| Durable source import jobs         |    `PARTIALLY_IMPLEMENTED` / `DUPLICATED_OR_CONFLICTING` | Fastify source import route creates and updates jobs through `getJobRepository`.  DB migration creates `source_import_jobs`.  Search also shows Java `SourceImportJobRepository`.                                                                                           | Durable job concept exists, but ownership is split between Fastify, DB migration, and Java service.                                                                                         | Operational consistency risk.                                |
+| Deterministic inventory scanner    |                                  `PARTIALLY_IMPLEMENTED` | Scanner config includes snapshotRef, `.gitignore`, include/exclude, max size, symlink policy; directory entries are sorted; IDs use deterministic helper when snapshotRef exists.  Inventory schema records snapshotRef, skipped artifacts, package boundaries, summaries.  | Scanner is real, but deterministic identity falls back to random UUID without snapshotRef; `.gitignore` parser is homegrown; bounded concurrency and exact gitignore parity are not proven. | Foundation is useful but not fully trustable.                |
+| Artifact graph schema              | `IMPLEMENTED` frontend / `PARTIALLY_IMPLEMENTED` backend | TS graph schema has nodes, resolved edges, unresolved edges, resolution records, source locations, provenance, confidence, residual refs.  Java DTOs are much thinner.                                                                                                      | Frontend IR is richer than backend persistence contract.                                                                                                                                    | Fidelity is lost when graph crosses backend boundary.        |
+| Resolved/unresolved edge lifecycle |                                  `PARTIALLY_IMPLEMENTED` | TS graph separates `GraphEdge` from `UnresolvedGraphEdge`; resolver emits resolved edges and records.   Graph validation checks edge source/target IDs exist.                                                                                                               | Frontend lifecycle exists; backend ingest has no first-class unresolved edge or resolution-record DTO/table.                                                                                | Backend can persist invalid or lossy graph semantics.        |
+| Semantic product model             |                                  `PARTIALLY_IMPLEMENTED` | Model schemas include component, page, layout, token/theme/style, data entity, API, state, interaction, cache, workflow, provenance, graphNodeIds, residualIslandIds.                                                                                                       | Rich schema exists, but synthesis completeness depends on extractors; model ID is random and backend model persistence is not coherently wired.                                             | Model layer exists but is not production round-trip durable. |
+| Residual islands                   |                                  `PARTIALLY_IMPLEMENTED` | Residual schema preserves originalSource, reason, sourceLocation, extractor metadata, rawFragmentRef, checksum, risk, related graph nodes.  Pipeline also creates residuals for low-confidence extraction.                                                                  | Schema is strong, but production detection, backend persistence, UI visibility, and patch preservation are incomplete.                                                                      | Source fidelity not guaranteed end-to-end.                   |
+| Synthesis pipeline                 |                                  `PARTIALLY_IMPLEMENTED` | Pipeline runs scan → extract → resolve → assemble graph → validate → model.  Source import route invokes pipeline with `extractors: []`.                                                                                                                                    | Pipeline skeleton exists, but current API path produces no extracted graph/model content for repository imports.                                                                            | Major production blocker.                                    |
+| Compile-back / patch generation    |          `STUB_OR_PLACEHOLDER` / `PARTIALLY_IMPLEMENTED` | Compile-back types and coordinator exist.   React emitter sync `emit()` deliberately no-ops and async supports only rename/add-prop.                                                                                                                                        | Not true round-trip. It is a limited React patch prototype.                                                                                                                                 | Cannot safely modify source at production level.             |
+| Backend graph API                  |                                  `PARTIALLY_IMPLEMENTED` | Java controller exposes ingest/analyze/merge/query/residual and resolves tenant from `Principal`.  Service and repository persist graph nodes/edges.                                                                                                                        | Tenant is protected better than before, but product/project scope still comes from request payload and no workspace/project registry validation is visible.                                 | Cross-project access risk remains.                           |
+| Backend graph persistence          |                                  `PARTIALLY_IMPLEMENTED` | Tables for nodes/edges exist.  Snapshot/tombstone columns added in V11 and again in V14.   Repository has upsert/tombstone/pagination methods.                                                                                                                              | Persistence exists, but migration intent is duplicated, unresolved edges/residuals/patches are not first-class, and `contentChecksum` parameter is ignored by upsert alias.                 | History and drift support remain incomplete.                 |
+| Frontend/API source import         |                                  `PARTIALLY_IMPLEMENTED` | Fastify route validates scope headers, source type, source locator, runs provider resolution, creates review-required job.                                                                                                                                                  | It is import/review-only and uses no extractors for repo imports; web UI integration was not directly verified.                                                                             | User-facing compiler flow is not end-to-end.                 |
+| Tests and fixtures                 |                                             `UNVERIFIED` | Package has test scripts in `package.json`.  Specific golden round-trip fixture tests were not verified.                                                                                                                                                                    | Test presence is not evidence of required coverage.                                                                                                                                         | Production confidence missing.                               |
+| Overall round-trip capability      |                                  `UNSAFE_FOR_PRODUCTION` | Compile-back is limited; source import route has empty extractor pipeline; backend DTO loses IR fidelity.                                                                                                                                                                   | Current implementation is not true round-trip capable.                                                                                                                                      | P0 blocker.                                                  |
 
-### Current Capability Classification
+### Maturity verdict
 
 ```text
-Source acquisition: partial repo-capable in library; single-file governed API route only.
-Inventory: repo-capable but not fully source-faithful or skip-auditable.
-Graph: schema-capable and resolver-capable, but not fully persisted/versioned/query-safe.
-Semantic model: broad schema and partial pipeline, not proven complete synthesis.
-Compile-back: stub/partial; not round-trip safe.
-Overall: not production-ready; foundation exists but trust, persistence, scope, and round-trip safety are incomplete.
+Current capability classification:
+- Source acquisition: snapshot-capable library, partially governed API
+- Inventory: repo-capable, partially deterministic
+- Graph: source-faithful schema in TypeScript, lossy backend persistence
+- Semantic model: schema/provenance-aware, synthesis incomplete in API path
+- Compile-back: limited React prototype, not round-trip safe
+- Overall: not production-ready; foundation exists but is not trustworthy end-to-end
 ```
 
 ---
 
 ## Section B: Evidence-Based Current Code Map
 
-| Capability area | Current file/module | What exists objectively | What is missing objectively | Keep/modify/remove/consolidate |
-|---|---|---|---|---|
-| Compiler package API | `products/yappc/frontend/libs/yappc-artifact-compiler/src/index.ts` | Modular exports for inventory, graph, source providers, compile-back, model, residuals, synthesis. :contentReference[oaicite:43]{index=43} | No top-level governed “compile repository” façade. | Keep; add canonical pipeline façade. |
-| Inventory schema | `src/inventory/types.ts` | Artifact, skipped artifact, package boundary, inventory schemas. :contentReference[oaicite:44]{index=44} | Skipped schema not actually populated. | Modify scanner to honor schema. |
-| Scanner | `src/inventory/scanner.ts` | File walk, sort, checksums, generated/binary detection, `.gitignore` parser, package boundaries. :contentReference[oaicite:45]{index=45} :contentReference[oaicite:46]{index=46} | Skip reasons, bounded concurrency, stable time metadata, robust glob/gitignore implementation. | Modify/split into scanner modules. |
-| Source providers | `src/source-providers/*` | Local/GitHub/GitLab/Zip providers and registry. :contentReference[oaicite:47]{index=47} | Scope context, credentialRef resolution, diagnostics, retry/cancel/resume. | Keep; harden contracts. |
-| Graph schema | `src/graph/types.ts` | Strong node/edge/unresolved-edge graph schema. :contentReference[oaicite:48]{index=48} :contentReference[oaicite:49]{index=49} | Cursor pagination query schema, persisted symbol index schema. | Modify. |
-| Symbol resolver | `src/synthesis/symbol-resolver.ts` | In-memory resolver for unresolved edges. :contentReference[oaicite:50]{index=50} | Configurable alias/project resolution, exported index, package-aware references. | Split into symbol-index and resolver. |
-| Synthesis pipeline | `src/synthesis/pipeline.ts` | Scan → extract → resolve → graph → model pipeline. :contentReference[oaicite:51]{index=51} :contentReference[oaicite:52]{index=52} | Provider acquisition, extractor registry discovery, true provenance index, schema-consistent model IDs. | Modify. |
-| Semantic model | `src/model/types.ts` | Broad model types and version metadata. :contentReference[oaicite:53]{index=53} :contentReference[oaicite:54]{index=54} | Container-level snapshotRef, source identity fields, schema alignment with deterministic URNs. | Modify. |
-| Residuals | `src/residual/types.ts`, `src/compile-back/residual-preserver.ts` | Rich residual schema and preservation helper. :contentReference[oaicite:55]{index=55} :contentReference[oaicite:56]{index=56} | Raw source preservation in pipeline, block-on-risk policy, no production stubs. | Modify. |
-| Compile-back | `src/compile-back/*` | Change and patch schemas, coordinator, React emitter. :contentReference[oaicite:57]{index=57} :contentReference[oaicite:58]{index=58} | AST/range patching, validation runner, apply/rollback/PR integration, no-op zero-diff. | Replace emitter; extend coordinator. |
-| Backend API | `ArtifactGraphController.java` | ActiveJ controller with tenant mismatch checks. :contentReference[oaicite:59]{index=59} | Principal-derived scope object passed into service, workspace/project checks, typed DTO sanitization. | Modify. |
-| Backend service | `ArtifactGraphServiceImpl.java` | JGraphT analysis, merge, residual analysis, parsing for Java/SQL/YAML. :contentReference[oaicite:60]{index=60} :contentReference[oaicite:61]{index=61} | Compile correctness, snapshot/version propagation, real residual analysis, TS/backend ownership clarity. | Modify. |
-| Backend persistence | `ArtifactGraphRepository.java` | JDBC upsert, tombstones, pagination methods, snapshot diff. :contentReference[oaicite:62]{index=62} :contentReference[oaicite:63]{index=63} | DB migrations verification, pagination SQL correctness, principal scope enforcement in saved nodes. | Modify. |
-| Frontend import workflow | `ImportSourceWorkflow.ts` | UI service exposes TSX/route/storybook/artifact/zip/github/gitlab/local-folder and server fallback. :contentReference[oaicite:64]{index=64} | Unified source import contract, duplicate residual type removal, repo import job status integration. | Modify/consolidate. |
-| Fastify import API | `source-imports.ts` | Governed source import route, progress jobs, audit event. :contentReference[oaicite:65]{index=65} :contentReference[oaicite:66]{index=66} | Repo import providers, database job store, async job awaits, full snapshot pipeline. | Modify. |
-| Job repository | `job-repository.ts` | File-based durable-ish job repository. :contentReference[oaicite:67]{index=67} | DB-backed production store, indexes, TTL cleanup safety, job locking. | Replace for prod; keep as dev adapter. |
-| Tests | `scanner.test.ts` | Smoke tests for scanner. :contentReference[oaicite:68]{index=68} | Golden fixtures, no-op round-trip, provider, tenant isolation, backend API, frontend E2E tests. | Add comprehensive tests. |
+| Capability area       | Current file/module                                                 | What exists objectively                                                                                          | What is missing objectively                                                                                            | Keep/modify/remove/consolidate                            | Evidence quality |
+| --------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
+| Package boundary      | `products/yappc/frontend/libs/yappc-artifact-compiler/package.json` | Published library shape with many exports.                                                                       | No proof all exported capabilities are production-complete.                                                            | Keep; harden exports and tests.                           | `DIRECT_CODE`    |
+| Root exports          | `src/index.ts`                                                      | Barrel exports all compiler layers.                                                                              | Does not prove wiring into app/backend.                                                                                | Keep.                                                     | `DIRECT_CODE`    |
+| Inventory types       | `src/inventory/types.ts`                                            | File classification, skipped artifacts, package boundaries, inventory summary.                                   | Skipped reasons missing generated/vendor/binary first-class reasons; source-file refs are not strong enough.           | Modify.                                                   | `DIRECT_CODE`    |
+| Scanner               | `src/inventory/scanner.ts`                                          | Recursive local scan, `.gitignore`, generated/binary heuristics, boundaries, deterministic IDs with snapshotRef. | No proven bounded concurrency; gitignore parity is partial; volatile timestamps complicate deterministic golden tests. | Modify.                                                   | `DIRECT_CODE`    |
+| Source provider core  | `src/source-providers/types.ts`                                     | `SourceProvider`, `SourceLocator`, `RepositorySnapshot`, registry, credential policy.                            | Typed provider dispatch and secret-reference resolver are incomplete.                                                  | Modify.                                                   | `DIRECT_CODE`    |
+| GitHub provider       | `src/source-providers/github-provider.ts`                           | Commit pinning and recursive tree materialization.                                                               | Durable server job integration, credentialRef, retry/rate-limit, cleanup, large repo fallback.                         | Modify.                                                   | `DIRECT_CODE`    |
+| GitLab provider       | `src/source-providers/gitlab-provider.ts`                           | Commit pinning and paginated materialization.                                                                    | Nested groups, credentialRef, provider dispatch safety.                                                                | Modify.                                                   | `DIRECT_CODE`    |
+| ZIP provider          | `src/source-providers/zip-provider.ts`                              | ZIP extraction with zip-slip guard.                                                                              | Tar support, skipped diagnostics, compression diagnostics.                                                             | Modify/add archive provider.                              | `DIRECT_CODE`    |
+| Graph schema          | `src/graph/types.ts`                                                | Rich IR with nodes, edges, unresolved edges, source metadata.                                                    | Backend parity; query result cursor; stronger invariants.                                                              | Modify.                                                   | `DIRECT_CODE`    |
+| Graph validation      | `src/graph/validateGraph.ts`                                        | Checks duplicate nodes, missing edge endpoints, confidence, index consistency.                                   | Not exported from graph barrel; lacks unresolved lifecycle and raw-name edge validation.                               | Modify/export.                                            | `DIRECT_CODE`    |
+| Synthesis pipeline    | `src/synthesis/pipeline.ts`                                         | Full orchestrator skeleton.                                                                                      | API route passes no extractors; deterministic model identity incomplete.                                               | Modify.                                                   | `DIRECT_CODE`    |
+| Symbol resolver       | `src/synthesis/symbol-resolver.ts`                                  | Resolves unresolved edges and records outcomes.                                                                  | Edge IDs are ad hoc strings; alias config not sourced from scan config/package metadata.                               | Modify.                                                   | `DIRECT_CODE`    |
+| Semantic model        | `src/model/types.ts`                                                | Rich model schemas with provenance and graph links.                                                              | Backend persistence, deterministic identity, model diffs/version storage.                                              | Modify + backend additions.                               | `DIRECT_CODE`    |
+| Residuals             | `src/residual/types.ts`                                             | Residual schema with source, checksum, risk.                                                                     | `placeholder-stub` strategy is allowed; backend/UI preservation unverified.                                            | Modify.                                                   | `DIRECT_CODE`    |
+| Compile-back types    | `src/compile-back/types.ts`                                         | Change ops, patch sets, validation, review bundle, rollback metadata.                                            | Too React/component-heavy; no broad model change coverage.                                                             | Modify.                                                   | `DIRECT_CODE`    |
+| Patch coordinator     | `src/compile-back/patch-coordinator.ts`                             | Emits patches, dry-run validation, review bundle.                                                                | No apply, no command validation, stderr logger, unsupported op handling is weak.                                       | Modify.                                                   | `DIRECT_CODE`    |
+| React patch emitter   | `src/compile-back/react-patch-emitter.ts`                           | Async rename/add-prop patch support.                                                                             | Sync emits empty; unsupported operations silently no-op; regex-based instead of AST-safe.                              | Modify.                                                   | `DIRECT_CODE`    |
+| Java graph API        | `ArtifactGraphController.java`                                      | ActiveJ endpoints and principal-derived tenant.                                                                  | Project/workspace authorization not proven; graph validation not enforced before persistence.                          | Modify.                                                   | `DIRECT_CODE`    |
+| Java graph service    | `ArtifactGraphServiceImpl.java`                                     | Ingest, analysis, merge, query, residual analysis.                                                               | TS/JS parse stub, residual analysis placeholder, query ignores pagination methods.                                     | Modify/remove stub behavior.                              | `DIRECT_CODE`    |
+| Java graph repository | `ArtifactGraphRepository.java`                                      | JDBC persistence, upsert, tombstone, pagination helpers.                                                         | Default `Runnable::run`, contentChecksum ignored, unresolved/residual/patch tables absent.                             | Modify.                                                   | `DIRECT_CODE`    |
+| Fastify source import | `source-imports.ts`                                                 | Scope headers, source validation, provider registry, jobs, audit.                                                | Uses `extractors: []`; does not persist full graph/model/patch; header auth inconsistent with Java principal.          | Modify/consolidate.                                       | `DIRECT_CODE`    |
+| DB migrations         | `V10`, `V11`, `V14`                                                 | Artifact graph and source job tables.                                                                            | Snapshot columns duplicated in V11 and V14; missing snapshot inventory, unresolved edge, residual, patch tables.       | Add corrective migration; do not edit applied migrations. | `DIRECT_CODE`    |
 
 ---
 
 ## Section C: Gap Analysis Against Target State
 
-| Capability | Current state | Gap | Severity | Required fix |
-|---|---|---|---:|---|
-| Build correctness | Backend service appears to contain malformed Java in `analyzeGraph`. :contentReference[oaicite:69]{index=69} | Build may fail before runtime validation. | P0 | Fix `ArtifactGraphServiceImpl.analyzeGraph` to use `Promise.ofBlocking(blockingExecutor, ...)` correctly and add compile test. |
-| Server-side scope enforcement | Controller validates tenant mismatch but does not normalize typed ingest/analyze/merge DTOs to principal tenant. :contentReference[oaicite:70]{index=70} | Null/body-supplied scope can flow into service/repository. | P0 | Introduce `ArtifactRequestScope` and make service methods accept server-derived scope separately from payload. |
-| Node persistence scope | `saveNodes` accepts product/tenant parameters but writes `node.tenantId()` and `node.projectId()`. :contentReference[oaicite:71]{index=71} | Node payload can override server scope. | P0 | Persist tenant/project from method arguments only; reject mismatching node DTO scope. |
-| Skipped source fidelity | `skippedArtifacts` exists but is never populated. :contentReference[oaicite:72]{index=72} :contentReference[oaicite:73]{index=73} | Users cannot see ignored/skipped/residual files. | P0 | Record skip decisions at walker/scanner boundary with explicit reasons. |
-| Semantic model validation | Pipeline returns deterministic URN model IDs while schema requires UUID. :contentReference[oaicite:74]{index=74} :contentReference[oaicite:75]{index=75} | Model may fail schema validation. | P0 | Change schema to accept `sourceModelRef` separately or make pipeline generate UUID model IDs. |
-| Compile-back | Current emitter is regex/placeholder-based and limited to React component operations. :contentReference[oaicite:76]{index=76} | Not round-trip safe. | P0 | Replace with AST-backed patch emitters and no-op zero-diff tests. |
-| Source provider governance | `ProviderCredentials` accepts raw token/password and providers read raw token. :contentReference[oaicite:77]{index=77} :contentReference[oaicite:78]{index=78} | Secrets can leak through options/logging/UI. | P0 | Use credentialRef only in governed flows; resolve secrets server-side. |
-| Fastify repo import | API route excludes GitHub/GitLab/local-folder even though frontend and job repo support them. :contentReference[oaicite:79]{index=79} :contentReference[oaicite:80]{index=80} :contentReference[oaicite:81]{index=81} | Full repo import UX cannot be server-governed. | P1 | Extend API route to provider-backed repository import jobs. |
-| Source import job durability | Job repository is file-based under user home. :contentReference[oaicite:82]{index=82} | Not production-durable or horizontally scalable. | P1 | Add DB-backed job repository and keep file repo as dev/test adapter. |
-| Backend pagination | Repository paginated methods read `updated_at` cursor without selecting `updated_at`. :contentReference[oaicite:83]{index=83} | Runtime SQL/result mapping failure. | P1 | Select `updated_at` and add pagination tests. |
-| Snapshot/version propagation | Service sets `snapshotId`, `versionId`, and checksum to null/TODO. :contentReference[oaicite:84]{index=84} | Graph persistence is not truly snapshot-aware. | P1 | Add DTO metadata fields and pass snapshot/version/checksum through service/repository. |
-| Residual preservation | Low-confidence residuals do not preserve raw source; preserver can emit stubs/TODO/throw. :contentReference[oaicite:85]{index=85} :contentReference[oaicite:86]{index=86} | Unsupported source is not safely round-tripped. | P1 | Preserve raw spans and block patching when preservation cannot be exact. |
-| Tests | Existing tests are scanner smoke tests. :contentReference[oaicite:87]{index=87} | No golden fixtures or round-trip evidence. | P1 | Add golden fixture suite and backend/frontend regression gates. |
+| Capability                    | Current state                                                                  | Gap                                                                               | Severity | Required fix                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------------------------------------------------- |
+| True round-trip               | Limited compile-back prototype.                                                | No source → model → patch → source → model guarantee.                             |       P0 | Build no-op round-trip harness, patch apply/dry-run, residual-preservation validation, and fixture tests before broad emitters. |
+| Repository import through API | Provider can snapshot repo, but route runs pipeline with `extractors: []`.     | API succeeds with no meaningful extraction.                                       |       P0 | Register real extractor capability registry or return explicit unsupported state.                                               |
+| Backend graph fidelity        | TS graph is rich; Java DTOs are thin.                                          | SourceLocation, confidence, provenance, unresolved edges, residual refs are lost. |       P0 | Extend DTOs/tables and validate graph before ingest.                                                                            |
+| Scope enforcement             | Controller enforces tenant from principal; productId remains payload-derived.  | Project/workspace authorization not proven.                                       |       P0 | Resolve workspace/project from principal/resource registry server-side.                                                         |
+| Durable source jobs           | Job concepts exist in Fastify and DB; Java job repo found.                     | Split ownership.                                                                  |       P1 | Pick one canonical source import job service and make other layer a client.                                                     |
+| Deterministic scan            | SnapshotRef IDs are deterministic; missing snapshotRef falls back random.      | Golden no-op scans can drift.                                                     |       P1 | Require snapshotRef for repo scans; isolate volatile timestamps from identity comparisons.                                      |
+| GitHub/GitLab governance      | Raw tokens accepted in server options; browser only rejects raw creds.         | Secret references not actually resolved.                                          |       P1 | Add credential resolver interface and audit-redacted provider diagnostics.                                                      |
+| Patch generation              | React emitter claims several ops but only implements async rename/add-prop.    | Silent no-op patch risk.                                                          |       P0 | Make unsupported ops explicit `review-required/unsupported`, not empty success.                                                 |
+| DB model                      | Nodes/edges exist; snapshot tracking duplicated across migrations.             | Missing repository snapshots, inventory, unresolved edges, residuals, patches.    |       P1 | Add V15 corrective migration with full IR persistence.                                                                          |
+| Backend parsing               | Java service returns stub-like unparsed nodes for unsupported languages.       | Production stub behavior remains.                                                 |       P0 | Remove from production path or gate behind explicit unsupported feature flag.                                                   |
+| UI import/review              | API supports review-required response.                                         | Web UI path and canvas integration not verified.                                  |       P1 | Add import summary, residuals, confidence, patch review, drift UI wired to real backend.                                        |
 
 ---
 
 ## Section D: Architecture Decisions
 
-### Decision 1: Canonical artifact compiler ownership
+### Decision 1: Canonical compiler/decompiler engine ownership
 
-- **Decision:** Keep `products/yappc/frontend/libs/yappc-artifact-compiler` as the canonical TypeScript compiler/decompiler library for source acquisition, inventory, extraction, graph IR, semantic model, residuals, and compile-back contracts.
-- **Why:** It already exports the relevant subdomains from a single package boundary. :contentReference[oaicite:88]{index=88}
-- **Files to modify:** `src/index.ts`, `src/synthesis/pipeline.ts`, `src/source-providers/types.ts`.
-- **Alternatives rejected:** Moving TS/TSX parsing into Java backend; backend itself says TS/JS should use frontend artifact compiler. :contentReference[oaicite:89]{index=89}
+* **Decision:** `products/yappc/frontend/libs/yappc-artifact-compiler` remains the canonical source-to-IR/model/patch engine.
+* **Why:** It already owns source providers, inventory, graph, synthesis, residual, and compile-back exports. 
+* **Files to keep:** `products/yappc/frontend/libs/yappc-artifact-compiler/src/**`
+* **Files to modify:** scanner, source providers, graph validation, synthesis, compile-back.
+* **Alternatives rejected:** Java service as primary parser for TS/JS, because Java currently returns stub-like unsupported nodes for many languages. 
 
-### Decision 2: Backend graph service ownership
+### Decision 2: Canonical durable governance/API ownership
 
-- **Decision:** Keep durable graph persistence and analysis in `products/yappc/core/yappc-services`, but make it consume canonical graph/model DTOs generated from the TypeScript package/proto contract.
-- **Why:** Java service already owns ActiveJ/JDBC/JGraphT persistence and analysis. :contentReference[oaicite:90]{index=90} :contentReference[oaicite:91]{index=91}
-- **Files to modify:** `ArtifactGraphController.java`, `ArtifactGraphService.java`, `ArtifactGraphServiceImpl.java`, `ArtifactGraphRepository.java`.
+* **Decision:** Java `yappc-services` owns durable graph/model/snapshot/patch persistence and server-side authorization.
+* **Why:** Java controller already uses authenticated `Principal` for tenant scope and repository persists graph nodes/edges.  
+* **Files to modify:** `ArtifactGraphController.java`, `ArtifactGraphServiceImpl.java`, `ArtifactGraphRepository.java`, domain DTOs, migrations.
+* **Alternatives rejected:** Fastify route as sole durable owner, because durable tables and graph service already live in Java.
 
-### Decision 3: Source acquisition jobs
+### Decision 3: Source import job ownership
 
-- **Decision:** Move production source import jobs from file-based repo to database-backed repository while retaining the file repository as a dev/test adapter.
-- **Why:** Current repository is explicitly file-based under `~/.yappc/jobs`. :contentReference[oaicite:92]{index=92}
-- **Files to modify/add:** `job-repository.ts`, `db-backed-job-repository.ts`, DB migration.
+* **Decision:** Consolidate around one durable job model and expose it through both APIs only as clients.
+* **Why:** Fastify route uses `getJobRepository`, DB has `source_import_jobs`, and Java repository also appears.   
+* **Files affected:** `source-imports.ts`, `job-repository.ts`, `SourceImportJobRepository.java`, V15 migration.
+* **Validation:** Same job can be created, polled, cancelled, resumed, and audited from a single canonical table/API.
 
-### Decision 4: Compile-back strategy
+### Decision 4: Graph schema parity
 
-- **Decision:** Replace placeholder/regex compile-back with AST/range-based emitters and patch validation.
-- **Why:** Current sync React emitter returns comment placeholders, and async path only supports limited regex edits. :contentReference[oaicite:93]{index=93}
-- **Files to replace/modify:** `react-patch-emitter.ts`, `patch-coordinator.ts`, `compile-back/types.ts`.
+* **Decision:** Backend DTOs must mirror the TS graph IR, not compress it into generic node/edge DTOs.
+* **Why:** TS graph carries sourceLocation, extractor, confidence, provenance, unresolved edges, and residual refs.  Java DTOs currently do not.  
+* **Validation:** Backend rejects any resolved edge whose target node does not exist and persists unresolved edges separately.
 
-### Decision 5: Residual strategy
+### Decision 5: Patch generation strategy
 
-- **Decision:** Residuals must default to verbatim preservation or block patch generation; production emitters must not generate stubs or throwing code for unknown source.
-- **Why:** Current residual preserver can emit TODO/stub/throwing fallback content. :contentReference[oaicite:94]{index=94}
-- **Files to modify:** `residual/types.ts`, `compile-back/residual-preserver.ts`, `synthesis/pipeline.ts`.
+* **Decision:** Patch emitters must be capability-declared, AST-backed where possible, and return explicit unsupported/review-required outcomes.
+* **Why:** Current React emitter silently no-ops for several operations it claims to handle. 
+* **Validation:** Unsupported operation creates review-required result, never an empty successful patch set.
 
 ---
 
 ## Section E: Prescriptive File-by-File TODO Plan
 
-| Priority | Phase | File path | Action | Current issue | Required change | Tests |
-|---:|---|---|---|---|---|---|
-| P0 | 1 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java` | MODIFY | `analyzeGraph` contains apparent malformed `g(blockingExecutor, ...)`. :contentReference[oaicite:95]{index=95} | Replace with valid `Promise.ofBlocking(blockingExecutor, () -> runJGraphTAnalysis(...))`; ensure cache update stays outside CPU work. | Add/repair Java compile test and service unit test for `analyzeGraph`. |
-| P0 | 1 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactGraphController.java` | MODIFY | Controller validates mismatch but passes request DTO unchanged for ingest/analyze/merge. :contentReference[oaicite:96]{index=96} | Build server-derived `ArtifactRequestScope` from `Principal`; reject body tenant/workspace/project fields or overwrite with principal scope before service call. | Controller tests for missing principal, mismatched tenant, omitted tenant, valid principal. |
-| P0 | 1 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphService.java` | MODIFY | Service methods take request DTOs that can contain body scope. :contentReference[oaicite:97]{index=97} | Change signatures to `ingestGraph(scope, request)`, `analyzeGraph(scope, request)`, `mergeModels(scope, request)`. | Compile + service tests. |
-| P0 | 1 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java` | MODIFY | `saveNodes` writes `node.tenantId()` / `node.projectId()` instead of server params. :contentReference[oaicite:98]{index=98} | Persist `tenantId` and `productId/projectId` from method args only; validate node payload scope if present. | Tenant isolation persistence test. |
-| P0 | 1 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/scanner.ts` | MODIFY | `skippedArtifacts` never populated. :contentReference[oaicite:99]{index=99} | Refactor walker to emit `{file, skip}` events; push skip records for `.gitignore`, exclude glob, max size, symlink, read error, binary-not-extracted. | `scanner.skipped-artifacts.test.ts`. |
-| P0 | 1 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/model/types.ts` | MODIFY | Model ID schema requires UUID while pipeline can generate URN. :contentReference[oaicite:100]{index=100} | Add `sourceModelRef`/`deterministicRef`; keep `id` UUID, or allow `id` UUID-or-URN consistently across schemas. | Schema validation test for `SynthesisPipeline.runFromSnapshot`. |
-| P0 | 1 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/pipeline.ts` | MODIFY | Low-confidence residuals store path as `originalSource` and zero source span. :contentReference[oaicite:101]{index=101} | Read raw file content/span; create residual with checksum, rawFragmentRef, actual source span, and risk/review reason. | Residual preservation golden test. |
-| P0 | 1 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/react-patch-emitter.ts` | REPLACE | Sync path emits placeholder comment diffs; async path is regex-only. :contentReference[oaicite:102]{index=102} | Implement TypeScript Compiler API range edits for rename/add/update props; no placeholder diffs allowed. | No-op zero diff, rename minimal diff, add prop minimal diff tests. |
-| P0 | 1 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/residual-preserver.ts` | MODIFY | Strategies can emit warning comments, TODO stubs, or throwing code. :contentReference[oaicite:103]{index=103} | In production mode, only `verbatim-preserve` may emit; other strategies must mark patch blocked/review-required. | Residual overlap patch-blocking test. |
-| P1 | 2 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/types.ts` | MODIFY | `SourceScopeContext` exists but is not used by provider API; raw credentials allowed. :contentReference[oaicite:104]{index=104} | Change provider resolve contract to accept typed `SourceLocator` and governed `SourceScopeContext`; deprecate raw token/password for browser flows. | Provider contract tests. |
-| P1 | 2 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/github-provider.ts` | MODIFY | Uses raw `options.credentials.token`; skip/oversize/materialization failures have no diagnostics. :contentReference[oaicite:105]{index=105} | Resolve credentialRef server-side; add diagnostics for skipped files, maxFiles, maxFileSize, materialization failures. | GitHub provider mocked API tests. |
-| P1 | 2 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/gitlab-provider.ts` | MODIFY | Same raw token/diagnostics gap. :contentReference[oaicite:106]{index=106} :contentReference[oaicite:107]{index=107} | Same as GitHub provider. | GitLab provider mocked API tests. |
-| P1 | 2 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/local-folder-provider.ts` | MODIFY | Does not prove immutable dirty-worktree snapshot. :contentReference[oaicite:108]{index=108} | Add dirty status detection and content tree hash fallback; mark dirty snapshots as review-required. | Dirty repo snapshot test. |
-| P1 | 2 | `products/yappc/frontend/apps/api/src/routes/source-imports.ts` | MODIFY | Allowed route types exclude GitHub/GitLab/local-folder. :contentReference[oaicite:109]{index=109} | Add repo import source types and dispatch to provider registry/pipeline. | API integration tests for GitHub/GitLab/local-folder. |
-| P1 | 2 | `products/yappc/frontend/apps/api/src/services/job-repository.ts` | REPLACE | File-based job persistence only. :contentReference[oaicite:110]{index=110} | Add DB-backed `SourceImportJobRepository`; keep file repo for tests/dev. | Repository contract tests. |
-| P1 | 2 | `products/yappc/frontend/apps/api/src/routes/source-imports.ts` | MODIFY | Some error responses assign `job: completeSourceImportJob(...)` without `await`. :contentReference[oaicite:111]{index=111} | Await every job update before response. | Route test asserts serialized job object, not Promise. |
-| P1 | 3 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/symbol-resolver.ts` | SPLIT | Symbol index is private and aliases are hardcoded. :contentReference[oaicite:112]{index=112} | Add `symbol-index.ts`; load `tsconfig.paths`, package boundaries, workspace aliases. | Resolver tests for tsconfig paths and monorepo packages. |
-| P1 | 3 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/types.ts` | MODIFY | Query schema has `limit` but no cursor/page token. :contentReference[oaicite:113]{index=113} | Add cursor pagination schema and unresolved-edge query filters. | Graph query schema tests. |
-| P1 | 4 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java` | MODIFY | Paginated methods read `updated_at` without selecting it. :contentReference[oaicite:114]{index=114} | Add `updated_at` to select list or use selected cursor column. | Pagination integration test. |
-| P1 | 4 | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java` | MODIFY | `snapshotId`, `versionId`, `contentChecksum` are null/TODO. :contentReference[oaicite:115]{index=115} | Add request metadata DTO fields and pass through to repository/version repository. | Snapshot-aware ingest test. |
-| P1 | 5 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/types.ts` | MODIFY | `TextPatch` lacks structured range metadata while emitter prepends range as comment. :contentReference[oaicite:116]{index=116} :contentReference[oaicite:117]{index=117} | Add first-class `ranges`, `baseChecksum`, `targetChecksum`, `validationStatus`. | Patch schema tests. |
-| P1 | 5 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/patch-coordinator.ts` | MODIFY | Coordinator logs to `console.error`, has no validation runner or patch apply dry-run. :contentReference[oaicite:118]{index=118} | Add injectable logger, validator registry, dry-run apply, conflict detection. | Patch validation tests. |
-| P1 | 6 | `products/yappc/frontend/web/src/services/compiler/ImportSourceWorkflow.ts` | CONSOLIDATE | Defines local `ResidualIsland` shape separate from compiler residual schema. :contentReference[oaicite:119]{index=119} | Import residual type from `yappc-artifact-compiler`; normalize server/client residual payloads. | Type test and UI import result test. |
-| P2 | 6 | `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/scanner.test.ts` | REPLACE | Tests scan `process.cwd()` and are not golden fixture-based. :contentReference[oaicite:120]{index=120} | Move to deterministic fixtures under `test/fixtures/*`; remove current-repo dependent assertions. | Golden fixture test suite. |
-| P2 | 6 | `products/yappc/frontend/libs/yappc-artifact-compiler/test/fixtures/*` | ADD | Required golden fixtures absent from inspected tests. :contentReference[oaicite:121]{index=121} | Add `small-react-app`, `react-router-app`, `prisma-fullstack-app`, `java-service`, `pnpm-monorepo`, etc. | All compiler golden tests. |
+| Priority | Phase   | File path                                                                                                             | Action               | Current issue                                                                                                                          | Required change                                                                                                                                                                                                             | Tests                                                                              |
+| -------: | ------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+|       P0 | 1       | `products/yappc/frontend/apps/api/src/routes/source-imports.ts`                                                       | MODIFY               | Repository import runs `SynthesisPipeline({ extractors: [] })`, producing no extracted graph/model.                                    | Register canonical extractor registry, or fail with `UNSUPPORTED_EXTRACTION_PIPELINE` before review success. Persist snapshot/graph/model IDs in response.                                                                  | `source-imports.repo-import.test.ts`                                               |
+|       P0 | 1       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/index.ts`                                             | MODIFY               | `validateGraph` exists but is not exported from graph barrel.                                                                          | Export `validateGraph`, `GraphValidationResult`, `GraphValidationError`.                                                                                                                                                    | `graph/index.exports.test.ts`                                                      |
+|       P0 | 1       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/validateGraph.ts`                                     | MODIFY               | Validation checks existing node IDs but not unresolved lifecycle consistency.                                                          | Add checks: every resolved edge target/source exists; no edge target is raw label when missing node; every `resolved` record target exists; every unresolved edge appears in records or remaining set; source ranges valid. | `graph/validateGraph.test.ts`                                                      |
+|       P0 | 1       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/ArtifactGraphIngestRequest.java`  | MODIFY               | Request has only productId, tenantId, nodes, edges.                                                                                    | Add `snapshotRef`, `snapshotId`, `versionId`, `contentChecksum`, `unresolvedEdges`, `edgeResolutionRecords`, `residualIslandIds`. Stop extracting these from node metadata.                                                 | `ArtifactGraphIngestRequestJsonTest.java`                                          |
+|       P0 | 1       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/ArtifactNodeDto.java`             | MODIFY               | DTO loses sourceLocation, extractor, confidence, provenance, residual refs.                                                            | Add fields matching TS `GraphNode`: sourceLocation, extractorId, extractorVersion, confidence, provenance, privacySecurityFlags, residualFragmentIds, sourceRef, symbolRef.                                                 | `ArtifactNodeDtoRoundTripTest.java`                                                |
+|       P0 | 1       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/ArtifactEdgeDto.java`             | MODIFY               | DTO lacks edgeId, confidence, and validation metadata.                                                                                 | Add `edgeId`, `confidence`, `bidirectional`, `metadata`, `snapshotId`, `versionId`; enforce source/target IDs as node IDs.                                                                                                  | `ArtifactEdgeDtoValidationTest.java`                                               |
+|       P0 | 1       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactGraphController.java`                 | MODIFY               | Tenant comes from principal, but product/project scope still comes from request body.                                                  | Resolve project/workspace access from principal/resource registry; reject body scope manipulation for tenant/workspace/project. Validate graph before service call.                                                         | `ArtifactGraphControllerScopeTest.java`                                            |
+|       P0 | 1       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java`  | MODIFY               | `parseSourceArtifact` returns stub-like unparsed nodes for unsupported TS/JS/etc.                                                      | Remove from production path or gate behind `artifactCompiler.unsupportedParserDiagnostics.enabled`; emit residual island, not stub node.                                                                                    | `ArtifactGraphServiceUnsupportedParserTest.java`                                   |
+|       P0 | 1       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/react-patch-emitter.ts`                        | MODIFY               | `canEmit` advertises ops that emit empty patches; sync emit always no-ops.                                                             | Restrict `canEmit` to implemented ops or return explicit unsupported result; replace regex edits with TS Compiler API/range-safe implementation.                                                                            | `react-patch-emitter.unsupported-op.test.ts`, `react-patch-emitter.rename.test.ts` |
+|       P0 | 1       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/patch-coordinator.ts`                          | MODIFY               | Unsupported emitter path can produce empty patch set without hard failure.                                                             | Add `UnsupportedPatchOperation` result; fail validation when op has no emitter unless explicitly manual-review. Replace stderr logger with injected structured logger.                                                      | `patch-coordinator.unsupported.test.ts`                                            |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/types.ts`                                  | MODIFY               | Registry ignores typed provider and raw credentials are only blocked in browser.                                                       | Add `CredentialResolver`; dispatch typed `SourceLocator.provider` directly; reject raw credentials outside test/dev unless explicitly allowed.                                                                              | `source-provider-registry.test.ts`                                                 |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/github-provider.ts`                        | MODIFY               | Uses raw token and random temp root; no retry/rate limit/cleanup.                                                                      | Use credentialRef resolver, retry/backoff, rate-limit diagnostics, cleanup contract, deterministic snapshot metadata.                                                                                                       | `github-provider.commit-pinning.test.ts`                                           |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/gitlab-provider.ts`                        | MODIFY               | Slug parsing is simple and collides with GitHub-style slugs.                                                                           | Support nested groups and typed locator dispatch; add credentialRef and retry/backoff.                                                                                                                                      | `gitlab-provider.nested-groups.test.ts`                                            |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/zip-provider.ts`                           | MODIFY               | Skipped entries lack diagnostics; tar unsupported.                                                                                     | Add diagnostics for skipped/unsafe/unsupported compression; extract common archive contract.                                                                                                                                | `zip-provider.diagnostics.test.ts`                                                 |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/source-providers/archive-provider.ts`                       | ADD                  | Target requires ZIP/tar archive support; current provider is ZIP-only.                                                                 | Add archive provider facade for zip/tar/tgz with shared safety rules.                                                                                                                                                       | `archive-provider.test.ts`                                                         |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/types.ts`                                         | MODIFY               | Skipped sources omit generated/vendor/binary as first-class reasons.                                                                   | Add skip sources `generated`, `vendor`, `binary`, `largeFile`; add `sourceFileRef`, `contentChecksum`, `classificationConfidence`.                                                                                          | `inventory-types.schema.test.ts`                                                   |
+|       P1 | 2       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/inventory/scanner.ts`                                       | MODIFY               | Homegrown gitignore and unbounded recursive scan.                                                                                      | Use a battle-tested ignore parser or add full fixture coverage; add bounded concurrency; expose deterministic scan mode.                                                                                                    | `scanner.gitignore.test.ts`, `scanner.determinism.test.ts`                         |
+|       P1 | 3       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/pipeline.ts`                                      | MODIFY               | Model id is random; API can run with empty extractors.                                                                                 | Deterministic `SemanticProductModel.id` from snapshot + graph checksum; enforce extractor registry capability.                                                                                                              | `synthesis-pipeline.determinism.test.ts`                                           |
+|       P1 | 3       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/symbol-resolver.ts`                               | MODIFY               | Edge IDs are ad hoc strings.                                                                                                           | Generate deterministic hashed edge IDs; include source location and resolver version in metadata.                                                                                                                           | `symbol-resolver.edge-id.test.ts`                                                  |
+|       P1 | 3       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/symbol-index.ts`                                  | MODIFY               | Alias rules are local options/defaults only.                                                                                           | Derive aliases from tsconfig/package boundaries and scanner workspace metadata.                                                                                                                                             | `symbol-index.aliases.test.ts`                                                     |
+|       P1 | 4       | `products/yappc/core/yappc-services/src/main/resources/db/migration/V15__artifact_compiler_snapshot_ir_hardening.sql` | ADD                  | Current tables lack repository snapshots, inventory, unresolved edges, residuals, patches; V11/V14 duplicate snapshot column intent.   | Add `repository_snapshots`, `artifact_inventory_items`, `artifact_unresolved_edges`, `artifact_edge_resolution_records`, `residual_islands`, `patch_sets`, `review_bundles`; add tenant/project/snapshot indexes.           | migration integration test                                                         |
+|       P1 | 4       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java`             | MODIFY               | `upsertNodes` ignores `contentChecksum`; default executor can be `Runnable::run`; pagination methods not used by service.              | Remove default blocking constructor or make it test-only; skip unchanged nodes by checksum; persist unresolved/residual tables; expose paginated query API.                                                                 | `ArtifactGraphRepositoryUpsertTest.java`                                           |
+|       P1 | 4       | `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java`  | MODIFY               | Query uses hard limit 10,000 and edge query without limit.                                                                             | Route graph queries through repository pagination; add query cursor response.                                                                                                                                               | `ArtifactGraphServicePaginationTest.java`                                          |
+|       P1 | 5       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/types.ts`                                      | MODIFY               | Change ops are mostly component-specific.                                                                                              | Add `ModelChange` coverage for page route, layout, token, API, data entity, workflow; add unsupported/manual-review operation type.                                                                                         | `compile-back-types.schema.test.ts`                                                |
+|       P1 | 5       | `products/yappc/frontend/libs/yappc-artifact-compiler/src/compile-back/apply-patch.ts`                                | ADD                  | No actual patch application contract exists.                                                                                           | Add dry-run/apply interface with checksum guard, residual guard, rollback metadata, and validation hook.                                                                                                                    | `apply-patch.noop-roundtrip.test.ts`                                               |
+|       P1 | 6       | `products/yappc/frontend/web/src/services/compiler/artifactCompilerClient.ts`                                         | ADD/MODIFY           | Web client integration not verified; API route exists.                                                                                 | Add typed client for import job, graph summary, residual review, patch review.                                                                                                                                              | `artifactCompilerClient.test.ts`                                                   |
+|       P1 | 6       | `products/yappc/frontend/web/src/components/canvas/page/SourceImportPanel.tsx`                                        | ADD/MODIFY           | User-facing source provider UX not verified.                                                                                           | Add provider selector, repo/ref/archive input, progress, job polling, unsupported-state display.                                                                                                                            | Playwright import flow                                                             |
+|       P1 | 6       | `products/yappc/frontend/web/src/components/canvas/page/ImportSummaryPanel.tsx`                                       | ADD                  | API returns summary/residual/skipped data.                                                                                             | Show understood vs skipped vs residual, confidence, review requirements.                                                                                                                                                    | component + E2E                                                                    |
+|       P1 | 6       | `products/yappc/frontend/web/src/components/canvas/page/PatchReviewPanel.tsx`                                         | ADD                  | Patch review UI not verified.                                                                                                          | Show unified diff, validation results, residual overlaps, approve/reject.                                                                                                                                                   | Playwright patch review                                                            |
+|       P2 | cleanup | `products/yappc/core/yappc-services/src/main/resources/db/migration/V11__create_source_import_jobs.sql`               | DOCUMENT/CONSOLIDATE | Snapshot columns added here and again in V14.                                                                                          | Do not edit applied migration; add V15 comment/doc explaining canonical schema and duplicate history.                                                                                                                       | migration verification                                                             |
+|       P2 | cleanup | `platform/comp-decomp-todo.md`                                                                                        | CONSOLIDATE          | TODO doc exists outside canonical architecture path.                                                                                   | Move still-current content into canonical architecture/implementation plan or archive.                                                                                                                                      | docs lint                                                                          |
+|       P2 | cleanup | `products/yappc/docs/architecture/ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md`                                       | MODIFY               | Architecture doc exists; content not revalidated here.                                                                                 | Update to match actual source-provider/pipeline/backend ownership after implementation.                                                                                                                                     | docs/code consistency checklist                                                    |
 
 ---
 
 ## Section F: Phase Plan
 
-### Phase 1: Foundation Hardening
+### Phase 1: Foundation hardening
 
-**Goal:** Make the existing code compile, preserve source-fidelity metadata, and prevent tenant-scope leakage.
+**Goal:** Make current IR trustworthy before adding breadth.
 
-**Files in scope:**
+**Files:** graph index/types/validation, Java DTOs/controller, source-import route, React emitter.
 
-- `ArtifactGraphServiceImpl.java`
-- `ArtifactGraphController.java`
-- `ArtifactGraphService.java`
-- `ArtifactGraphRepository.java`
-- `src/inventory/scanner.ts`
-- `src/model/types.ts`
-- `src/synthesis/pipeline.ts`
-- `src/compile-back/react-patch-emitter.ts`
-- `src/compile-back/residual-preserver.ts`
+**Tasks:**
 
-**Validation:**
+1. Export and enforce graph validation.
+2. Extend backend DTOs to preserve TS graph fidelity.
+3. Stop repo import from succeeding with `extractors: []`.
+4. Stop patch emitters from silently no-oping unsupported ops.
 
-- Java compile passes.
-- Scanner skipped-artifact fixture tests pass.
-- Synthesis output validates against model schema.
-- Tenant isolation tests pass.
-- No placeholder patch diffs are emitted.
+**Validation:** graph validation tests, API repo import test, backend ingest validation test, unsupported patch op test.
 
-**Exit criteria:**
-
-- No malformed backend source.
-- Source-derived scans produce visible skip reasons.
-- Semantic model IDs validate.
-- Backend writes cannot use request-body tenant/project scope.
-- Unsupported residuals block unsafe patch generation.
+**Exit criteria:** Invalid edges rejected; repo import without extractors returns explicit unsupported; no unsupported patch operation produces successful empty patch.
 
 ---
 
-### Phase 2: Source Provider and Snapshot Layer
+### Phase 2: Source provider and snapshot layer
 
-**Goal:** Make repository acquisition governed, scoped, diagnostic-rich, and durable.
+**Goal:** Governed, deterministic source snapshots.
 
-**Files in scope:**
+**Files:** source-provider types, GitHub/GitLab/ZIP/local providers, inventory scanner/types.
 
-- `src/source-providers/types.ts`
-- `github-provider.ts`
-- `gitlab-provider.ts`
-- `local-folder-provider.ts`
-- `zip-provider.ts`
-- `source-imports.ts`
-- `job-repository.ts`
-- DB migration for source import jobs and repository snapshots.
+**Tasks:**
 
-**Validation:**
+1. Add typed provider dispatch.
+2. Add credentialRef resolver and raw-secret rejection policy.
+3. Add provider diagnostics and cleanup lifecycle.
+4. Harden scanner gitignore, generated/vendor/binary classification, and deterministic mode.
 
-- GitHub/GitLab/local/ZIP provider tests.
-- DB-backed job repository tests.
-- API route tests for source import job lifecycle.
+**Validation:** GitHub commit-pinning, GitLab nested groups, ZIP zip-slip, `.gitignore`, deterministic inventory tests.
 
-**Exit criteria:**
-
-- GitHub/GitLab/local/ZIP imports create durable scoped jobs.
-- SnapshotRef is commit/content pinned.
-- Skipped/unmaterialized files are visible with diagnostics.
-- Raw credentials are not accepted in browser-governed flows.
+**Exit criteria:** Same commit produces stable inventory identity; provider credentials never leak; skipped files have explicit reasons.
 
 ---
 
-### Phase 3: Canonical Compile Pipeline
+### Phase 3: Canonical compile pipeline
 
-**Goal:** Make snapshot → inventory → extraction → graph → semantic model → residuals deterministic and extensible.
+**Goal:** Snapshot → inventory → extraction → graph → semantic model → residuals works with real extractors.
 
-**Files in scope:**
+**Files:** synthesis pipeline, symbol resolver/index, extractor registry.
 
-- `src/synthesis/pipeline.ts`
-- `src/synthesis/symbol-resolver.ts`
-- `src/synthesis/symbol-index.ts`
-- `src/extractors/types.ts`
-- `src/graph/types.ts`
+**Tasks:**
 
-**Validation:**
+1. Register canonical extractor capabilities.
+2. Make model identity deterministic.
+3. Persist unresolved edge lifecycle.
+4. Link semantic elements to graph nodes and residuals.
 
-- Golden fixture extraction tests.
-- Resolver tests for relative imports, aliases, package boundaries, ambiguous references.
-- Graph validation tests.
+**Validation:** small React fixture synthesis, unresolved reference fixture, residual fixture.
 
-**Exit criteria:**
-
-- Resolved graph edges only contain valid graph node IDs.
-- Unresolved/cross-repo/ambiguous references are preserved and queryable.
-- Semantic elements include graph provenance and confidence.
+**Exit criteria:** Repository fixture produces non-empty graph/model/residual summary and validated graph.
 
 ---
 
-### Phase 4: Backend Production Hardening
+### Phase 4: Backend production hardening
 
-**Goal:** Persist and query graph/model data with snapshot awareness, pagination, and auditability.
+**Goal:** Durable, scoped, paginated, observable artifact graph backend.
 
-**Files in scope:**
+**Files:** Java controller/service/repository/domain DTOs, V15 migration.
 
-- `ArtifactGraphController.java`
-- `ArtifactGraphServiceImpl.java`
-- `ArtifactGraphRepository.java`
-- `ArtifactModelVersionRepository.java`
-- DB migrations.
+**Tasks:**
 
-**Validation:**
+1. Add repository snapshots and unresolved/residual/patch persistence.
+2. Enforce workspace/project authorization server-side.
+3. Use paginated graph query responses.
+4. Remove production parser stubs.
 
-- Backend integration tests for ingest/query/pagination/snapshot diff.
-- Tenant isolation tests.
-- Performance test for large graph query.
+**Validation:** tenant/project isolation tests, repository upsert tests, graph query pagination tests.
 
-**Exit criteria:**
-
-- Graph ingest carries snapshot/version/checksum.
-- Query APIs paginate.
-- CPU-heavy graph analysis runs on blocking executor.
-- All graph endpoints enforce principal-derived scope.
+**Exit criteria:** Cross-project reads/writes fail; graph persists without fidelity loss; large graph queries page.
 
 ---
 
-### Phase 5: Compile-Back and Patch Generation
+### Phase 5: Compile-back and patch generation
 
-**Goal:** Produce minimal, validated, reviewable patch sets.
+**Goal:** Safe minimal patches for supported edits.
 
-**Files in scope:**
+**Files:** compile-back types, patch coordinator, React emitter, apply-patch module.
 
-- `compile-back/types.ts`
-- `react-patch-emitter.ts`
-- `patch-coordinator.ts`
-- `residual-preserver.ts`
-- new validator/apply modules.
+**Tasks:**
 
-**Validation:**
+1. Implement no-op round-trip test harness.
+2. Replace regex-only React patching with AST/range-safe patching.
+3. Add patch dry-run/apply interface with checksum and residual guards.
+4. Add review bundle persistence.
 
-- No-op round-trip zero diff.
-- Simple React rename minimal diff.
-- Add prop minimal diff.
-- Residual overlap blocks unsafe patch.
-- Patch validation rejects stale checksum.
+**Validation:** no-op zero-diff, rename component patch, add prop patch, residual overlap rejection, stale checksum rejection.
 
-**Exit criteria:**
-
-- No placeholder patch diffs.
-- PatchSet includes checksums, ranges, validation result, review bundle.
-- Unsupported edits require manual review.
+**Exit criteria:** Supported edits produce minimal patches; unsupported edits require review; no-op round-trip is zero diff.
 
 ---
 
-### Phase 6: UX and Continuous Evolution
+### Phase 6: UX and continuous evolution
 
-**Goal:** Provide no-cognitive-load repo import, import summary, confidence, residuals, patch review, and drift detection.
+**Goal:** No-cognitive-load import/review/patch/rescan UX.
 
-**Files in scope:**
+**Files:** compiler API client, source import panel, import summary panel, patch review panel, canvas integration.
 
-- `ImportSourceWorkflow.ts`
-- import API client files
-- import/review UI components
-- canvas/page builder bridge.
+**Tasks:**
 
-**Validation:**
+1. Provider selector and repo/ref/archive input.
+2. Job progress and import summary.
+3. Confidence/residual/skipped file review.
+4. Patch diff and validation review.
+5. Rescan/drift state.
 
-- Frontend E2E import job flow.
-- Patch review UX test.
-- Re-scan/drift test.
+**Validation:** Playwright E2E import → summary → model review → patch review → rescan.
 
-**Exit criteria:**
-
-- User can select provider/ref, start import, see progress, review summary, inspect residuals, generate patch, validate, and accept/reject changes.
+**Exit criteria:** User sees clear understood/skipped/residual/patch status without compiler internals.
 
 ---
 
 ## Section G: Cleanup and Consolidation Plan
 
-| Priority | Path | Current problem | Action | Target canonical path |
-|---:|---|---|---|---|
-| P0 | `src/compile-back/react-patch-emitter.ts` | Placeholder sync diffs and regex-only async patches. :contentReference[oaicite:122]{index=122} | REPLACE | Same file with AST/range emitter. |
-| P0 | `src/compile-back/residual-preserver.ts` | Production strategies can emit stubs/TODO/throwing source. :contentReference[oaicite:123]{index=123} | MODIFY | Preserve-or-block policy. |
-| P0 | `ArtifactGraphServiceImpl.java` | Apparent malformed source in graph analysis. :contentReference[oaicite:124]{index=124} | MODIFY | Valid ActiveJ blocking executor pattern. |
-| P1 | `ImportSourceWorkflow.ts` | Duplicate frontend residual type. :contentReference[oaicite:125]{index=125} | CONSOLIDATE | `yappc-artifact-compiler/src/residual/types.ts`. |
-| P1 | `job-repository.ts` | File-based prod-like job store. :contentReference[oaicite:126]{index=126} | SPLIT | `FileJobRepository` dev adapter + DB repository. |
-| P1 | `source-imports.ts` | Allowed source types conflict with frontend/job repo. :contentReference[oaicite:127]{index=127} :contentReference[oaicite:128]{index=128} | MODIFY | Single source import contract. |
-| P1 | `scanner.test.ts` | Current-repo smoke tests. :contentReference[oaicite:129]{index=129} | REPLACE | Golden fixture tests. |
-| P2 | `synthesis/symbol-resolver.ts` | Private index + hardcoded aliases. :contentReference[oaicite:130]{index=130} | SPLIT | `symbol-index.ts` + resolver. |
-| P2 | `source-providers/types.ts` | Raw credentials and scope context not enforced in API. :contentReference[oaicite:131]{index=131} | MODIFY | Governed typed locator/scope contract. |
+| Priority | Path                                                                                      | Current problem                                            | Action                                   | Target canonical path                              | Validation                                                                               |
+| -------: | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+|       P0 | `products/yappc/frontend/apps/api/src/routes/source-imports.ts`                           | Empty extractor pipeline gives false confidence.           | MODIFY                                   | Same file + canonical extractor registry           | Repo import test fails today, passes after non-empty extraction or explicit unsupported. |
+|       P0 | `ArtifactGraphServiceImpl.java#parseSourceArtifact`                                       | Stub-like unsupported parser response in production path.  | REMOVE or FEATURE-FLAG                   | TS artifact compiler pipeline                      | Unsupported parser test.                                                                 |
+|       P1 | `V11__create_source_import_jobs.sql` + `V14__add_snapshot_tracking_to_artifact_graph.sql` | Duplicate snapshot/tombstone migration intent.             | CONSOLIDATE via V15 corrective migration | `V15__artifact_compiler_snapshot_ir_hardening.sql` | Migration idempotency test.                                                              |
+|       P1 | `ArtifactNodeDto.java` / `ArtifactEdgeDto.java`                                           | Backend graph DTOs are lossy.                              | MODIFY                                   | Backend IR DTO parity with TS graph                | DTO round-trip tests.                                                                    |
+|       P1 | Fastify job repository + Java `SourceImportJobRepository`                                 | Duplicate job ownership.                                   | CONSOLIDATE                              | Single durable source import job API/table         | Job create/poll/cancel integration test.                                                 |
+|       P1 | `react-patch-emitter.ts`                                                                  | Advertises unsupported ops.                                | MODIFY                                   | Capability-declared patch emitter                  | Unsupported-op review test.                                                              |
+|       P2 | `platform/comp-decomp-todo.md`                                                            | Non-canonical TODO doc can cause repeated work.            | ARCHIVE/CONSOLIDATE                      | Canonical architecture/implementation docs         | Docs cleanup checklist.                                                                  |
 
 ---
 
 ## Section H: Test Plan
 
-| Priority | Test type | Test file path | Scenario | Expected assertion |
-|---:|---|---|---|---|
-| P0 | Java compile | `products/yappc/core/yappc-services/.../ArtifactGraphServiceImplTest.java` | Compile and call `analyzeGraph`. | No malformed source; analysis returns result. |
-| P0 | Backend tenant isolation | `ArtifactGraphControllerScopeTest.java` | Body tenant omitted/mismatched. | Principal tenant is used; mismatch returns 403. |
-| P0 | Repository scope | `ArtifactGraphRepositoryScopeTest.java` | Node DTO tenant differs from method tenant. | Persisted tenant equals server tenant or request rejected. |
-| P0 | Scanner fixture | `src/inventory/scanner.skipped-artifacts.test.ts` | `.gitignore`, excludeGlob, oversize, symlink, readError. | `skippedArtifacts` contains exact reasons. |
-| P0 | Model schema | `src/synthesis/pipeline.schema.test.ts` | Run pipeline with snapshotRef. | `SemanticProductModelSchema.parse(model)` succeeds. |
-| P0 | Round-trip | `src/compile-back/roundtrip.test.ts` | No-op source → model → patch. | Patch set is empty / zero diff. |
-| P0 | Residual safety | `src/compile-back/residual-preserver.test.ts` | Patch overlaps residual. | Patch is blocked or review-required; no stub emitted. |
-| P1 | GitHub provider | `src/source-providers/github-provider.test.ts` | Resolve branch to commit SHA. | SnapshotRef has resolved commit SHA and diagnostics for skipped files. |
-| P1 | GitLab provider | `src/source-providers/gitlab-provider.test.ts` | Resolve paginated repo tree. | All pages processed; oversize files recorded. |
-| P1 | Local provider | `src/source-providers/local-folder-provider.test.ts` | Dirty git worktree. | Snapshot is marked dirty/review-required or content-hash pinned. |
-| P1 | API route | `source-imports.test.ts` | GitHub import job. | Job persists, progresses, has snapshotRef. |
-| P1 | Job repo | `db-job-repository.test.ts` | Create/update/poll/delete expired. | DB-backed job lifecycle works across process restart. |
-| P1 | Graph resolver | `symbol-resolver.test.ts` | TS path alias and ambiguous imports. | Resolved, ambiguous, cross-repo statuses correct. |
-| P1 | Backend pagination | `ArtifactGraphRepositoryPaginationTest.java` | Fetch nodes/edges with cursor. | No SQL column error; nextCursor returned. |
-| P1 | Frontend E2E | `import-source-flow.spec.ts` | Start repo import and review summary. | UI shows progress, skipped files, residuals, confidence. |
-| P1 | Patch UX | `patch-review-flow.spec.ts` | Generate patch, view validation, reject/apply. | Diff and validation are visible; actions work. |
+| Priority | Test type           | Test file path                                                                                                 | Scenario                                                       | Expected assertion                                    | Fails today because                                                                 |
+| -------: | ------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+|       P0 | API integration     | `products/yappc/frontend/apps/api/src/routes/source-imports.repo-import.test.ts`                               | Import `small-react-app` GitHub/local fixture                  | Non-empty graph/model or explicit unsupported error   | Route uses `extractors: []`.                                                        |
+|       P0 | Unit                | `products/yappc/frontend/libs/yappc-artifact-compiler/src/graph/validateGraph.test.ts`                         | Edge target is raw component name not node ID                  | Validation error                                      | Current backend DTO can accept raw strings; TS validation only checks within graph. |
+|       P0 | Backend API         | `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ArtifactGraphControllerScopeTest.java` | Body product/project differs from principal-authorized project | 403                                                   | Controller only proves tenant check.                                                |
+|       P0 | Unit                | `src/compile-back/react-patch-emitter.unsupported-op.test.ts`                                                  | `remove-component` op                                          | Review-required unsupported result, not empty success | `canEmit` includes op but implementation returns empty.                             |
+|       P0 | Golden              | `src/compile-back/noop-roundtrip.test.ts`                                                                      | source → model → patch with no change                          | zero diff                                             | Full round-trip not implemented.                                                    |
+|       P1 | Unit                | `src/inventory/scanner.determinism.test.ts`                                                                    | Scan same snapshot twice                                       | Stable IDs/checksums/order                            | Random fallback exists without snapshotRef.                                         |
+|       P1 | Unit                | `src/inventory/scanner.gitignore.test.ts`                                                                      | Nested `.gitignore` with negation                              | Exact skip/include behavior                           | Homegrown parser needs fixture proof.                                               |
+|       P1 | Unit                | `src/source-providers/github-provider.commit-pinning.test.ts`                                                  | `owner/repo@branch`                                            | snapshotRef contains resolved commit SHA              | Provider supports commit resolve but needs regression.                              |
+|       P1 | Unit                | `src/source-providers/gitlab-provider.nested-groups.test.ts`                                                   | `group/subgroup/repo`                                          | correct project path                                  | Parser currently models owner/repo.                                                 |
+|       P1 | Unit                | `src/source-providers/zip-provider.security.test.ts`                                                           | zip-slip entry                                                 | skipped with diagnostic                               | Zip-slip skip exists but diagnostics absent.                                        |
+|       P1 | Backend persistence | `ArtifactGraphRepositoryUpsertTest.java`                                                                       | Same checksum upsert                                           | unchanged node not rewritten; version tracked         | `contentChecksum` parameter is ignored.                                             |
+|       P1 | Backend persistence | `ArtifactGraphRepositoryPaginationTest.java`                                                                   | large graph query                                              | cursor returned and honored                           | Service query uses fixed 10,000 limit.                                              |
+|       P1 | E2E                 | `tests/e2e/yappc-artifact-import-review.spec.ts`                                                               | Import → summary → residual review                             | shows progress, confidence, skipped, residuals        | UI path not verified.                                                               |
+|       P1 | E2E                 | `tests/e2e/yappc-patch-review.spec.ts`                                                                         | Model edit → patch review                                      | diff + validation + approve/reject                    | Patch review UX not verified.                                                       |
 
 ---
 
 ## Section I: Critical Questions — Direct Answers
 
-### 1. Is the current system truly round-trip capable?
-
-**Answer:** No.
-
-**Evidence:** Compile-back contracts and coordinator exist, but React emitter still emits placeholder comment diffs in sync mode and limited regex-based patches in async mode. :contentReference[oaicite:132]{index=132} :contentReference[oaicite:133]{index=133} :contentReference[oaicite:134]{index=134}
-
-**Required fix:** Replace placeholder/regex patching with AST/range emitters, patch validation, and no-op round-trip zero-diff tests.
-
----
-
-### 2. Can it scan a full GitHub repo today, or only import individual sources/files?
-
-**Answer:** Partial.
-
-**Evidence:** GitHub provider can resolve repo/ref to commit SHA and materialize recursive tree files. :contentReference[oaicite:135]{index=135} However, Fastify governed source import route only allows `tsx`, `route`, `storybook`, `artifact`, and `zip`, not `github`. :contentReference[oaicite:136]{index=136}
-
-**Required fix:** Wire GitHub/GitLab/local-folder providers into the governed API job route.
-
----
-
-### 3. Are artifact IDs deterministic?
-
-**Answer:** Partial.
-
-**Evidence:** `buildDeterministicNodeId` is deterministic only when `snapshotRef` is present; otherwise it returns `crypto.randomUUID()`. :contentReference[oaicite:137]{index=137}
-
-**Required fix:** Require snapshotRef for source-derived scans; reserve UUIDs only for manual/user-created artifacts.
-
----
-
-### 4. Are graph edges valid and resolved?
-
-**Answer:** Partial.
-
-**Evidence:** Graph schema separates resolved and unresolved edges, resolver emits resolved edges only when a target node is found, and graph validation checks edge endpoints. :contentReference[oaicite:138]{index=138} :contentReference[oaicite:139]{index=139} :contentReference[oaicite:140]{index=140}
-
-**Required fix:** Persist unresolved-edge lifecycle, make symbol index configurable, and validate that backend ingest rejects fake resolved edges.
-
----
-
-### 5. Is there a complete synthesis pipeline?
-
-**Answer:** Partial.
-
-**Evidence:** `SynthesisPipeline` scans, extracts, resolves, validates, and builds graph/model. :contentReference[oaicite:141]{index=141} :contentReference[oaicite:142]{index=142} It relies entirely on registered extractors and has model ID schema mismatch.
-
-**Required fix:** Add provider acquisition, extractor registry/capability discovery, schema-valid model IDs, and golden fixture coverage.
-
----
-
-### 6. Is compile-back/patch generation implemented?
-
-**Answer:** Partial / stub.
-
-**Evidence:** Types and coordinator exist, but patch emitter is limited and placeholder-based in sync path. :contentReference[oaicite:143]{index=143} :contentReference[oaicite:144]{index=144}
-
-**Required fix:** Implement AST-backed patch emitters and validation/apply pipeline.
-
----
-
-### 7. Are residual islands preserved?
-
-**Answer:** Partial.
-
-**Evidence:** Residual schema is rich, but pipeline-generated low-confidence residuals do not preserve raw source content/span, and preserver can emit stubs. :contentReference[oaicite:145]{index=145} :contentReference[oaicite:146]{index=146} :contentReference[oaicite:147]{index=147}
-
-**Required fix:** Preserve raw spans and block unsafe regeneration.
-
----
-
-### 8. Are source import jobs durable?
-
-**Answer:** Partial.
-
-**Evidence:** File-backed job repository persists JSON jobs under `~/.yappc/jobs`; it is described as initially file-based and replaceable with database. :contentReference[oaicite:148]{index=148}
-
-**Required fix:** Implement DB-backed repository and job locking.
-
----
-
-### 9. Is tenant/workspace/project scope enforced consistently?
-
-**Answer:** Partial.
-
-**Evidence:** Controller checks principal tenant for graph APIs, but service/repository still accept scope from DTOs in several paths. :contentReference[oaicite:149]{index=149} :contentReference[oaicite:150]{index=150}
-
-**Required fix:** Pass server-derived scope separately and persist only server-derived scope.
-
----
-
-### 10. Is backend artifact graph logic in the right canonical module?
-
-**Answer:** Partial.
-
-**Evidence:** `yappc-services` contains API/service/repository implementation for graph operations. :contentReference[oaicite:151]{index=151} :contentReference[oaicite:152]{index=152} :contentReference[oaicite:153]{index=153}
-
-**Required fix:** Keep durable backend graph operations in `yappc-services`, but align DTOs with the TypeScript compiler graph schema and verify/consolidate any overlapping `knowledge-graph` implementations in the next pass.
-
----
-
-### 11. Are there duplicate or conflicting implementations?
-
-**Answer:** Yes.
-
-**Evidence:** Frontend import workflow, API route, and job repository disagree on supported source types; frontend also defines a duplicate residual shape. :contentReference[oaicite:154]{index=154} :contentReference[oaicite:155]{index=155} :contentReference[oaicite:156]{index=156}
-
-**Required fix:** Create one shared source import contract and one shared residual DTO.
-
----
-
-### 12. What is the smallest milestone that makes the foundation trustworthy?
-
-**Answer:** Milestone 1: stable repository IR and source snapshot compiler.
-
-**Required first files:**
-
-- `scanner.ts`
-- `types.ts` for source providers/model/graph
-- `pipeline.ts`
-- `symbol-resolver.ts`
-- `ArtifactGraphController.java`
-- `ArtifactGraphServiceImpl.java`
-- `ArtifactGraphRepository.java`
-- `source-imports.ts`
-- DB migration for jobs/snapshots/graph versions.
-
----
-
-### 13. What files must be changed first?
-
-**Answer:**
-
-1. `ArtifactGraphServiceImpl.java`
-2. `ArtifactGraphController.java`
-3. `ArtifactGraphRepository.java`
-4. `scanner.ts`
-5. `model/types.ts`
-6. `pipeline.ts`
-7. `react-patch-emitter.ts`
-8. `source-imports.ts`
-9. `job-repository.ts`
-
----
-
-### 14. What tests must fail today and pass after implementation?
-
-**Answer:**
-
-- Backend compile test for `ArtifactGraphServiceImpl`.
-- Tenant isolation test where body tenant is omitted/mismatched.
-- Scanner skipped-artifact test.
-- Synthesis model schema validation test.
-- No-op round-trip zero-diff test.
-- Residual preservation test.
-- GitHub provider diagnostics test.
-- DB-backed job repository test.
-- Repo import API route test.
-- Backend pagination test.
-
----
-
-### 15. What legacy/stale/deprecated code or docs must be removed or consolidated?
-
-**Answer:**
-
-- Placeholder patch emission in `react-patch-emitter.ts`.
-- Production stub/throw residual strategies in `residual-preserver.ts`.
-- Duplicate residual type in `ImportSourceWorkflow.ts`.
-- File-based job repository as production default.
-- Current-repo scanner smoke tests as primary confidence tests.
-- Conflicting source type lists across frontend/API/job repository.
+| Question                                                               | Answer                                                                                                | Evidence                                                                                                       | Required fix                                                          |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Is the current system truly round-trip capable?                        | No                                                                                                    | React emitter only supports limited async rename/add-prop; sync emit no-ops.                                   | Build no-op round-trip, patch apply, validation, residual guard.      |
+| Can it scan a full GitHub repo today, or only import individual files? | Partial                                                                                               | GitHub provider can snapshot recursive tree and commit pin.  API route then runs pipeline with no extractors.  | Wire real extractor registry and durable graph/model persistence.     |
+| Are artifact IDs deterministic?                                        | Partial                                                                                               | Deterministic with snapshotRef; random UUID without snapshotRef.                                               | Require snapshotRef for repo scans and deterministic model IDs.       |
+| Are graph edges valid and resolved?                                    | Partial                                                                                               | TS separates resolved/unresolved and validates edge endpoints.   Backend DTO lacks unresolved edge contract.   | Add backend validation and unresolved edge persistence.               |
+| Is there a complete synthesis pipeline?                                | Partial                                                                                               | Pipeline exists.  API route uses no extractors.                                                                | Capability registry + real extractors in source import.               |
+| Is compile-back/patch generation implemented?                          | Partial                                                                                               | Coordinator/types exist.   Emitter is limited.                                                                 | AST-backed emitters + patch apply/dry-run.                            |
+| Are residual islands preserved?                                        | Partial                                                                                               | Schema exists and pipeline can create residuals.                                                               | Persist residuals and show them in UX; patch overlap validation.      |
+| Are source import jobs durable?                                        | Partial                                                                                               | API job route and DB table exist.                                                                              | Consolidate Fastify/Java job ownership.                               |
+| Is tenant/workspace/project scope enforced consistently?               | Partial                                                                                               | Java tenant from principal.  Fastify headers for tenant/workspace/project.                                     | Principal-derived tenant/workspace/project in one server-side policy. |
+| Is backend artifact graph logic in the right canonical module?         | Partial                                                                                               | Java owns API/persistence; TS owns compiler.                                                                   | Formalize boundary and remove parser duplication/stubs.               |
+| Are there duplicate/conflicting implementations?                       | Yes                                                                                                   | V11 and V14 duplicate snapshot tracking; job repo appears in Fastify and Java.                                 | Consolidation plan and V15 corrective migration.                      |
+| Smallest trustworthy milestone?                                        | Stable Repository IR and Source Snapshot Compiler                                                     | Current scanner/source/graph foundations exist.                                                                | Complete Phase 1–2 with golden tests.                                 |
+| What files must change first?                                          | Source import route, graph validation/export, DTOs, controller, emitter                               | Evidence above.                                                                                                | Execute P0 TODOs.                                                     |
+| What tests must fail today and pass after?                             | Repo import non-empty extraction, unsupported patch op, backend invalid edge ingest, no-op round-trip | Evidence above.                                                                                                | Add tests in Section H.                                               |
+| What legacy/stale/deprecated code/docs must be removed/consolidated?   | Parser stubs, duplicate migrations intent, duplicate job ownership, external TODO doc                 | Evidence above.                                                                                                | Cleanup Section G.                                                    |
 
 ---
 
 ## Section J: Definition of Done
 
-Implementation is done when:
+Implementation is done only when:
 
-1. Java backend compiles cleanly.
-2. Repository source can be imported as immutable, scoped snapshot.
-3. Source providers use governed credential references, not raw browser tokens.
-4. Inventory records deterministic artifacts and explicit skipped artifacts.
-5. Graph resolved edges only contain valid node IDs.
-6. Unresolved, ambiguous, and cross-repo references are persisted and reviewable.
-7. Semantic model validates and carries provenance/confidence.
-8. Residual islands preserve raw source spans and checksums.
-9. No-op round-trip produces zero diff.
-10. Supported edits produce minimal AST/range-backed patches.
-11. Patch validation blocks stale, risky, or residual-overlapping edits.
-12. Backend graph APIs enforce principal-derived tenant/workspace/project scope.
-13. Import jobs are DB-backed, auditable, retryable, and pollable.
-14. UI shows provider/ref selection, progress, import summary, skipped files, confidence, residuals, validation, and patch review.
-15. Golden fixture tests and E2E import/edit/patch/re-scan tests pass.
+1. GitHub/GitLab/local/archive sources produce immutable `RepositorySnapshot` records.
+2. Inventory is deterministic for a commit-pinned snapshot.
+3. Generated/vendor/binary/large/skipped files have explicit reasons.
+4. Graph resolved edges only reference existing graph node IDs.
+5. Unresolved references are persisted separately with resolution records.
+6. Semantic model elements have provenance, confidence, graph node IDs, and residual links.
+7. Residual islands are persisted, visible, and protected from patch emitters.
+8. Repository import through API produces a validated graph/model or explicit unsupported state.
+9. Backend artifact APIs enforce tenant/workspace/project scope server-side.
+10. Patch generation supports at least React rename/add-prop with minimal diff, checksum validation, and residual guard.
+11. Unsupported compile-back operations require review and never silently succeed.
+12. No-op round-trip fixture produces zero diff.
+13. Golden fixtures pass for scanner, graph, synthesis, residual, and patch flows.
+14. Stale/duplicate job and migration ownership is consolidated or explicitly documented.
 
 ---
+
+## Section K: Prioritized TODO Checklist
+
+### P0
+
+* [ ] [P0] Stop repository import from succeeding with an empty extractor pipeline.
+
+  * Files:
+
+    * `products/yappc/frontend/apps/api/src/routes/source-imports.ts`
+  * Why: Current route calls `SynthesisPipeline({ extractors: [] })`. 
+  * Done when: repo import returns non-empty validated model/graph or explicit unsupported error.
+  * Test: `source-imports.repo-import.test.ts`
+
+* [ ] [P0] Preserve full graph fidelity across backend API.
+
+  * Files:
+
+    * `ArtifactGraphIngestRequest.java`
+    * `ArtifactNodeDto.java`
+    * `ArtifactEdgeDto.java`
+    * `ArtifactGraphRepository.java`
+  * Why: TS graph schema is rich, Java DTOs are lossy.   
+  * Done when: sourceLocation, confidence, provenance, unresolved edges, residual refs persist round-trip.
+  * Test: backend DTO/repository round-trip tests.
+
+* [ ] [P0] Enforce workspace/project scope server-side.
+
+  * Files:
+
+    * `ArtifactGraphController.java`
+    * `source-imports.ts`
+  * Why: Java controller proves tenant enforcement, but product/project remains payload/header driven.  
+  * Done when: cross-project request fails with 403.
+  * Test: `ArtifactGraphControllerScopeTest.java`
+
+* [ ] [P0] Remove silent patch no-ops.
+
+  * Files:
+
+    * `react-patch-emitter.ts`
+    * `patch-coordinator.ts`
+  * Why: emitter advertises unsupported ops and returns empty patches. 
+  * Done when: unsupported ops produce explicit review-required unsupported results.
+  * Test: `react-patch-emitter.unsupported-op.test.ts`
+
+* [ ] [P0] Remove or flag production parser stubs.
+
+  * Files:
+
+    * `ArtifactGraphServiceImpl.java`
+  * Why: unsupported TS/JS parser path returns stub-like unparsed node. 
+  * Done when: unsupported language emits residual/unsupported diagnostic, not production stub node.
+  * Test: `ArtifactGraphServiceUnsupportedParserTest.java`
+
+### P1
+
+* [ ] [P1] Harden source provider governance.
+
+  * Files:
+
+    * `source-providers/types.ts`
+    * `github-provider.ts`
+    * `gitlab-provider.ts`
+    * `zip-provider.ts`
+  * Why: provider abstraction exists but credentialRef, typed dispatch, retries, diagnostics are incomplete. 
+  * Done when: providers use credential resolver, typed provider dispatch, redacted diagnostics.
+  * Test: provider registry and provider-specific tests.
+
+* [ ] [P1] Make inventory scan production deterministic.
+
+  * Files:
+
+    * `inventory/types.ts`
+    * `inventory/scanner.ts`
+  * Why: scanner exists but needs stronger gitignore, skip reasons, concurrency, deterministic mode.  
+  * Done when: golden fixture scan is stable across repeated runs.
+  * Test: scanner determinism and `.gitignore` tests.
+
+* [ ] [P1] Add full IR persistence migration.
+
+  * Files:
+
+    * `V15__artifact_compiler_snapshot_ir_hardening.sql`
+  * Why: current schema lacks snapshots, inventory, unresolved edges, residuals, patches; V11/V14 duplicate snapshot tracking.  
+  * Done when: DB stores source snapshot → inventory → graph → residual → patch lineage.
+  * Test: migration integration test.
+
+* [ ] [P1] Add no-op round-trip harness.
+
+  * Files:
+
+    * `compile-back/apply-patch.ts`
+    * `compile-back/patch-coordinator.ts`
+    * `tests/fixtures/small-react-app`
+  * Why: current compile-back is not round-trip safe.  
+  * Done when: no-op round-trip produces zero diff.
+  * Test: `noop-roundtrip.test.ts`
+
+* [ ] [P1] Consolidate source import job ownership.
+
+  * Files:
+
+    * `source-imports.ts`
+    * `job-repository.ts`
+    * `SourceImportJobRepository.java`
+  * Why: job flow appears split across Fastify, DB, and Java.   
+  * Done when: one canonical job API/table supports create, poll, cancel, resume, audit.
+  * Test: job lifecycle integration test.
+
+### P2
+
+* [ ] [P2] Add canvas import summary and patch review UX.
+
+  * Files:
+
+    * `products/yappc/frontend/web/src/services/compiler/artifactCompilerClient.ts`
+    * `products/yappc/frontend/web/src/components/canvas/page/SourceImportPanel.tsx`
+    * `products/yappc/frontend/web/src/components/canvas/page/ImportSummaryPanel.tsx`
+    * `products/yappc/frontend/web/src/components/canvas/page/PatchReviewPanel.tsx`
+  * Why: API has review concepts, but web/canvas integration was not verified.
+  * Done when: user can import, review confidence/residuals/skipped files, review patch, and rescan.
+  * Test: Playwright source import and patch review E2E.
+
+* [ ] [P2] Consolidate stale compiler/decompiler TODO docs.
+
+  * Files:
+
+    * `platform/comp-decomp-todo.md`
+    * `products/yappc/docs/architecture/ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md`
+  * Why: Non-canonical TODO docs can cause repeated or stale planning.  
+  * Done when: canonical architecture reflects actual code ownership and stale TODO is archived or merged.
+  * Test: docs/code consistency checklist.
+
+### P3
+
+* [ ] [P3] Improve graph query response ergonomics.
+
+  * Files:
+
+    * `graph/types.ts`
+    * `ArtifactGraphRepository.java`
+    * `ArtifactGraphServiceImpl.java`
+  * Why: TS query supports cursor/limit, but result schema lacks cursor and Java service uses fixed limits.  
+  * Done when: graph queries return `items`, `nextCursor`, `totalEstimate`, and scope metadata.
+  * Test: graph query pagination test.

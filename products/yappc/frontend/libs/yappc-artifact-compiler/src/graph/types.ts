@@ -29,7 +29,7 @@ export function toArtifactNodeId(raw: string): ArtifactNodeId {
 // ============================================================================
 
 export const SnapshotRefSchema = z.object({
-  provider: z.enum(["local-folder", "github", "gitlab", "zip", "artifact-registry"]),
+  provider: z.enum(["local-folder", "github", "gitlab", "zip", "archive", "artifact-registry"]),
   repoId: z.string().min(1),
   commitSha: z.string().optional(),
   branch: z.string().optional(),

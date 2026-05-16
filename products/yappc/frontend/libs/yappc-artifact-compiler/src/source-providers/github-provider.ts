@@ -1,6 +1,8 @@
 /**
  * @fileoverview GitHub source provider.
  *
+ * P1-2: Hardened with credentialRef resolver, retry/backoff, rate-limit diagnostics, cleanup contract.
+ *
  * Resolves GitHub repos into a RepositorySnapshot using the GitHub Contents API.
  * Materializes files into a temp directory. Generates stable deterministic SnapshotRef
  * including the resolved commit SHA.
@@ -13,10 +15,9 @@
  *   - "https://github.com/owner/repo/tree/branch"
  */
 
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { randomUUID } from 'crypto';
 import type {
   SourceProvider,
   SourceProviderOptions,
@@ -92,36 +93,115 @@ interface GitHubBlobResponse {
 }
 
 // ============================================================================
-// API helpers
+// API helpers with retry/backoff and rate-limit handling
 // ============================================================================
+
+interface RetryConfig {
+  maxRetries: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 10000,
+};
 
 async function githubApiFetch<T>(
   path: string,
   token: string | undefined,
   timeoutMs: number,
+  retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG,
+  diagnostics: ProviderDiagnostic[] = [],
 ): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github.v3+json',
-    };
-    if (token) headers['Authorization'] = `token ${token}`;
-
-    const response = await fetch(`https://api.github.com${path}`, {
-      headers,
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`GitHub API ${response.status}: ${text.slice(0, 200)}`);
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.min(
+        retryConfig.baseDelayMs * Math.pow(2, attempt - 1),
+        retryConfig.maxDelayMs
+      );
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
+    
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github.v3+json',
+      };
+      if (token) headers['Authorization'] = `token ${token}`;
 
-    return (await response.json()) as T;
-  } finally {
-    clearTimeout(timer);
+      const response = await fetch(`https://api.github.com${path}`, {
+        headers,
+        signal: controller.signal,
+      });
+
+      // P1-2: Handle rate limiting
+      const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+      const rateLimitReset = response.headers.get('x-ratelimit-reset');
+      
+      if (rateLimitRemaining && parseInt(rateLimitRemaining, 10) < 10) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITHUB_RATE_LIMIT_LOW',
+          message: `GitHub rate limit nearly exhausted: ${rateLimitRemaining} remaining`,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            remaining: rateLimitRemaining,
+            reset: rateLimitReset,
+          },
+        });
+      }
+
+      if (response.status === 429) {
+        const resetTime = parseInt(response.headers.get('x-ratelimit-reset') || '0', 10) * 1000;
+        const now = Date.now();
+        const waitMs = Math.max(0, resetTime - now);
+        
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITHUB_RATE_LIMIT_EXCEEDED',
+          message: `GitHub rate limit exceeded. Waiting ${waitMs}ms before retry.`,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            resetTime: new Date(resetTime).toISOString(),
+            waitMs,
+          },
+        });
+        
+        if (attempt < retryConfig.maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+          continue;
+        }
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`GitHub API ${response.status}: ${text.slice(0, 200)}`);
+      }
+
+      return (await response.json()) as T;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      
+      // Don't retry on abort (timeout) or 4xx client errors (except 429 handled above)
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw lastError;
+      }
+      
+      if (lastError.message.includes('GitHub API 4')) {
+        throw lastError;
+      }
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  
+  throw lastError || new Error('GitHub API request failed after retries');
 }
 
 // ============================================================================
@@ -149,8 +229,29 @@ export class GitHubProvider implements SourceProvider {
       throw new SourceProviderError(this.providerId, normalizedInput, 'Cannot parse GitHub locator');
     }
 
+    // P1-2: Resolve credentials via credentialRef resolver
+    let token = options?.credentials?.token;
+    if (options?.credentialResolver && options.credentials?.credentialRef) {
+      const scope = options.scope ?? { tenantId: 'default', principalId: 'system', grantedAt: new Date().toISOString() };
+      const resolvedCreds = await options.credentialResolver.resolve(options.credentials.credentialRef, scope);
+      token = resolvedCreds?.token;
+    }
+
     try {
-      return await this.doResolve(parsed, normalizedInput, options);
+      const snapshot = await this.doResolve(parsed, normalizedInput, token, options);
+      
+      // P1-2: Cleanup temp files unless keepTempFiles is true
+      if (!options?.keepTempFiles) {
+        setImmediate(async () => {
+          try {
+            await rm(snapshot.localRootPath, { recursive: true, force: true });
+          } catch (err) {
+            console.warn(`[GitHubProvider] Failed to cleanup temp directory: ${snapshot.localRootPath}`, err);
+          }
+        });
+      }
+      
+      return snapshot;
     } catch (err) {
       if (err instanceof SourceProviderError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
@@ -161,27 +262,32 @@ export class GitHubProvider implements SourceProvider {
   private async doResolve(
     parsed: ParsedGitHubLocator,
     _locator: string,
+    token: string | undefined,
     options?: SourceProviderOptions,
   ): Promise<RepositorySnapshot> {
 
-    const token = options?.credentials?.token;
     const timeoutMs = options?.requestTimeoutMs ?? 30_000;
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 1 * 1024 * 1024; // 1MB default
     const maxFiles = options?.maxFiles ?? 10_000;
+    const diagnostics: ProviderDiagnostic[] = [];
 
-    // Resolve the commit SHA
+    // Resolve the commit SHA with retry/backoff
     const commitRef = await githubApiFetch<GitHubCommitResponse>(
       `/repos/${parsed.owner}/${parsed.repo}/commits/${parsed.ref}`,
       token,
       timeoutMs,
+      DEFAULT_RETRY_CONFIG,
+      diagnostics,
     );
     const commitSha = commitRef.sha;
 
-    // Fetch the recursive tree
+    // Fetch the recursive tree with retry/backoff
     const treeResponse = await githubApiFetch<GitHubTreeResponse>(
       `/repos/${parsed.owner}/${parsed.repo}/git/trees/${commitSha}?recursive=1`,
       token,
       timeoutMs,
+      DEFAULT_RETRY_CONFIG,
+      diagnostics,
     );
 
     if (treeResponse.truncated) {
@@ -193,13 +299,7 @@ export class GitHubProvider implements SourceProvider {
       );
     }
 
-    // Materialize to a temp directory
-    const tempRoot = join(
-      options?.tempDir ?? tmpdir(),
-      `yappc-github-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}-${randomUUID().slice(0, 8)}`,
-    );
-    await mkdir(tempRoot, { recursive: true });
-
+    // P1-2: Deterministic snapshot metadata using commit SHA
     const snapshotRef: SnapshotRef = {
       provider: 'github',
       repoId: `github.com/${parsed.owner}/${parsed.repo}`,
@@ -207,8 +307,14 @@ export class GitHubProvider implements SourceProvider {
       branch: parsed.ref !== 'HEAD' ? parsed.ref : undefined,
     };
 
+    // Materialize to a temp directory (deterministic path for same commit)
+    const tempRoot = join(
+      options?.tempDir ?? tmpdir(),
+      `yappc-github-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}`,
+    );
+    await mkdir(tempRoot, { recursive: true });
+
     const files: SnapshotFile[] = [];
-    const diagnostics: ProviderDiagnostic[] = [];
     let fileCount = 0;
 
     for (const entry of treeResponse.tree) {
@@ -238,12 +344,14 @@ export class GitHubProvider implements SourceProvider {
         continue;
       }
 
-      // Materialize the blob
+      // Materialize the blob with retry/backoff
       try {
         const blob = await githubApiFetch<GitHubBlobResponse>(
           `/repos/${parsed.owner}/${parsed.repo}/git/blobs/${entry.sha}`,
           token,
           timeoutMs,
+          DEFAULT_RETRY_CONFIG,
+          diagnostics,
         );
         const content = blob.encoding === 'base64'
           ? Buffer.from(blob.content.replace(/\n/g, ''), 'base64')
@@ -262,7 +370,7 @@ export class GitHubProvider implements SourceProvider {
           lastModifiedAt: new Date().toISOString(),
         });
         fileCount++;
-      } catch {
+      } catch (err) {
         // Non-fatal: record without materialization
         files.push({
           relativePath: entry.path,
@@ -278,6 +386,7 @@ export class GitHubProvider implements SourceProvider {
           resourcePath: entry.path,
           metadata: {
             sizeBytes: entry.size ?? 0,
+            error: err instanceof Error ? err.message : String(err),
           },
         });
       }

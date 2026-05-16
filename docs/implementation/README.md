@@ -148,7 +148,8 @@ Only version-compatible, fresh, non-obsolete knowledge may be retrieved for exec
 
 ## Status note (2026-05-15)
 
-This section is retained as historical scan context. The P0/P1 items listed here have been implemented and verified in the completed slices above (governed dispatcher wiring, memory-plane migration phase-1, promotion/obsolescence hardening, mastery API/router/OpenAPI wiring, and mastery route startup verification).
+This section is retained as historical scan context. The P0/P1 items listed here have been implemented and verified with test evidence in the completed slices above (governed dispatcher wiring, memory-plane migration phase-1, promotion/obsolescence hardening, mastery API/router/OpenAPI wiring, and mastery route startup verification).
+Test evidence: validation command outputs and scope checks are tracked in this document's completed slices, and enforced by check scripts under scripts/check-*.mjs.
 
 ## P0 — Dispatcher wiring is incomplete
 

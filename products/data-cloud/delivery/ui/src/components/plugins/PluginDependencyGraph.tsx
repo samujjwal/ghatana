@@ -184,13 +184,13 @@ export function PluginDependencyGraph({
     const style = getComputedStyle(document.documentElement);
     const cssVar = (name: string) => style.getPropertyValue(name).trim();
 
-    const colorSuccess  = cssVar('--color-success');   // #10b981 in globals.css
-    const colorError    = cssVar('--color-error');     // #ef4444
-    const colorWarning  = cssVar('--color-warning');   // #f59e0b
-    const colorInfo     = cssVar('--color-info');      // #3b82f6
-    const colorMuted    = cssVar('--color-text-muted');// #6b7280
-    const colorSurface  = cssVar('--color-bg-surface');// #ffffff
-    const colorBorder   = cssVar('--color-border');    // #e5e7eb
+    const colorSuccess  = cssVar('--color-success');
+    const colorError    = cssVar('--color-error');
+    const colorWarning  = cssVar('--color-warning');
+    const colorInfo     = cssVar('--color-info');
+    const colorMuted    = cssVar('--color-text-muted');
+    const colorSurface  = cssVar('--color-bg-surface');
+    const colorBorder   = cssVar('--color-border');
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -34,3 +34,12 @@ export type {
   GraphQuery,
   GraphQueryResult,
 } from "./types";
+
+export {
+  validateGraph,
+} from "./validateGraph";
+
+export type {
+  GraphValidationError,
+  GraphValidationResult,
+} from "./validateGraph";

@@ -15,6 +15,8 @@ export type {
 export {
   ExtractorRegistry,
   defaultExtractorRegistry,
+  registerCanonicalExtractors,
+  getCanonicalExtractors,
 } from './extractor-registry';
 
 export type {

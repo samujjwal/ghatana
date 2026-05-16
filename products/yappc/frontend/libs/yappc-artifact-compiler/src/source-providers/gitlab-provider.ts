@@ -1,19 +1,23 @@
 /**
  * @fileoverview GitLab source provider.
  *
+ * P1-3: Hardened with nested groups support, credentialRef resolver, retry/backoff, cleanup contract.
+ *
  * Resolves GitLab repos into a RepositorySnapshot using the GitLab API.
  * Materializes files into a temp directory. Generates stable deterministic SnapshotRef
  * including the resolved commit SHA.
  *
  * Locator formats supported:
  *   - "owner/repo"                (default branch HEAD)
+ *   - "group/subgroup/repo"        (nested groups)
  *   - "owner/repo@branch"
  *   - "owner/repo@sha"
  *   - "https://gitlab.com/owner/repo"
  *   - "https://gitlab.com/owner/repo/-/tree/branch"
+ *   - "https://gitlab.com/group/subgroup/repo"
  */
 
-import { mkdir, writeFile, mkdtemp } from 'fs/promises';
+import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type {
@@ -28,35 +32,40 @@ import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } 
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
-// Locator parsing
+// Locator parsing with nested groups support
 // ============================================================================
 
 interface ParsedGitLabLocator {
-  readonly owner: string;
-  readonly repo: string;
+  readonly projectPath: string;  // Full path including nested groups, e.g., "group/subgroup/repo"
+  readonly repo: string;         // Repository name (last component)
   readonly ref: string;
 }
 
-const GITLAB_URL_RE = /gitlab\.com\/([^/]+)\/([^/?#]+)(?:\/-\/tree\/([^/?#]+))?/;
-const SLUG_RE = /^([\w.-]+)\/([\w.-]+)(?:@(.+))?$/;
+const GITLAB_URL_RE = /gitlab\.com\/([^/]+(?:\/[^/]+)*)(?:\/-\/tree\/([^/?#]+))?/;
+// P1-3: Support nested groups: "group/subgroup/repo" or "group/subgroup/repo@ref"
+const SLUG_RE = /^([\w.-]+(?:\/[\w.-]+)*)(?:@(.+))?$/;
 
 function parseLocator(locator: string): ParsedGitLabLocator | null {
   // Full URL
   const urlMatch = GITLAB_URL_RE.exec(locator);
   if (urlMatch) {
+    const projectPath = urlMatch[1]!.replace(/\.git$/, '');
+    const repo = projectPath.split('/').pop() || projectPath;
     return {
-      owner: urlMatch[1]!,
-      repo: urlMatch[2]!.replace(/\.git$/, ''),
-      ref: urlMatch[3] ?? 'HEAD',
+      projectPath,
+      repo,
+      ref: urlMatch[2] ?? 'HEAD',
     };
   }
-  // Slug
+  // Slug with nested groups
   const slugMatch = SLUG_RE.exec(locator);
   if (slugMatch) {
+    const projectPath = slugMatch[1]!;
+    const repo = projectPath.split('/').pop() || projectPath;
     return {
-      owner: slugMatch[1]!,
-      repo: slugMatch[2]!,
-      ref: slugMatch[3] ?? 'HEAD',
+      projectPath,
+      repo,
+      ref: slugMatch[2] ?? 'HEAD',
     };
   }
   return null;
@@ -91,37 +100,116 @@ interface GitLabFileResponse {
 }
 
 // ============================================================================
-// API helpers
+// API helpers with retry/backoff
 // ============================================================================
+
+interface RetryConfig {
+  maxRetries: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 10000,
+};
 
 async function gitlabApiFetch<T>(
   host: string,
   path: string,
   token: string | undefined,
   timeoutMs: number,
+  retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG,
+  diagnostics: ProviderDiagnostic[] = [],
 ): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-    };
-    if (token) headers['PRIVATE-TOKEN'] = token;
-
-    const response = await fetch(`${host}${path}`, {
-      headers,
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`GitLab API ${response.status}: ${text.slice(0, 200)}`);
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.min(
+        retryConfig.baseDelayMs * Math.pow(2, attempt - 1),
+        retryConfig.maxDelayMs
+      );
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
+    
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+      };
+      if (token) headers['PRIVATE-TOKEN'] = token;
 
-    return (await response.json()) as T;
-  } finally {
-    clearTimeout(timer);
+      const response = await fetch(`${host}${path}`, {
+        headers,
+        signal: controller.signal,
+      });
+
+      // P1-3: Handle rate limiting
+      const rateLimitRemaining = response.headers.get('ratelimit-remaining');
+      const rateLimitReset = response.headers.get('ratelimit-reset');
+      
+      if (rateLimitRemaining && parseInt(rateLimitRemaining, 10) < 10) {
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITLAB_RATE_LIMIT_LOW',
+          message: `GitLab rate limit nearly exhausted: ${rateLimitRemaining} remaining`,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            remaining: rateLimitRemaining,
+            reset: rateLimitReset,
+          },
+        });
+      }
+
+      if (response.status === 429) {
+        const resetTime = parseInt(response.headers.get('ratelimit-reset') || '0', 10) * 1000;
+        const now = Date.now();
+        const waitMs = Math.max(0, resetTime - now);
+        
+        diagnostics.push({
+          level: 'warning',
+          code: 'GITLAB_RATE_LIMIT_EXCEEDED',
+          message: `GitLab rate limit exceeded. Waiting ${waitMs}ms before retry.`,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            resetTime: new Date(resetTime).toISOString(),
+            waitMs,
+          },
+        });
+        
+        if (attempt < retryConfig.maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+          continue;
+        }
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`GitLab API ${response.status}: ${text.slice(0, 200)}`);
+      }
+
+      return (await response.json()) as T;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      
+      // Don't retry on abort (timeout) or 4xx client errors (except 429 handled above)
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw lastError;
+      }
+      
+      if (lastError.message.includes('GitLab API 4')) {
+        throw lastError;
+      }
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  
+  throw lastError || new Error('GitLab API request failed after retries');
 }
 
 // ============================================================================
@@ -155,8 +243,29 @@ export class GitLabProvider implements SourceProvider {
       throw new SourceProviderError(this.providerId, normalizedInput, 'Cannot parse GitLab locator');
     }
 
+    // P1-3: Resolve credentials via credentialRef resolver
+    let token = options?.credentials?.token;
+    if (options?.credentialResolver && options.credentials?.credentialRef) {
+      const scope = options.scope ?? { tenantId: 'default', principalId: 'system', grantedAt: new Date().toISOString() };
+      const resolvedCreds = await options.credentialResolver.resolve(options.credentials.credentialRef, scope);
+      token = resolvedCreds?.token;
+    }
+
     try {
-      return await this.doResolve(parsed, normalizedInput, options);
+      const snapshot = await this.doResolve(parsed, normalizedInput, token, options);
+      
+      // P1-3: Cleanup temp files unless keepTempFiles is true
+      if (!options?.keepTempFiles) {
+        setImmediate(async () => {
+          try {
+            await rm(snapshot.localRootPath, { recursive: true, force: true });
+          } catch (err) {
+            console.warn(`[GitLabProvider] Failed to cleanup temp directory: ${snapshot.localRootPath}`, err);
+          }
+        });
+      }
+      
+      return snapshot;
     } catch (err) {
       if (err instanceof SourceProviderError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
@@ -167,34 +276,38 @@ export class GitLabProvider implements SourceProvider {
   private async doResolve(
     parsed: ParsedGitLabLocator,
     _locator: string,
+    token: string | undefined,
     options?: SourceProviderOptions,
   ): Promise<RepositorySnapshot> {
 
-    const token = options?.credentials?.token;
     const timeoutMs = options?.requestTimeoutMs ?? 30_000;
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 1 * 1024 * 1024; // 1MB default
     const maxFiles = options?.maxFiles ?? 10_000;
+    const diagnostics: ProviderDiagnostic[] = [];
 
-    const encodedOwner = encodeURIComponent(parsed.owner);
-    const encodedRepo = encodeURIComponent(parsed.repo);
+    // P1-3: Encode full project path for nested groups
+    const encodedProjectPath = encodeURIComponent(parsed.projectPath);
 
-    // Resolve the commit SHA
+    // Resolve the commit SHA with retry/backoff
     const commitRef = await gitlabApiFetch<GitLabCommitResponse>(
       this.apiHost,
-      `/projects/${encodedOwner}%2F${encodedRepo}/repository/commits/${parsed.ref}`,
+      `/projects/${encodedProjectPath}/repository/commits/${parsed.ref}`,
       token,
       timeoutMs,
+      DEFAULT_RETRY_CONFIG,
+      diagnostics,
     );
     const commitSha = commitRef.id;
 
-    // Create temp root once before file loop
-    const tempRoot = await mkdtemp(
-      join(options?.tempDir ?? tmpdir(), `yappc-gitlab-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}-`),
+    // P1-3: Deterministic temp directory path using commit SHA
+    const tempRoot = join(
+      options?.tempDir ?? tmpdir(),
+      `yappc-gitlab-${parsed.projectPath.replace(/\//g, '-')}-${commitSha.slice(0, 8)}`,
     );
+    await mkdir(tempRoot, { recursive: true });
 
-    // Get repository tree (paginated)
+    // Get repository tree (paginated) with retry/backoff
     const files: SnapshotFile[] = [];
-    const diagnostics: ProviderDiagnostic[] = [];
     let fileCount = 0;
     let page = 1;
     const perPage = 100;
@@ -213,9 +326,11 @@ export class GitLabProvider implements SourceProvider {
 
       const treeResponse = await gitlabApiFetch<GitLabTreeEntry[]>(
         this.apiHost,
-        `/projects/${encodedOwner}%2F${encodedRepo}/repository/tree?ref=${commitSha}&per_page=${perPage}&page=${page}&recursive=true`,
+        `/projects/${encodedProjectPath}/repository/tree?ref=${commitSha}&per_page=${perPage}&page=${page}&recursive=true`,
         token,
         timeoutMs,
+        DEFAULT_RETRY_CONFIG,
+        diagnostics,
       );
 
       if (treeResponse.length === 0) break;
@@ -224,13 +339,15 @@ export class GitLabProvider implements SourceProvider {
         if (fileCount >= maxFiles) break;
         if (entry.type !== 'blob') continue;
 
-        // Get file metadata to check size
+        // Get file metadata to check size with retry/backoff
         try {
           const fileMeta = await gitlabApiFetch<GitLabFileResponse>(
             this.apiHost,
-            `/projects/${encodedOwner}%2F${encodedRepo}/repository/files/${encodeURIComponent(entry.path)}?ref=${commitSha}`,
+            `/projects/${encodedProjectPath}/repository/files/${encodeURIComponent(entry.path)}?ref=${commitSha}`,
             token,
             timeoutMs,
+            DEFAULT_RETRY_CONFIG,
+            diagnostics,
           );
 
           if (fileMeta.size > maxFileSizeBytes) {
@@ -270,7 +387,7 @@ export class GitLabProvider implements SourceProvider {
             lastModifiedAt: new Date().toISOString(),
           });
           fileCount++;
-        } catch {
+        } catch (err) {
           // Non-fatal: record without materialization
           files.push({
             relativePath: entry.path,
@@ -284,6 +401,9 @@ export class GitLabProvider implements SourceProvider {
             message: `Failed to materialize GitLab file ${entry.path}; keeping metadata-only snapshot entry.`,
             timestamp: new Date().toISOString(),
             resourcePath: entry.path,
+            metadata: {
+              error: err instanceof Error ? err.message : String(err),
+            },
           });
         }
       }
@@ -293,9 +413,10 @@ export class GitLabProvider implements SourceProvider {
       if (treeResponse.length < perPage) break;
     }
 
+    // P1-3: Deterministic snapshot metadata using commit SHA and full project path
     const snapshotRef: SnapshotRef = {
       provider: 'gitlab',
-      repoId: `gitlab.com/${parsed.owner}/${parsed.repo}`,
+      repoId: `gitlab.com/${parsed.projectPath}`,
       commitSha,
       branch: parsed.ref !== 'HEAD' ? parsed.ref : undefined,
     };

@@ -146,7 +146,7 @@ export function PolicyVisualizer({
                         style={{
                           width: `${radius * 2}px`,
                           height: `${radius * 2}px`,
-                          borderColor: 'rgba(59, 130, 246, 0.3)',
+                          borderColor: 'var(--color-info-border)',
                         }}
                       />
 

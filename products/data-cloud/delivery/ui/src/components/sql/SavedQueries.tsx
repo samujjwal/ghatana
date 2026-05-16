@@ -249,7 +249,7 @@ export function SavedQueries({
                 {/* DC-UX-024: Sample data disclosure — shown until persistence API is connected */}
                 {isSampleData && (
                     <div className="mb-2 flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-3 py-2" role="note">
-                        <span className="mt-0.5 text-blue-500 text-xs">&#9432;</span>
+                        <span className="mt-0.5 text-blue-500 text-xs">{'\u2139'}</span>
                         <p className="text-xs text-blue-700 dark:text-blue-300">
                             <span className="font-semibold">Sample queries</span> — these are examples only. Your saved queries will appear here once query persistence is connected.
                         </p>

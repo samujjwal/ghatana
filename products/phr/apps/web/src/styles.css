@@ -3,10 +3,10 @@
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0d1b2a;
+  color: hsl(212 53% 11%);
   background:
-    radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 35%),
-    linear-gradient(180deg, #f8fbff 0%, #eef4ff 60%, #f4f7fb 100%);
+    radial-gradient(circle at top left, hsl(244 71% 60% / 0.12), transparent 35%),
+    linear-gradient(180deg, hsl(210 100% 99%) 0%, hsl(221 100% 97%) 60%, hsl(218 43% 97%) 100%);
 }
 
 * {
@@ -36,8 +36,8 @@ a {
 
 .app-sidebar {
   padding: 2rem 1.25rem;
-  background: rgba(6, 21, 47, 0.92);
-  color: #f7fbff;
+  background: hsl(216 77% 10% / 0.92);
+  color: hsl(205 100% 98%);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -51,12 +51,12 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.75rem;
-  color: #6b7de6;
+  color: hsl(231 71% 66%);
   margin: 0 0 0.5rem;
 }
 
 .muted {
-  color: #5b6578;
+  color: hsl(220 14% 41%);
 }
 
 .nav-list,
@@ -68,12 +68,12 @@ a {
 .nav-link {
   padding: 0.75rem 0.9rem;
   border-radius: 1rem;
-  color: rgba(247, 251, 255, 0.86);
+  color: hsl(205 100% 98% / 0.86);
 }
 
 .nav-link.active,
 .nav-link:hover {
-  background: rgba(120, 180, 255, 0.18);
+  background: hsl(211 100% 74% / 0.18);
 }
 
 .sidebar-footer {
@@ -97,8 +97,8 @@ a {
 
 .hero-panel {
   padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(44, 90, 160, 0.12), rgba(126, 34, 206, 0.08));
-  border: 1px solid rgba(44, 90, 160, 0.1);
+  background: linear-gradient(135deg, hsl(214 57% 40% / 0.12), hsl(271 72% 47% / 0.08));
+  border: 1px solid hsl(214 57% 40% / 0.1);
 }
 
 .metric-strip {
@@ -123,8 +123,8 @@ a {
 
 .data-card {
   padding: 1rem 1.1rem;
-  border: 1px solid rgba(13, 27, 42, 0.1);
-  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid hsl(212 53% 11% / 0.1);
+  background: hsl(0 0% 100% / 0.86);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -137,19 +137,19 @@ a {
   justify-content: center;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: #dde9ff;
-  color: #16366c;
+  background: hsl(218 100% 93%);
+  color: hsl(216 66% 25%);
   font-size: 0.85rem;
 }
 
 .pill.warning {
-  background: #fde7bf;
-  color: #8b4b00;
+  background: hsl(40 94% 87%);
+  color: hsl(33 100% 27%);
 }
 
 .pill.ghost {
-  background: #edf1f7;
-  color: #465469;
+  background: hsl(216 30% 95%);
+  color: hsl(216 20% 34%);
 }
 
 .row {
@@ -187,12 +187,12 @@ a {
   display: inline-flex;
   align-items: center;
   font-weight: 600;
-  color: #254b9b;
+  color: hsl(220 62% 38%);
 }
 
 .code-block {
-  background: #0d1b2a;
-  color: #d9f0ff;
+  background: hsl(212 53% 11%);
+  color: hsl(200 100% 92%);
   padding: 1rem;
   overflow: auto;
 }
@@ -200,8 +200,8 @@ a {
 .code-inline {
   display: block;
   padding: 0.75rem;
-  background: #eef4ff;
-  color: #16366c;
+  background: hsl(221 100% 97%);
+  color: hsl(216 66% 25%);
   overflow-wrap: anywhere;
 }
 

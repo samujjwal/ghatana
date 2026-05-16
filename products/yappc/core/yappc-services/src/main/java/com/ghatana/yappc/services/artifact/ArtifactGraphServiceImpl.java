@@ -508,6 +508,11 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
      * For TypeScript/JavaScript, use the TypeScript compiler library in the frontend artifact-compiler.
      * @return map with {@code "nodes"} and {@code "edges"} lists
      */
+    /**
+     * P0-8: Parse source artifact with language-specific parsers.
+     * Unsupported parsers are gated behind artifactCompiler.unsupportedParserDiagnostics.enabled feature flag.
+     * When disabled, unsupported files emit residual islands instead of stub diagnostics.
+     */
     public Map<String, Object> parseSourceArtifact(String filePath, String sourceCode) {
         String lower = filePath.toLowerCase();
 
@@ -526,24 +531,53 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             return new CicdWorkflowParser().parseGitHubActionsWorkflow(sourceCode);
         }
 
-        // P4-3: Tree-sitter JNI fallback removed - log unsupported languages for review
+        // P0-8: Check feature flag for unsupported parser diagnostics
+        boolean unsupportedDiagnosticsEnabled = Boolean.parseBoolean(
+            System.getProperty("artifactCompiler.unsupportedParserDiagnostics.enabled", "false")
+        );
+
         String detectedLang = detectLanguageFromExtension(lower);
         if (detectedLang != null) {
-            log.info("No dedicated parser available for {} (detected: {}). " +
-                    "Use frontend TypeScript artifact-compiler for TS/JS/TSX files. " +
-                    "Returning stub for manual review.", filePath, detectedLang);
-            return Map.of(
-                    "nodes", List.of(Map.of(
-                            "id", "unparsed://" + filePath,
-                            "type", "source_file",
-                            "name", filePath,
-                            "filePath", filePath,
-                            "language", detectedLang,
-                            "parseStatus", "requires_dedicated_parser",
-                            "message", "No dedicated parser available in Java backend. Use frontend artifact-compiler for TypeScript/JavaScript files."
-                    )),
-                    "edges", List.of()
-            );
+            if (unsupportedDiagnosticsEnabled) {
+                // P0-8: When enabled, emit diagnostic stub for manual review
+                log.info("No dedicated parser available for {} (detected: {}). " +
+                        "Use frontend TypeScript artifact-compiler for TS/JS/TSX files. " +
+                        "Returning diagnostic stub for manual review.", filePath, detectedLang);
+                return Map.of(
+                        "nodes", List.of(Map.of(
+                                "id", "unparsed://" + filePath,
+                                "type", "source_file",
+                                "name", filePath,
+                                "filePath", filePath,
+                                "language", detectedLang,
+                                "parseStatus", "requires_dedicated_parser",
+                                "message", "No dedicated parser available in Java backend. Use frontend artifact-compiler for TypeScript/JavaScript files."
+                        )),
+                        "edges", List.of()
+                );
+            } else {
+                // P0-8: When disabled, emit residual island instead of stub
+                log.debug("No dedicated parser available for {} (detected: {}). Emitting residual island.", filePath, detectedLang);
+                String residualId = "residual://" + filePath;
+                return Map.of(
+                        "nodes", List.of(),
+                        "edges", List.of(),
+                        "residualIslands", List.of(Map.of(
+                                "id", residualId,
+                                "type", "unsupported_language",
+                                "filePath", filePath,
+                                "language", detectedLang,
+                                "reason", "No dedicated parser available. Requires AST upgrade or manual review.",
+                                "confidence", 0.0,
+                                "sourceRange", Map.of(
+                                        "startLine", 0,
+                                        "startColumn", 0,
+                                        "endLine", sourceCode.split("\n").length,
+                                        "endColumn", sourceCode.length()
+                                )
+                        ))
+                );
+            }
         }
 
         log.warn("Unknown file type, no parser available: {}", filePath);

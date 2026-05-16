@@ -142,9 +142,20 @@ export const SkippedArtifactSchema = z.object({
    */
   matchedPattern: z.string().optional(),
   /**
-   * Source of the skip decision (e.g., "gitignore", "excludeGlobs", "maxFileSize").
+   * Source of the skip decision.
+   * P1-6: Added "generated", "vendor", "binary", "largeFile" sources.
    */
-  source: z.enum(["gitignore", "excludeGlobs", "maxFileSize", "readError", "symlink"]),
+  source: z.enum([
+    "gitignore",
+    "excludeGlobs",
+    "maxFileSize",
+    "readError",
+    "symlink",
+    "generated",
+    "vendor",
+    "binary",
+    "largeFile",
+  ]),
   /**
    * ISO 8601 timestamp when the skip was detected.
    */
@@ -196,6 +207,21 @@ export const ArtifactRecordSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   lastModifiedAt: z.string().datetime(),
   incrementalParseToken: z.string().optional(),
+  /**
+   * P1-6: Reference to the source file in the snapshot (e.g., GitHub blob URL or local path).
+   * Enables tracing back to the original source location.
+   */
+  sourceFileRef: z.string().optional(),
+  /**
+   * P1-6: Content checksum for integrity verification (SHA-256 hex string).
+   * Separate from the general checksum field to allow for different hashing strategies.
+   */
+  contentChecksum: z.string().optional(),
+  /**
+   * P1-6: Classification confidence score (0.0 to 1.0).
+   * Indicates how confident the scanner is about the artifact kind/language classification.
+   */
+  classificationConfidence: z.number().min(0).max(1).optional(),
 });
 
 export type ArtifactRecord = z.infer<typeof ArtifactRecordSchema>;

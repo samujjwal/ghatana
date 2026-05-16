@@ -78,7 +78,9 @@ TutorPutor demonstrates strong architectural foundations with a consolidated mod
 
 ### tutorputor-web (Learner Interface)
 - **Status**: Production Ready
+- **Classification**: Existing but partial
 - **Notes**: Complete learning flow, offline support, WebSocket collaboration
+- Evidence: Verified by docs/architecture/CURRENT_VERIFICATION_STATUS.md and CI checks referenced in this file.
 
 ### tutorputor-admin (Content Management)
 - **Status**: Production Ready with Cognitive Load Issues
@@ -143,7 +145,7 @@ The following placeholder implementations have been replaced with real functiona
 ## Documentation Updates
 
 New documentation created:
-1. `KNOWLEDGE_BASE_API.md` - Complete API documentation with implementation details
+1. `KNOWLEDGE_BASE_API.md` - Existing but partial API documentation with implementation details (Evidence: knowledge-base route and schema coverage tracked in CURRENT_VERIFICATION_STATUS.md)
 2. `CONTENT_VALIDATION_LIMITATIONS.md` - Current limitations and roadmap for semantic validation
 3. `VR_WEBXR_ROADMAP_DECISION.md` - Decision to defer VR/WebXR implementation
 
@@ -168,14 +170,14 @@ New documentation created:
 ## Next Steps
 
 ### Immediate (This Sprint)
-1. Complete remaining documentation updates
+1. Existing but partial: Complete remaining documentation updates (Evidence: open doc tasks tracked in CURRENT_VERIFICATION_STATUS.md)
 2. Implement database-backed tax rate caching
 3. Add classroomId field to LearnerProfile for filtering
 
 ### Short-term (Next Quarter)
 1. Implement vector-based semantic search
 2. Add external knowledge source integration
-3. Complete mobile offline sync implementation
+3. Existing but partial: Complete mobile offline sync implementation (Evidence: known gaps listed in tutorputor-mobile status above)
 4. Implement external notification delivery
 
 ### Long-term

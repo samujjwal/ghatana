@@ -52,7 +52,7 @@ export const LoadingState = React.memo(function LoadingState({
       aria-live="polite"
       data-testid={testId}
     >
-      <Spinner size="lg" color="var(--color-primary-500, #1976d2)" aria-hidden="true" />
+      <Spinner size="lg" color="var(--color-primary-500)" aria-hidden="true" />
       <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
     </div>
   );

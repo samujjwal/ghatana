@@ -37,7 +37,8 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
         kind: 'business-product',
         registryProviderRef: { providerId: 'registry' },
         sourceProviderRef: { providerId: 'source' },
-        metadata: { environments: ['local'] },
+        lifecycleStatus: 'enabled',
+        metadata: { environments: ['local'], lifecycleExecutionAllowed: true },
         surfaces: [{ id: 'web', type: 'web', implementationStatus: 'implemented' }],
       },
       lifecycleRuns: [
@@ -275,11 +276,11 @@ describe('LifecyclePage approval queue', () => {
 
     expect(screen.getByText('security-scan')).toBeInTheDocument();
     expect(screen.getByText('web-dist')).toBeInTheDocument();
-    expect(screen.getByText('Environment: local')).toBeInTheDocument();
-    expect(screen.getByText('Status: healthy')).toBeInTheDocument();
-    expect(screen.getAllByText('Run ID').length).toBeGreaterThan(0);
-    expect(screen.getByText('Failure Reason')).toBeInTheDocument();
-    expect(screen.getByText('Completed without failure reason')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.environmentLabel: local')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.statusLabel: healthy')).toBeInTheDocument();
+    expect(screen.getAllByText('studio.route.lifecycle.runIdLabel').length).toBeGreaterThan(0);
+    expect(screen.getByText('studio.route.lifecycle.failureReasonLabel')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.outcome.completedWithoutFailureReason')).toBeInTheDocument();
   });
 
   it('shows blocked reason codes for unsupported phase/environment and platform provider mode', () => {
@@ -292,9 +293,16 @@ describe('LifecyclePage approval queue', () => {
           status: 'degraded',
           productUnit: {
             ...createContextValue().snapshot.productUnit!,
+            lifecycleStatus: 'planned',
             metadata: {
               environments: ['local'],
               phases: ['build'],
+              lifecycleExecutionAllowed: false,
+              lifecycleReadiness: {
+                reasonCodes: ['requires-product-gates'],
+                requiredGates: ['security-gate'],
+                nextRequiredWork: ['enable-gates-before-execution'],
+              },
             },
           },
         },
@@ -309,6 +317,11 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByText('phase-not-supported')).toBeInTheDocument();
     expect(screen.getByText('environment-not-supported')).toBeInTheDocument();
     expect(screen.getByText('provider-mode-unavailable')).toBeInTheDocument();
+    expect(screen.getByText('lifecycle-execution-not-allowed')).toBeInTheDocument();
+    expect(screen.getByLabelText('lifecycle-readiness-state')).toBeInTheDocument();
+    expect(screen.getByText('requires-product-gates')).toBeInTheDocument();
+    expect(screen.getByText('security-gate')).toBeInTheDocument();
+    expect(screen.getByText('enable-gates-before-execution')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'studio.route.lifecycle.executePhaseButton' })).toBeDisabled();
   });
 

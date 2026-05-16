@@ -37,6 +37,11 @@ export const ChangeOpKindSchema = z.enum([
   'update-accessibility',
   'add-variant',
   'remove-variant',
+  /**
+   * P0-10: Operation that has no capable emitter and cannot be applied automatically.
+   * Requires manual review or emitter implementation.
+   */
+  'unsupported-operation',
 ]);
 
 export type ChangeOpKind = z.infer<typeof ChangeOpKindSchema>;

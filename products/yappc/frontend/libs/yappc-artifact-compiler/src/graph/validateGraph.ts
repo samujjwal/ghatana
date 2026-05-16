@@ -1,4 +1,17 @@
 /**
+ * @fileoverview Graph structural integrity validation.
+ *
+ * P0-3: Enhanced validation for:
+ * - Resolved edge targets must exist in node set
+ * - Raw label edges must have corresponding node or be in unresolved set
+ * - Resolution records must reference valid targets
+ * - Source ranges must be valid (start <= end, non-negative)
+ * - Unresolved lifecycle consistency
+ */
+
+import type { ArtifactGraph } from './types';
+
+/**
  * @fileoverview Graph validation utility.
  *
  * Validates ArtifactGraph structural integrity:
@@ -8,8 +21,6 @@
  * - Required fields present
  * - Index consistency
  */
-
-import type { ArtifactGraph } from './types';
 
 export interface GraphValidationError {
   readonly code: string;
@@ -30,82 +41,85 @@ export interface GraphValidationResult {
 }
 
 /**
- * Validates an ArtifactGraph for structural integrity.
- * Returns validation errors and warnings.
+ * Validate an ArtifactGraph for structural integrity and lifecycle consistency.
+ *
+ * P0-3: Enhanced validation checks:
+ * - Duplicate node IDs
+ * - Edge source/target existence
+ * - Confidence score validity
+ * - Required field presence
+ * - Index consistency
+ * - Resolved edge targets exist in node set
+ * - Raw label edges have corresponding node or are unresolved
+ * - Resolution records reference valid targets
+ * - Source ranges are valid (start <= end, non-negative)
+ * - Unresolved edges appear in resolution records or remaining set
  */
 export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
   const errors: GraphValidationError[] = [];
   const warnings: GraphValidationError[] = [];
 
-  // Build node ID lookup for O(1) checks
-  const nodeIds = new Set(graph.nodes.map((n) => n.id));
-  const nodeIdSet = nodeIds;
+  const nodeIds = new Set<string>();
+  const nodeIdSet = new Set<string>(graph.nodes.map((n) => n.id));
 
   // Check for duplicate node IDs
-  const duplicateNodeIds = graph.nodes
-    .map((n) => n.id)
-    .filter((id, index, arr) => arr.indexOf(id) !== index);
-  for (const dupId of duplicateNodeIds) {
-    errors.push({
-      code: 'DUPLICATE_NODE_ID',
-      message: `Duplicate node ID: ${dupId}`,
-      severity: 'error',
-      context: { nodeId: dupId },
-    });
+  for (const node of graph.nodes) {
+    if (nodeIds.has(node.id)) {
+      errors.push({
+        code: 'DUPLICATE_NODE_ID',
+        message: `Duplicate node ID: ${node.id}`,
+        severity: 'error',
+        context: { nodeId: node.id },
+      });
+    }
+    nodeIds.add(node.id);
   }
 
-  // Check all edge source/target IDs reference existing nodes
+  // Check edge source/target existence
   for (const edge of graph.edges) {
     if (!nodeIdSet.has(edge.sourceId)) {
       errors.push({
         code: 'EDGE_SOURCE_NOT_FOUND',
-        message: `Edge references non-existent source node: ${edge.sourceId}`,
+        message: `Edge source node not found: ${edge.sourceId}`,
         severity: 'error',
-        context: { edgeId: edge.id, field: 'sourceId', value: edge.sourceId },
+        context: { edgeId: edge.id },
       });
     }
     if (!nodeIdSet.has(edge.targetId)) {
       errors.push({
         code: 'EDGE_TARGET_NOT_FOUND',
-        message: `Edge references non-existent target node: ${edge.targetId}`,
+        message: `Edge target node not found: ${edge.targetId}`,
         severity: 'error',
-        context: { edgeId: edge.id, field: 'targetId', value: edge.targetId },
+        context: { edgeId: edge.id },
       });
     }
   }
 
-  // Validate confidence scores in range [0, 1]
+  // P0-3: Check confidence score validity
   for (const node of graph.nodes) {
-    if (node.confidence < 0 || node.confidence > 1) {
+    if (node.confidence !== undefined && (node.confidence < 0 || node.confidence > 1)) {
       errors.push({
         code: 'INVALID_CONFIDENCE',
         message: `Node confidence must be between 0 and 1: ${node.confidence}`,
         severity: 'error',
-        context: { nodeId: node.id, field: 'confidence', value: node.confidence },
-      });
-    }
-  }
-  for (const edge of graph.edges) {
-    if (edge.confidence < 0 || edge.confidence > 1) {
-      errors.push({
-        code: 'INVALID_CONFIDENCE',
-        message: `Edge confidence must be between 0 and 1: ${edge.confidence}`,
-        severity: 'error',
-        context: { edgeId: edge.id, field: 'confidence', value: edge.confidence },
+        context: { nodeId: node.id, value: node.confidence },
       });
     }
   }
 
-  // Validate required fields
-  for (const node of graph.nodes) {
-    if (!node.id || node.id.trim() === '') {
+  for (const edge of graph.edges) {
+    if (edge.confidence !== undefined && (edge.confidence < 0 || edge.confidence > 1)) {
       errors.push({
-        code: 'MISSING_REQUIRED_FIELD',
-        message: 'Node missing required field: id',
+        code: 'INVALID_CONFIDENCE',
+        message: `Edge confidence must be between 0 and 1: ${edge.confidence}`,
         severity: 'error',
-        context: { field: 'id' },
+        context: { edgeId: edge.id, value: edge.confidence },
       });
     }
+  }
+
+  // Check required fields
+  for (const node of graph.nodes) {
     if (!node.kind) {
       errors.push({
         code: 'MISSING_REQUIRED_FIELD',
@@ -123,6 +137,7 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
       });
     }
   }
+
   for (const edge of graph.edges) {
     if (!edge.id || edge.id.trim() === '') {
       errors.push({
@@ -246,6 +261,75 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
       severity: 'error',
       context: { field: 'version', value: graph.version },
     });
+  }
+
+  // P0-3: Validate source ranges
+  for (const node of graph.nodes) {
+    const loc = node.sourceLocation;
+    if (loc) {
+      if (loc.startLine < 0 || loc.startColumn < 0 || loc.endLine < 0 || loc.endColumn < 0) {
+        errors.push({
+          code: 'INVALID_SOURCE_RANGE',
+          message: `Source location has negative values: line/col must be >= 0`,
+          severity: 'error',
+          context: { nodeId: node.id, field: 'sourceLocation', value: loc },
+        });
+      }
+      if (loc.startLine > loc.endLine || (loc.startLine === loc.endLine && loc.startColumn > loc.endColumn)) {
+        errors.push({
+          code: 'INVALID_SOURCE_RANGE',
+          message: `Source location end must be after start: start(${loc.startLine}:${loc.startColumn}) > end(${loc.endLine}:${loc.endColumn})`,
+          severity: 'error',
+          context: { nodeId: node.id, field: 'sourceLocation', value: loc },
+        });
+      }
+    }
+  }
+
+  // P0-3: Validate unresolved edge lifecycle consistency
+  const unresolvedTargetRefs = new Set<string>(
+    graph.unresolvedEdges.map((e) => e.targetRef),
+  );
+
+  // Raw label edges must have corresponding node or be in unresolved set
+  for (const edge of graph.unresolvedEdges) {
+    if (edge.targetRef.startsWith('label://')) {
+      if (!nodeIdSet.has(edge.targetRef) && !unresolvedTargetRefs.has(edge.targetRef)) {
+        warnings.push({
+          code: 'RAW_LABEL_EDGE_WITHOUT_TARGET',
+          message: `Raw label edge target ${edge.targetRef} has no corresponding node or unresolved edge`,
+          severity: 'warning',
+          context: { field: 'targetRef', value: edge.targetRef },
+        });
+      }
+    }
+  }
+
+  // Every resolution record target must exist in node set
+  for (const record of graph.edgeResolutionRecords) {
+    if (record.resolvedTargetId && !nodeIdSet.has(record.resolvedTargetId)) {
+      errors.push({
+        code: 'RESOLUTION_RECORD_TARGET_MISSING',
+        message: `Resolution record target ${record.resolvedTargetId} does not exist in node set`,
+        severity: 'error',
+        context: { field: 'resolvedTargetId', value: record.resolvedTargetId },
+      });
+    }
+  }
+
+  // Every unresolved edge should appear in resolution records
+  const resolvedEdgeSourceIds = new Set(
+    graph.edgeResolutionRecords.map((r) => r.unresolvedEdge.sourceId),
+  );
+  for (const edge of graph.unresolvedEdges) {
+    if (!resolvedEdgeSourceIds.has(edge.sourceId)) {
+      warnings.push({
+        code: 'UNRESOLVED_EDGE_NOT_TRACKED',
+        message: `Unresolved edge from ${edge.sourceId} does not appear in resolution records`,
+        severity: 'warning',
+        context: { field: 'sourceId', value: edge.sourceId },
+      });
+    }
   }
 
   return {

@@ -418,7 +418,11 @@ export const SemanticModelElementSchema = z.union([
 export type SemanticModelElement = z.infer<typeof SemanticModelElementSchema>;
 
 export const SemanticProductModelSchema = z.object({
-  id: z.string().uuid(),
+  /**
+   * P1-8: Deterministic ID from snapshot + graph checksum.
+   * Changed from strict UUID to string to support deterministic hashing.
+   */
+  id: z.string().min(1),
   sourceModelRef: z.string().min(1).optional(),
   repositoryRoot: z.string().min(1),
   createdAt: z.string().datetime(),

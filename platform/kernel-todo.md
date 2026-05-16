@@ -615,6 +615,30 @@ Validation note: `pnpm --dir platform/typescript/ghatana-studio type-check` stil
 | Data Cloud gateway auth/lifecycle route tests | ✅ Clean | `pnpm --dir products/data-cloud/planes/action/gateway test` (12 files, 130 tests passed) | Updated JWT fixtures to use valid HMAC signatures and aligned agentic/error route tests with current scope/schema guards. |
 | Studio type-check residual blocker | ✅ Resolved | `pnpm --dir platform/typescript/ghatana-studio type-check` | Resolved package resolution blocker for `@ghatana/kernel-lifecycle` after rebuilding package declarations and workspace install refresh. |
 
+### Progress Delta (2026-05-16, session 2)
+
+| ID / Area | Status | Evidence | Notes |
+|---|---|---|---|
+| P0-01 | ✅ Completed | `pnpm --dir products/data-cloud/planes/action/gateway test` (12 files, 130 tests passed) | Gateway provider routes validate canonical Kernel schemas including events/artifacts/health/provenance/memory/runtimeTruth payloads. |
+| P0-02 | ✅ Completed | `pnpm check:data-cloud-platform-providers` | Gateway fails closed with `PROVIDER_STORE_UNAVAILABLE` when no provider store is injected; production path has no `InMemoryProviderStore` fallback. |
+| P0-03 | ✅ Completed | `pnpm --dir products/data-cloud/planes/action/gateway test` + `pnpm check:data-cloud-platform-providers` | Provider-store scope checks enforce tenant + workspace + project filtering for list/latest queries. |
+| P1-01 | ✅ Completed | `pnpm --dir platform/typescript/ghatana-studio type-check` | `LifecyclePage` now renders lifecycle readiness status, reason codes, required gates, and next required work from ProductUnit metadata. |
+| P1-02 | ✅ Completed | `pnpm --dir platform/typescript/ghatana-studio type-check` | Removed hardcoded user-facing lifecycle strings in `LifecyclePage`; added translation keys for labels, evidence states, and readiness messaging. |
+| P1-03 | ✅ Completed | `pnpm check:digital-marketing-lifecycle-pilot` | Digital Marketing lifecycle pilot gate passes in current workspace. |
+| P1-04 | ✅ Completed | `.github/workflows/product-lifecycle.yml` + `pnpm check:digital-marketing-lifecycle-pilot` | Workflow includes required Digital Marketing lifecycle check and smoke steps. |
+| P1-05 | ✅ Completed | `pnpm check:agentic-lifecycle-action-contracts` + `pnpm --dir platform/typescript/kernel-product-contracts test` (10 files, 102 tests passed) | Agent lifecycle request/result contracts enforce risk/approval/evidence/rollback/verification schema constraints. |
+| P1-06 | ✅ Completed | `pnpm --dir products/data-cloud/planes/action/gateway test` (agentic-lifecycle-actions suite passing) | Governed agent lifecycle route is enforced; service-unavailable and schema/scope checks block raw execution path. |
+| P1-07 | ✅ Completed | `pnpm --dir platform/typescript/ghatana-studio type-check` + `pnpm check:studio-kernel-api` | `AgentsPage` now uses typed agent lifecycle client wiring with action preview, governed execute flow, result state, and evidence-backed output panel. |
+| P2-01 | ✅ Completed | `pnpm --dir platform/typescript/kernel-product-contracts test` | Artifact intelligence contracts for graph summary/product shape/residual/risk/change-set are schema-backed and passing. |
+| P2-02 | ✅ Completed | `pnpm check:yappc-product-unit-intent-handoff` (API 17 tests + web 17 tests passed) | YAPPC ProductUnitIntent/evidence handoff boundary checks pass with explicit platform/bootstrapped evidence handling. |
+| P2-03 | ✅ Completed | `pnpm check:yappc-artifact-intelligence-boundary` | Artifact intelligence boundary check passes; no platform-boundary violations found in YAPPC surfaces. |
+| P2-04 | ✅ Completed | `pnpm --dir platform/typescript/ghatana-studio type-check` | `ArtifactsPage` now displays residual islands, risk hotspots, recommendations, and evidence references from artifact intelligence metadata. |
+| P2-05 | ✅ Completed | `pnpm check:design-system-conformance` | Design-system conformance passes after remediating remaining hardcoded token literals in Data Cloud theme variables. |
+| P3-01 | ✅ Completed | `pnpm check:production-readiness` | Production-readiness script includes explicit checks for provider schema usage, in-memory fallback prohibition, LifecyclePage hardcoded text drift, lifecycleExecutionAllowed guard presence, and currently passes after production marker cleanup. |
+| P3-02 | ✅ Completed | `pnpm check:current-state-claims` | Current-state claim governance passes after classification/evidence reconciliation updates in Tutorputor current-state doc. |
+| P3-03 | ✅ Completed | `pnpm check:doc-truth` | Doc truth authority check passes after adding nearby test evidence context in implementation docs. |
+| P3-04 | ⚠️ Partially complete (repo scope) | `.github/workflows/product-lifecycle.yml` | Workflow coverage exists for architecture/kernel/provider/studio/digital-marketing/production-readiness checks; branch protection enforcement itself is repository setting outside workspace file edits. |
+
 ## P1 — Release 1/2 hardening
 
 | ID | File(s) | TODO | Validation |

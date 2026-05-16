@@ -348,7 +348,17 @@ export function EventExplorerPage(): React.ReactElement {
                           onClick={() => setSelectedEvent(ev)}
                           className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${selectedEvent?.id === ev.id ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
                         >
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ev.tier === 'HOT' ? '#ef4444' : ev.tier === 'WARM' ? '#f97316' : ev.tier === 'COOL' ? '#3b82f6' : '#64748b' }} />
+                          <div
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              ev.tier === 'HOT'
+                                ? 'bg-red-500'
+                                : ev.tier === 'WARM'
+                                  ? 'bg-orange-500'
+                                  : ev.tier === 'COOL'
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-500'
+                            }`}
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900 truncate">{ev.eventType}</span>

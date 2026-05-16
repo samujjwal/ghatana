@@ -34,6 +34,18 @@ export interface ScannerConfig {
    * Defaults to true.
    */
   readonly respectGitignore?: boolean;
+  /**
+   * P1-7: Maximum number of concurrent file operations (reads, checksums).
+   * Prevents overwhelming the filesystem with too many parallel operations.
+   * Defaults to 50.
+   */
+  readonly concurrency?: number;
+  /**
+   * P1-7: Deterministic scan mode ensures consistent ordering and behavior across runs.
+   * When enabled, entries are sorted by name before processing, and results are returned in a stable order.
+   * Defaults to true.
+   */
+  readonly deterministic?: boolean;
 }
 
 export const DEFAULT_SCANNER_CONFIG: ScannerConfig = {
@@ -59,6 +71,8 @@ export const DEFAULT_SCANNER_CONFIG: ScannerConfig = {
   maxFileSizeBytes: 10 * 1024 * 1024, // 10MB
   followSymlinks: false,
   respectGitignore: true,
+  concurrency: 50,
+  deterministic: true,
 };
 
 // ============================================================================
@@ -764,8 +778,10 @@ async function* walkDirectory(
     return;
   }
 
-  // Sort entries by name for deterministic ordering
-  entries.sort((a, b) => a.name.localeCompare(b.name));
+  // P1-7: Sort entries by name for deterministic ordering when deterministic mode is enabled
+  if (config.deterministic !== false) {
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+  }
 
   for (const entry of entries) {
     const entryName = entry.name as string;
@@ -859,13 +875,13 @@ async function scanFile(
       };
     }
 
-    // Skip files larger than the configured limit
+    // P1-7: Use new skip source for large files
     if (stats.size > config.maxFileSizeBytes) {
       return {
         record: null,
         skippedArtifact: createSkippedArtifact(
           relativePath,
-          'maxFileSize',
+          'largeFile',
           'Skipped file because it exceeds the configured size limit.',
           { sizeBytes: stats.size },
         ),
@@ -874,7 +890,7 @@ async function scanFile(
 
     const binary = isBinaryFile(absolutePath);
 
-    // Binary files: record metadata only, skip content parsing
+    // P1-7: Use new skip source for binary files
     if (binary) {
       // Compute SHA-256 of binary content for accurate checksum
       const binaryContent = await readFile(absolutePath);
@@ -895,6 +911,10 @@ async function scanFile(
         checksum: binaryChecksum,
         sizeBytes: stats.size,
         lastModifiedAt: stats.mtime.toISOString(),
+        // P1-6: Add new optional fields
+        sourceFileRef: absolutePath,
+        contentChecksum: binaryChecksum,
+        classificationConfidence: 1.0,
       } };
     }
 
@@ -909,6 +929,19 @@ async function scanFile(
       : extractImportExportSummary(content, language);
     const eligibility = generated ? [] : determineExtractorEligibility(kind, language, framework);
     const checksum = computeChecksum(content);
+
+    // P1-7: Use new skip source for generated files
+    if (generated) {
+      return {
+        record: null,
+        skippedArtifact: createSkippedArtifact(
+          relativePath,
+          'generated',
+          'Skipped auto-generated file.',
+          { sizeBytes: stats.size },
+        ),
+      };
+    }
 
     return { record: {
       id: buildArtifactId(config.snapshotRef, relativePath),
@@ -925,6 +958,10 @@ async function scanFile(
       checksum,
       sizeBytes: stats.size,
       lastModifiedAt: stats.mtime.toISOString(),
+      // P1-6: Add new optional fields
+      sourceFileRef: absolutePath,
+      contentChecksum: checksum,
+      classificationConfidence: 0.9, // Default confidence for classified files
     } };
   } catch (_err: unknown) {
     return {
@@ -960,6 +997,22 @@ export async function scanRepository(
     mergedConfig.rootPath,
   );
 
+  // P1-7: Bounded concurrency for file scanning
+  const concurrency = mergedConfig.concurrency ?? 50;
+  const scanQueue: Array<Promise<void>> = [];
+  const semaphore = {
+    acquired: 0,
+    async acquire(): Promise<void> {
+      while (this.acquired >= concurrency) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      this.acquired++;
+    },
+    release(): void {
+      this.acquired--;
+    },
+  };
+
   for await (const file of walkDirectory(
     mergedConfig.rootPath,
     mergedConfig.rootPath,
@@ -972,21 +1025,43 @@ export async function scanRepository(
       continue;
     }
 
-    const record = await scanFile(
-      file.relativePath,
-      file.absolutePath,
-      mergedConfig,
-      packageBoundaries,
-    );
-    if (record.record) {
-      artifacts.push(record.record);
-    } else {
-      if (record.skippedArtifact) {
-        skippedArtifacts.push(record.skippedArtifact);
+    // P1-7: Bounded concurrency - wait for available slot
+    const scanPromise = (async () => {
+      await semaphore.acquire();
+      try {
+        const record = await scanFile(
+          file.relativePath,
+          file.absolutePath,
+          mergedConfig,
+          packageBoundaries,
+        );
+        if (record.record) {
+          artifacts.push(record.record);
+        } else {
+          if (record.skippedArtifact) {
+            skippedArtifacts.push(record.skippedArtifact);
+          }
+          ignoredFiles++;
+        }
+      } finally {
+        semaphore.release();
       }
-      ignoredFiles++;
+    })();
+
+    scanQueue.push(scanPromise);
+
+    // Wait for some promises to complete if queue is full
+    if (scanQueue.length >= concurrency) {
+      await Promise.race(scanQueue);
+      scanQueue.splice(0, scanQueue.findIndex(p => 
+        // eslint-disable-next-line no-promise-executor-return
+        p.then(() => false, () => false)
+      ));
     }
   }
+
+  // Wait for all remaining scans to complete
+  await Promise.all(scanQueue);
 
   // Compute summary
   const byKind: Record<string, number> = {};
@@ -1007,9 +1082,11 @@ export async function scanRepository(
     if (artifact.isBinary) binaryFiles++;
   }
 
-  // Sort artifacts and skippedArtifacts by relativePath for deterministic output
-  artifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
-  skippedArtifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  // P1-7: Sort artifacts and skippedArtifacts for deterministic output when deterministic mode is enabled
+  if (mergedConfig.deterministic !== false) {
+    artifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+    skippedArtifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  }
 
   return {
     repositoryRoot: mergedConfig.rootPath,

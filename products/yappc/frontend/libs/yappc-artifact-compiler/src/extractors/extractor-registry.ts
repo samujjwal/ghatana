@@ -134,3 +134,90 @@ export class ExtractorRegistry {
  * for isolated contexts (e.g., testing, tenant-specific configurations).
  */
 export const defaultExtractorRegistry = new ExtractorRegistry();
+
+// ============================================================================
+// Canonical Extractor Registration
+// ============================================================================
+
+/**
+ * Register all canonical extractors with the given registry.
+ * This function registers the production-ready extractors for:
+ * - TypeScript/React components
+ * - Next.js pages and routes
+ * - State management stores (Zustand, Redux, Jotai, Context)
+ * - Storybook CSF stories
+ * - Prisma schemas
+ *
+ * @param registry - The ExtractorRegistry to register extractors with (defaults to defaultExtractorRegistry)
+ * @returns The same registry instance for chaining
+ */
+export function registerCanonicalExtractors(registry: ExtractorRegistry = defaultExtractorRegistry): ExtractorRegistry {
+  // Lazy import extractors to avoid circular dependencies
+  const {
+    extractComponentArtifact,
+  } = require('./typescript/component-extractor');
+  const {
+    extractPageArtifact,
+  } = require('./typescript/page-extractor');
+  const {
+    extractStateStoreArtifact,
+  } = require('./typescript/state-extractor');
+  const {
+    extractStorybookCsf,
+  } = require('./storybook/csf-extractor');
+  const {
+    extractPrismaSchemaArtifact,
+  } = require('./prisma/schema-extractor');
+
+  // Register TypeScript component extractor
+  try {
+    registry.register(extractComponentArtifact());
+  } catch (error) {
+    // Log but don't fail if one extractor fails to register
+    console.warn(`Failed to register TypeScript component extractor: ${error}`);
+  }
+
+  // Register page/route extractor
+  try {
+    registry.register(extractPageArtifact());
+  } catch (error) {
+    console.warn(`Failed to register page/route extractor: ${error}`);
+  }
+
+  // Register state management extractor
+  try {
+    registry.register(extractStateStoreArtifact());
+  } catch (error) {
+    console.warn(`Failed to register state management extractor: ${error}`);
+  }
+
+  // Register Storybook CSF extractor
+  try {
+    registry.register(extractStorybookCsf());
+  } catch (error) {
+    console.warn(`Failed to register Storybook CSF extractor: ${error}`);
+  }
+
+  // Register Prisma schema extractor
+  try {
+    registry.register(extractPrismaSchemaArtifact());
+  } catch (error) {
+    console.warn(`Failed to register Prisma schema extractor: ${error}`);
+  }
+
+  return registry;
+}
+
+/**
+ * Get all canonical extractors as an array.
+ * This is a convenience function for creating a SynthesisPipeline with canonical extractors.
+ *
+ * @returns Array of registered canonical extractors
+ */
+export function getCanonicalExtractors(): readonly import('./types').ArtifactExtractor[] {
+  // Ensure canonical extractors are registered
+  if (defaultExtractorRegistry.count() === 0) {
+    registerCanonicalExtractors(defaultExtractorRegistry);
+  }
+  return defaultExtractorRegistry.getAll();
+}

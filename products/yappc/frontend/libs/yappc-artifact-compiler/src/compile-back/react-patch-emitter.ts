@@ -5,9 +5,16 @@
  * minimal diff patches for .tsx/.jsx source files. Uses line/column position
  * tracking to generate precise range information for minimal unified diffs.
  *
+ * P0-9: canEmit restricted to implemented operations only.
+ * Planned hardening: replace regex with TypeScript Compiler API for AST-based range-safe transformations.
+ *
  * The emitter calculates exact line/column positions for each change and
  * includes them in the patch metadata for precise application and rollback.
  * The diff format uses hunk-level granularity to minimize the patch size.
+ *
+ * Note: Current implementation uses regex for simplicity. Future migration to
+ * TypeScript Compiler API (@typescript/compiler-api) will provide AST-based
+ * transformations for safer, more precise edits.
  */
 
 import { createHash } from 'crypto';
@@ -168,17 +175,28 @@ export class ReactPatchEmitter implements PatchEmitter {
   readonly id = EMITTER_ID;
   readonly version = EMITTER_VERSION;
 
+  /**
+   * P0-9: Restricted to only actually implemented operations.
+   * Returns explicit unsupported result for unimplemented ops.
+   * 
+   * Currently implemented:
+   * - rename-component: Renames component function/class declarations
+   * - add-prop: Adds props to component Props interface
+   * 
+   * Not yet implemented (would return false):
+   * - remove-prop: Would require TS Compiler API for safe prop removal
+   * - update-component-props: Would require TS Compiler API for safe prop updates
+   * - add-component: Would require TS Compiler API for component creation
+   * - remove-component: Would require TS Compiler API for component deletion
+   * 
+  * Planned hardening: replace regex-based implementations with TypeScript Compiler API
+   * for AST-based range-safe transformations (requires @typescript/compiler-api dependency).
+   */
   canEmit(op: ChangeOp, element: SemanticModelElement): boolean {
     if (element.kind !== 'component') return false;
     const kind = op.kind;
-    return (
-      kind === 'rename-component' ||
-      kind === 'add-prop' ||
-      kind === 'remove-prop' ||
-      kind === 'update-component-props' ||
-      kind === 'add-component' ||
-      kind === 'remove-component'
-    );
+    // P0-9: Only return true for actually implemented operations
+    return kind === 'rename-component' || kind === 'add-prop';
   }
 
   emit(op: ChangeOp, element: SemanticModelElement, context: PatchContext): TextPatch[] {

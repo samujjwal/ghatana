@@ -210,7 +210,7 @@ export function ContextExplorerPage(): React.ReactElement {
   const schemaFields = context?.schema.fields ?? [];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.14),_transparent_30%),linear-gradient(180deg,_#fffdf8,_#f8fafc)] p-6 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="rounded-[2rem] border border-amber-200/70 bg-white/90 p-6 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

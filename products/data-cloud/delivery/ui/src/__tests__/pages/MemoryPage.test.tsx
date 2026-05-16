@@ -51,7 +51,7 @@ const sampleItems = [
     tenantId: TEST_TENANT_ID,
     agentId: 'agent-456',
     type: 'EPISODIC' as const,
-    content: 'Failed to process order #12345',
+    content: 'Failed to process order 12345',
     tags: ['order', 'failure'],
     salience: 0.62,
     createdAt: '2026-04-14T12:10:00Z',
@@ -75,7 +75,7 @@ describe('MemoryPage — MemoryPlaneViewerPage', () => {
         render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
 
         expect(await screen.findByText('User asked about refund policy')).toBeInTheDocument();
-        expect(screen.getByText('Failed to process order #12345')).toBeInTheDocument();
+        expect(screen.getByText('Failed to process order 12345')).toBeInTheDocument();
         expect(screen.getByText(/Episodes processed:/i)).toBeInTheDocument();
         expect(screen.getByText('24')).toBeInTheDocument();
         expect(screen.getByText('3')).toBeInTheDocument();

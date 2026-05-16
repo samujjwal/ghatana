@@ -75,6 +75,30 @@ export type RepositorySnapshot = z.infer<typeof RepositorySnapshotSchema>;
 // Provider Options
 // ============================================================================
 
+/**
+ * P1-1: Credential resolver interface for secure credential resolution.
+ * Allows providers to resolve credentialRef from a secrets manager or credential store.
+ */
+export interface CredentialResolver {
+  /**
+   * Resolve a credential reference to actual provider credentials.
+   * @param credentialRef - Reference to stored credential (e.g., from secrets manager)
+   * @param scope - Execution scope for authorization checks
+   * @returns Provider credentials or null if not found/authorized
+   */
+  resolve(credentialRef: string, scope: SourceScopeContext): Promise<ProviderCredentials | null>;
+}
+
+/**
+ * No-op credential resolver for test/dev environments.
+ * Returns null for all credential references.
+ */
+export class NoOpCredentialResolver implements CredentialResolver {
+  async resolve(_credentialRef: string, _scope: SourceScopeContext): Promise<ProviderCredentials | null> {
+    return null;
+  }
+}
+
 export interface ProviderCredentials {
   readonly token?: string;
   readonly username?: string;
@@ -208,6 +232,11 @@ export interface SourceProviderOptions {
   readonly maxFileSizeBytes?: number;
   readonly credentials?: ProviderCredentials;
   /**
+   * P1-1: Credential resolver for secure credential resolution from credentialRef.
+   * If provided, the provider will use this to resolve credentialRef instead of raw credentials.
+   */
+  readonly credentialResolver?: CredentialResolver;
+  /**
    * Directory to use for temporary materialization.
    * Providers clean up temp files after the scan completes unless keepTempFiles is true.
    */
@@ -246,9 +275,28 @@ export function hasRawProviderCredentials(credentials: ProviderCredentials | und
   return Boolean(credentials?.token || credentials?.username || credentials?.password);
 }
 
+/**
+ * P1-1: Validate credential policy based on execution environment.
+ * Rejects raw credentials in browser and production server environments.
+ * Only allows raw credentials in test/dev environments.
+ */
 export function validateCredentialPolicy(scope: SourceScopeContext | undefined, credentials: ProviderCredentials | undefined): void {
-  if (scope?.executionEnvironment === 'browser' && hasRawProviderCredentials(credentials)) {
+  const hasRaw = hasRawProviderCredentials(credentials);
+  
+  // Browser environment: never allow raw credentials
+  if (scope?.executionEnvironment === 'browser' && hasRaw) {
     throw new Error('Browser source acquisition must use credentialRef instead of raw provider credentials.');
+  }
+  
+  // P1-1: Server production environment: reject raw credentials
+  if (scope?.executionEnvironment === 'server' && hasRaw) {
+    throw new Error('Server source acquisition must use credentialRef instead of raw provider credentials. Raw credentials are only allowed in test/dev environments.');
+  }
+  
+  // Test environment: allow raw credentials for testing purposes
+  if (scope?.executionEnvironment === 'test' && hasRaw) {
+    // Log warning but allow for test environment
+    console.warn('[CredentialPolicy] Raw credentials used in test environment. This should not happen in production.');
   }
 }
 
@@ -324,17 +372,41 @@ export class SourceProviderRegistry {
   }
 
   /**
-   * Resolve a locator by trying each registered provider in insertion order.
-   * Returns the first snapshot from a provider that accepts the locator.
+   * P1-1: Resolve a locator by dispatching to the provider based on typed SourceLocator.provider.
+   * If locator is a string, it will be parsed to determine the provider type.
    * Throws SourceProviderError if no provider can handle the locator.
    */
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    
+    // P1-1: Resolve credentials via resolver if credentialRef is present
+    let resolvedCredentials = options?.credentials;
+    if (options?.credentialResolver && options.credentials?.credentialRef) {
+      const scope = options.scope ?? { tenantId: 'default', principalId: 'system', grantedAt: new Date().toISOString() };
+      const creds = await options.credentialResolver.resolve(options.credentials.credentialRef, scope);
+      resolvedCredentials = creds ?? undefined;
+    }
+    
     const normalizedLocator = sourceLocatorToString(locator);
+    const finalOptions = resolvedCredentials ? { ...options, credentials: resolvedCredentials } : options;
 
+    // P1-1: Dispatch based on typed provider if SourceLocator is provided
+    if (typeof locator !== 'string' && locator.provider) {
+      const provider = this.get(locator.provider);
+      if (provider) {
+        return provider.resolve(locator, finalOptions);
+      }
+      throw new SourceProviderError(
+        'registry',
+        normalizedLocator,
+        `No registered provider for type "${locator.provider}". Registered: [${[...this.providers.keys()].join(', ')}]`,
+      );
+    }
+
+    // Fallback: try each registered provider in insertion order
     for (const provider of this.providers.values()) {
       if (provider.canHandle(normalizedLocator)) {
-        return provider.resolve(locator, options);
+        return provider.resolve(locator, finalOptions);
       }
     }
     throw new SourceProviderError(
