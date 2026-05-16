@@ -9,26 +9,180 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
-import { LifecycleTimelinePanel } from './LifecycleTimelinePanel';
+import { LifecycleTimelinePanel, type LifecycleRunSummary } from './LifecycleTimelinePanel';
 import { GateHealthPanel } from './GateHealthPanel';
 import { ArtifactHealthPanel } from './ArtifactHealthPanel';
-import { DeploymentHealthPanel } from './DeploymentHealthPanel';
+import { DeploymentHealthPanel, type Deployment, type HealthCheck } from './DeploymentHealthPanel';
 import { AgentGovernanceHealthPanel } from './AgentGovernanceHealthPanel';
-import { PreviewSecurityHealthPanel } from './PreviewSecurityHealthPanel';
+import {
+  PreviewSecurityHealthPanel,
+  type PreviewSecurity,
+  type TokenScope,
+} from './PreviewSecurityHealthPanel';
 import { RecommendedActionsPanel } from './RecommendedActionsPanel';
 import {
   useKernelProductUnitHealth,
   useKernelLifecycleTimeline,
   useKernelRecommendedActions,
 } from '../../hooks/useKernelHealth';
-import type { KernelProductUnitHealthView } from '../../clients/kernelHealthClient';
+
+type JsonRecord = Record<string, unknown>;
+
+const toStringOr = (value: unknown, fallback: string): string =>
+  typeof value === 'string' ? value : fallback;
+
+const toBooleanOr = (value: unknown, fallback: boolean): boolean =>
+  typeof value === 'boolean' ? value : fallback;
+
+const toLifecycleStatus = (value: unknown): LifecycleRunSummary['status'] => {
+  switch (value) {
+    case 'succeeded':
+    case 'failed':
+    case 'running':
+    case 'blocked':
+    case 'pending':
+      return value;
+    default:
+      return 'pending';
+  }
+};
+
+const toDeploymentStatus = (value: unknown): Deployment['status'] => {
+  switch (value) {
+    case 'deployed':
+    case 'failed':
+    case 'pending':
+    case 'rolling_back':
+    case 'not_deployed':
+      return value;
+    default:
+      return 'not_deployed';
+  }
+};
+
+const toDeploymentEnvironment = (value: unknown): Deployment['environment'] => {
+  switch (value) {
+    case 'dev':
+    case 'staging':
+    case 'production':
+    case 'preview':
+      return value;
+    default:
+      return 'dev';
+  }
+};
+
+const toPreviewTrustLevel = (value: unknown): PreviewSecurity['trustLevel'] => {
+  switch (value) {
+    case 'trusted':
+    case 'semi-trusted':
+    case 'untrusted':
+      return value;
+    default:
+      return 'untrusted';
+  }
+};
+
+const toAcknowledgementStatus = (
+  value: unknown
+): PreviewSecurity['acknowledgementStatus'] => {
+  switch (value) {
+    case 'acknowledged':
+    case 'pending':
+    case 'expired':
+      return value;
+    default:
+      return 'pending';
+  }
+};
+
+const toHealthCheck = (input: unknown): HealthCheck => {
+  const record = typeof input === 'object' && input !== null ? (input as JsonRecord) : {};
+  return {
+    name: toStringOr(record.name, 'unknown-check'),
+    status:
+      record.status === 'pass' || record.status === 'fail' || record.status === 'pending'
+        ? record.status
+        : 'pending',
+    lastChecked: toStringOr(record.lastChecked, ''),
+  };
+};
+
+const normalizeRuns = (runs: unknown): LifecycleRunSummary[] => {
+  if (!Array.isArray(runs)) {
+    return [];
+  }
+
+  return runs.map((run, index) => {
+    const record = typeof run === 'object' && run !== null ? (run as JsonRecord) : {};
+    const durationValue = record.duration;
+    return {
+      phase: toStringOr(record.phase, `phase-${index + 1}`),
+      status: toLifecycleStatus(record.status),
+      timestamp: toStringOr(record.timestamp, ''),
+      duration: typeof durationValue === 'number' ? durationValue : undefined,
+    };
+  });
+};
+
+const normalizeDeployment = (deployment: unknown, productUnitId: string): Deployment => {
+  const record =
+    typeof deployment === 'object' && deployment !== null ? (deployment as JsonRecord) : {};
+
+  return {
+    id: toStringOr(record.id, `${productUnitId}-deployment`),
+    status: toDeploymentStatus(record.status),
+    target: toStringOr(record.target, 'unknown-target'),
+    environment: toDeploymentEnvironment(record.environment),
+    deployedAt: typeof record.deployedAt === 'string' ? record.deployedAt : undefined,
+    artifactId: toStringOr(record.artifactId, 'unknown-artifact'),
+    healthChecks: Array.isArray(record.healthChecks)
+      ? record.healthChecks.map(toHealthCheck)
+      : [],
+    rollbackAvailable: toBooleanOr(record.rollbackAvailable, false),
+    rollbackStatus:
+      record.rollbackStatus === 'available' ||
+      record.rollbackStatus === 'not_available' ||
+      record.rollbackStatus === 'in_progress'
+        ? record.rollbackStatus
+        : undefined,
+  };
+};
+
+const toTokenScope = (input: unknown, index: number): TokenScope => {
+  const record = typeof input === 'object' && input !== null ? (input as JsonRecord) : {};
+  return {
+    id: toStringOr(record.id, `scope-${index + 1}`),
+    name: toStringOr(record.name, `scope-${index + 1}`),
+    required: toBooleanOr(record.required, false),
+    granted: toBooleanOr(record.granted, false),
+  };
+};
+
+const normalizePreviewSecurity = (snapshot: unknown, productUnitId: string): PreviewSecurity => {
+  const record = typeof snapshot === 'object' && snapshot !== null ? (snapshot as JsonRecord) : {};
+  return {
+    previewTokenId: toStringOr(record.previewTokenId, `${productUnitId}-preview-token`),
+    tokenScope: Array.isArray(record.tokenScope)
+      ? record.tokenScope.map(toTokenScope)
+      : [],
+    trustLevel: toPreviewTrustLevel(record.trustLevel),
+    acknowledgementRequired: toBooleanOr(record.acknowledgementRequired, false),
+    acknowledgementStatus: toAcknowledgementStatus(record.acknowledgementStatus),
+    scopeMismatches: Array.isArray(record.scopeMismatches)
+      ? record.scopeMismatches.filter((item): item is string => typeof item === 'string')
+      : [],
+    expiresAt: typeof record.expiresAt === 'string' ? record.expiresAt : undefined,
+    lastRefreshed: typeof record.lastRefreshed === 'string' ? record.lastRefreshed : undefined,
+  };
+};
 
 export const KernelHealthDashboardPage: React.FC = () => {
   const { productUnitId: routeProductUnitId } = useParams<{ productUnitId?: string }>();
@@ -57,6 +211,13 @@ export const KernelHealthDashboardPage: React.FC = () => {
 
   const loading = healthLoading || timelineLoading || recsLoading;
   const error = healthError ? 'Failed to load Kernel health data' : null;
+  const timelineRuns = normalizeRuns(timeline?.runs);
+  const deployment = healthView
+    ? normalizeDeployment(healthView.deployment, healthView.productUnitId)
+    : null;
+  const previewSecurity = healthView
+    ? normalizePreviewSecurity(healthView.healthSnapshot, healthView.productUnitId)
+    : null;
 
   const handleRefresh = () => {
     void refetchHealth();
@@ -180,7 +341,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
             <TabsContent value="timeline">
               <LifecycleTimelinePanel
                 productUnitId={healthView.productUnitId}
-                runs={timeline?.runs ?? []}
+                runs={timelineRuns}
               />
             </TabsContent>
 
@@ -201,7 +362,7 @@ export const KernelHealthDashboardPage: React.FC = () => {
             <TabsContent value="deployment">
               <DeploymentHealthPanel
                 productUnitId={healthView.productUnitId}
-                deployment={healthView.deployment as Parameters<typeof DeploymentHealthPanel>[0]['deployment']}
+                deployment={deployment ?? normalizeDeployment({}, healthView.productUnitId)}
               />
             </TabsContent>
 
@@ -215,7 +376,9 @@ export const KernelHealthDashboardPage: React.FC = () => {
             <TabsContent value="security">
               <PreviewSecurityHealthPanel
                 productUnitId={healthView.productUnitId}
-                previewSecurity={healthView.healthSnapshot as Parameters<typeof PreviewSecurityHealthPanel>[0]['previewSecurity']}
+                previewSecurity={
+                  previewSecurity ?? normalizePreviewSecurity({}, healthView.productUnitId)
+                }
               />
             </TabsContent>
           </Tabs>

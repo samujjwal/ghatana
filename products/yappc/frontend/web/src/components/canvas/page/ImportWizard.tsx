@@ -155,16 +155,20 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
   const { t } = useTranslation('common');
   const [templateId, setTemplateId] = useState<ImportWizardTemplate['id']>('paste-code');
   const [input, setInput] = useState('');
+  const [ref, setRef] = useState(''); // Branch, tag, or commit SHA for GitHub/GitLab
   const [workflowMode, setWorkflowMode] = useState<ImportWorkflowMode>('semantic-model');
   const [guidedSourceType, setGuidedSourceType] = useState<ImportSourceType>('tsx');
   const [error, setError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [step, setStep] = useState<WizardStep>('input');
+  const [jobId, setJobId] = useState<string | null>(null); // Job ID for long-running imports
+  const [progress, setProgress] = useState(0); // Import progress percentage
   const [previewData, setPreviewData] = useState<{
     success: boolean;
     confidence?: ImportConfidenceMetrics;
     residuals?: ResidualIsland[];
     fileCount?: number;
+    skippedFiles?: Array<{ path: string; reason: string }>;
     warnings?: string[];
     errors?: string[];
   } | null>(null);
@@ -180,9 +184,12 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       setGuidedSourceType(newTemplate.sourceType);
     }
     setInput('');
+    setRef('');
     setError(null);
     setStep('input');
     setPreviewData(null);
+    setJobId(null);
+    setProgress(0);
   };
 
   const handleImport = async () => {
@@ -318,6 +325,19 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                     disabled={isImporting}
                   />
                 )}
+
+                {/* Ref field for GitHub/GitLab (branch, tag, or commit SHA) */}
+                {(guidedSourceType === 'github' || guidedSourceType === 'gitlab') && (
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle2">Branch, Tag, or Commit SHA (Optional)</Typography>
+                    <Input
+                      value={ref}
+                      onChange={(e) => setRef(e.target.value)}
+                      placeholder="main, v1.0.0, abc123def..."
+                      disabled={isImporting}
+                    />
+                  </Stack>
+                )}
               </Stack>
             </>
           )}
@@ -414,6 +434,37 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                   <Stack spacing={1}>
                     <Typography variant="subtitle2">Files to Import</Typography>
                     <Typography variant="body2">{previewData.fileCount} file(s)</Typography>
+                  </Stack>
+                )}
+
+                {/* Skipped Files */}
+                {previewData.skippedFiles && previewData.skippedFiles.length > 0 && (
+                  <Stack spacing={2}>
+                    <Typography variant="subtitle2">Skipped Files</Typography>
+                    <Alert severity="info">
+                      <Typography variant="body2">
+                        {previewData.skippedFiles.length} file{previewData.skippedFiles.length !== 1 ? 's were' : ' was'} skipped during import.
+                      </Typography>
+                    </Alert>
+                    <Box style={{ maxHeight: 200, overflowY: 'auto' }}>
+                      {previewData.skippedFiles.map((skipped, idx) => (
+                        <Box
+                          key={idx}
+                          padding={2}
+                          marginBottom={1}
+                          style={{ backgroundColor: '#e7f3ff', border: '1px solid #90caf9', borderRadius: '4px' }}
+                        >
+                          <Stack spacing={1}>
+                            <Typography variant="caption" fontWeight="bold">
+                              {skipped.path}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Reason: {skipped.reason}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      ))}
+                    </Box>
                   </Stack>
                 )}
 

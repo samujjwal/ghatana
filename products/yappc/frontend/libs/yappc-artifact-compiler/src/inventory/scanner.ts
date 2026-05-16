@@ -187,7 +187,7 @@ async function detectPackageBoundaries(
           const boundary: PackageBoundary = {
             name: pkgName,
             relativePath: relDir,
-            system: entryName === 'package.json' ? detectNpmSystem(dir) : system,
+            system: entryName === 'package.json' ? await detectNpmSystem(dir) : system,
             manifestFile: relManifest,
           };
           if (WORKSPACE_MANIFESTS.has(entryName)) {
@@ -204,15 +204,39 @@ async function detectPackageBoundaries(
   return { packageBoundaries, workspaceBoundaries };
 }
 
-function detectNpmSystem(dir: string): PackageBoundary['system'] {
-  // Check for pnpm-workspace.yaml walking upwards (simple heuristic)
-  const parts = dir.split(/[\\/]/);
-  for (let i = parts.length; i > 0; i--) {
-    const candidate = parts.slice(0, i).join('/') + '/pnpm-workspace.yaml';
-    // We can't async here; use a synchronous existence check via the name convention.
-    // In this heuristic: if any ancestor has 'pnpm' in its package manager marker file name, use pnpm.
-    if (candidate.includes('pnpm-workspace')) return 'pnpm';
+async function detectNpmSystem(dir: string): Promise<PackageBoundary['system']> {
+  const { existsSync } = await import('fs');
+  const { resolve } = await import('path');
+
+  // Check for lockfile markers in the current directory and ancestors
+  let currentDir = dir;
+  const root = resolve(dir, '/');
+  const maxDepth = 10;
+  let depth = 0;
+
+  while (currentDir !== root && depth < maxDepth) {
+    // Check for pnpm-workspace.yaml (indicates pnpm workspace)
+    if (existsSync(resolve(currentDir, 'pnpm-workspace.yaml'))) {
+      return 'pnpm';
+    }
+    // Check for pnpm-lock.yaml (indicates pnpm package)
+    if (existsSync(resolve(currentDir, 'pnpm-lock.yaml'))) {
+      return 'pnpm';
+    }
+    // Check for yarn.lock (indicates yarn)
+    if (existsSync(resolve(currentDir, 'yarn.lock'))) {
+      return 'yarn';
+    }
+    // Check for package-lock.json (indicates npm)
+    if (existsSync(resolve(currentDir, 'package-lock.json'))) {
+      return 'npm';
+    }
+
+    currentDir = resolve(currentDir, '..');
+    depth++;
   }
+
+  // Default to npm if no lockfile found
   return 'npm';
 }
 
@@ -704,6 +728,9 @@ async function* walkDirectory(
     return;
   }
 
+  // Sort entries by name for deterministic ordering
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+
   for (const entry of entries) {
     const entryName = entry.name as string;
     const absolutePath = join(dir, entryName);
@@ -746,6 +773,10 @@ async function scanFile(
 
     // Binary files: record metadata only, skip content parsing
     if (binary) {
+      // Compute SHA-256 of binary content for accurate checksum
+      const binaryContent = await readFile(absolutePath);
+      const binaryChecksum = createHash('sha256').update(binaryContent).digest('hex');
+
       return {
         id: buildArtifactId(config.snapshotRef, relativePath),
         relativePath,
@@ -758,7 +789,7 @@ async function scanFile(
         packageBoundary: resolvePackageBoundary(relativePath, packageBoundaries),
         extractorEligibility: [],
         importExportSummary: { imports: [], exports: [] },
-        checksum: stats.size.toString(16), // size-based checksum for binaries
+        checksum: binaryChecksum,
         sizeBytes: stats.size,
         lastModifiedAt: stats.mtime.toISOString(),
       };
@@ -806,6 +837,7 @@ export async function scanRepository(
 ): Promise<ArtifactInventory> {
   const mergedConfig: ScannerConfig = { ...DEFAULT_SCANNER_CONFIG, ...config };
   const artifacts: ArtifactRecord[] = [];
+  const skippedArtifacts: import('./types').SkippedArtifact[] = [];
   let ignoredFiles = 0;
 
   // Build .gitignore matcher once before walking
@@ -857,11 +889,16 @@ export async function scanRepository(
     if (artifact.isBinary) binaryFiles++;
   }
 
+  // Sort artifacts and skippedArtifacts by relativePath for deterministic output
+  artifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  skippedArtifacts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+
   return {
     repositoryRoot: mergedConfig.rootPath,
     scannedAt: new Date().toISOString(),
     snapshotRef: mergedConfig.snapshotRef,
     artifacts,
+    skippedArtifacts,
     packageBoundaries,
     workspaceBoundaries,
     summary: {

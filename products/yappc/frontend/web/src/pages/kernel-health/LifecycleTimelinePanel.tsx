@@ -6,11 +6,11 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 
-interface LifecycleRunSummary {
+export interface LifecycleRunSummary {
   phase: string;
   status: 'succeeded' | 'failed' | 'running' | 'blocked' | 'pending';
   timestamp: string;

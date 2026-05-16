@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,6 +169,22 @@ public final class ArtifactGraphRepository {
                     edges.size(), productId, snapshotId, versionId);
             }
         }).map(v -> null);
+    }
+
+    /**
+     * P4-2: Alias for saveNodes - provides incremental upsert semantics.
+     * Uses ON CONFLICT DO UPDATE to only insert/update changed nodes.
+     */
+    public Promise<Void> upsertNodes(String productId, String tenantId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId, String contentChecksum) {
+        return saveNodes(productId, tenantId, nodes, snapshotId, versionId);
+    }
+
+    /**
+     * P4-2: Alias for saveEdges - provides incremental upsert semantics.
+     * Uses ON CONFLICT DO UPDATE to only insert/update changed edges.
+     */
+    public Promise<Void> upsertEdges(String productId, String tenantId, List<ArtifactEdgeDto> edges, String snapshotId, String versionId) {
+        return saveEdges(productId, tenantId, edges, snapshotId, versionId);
     }
 
     public Promise<List<ArtifactNodeDto>> findNodesByProduct(String productId, String tenantId, int limit) {
@@ -322,8 +339,8 @@ public final class ArtifactGraphRepository {
             String sql = """
                 UPDATE artifact_nodes 
                 SET is_tombstone = true, updated_at = ?, snapshot_id = ?
-                WHERE tenant_id = ? AND node_id IN (""" + placeholders + """) AND is_tombstone = false
-                """;
+                WHERE tenant_id = ? AND node_id IN (%s) AND is_tombstone = false
+                """.formatted(placeholders);
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setTimestamp(1, Timestamp.from(Instant.now()));
@@ -378,6 +395,192 @@ public final class ArtifactGraphRepository {
             }
         });
     }
+
+    // ============================================================================
+    // P4-4: Cursor Pagination and Snapshot Diff Methods
+    // ============================================================================
+
+    /**
+     * P4-4: Cursor-based pagination for nodes.
+     * Returns a page of nodes along with a cursor for the next page.
+     */
+    public Promise<PageResult<ArtifactNodeDto>> findNodesPaginated(
+            String productId, String tenantId, String cursor, int pageSize) {
+        return Promise.ofBlocking(executor, () -> {
+            String cursorFilter = "";
+            List<Object> params = new ArrayList<>();
+            params.add(tenantId);
+            params.add(productId);
+            
+            if (cursor != null && !cursor.isBlank()) {
+                cursorFilter = " AND updated_at < ?::timestamp";
+                params.add(cursor);
+            }
+            
+            String sql = """
+                SELECT node_id, node_type, node_name, file_path, content_snippet,
+                       properties_json, tags_json, tenant_id, project_id
+                FROM artifact_nodes
+                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                """ + cursorFilter + """
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """;
+            params.add(pageSize);
+            
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (int index = 0; index < params.size(); index++) {
+                    statement.setObject(index + 1, params.get(index));
+                }
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<ArtifactNodeDto> nodes = new ArrayList<>();
+                    String nextCursor = null;
+                    while (resultSet.next()) {
+                        nodes.add(mapNode(resultSet));
+                        nextCursor = resultSet.getTimestamp("updated_at").toString();
+                    }
+                    return new PageResult<>(nodes, nextCursor);
+                }
+            }
+        });
+    }
+
+    /**
+     * P4-4: Cursor-based pagination for edges.
+     */
+    public Promise<PageResult<ArtifactEdgeDto>> findEdgesPaginated(
+            String productId, String tenantId, String cursor, int pageSize) {
+        return Promise.ofBlocking(executor, () -> {
+            String cursorFilter = "";
+            List<Object> params = new ArrayList<>();
+            params.add(tenantId);
+            params.add(productId);
+            
+            if (cursor != null && !cursor.isBlank()) {
+                cursorFilter = " AND updated_at < ?::timestamp";
+                params.add(cursor);
+            }
+            
+            String sql = """
+                SELECT source_node_id, target_node_id, relationship_type, properties_json
+                FROM artifact_edges
+                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                """ + cursorFilter + """
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """;
+            params.add(pageSize);
+            
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (int index = 0; index < params.size(); index++) {
+                    statement.setObject(index + 1, params.get(index));
+                }
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<ArtifactEdgeDto> edges = new ArrayList<>();
+                    String nextCursor = null;
+                    while (resultSet.next()) {
+                        edges.add(mapEdge(resultSet));
+                        nextCursor = resultSet.getTimestamp("updated_at").toString();
+                    }
+                    return new PageResult<>(edges, nextCursor);
+                }
+            }
+        });
+    }
+
+    /**
+     * P4-4: Compute snapshot diff between two snapshots.
+     * Returns added, removed, and modified nodes/edges.
+     */
+    public Promise<SnapshotDiffResult> computeSnapshotDiff(
+            String productId, String tenantId, String fromSnapshotId, String toSnapshotId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT node_id, node_type, node_name, file_path, content_snippet,
+                       properties_json, tags_json, tenant_id, project_id, snapshot_id
+                FROM artifact_nodes
+                WHERE tenant_id = ? AND project_id = ? AND snapshot_id IN (?, ?)
+                ORDER BY snapshot_id
+                """;
+            
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, productId);
+                statement.setString(3, fromSnapshotId);
+                statement.setString(4, toSnapshotId);
+                
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    Map<String, ArtifactNodeDto> fromNodes = new HashMap<>();
+                    Map<String, ArtifactNodeDto> toNodes = new HashMap<>();
+                    
+                    while (resultSet.next()) {
+                        String snapshotId = resultSet.getString("snapshot_id");
+                        ArtifactNodeDto node = new ArtifactNodeDto(
+                            resultSet.getString("node_id"),
+                            resultSet.getString("node_type"),
+                            resultSet.getString("node_name"),
+                            resultSet.getString("file_path"),
+                            resultSet.getString("content_snippet"),
+                            readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
+                            readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
+                            resultSet.getString("tenant_id"),
+                            resultSet.getString("project_id")
+                        );
+                        
+                        if (snapshotId.equals(fromSnapshotId)) {
+                            fromNodes.put(node.id(), node);
+                        } else {
+                            toNodes.put(node.id(), node);
+                        }
+                    }
+                    
+                    List<ArtifactNodeDto> addedNodes = new ArrayList<>();
+                    List<ArtifactNodeDto> removedNodes = new ArrayList<>();
+                    List<ArtifactNodeDto> modifiedNodes = new ArrayList<>();
+                    
+                    for (ArtifactNodeDto node : toNodes.values()) {
+                        if (!fromNodes.containsKey(node.id())) {
+                            addedNodes.add(node);
+                        } else {
+                            ArtifactNodeDto fromNode = fromNodes.get(node.id());
+                            if (!fromNode.content().equals(node.content()) ||
+                                !fromNode.properties().equals(node.properties())) {
+                                modifiedNodes.add(node);
+                            }
+                        }
+                    }
+                    
+                    for (ArtifactNodeDto node : fromNodes.values()) {
+                        if (!toNodes.containsKey(node.id())) {
+                            removedNodes.add(node);
+                        }
+                    }
+                    
+                    return new SnapshotDiffResult(addedNodes, removedNodes, modifiedNodes, List.of(), List.of(), List.of());
+                }
+            }
+        });
+    }
+
+    /**
+     * P4-4: Page result container for cursor-based pagination.
+     */
+    public record PageResult<T>(List<T> items, String nextCursor) {}
+
+    /**
+     * P4-4: Snapshot diff result container.
+     */
+    public record SnapshotDiffResult(
+        List<ArtifactNodeDto> addedNodes,
+        List<ArtifactNodeDto> removedNodes,
+        List<ArtifactNodeDto> modifiedNodes,
+        List<ArtifactEdgeDto> addedEdges,
+        List<ArtifactEdgeDto> removedEdges,
+        List<ArtifactEdgeDto> modifiedEdges
+    ) {}
 
     /**
      * Compute checksum for a node to enable incremental upsert.

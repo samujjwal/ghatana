@@ -35,6 +35,14 @@ export const RegenerationStrategySchema = z.enum([
 export type RegenerationStrategy = z.infer<typeof RegenerationStrategySchema>;
 
 // ============================================================================
+// Risk Level
+// ============================================================================
+
+export const RiskLevelSchema = z.enum(['low', 'medium', 'high', 'critical']);
+
+export type RiskLevel = z.infer<typeof RiskLevelSchema>;
+
+// ============================================================================
 // Residual Island
 // ============================================================================
 
@@ -60,6 +68,26 @@ export const ResidualIslandSchema = z.object({
   confidence: z.number().min(0).max(1),
   linkedModelElementIds: z.array(z.string().uuid()).default([]),
   tags: z.array(z.string()).default([]),
+  /**
+   * Reference to the raw source fragment (e.g., a specific code block).
+   * Enables precise round-trip reconstruction of unmodelable content.
+   */
+  rawFragmentRef: z.string().optional(),
+  /**
+   * Checksum of the raw fragment content for verification.
+   * Ensures round-trip integrity and detects accidental modifications.
+   */
+  checksum: z.string().optional(),
+  /**
+   * Risk assessment for this residual island.
+   * Indicates the impact of losing or incorrectly modifying this content.
+   */
+  risk: RiskLevelSchema.optional(),
+  /**
+   * Related graph node IDs that this residual island references or is referenced by.
+   * Enables tracing relationships between modeled and unmodeled content.
+   */
+  relatedGraphNodeIds: z.array(z.string()).default([]),
 });
 
 export type ResidualIsland = z.infer<typeof ResidualIslandSchema>;

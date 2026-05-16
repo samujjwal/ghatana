@@ -121,6 +121,39 @@ export const ExtractorEligibilitySchema = z.object({
 export type ExtractorEligibility = z.infer<typeof ExtractorEligibilitySchema>;
 
 // ============================================================================
+// Skipped Artifact
+// ============================================================================
+
+export const SkippedArtifactSchema = z.object({
+  /**
+   * Relative path of the skipped file from repository root.
+   */
+  relativePath: z.string().min(1),
+  /**
+   * Human-readable reason for skipping (e.g., "excluded by gitignore", "oversized", "binary").
+   */
+  reason: z.string().min(1),
+  /**
+   * File size in bytes, if available.
+   */
+  sizeBytes: z.number().int().nonnegative().optional(),
+  /**
+   * The glob pattern or rule that caused the file to be skipped.
+   */
+  matchedPattern: z.string().optional(),
+  /**
+   * Source of the skip decision (e.g., "gitignore", "excludeGlobs", "maxFileSize").
+   */
+  source: z.enum(["gitignore", "excludeGlobs", "maxFileSize", "readError", "symlink"]),
+  /**
+   * ISO 8601 timestamp when the skip was detected.
+   */
+  detectedAt: z.string().datetime(),
+});
+
+export type SkippedArtifact = z.infer<typeof SkippedArtifactSchema>;
+
+// ============================================================================
 // Package Boundary
 // ============================================================================
 
@@ -180,6 +213,8 @@ export const ArtifactInventorySchema = z.object({
    */
   snapshotRef: SnapshotRefSchema.optional(),
   artifacts: z.array(ArtifactRecordSchema),
+  /** Files that were skipped during scanning with reasons. */
+  skippedArtifacts: z.array(SkippedArtifactSchema).default([]),
   /** Detected package boundaries (package.json, build.gradle, Cargo.toml, etc.). */
   packageBoundaries: z.array(PackageBoundarySchema).default([]),
   /** Workspace-level boundaries (pnpm-workspace.yaml, nx.json, etc.). */

@@ -15,7 +15,6 @@ import {
   Paper,
   Divider,
   Alert,
-  AlertTitle,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
@@ -75,7 +74,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
         return (
           <Alert severity="error" className="mb-4">
             <ShieldAlertIcon className="size-4" />
-            <AlertTitle>Preview Blocked</AlertTitle>
+            <Typography variant="subtitle2">Preview Blocked</Typography>
             <Typography variant="body2">
               {policyMessage || 'This preview has been blocked due to security policy violations.'}
             </Typography>
@@ -90,7 +89,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
         return (
           <Alert severity="warning" className="mb-4">
             <AlertTriangleIcon className="size-4" />
-            <AlertTitle>Degraded Preview</AlertTitle>
+            <Typography variant="subtitle2">Degraded Preview</Typography>
             <Typography variant="body2">
               {policyMessage || 'This preview is running in degraded mode with limited functionality.'}
             </Typography>
@@ -105,7 +104,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
         return (
           <Alert severity="info" className="mb-4">
             <FileCheckIcon className="size-4" />
-            <AlertTitle>Policy Review Required</AlertTitle>
+            <Typography variant="subtitle2">Policy Review Required</Typography>
             <Typography variant="body2">
               {policyMessage || 'This preview requires policy review before proceeding.'}
             </Typography>

@@ -12,6 +12,7 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { studioLogger } from '../logging/studioLogger';
 
 interface ProductArtifactView {
   artifactId: string;
@@ -60,7 +61,7 @@ export default function ArtifactsVisualization(): ReactElement {
         setSessions(artifacts);
       }
     } catch (err) {
-      console.error('Failed to load artifacts:', err);
+      studioLogger.error('Failed to load artifacts', { error: err });
     }
   };
 
@@ -106,7 +107,7 @@ export default function ArtifactsVisualization(): ReactElement {
       setSelectedSession(newSession);
       localStorage.setItem('artifact-sessions', JSON.stringify([newSession]));
     } catch (err) {
-      console.error('Failed to refresh artifacts:', err);
+      studioLogger.error('Failed to refresh artifacts', { error: err });
       setError('Failed to refresh artifacts');
     } finally {
       setIsLoading(false);

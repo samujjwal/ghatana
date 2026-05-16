@@ -378,7 +378,7 @@ export function BacklogBoard({
         <div
           className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
-          aria-label={t('planning.backlog.loading')}
+          aria-label="Loading backlog"
         >
           <BacklogIcon className="h-5 w-5 animate-pulse" aria-hidden="true" />
           <Typography variant="body2">Loading backlog…</Typography>

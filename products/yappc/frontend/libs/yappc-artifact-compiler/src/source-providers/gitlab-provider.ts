@@ -13,10 +13,9 @@
  *   - "https://gitlab.com/owner/repo/-/tree/branch"
  */
 
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, writeFile, mkdtemp } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { randomUUID } from 'crypto';
 import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
 import { SourceProviderError } from './types';
 import type { SnapshotRef } from '../graph/types';
@@ -179,6 +178,11 @@ export class GitLabProvider implements SourceProvider {
     );
     const commitSha = commitRef.id;
 
+    // Create temp root once before file loop
+    const tempRoot = await mkdtemp(
+      join(options?.tempDir ?? tmpdir(), `yappc-gitlab-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}-`),
+    );
+
     // Get repository tree (paginated)
     const files: SnapshotFile[] = [];
     let fileCount = 0;
@@ -223,12 +227,6 @@ export class GitLabProvider implements SourceProvider {
           // Materialize the file
           const content = Buffer.from(fileMeta.content, 'base64');
 
-          const tempRoot = join(
-            options?.tempDir ?? tmpdir(),
-            `yappc-gitlab-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}-${randomUUID().slice(0, 8)}`,
-          );
-          await mkdir(tempRoot, { recursive: true });
-
           const absolutePath = join(tempRoot, entry.path.replace(/\//g, '/'));
           const dir = absolutePath.slice(0, absolutePath.lastIndexOf('/'));
           await mkdir(dir, { recursive: true });
@@ -265,18 +263,13 @@ export class GitLabProvider implements SourceProvider {
       branch: parsed.ref !== 'HEAD' ? parsed.ref : undefined,
     };
 
-    const tempRoot = join(
-      options?.tempDir ?? tmpdir(),
-      `yappc-gitlab-${parsed.owner}-${parsed.repo}-${commitSha.slice(0, 8)}-${randomUUID().slice(0, 8)}`,
-    );
-    await mkdir(tempRoot, { recursive: true });
-
     return {
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
+      diagnostics: [],
     };
   }
 }

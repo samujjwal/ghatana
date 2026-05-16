@@ -125,7 +125,7 @@ function isPreviewSandboxProfile(value: unknown): value is { readonly viewport: 
   return isRecord(value) &&
     isViewport(value.viewport) &&
     isPreviewThemeName(value.theme) &&
-    isNonEmptyString(value.i18n.language);
+    isNonEmptyString(value.locale);
 }
 
 function isBuilderDocument(value: unknown): value is BuilderDocument {
@@ -296,7 +296,7 @@ export default function BuilderPreviewRoute() {
         setRuntimeEnvironment({
           viewport: message.sandbox.viewport,
           theme: message.sandbox.theme,
-          locale: message.sandbox.i18n.language,
+          locale: message.sandbox.locale,
         });
         // MOUNTED is sent after the state update triggers a render.
         // We use a microtask so the render has a chance to flush.
@@ -378,14 +378,14 @@ export default function BuilderPreviewRoute() {
       }
 
       case 'SET_LOCALE': {
-        if (!isNonEmptyString(message.i18n.language)) {
+        if (!isNonEmptyString(message.locale)) {
           sendPreviewError(message.correlationId, 'INVALID_PREVIEW_LOCALE', 'Preview locale failed runtime validation.');
           break;
         }
 
         setRuntimeEnvironment((current) => ({
           ...current,
-          locale: message.i18n.language,
+          locale: message.locale,
         }));
         break;
       }
@@ -431,7 +431,7 @@ export default function BuilderPreviewRoute() {
     return (
       <div
         className="flex h-screen items-center justify-center text-sm text-fg-muted font-sans"
-        lang={runtimeEnvironment.i18n.language}
+        lang={runtimeEnvironment.locale}
       >
         Waiting for document…
       </div>
@@ -439,13 +439,13 @@ export default function BuilderPreviewRoute() {
   }
 
   const themePack = PREVIEW_THEME_PACKS[runtimeEnvironment.theme as PreviewThemeName] ?? PREVIEW_THEME_PACKS.default;
-  const localeFixture = getPreviewLocaleFixture(runtimeEnvironment.i18n.language);
+  const localeFixture = getPreviewLocaleFixture(runtimeEnvironment.locale);
 
   return (
     <div
       className="min-h-screen transition-colors duration-200"
       data-preview-theme={runtimeEnvironment.theme}
-      data-preview-locale={runtimeEnvironment.i18n.language}
+      data-preview-locale={runtimeEnvironment.locale}
       data-preview-locale-direction={localeFixture.direction}
       data-preview-locale-date={localeFixture.dateExample}
       data-preview-locale-currency={localeFixture.currencyExample}
@@ -453,7 +453,7 @@ export default function BuilderPreviewRoute() {
       data-preview-viewport-height={runtimeEnvironment.viewport.height}
       data-testid="preview-runtime-shell"
       dir={localeFixture.direction}
-      lang={runtimeEnvironment.i18n.language}
+      lang={runtimeEnvironment.locale}
       style={{
         backgroundColor: themePack.background,
         color: themePack.foreground,
@@ -472,7 +472,7 @@ export default function BuilderPreviewRoute() {
         <div
           className="sr-only"
           data-testid="preview-runtime-locale-fixture"
-          lang={localeFixture.i18n.language}
+          lang={localeFixture.locale}
         >
           {localeFixture.headline} {localeFixture.primaryCta} {localeFixture.dateExample} {localeFixture.currencyExample}
         </div>

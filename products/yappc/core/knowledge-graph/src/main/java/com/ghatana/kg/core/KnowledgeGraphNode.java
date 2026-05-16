@@ -7,14 +7,23 @@ import java.util.Set;
 
 /**
  * Knowledge Graph node model for CLI creation.
- * Stub for compilation — bridges to YAPPC domain model.
-
+ *
+ * @deprecated This is a stub for compilation that bridges to YAPPC domain model.
+ *             Use {@link com.ghatana.yappc.knowledge.model.YAPPCGraphNode} instead.
+ *             This stub is retained for compilation compatibility only and will be removed in a future release.
+ *             Set system property "kg.core.stub.enabled=false" to disable stub usage at runtime.
+ *
  * @doc.type class
  * @doc.purpose Handles knowledge graph node operations
  * @doc.layer core
  * @doc.pattern ValueObject
-*/
+ */
+@Deprecated(since = "2026-03-27", forRemoval = true)
 public class KnowledgeGraphNode {
+
+    private static final boolean STUB_ENABLED = Boolean.parseBoolean(
+        System.getProperty("kg.core.stub.enabled", "true")
+    );
 
     private final String label;
     private final String nodeType;
@@ -24,6 +33,12 @@ public class KnowledgeGraphNode {
     private final Map<String, String> properties;
 
     private KnowledgeGraphNode(Builder builder) {
+        if (!STUB_ENABLED) {
+            throw new IllegalStateException(
+                "KnowledgeGraphNode stub is disabled. " +
+                "Set kg.core.stub.enabled=true or use com.ghatana.yappc.knowledge.model.YAPPCGraphNode instead."
+            );
+        }
         this.label = builder.label;
         this.nodeType = builder.nodeType;
         this.description = builder.description;

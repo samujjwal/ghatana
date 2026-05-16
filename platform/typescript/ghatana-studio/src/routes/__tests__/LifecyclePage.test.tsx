@@ -179,6 +179,8 @@ describe('LifecyclePage approval queue', () => {
                   packaging: 'static-files',
                   version: '1.0.0',
                   buildNumber: '1',
+                  gitCommit: 'abc1234',
+                  gitBranch: 'main',
                   timestamp: '2026-05-16T00:00:00.000Z',
                   sizeBytes: 1024,
                 },
@@ -196,6 +198,7 @@ describe('LifecyclePage approval queue', () => {
             productId: 'digital-marketing',
             version: '1.0.0',
             environment: 'local',
+            environmentSafety: 'local',
             deploymentId: 'deploy-1',
             deployedAt: '2026-05-16T00:00:00.000Z',
             rollbackPlan: {
@@ -230,6 +233,9 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByText('web-dist')).toBeInTheDocument();
     expect(screen.getByText('Environment: local')).toBeInTheDocument();
     expect(screen.getByText('Status: healthy')).toBeInTheDocument();
+    expect(screen.getAllByText('Run ID').length).toBeGreaterThan(0);
+    expect(screen.getByText('Failure Reason')).toBeInTheDocument();
+    expect(screen.getByText('Completed without failure reason')).toBeInTheDocument();
   });
 
   it('shows blocked reason codes for unsupported phase/environment and platform provider mode', () => {
@@ -260,5 +266,14 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByText('environment-not-supported')).toBeInTheDocument();
     expect(screen.getByText('provider-mode-unavailable')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'studio.route.lifecycle.executePhaseButton' })).toBeDisabled();
+  });
+
+  it('renders manifest remediation guidance for missing manifest states', () => {
+    useStudioLifecycleDataMock.mockReturnValue(createContextValue());
+
+    render(<LifecyclePage />);
+
+    expect(screen.getAllByLabelText('manifest-status-reason').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('studio.route.lifecycle.manifest.remediation.missing').length).toBeGreaterThan(0);
   });
 });

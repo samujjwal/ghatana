@@ -395,6 +395,39 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("transient read failure retries and recovers before exhaustion")
+        void transientReadFailureRetriesAndRecoversBeforeExhaustion() {
+            AtomicInteger calls = new AtomicInteger();
+            DataResult expected = new DataResult("rec-42", "ok".getBytes(), Map.of(), Instant.now().toEpochMilli());
+            when(client.read(any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    if (calls.incrementAndGet() < 3) {
+                        return CompletableFuture.failedFuture(new RuntimeException("temporary timeout"));
+                    }
+                    return CompletableFuture.completedFuture(expected);
+                });
+
+            CapturingHealth health = new CapturingHealth();
+            List<BridgeAuditEmitter.BridgeAuditEvent> auditEvents = new ArrayList<>();
+            DataCloudKernelAdapterImpl retryingAdapter = new DataCloudKernelAdapterImpl(
+                client,
+                TestBridgePorts.allowAllAuthorization(),
+                auditEvents::add,
+                health);
+
+            DataResult result = runPromise(() ->
+                retryingAdapter.readData(new DataReadRequest(bridgeContext, "tenant-a.entities", "rec-42", Map.of())));
+
+            assertThat(result.getRecordId()).isEqualTo("rec-42");
+            assertThat(calls.get()).isEqualTo(3);
+            assertThat(health.degradedReasons).isNotEmpty();
+            assertThat(health.unhealthyReasons).isEmpty();
+            assertThat(health.healthyBridgeIds).contains("data-cloud-kernel-bridge");
+            assertThat(auditEvents).noneMatch(event -> event.outcome().equals("ERROR"));
+            assertThat(auditEvents).anyMatch(event -> event.outcome().equals("ALLOWED"));
+        }
+
+        @Test
         @DisplayName("successful read emits authorization and operation audit with healthy signal")
         void successfulReadEmitsAuditAndHealth() {
             DataResult expected = new DataResult("rec-42", "hello".getBytes(), Map.of(), Instant.now().toEpochMilli());
@@ -546,6 +579,52 @@ class DataCloudKernelBridgeMappingTest extends EventloopTestBase {
 
             assertThat(result.getDatasetId()).isEqualTo("tenant-a.schema");
             verify(client).getSchema("tenant-a.schema");
+        }
+
+        @Test
+        @DisplayName("cross-tenant query fails closed")
+        void crossTenantQueryFailsClosed() {
+            assertThatThrownBy(() -> runPromise(() ->
+                adapter.queryData(new DataQueryRequest(
+                    bridgeContext,
+                    "tenant-b.analytics",
+                    "SELECT *",
+                    Map.of(),
+                    10,
+                    0))))
+                .isInstanceOf(DataCloudProviderException.class)
+                .hasMessageContaining("outside tenant scope");
+
+            verifyNoInteractions(client);
+        }
+
+        @Test
+        @DisplayName("cross-tenant schema create fails closed")
+        void crossTenantSchemaCreateFailsClosed() {
+            assertThatThrownBy(() -> runPromise(() ->
+                adapter.createSchema(new com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest(
+                    bridgeContext,
+                    "tenant-b.catalog",
+                    Map.of("id", "string"),
+                    Map.of()))))
+                .isInstanceOf(DataCloudProviderException.class)
+                .hasMessageContaining("outside tenant scope");
+
+            verifyNoInteractions(client);
+        }
+
+        @Test
+        @DisplayName("cross-tenant stream open fails closed")
+        void crossTenantStreamOpenFailsClosed() {
+            assertThatThrownBy(() -> runPromise(() ->
+                adapter.openReadStream(new com.ghatana.kernel.adapter.datacloud.DataStreamRequest(
+                    bridgeContext,
+                    "tenant-b.streams",
+                    Map.of("mode", "read")))))
+                .isInstanceOf(DataCloudProviderException.class)
+                .hasMessageContaining("outside tenant scope");
+
+            verifyNoInteractions(client);
         }
     }
 

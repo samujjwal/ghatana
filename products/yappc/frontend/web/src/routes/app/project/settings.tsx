@@ -88,7 +88,7 @@ export default function Component() {
             const request: UpdateProjectRequestContract = {
                 name: settings.name,
                 description: settings.description,
-                type: settings.type,
+                type: settings.type as UpdateProjectRequestContract['type'],
             };
 
             return yappcApi.projects.updateScoped(projectId, workspaceScopeId, request) as unknown as ProjectContract;

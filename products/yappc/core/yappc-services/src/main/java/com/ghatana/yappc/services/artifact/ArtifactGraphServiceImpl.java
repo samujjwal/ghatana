@@ -17,7 +17,7 @@ import com.ghatana.yappc.services.artifact.parser.SqlSchemaParser;
 import io.activej.promise.Promise;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.alg.scoring.BetweennessCentrality;
-import org.jgrapht.alg.shortestpath.BFSIterator;
+import org.jgrapht.traverse.BreadthFirstIterator;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -58,18 +59,18 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     private final Cache<String, List<ArtifactEdgeDto>> edgeCache;
     private final Executor blockingExecutor;
 
-    public ArtifactGraphServiceImpl(ArtifactGraphRepository repository) {
-        this(repository, null, Runnable::run);
-    }
-
-    public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository) {
-        this(repository, versionRepository, Runnable::run);
+    /**
+     * P4-2: Require blocking executor to prevent event loop blocking.
+     * Default constructors removed to enforce explicit executor configuration.
+     */
+    public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, Executor blockingExecutor) {
+        this(repository, null, Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null"));
     }
 
     public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository, Executor blockingExecutor) {
         this.repository = repository;
         this.versionRepository = versionRepository;
-        this.blockingExecutor = blockingExecutor;
+        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
         this.nodeCache = Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -86,13 +87,16 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         log.info("Ingesting artifact graph for product {} ({} nodes, {} edges)",
                 request.productId(), request.nodes().size(), request.edges().size());
 
-        // P4-4: Extract snapshotId and versionId from request metadata for tracking
-        String snapshotId = request.metadata() != null ? (String) request.metadata().get("snapshotId") : null;
-        String versionId = request.metadata() != null ? (String) request.metadata().get("versionId") : null;
+        // P4-2: Extract snapshotId and versionId from request metadata for tracking
+        // TODO: Add metadata field to ArtifactGraphIngestRequest DTO when available
+        String snapshotId = null;
+        String versionId = null;
+        String contentChecksum = null;
 
-        return repository.deleteGraphForProduct(request.productId(), request.tenantId())
-                .then(deleted -> repository.saveNodes(request.productId(), request.tenantId(), request.nodes(), snapshotId, versionId))
-                .then(saved -> repository.saveEdges(request.productId(), request.tenantId(), request.edges(), snapshotId, versionId))
+        // P4-2: Use incremental upsert instead of delete-then-insert
+        // Only insert/update nodes that have changed based on checksum
+        return repository.upsertNodes(request.productId(), request.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
+                .then(saved -> repository.upsertEdges(request.productId(), request.tenantId(), request.edges(), snapshotId, versionId))
                 .then(v -> {
                     nodeCache.invalidate(cacheKey);
                     edgeCache.invalidate(cacheKey);
@@ -102,27 +106,27 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                                 request.productId(),
                                 request.tenantId(),
                                 snapshotId,
-                                "Ingested " + request.nodes().size() + " nodes and " + request.edges().size() + " edges",
+                                "Incrementally upserted " + request.nodes().size() + " nodes and " + request.edges().size() + " edges",
                                 java.time.Instant.now(),
                                 "artifact-compiler",
                                 Map.of("nodeTypes", request.nodes().stream().map(ArtifactNodeDto::type).distinct().toList()),
                                 request.nodes().size(),
                                 request.edges().size(),
-                                Map.of("snapshotId", snapshotId != null ? snapshotId : "none")
+                                Map.of("snapshotId", snapshotId != null ? snapshotId : "none", "contentChecksum", contentChecksum != null ? contentChecksum : "none")
                         );
                         return versionRepository.saveVersion(version).map(ignored -> new ArtifactGraphResponse(
                                 true, "ingest",
-                                Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "versionId", version.versionId(), "snapshotId", snapshotId),
-                                "Artifact graph ingested and versioned successfully"
+                                Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "versionId", version.versionId(), "snapshotId", snapshotId, "contentChecksum", contentChecksum),
+                                "Artifact graph incrementally upserted and versioned successfully"
                         ));
                     }
                     return Promise.of(new ArtifactGraphResponse(
                             true, "ingest",
-                            Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "snapshotId", snapshotId),
-                            "Artifact graph ingested successfully"
+                            Map.of("nodeCount", request.nodes().size(), "edgeCount", request.edges().size(), "snapshotId", snapshotId, "contentChecksum", contentChecksum),
+                            "Artifact graph incrementally upserted successfully"
                     ));
                 })
-                .whenException(e -> log.error("Failed to ingest artifact graph for product {}", request.productId(), e));
+                .whenException(e -> log.error("Failed to incrementally upsert artifact graph for product {}", request.productId(), e));
     }
 
     @Override
@@ -151,7 +155,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             edgeCache.put(cacheKey, edges);
             
             // Offload JGraphT analysis to blocking executor
-            return Promise.ofBlocking(blockingExecutor, () -> runJGraphTAnalysis(nodes, edges, request));
+          g(blockingExecutor, () -> runJGraphTAnalysis(nodes, edges, request));
         }).flatMap(result -> result);
     }
 
@@ -198,7 +202,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                         for (String vertex : cycleVertices) {
                             List<String> group = cycleGroups.computeIfAbsent(vertex, k -> new ArrayList<>());
                             // Add vertices reachable within the cycle
-                            BFSIterator<String, DefaultEdge> bfs = new BFSIterator<>(graph, vertex);
+                            BreadthFirstIterator<String, DefaultEdge> bfs = new BreadthFirstIterator<>(graph, vertex);
                             while (bfs.hasNext() && group.size() < 50) { // Limit cycle size
                                 String v = bfs.next();
                                 if (cycleVertices.contains(v)) {
@@ -270,7 +274,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             if (!graph.containsVertex(source)) continue;
             
             int reachableFromSource = 0;
-            BFSIterator<String, DefaultEdge> bfs = new BFSIterator<>(graph, source);
+            BreadthFirstIterator<String, DefaultEdge> bfs = new BreadthFirstIterator<>(graph, source);
             int depth = 0;
             String lastAtDepth = source;
             
@@ -467,14 +471,10 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     /**
-     * Parse source text into artifact nodes and edges using language-specific parsers.
      * 
-     * P4-3: Tree-sitter JNI fallback removed due to JVM stability risks.
-     * Languages without dedicated parsers are logged for manual review or future parser implementation.
-     * For TypeScript/JavaScript, use the TypeScript compiler library in the frontend artifact-compiler.
-     *
      * @param filePath   relative path of the source file (used for language detection)
      * @param sourceCode raw source text
+     * For TypeScript/JavaScript, use the TypeScript compiler library in the frontend artifact-compiler.
      * @return map with {@code "nodes"} and {@code "edges"} lists
      */
     public Map<String, Object> parseSourceArtifact(String filePath, String sourceCode) {

@@ -133,7 +133,7 @@ public final class BuilderDocumentSchema {
             String changeId,
             String timestamp,
             Map<String, Object> descriptor,
-            ReviewStatus reviewStatus
+            DocumentMetadata.ReviewStatus reviewStatus
     ) {}
 
     /**
@@ -161,7 +161,7 @@ public final class BuilderDocumentSchema {
             List<ResponsiveVariant> responsiveVariants,
             List<StateVariant> stateVariants,
             List<ActionDefinition> actions,
-            ReviewStatus reviewStatus,
+            DocumentMetadata.ReviewStatus reviewStatus,
             Map<String, Object> pendingProps,
             PrivacyMetadata privacyMetadata,
             Map<String, Object> dataClassification,
@@ -247,12 +247,12 @@ public final class BuilderDocumentSchema {
         public record Landmark(
                 String type, // main, navigation, complementary, contentinfo, search, banner
                 String nodeId
-        );
+        ) {}
 
         public record SkipLink(
                 String targetId,
                 String label
-        );
+        ) {}
     }
 
     /**
@@ -267,7 +267,7 @@ public final class BuilderDocumentSchema {
         public record DataRetention(
                 int days,
                 boolean autoDelete
-        );
+        ) {}
     }
 
     /**

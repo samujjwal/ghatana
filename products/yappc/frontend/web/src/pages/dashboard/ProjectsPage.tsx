@@ -23,13 +23,20 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function toProjectSummary(project: ApiProject): ProjectSummary {
+  const projectLike = project as {
+    id: string;
+    name: string;
+    description?: string;
+    updatedAt: string;
+  };
+
   return {
-    id: project.id,
-    name: project.name,
-    key: project.id,
+    id: projectLike.id,
+    name: projectLike.name,
+    key: projectLike.id,
     status: 'ACTIVE',
-    ...(project.description ? { description: project.description } : {}),
-    updatedAt: project.updatedAt,
+    ...(projectLike.description ? { description: projectLike.description } : {}),
+    updatedAt: projectLike.updatedAt,
   };
 }
 

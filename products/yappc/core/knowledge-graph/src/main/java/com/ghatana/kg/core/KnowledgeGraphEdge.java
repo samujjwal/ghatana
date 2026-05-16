@@ -5,14 +5,23 @@ import java.util.Map;
 
 /**
  * Knowledge Graph edge model for CLI creation.
- * Stub for compilation — bridges to YAPPC domain model.
-
+ *
+ * @deprecated This is a stub for compilation that bridges to YAPPC domain model.
+ *             Use {@link com.ghatana.yappc.knowledge.model.YAPPCGraphEdge} instead.
+ *             This stub is retained for compilation compatibility only and will be removed in a future release.
+ *             Set system property "kg.core.stub.enabled=false" to disable stub usage at runtime.
+ *
  * @doc.type class
  * @doc.purpose Handles knowledge graph edge operations
  * @doc.layer core
  * @doc.pattern ValueObject
-*/
+ */
+@Deprecated(since = "2026-03-27", forRemoval = true)
 public class KnowledgeGraphEdge {
+
+    private static final boolean STUB_ENABLED = Boolean.parseBoolean(
+        System.getProperty("kg.core.stub.enabled", "true")
+    );
 
     private final String sourceNodeId;
     private final String targetNodeId;
@@ -21,6 +30,12 @@ public class KnowledgeGraphEdge {
     private final Map<String, String> properties;
 
     private KnowledgeGraphEdge(Builder builder) {
+        if (!STUB_ENABLED) {
+            throw new IllegalStateException(
+                "KnowledgeGraphEdge stub is disabled. " +
+                "Set kg.core.stub.enabled=true or use com.ghatana.yappc.knowledge.model.YAPPCGraphEdge instead."
+            );
+        }
         this.sourceNodeId = builder.sourceNodeId;
         this.targetNodeId = builder.targetNodeId;
         this.relationshipType = builder.relationshipType;

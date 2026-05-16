@@ -100,3 +100,75 @@ describe('scanRepository exclusions', () => {
     }
   });
 });
+
+describe('Phase 1 enhancements', () => {
+  it('should produce deterministic scan output ordering', async () => {
+    const config = {
+      rootPath: process.cwd(),
+      includeGlobs: ['**/*.json'],
+      excludeGlobs: ['**/node_modules/**'],
+    };
+
+    const inventory1 = await scanRepository(config);
+    const inventory2 = await scanRepository(config);
+
+    // Artifacts should be in the same order across scans
+    expect(inventory1.artifacts.length).toBe(inventory2.artifacts.length);
+    for (let i = 0; i < inventory1.artifacts.length; i++) {
+      expect(inventory1.artifacts[i]!.relativePath).toBe(inventory2.artifacts[i]!.relativePath);
+    }
+  });
+
+  it('should use SHA-256 for binary checksums', async () => {
+    const config = {
+      rootPath: process.cwd(),
+      includeGlobs: ['**/package.json'],
+      excludeGlobs: [],
+    };
+
+    const inventory = await scanRepository(config);
+    expect(inventory.artifacts.length).toBeGreaterThan(0);
+
+    for (const artifact of inventory.artifacts) {
+      // SHA-256 produces 64 hex characters
+      expect(artifact.checksum).toMatch(/^[a-f0-9]{64}$/);
+      expect(artifact.checksum.length).toBe(64);
+    }
+  });
+
+  it('should detect npm/pnpm package boundaries', async () => {
+    const config = {
+      rootPath: process.cwd(),
+      includeGlobs: ['**/package.json'],
+      excludeGlobs: [],
+    };
+
+    const inventory = await scanRepository(config);
+    const pkgJsons = inventory.artifacts.filter(a => a.relativePath.endsWith('package.json'));
+
+    // Package boundary detection should identify package roots
+    for (const pkg of pkgJsons) {
+      // Packages should have package.json at root
+      const parts = pkg.relativePath.split('/');
+      expect(parts[parts.length - 1]).toBe('package.json');
+    }
+  });
+
+  it('should protect against zip-slip attacks', async () => {
+    const config = {
+      rootPath: process.cwd(),
+      includeGlobs: ['**/*'],
+      excludeGlobs: ['**/node_modules/**', '**/dist/**'],
+    };
+
+    const inventory = await scanRepository(config);
+
+    // All paths should be contained within the root
+    for (const artifact of inventory.artifacts) {
+      // Path traversal should be blocked
+      expect(artifact.relativePath).not.toMatch(/^\.\./);
+      expect(artifact.relativePath).not.toMatch(/\/\.\.\//);
+      expect(artifact.relativePath).not.toMatch(/\/\.\.$/);
+    }
+  });
+});

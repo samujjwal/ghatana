@@ -34,9 +34,9 @@ const ProductUnitHealthSummarySchema = z.object({
 const ProductUnitHealthViewSchema = ProductUnitHealthSummarySchema.extend({
   gateFailureCount: z.number(),
   deploymentStatus: z.string(),
-  healthSnapshot: z.record(z.unknown()),
-  lifecycleResult: z.record(z.unknown()),
-  deployment: z.record(z.unknown()),
+  healthSnapshot: z.record(z.string(), z.unknown()),
+  lifecycleResult: z.record(z.string(), z.unknown()),
+  deployment: z.record(z.string(), z.unknown()),
 });
 
 const LifecycleTimelineViewSchema = z.object({

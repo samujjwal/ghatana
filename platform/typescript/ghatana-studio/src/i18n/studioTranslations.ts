@@ -97,6 +97,24 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.lifecycle.noRunsMessage': 'No lifecycle runs available',
   'studio.route.lifecycle.runDetailTitle': 'Run detail',
   'studio.route.lifecycle.manifestTabsTitle': 'Manifests',
+  'studio.route.lifecycle.manifest.reasonTitle': 'Reason',
+  'studio.route.lifecycle.manifest.reasonDefault': 'Manifest state indicates partial lifecycle truth.',
+  'studio.route.lifecycle.manifest.remediationTitle': 'Recommended action',
+  'studio.route.lifecycle.manifest.status.loaded': 'Loaded',
+  'studio.route.lifecycle.manifest.status.missing': 'Missing',
+  'studio.route.lifecycle.manifest.status.corrupt': 'Corrupt',
+  'studio.route.lifecycle.manifest.status.unauthorized': 'Unauthorized',
+  'studio.route.lifecycle.manifest.status.unavailable': 'Unavailable',
+  'studio.route.lifecycle.manifest.remediation.missing':
+    'Run the lifecycle phase again to regenerate this manifest and refresh Studio.',
+  'studio.route.lifecycle.manifest.remediation.corrupt':
+    'Inspect manifest writer logs and rerun the phase after fixing manifest serialization inputs.',
+  'studio.route.lifecycle.manifest.remediation.unauthorized':
+    'Verify tenant/workspace authorization headers and required bridge permissions before retrying.',
+  'studio.route.lifecycle.manifest.remediation.unavailable':
+    'Check provider health and runtime truth connectivity, then retry manifest load.',
+  'studio.route.lifecycle.manifest.remediation.default':
+    'Refresh lifecycle data after validating provider health and run status.',
   'studio.route.lifecycle.approvalQueueTitle': 'Approval queue',
   'studio.route.lifecycle.noPendingApprovals': 'No pending approvals',
   'studio.route.lifecycle.failureDiagnosticsTitle': 'Failure diagnostics',

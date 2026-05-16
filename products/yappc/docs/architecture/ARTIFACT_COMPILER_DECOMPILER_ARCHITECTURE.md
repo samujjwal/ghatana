@@ -70,23 +70,36 @@
   - **State Store Extractor**: Redux Toolkit, Zustand, Jotai, React Context patterns
   - **Storybook CSF Extractor**: CSF meta/story extraction, variant mapping
   - **Prisma Schema Extractor**: Model, field, relation, index extraction
-- Barrel exports in `src/index.ts` with subpath exports for `inventory`, `graph`, `model`, `extractors`, `provenance`, `residual`, `merge`, `synthesis`
+- Barrel exports in `src/index.ts` with subpath exports for `inventory`, `graph`, `model`, `extractors`, `provenance`, `residual`, `merge`, `synthesis`, `source-providers`, `compile-back`, `capabilities`
+- Capability Registry in `src/capabilities/capability-registry.ts`:
+  - Runtime discovery of providers, extractors, emitters, and validators
+  - Support levels (production, preview, unsupported)
+  - Language and framework support metadata
+  - Confidence ranges and limitations
 
 ### Synthesis Orchestrator
 
-**Location**: `src/synthesis/engine.ts`
+**Location**: `src/synthesis/pipeline.ts`
 
 **Deliverables**:
 - `SynthesisPipeline` class that coordinates extraction → graph building → semantic model generation
-- Calls Java Knowledge Graph HTTP API for heavy graph computation (centrality, communities, cycles)
-- Receives `GraphAnalysisResult` from Java, applies heuristics to generate `SemanticModelElement`s
+- Six-step compilation process:
+  1. Source acquisition → RepositorySnapshot (via SourceProvider)
+  2. Inventory scan → ArtifactInventory (via scanRepository)
+  3. Extraction → ExtractionResult[] (via registered ArtifactExtractors)
+  4. Symbol resolution → Resolved GraphEdge[] (via resolveSymbols)
+  5. Graph assembly → ArtifactGraph (with validation via validateGraph)
+  6. Provenance indexing → ProvenanceIndex
+- Graph validation before proceeding to model synthesis (structural integrity checks)
 - Confidence scoring per element based on extraction source and graph position
-- Uses `platform/typescript/api` `ApiClient` for HTTP communication (reuses existing client with retry, timeout, circuit breaker)
+- Deterministic ordering for reproducible scans (entries sorted by name, artifacts by relativePath)
 
 **Acceptance Criteria**:
 - Pipeline processes 100 files end-to-end in <10s (with Java delegation)
 - Each generated element has provenance traceable to source file + line
 - Confidence scores follow defined thresholds (HIGH >0.8, MEDIUM 0.5-0.8, LOW <0.5)
+- Graph validation catches structural errors before model synthesis
+- Deterministic behavior across repeated scans of the same commit
 
 ---
 
@@ -267,6 +280,39 @@
 
 ## Cross-Cutting Concerns
 
+### Source Providers
+
+**Location**: `src/source-providers/{github-provider,gitlab-provider,zip-provider,local-folder-provider}.ts`
+
+**Deliverables**:
+- GitHubProvider: GitHub Contents API integration with truncation detection
+- GitLabProvider: GitLab API integration with paginated tree fetching
+- ZipProvider: ZIP archive extraction with path containment guards (zip-slip prevention)
+- LocalFolderProvider: Direct filesystem access
+- Provider diagnostics for observability (ProviderDiagnosticSchema)
+- Typed source locators (SourceLocatorSchema) for governed source acquisition
+
+**Security Features**:
+- GitHub: Fails closed on tree API truncation (>500k entries)
+- ZIP: Path containment guards prevent zip-slip attacks
+- All providers: Structured diagnostics without exposing credentials
+
+### Compile-Back Layer
+
+**Location**: `src/compile-back/{patch-coordinator,react-patch-emitter,residual-preserver}.ts`
+
+**Deliverables**:
+- PatchCoordinator: Orchestrates patch emitters, validates change plans, detects residual overlaps
+- ReactPatchEmitter: AST/range-based minimal diffs with range metadata in patches
+- ResidualPreserver: Applies regeneration strategies to residual islands
+- Full patch lifecycle types: ModelChange, ChangePlan, FilePatch, ReviewBundle, ValidationResult, RollbackMetadata
+
+**Features**:
+- AST/range-based minimal diffs (vs full-file replacements)
+- Residual overlap detection and blocking
+- Validation and review bundle generation
+- Rollback metadata for audit trails
+
 ### Observability & Metrics
 
 **Pattern**: Micrometer + Prometheus + OpenTelemetry (existing platform pattern)
@@ -327,6 +373,25 @@
 - `testImplementation(libs.testcontainers.core)`, `(libs.testcontainers.postgresql)`, `(libs.testcontainers.junit.jupiter)` — PostgreSQL test containers
 
 **Required**: All new Java modules must follow this pattern. Reuse `PostgresTestContainer` from `platform/java/testing/src/main/java/com/ghatana/platform/testing/internal/containers/`.
+
+---
+
+## Implementation Status (2026-03-27)
+
+### Completed (High Priority)
+- Phase 1 Foundation Hardening: Scanner API exports, public subpath exports, skipped artifact schema, binary checksum, package boundary detection, deterministic scan ordering, GitLab materialization root fix, GitHub truncation fail-closed, ZIP path containment guard, provider diagnostics and typed source locator
+- Phase 2 Canonical Repository IR: Graph validator, URN ID query schema support, reference index with relative import support, extractor instance exposure, pipeline graph validation
+- Phase 3 Semantic Model: Model graph node IDs and source refs, model diff/version metadata (ModelChangeSchema, ModelVersionMetadataSchema), residual enhancements (rawFragmentRef, checksum, risk, relatedGraphNodeIds)
+- Phase 4 Backend Production Hardening: DB migration V14 columns, principal-derived tenant/project scope enforcement, executor defaults removal, cursor pagination, proto alignment with TS schema (V12 additions)
+- Phase 5 Compile-Back: Full patch lifecycle types, AST/range-based React patch emitter, validation and review bundle, residual overlap blocking
+- Capability Registry: Runtime discovery of providers/extractors/emitters/validators with support levels and metadata
+
+### Remaining (Medium Priority)
+- Durable Job Service: Replace in-memory job Map with durable repository; integrate canonical source providers for GitHub/GitLab/local/archive locators; route through synthesis job service
+- ImportWizard Full Lifecycle: Update for provider selection, repo/ref/archive fields, progress tracking, summary display, residuals, skipped files, confidence metrics, job API integration, typed DTOs, model element mapping to canvas/page builder
+
+### Remaining (Low Priority)
+- Architecture documentation updates (in progress)
 
 ---
 

@@ -297,6 +297,10 @@ export default defineConfig({
         __dirname,
         '../../../../platform/typescript/platform-utils/src/index.ts'
       ),
+      '@ghatana/i18n': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/i18n/src/index.ts'
+      ),
       '@ghatana/accessibility': path.resolve(
         __dirname,
         '../../../../platform/typescript/accessibility/src/index.ts'
@@ -351,6 +355,7 @@ export default defineConfig({
         __dirname,
         '../libs/mobile/capacitor-shims.ts'
       ),
+      'form-data': path.resolve(__dirname, 'src/shims/form-data.ts'),
       openai: path.resolve(__dirname, 'src/shims/openai.ts'),
       '@anthropic-ai/sdk': path.resolve(__dirname, 'src/shims/anthropic.ts'),
       'react-colorful': path.resolve(__dirname, 'src/shims/react-colorful.tsx'),

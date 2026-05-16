@@ -18,6 +18,7 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "ignoreDeprecations": "6.0",
+    "rootDir": "../../../../",
     "baseUrl": ".",
     "types": ["vite/client", "@react-router/node", "node"],
     "paths": {
@@ -71,6 +72,7 @@
       "@ghatana/theme/provider": ["src/theme/provider.ts"],
       "@ghatana/canvas": ["src/shims/ghatana-canvas.ts"],
       "@ghatana/canvas/*": ["src/shims/ghatana-canvas.ts"],
+      "@sentry/react": ["src/__mocks__/@sentry/react.ts"],
       "@yappc/testing/*": ["../libs/yappc-core/src/testing/*"],
       "@yappc/core/testing/*": ["../libs/yappc-core/src/testing/*"],
       "@yappc/core/types": ["src/types/module-shims.d.ts"],

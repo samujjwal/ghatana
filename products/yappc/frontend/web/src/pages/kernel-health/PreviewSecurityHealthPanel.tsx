@@ -6,19 +6,19 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield, Lock, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-interface TokenScope {
+export interface TokenScope {
   id: string;
   name: string;
   required: boolean;
   granted: boolean;
 }
 
-interface PreviewSecurity {
+export interface PreviewSecurity {
   previewTokenId: string;
   tokenScope: TokenScope[];
   trustLevel: 'trusted' | 'semi-trusted' | 'untrusted';

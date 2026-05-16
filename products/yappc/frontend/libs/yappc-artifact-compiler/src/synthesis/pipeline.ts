@@ -28,8 +28,9 @@ import type {
 import { buildDeterministicNodeId } from '../graph/types';
 import { resolveSymbols } from './symbol-resolver';
 import type { RepositorySnapshot } from '../source-providers/types';
-import type { SemanticModelElement } from '../model/types';
+import type { SemanticModelElement, SemanticProductModel } from '../model';
 import type { ResidualIsland } from '../residual/types';
+import { validateGraph } from '../graph/validateGraph';
 
 // ============================================================================
 // Pipeline configuration
@@ -59,8 +60,7 @@ export interface SynthesisPipelineConfig {
 export interface SynthesisPipelineResult {
   readonly snapshot: RepositorySnapshot | null;
   readonly graph: ArtifactGraph;
-  readonly modelElements: SemanticModelElement[];
-  readonly residualIslands: ResidualIsland[];
+  readonly model: SemanticProductModel;
   readonly extractionResults: ExtractionResult[];
   readonly errors: PipelineError[];
   readonly warnings: PipelineWarning[];
@@ -164,6 +164,45 @@ function assembleGraph(
     edgeResolutionRecords: resolutionRecords,
     nodeIndex,
     edgeIndex,
+  };
+}
+
+// ============================================================================
+// Build SemanticProductModel container
+// ============================================================================
+
+function buildSemanticProductModel(
+  snapshotRef: SnapshotRef | undefined,
+  rootPath: string,
+  modelElements: SemanticModelElement[],
+  residualIslands: ResidualIsland[],
+): SemanticProductModel {
+  const now = new Date().toISOString();
+
+  // Build elementIndex (kind -> elementIds)
+  const elementIndex: Record<string, string[]> = {};
+  for (const element of modelElements) {
+    const list = elementIndex[element.kind] ?? (elementIndex[element.kind] = []);
+    list.push(element.id);
+  }
+
+  // Collect residual island IDs
+  const residualIslandIds = residualIslands.map(island => island.id);
+
+  // Deterministic model ID: hash of snapshotRef + element count
+  const modelId = snapshotRef
+    ? buildDeterministicNodeId(snapshotRef, rootPath, 'model', `elements:${modelElements.length}`)
+    : randomUUID();
+
+  return {
+    id: modelId,
+    repositoryRoot: rootPath,
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+    elements: modelElements,
+    elementIndex,
+    residualIslandIds,
   };
 }
 
@@ -290,6 +329,7 @@ export class SynthesisPipeline {
                 confidence: element.confidence,
                 linkedModelElementIds: [],
                 tags: [],
+                relatedGraphNodeIds: [],
               });
             }
           }
@@ -361,6 +401,34 @@ export class SynthesisPipeline {
       resolutionRecords,
     );
 
+    // Validate graph before proceeding
+    const validationResult = validateGraph(graph);
+    if (validationResult.errors.length > 0) {
+      for (const error of validationResult.errors) {
+        errors.push({
+          phase: 'assemble',
+          message: error.message,
+          recoverable: false,
+        });
+      }
+    }
+    if (validationResult.warnings.length > 0) {
+      for (const warning of validationResult.warnings) {
+        warnings.push({
+          phase: 'assemble',
+          message: warning.message,
+        });
+      }
+    }
+
+    // ── Phase 5: Assemble SemanticProductModel ──────────────────────────────────
+    const model = buildSemanticProductModel(
+      snapshotRef,
+      rootPath,
+      allModelElements,
+      allResidualIslands,
+    );
+
     const stats: PipelineStats = {
       scannedFiles: inventory.summary.totalFiles,
       eligibleArtifacts: inventory.summary.eligibleForExtraction,
@@ -376,8 +444,7 @@ export class SynthesisPipeline {
     return {
       snapshot,
       graph,
-      modelElements: allModelElements,
-      residualIslands: allResidualIslands,
+      model,
       extractionResults,
       errors,
       warnings,
@@ -405,11 +472,20 @@ export class SynthesisPipeline {
       nodeIndex: {},
       edgeIndex: {},
     };
+    const emptyModel: SemanticProductModel = {
+      id: randomUUID(),
+      repositoryRoot: snapshot?.localRootPath ?? '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 0,
+      elements: [],
+      elementIndex: {},
+      residualIslandIds: [],
+    };
     return {
       snapshot,
       graph: emptyGraph,
-      modelElements: [],
-      residualIslands: [],
+      model: emptyModel,
       extractionResults: [],
       errors,
       warnings,

@@ -259,7 +259,7 @@ async function createProjectApi(data: {
   const request: CreateProjectRequestContract = {
     name: data.name,
     description: data.description,
-    type: data.type,
+    type: data.type as CreateProjectRequestContract['type'],
     workspaceId: data.ownerWorkspaceId,
   };
 

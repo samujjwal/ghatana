@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { User } from '@/types/dashboard';
-import type { WorkspaceMember, PersonaType, WorkspacePermission, WorkspaceRole } from 'yappc-auth/rbac';
+import type { WorkspaceMember, PersonaType, WorkspacePermission, WorkspaceRole } from '@yappc/auth/rbac';
 
 /**
  * Current authenticated user atom.

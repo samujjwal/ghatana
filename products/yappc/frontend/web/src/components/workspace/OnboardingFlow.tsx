@@ -339,6 +339,7 @@ function ProjectStep({
     onNext: () => void;
     onBack: () => void;
 }) {
+    const { t } = useTranslation('common');
     const useSuggestion = useCallback(() => {
         if (suggestedName) {
             setProjectName(suggestedName);

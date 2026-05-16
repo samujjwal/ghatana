@@ -13,7 +13,7 @@
  */
 
 import { mkdir, readFile, writeFile, mkdtemp } from 'fs/promises';
-import { join, basename } from 'path';
+import { join, basename, normalize, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'crypto';
 import type { SourceProvider, SourceProviderOptions, SnapshotFile, RepositorySnapshot } from './types';
@@ -214,7 +214,17 @@ export class ZipProvider implements SourceProvider {
 
       try {
         const content = inflateEntry(zipBuffer, entry);
-        const absolutePath = join(tempRoot, relativePath.replace(/\//g, '/'));
+        // Normalize the resolved path to prevent zip-slip attacks
+        const absolutePath = normalize(join(tempRoot, relativePath.replace(/\//g, '/')));
+        const resolvedPath = resolve(absolutePath);
+        const resolvedTempRoot = resolve(tempRoot);
+
+        // Enforce path containment: reject if the resolved path escapes tempRoot
+        if (!resolvedPath.startsWith(resolvedTempRoot + (process.platform === 'win32' ? '\\' : '/'))) {
+          // Skip unsafe entry (zip-slip attempt)
+          continue;
+        }
+
         const dir = absolutePath.slice(0, absolutePath.lastIndexOf('/'));
         await mkdir(dir, { recursive: true });
         await writeFile(absolutePath, content);
@@ -243,6 +253,7 @@ export class ZipProvider implements SourceProvider {
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
+      diagnostics: [],
     };
   }
 }

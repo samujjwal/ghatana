@@ -90,7 +90,7 @@ export function FormSkeleton({
         <div
             className="space-y-6"
             role="status"
-            aria-label={t('commonSkeletons.loadingForm')}
+            aria-label="Loading form"
             aria-busy="true"
         >
             {Array.from({ length: fields }).map((_, i) => (
@@ -135,7 +135,7 @@ export function ListSkeleton({ items = 5 }: { items?: number }) {
         <div
             className="space-y-3"
             role="status"
-            aria-label={t('commonSkeletons.loadingItems', { items })}
+            aria-label={`Loading ${items} items`}
             aria-busy="true"
         >
             {Array.from({ length: items }).map((_, i) => (
@@ -154,7 +154,7 @@ export function NavigationSkeleton({ items = 8 }: { items?: number }) {
         <nav
             className="space-y-2 p-4"
             role="status"
-            aria-label={t('commonSkeletons.loadingNavigation')}
+            aria-label="Loading navigation"
             aria-busy="true"
         >
             {Array.from({ length: items }).map((_, i) => (
@@ -182,7 +182,7 @@ export function HeaderSkeleton({
         <header
             className="space-y-4"
             role="status"
-            aria-label={t('commonSkeletons.loadingHeader')}
+            aria-label="Loading header"
             aria-busy="true"
         >
             {showBreadcrumbs && (
@@ -221,7 +221,7 @@ export function StatsCardSkeleton() {
         <div
             className="p-6 rounded-lg border border-divider bg-bg-paper"
             role="status"
-            aria-label={t('commonSkeletons.loadingStatistics')}
+            aria-label="Loading statistics"
             aria-busy="true"
         >
             <div className="flex items-start justify-between mb-4">
@@ -243,7 +243,7 @@ export function StatsGridSkeleton({ cards = 4 }: { cards?: number }) {
         <div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
             role="status"
-            aria-label={t('commonSkeletons.loadingStatisticsDashboard')}
+            aria-label="Loading statistics dashboard"
             aria-busy="true"
         >
             {Array.from({ length: cards }).map((_, i) => (
@@ -262,7 +262,7 @@ export function ProfileSkeleton() {
         <div
             className="space-y-6"
             role="status"
-            aria-label={t('commonSkeletons.loadingProfile')}
+            aria-label="Loading profile"
             aria-busy="true"
         >
             {/* Header */}
@@ -316,7 +316,7 @@ export function PageSkeleton({
         <div
             className="flex h-screen"
             role="status"
-            aria-label={t('commonSkeletons.loadingPage')}
+            aria-label="Loading page"
             aria-busy="true"
         >
             {showSidebar && (
@@ -362,7 +362,7 @@ export function ChartSkeleton({
         <div
             className={`w-full ${height} rounded-lg border border-divider bg-bg-paper p-6`}
             role="status"
-            aria-label={t('commonSkeletons.loadingChart')}
+            aria-label="Loading chart"
             aria-busy="true"
         >
             <div className="flex items-center justify-between mb-4">
@@ -413,7 +413,7 @@ export function DialogContentSkeleton() {
         <div
             className="space-y-4"
             role="status"
-            aria-label={t('commonSkeletons.loadingDialogContent')}
+            aria-label="Loading dialog content"
             aria-busy="true"
         >
             <Skeleton className="h-6 w-48" />

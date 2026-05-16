@@ -5,6 +5,23 @@ package com.ghatana.yappc.artifact;
 option java_package = "com.ghatana.yappc.artifact.grpc";
 option java_multiple_files = true;
 
+// SnapshotRef provides stable cross-scan identity anchor
+message SnapshotRef {
+  string provider = 1;
+  string repo_id = 2;
+  string commit_sha = 3;
+  string branch = 4;
+}
+
+// SourceLocation tracks precise source file positions
+message SourceLocation {
+  string file_path = 1;
+  int32 start_line = 2;
+  int32 start_column = 3;
+  int32 end_line = 4;
+  int32 end_column = 5;
+}
+
 // ArtifactNode represents a single extracted artifact node (component, page, model, etc.)
 message ArtifactNode {
   string id = 1;
@@ -16,6 +33,27 @@ message ArtifactNode {
   repeated string tags = 7;
   string tenant_id = 8;
   string project_id = 9;
+  
+  // V12: Snapshot reference for stable identity
+  SnapshotRef snapshot_ref = 10;
+  
+  // V12: Precise source location with range information
+  SourceLocation source_location = 11;
+  
+  // V12: Confidence score (0.0 to 1.0)
+  double confidence = 12;
+  
+  // V12: Provenance metadata
+  string provenance = 13;
+  string extractor_id = 14;
+  string extractor_version = 15;
+  
+  // V12: Residual fragment IDs for unmodelable code
+  repeated string residual_fragment_ids = 16;
+  
+  // V12: Security and privacy flags
+  repeated string security_flags = 17;
+  repeated string privacy_flags = 18;
 }
 
 // ArtifactEdge represents a directed relationship between two artifact nodes.
@@ -24,6 +62,33 @@ message ArtifactEdge {
   string target_node_id = 2;
   string relationship_type = 3;
   map<string, string> properties = 4;
+  
+  // V12: Confidence score (0.0 to 1.0)
+  double confidence = 5;
+  
+  // V12: Bidirectional flag
+  bool bidirectional = 6;
+}
+
+// UnresolvedGraphEdge - Phase 1 extractor output (pre-resolution)
+message UnresolvedGraphEdge {
+  string source_id = 1;
+  string target_ref = 2;
+  string relationship = 3;
+  SourceLocation source_location = 4;
+  double confidence = 5;
+  map<string, string> metadata = 6;
+  string target_kind_hint = 7;
+}
+
+// EdgeResolutionRecord tracks resolution outcomes
+message EdgeResolutionRecord {
+  string edge_id = 1;
+  string status = 2;
+  string resolved_to_id = 3;
+  repeated string candidate_ids = 4;
+  bool review_required = 5;
+  string resolution_method = 6;
 }
 
 // IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.
@@ -32,6 +97,18 @@ message IngestArtifactGraphRequest {
   string tenant_id = 2;
   repeated ArtifactNode nodes = 3;
   repeated ArtifactEdge edges = 4;
+  
+  // V12: Unresolved edges for two-phase resolution
+  repeated UnresolvedGraphEdge unresolved_edges = 5;
+  
+  // V12: Edge resolution records
+  repeated EdgeResolutionRecord edge_resolution_records = 6;
+  
+  // V12: Snapshot reference for the ingest
+  SnapshotRef snapshot_ref = 7;
+  
+  // V12: Residual islands (unmodelable code preserved verbatim)
+  repeated string residual_island_ids = 8;
 }
 
 message IngestArtifactGraphResponse {
@@ -40,6 +117,15 @@ message IngestArtifactGraphResponse {
   int64 edge_count = 3;
   string version_id = 4;
   string message = 5;
+  
+  // V12: Content checksum for verification
+  string content_checksum = 6;
+  
+  // V12: Snapshot ID for this ingest
+  string snapshot_id = 7;
+  
+  // V12: Tombstone flag for deleted snapshots
+  bool is_tombstone = 8;
 }
 
 // ArtifactGraphAnalysisRequest requests one or more algorithms over a product graph.

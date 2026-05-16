@@ -12,6 +12,7 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { studioLogger } from '../logging/studioLogger';
 
 type HealthStatus = 'healthy' | 'degraded' | 'blocked' | 'failed' | 'unknown';
 
@@ -60,7 +61,7 @@ export default function HealthVisualization(): ReactElement {
         setSessions(snapshots);
       }
     } catch (err) {
-      console.error('Failed to load health snapshots:', err);
+      studioLogger.error('Failed to load health snapshots', { error: err });
     }
   };
 
@@ -100,7 +101,7 @@ export default function HealthVisualization(): ReactElement {
       setSelectedSession(newSession);
       localStorage.setItem('health-snapshots', JSON.stringify([newSession]));
     } catch (err) {
-      console.error('Failed to refresh health snapshots:', err);
+      studioLogger.error('Failed to refresh health snapshots', { error: err });
       setError('Failed to refresh health snapshots');
     } finally {
       setIsLoading(false);

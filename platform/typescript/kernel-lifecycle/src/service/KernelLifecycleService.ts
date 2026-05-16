@@ -371,8 +371,10 @@ export class KernelLifecycleService {
           productUnitId,
           runId,
           phase: resolvedPhase,
-          manifestType,
-          correlationId: query.correlationId,
+          ...(query.correlationId === undefined ? {} : { correlationId: query.correlationId }),
+          safeDetails: {
+            manifestType,
+          },
         });
       }
       if (error instanceof SyntaxError) {
@@ -415,7 +417,8 @@ export class KernelLifecycleService {
       return true;
     });
 
-    if (query.scope === undefined) {
+    const expectedScope = query.scope;
+    if (expectedScope === undefined) {
       return filteredById;
     }
 
@@ -425,7 +428,7 @@ export class KernelLifecycleService {
         if (productUnit === null) {
           return null;
         }
-        return this.scopeMatches(productUnit.scope, query.scope) ? approval : null;
+        return this.scopeMatches(productUnit.scope, expectedScope) ? approval : null;
       }),
     );
 

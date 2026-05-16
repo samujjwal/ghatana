@@ -229,3 +229,142 @@ export function buildChangePlan(
 
   return ops;
 }
+
+// ============================================================================
+// Full Patch Lifecycle Types
+// ============================================================================
+
+/**
+ * Represents a single change to a model element with full audit trail.
+ */
+export const ModelChangeSchema = z.object({
+  id: z.string().uuid(),
+  elementId: z.string().uuid(),
+  kind: ChangeOpKindSchema,
+  description: z.string().min(1),
+  before: z.unknown().optional(),
+  after: z.unknown().optional(),
+  changedBy: z.string().optional(),
+  changedAt: z.string().datetime(),
+  autoApplyConfidence: z.number().min(0).max(1),
+  reviewRequired: z.boolean().default(false),
+});
+
+export type ModelChange = z.infer<typeof ModelChangeSchema>;
+
+/**
+ * A complete change plan containing all model changes and their relationships.
+ */
+export const ChangePlanSchema = z.object({
+  id: z.string().uuid(),
+  sourceModelId: z.string().uuid(),
+  targetModelId: z.string().uuid(),
+  changes: z.array(ModelChangeSchema),
+  createdAt: z.string().datetime(),
+  createdBy: z.string().optional(),
+  description: z.string().optional(),
+  estimatedImpact: z.object({
+    addedElements: z.number().int().nonnegative(),
+    removedElements: z.number().int().nonnegative(),
+    modifiedElements: z.number().int().nonnegative(),
+    affectedFiles: z.number().int().nonnegative(),
+  }),
+});
+
+export type ChangePlan = z.infer<typeof ChangePlanSchema>;
+
+/**
+ * A file-level patch with AST/range-based metadata for precise application.
+ */
+export const FilePatchSchema = z.object({
+  id: z.string().uuid(),
+  filePath: z.string().min(1),
+  /** Unified diff format for the patch. */
+  diff: z.string().min(1),
+  /** AST-based range information for precise patch application. */
+  ranges: z.array(z.object({
+    startLine: z.number().int().nonnegative(),
+    startColumn: z.number().int().nonnegative(),
+    endLine: z.number().int().nonnegative(),
+    endColumn: z.number().int().nonnegative(),
+    nodeType: z.string().optional(),
+  })).optional(),
+  /** Source model change that generated this patch. */
+  sourceChangeId: z.string().uuid(),
+  isAtomic: z.boolean().default(true),
+  canAutoApply: z.boolean().default(true),
+  checksum: z.string().optional(), // Content checksum for verification
+});
+
+export type FilePatch = z.infer<typeof FilePatchSchema>;
+
+/**
+ * Validation result for a change plan or patch set.
+ */
+export const ValidationResultSchema = z.object({
+  id: z.string().uuid(),
+  valid: z.boolean(),
+  errors: z.array(z.object({
+    code: z.string().min(1),
+    message: z.string().min(1),
+    severity: z.enum(['error', 'warning']),
+    filePath: z.string().optional(),
+    changeId: z.string().optional(),
+  })),
+  warnings: z.array(z.object({
+    code: z.string().min(1),
+    message: z.string().min(1),
+    filePath: z.string().optional(),
+    changeId: z.string().optional(),
+  })),
+  validatedAt: z.string().datetime(),
+  validatorId: z.string().min(1),
+});
+
+export type ValidationResult = z.infer<typeof ValidationResultSchema>;
+
+/**
+ * Review bundle containing changes, patches, and validation results for human review.
+ */
+export const ReviewBundleSchema = z.object({
+  id: z.string().uuid(),
+  changePlanId: z.string().uuid(),
+  changes: z.array(ModelChangeSchema),
+  patches: z.array(FilePatchSchema),
+  validation: ValidationResultSchema,
+  /** Residual islands that overlap with changes and require manual review. */
+  residualOverlaps: z.array(z.object({
+    residualId: z.string().uuid(),
+    changeId: z.string().uuid(),
+    filePath: z.string().min(1),
+    reason: z.string().min(1),
+  })),
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime().optional(),
+  status: z.enum(['pending', 'approved', 'rejected', 'expired']).default('pending'),
+  reviewedBy: z.string().optional(),
+  reviewedAt: z.string().datetime().optional(),
+  reviewNotes: z.string().optional(),
+});
+
+export type ReviewBundle = z.infer<typeof ReviewBundleSchema>;
+
+/**
+ * Rollback metadata for reverting applied changes.
+ */
+export const RollbackMetadataSchema = z.object({
+  id: z.string().uuid(),
+  originalChangePlanId: z.string().uuid(),
+  originalPatchSetId: z.string().uuid(),
+  rollbackChangePlanId: z.string().uuid(),
+  rollbackPatchSetId: z.string().uuid(),
+  rolledBackBy: z.string().optional(),
+  rolledBackAt: z.string().datetime(),
+  reason: z.string().min(1),
+  /** Whether rollback was successful. */
+  success: z.boolean(),
+  /** Error message if rollback failed. */
+  error: z.string().optional(),
+});
+
+export type RollbackMetadata = z.infer<typeof RollbackMetadataSchema>;

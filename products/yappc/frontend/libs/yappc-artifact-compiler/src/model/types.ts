@@ -33,6 +33,21 @@ export const ModelElementBaseSchema = z.object({
   securityFlags: z.array(z.string()).default([]),
   privacyFlags: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
+  /**
+   * Graph node IDs that this model element is derived from or associated with.
+   * Enables tracing from semantic model back to source graph nodes.
+   */
+  graphNodeIds: z.array(z.string()).default([]),
+  /**
+   * Source references (e.g., file paths, symbol refs) that contributed to this element.
+   * Provides provenance tracking back to original source locations.
+   */
+  sourceRefs: z.array(z.string()).default([]),
+  /**
+   * Residual island IDs that are related to this model element.
+   * Enables linking modeled content to its unmodelable parts.
+   */
+  residualIslandIds: z.array(z.string().uuid()).default([]),
 });
 
 export type ModelElementBase = z.infer<typeof ModelElementBaseSchema>;
@@ -414,3 +429,52 @@ export const SemanticProductModelSchema = z.object({
 });
 
 export type SemanticProductModel = z.infer<typeof SemanticProductModelSchema>;
+
+// ============================================================================
+// Model Diff / Version Metadata
+// ============================================================================
+
+export const ModelChangeKindSchema = z.enum([
+  'added',
+  'removed',
+  'modified',
+  'renamed',
+  'moved',
+]);
+
+export type ModelChangeKind = z.infer<typeof ModelChangeKindSchema>;
+
+export const ModelChangeSchema = z.object({
+  elementId: z.string().uuid(),
+  kind: ModelChangeKindSchema,
+  previousVersion: z.string().uuid().optional(),
+  newVersion: z.string().uuid().optional(),
+  changedFields: z.array(z.string()).default([]),
+  changeReason: z.string().optional(),
+  changedAt: z.string().datetime(),
+  changedBy: z.string().optional(), // User or system identifier
+});
+
+export type ModelChange = z.infer<typeof ModelChangeSchema>;
+
+export const ModelVersionMetadataSchema = z.object({
+  versionId: z.string().uuid(),
+  previousVersionId: z.string().uuid().optional(),
+  snapshotRef: z.object({
+    provider: z.enum(['local-folder', 'github', 'gitlab', 'zip', 'artifact-registry']),
+    repoId: z.string().min(1),
+    commitSha: z.string().optional(),
+    branch: z.string().optional(),
+  }).optional(),
+  changes: z.array(ModelChangeSchema).default([]),
+  changeSummary: z.object({
+    added: z.number().int().nonnegative(),
+    removed: z.number().int().nonnegative(),
+    modified: z.number().int().nonnegative(),
+  }),
+  createdAt: z.string().datetime(),
+  createdBy: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export type ModelVersionMetadata = z.infer<typeof ModelVersionMetadataSchema>;

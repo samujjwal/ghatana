@@ -18,6 +18,7 @@ export interface ArtifactPolicyRule {
   requireDigestForContainers?: boolean;
   maxUnverifiedCount?: number;
   minArtifactCount?: number;
+  expectedArtifacts?: readonly ExpectedArtifactDeclaration[];
 }
 
 /**
@@ -39,7 +40,8 @@ export interface ArtifactPolicyViolation {
     | 'sbom-required'
     | 'attestation-required'
     | 'container-digest-required'
-    | 'artifact-count-below-policy';
+    | 'artifact-count-below-policy'
+    | 'expected-artifact-missing';
   readonly message: string;
 }
 
@@ -195,6 +197,30 @@ export class ProductArtifactValidator {
     const violations: ArtifactPolicyViolation[] = [];
     const violatingIds = new Set<string>();
     let compliantCount = 0;
+
+    const artifactsById = new Map(manifest.artifacts.map((artifact) => [artifact.id, artifact]));
+    const artifactsByRef = new Map(
+      manifest.artifacts
+        .filter((artifact) => artifact.metadata.artifactRef)
+        .map((artifact) => [artifact.metadata.artifactRef as string, artifact]),
+    );
+
+    const requiredExpectedArtifacts = (policy.expectedArtifacts ?? []).filter(
+      (expected) => expected.required,
+    );
+    for (const expected of requiredExpectedArtifacts) {
+      const artifact = artifactsById.get(expected.id) ??
+        (expected.artifactRef ? artifactsByRef.get(expected.artifactRef) : undefined);
+
+      if (!artifact || !artifact.found) {
+        violations.push({
+          artifactId: expected.id,
+          reasonCode: 'expected-artifact-missing',
+          message: `Required expected artifact '${expected.id}' is missing from manifest evidence`,
+        });
+        violatingIds.add(expected.id);
+      }
+    }
 
     const requiredArtifactCount = this.resolveRequiredArtifactCount(policy);
     if (manifest.artifacts.length < requiredArtifactCount) {

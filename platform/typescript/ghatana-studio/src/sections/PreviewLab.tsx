@@ -26,6 +26,7 @@ import {
   createBuilderDocument,
   type DocumentId,
 } from '@ghatana/ui-builder';
+import { studioLogger } from '../logging/studioLogger';
 
 type PreviewBuilderDocument = Parameters<PreviewHostService['mount']>[0];
 
@@ -112,7 +113,7 @@ export default function PreviewLab(): ReactElement {
       setSessions(prev => [...prev, session]);
       setSelectedSession(session);
     } catch (err) {
-      console.error('Failed to create preview session:', err);
+      studioLogger.error('Failed to create preview session', { error: err });
       setError('Failed to create preview session');
     } finally {
       setIsLoading(false);
@@ -141,7 +142,7 @@ export default function PreviewLab(): ReactElement {
 
       setSelectedSession(prev => prev ? { ...prev, isActive: true } : null);
     } catch (err) {
-      console.error('Failed to launch preview:', err);
+      studioLogger.error('Failed to launch preview', { error: err });
       setError('Failed to launch preview');
     } finally {
       setIsLoading(false);
@@ -174,7 +175,7 @@ export default function PreviewLab(): ReactElement {
 
       setSelectedSession(prev => prev ? { ...prev, isActive: false } : null);
     } catch (err) {
-      console.error('Failed to stop preview:', err);
+      studioLogger.error('Failed to stop preview', { error: err });
       setError('Failed to stop preview');
     }
   };

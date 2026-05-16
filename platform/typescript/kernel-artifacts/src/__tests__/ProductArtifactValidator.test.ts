@@ -262,6 +262,44 @@ describe('ProductArtifactValidator', () => {
   });
 
   describe('validateArtifactPolicy', () => {
+    it('fails closed when required expected artifacts are missing from policy evidence', () => {
+      const result = validator.validateArtifactPolicy(createManifest([]), {
+        expectedArtifacts: [
+          {
+            id: 'web-dist',
+            type: 'static-web-bundle',
+            packaging: 'static-files',
+            required: true,
+          },
+        ],
+      });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations).toEqual([
+        expect.objectContaining({
+          artifactId: 'web-dist',
+          reasonCode: 'expected-artifact-missing',
+        }),
+      ]);
+      expect(result.violatingArtifactIds).toContain('web-dist');
+    });
+
+    it('does not fail policy for optional expected artifacts that are missing', () => {
+      const result = validator.validateArtifactPolicy(createManifest([]), {
+        expectedArtifacts: [
+          {
+            id: 'coverage',
+            type: 'coverage-report',
+            packaging: 'json',
+            required: false,
+          },
+        ],
+      });
+
+      expect(result.compliant).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
     it('fails closed when manifest is empty and policy requires trust evidence', () => {
       const result = validator.validateArtifactPolicy(createManifest([]), {
         requireTrustState: ['verified', 'signed'],

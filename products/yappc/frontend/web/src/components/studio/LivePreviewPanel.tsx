@@ -313,8 +313,8 @@ export function LivePreviewPanel({
   const currentViewportSpec = PRESET_VIEWPORTS[currentViewport];
   const currentLocaleFixture = getPreviewLocaleFixture(currentLocale);
   const previewLocaleOptions = getPreviewLocaleFixtures().map((fixture) => ({
-    value: fixture.i18n.language,
-    label: `${fixture.i18n.language} · ${fixture.label}`,
+    value: fixture.locale,
+    label: `${fixture.locale} · ${fixture.label}`,
   }));
 
   return (
@@ -392,7 +392,7 @@ export function LivePreviewPanel({
         className="border-b border-border bg-surface px-3 py-2 text-xs text-fg-muted"
         data-testid="live-preview-locale-fixture"
         dir={currentLocaleFixture.direction}
-        lang={currentLocaleFixture.i18n.language}
+        lang={currentLocaleFixture.locale}
       >
         <span className="font-semibold text-fg">{currentLocaleFixture.headline}</span>
         <span className="ml-2">{currentLocaleFixture.primaryCta}</span>

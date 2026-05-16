@@ -275,11 +275,32 @@ export type ArtifactGraph = z.infer<typeof ArtifactGraphSchema>;
 // Graph Query
 // ============================================================================
 
+/**
+ * Validates that a string is either a UUID or a URN format.
+ * Node IDs can be deterministic URNs (artifact://...) or random UUIDs.
+ */
+const nodeIdOrUrnSchema = z.string().refine(
+  (val) => {
+    // Accept UUID format
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+      return true;
+    }
+    // Accept URN format (artifact://...)
+    if (val.startsWith('artifact://')) {
+      return true;
+    }
+    return false;
+  },
+  {
+    message: 'Node ID must be a UUID or a URN (artifact://...)',
+  },
+);
+
 export const GraphQuerySchema = z.object({
   nodeKinds: z.array(GraphNodeKindSchema).optional(),
   edgeKinds: z.array(GraphEdgeKindSchema).optional(),
-  fromNodeId: z.string().uuid().optional(),
-  toNodeId: z.string().uuid().optional(),
+  fromNodeId: nodeIdOrUrnSchema.optional(),
+  toNodeId: nodeIdOrUrnSchema.optional(),
   minConfidence: z.number().min(0).max(1).optional(),
   sourcePath: z.string().optional(),
   labelContains: z.string().optional(),

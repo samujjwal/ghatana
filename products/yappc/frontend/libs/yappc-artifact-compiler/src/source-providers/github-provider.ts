@@ -176,8 +176,12 @@ export class GitHubProvider implements SourceProvider {
     );
 
     if (treeResponse.truncated) {
-      // Warn but continue — large repos may have truncated trees
-      console.warn(`[github-provider] Tree truncated for ${parsed.owner}/${parsed.repo}@${commitSha}. Some files may be missing.`);
+      // Fail closed: GitHub tree truncation means we cannot guarantee a complete snapshot
+      throw new SourceProviderError(
+        this.providerId,
+        `${parsed.owner}/${parsed.repo}@${commitSha}`,
+        `GitHub tree API returned truncated results. The repository is too large for the GitHub tree API (limit: 500k entries). Use an alternative method (e.g., git clone) for this repository.`,
+      );
     }
 
     // Materialize to a temp directory
@@ -243,6 +247,7 @@ export class GitHubProvider implements SourceProvider {
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
+      diagnostics: [],
     };
   }
 }

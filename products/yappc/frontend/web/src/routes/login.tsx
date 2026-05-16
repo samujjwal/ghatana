@@ -15,12 +15,10 @@ import { logger } from '../utils/Logger';
 
 import { RouteErrorBoundary } from "../components/route/ErrorBoundary";
 
-import type { Route } from './+types/login';
-
 /**
  * Client action for login form submission
  */
-export async function clientAction({ request }: Route.ClientActionArgs) {
+export async function clientAction({ request }: { request: Request }) {
     const formData = await request.formData();
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;

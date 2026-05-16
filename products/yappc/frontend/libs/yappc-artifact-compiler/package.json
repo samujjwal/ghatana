@@ -40,6 +40,18 @@
     "./synthesis": {
       "import": "./dist/synthesis/index.js",
       "types": "./dist/synthesis/index.d.ts"
+    },
+    "./source-providers": {
+      "import": "./dist/source-providers/index.js",
+      "types": "./dist/source-providers/index.d.ts"
+    },
+    "./compile-back": {
+      "import": "./dist/compile-back/index.js",
+      "types": "./dist/compile-back/index.d.ts"
+    },
+    "./builder": {
+      "import": "./dist/builder/index.js",
+      "types": "./dist/builder/index.d.ts"
     }
   },
   "files": [
@@ -57,7 +69,9 @@
     "zod": "^4.3.6",
     "nanoid": "^5.1.7",
     "@ghatana/ui-builder": "workspace:*",
-    "@ghatana/ds-schema": "workspace:*"
+    "@ghatana/ds-schema": "workspace:*",
+    "@typescript-eslint/typescript-estree": "^8.0.0",
+    "@typescript-eslint/visitor-keys": "^8.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

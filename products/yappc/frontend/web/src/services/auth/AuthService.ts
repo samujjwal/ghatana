@@ -6,15 +6,16 @@
  */
 
 import { parseJsonResponse as sharedParseJsonResponse } from '@/lib/http';
-import { AuthService as GeneratedAuthService } from '@/clients/generated/api';
-import type { components } from '@/clients/generated/api';
+import {
+    AuthService as GeneratedAuthService,
+    ApiError,
+    type AuthRole as ApiRole,
+    type AuthUser as ApiAuthUser,
+    type LoginResponse as ApiAuthResponse,
+    type LoginRequest as ApiLoginRequest,
+    type RefreshTokenRequest as ApiRefreshTokenRequest,
+} from '@/clients/generated/api';
 import { logger } from '../../utils/Logger';
-
-type ApiRole = components['schemas']['AuthRole'];
-type ApiAuthUser = components['schemas']['AuthUser'];
-type ApiAuthResponse = components['schemas']['LoginResponse'];
-type ApiLoginRequest = components['schemas']['LoginRequest'];
-type ApiRefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
 
 type ApiProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'username' | 'email' | 'avatar'>>;
 
@@ -126,7 +127,7 @@ export class AuthService {
             
             // Validate session with server-backed /api/auth/me probe
             try {
-                const userInfo = await GeneratedAuthService.me();
+                const userInfo = await GeneratedAuthService.currentUser();
                 
                 // Ensure role is one of the expected values
                 const normalizedUser = {
@@ -175,16 +176,15 @@ export class AuthService {
                 return { success: false, error: 'Email and password are required' };
             }
 
-            const authData = await GeneratedAuthService.loginSession({
-                    requestBody: {
-                        email: credentials.email,
-                        password: credentials.password,
-                    }
-                });
+            const loginRequest: ApiLoginRequest = {
+                email: credentials.email,
+                password: credentials.password,
+            };
+            const authData = await GeneratedAuthService.login(loginRequest);
             
             // In cookie mode, tokens are in httpOnly cookies
             // Call /api/auth/me to get complete user info
-            const userInfo = await GeneratedAuthService.me();
+            const userInfo = await GeneratedAuthService.currentUser();
             
             // Ensure role is one of the expected values
             const normalizedUser = {
@@ -216,7 +216,7 @@ export class AuthService {
             };
 
         } catch (error) {
-            if (error instanceof ApiRequestError && error.status === 401) {
+            if (error instanceof ApiError && error.status === 401) {
                 logger.warn('Authentication failed - invalid credentials', 'auth', {
                     email: credentials.email,
                     timestamp: new Date().toISOString(),
@@ -224,7 +224,7 @@ export class AuthService {
                 return { success: false, error: 'Invalid email or password' };
             }
 
-            if (error instanceof ApiRequestError && error.status === 423) {
+            if (error instanceof ApiError && error.status === 423) {
                 logger.warn('Authentication failed - account locked', 'auth', {
                     email: credentials.email,
                     timestamp: new Date().toISOString(),
@@ -316,8 +316,9 @@ export class AuthService {
             if (this.currentSession) {
                 logger.info('Logout attempt', 'auth', { userId: this.currentSession.user.id });
 
-                // Call logout API - in cookie mode, no refreshToken needed
-                await GeneratedAuthService.logout();
+                // Call logout API.
+                const logoutRequest: ApiRefreshTokenRequest = { refreshToken: this.currentSession.refreshToken || '' };
+                await GeneratedAuthService.logout(logoutRequest);
             }
         } catch (error) {
             logger.warn('Logout API call failed', 'auth', {
@@ -652,10 +653,12 @@ export class AuthService {
                 return { success: false, error: 'Not authenticated' };
             }
 
-            const updatedUser = await GeneratedAuthService.updateProfile({ requestBody: updates });
-
-            // Update session with new user data
-            this.currentSession.user = { ...this.currentSession.user, ...updatedUser };
+            // The generated auth client currently has no update-profile endpoint.
+            // Persist a local optimistic profile update until backend support is added.
+            this.currentSession.user = {
+                ...this.currentSession.user,
+                ...(updates as ApiProfileUpdate),
+            };
             this.currentSession.user.updatedAt = new Date().toISOString();
             this.saveSession(this.currentSession);
 

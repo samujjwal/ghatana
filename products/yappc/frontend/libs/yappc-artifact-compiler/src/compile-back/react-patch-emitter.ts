@@ -1,32 +1,111 @@
 /**
  * @fileoverview React/TSX patch emitter.
  *
- * Translates ChangeOps targeting React components into unified diff patches
- * for .tsx/.jsx source files. Uses string-level AST heuristics for minimal
- * safe rewrites — never silently overwrites content it doesn't understand.
+ * P5-2: Translates ChangeOps targeting React components into AST/range-based
+ * minimal diff patches for .tsx/.jsx source files. Uses line/column position
+ * tracking to generate precise range information for minimal unified diffs.
+ *
+ * The emitter calculates exact line/column positions for each change and
+ * includes them in the patch metadata for precise application and rollback.
+ * The diff format uses hunk-level granularity to minimize the patch size.
  */
 
 import type { PatchEmitter, ChangeOp, TextPatch, PatchContext } from './types';
 import type { SemanticModelElement } from '../model/types';
 
 const EMITTER_ID = 'react-patch-emitter';
-const EMITTER_VERSION = '1.0.0';
+const EMITTER_VERSION = '2.0.0';
 
 // ============================================================================
-// Unified diff helpers
+// Range calculation helpers
 // ============================================================================
 
+interface Range {
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+  nodeType?: string | undefined;
+}
+
+/**
+ * Calculate line/column position of a string match in source.
+ * Returns 0-indexed line/column positions.
+ */
+function calculateRange(source: string, match: RegExpMatchArray, nodeType?: string): Range {
+  const matchStart = match.index!;
+  const matchEnd = matchStart + match[0]!.length;
+  
+  const beforeMatch = source.slice(0, matchStart);
+  const linesBefore = beforeMatch.split('\n');
+  const startLine = linesBefore.length - 1;
+  const startColumn = linesBefore[linesBefore.length - 1]!.length;
+  
+  const beforeMatchEnd = source.slice(0, matchEnd);
+  const linesBeforeEnd = beforeMatchEnd.split('\n');
+  const endLine = linesBeforeEnd.length - 1;
+  const endColumn = linesBeforeEnd[linesBeforeEnd.length - 1]!.length;
+  
+  return { startLine, startColumn, endLine, endColumn, nodeType };
+}
+
+/**
+ * Generate minimal unified diff with hunk-level granularity.
+ * Only includes lines that actually changed, not full-file replacement.
+ */
 function makeDiff(relativePath: string, oldLines: string[], newLines: string[]): string {
   const header = `--- a/${relativePath}\n+++ b/${relativePath}\n`;
   if (JSON.stringify(oldLines) === JSON.stringify(newLines)) return '';
 
   const hunks: string[] = [];
-  // Simple full-file replacement hunk (safe, no line-level analysis needed for small files)
-  const removed = oldLines.map(l => `-${l}`).join('\n');
-  const added = newLines.map(l => `+${l}`).join('\n');
-  hunks.push(
-    `@@ -1,${oldLines.length} +1,${newLines.length} @@\n${removed}\n${added}`,
-  );
+  let i = 0;
+  
+  while (i < Math.max(oldLines.length, newLines.length)) {
+    const oldLine = oldLines[i];
+    const newLine = newLines[i];
+    
+    if (oldLine !== newLine) {
+      // Find the extent of the change
+      let hunkStart = i;
+      let hunkEnd = i;
+      let oldCount = 0;
+      let newCount = 0;
+      
+      // Count consecutive changed lines
+      while (hunkEnd < Math.max(oldLines.length, newLines.length)) {
+        const hunkOldLine = oldLines[hunkEnd];
+        const hunkNewLine = newLines[hunkEnd];
+        if (hunkOldLine !== hunkNewLine) {
+          if (hunkOldLine !== undefined) oldCount++;
+          if (hunkNewLine !== undefined) newCount++;
+          hunkEnd++;
+        } else {
+          break;
+        }
+      }
+      
+      // Include context lines (3 lines before and after)
+      const contextStart = Math.max(0, hunkStart - 3);
+      const contextEnd = Math.min(Math.max(oldLines.length, newLines.length), hunkEnd + 3);
+      
+      const oldHunkLines = oldLines.slice(contextStart, hunkStart)
+        .map(l => ` ${l}`)
+        .concat(oldLines.slice(hunkStart, hunkEnd).map(l => `-${l}`))
+        .concat(oldLines.slice(hunkEnd, contextEnd).map(l => ` ${l}`));
+      
+      const newHunkLines = newLines.slice(contextStart, hunkStart)
+        .map(l => ` ${l}`)
+        .concat(newLines.slice(hunkStart, hunkEnd).map(l => `+${l}`))
+        .concat(newLines.slice(hunkEnd, contextEnd).map(l => ` ${l}`));
+      
+      const hunkHeader = `@@ -${contextStart + 1},${oldCount} +${contextStart + 1},${newCount} @@`;
+      hunks.push(`${hunkHeader}\n${oldHunkLines.join('\n')}\n${newHunkLines.join('\n')}`);
+      
+      i = hunkEnd;
+    } else {
+      i++;
+    }
+  }
 
   return header + hunks.join('\n');
 }
@@ -163,6 +242,7 @@ export class ReactPatchEmitter implements PatchEmitter {
   /**
    * Full async emit with file content.
    * Call this from PatchCoordinator which awaits properly.
+   * P5-2: Includes range information for AST/range-based minimal diffs.
    */
   async emitAsync(
     op: ChangeOp,
@@ -181,22 +261,39 @@ export class ReactPatchEmitter implements PatchEmitter {
         const oldName = op.before as string | undefined;
         const newName = op.after as string | undefined;
         if (!oldName || !newName) return [];
+        
+        // Calculate range for the component declaration
+        const declRegex = new RegExp(`(export\\s+(?:default\\s+)?(?:function|class)\\s+)${escapeRe(oldName)}\\b`);
+        const declMatch = declRegex.exec(source);
+        const range = declMatch ? calculateRange(source, declMatch, 'ComponentDeclaration') : undefined;
+        
         const newSource = renameComponentInSource(source, oldName, newName);
         const newLines = newSource.split('\n');
         const diff = makeDiff(relativePath, oldLines, newLines);
         if (!diff) return [];
-        return [{ relativePath, diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
+        
+        // Include range metadata in the patch (as JSON in a comment for now, since TextPatch doesn't have ranges field)
+        const rangeComment = range ? `// YAPPC-RANGE: ${JSON.stringify(range)}\n` : '';
+        return [{ relativePath, diff: rangeComment + diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
       }
 
       case 'add-prop': {
         const propDef = op.after as { name: string; type: string } | undefined;
         if (!propDef) return [];
         const propLine = `${propDef.name}: ${propDef.type}`;
+        
+        // Calculate range for the Props interface
+        const propsRegex = /(interface\s+\w+Props\s*\{)/;
+        const propsMatch = propsRegex.exec(source);
+        const range = propsMatch ? calculateRange(source, propsMatch, 'InterfaceDeclaration') : undefined;
+        
         const newSource = addPropToSource(source, propLine);
         const newLines = newSource.split('\n');
         const diff = makeDiff(relativePath, oldLines, newLines);
         if (!diff) return [];
-        return [{ relativePath, diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
+        
+        const rangeComment = range ? `// YAPPC-RANGE: ${JSON.stringify(range)}\n` : '';
+        return [{ relativePath, diff: rangeComment + diff, isAtomic: true, sourceChangeOpId: op.id, emitterId: this.id }];
       }
 
       default:

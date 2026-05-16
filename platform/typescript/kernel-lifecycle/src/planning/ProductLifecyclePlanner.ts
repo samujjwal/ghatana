@@ -1057,7 +1057,590 @@ export class ProductLifecyclePlanner {
         `kernel-product.yaml for product "${productId}" must declare a non-empty lifecycleProfile (${configPath}).`,
       );
     }
+    this.assertRecordProperty(config, 'surfaces', configPath);
     this.assertRecordProperty(config, 'phases', configPath);
+    this.assertSurfacesConfigShape(config.surfaces as Record<string, unknown>, configPath, productId);
+    this.assertPhasesConfigShape(config.phases as Record<string, unknown>, configPath, productId);
+    this.assertRequiredManifestsConfigShape(config, configPath, productId);
+    this.assertPluginsConfigShape(config, configPath, productId);
+    this.assertEnvironmentsConfigShape(config, configPath, productId);
+    this.assertApprovalsConfigShape(config, configPath, productId);
+    this.assertPackageConfigShape(config, configPath, productId);
+    this.assertDeploymentConfigShape(config, configPath, productId);
+    this.assertVerifyConfigShape(config, configPath, productId);
+    this.assertGatesConfigShape(config, configPath, productId);
+    this.assertArtifactsConfigShape(config, configPath, productId);
+  }
+
+  private assertRequiredManifestsConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const requiredManifests = config.requiredManifests;
+    if (requiredManifests === undefined) {
+      return;
+    }
+    if (typeof requiredManifests !== 'object' || requiredManifests === null || Array.isArray(requiredManifests)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare requiredManifests as an object (${configPath}).`,
+      );
+    }
+
+    const allowedManifestTypes = new Set<ProductLifecycleManifestType>([
+      'lifecycle-plan',
+      'lifecycle-result',
+      'gate-result-manifest',
+      'artifact-manifest',
+      'deployment-manifest',
+      'verify-health-report',
+      'lifecycle-health-snapshot',
+      'lifecycle-events',
+    ]);
+
+    for (const [phaseName, manifests] of Object.entries(requiredManifests as Record<string, unknown>)) {
+      if (
+        !Array.isArray(manifests) ||
+        manifests.some((manifest) => typeof manifest !== 'string' || !allowedManifestTypes.has(manifest as ProductLifecycleManifestType))
+      ) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare requiredManifests.${phaseName} as an array of valid manifest types (${configPath}).`,
+        );
+      }
+    }
+  }
+
+  private assertPluginsConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const plugins = config.plugins;
+    if (plugins === undefined) {
+      return;
+    }
+    if (typeof plugins !== 'object' || plugins === null || Array.isArray(plugins)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare plugins as an object (${configPath}).`,
+      );
+    }
+
+    for (const [pluginId, pluginValue] of Object.entries(plugins as Record<string, unknown>)) {
+      if (typeof pluginValue !== 'object' || pluginValue === null || Array.isArray(pluginValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare plugins.${pluginId} as an object (${configPath}).`,
+        );
+      }
+
+      const pluginConfig = pluginValue as Record<string, unknown>;
+      this.assertOptionalBooleanProperty(pluginConfig, 'required', `plugins.${pluginId}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(pluginConfig, 'providerId', `plugins.${pluginId}`, configPath, productId);
+    }
+  }
+
+  private assertEnvironmentsConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const environments = config.environments;
+    if (environments === undefined) {
+      return;
+    }
+    if (typeof environments !== 'object' || environments === null || Array.isArray(environments)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare environments as an object (${configPath}).`,
+      );
+    }
+
+    for (const [environmentName, environmentValue] of Object.entries(environments as Record<string, unknown>)) {
+      if (typeof environmentValue !== 'object' || environmentValue === null || Array.isArray(environmentValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare environments.${environmentName} as an object (${configPath}).`,
+        );
+      }
+
+      const environmentConfig = environmentValue as Record<string, unknown>;
+      this.assertOptionalBooleanProperty(
+        environmentConfig,
+        'approvalRequired',
+        `environments.${environmentName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalBooleanProperty(
+        environmentConfig,
+        'safeForDefault',
+        `environments.${environmentName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalStringArrayProperty(
+        environmentConfig,
+        'requiredGates',
+        `environments.${environmentName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(environmentConfig, 'type', `environments.${environmentName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(
+        environmentConfig,
+        'deploymentProvider',
+        `environments.${environmentName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        environmentConfig,
+        'secretsProvider',
+        `environments.${environmentName}`,
+        configPath,
+        productId,
+      );
+    }
+  }
+
+  private assertApprovalsConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const approvals = config.approvals;
+    if (approvals === undefined) {
+      return;
+    }
+    if (typeof approvals !== 'object' || approvals === null || Array.isArray(approvals)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare approvals as an object (${configPath}).`,
+      );
+    }
+
+    const allowedRiskLevels = new Set(['low', 'medium', 'high', 'critical']);
+    for (const [phaseName, approvalItems] of Object.entries(approvals as Record<string, unknown>)) {
+      if (!Array.isArray(approvalItems)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare approvals.${phaseName} as an array (${configPath}).`,
+        );
+      }
+
+      for (const approvalItem of approvalItems) {
+        if (typeof approvalItem !== 'object' || approvalItem === null || Array.isArray(approvalItem)) {
+          throw new Error(
+            `kernel-product.yaml for product "${productId}" must declare approvals.${phaseName} entries as objects (${configPath}).`,
+          );
+        }
+
+        const approvalConfig = approvalItem as Record<string, unknown>;
+        this.assertRequiredNonEmptyStringProperty(approvalConfig, 'action', `approvals.${phaseName}`, configPath, productId);
+        this.assertOptionalNonEmptyStringProperty(approvalConfig, 'approvalId', `approvals.${phaseName}`, configPath, productId);
+        this.assertOptionalBooleanProperty(approvalConfig, 'required', `approvals.${phaseName}`, configPath, productId);
+        this.assertOptionalStringArrayProperty(approvalConfig, 'requiredApprovers', `approvals.${phaseName}`, configPath, productId);
+        this.assertOptionalNonEmptyStringProperty(approvalConfig, 'source', `approvals.${phaseName}`, configPath, productId);
+
+        const riskLevel = approvalConfig.riskLevel;
+        if (riskLevel !== undefined && (typeof riskLevel !== 'string' || !allowedRiskLevels.has(riskLevel))) {
+          throw new Error(
+            `kernel-product.yaml for product "${productId}" must declare approvals.${phaseName}.riskLevel as one of low|medium|high|critical (${configPath}).`,
+          );
+        }
+      }
+    }
+  }
+
+  private assertSurfacesConfigShape(
+    surfaces: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    for (const [surfaceName, surfaceValue] of Object.entries(surfaces)) {
+      if (typeof surfaceValue !== 'object' || surfaceValue === null || Array.isArray(surfaceValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare surfaces.${surfaceName} as an object (${configPath}).`,
+        );
+      }
+
+      const surfaceConfig = surfaceValue as Record<string, unknown>;
+      this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'adapter', `surfaces.${surfaceName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'path', `surfaces.${surfaceName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'type', `surfaces.${surfaceName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'implementationStatus',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+    }
+  }
+
+  private assertPhasesConfigShape(
+    phases: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    for (const [phaseName, phaseValue] of Object.entries(phases)) {
+      if (typeof phaseValue !== 'object' || phaseValue === null || Array.isArray(phaseValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare phases.${phaseName} as an object (${configPath}).`,
+        );
+      }
+
+      const phaseConfig = phaseValue as Record<string, unknown>;
+      const defaultSurfaces = phaseConfig.defaultSurfaces;
+      if (
+        defaultSurfaces !== undefined &&
+        (!Array.isArray(defaultSurfaces) ||
+          defaultSurfaces.some((surface) => typeof surface !== 'string' || surface.trim().length === 0))
+      ) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare phases.${phaseName}.defaultSurfaces as a non-empty string array (${configPath}).`,
+        );
+      }
+
+      const mode = phaseConfig.mode;
+      if (mode !== undefined && mode !== 'sequential' && mode !== 'parallel' && mode !== 'dag') {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare phases.${phaseName}.mode as one of sequential|parallel|dag (${configPath}).`,
+        );
+      }
+    }
+  }
+
+  private assertOptionalNonEmptyStringProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (value !== undefined && (typeof value !== 'string' || value.trim().length === 0)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as a non-empty string (${configPath}).`,
+      );
+    }
+  }
+
+  private assertRequiredNonEmptyStringProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as a non-empty string (${configPath}).`,
+      );
+    }
+  }
+
+  private assertOptionalBooleanProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (value !== undefined && typeof value !== 'boolean') {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as a boolean (${configPath}).`,
+      );
+    }
+  }
+
+  private assertOptionalStringArrayProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (
+      value !== undefined &&
+      (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || item.trim().length === 0))
+    ) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as a non-empty string array (${configPath}).`,
+      );
+    }
+  }
+
+  private assertOptionalPositiveIntegerProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (value !== undefined && (typeof value !== 'number' || !Number.isInteger(value) || value <= 0)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as a positive integer (${configPath}).`,
+      );
+    }
+  }
+
+  private assertOptionalPortProperty(
+    source: Record<string, unknown>,
+    propertyName: string,
+    contextPath: string,
+    configPath: string,
+    productId: string,
+  ): void {
+    const value = source[propertyName];
+    if (value !== undefined && (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65_535)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare ${contextPath}.${propertyName} as an integer between 1 and 65535 (${configPath}).`,
+      );
+    }
+  }
+
+  private assertPackageConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const packageConfig = config.package;
+    if (packageConfig === undefined) {
+      return;
+    }
+    if (typeof packageConfig !== 'object' || packageConfig === null || Array.isArray(packageConfig)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare package as an object (${configPath}).`,
+      );
+    }
+
+    for (const [surfaceName, packageValue] of Object.entries(packageConfig as Record<string, unknown>)) {
+      if (typeof packageValue !== 'object' || packageValue === null || Array.isArray(packageValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare package.${surfaceName} as an object (${configPath}).`,
+        );
+      }
+
+      this.assertOptionalNonEmptyStringProperty(
+        packageValue as Record<string, unknown>,
+        'adapter',
+        `package.${surfaceName}`,
+        configPath,
+        productId,
+      );
+    }
+  }
+
+  private assertDeploymentConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const deploymentConfig = config.deployment;
+    if (deploymentConfig === undefined) {
+      return;
+    }
+    if (typeof deploymentConfig !== 'object' || deploymentConfig === null || Array.isArray(deploymentConfig)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare deployment as an object (${configPath}).`,
+      );
+    }
+
+    for (const [environmentName, environmentValue] of Object.entries(deploymentConfig as Record<string, unknown>)) {
+      if (typeof environmentValue !== 'object' || environmentValue === null || Array.isArray(environmentValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare deployment.${environmentName} as an object (${configPath}).`,
+        );
+      }
+
+      this.assertOptionalNonEmptyStringProperty(
+        environmentValue as Record<string, unknown>,
+        'adapter',
+        `deployment.${environmentName}`,
+        configPath,
+        productId,
+      );
+    }
+  }
+
+  private assertVerifyConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const verifyConfig = config.verify;
+    if (verifyConfig === undefined) {
+      return;
+    }
+    if (typeof verifyConfig !== 'object' || verifyConfig === null || Array.isArray(verifyConfig)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare verify as an object (${configPath}).`,
+      );
+    }
+
+    for (const [environmentName, verifyValue] of Object.entries(verifyConfig as Record<string, unknown>)) {
+      if (typeof verifyValue !== 'object' || verifyValue === null || Array.isArray(verifyValue)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare verify.${environmentName} as an object (${configPath}).`,
+        );
+      }
+
+      const verifyEnvironment = verifyValue as Record<string, unknown>;
+      this.assertOptionalNonEmptyStringProperty(
+        verifyEnvironment,
+        'adapter',
+        `verify.${environmentName}`,
+        configPath,
+        productId,
+      );
+
+      const healthChecks = verifyEnvironment.healthChecks;
+      if (healthChecks === undefined) {
+        continue;
+      }
+      if (typeof healthChecks !== 'object' || healthChecks === null || Array.isArray(healthChecks)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare verify.${environmentName}.healthChecks as an object (${configPath}).`,
+        );
+      }
+
+      for (const [checkId, checkValue] of Object.entries(healthChecks as Record<string, unknown>)) {
+        if (typeof checkValue !== 'object' || checkValue === null || Array.isArray(checkValue)) {
+          throw new Error(
+            `kernel-product.yaml for product "${productId}" must declare verify.${environmentName}.healthChecks.${checkId} as an object (${configPath}).`,
+          );
+        }
+
+        const checkConfig = checkValue as Record<string, unknown>;
+        const checkPath = `verify.${environmentName}.healthChecks.${checkId}`;
+        const checkType = checkConfig.type;
+        if (checkType !== 'http' && checkType !== 'tcp') {
+          throw new Error(
+            `kernel-product.yaml for product "${productId}" must declare ${checkPath}.type as one of http|tcp (${configPath}).`,
+          );
+        }
+
+        this.assertOptionalNonEmptyStringProperty(checkConfig, 'url', checkPath, configPath, productId);
+        this.assertOptionalNonEmptyStringProperty(checkConfig, 'host', checkPath, configPath, productId);
+        this.assertOptionalNonEmptyStringProperty(checkConfig, 'path', checkPath, configPath, productId);
+        this.assertOptionalPositiveIntegerProperty(checkConfig, 'retries', checkPath, configPath, productId);
+        this.assertOptionalPositiveIntegerProperty(checkConfig, 'intervalMs', checkPath, configPath, productId);
+        this.assertOptionalPositiveIntegerProperty(checkConfig, 'timeoutMs', checkPath, configPath, productId);
+        this.assertOptionalPortProperty(checkConfig, 'port', checkPath, configPath, productId);
+
+        if (checkType === 'http') {
+          const hasUrl = typeof checkConfig.url === 'string' && checkConfig.url.trim().length > 0;
+          const hasHost = typeof checkConfig.host === 'string' && checkConfig.host.trim().length > 0;
+          if (!hasUrl && !hasHost) {
+            throw new Error(
+              `kernel-product.yaml for product "${productId}" must declare ${checkPath}.url or ${checkPath}.host for http checks (${configPath}).`,
+            );
+          }
+        }
+
+        if (checkType === 'tcp') {
+          const hasHost = typeof checkConfig.host === 'string' && checkConfig.host.trim().length > 0;
+          if (!hasHost) {
+            throw new Error(
+              `kernel-product.yaml for product "${productId}" must declare ${checkPath}.host as a non-empty string for tcp checks (${configPath}).`,
+            );
+          }
+
+          const port = checkConfig.port;
+          if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65_535) {
+            throw new Error(
+              `kernel-product.yaml for product "${productId}" must declare ${checkPath}.port as an integer between 1 and 65535 for tcp checks (${configPath}).`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  private assertGatesConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const gates = config.gates;
+    if (gates === undefined) {
+      return;
+    }
+    if (typeof gates !== 'object' || gates === null || Array.isArray(gates)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare gates as an object (${configPath}).`,
+      );
+    }
+
+    for (const [phaseName, gateIds] of Object.entries(gates as Record<string, unknown>)) {
+      if (!Array.isArray(gateIds) || gateIds.some((gateId) => typeof gateId !== 'string' || gateId.trim().length === 0)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare gates.${phaseName} as a non-empty string array (${configPath}).`,
+        );
+      }
+    }
+  }
+
+  private assertArtifactsConfigShape(
+    config: Record<string, unknown>,
+    configPath: string,
+    productId: string,
+  ): void {
+    const artifacts = config.artifacts;
+    if (artifacts === undefined) {
+      return;
+    }
+    if (typeof artifacts !== 'object' || artifacts === null || Array.isArray(artifacts)) {
+      throw new Error(
+        `kernel-product.yaml for product "${productId}" must declare artifacts as an object (${configPath}).`,
+      );
+    }
+
+    for (const [phaseName, phaseArtifacts] of Object.entries(artifacts as Record<string, unknown>)) {
+      if (typeof phaseArtifacts !== 'object' || phaseArtifacts === null || Array.isArray(phaseArtifacts)) {
+        throw new Error(
+          `kernel-product.yaml for product "${productId}" must declare artifacts.${phaseName} as an object (${configPath}).`,
+        );
+      }
+
+      for (const [surfaceName, artifactValue] of Object.entries(phaseArtifacts as Record<string, unknown>)) {
+        if (typeof artifactValue !== 'object' || artifactValue === null || Array.isArray(artifactValue)) {
+          throw new Error(
+            `kernel-product.yaml for product "${productId}" must declare artifacts.${phaseName}.${surfaceName} as an object (${configPath}).`,
+          );
+        }
+
+        const artifactConfig = artifactValue as Record<string, unknown>;
+        this.assertRequiredNonEmptyStringProperty(
+          artifactConfig,
+          'type',
+          `artifacts.${phaseName}.${surfaceName}`,
+          configPath,
+          productId,
+        );
+        this.assertOptionalNonEmptyStringProperty(
+          artifactConfig,
+          'packaging',
+          `artifacts.${phaseName}.${surfaceName}`,
+          configPath,
+          productId,
+        );
+        this.assertOptionalBooleanProperty(
+          artifactConfig,
+          'required',
+          `artifacts.${phaseName}.${surfaceName}`,
+          configPath,
+          productId,
+        );
+        this.assertOptionalStringArrayProperty(
+          artifactConfig,
+          'paths',
+          `artifacts.${phaseName}.${surfaceName}`,
+          configPath,
+          productId,
+        );
+      }
+    }
   }
 
   private assertRecordProperty(
@@ -1099,9 +1682,42 @@ export class ProductLifecyclePlanner {
         );
       }
     }
+
+    const requiredGates = profile.requiredGates;
+    if (requiredGates !== undefined) {
+      if (typeof requiredGates !== 'object' || requiredGates === null || Array.isArray(requiredGates)) {
+        throw new Error(
+          `Lifecycle profile "${profileId}" must declare requiredGates as an object in ${filePath}.`,
+        );
+      }
+      for (const [phase, gates] of Object.entries(requiredGates)) {
+        if (!Array.isArray(gates) || gates.some((gate) => typeof gate !== 'string' || gate.trim().length === 0)) {
+          throw new Error(
+            `Lifecycle profile "${profileId}" must declare requiredGates.${phase} as a non-empty string array in ${filePath}.`,
+          );
+        }
+      }
+    }
+
+    const defaultAdapters = profile.defaultAdapters;
+    if (defaultAdapters !== undefined) {
+      if (typeof defaultAdapters !== 'object' || defaultAdapters === null || Array.isArray(defaultAdapters)) {
+        throw new Error(
+          `Lifecycle profile "${profileId}" must declare defaultAdapters as an object in ${filePath}.`,
+        );
+      }
+      for (const [adapterKey, adapterValue] of Object.entries(defaultAdapters)) {
+        if (typeof adapterValue !== 'string' || adapterValue.trim().length === 0) {
+          throw new Error(
+            `Lifecycle profile "${profileId}" must declare defaultAdapters.${adapterKey} as a non-empty string in ${filePath}.`,
+          );
+        }
+      }
+    }
   }
 
   private assertToolchainRegistryShape(adapters: ToolchainRegistry, filePath: string): void {
+    const allowedReadiness = new Set(['execution-ready', 'production-ready', 'planning-only', 'declared-only']);
     for (const [adapterId, adapterValue] of Object.entries(adapters)) {
       if (typeof adapterValue !== 'object' || adapterValue === null || Array.isArray(adapterValue)) {
         throw new Error(`Adapter "${adapterId}" in ${filePath} must be an object.`);
@@ -1120,6 +1736,32 @@ export class ProductLifecyclePlanner {
         throw new Error(
           `Adapter "${adapterId}" in ${filePath} must declare supportedSurfaceTypes as a non-empty string array.`,
         );
+      }
+
+      if (typeof adapter.status !== 'string' || adapter.status.trim().length === 0) {
+        throw new Error(
+          `Adapter "${adapterId}" in ${filePath} must declare status as a non-empty string.`,
+        );
+      }
+
+      if (typeof adapter.safeForDefault !== 'boolean') {
+        throw new Error(
+          `Adapter "${adapterId}" in ${filePath} must declare safeForDefault as a boolean.`,
+        );
+      }
+
+      if (typeof adapter.lifecycleEnabled !== 'boolean') {
+        throw new Error(
+          `Adapter "${adapterId}" in ${filePath} must declare lifecycleEnabled as a boolean.`,
+        );
+      }
+
+      if (adapter.readiness !== undefined) {
+        if (typeof adapter.readiness !== 'string' || !allowedReadiness.has(adapter.readiness)) {
+          throw new Error(
+            `Adapter "${adapterId}" in ${filePath} must declare readiness as one of execution-ready|production-ready|planning-only|declared-only.`,
+          );
+        }
       }
     }
   }

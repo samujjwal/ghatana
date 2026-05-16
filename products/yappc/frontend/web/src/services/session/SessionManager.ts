@@ -67,9 +67,7 @@ export async function hasSession(): Promise<boolean> {
  */
 export async function clearSession(): Promise<void> {
   try {
-    await yappcApi.auth.logout({
-      refreshToken: '', // Not needed when using httpOnly cookies
-    });
+    await yappcApi.auth.logout();
   } catch {
     // Silent fail - cookies will expire naturally
   }

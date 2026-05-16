@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  EVIDENCE_TYPES,
   isKernelPluginLifecycleHook,
   isProductUnit,
   isProductUnitIntent,
   isKernelLifecycleEvent,
   isKernelProviderMode,
+  isSemanticArtifactEvidenceBundle,
   isSemanticArtifactReference,
+  isArtifactIntelligenceEvidenceEnvelope,
+  type ArtifactIntelligenceEvidenceEnvelope,
   type KernelLifecycleEvent,
   type KernelLifecycleProviderContext,
   type KernelPlugin,
@@ -13,6 +17,7 @@ import {
   type ProductUnitHealthSnapshot,
   type ProductUnitIntent,
   type RegistryProvider,
+  type SemanticArtifactEvidenceBundle,
   type SemanticArtifactReference,
 } from "../index";
 
@@ -137,6 +142,33 @@ describe("public package exports", () => {
       semanticTags: ["studio", "sample"],
     };
 
+    const semanticBundle: SemanticArtifactEvidenceBundle = {
+      bundleId: "bundle-sample-1",
+      productUnitId: productUnit.id,
+      semanticArtifactRefs: ["artifact://sample/sample-web"],
+      graphSummaryRef: "evidence://artifact-graph/graph-sample-1",
+      dependencyGraphRef: "evidence://dependency-graph/dependency-sample-1",
+      productShapeRef: "evidence://product-shape/shape-sample-1",
+      residualIslandRef: "evidence://residual-islands/residual-sample-1",
+      riskHotspotRef: "evidence://risk-hotspots/risk-sample-1",
+      generatedChangeSetRef: "evidence://change-set/changes-sample-1",
+      bundleCreatedAt: "2026-01-01T00:00:00.000Z",
+      correlationId: "corr-sample",
+    };
+
+    const envelope: ArtifactIntelligenceEvidenceEnvelope = {
+      envelopeId: "envelope-sample-1",
+      tenantId: "tenant-sample",
+      workspaceId: "workspace-sample",
+      projectId: "project-sample",
+      productUnitId: productUnit.id,
+      evidenceType: "artifact-graph-summary",
+      evidenceId: "evidence-graph-sample-1",
+      evidenceRef: "evidence://artifact-graph/graph-sample-1",
+      envelopeCreatedAt: "2026-01-01T00:00:00.000Z",
+      correlationId: "corr-sample",
+    };
+
     expect(isProductUnit(productUnit)).toBe(true);
     expect(isProductUnitIntent(intent)).toBe(true);
     expect(provider.providerId).toBe("sample-registry");
@@ -147,5 +179,8 @@ describe("public package exports", () => {
     expect(plugin.kind).toBe("platform-plugin");
     expect(isKernelPluginLifecycleHook("onProductValidated")).toBe(true);
     expect(isSemanticArtifactReference(semanticArtifact)).toBe(true);
+    expect(isSemanticArtifactEvidenceBundle(semanticBundle)).toBe(true);
+    expect(isArtifactIntelligenceEvidenceEnvelope(envelope)).toBe(true);
+    expect(EVIDENCE_TYPES).toContain("artifact-graph-summary");
   });
 });

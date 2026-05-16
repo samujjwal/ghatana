@@ -75,6 +75,7 @@ describe("ProductLifecyclePlanner Provider Mode Fail-Closed", () => {
           supportedSurfaceTypes: ["backend-api"],
           status: "implemented",
           safeForDefault: true,
+          lifecycleEnabled: true,
         },
       },
     };

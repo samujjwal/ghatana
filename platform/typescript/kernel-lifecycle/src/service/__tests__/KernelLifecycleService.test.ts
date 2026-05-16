@@ -14,7 +14,10 @@ import type {
 } from '../../domain/ProductLifecyclePhase.js';
 import type { ProductLifecycleExecutor } from '../../execution/ProductLifecycleExecutor.js';
 import type { ProductLifecyclePlanner } from '../../planning/ProductLifecyclePlanner.js';
-import { ProviderUnavailableError } from '../KernelLifecycleErrors.js';
+import {
+  ManifestNotFoundError,
+  ProviderUnavailableError,
+} from '../KernelLifecycleErrors.js';
 import { KernelLifecycleService } from '../KernelLifecycleService.js';
 
 describe('KernelLifecycleService', () => {
@@ -162,6 +165,28 @@ describe('KernelLifecycleService', () => {
     });
   });
 
+  it('returns manifest-not-found with safeDetails manifestType when pointer exists but file is missing', async () => {
+    const plan = createPlan(repoRoot);
+    const result = createResult(repoRoot);
+    const service = new KernelLifecycleService({
+      repoRoot,
+      planner: { plan: vi.fn().mockResolvedValue(plan) } as unknown as ProductLifecyclePlanner,
+      executor: { executePlan: vi.fn().mockResolvedValue(result) } as unknown as ProductLifecycleExecutor,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: createBootstrapProviderContext(),
+    });
+    await service.runLifecyclePhase('digital-marketing', 'build', { dryRun: true, correlationId: 'corr-1' });
+
+    await fs.rm(path.join(plan.outputDirectory, 'lifecycle-result.json'), { force: true });
+
+    await expect(
+      service.getManifest('digital-marketing', 'run-1', 'lifecycle-result', 'build', { correlationId: 'corr-1' }),
+    ).rejects.toMatchObject<Partial<ManifestNotFoundError>>({
+      reasonCode: 'manifest-not-found',
+      safeDetails: { manifestType: 'lifecycle-result' },
+    });
+  });
+
   it('fails closed when platform mode lacks the memory provider', async () => {
     const service = new KernelLifecycleService({
       repoRoot,
@@ -267,6 +292,78 @@ describe('KernelLifecycleService', () => {
       expect.objectContaining({ approvalId: 'approval-1', productUnitId: 'digital-marketing' }),
     ]);
     expect(listPendingApprovals).toHaveBeenCalledTimes(1);
+  });
+
+  it('filters pending approvals by scope when a scope query is provided', async () => {
+    const scopedProductUnit = createExecutableProductUnit({
+      id: 'finance',
+      name: 'Finance',
+      kind: 'business-product',
+      scope: {
+        tenantId: 'tenant-2',
+        workspaceId: 'workspace-1',
+        projectId: 'project-1',
+      },
+      lifecycleProfile: 'standard-web-api-product',
+      lifecycleStatus: 'enabled',
+      registryProviderRef: { providerId: 'ghatana-file-registry' },
+      sourceProviderRef: {
+        providerId: 'ghatana-file-registry',
+        config: { lifecycleConfigPath: 'products/finance/kernel-product.yaml' },
+      },
+      surfaces: [
+        {
+          id: 'api',
+          type: 'backend-api',
+          implementationStatus: 'implemented',
+        },
+      ],
+    });
+
+    const listPendingApprovals = vi.fn().mockResolvedValue([
+      {
+        approvalId: 'approval-1',
+        productUnitId: 'digital-marketing',
+        runId: 'run-1',
+        requestedBy: 'release-manager',
+        reason: 'Deploy',
+        requiredApprovers: ['alice'],
+        expiresAt: '2026-05-16T00:00:00.000Z',
+      },
+      {
+        approvalId: 'approval-2',
+        productUnitId: 'finance',
+        runId: 'run-2',
+        requestedBy: 'release-manager',
+        reason: 'Deploy',
+        requiredApprovers: ['alice'],
+        expiresAt: '2026-05-16T00:00:00.000Z',
+      },
+    ]);
+
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit, scopedProductUnit]),
+      providerContext: {
+        ...createBootstrapProviderContext(),
+        approvals: {
+          ...createBootstrapProviderContext().approvals!,
+          listPendingApprovals,
+        } as unknown as KernelLifecycleProviderContext['approvals'],
+      },
+    });
+
+    await expect(
+      service.listPendingApprovals({
+        scope: {
+          tenantId: 'tenant-1',
+          workspaceId: 'workspace-1',
+          projectId: 'project-1',
+        },
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({ approvalId: 'approval-1', productUnitId: 'digital-marketing' }),
+    ]);
   });
 
   it('fails approval queue listing when provider does not support listPendingApprovals', async () => {

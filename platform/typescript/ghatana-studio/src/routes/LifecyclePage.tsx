@@ -5,6 +5,7 @@ import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import type {
   GateResultManifest,
+  LifecycleRun,
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
@@ -355,9 +356,7 @@ export default function LifecyclePage(): ReactElement {
           <h3 id="run-detail-title" className="text-base font-semibold text-gray-950">
             {t('studio.route.lifecycle.runDetailTitle')}
           </h3>
-          <pre className="overflow-auto rounded-md bg-gray-950 p-4 text-xs leading-5 text-gray-100">
-            {JSON.stringify(selectedRun, null, 2)}
-          </pre>
+          <RunDetailPanel run={selectedRun} />
         </article>
       )}
 
@@ -372,17 +371,18 @@ export default function LifecyclePage(): ReactElement {
               <ManifestTab
                 title="Lifecycle Plan"
                 content={
-                  <pre className="overflow-auto whitespace-pre-wrap text-gray-100">
-                    {JSON.stringify({ runId: selectedRun.runId, phase: selectedRun.phase }, null, 2)}
-                  </pre>
+                  <LifecyclePlanPanel
+                    runId={selectedRun.runId}
+                    phase={selectedRun.phase}
+                    correlationId={selectedRun.correlationId}
+                    status={selectedRun.status}
+                  />
                 }
               />
               <ManifestTab
                 title="Lifecycle Result"
                 content={
-                  <pre className="overflow-auto whitespace-pre-wrap text-gray-100">
-                    {JSON.stringify(selectedRun, null, 2)}
-                  </pre>
+                  <LifecycleResultPanel run={selectedRun} />
                 }
               />
               <ManifestTab
@@ -507,6 +507,105 @@ export default function LifecyclePage(): ReactElement {
   );
 }
 
+function LifecyclePlanPanel(props: {
+  readonly runId: string;
+  readonly phase: string | undefined;
+  readonly correlationId: string;
+  readonly status: string;
+}): ReactElement {
+  return (
+    <dl className="grid grid-cols-1 gap-2 text-gray-100 sm:grid-cols-2">
+      <div className="rounded bg-gray-900 px-2 py-1">
+        <dt className="text-[11px] uppercase tracking-wide text-gray-400">Run ID</dt>
+        <dd className="font-medium">{props.runId}</dd>
+      </div>
+      <div className="rounded bg-gray-900 px-2 py-1">
+        <dt className="text-[11px] uppercase tracking-wide text-gray-400">Phase</dt>
+        <dd className="font-medium">{props.phase ?? 'unknown'}</dd>
+      </div>
+      <div className="rounded bg-gray-900 px-2 py-1">
+        <dt className="text-[11px] uppercase tracking-wide text-gray-400">Correlation ID</dt>
+        <dd className="font-medium">{props.correlationId}</dd>
+      </div>
+      <div className="rounded bg-gray-900 px-2 py-1">
+        <dt className="text-[11px] uppercase tracking-wide text-gray-400">Status</dt>
+        <dd className="font-medium">{props.status}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function LifecycleResultPanel(props: { readonly run: LifecycleRun }): ReactElement {
+  const run = props.run;
+  const manifestRefs = run.manifestRefs ?? {};
+  const approvalRefs = run.approvalRefs ?? [];
+
+  return (
+    <div className="space-y-2">
+      <div className="rounded bg-gray-900 px-2 py-1 text-gray-100">
+        <span className="text-[11px] uppercase tracking-wide text-gray-400">Outcome</span>
+        <div className="mt-1 font-medium">
+          {run.failureReasonCode === undefined ? 'Completed without failure reason' : `Failed: ${run.failureReasonCode}`}
+        </div>
+      </div>
+      <div className="rounded bg-gray-900 px-2 py-1 text-gray-100">
+        <span className="text-[11px] uppercase tracking-wide text-gray-400">Manifest Refs</span>
+        <div className="mt-1 text-sm">{Object.keys(manifestRefs).length}</div>
+      </div>
+      <div className="rounded bg-gray-900 px-2 py-1 text-gray-100">
+        <span className="text-[11px] uppercase tracking-wide text-gray-400">Approval Refs</span>
+        <div className="mt-1 text-sm">{approvalRefs.length}</div>
+      </div>
+      {run.failureReasonCode !== undefined && (
+        <div className="rounded bg-red-950/60 px-2 py-1 text-red-100">
+          <span className="text-[11px] uppercase tracking-wide text-red-200">Failure Reason Code</span>
+          <div className="mt-1 font-medium">{run.failureReasonCode}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RunDetailPanel(props: { readonly run: LifecycleRun }): ReactElement {
+  const run = props.run;
+
+  return (
+    <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+      <DetailRow label="Run ID" value={run.runId} />
+      <DetailRow label="ProductUnit" value={run.productUnitId} />
+      <DetailRow label="Phase" value={run.phase ?? 'unknown'} />
+      <DetailRow label="Status" value={run.status} />
+      <DetailRow label="Correlation ID" value={run.correlationId} />
+      <DetailRow label="Health Ref" value={run.healthSnapshotRef ?? 'n/a'} />
+      <DetailRow label="Events Ref" value={run.eventsRef ?? 'n/a'} />
+      <DetailRow
+        label="Failure Reason"
+        value={run.failureReasonCode ?? 'none'}
+        tone={run.failureReasonCode === undefined ? 'neutral' : 'danger'}
+      />
+    </dl>
+  );
+}
+
+function DetailRow(props: {
+  readonly label: string;
+  readonly value: string;
+  readonly tone?: 'neutral' | 'danger';
+}): ReactElement {
+  return (
+    <div className={
+      props.tone === 'danger'
+        ? 'rounded border border-red-200 bg-red-50 px-3 py-2'
+        : 'rounded border border-gray-200 bg-gray-50 px-3 py-2'
+    }>
+      <dt className="text-[11px] uppercase tracking-wide text-gray-500">{props.label}</dt>
+      <dd className={props.tone === 'danger' ? 'mt-1 font-medium text-red-900' : 'mt-1 font-medium text-gray-900'}>
+        {props.value}
+      </dd>
+    </div>
+  );
+}
+
 interface ManifestTabProps {
   readonly title: string;
   readonly status?: string;
@@ -515,18 +614,69 @@ interface ManifestTabProps {
 }
 
 function ManifestTab(props: ManifestTabProps): ReactElement {
+  const t = useStudioTranslation();
+  const status = props.status;
+  const statusTone = resolveManifestStatusTone(status);
+  const remediationKey = resolveManifestRemediationKey(status);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-sm font-medium text-gray-900">{props.title}</h4>
-        {props.status && <Badge tone={props.status === 'loaded' ? 'success' : 'warning'} variant="soft">{props.status}</Badge>}
+        {status && (
+          <Badge tone={statusTone} variant="soft">
+            {t(`studio.route.lifecycle.manifest.status.${status}` as never)}
+          </Badge>
+        )}
       </div>
-      {props.message && <p className="text-xs text-amber-700">{props.message}</p>}
+      {status !== undefined && status !== 'loaded' && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" aria-label="manifest-status-reason">
+          <div className="font-semibold">{t('studio.route.lifecycle.manifest.reasonTitle')}</div>
+          <div className="mt-1">{props.message ?? t('studio.route.lifecycle.manifest.reasonDefault')}</div>
+          <div className="mt-2 font-semibold">{t('studio.route.lifecycle.manifest.remediationTitle')}</div>
+          <div className="mt-1">{t(remediationKey as never)}</div>
+        </div>
+      )}
       <div className="rounded-md bg-gray-950 p-4 text-xs leading-5 text-gray-100">
         {props.content}
       </div>
     </div>
   );
+}
+
+function resolveManifestStatusTone(status: string | undefined): 'success' | 'warning' | 'danger' | 'neutral' {
+  switch (status) {
+    case 'loaded':
+      return 'success';
+    case 'missing':
+    case 'unavailable':
+      return 'warning';
+    case 'corrupt':
+    case 'unauthorized':
+      return 'danger';
+    default:
+      return 'neutral';
+  }
+}
+
+function resolveManifestRemediationKey(status: string | undefined):
+  | 'studio.route.lifecycle.manifest.remediation.missing'
+  | 'studio.route.lifecycle.manifest.remediation.corrupt'
+  | 'studio.route.lifecycle.manifest.remediation.unauthorized'
+  | 'studio.route.lifecycle.manifest.remediation.unavailable'
+  | 'studio.route.lifecycle.manifest.remediation.default' {
+  switch (status) {
+    case 'missing':
+      return 'studio.route.lifecycle.manifest.remediation.missing';
+    case 'corrupt':
+      return 'studio.route.lifecycle.manifest.remediation.corrupt';
+    case 'unauthorized':
+      return 'studio.route.lifecycle.manifest.remediation.unauthorized';
+    case 'unavailable':
+      return 'studio.route.lifecycle.manifest.remediation.unavailable';
+    default:
+      return 'studio.route.lifecycle.manifest.remediation.default';
+  }
 }
 
 function GateManifestPanel(props: { readonly manifest?: GateResultManifest }): ReactElement {

@@ -21,6 +21,7 @@ import {
   deserializeBuilderDocument,
 } from '@ghatana/ui-builder';
 import type { DocumentId } from '@ghatana/ui-builder';
+import { studioLogger } from '../logging/studioLogger';
 
 type StudioBuilderDocument = ReturnType<typeof createBuilderDocument>;
 
@@ -50,7 +51,7 @@ export default function BuilderStudio(): ReactElement {
         setDocuments(docs);
       }
     } catch (err) {
-      console.error('Failed to load documents:', err);
+      studioLogger.error('Failed to load documents', { error: err });
     }
   };
 
@@ -59,7 +60,7 @@ export default function BuilderStudio(): ReactElement {
       localStorage.setItem('builder-studio-documents', JSON.stringify(docs));
       setDocuments(docs);
     } catch (err) {
-      console.error('Failed to save documents:', err);
+      studioLogger.error('Failed to save documents', { error: err });
       setError('Failed to save documents');
     }
   };
@@ -91,7 +92,7 @@ export default function BuilderStudio(): ReactElement {
       saveDocuments([...documents, newListItem]);
       setSelectedDocument(newListItem);
     } catch (err) {
-      console.error('Failed to create document:', err);
+      studioLogger.error('Failed to create document', { error: err });
       setError('Failed to create document');
     } finally {
       setIsLoading(false);
@@ -122,7 +123,7 @@ export default function BuilderStudio(): ReactElement {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Failed to export document:', err);
+      studioLogger.error('Failed to export document', { error: err });
       setError('Failed to export document');
     }
   };
@@ -151,7 +152,7 @@ export default function BuilderStudio(): ReactElement {
 
         saveDocuments([...documents, importedDoc]);
       } catch (err) {
-        console.error('Failed to import document:', err);
+        studioLogger.error('Failed to import document', { error: err });
         setError('Failed to import document');
       }
     };

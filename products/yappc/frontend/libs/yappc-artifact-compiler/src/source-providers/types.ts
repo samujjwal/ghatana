@@ -15,6 +15,28 @@ import type { SnapshotRef } from '../graph/types';
 import { SnapshotRefSchema } from '../graph/types';
 
 // ============================================================================
+// Provider Diagnostic
+// ============================================================================
+
+/**
+ * Provider diagnostic event for observability and debugging.
+ * Includes structured information without exposing secrets.
+ */
+export const ProviderDiagnosticSchema = z.object({
+  level: z.enum(['info', 'warning', 'error']),
+  code: z.string().optional(),
+  message: z.string(),
+  /** Timestamp of the diagnostic event */
+  timestamp: z.string().datetime(),
+  /** Related file or resource path (sanitized) */
+  resourcePath: z.string().optional(),
+  /** Provider-specific metadata (never includes credentials) */
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type ProviderDiagnostic = z.infer<typeof ProviderDiagnosticSchema>;
+
+// ============================================================================
 // Repository Snapshot — virtual file tree returned by a provider
 // ============================================================================
 
@@ -40,6 +62,11 @@ export const RepositorySnapshotSchema = z.object({
   snapshotAt: z.string().datetime(),
   /** True when the snapshot is a shallow clone (commit history may be absent). */
   shallow: z.boolean().default(false),
+  /**
+   * Provider-specific diagnostics (warnings, errors, skipped files, etc.).
+   * Useful for observability and debugging.
+   */
+  diagnostics: z.array(ProviderDiagnosticSchema).default([]),
 });
 
 export type RepositorySnapshot = z.infer<typeof RepositorySnapshotSchema>;
@@ -52,6 +79,118 @@ export interface ProviderCredentials {
   readonly token?: string;
   readonly username?: string;
   readonly password?: string;
+  /**
+   * Reference to stored credential (e.g., from a secrets manager).
+   * When present, the provider should resolve the actual credentials from this reference.
+   */
+  readonly credentialRef?: string;
+}
+
+// ============================================================================
+// Source Locator Schema
+// ============================================================================
+
+/**
+ * Typed source locator for governed source acquisition.
+ * Replaces raw string locators with a validated, typed structure.
+ */
+export const SourceLocatorSchema = z.object({
+  /** Provider type (must match SnapshotRef.provider) */
+  provider: z.enum(['local-folder', 'github', 'gitlab', 'zip', 'artifact-registry']),
+  /** Repository or archive identifier */
+  repoId: z.string().min(1),
+  /** Commit SHA, branch, or tag reference */
+  ref: z.string().optional(),
+  /** Specific path within the repo/archive (optional) */
+  path: z.string().optional(),
+  /** Reference to stored credential (never raw token) */
+  credentialRef: z.string().optional(),
+});
+
+export type SourceLocator = z.infer<typeof SourceLocatorSchema>;
+
+/**
+ * Parse a string locator into a typed SourceLocator.
+ * Supports formats:
+ *   - "owner/repo" -> { provider: 'github', repoId: 'owner/repo' }
+ *   - "owner/repo@branch" -> { provider: 'github', repoId: 'owner/repo', ref: 'branch' }
+ *   - "/absolute/path" -> { provider: 'local-folder', repoId: '/absolute/path' }
+ *   - "https://github.com/owner/repo" -> { provider: 'github', repoId: 'owner/repo' }
+ */
+export function parseSourceLocator(locator: string): SourceLocator {
+  // GitHub URL
+  const githubMatch = /github\.com\/([^/]+)\/([^/?#]+)(?:\/tree\/([^/?#]+))?/.exec(locator);
+  if (githubMatch) {
+    return {
+      provider: 'github',
+      repoId: `${githubMatch[1]}/${githubMatch[2]!.replace(/\.git$/, '')}`,
+      ref: githubMatch[3],
+    };
+  }
+
+  // GitLab URL
+  const gitlabMatch = /gitlab\.com\/([^/]+)\/([^/?#]+)(?:\/-\/tree\/([^/?#]+))?/.exec(locator);
+  if (gitlabMatch) {
+    return {
+      provider: 'gitlab',
+      repoId: `${gitlabMatch[1]}/${gitlabMatch[2]!.replace(/\.git$/, '')}`,
+      ref: gitlabMatch[3],
+    };
+  }
+
+  // Slug format: "owner/repo" or "owner/repo@ref"
+  const slugMatch = /^([\w.-]+)\/([\w.-]+)(?:@(.+))?$/.exec(locator);
+  if (slugMatch) {
+    // Default to github for slug format (can be overridden)
+    return {
+      provider: 'github',
+      repoId: `${slugMatch[1]}/${slugMatch[2]}`,
+      ref: slugMatch[3],
+    };
+  }
+
+  // Absolute/relative path
+  if (locator.startsWith('/') || locator.startsWith('./') || locator.startsWith('../')) {
+    return {
+      provider: 'local-folder',
+      repoId: locator,
+    };
+  }
+
+  // ZIP file
+  if (locator.toLowerCase().endsWith('.zip')) {
+    return {
+      provider: 'zip',
+      repoId: locator,
+    };
+  }
+
+  // Fallback: treat as local folder
+  return {
+    provider: 'local-folder',
+    repoId: locator,
+  };
+}
+
+// ============================================================================
+// Source Scope Context
+// ============================================================================
+
+/**
+ * Scope context for multi-tenant source acquisition.
+ * Ensures source operations are properly scoped and authorized.
+ */
+export interface SourceScopeContext {
+  /** Tenant identifier */
+  tenantId: string;
+  /** Workspace identifier (optional) */
+  workspaceId?: string;
+  /** Project identifier (optional) */
+  projectId?: string;
+  /** User principal who initiated the operation */
+  principalId: string;
+  /** Timestamp when the scope was granted */
+  grantedAt: string;
 }
 
 export interface SourceProviderOptions {

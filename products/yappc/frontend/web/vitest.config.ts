@@ -57,6 +57,10 @@ export default defineConfig({
         ),
       },
       {
+        find: '@ghatana/i18n',
+        replacement: resolve(__dirname, '../../../../platform/typescript/i18n/src/index.ts'),
+      },
+      {
         find: '@ghatana/ds-schema',
         replacement: resolve(
           __dirname,
@@ -171,6 +175,10 @@ export default defineConfig({
       {
         find: '@sentry/react',
         replacement: resolve(__dirname, 'src/__mocks__/@sentry/react.ts'),
+      },
+      {
+        find: 'form-data',
+        replacement: resolve(__dirname, 'src/shims/form-data.ts'),
       },
     ],
   },

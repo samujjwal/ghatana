@@ -1,31 +1,33 @@
 # @yappc/artifact-compiler
 
-Bidirectional artifact-to-model pipeline for Ghatana. Decompiles arbitrary codebases into governed product models and enables round-trip code generation.
+Forward-only artifact-to-model pipeline for Ghatana. Decompiles codebases into governed product models with provenance tracking and confidence scoring.
 
 ## Architecture
 
-The artifact compiler follows the 5-phase pipeline from the Artifact Decompilation Report:
+The artifact compiler implements a forward-only decompilation pipeline:
 
 ```
 existing artifacts → extractors → ArtifactGraph
 ArtifactGraph → semantic synthesis → SemanticProductModel
-SemanticProductModel → builder/design-system/runtime projections
-projections → generated code/artifacts
-regeneration and re-import both attach provenance, confidence, and residual loss markers
 ```
+
+**Current Status**: The forward decompilation pipeline (scan → extract → graph → model) is implemented. The compile-back round-trip (model → generated code) with patch lifecycle, validation, and rollback is implemented.
 
 ## Modules
 
-| Module | Purpose |
-|--------|---------|
-| `inventory` | Repository-wide file scanning, classification, and eligibility |
-| `graph` | ArtifactGraph data model - the "reverse compiler IR" |
-| `model` | SemanticProductModel - normalized product-facing models |
-| `provenance` | Confidence scoring, provenance tracking, security/privacy flags |
-| `residual` | Residual islands for unmodelable artifacts |
-| `extractors` | Language-specific extractors (TypeScript, Storybook, Prisma) |
-| `synthesis` | Graph-to-model synthesis pipeline |
-| `merge` | Round-trip merge engine for semantic diff |
+| Module | Purpose | Status |
+|--------|---------|--------|
+| `inventory` | Repository-wide file scanning, classification, and eligibility | ✅ Implemented |
+| `graph` | ArtifactGraph data model - the "reverse compiler IR" | ✅ Implemented |
+| `model` | SemanticProductModel - normalized product-facing models | ✅ Implemented |
+| `provenance` | Confidence scoring, provenance tracking, security/privacy flags | ✅ Implemented |
+| `residual` | Residual islands for unmodelable artifacts | ✅ Implemented |
+| `extractors` | Language-specific extractors (TypeScript, Storybook, Prisma) | ✅ Implemented |
+| `synthesis` | Graph-to-model synthesis pipeline | ✅ Implemented |
+| `merge` | Round-trip merge engine for semantic diff | ✅ Implemented |
+| `source-providers` | GitHub, GitLab, ZIP, local folder source acquisition | ✅ Implemented |
+| `compile-back` | Model-to-code generation with patch lifecycle, validation, rollback | ✅ Implemented |
+| `capabilities` | Runtime capability discovery registry for providers/extractors/emitters/validators | ✅ Implemented |
 
 ## Extractors
 
@@ -54,13 +56,19 @@ regeneration and re-import both attach provenance, confidence, and residual loss
 
 ```typescript
 import { scanRepository } from '@yappc/artifact-compiler/inventory';
-import { extractComponentsFromSource } from '@yappc/artifact-compiler/extractors';
+import { SynthesisPipeline, defaultExtractorRegistry } from '@yappc/artifact-compiler/synthesis';
 
 // Scan repository
 const inventory = await scanRepository({ rootPath: '/path/to/repo' });
 
-// Extract components from a TSX file
-const components = extractComponentsFromSource(sourceCode, 'Button.tsx');
+// Run full synthesis pipeline
+const pipeline = new SynthesisPipeline({
+  extractors: defaultExtractorRegistry.getAll(),
+  residualConfidenceThreshold: 0.5,
+});
+
+const result = await pipeline.runFromLocalPath('/path/to/repo');
+console.log(`Extracted ${result.stats.extractedNodes} nodes, ${result.stats.modelElementsGenerated} model elements`);
 ```
 
 ## Key Design Decisions
@@ -68,8 +76,9 @@ const components = extractComponentsFromSource(sourceCode, 'Button.tsx');
 1. **No external service dependencies** - All extraction operates on local source files only
 2. **TypeScript Compiler API for TS/TSX** - Not regex, not Babel - real AST with type awareness
 3. **Confidence-graded extraction** - Every model element carries confidence and provenance
-4. **Residual islands** - Unmodelable code is preserved, not silently dropped
+4. **Residual islands** - Unmodelable code is preserved with risk assessment, not silently dropped
 5. **Self-contained open source** - Only MIT/Apache/BSD dependencies, no proprietary tools
+6. **Full bidirectional pipeline** - Both decompilation (artifacts → model) and compile-back (model → code) are implemented with patch lifecycle, validation, and rollback support
 
 ## Standards Compliance
 

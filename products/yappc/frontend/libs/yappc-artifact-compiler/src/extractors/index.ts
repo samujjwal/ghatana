@@ -11,6 +11,16 @@ export type {
   ExtractionContext,
 } from './types';
 
+// Extractor registry
+export {
+  ExtractorRegistry,
+  defaultExtractorRegistry,
+} from './extractor-registry';
+
+export type {
+  ExtractorCapabilities,
+} from './extractor-registry';
+
 // TypeScript component extractor
 export {
   EXTRACTOR_ID as TS_COMPONENT_EXTRACTOR_ID,

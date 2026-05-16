@@ -441,6 +441,437 @@ describe('ProductLifecyclePlanner', () => {
       'Invalid YAML',
     );
 
+    const missingSurfacesRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+        '    mode: sequential',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(missingSurfacesRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'Expected object property "surfaces"',
+    );
+
+    const invalidSurfaceEntryRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web: []',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidSurfaceEntryRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare surfaces.web as an object',
+    );
+
+    const invalidSurfaceAdapterRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: ""',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidSurfaceAdapterRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare surfaces.web.adapter as a non-empty string',
+    );
+
+    const invalidPhaseModeRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+        '    mode: random',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidPhaseModeRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare phases.test.mode as one of sequential|parallel|dag',
+    );
+
+    const invalidPhaseDefaultSurfacesRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: web',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidPhaseDefaultSurfacesRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare phases.test.defaultSurfaces as a non-empty string array',
+    );
+
+    const invalidPackageEntryRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  package:',
+        '    defaultSurfaces: [web]',
+        'package:',
+        '  web: []',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidPackageEntryRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare package.web as an object',
+    );
+
+    const invalidPackageAdapterRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  package:',
+        '    defaultSurfaces: [web]',
+        'package:',
+        '  web:',
+        '    adapter: ""',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidPackageAdapterRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare package.web.adapter as a non-empty string',
+    );
+
+    const invalidDeploymentEntryRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  deploy:',
+        '    defaultEnvironment: local',
+        'deployment:',
+        '  local: []',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidDeploymentEntryRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare deployment.local as an object',
+    );
+
+    const invalidDeploymentAdapterRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  deploy:',
+        '    defaultEnvironment: local',
+        'deployment:',
+        '  local:',
+        '    adapter: ""',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidDeploymentAdapterRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare deployment.local.adapter as a non-empty string',
+    );
+
+    const invalidRequiredManifestsRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'requiredManifests:',
+        '  test: [not-a-manifest-type]',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidRequiredManifestsRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare requiredManifests.test as an array of valid manifest types',
+    );
+
+    const invalidPluginsRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'plugins:',
+        '  audit: []',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidPluginsRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare plugins.audit as an object',
+    );
+
+    const invalidEnvironmentsRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'environments:',
+        '  prod:',
+        '    approvalRequired: yes',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidEnvironmentsRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare environments.prod.approvalRequired as a boolean',
+    );
+
+    const invalidApprovalsRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'approvals:',
+        '  deploy:',
+        '    - action: ""',
+        '      riskLevel: medium',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  deploy:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidApprovalsRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare approvals.deploy.action as a non-empty string',
+    );
+
+    const invalidGatesRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'gates:',
+        '  test: gate-security',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  test:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidGatesRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare gates.test as a non-empty string array',
+    );
+
+    const invalidArtifactsRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'artifacts:',
+        '  build:',
+        '    web: []',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  build:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidArtifactsRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare artifacts.build.web as an object',
+    );
+
+    const invalidArtifactTypeRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'artifacts:',
+        '  build:',
+        '    web:',
+        '      type: ""',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  build:',
+        '    defaultSurfaces: [web]',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidArtifactTypeRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare artifacts.build.web.type as a non-empty string',
+    );
+
+    const invalidVerifyEntryRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'verify:',
+        '  local: []',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  verify:',
+        '    defaultEnvironment: local',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidVerifyEntryRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare verify.local as an object',
+    );
+
+    const invalidVerifyHealthChecksRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'verify:',
+        '  local:',
+        '    adapter: compose-local',
+        '    healthChecks: []',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  verify:',
+        '    defaultEnvironment: local',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidVerifyHealthChecksRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare verify.local.healthChecks as an object',
+    );
+
+    const invalidVerifyHttpHealthCheckRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'verify:',
+        '  local:',
+        '    adapter: compose-local',
+        '    healthChecks:',
+        '      api:',
+        '        type: http',
+        '        retries: 2',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  verify:',
+        '    defaultEnvironment: local',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidVerifyHttpHealthCheckRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare verify.local.healthChecks.api.url or verify.local.healthChecks.api.host for http checks',
+    );
+
+    const invalidVerifyTcpHealthCheckRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'verify:',
+        '  local:',
+        '    adapter: compose-local',
+        '    healthChecks:',
+        '      worker:',
+        '        type: tcp',
+        '        host: localhost',
+        '        port: 70000',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  verify:',
+        '    defaultEnvironment: local',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidVerifyTcpHealthCheckRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare verify.local.healthChecks.worker.port as an integer between 1 and 65535',
+    );
+
+    const invalidVerifyTimeoutRepoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'verify:',
+        '  local:',
+        '    adapter: compose-local',
+        '    healthChecks:',
+        '      api:',
+        '        type: http',
+        '        url: http://localhost:8080/health',
+        '        timeoutMs: 0',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        'phases:',
+        '  verify:',
+        '    defaultEnvironment: local',
+      ],
+    });
+    await expect(new ProductLifecyclePlanner(invalidVerifyTimeoutRepoRoot).loadProductConfig('shape-product')).rejects.toThrow(
+      'must declare verify.local.healthChecks.api.timeoutMs as a positive integer',
+    );
+
     const invalidProfileShapeRepoRoot = await createPlannerFixtureRepo({
       profiles: {
         'shape-only-profile': {
@@ -456,6 +887,40 @@ describe('ProductLifecyclePlanner', () => {
       'must declare defaultSurfaces.test as a non-empty string array',
     );
 
+    const invalidRequiredGatesProfileRepoRoot = await createPlannerFixtureRepo({
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: {
+            test: ['web'],
+          },
+          requiredGates: {
+            test: 'security-scan',
+          },
+          defaultAdapters: {},
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidRequiredGatesProfileRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare requiredGates.test as a non-empty string array',
+    );
+
+    const invalidDefaultAdaptersProfileRepoRoot = await createPlannerFixtureRepo({
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: {
+            test: ['web'],
+          },
+          requiredGates: {},
+          defaultAdapters: {
+            web: ['pnpm-vite-react'],
+          },
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidDefaultAdaptersProfileRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare defaultAdapters.web as a non-empty string',
+    );
+
     const invalidToolchainShapeRepoRoot = await createPlannerFixtureRepo({
       adapters: {
         vitest: {
@@ -468,6 +933,38 @@ describe('ProductLifecyclePlanner', () => {
     });
     await expect(new ProductLifecyclePlanner(invalidToolchainShapeRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
       'must declare supportedPhases as a non-empty string array',
+    );
+
+    const invalidToolchainReadinessRepoRoot = await createPlannerFixtureRepo({
+      adapters: {
+        vitest: {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['test'],
+          status: 'implemented',
+          safeForDefault: true,
+          lifecycleEnabled: true,
+          readiness: 'invalid-readiness',
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidToolchainReadinessRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare readiness as one of execution-ready|production-ready|planning-only|declared-only',
+    );
+
+    const invalidToolchainLifecycleEnabledRepoRoot = await createPlannerFixtureRepo({
+      adapters: {
+        vitest: {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['test'],
+          status: 'implemented',
+          safeForDefault: true,
+          lifecycleEnabled: 'yes',
+          readiness: 'execution-ready',
+        } as unknown as Record<string, unknown>,
+      },
+    });
+    await expect(new ProductLifecyclePlanner(invalidToolchainLifecycleEnabledRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
+      'must declare lifecycleEnabled as a boolean',
     );
   });
 
@@ -697,6 +1194,12 @@ describe('ProductLifecyclePlanner', () => {
         kernelProductYamlLines: [
           'productId: shape-product',
           'lifecycleProfile: shape-only-profile',
+          'surfaces:',
+          '  backend-api:',
+          '    type: backend-api',
+          '    adapter: compose-local',
+          '    path: products/shape-product/backend-api',
+          '    implementationStatus: implemented',
           'phases:',
           '  deploy:',
           '    defaultEnvironment: local',
@@ -922,14 +1425,17 @@ async function createPlannerFixtureRepo(options: PlannerFixtureOptions = {}): Pr
     JSON.stringify(
       {
         adapters: {
-          ...(options.adapters ?? {
-            vitest: {
-            supportedSurfaceTypes: ['web'],
-            supportedPhases: ['test'],
-            status: 'partial',
-            safeForDefault: false,
+          ...normalizeFixtureAdapters(
+            options.adapters ?? {
+              vitest: {
+                supportedSurfaceTypes: ['web'],
+                supportedPhases: ['test'],
+                status: 'partial',
+                safeForDefault: false,
+                lifecycleEnabled: false,
+              },
             },
-          }),
+          ),
         },
       },
       null,
@@ -961,6 +1467,20 @@ async function createPlannerFixtureRepo(options: PlannerFixtureOptions = {}): Pr
     ]).join('\n'),
   );
   return repoRoot;
+}
+
+function normalizeFixtureAdapters(
+  adapters: Record<string, Record<string, unknown>>,
+): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    Object.entries(adapters).map(([adapterId, adapterConfig]) => [
+      adapterId,
+      {
+        lifecycleEnabled: true,
+        ...adapterConfig,
+      },
+    ]),
+  );
 }
 
 describe('SurfaceSelector', () => {

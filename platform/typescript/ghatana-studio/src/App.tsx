@@ -28,22 +28,14 @@ import {
   type StudioRouteStatus,
 } from './navigation/studioNavigation';
 import { useStudioTranslation } from './i18n/studioTranslations';
+import { STUDIO_ENVIRONMENT_CONFIG } from './config/studioEnvironment';
+import { studioLogger } from './logging/studioLogger';
 
 interface RouteShellProps {
   readonly title: string;
   readonly description: string;
   readonly status: StudioRouteStatus;
 }
-
-interface StudioEnvironmentConfig {
-  readonly version: string;
-  readonly docsUrl: string;
-}
-
-const STUDIO_ENVIRONMENT_CONFIG: StudioEnvironmentConfig = {
-  version: readStudioEnvironment('VITE_STUDIO_VERSION', 'dev'),
-  docsUrl: readStudioEnvironment('VITE_STUDIO_DOCS_URL', 'https://docs.ghatana.dev'),
-};
 
 function Sidebar(): ReactElement {
   const location = useLocation();
@@ -167,17 +159,6 @@ function logStudioError(errorContext: { readonly error: Error }): void {
     message: errorContext.error.message,
     stack: errorContext.error.stack,
   });
-}
-
-const studioLogger = {
-  error(message: string, meta: Record<string, unknown>): void {
-    console.error(message, meta);
-  },
-};
-
-function readStudioEnvironment(name: string, fallback: string): string {
-  const value = (import.meta as ImportMeta & { readonly env?: Record<string, unknown> }).env?.[name];
-  return typeof value === 'string' && value.trim().length > 0 ? value : fallback;
 }
 
 export default function App(): ReactElement {

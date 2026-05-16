@@ -177,6 +177,7 @@ export class LocalFolderProvider implements SourceProvider {
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
+      diagnostics: [],
     };
   }
 }

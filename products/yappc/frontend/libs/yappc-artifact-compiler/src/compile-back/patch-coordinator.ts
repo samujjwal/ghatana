@@ -7,7 +7,18 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { ChangeOp, PatchEmitter, TextPatch, PatchSet, PatchContext } from './types';
+import type {
+  ChangeOp,
+  PatchEmitter,
+  TextPatch,
+  PatchSet,
+  PatchContext,
+  ChangePlan,
+  FilePatch,
+  ValidationResult,
+  ReviewBundle,
+  RollbackMetadata,
+} from './types';
 import type { SemanticModelElement } from '../model/types';
 import type { ResidualIsland } from '../residual/types';
 import { ReactPatchEmitter } from './react-patch-emitter';
@@ -36,7 +47,7 @@ export class PatchCoordinator {
   }
 
   /**
-   * Compile ChangeOps into a PatchSet.
+   * Compile ChangeOps into a PatchSet with validation.
    * Residual islands are preserved and not patched.
    */
   async buildPatchSet(
@@ -113,6 +124,133 @@ export class PatchCoordinator {
         requiresReview: reviewRequiredPatchIds.length,
         preservedResiduals: preservedResidualIds.length,
       },
+    };
+  }
+
+  /**
+   * Validate a change plan for structural integrity and residual overlaps.
+   */
+  async validateChangePlan(
+    changePlan: ChangePlan,
+    elementMap: ReadonlyMap<string, SemanticModelElement>,
+    residuals: ReadonlyMap<string, ResidualIsland>,
+  ): Promise<ValidationResult> {
+    const errors: Array<{ code: string; message: string; severity: 'error' | 'warning'; filePath?: string; changeId?: string }> = [];
+    const warnings: Array<{ code: string; message: string; filePath?: string; changeId?: string }> = [];
+
+    for (const change of changePlan.changes) {
+      const element = elementMap.get(change.elementId);
+      if (!element) {
+        errors.push({
+          code: 'ELEMENT_NOT_FOUND',
+          message: `Element ${change.elementId} not found in element map`,
+          severity: 'error',
+          changeId: change.id,
+        });
+        continue;
+      }
+
+      // Check for residual overlap
+      if (residuals.has(change.elementId)) {
+        errors.push({
+          code: 'RESIDUAL_OVERLAP',
+          message: `Change overlaps with residual island ${change.elementId}`,
+          severity: 'error',
+          changeId: change.id,
+        });
+      }
+
+      // Check confidence threshold
+      if (change.autoApplyConfidence < this.autoApplyThreshold) {
+        warnings.push({
+          code: 'LOW_CONFIDENCE',
+          message: `Change has low auto-apply confidence (${change.autoApplyConfidence.toFixed(2)})`,
+          changeId: change.id,
+        });
+      }
+    }
+
+    return {
+      id: randomUUID(),
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      validatedAt: new Date().toISOString(),
+      validatorId: 'patch-coordinator',
+    };
+  }
+
+  /**
+   * Build a review bundle containing changes, patches, and validation results.
+   */
+  async buildReviewBundle(
+    changePlan: ChangePlan,
+    patchSet: PatchSet,
+    validation: ValidationResult,
+    residuals: ReadonlyMap<string, ResidualIsland>,
+    elementMap: ReadonlyMap<string, SemanticModelElement>,
+  ): Promise<ReviewBundle> {
+    const residualOverlaps: Array<{ residualId: string; changeId: string; filePath: string; reason: string }> = [];
+
+    // Detect residual overlaps
+    for (const change of changePlan.changes) {
+      const residual = residuals.get(change.elementId);
+      if (residual) {
+        const element = elementMap.get(change.elementId);
+        const filePath = element?.provenance.sourcePaths[0] ?? residual.sourceLocation.filePath;
+        residualOverlaps.push({
+          residualId: residual.id,
+          changeId: change.id,
+          filePath,
+          reason: `Change to element ${change.elementId} overlaps with residual island`,
+        });
+      }
+    }
+
+    // Convert TextPatch to FilePatch for review bundle
+    const filePatches: FilePatch[] = patchSet.patches.map(patch => ({
+      id: randomUUID(),
+      filePath: patch.relativePath,
+      diff: patch.diff,
+      sourceChangeId: patch.sourceChangeOpId,
+      isAtomic: patch.isAtomic,
+      canAutoApply: !patchSet.reviewRequiredPatches.includes(patch.sourceChangeOpId),
+    }));
+
+    return {
+      id: randomUUID(),
+      changePlanId: changePlan.id,
+      changes: changePlan.changes,
+      patches: filePatches,
+      validation,
+      residualOverlaps,
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+    };
+  }
+
+  /**
+   * Create rollback metadata for reverting applied changes.
+   * This records the original change plan and the rollback change plan for audit trails.
+   */
+  async createRollbackMetadata(
+    originalChangePlanId: string,
+    originalPatchSetId: string,
+    rollbackChangePlanId: string,
+    rollbackPatchSetId: string,
+    reason: string,
+    rolledBackBy?: string,
+  ): Promise<RollbackMetadata> {
+    return {
+      id: randomUUID(),
+      originalChangePlanId,
+      originalPatchSetId,
+      rollbackChangePlanId,
+      rollbackPatchSetId,
+      rolledBackBy,
+      rolledBackAt: new Date().toISOString(),
+      reason,
+      success: false, // Will be updated after rollback attempt
     };
   }
 }

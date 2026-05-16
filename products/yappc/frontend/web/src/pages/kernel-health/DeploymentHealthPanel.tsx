@@ -6,17 +6,17 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Server, Clock, RotateCcw } from 'lucide-react';
 
-interface HealthCheck {
+export interface HealthCheck {
   name: string;
   status: 'pass' | 'fail' | 'pending';
   lastChecked: string;
 }
 
-interface Deployment {
+export interface Deployment {
   id: string;
   status: 'deployed' | 'failed' | 'pending' | 'rolling_back' | 'not_deployed';
   target: string;

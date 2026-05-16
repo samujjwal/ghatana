@@ -8,6 +8,7 @@ export {
   ArtifactFrameworkSchema,
   ImportExportSummarySchema,
   ExtractorEligibilitySchema,
+  SkippedArtifactSchema,
   ArtifactRecordSchema,
   ArtifactInventorySchema,
 } from "./types";
@@ -18,6 +19,13 @@ export type {
   ArtifactFramework,
   ImportExportSummary,
   ExtractorEligibility,
+  SkippedArtifact,
   ArtifactRecord,
   ArtifactInventory,
 } from "./types";
+
+export {
+  scanRepository,
+  type ScannerConfig,
+  DEFAULT_SCANNER_CONFIG,
+} from "./scanner";

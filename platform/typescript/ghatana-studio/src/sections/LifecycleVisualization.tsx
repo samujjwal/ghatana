@@ -12,6 +12,7 @@
 import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { studioLogger } from '../logging/studioLogger';
 
 type KernelLifecycleEventType =
   | 'lifecycle.phase.started'
@@ -65,7 +66,7 @@ export default function LifecycleVisualization(): ReactElement {
         setSessions(sessions);
       }
     } catch (err) {
-      console.error('Failed to load lifecycle events:', err);
+      studioLogger.error('Failed to load lifecycle events', { error: err });
     }
   };
 
@@ -126,7 +127,7 @@ export default function LifecycleVisualization(): ReactElement {
       setSelectedSession(newSession);
       localStorage.setItem('lifecycle-sessions', JSON.stringify([newSession]));
     } catch (err) {
-      console.error('Failed to refresh lifecycle events:', err);
+      studioLogger.error('Failed to refresh lifecycle events', { error: err });
       setError('Failed to refresh lifecycle events');
     } finally {
       setIsLoading(false);
