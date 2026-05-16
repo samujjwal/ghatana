@@ -42,6 +42,58 @@ export interface ArtifactFingerprint {
 }
 
 /**
+ * Artifact trust state — indicates the verification status of a produced artifact.
+ */
+export type ArtifactTrustState =
+  | 'unverified'
+  | 'verified'
+  | 'signed'
+  | 'attested'
+  | 'policy-compliant'
+  | 'policy-rejected';
+
+/**
+ * Artifact signature — a cryptographic signature or signed reference for an artifact.
+ */
+export interface ArtifactSignature {
+  readonly algorithm: 'cosign' | 'gpg' | 'sigstore' | 'custom';
+  readonly keyId?: string;
+  readonly signedAt: string;
+  readonly sigRef?: string;
+  readonly verifiedAt?: string;
+}
+
+/**
+ * Reference to a Software Bill of Materials (SBOM) associated with an artifact.
+ */
+export interface ArtifactSbomRef {
+  readonly format: 'cyclonedx' | 'spdx' | 'custom';
+  readonly version: string;
+  readonly ref: string;
+  readonly generatedAt: string;
+}
+
+/**
+ * Artifact attestation — an in-toto or custom attestation produced for an artifact.
+ */
+export interface ArtifactAttestation {
+  readonly predicateType: string;
+  readonly ref: string;
+  readonly attestedAt: string;
+  readonly attestedBy?: string;
+}
+
+/**
+ * Artifact retention policy — how long this artifact must be retained and where.
+ */
+export interface ArtifactRetentionPolicy {
+  readonly retainUntil?: string;
+  readonly storageClass?: 'hot' | 'cold' | 'archive';
+  readonly deleteAfterDays?: number;
+  readonly reason?: string;
+}
+
+/**
  * Artifact metadata
  */
 export interface ArtifactMetadata {
@@ -55,6 +107,11 @@ export interface ArtifactMetadata {
   sizeBytes: number;
   artifactRef?: string;
   deploymentRefs?: ArtifactDeploymentLink[];
+  trustState?: ArtifactTrustState;
+  signature?: ArtifactSignature;
+  sbomRef?: ArtifactSbomRef;
+  attestation?: ArtifactAttestation;
+  retention?: ArtifactRetentionPolicy;
 }
 
 export interface ArtifactDeploymentLink {
@@ -74,6 +131,8 @@ export interface ArtifactEntry {
   fingerprint: ArtifactFingerprint;
   expected: boolean;
   found: boolean;
+  policyCompliant?: boolean;
+  policyViolations?: string[];
 }
 
 /**
@@ -122,6 +181,35 @@ const ArtifactDeploymentLinkSchema = z.object({
   promotedFromArtifactRef: z.string().min(1).optional(),
 });
 
+const ArtifactSignatureSchema = z.object({
+  algorithm: z.enum(['cosign', 'gpg', 'sigstore', 'custom']),
+  keyId: z.string().min(1).optional(),
+  signedAt: z.string().datetime({ offset: true }),
+  sigRef: z.string().min(1).optional(),
+  verifiedAt: z.string().datetime({ offset: true }).optional(),
+});
+
+const ArtifactSbomRefSchema = z.object({
+  format: z.enum(['cyclonedx', 'spdx', 'custom']),
+  version: z.string().min(1),
+  ref: z.string().min(1),
+  generatedAt: z.string().datetime({ offset: true }),
+});
+
+const ArtifactAttestationSchema = z.object({
+  predicateType: z.string().min(1),
+  ref: z.string().min(1),
+  attestedAt: z.string().datetime({ offset: true }),
+  attestedBy: z.string().min(1).optional(),
+});
+
+const ArtifactRetentionPolicySchema = z.object({
+  retainUntil: z.string().datetime({ offset: true }).optional(),
+  storageClass: z.enum(['hot', 'cold', 'archive']).optional(),
+  deleteAfterDays: z.number().int().positive().optional(),
+  reason: z.string().min(1).optional(),
+});
+
 export const ArtifactManifestSchema = z.object({
   schemaVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
   runId: z.string().min(1).optional(),
@@ -154,6 +242,11 @@ export const ArtifactManifestSchema = z.object({
         sizeBytes: z.number().int().nonnegative(),
         artifactRef: z.string().min(1).optional(),
         deploymentRefs: z.array(ArtifactDeploymentLinkSchema).optional(),
+        trustState: z.enum(['unverified', 'verified', 'signed', 'attested', 'policy-compliant', 'policy-rejected']).optional(),
+        signature: ArtifactSignatureSchema.optional(),
+        sbomRef: ArtifactSbomRefSchema.optional(),
+        attestation: ArtifactAttestationSchema.optional(),
+        retention: ArtifactRetentionPolicySchema.optional(),
       }),
       fingerprint: z.object({
         algorithm: z.enum(['sha256', 'sha512']),
@@ -161,6 +254,8 @@ export const ArtifactManifestSchema = z.object({
       }),
       expected: z.boolean(),
       found: z.boolean(),
+      policyCompliant: z.boolean().optional(),
+      policyViolations: z.array(z.string().min(1)).optional(),
     }),
   ),
 });

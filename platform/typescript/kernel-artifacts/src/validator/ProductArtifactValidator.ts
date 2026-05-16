@@ -3,8 +3,43 @@ import type {
   ArtifactFingerprint,
   ArtifactManifest,
   ArtifactPackaging,
+  ArtifactTrustState,
   ArtifactType,
 } from '../domain/ArtifactManifest.js';
+
+/**
+ * Policy rule for artifact trust enforcement.
+ */
+export interface ArtifactPolicyRule {
+  requireTrustState?: readonly ArtifactTrustState[];
+  requireSignature?: boolean;
+  requireSbom?: boolean;
+  requireAttestation?: boolean;
+  requireDigestForContainers?: boolean;
+  maxUnverifiedCount?: number;
+}
+
+/**
+ * Result of a policy evaluation over an artifact manifest.
+ */
+export interface ArtifactPolicyResult {
+  readonly compliant: boolean;
+  readonly violations: ArtifactPolicyViolation[];
+  readonly checkedCount: number;
+  readonly compliantCount: number;
+  readonly violatingArtifactIds: string[];
+}
+
+export interface ArtifactPolicyViolation {
+  readonly artifactId: string;
+  readonly reasonCode:
+    | 'trust-state-below-policy'
+    | 'signature-required'
+    | 'sbom-required'
+    | 'attestation-required'
+    | 'container-digest-required';
+  readonly message: string;
+}
 
 /**
  * Product artifact validator
@@ -149,6 +184,99 @@ export class ProductArtifactValidator {
     }
 
     return errors;
+  }
+
+  validateArtifactPolicy(
+    manifest: ArtifactManifest,
+    policy: ArtifactPolicyRule,
+  ): ArtifactPolicyResult {
+    const violations: ArtifactPolicyViolation[] = [];
+    const violatingIds = new Set<string>();
+    let compliantCount = 0;
+
+    const allowedTrustStates = policy.requireTrustState;
+    let unverifiedCount = 0;
+
+    for (const artifact of manifest.artifacts) {
+      const artifactViolations: ArtifactPolicyViolation[] = [];
+      const trustState = artifact.metadata.trustState ?? 'unverified';
+
+      if (trustState === 'unverified') {
+        unverifiedCount++;
+      }
+
+      if (allowedTrustStates !== undefined && allowedTrustStates.length > 0) {
+        if (!allowedTrustStates.includes(trustState)) {
+          artifactViolations.push({
+            artifactId: artifact.id,
+            reasonCode: 'trust-state-below-policy',
+            message: `Artifact '${artifact.id}' has trustState='${trustState}' but policy requires one of: ${allowedTrustStates.join(', ')}`,
+          });
+        }
+      }
+
+      if (policy.requireSignature === true && artifact.metadata.signature === undefined) {
+        artifactViolations.push({
+          artifactId: artifact.id,
+          reasonCode: 'signature-required',
+          message: `Artifact '${artifact.id}' is missing a required cryptographic signature`,
+        });
+      }
+
+      if (policy.requireSbom === true && artifact.metadata.sbomRef === undefined) {
+        artifactViolations.push({
+          artifactId: artifact.id,
+          reasonCode: 'sbom-required',
+          message: `Artifact '${artifact.id}' is missing a required SBOM reference`,
+        });
+      }
+
+      if (policy.requireAttestation === true && artifact.metadata.attestation === undefined) {
+        artifactViolations.push({
+          artifactId: artifact.id,
+          reasonCode: 'attestation-required',
+          message: `Artifact '${artifact.id}' is missing a required attestation`,
+        });
+      }
+
+      if (
+        policy.requireDigestForContainers === true &&
+        artifact.metadata.type === 'container-image'
+      ) {
+        const imageRef = artifact.metadata.artifactRef ?? artifact.path;
+        if (!imageRef.includes('@sha256:')) {
+          artifactViolations.push({
+            artifactId: artifact.id,
+            reasonCode: 'container-digest-required',
+            message: `Container artifact '${artifact.id}' must include a sha256 digest reference`,
+          });
+        }
+      }
+
+      if (artifactViolations.length > 0) {
+        violations.push(...artifactViolations);
+        violatingIds.add(artifact.id);
+      } else {
+        compliantCount++;
+      }
+    }
+
+    const maxUnverified = policy.maxUnverifiedCount;
+    if (maxUnverified !== undefined && unverifiedCount > maxUnverified) {
+      violations.push({
+        artifactId: '__manifest__',
+        reasonCode: 'trust-state-below-policy',
+        message: `Manifest has ${unverifiedCount} unverified artifacts but policy allows at most ${maxUnverified}`,
+      });
+    }
+
+    return {
+      compliant: violations.length === 0,
+      violations,
+      checkedCount: manifest.artifacts.length,
+      compliantCount,
+      violatingArtifactIds: [...violatingIds],
+    };
   }
 
   validateExpectedArtifacts(params: {

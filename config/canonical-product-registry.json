@@ -492,10 +492,7 @@
       },
       "environments": {
         "supported": [
-          "local",
-          "dev",
-          "staging",
-          "prod"
+          "local"
         ]
       }
     },

@@ -52,7 +52,11 @@ export type ProductUnitIntentApplicationReasonCode =
   | "runtime-truth-write-failed"
   | "provenance-write-failed"
   | "event-write-failed"
-  | "schema-invalid";
+  | "schema-invalid"
+  | "kernel-lifecycle-service-unavailable"
+  | "kernel-service-unreachable"
+  | "kernel-service-response-invalid"
+  | `kernel-service-http-${number}`;
 
 /**
  * Result of applying a ProductUnitIntent through the Kernel.

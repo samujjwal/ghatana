@@ -260,6 +260,172 @@ describe('ProductArtifactValidator', () => {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  describe('validateArtifactPolicy', () => {
+    it('returns compliant when manifest is empty', () => {
+      const result = validator.validateArtifactPolicy(createManifest([]), {
+        requireTrustState: ['verified', 'signed'],
+        requireSignature: true,
+      });
+
+      expect(result.compliant).toBe(true);
+      expect(result.violations).toHaveLength(0);
+      expect(result.checkedCount).toBe(0);
+      expect(result.compliantCount).toBe(0);
+    });
+
+    it('returns compliant when all artifacts satisfy trust-state policy', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'a', type: 'static-web-bundle', packaging: 'static-files', trustState: 'signed' }),
+        createArtifact({ id: 'b', type: 'node-service', packaging: 'npm', trustState: 'attested' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, {
+        requireTrustState: ['signed', 'attested', 'policy-compliant'],
+      });
+
+      expect(result.compliant).toBe(true);
+      expect(result.violatingArtifactIds).toHaveLength(0);
+      expect(result.compliantCount).toBe(2);
+    });
+
+    it('reports trust-state-below-policy for unverified artifacts when policy requires signed', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'a', type: 'static-web-bundle', packaging: 'static-files' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, {
+        requireTrustState: ['signed', 'attested'],
+      });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0].reasonCode).toBe('trust-state-below-policy');
+      expect(result.violations[0].artifactId).toBe('a');
+      expect(result.violatingArtifactIds).toContain('a');
+    });
+
+    it('reports signature-required when artifact has no signature and policy requires it', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'svc', type: 'jvm-service', packaging: 'jar' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireSignature: true });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0].reasonCode).toBe('signature-required');
+    });
+
+    it('passes signature check when artifact has a signature', () => {
+      const manifest = createManifest([
+        createArtifact({
+          id: 'svc',
+          type: 'jvm-service',
+          packaging: 'jar',
+          signature: { algorithm: 'cosign', signedAt: '2026-05-14T00:00:00.000Z' },
+        }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireSignature: true });
+
+      expect(result.compliant).toBe(true);
+    });
+
+    it('reports sbom-required when artifact has no sbomRef and policy requires it', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'svc', type: 'node-service', packaging: 'npm' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireSbom: true });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0].reasonCode).toBe('sbom-required');
+    });
+
+    it('reports attestation-required when artifact lacks attestation and policy requires it', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'svc', type: 'container-image', packaging: 'container' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireAttestation: true });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0].reasonCode).toBe('attestation-required');
+    });
+
+    it('reports container-digest-required for container image without sha256 digest', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'img', type: 'container-image', packaging: 'container', artifactRef: 'registry.io/app:latest' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireDigestForContainers: true });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations[0].reasonCode).toBe('container-digest-required');
+    });
+
+    it('passes container-digest check when sha256 digest is present in artifactRef', () => {
+      const manifest = createManifest([
+        createArtifact({
+          id: 'img',
+          type: 'container-image',
+          packaging: 'container',
+          artifactRef: 'registry.io/app@sha256:' + 'a'.repeat(64),
+        }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, { requireDigestForContainers: true });
+
+      expect(result.compliant).toBe(true);
+    });
+
+    it('enforces maxUnverifiedCount at manifest level', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'a', type: 'static-web-bundle', packaging: 'static-files' }),
+        createArtifact({ id: 'b', type: 'node-service', packaging: 'npm' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, {
+        maxUnverifiedCount: 1,
+      });
+
+      expect(result.compliant).toBe(false);
+      expect(result.violations.some((v: { artifactId: string }) => v.artifactId === '__manifest__')).toBe(true);
+    });
+
+    it('reports multiple violations from multiple rules for same artifact', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'svc', type: 'jvm-service', packaging: 'jar' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, {
+        requireSignature: true,
+        requireSbom: true,
+        requireAttestation: true,
+      });
+
+      expect(result.compliant).toBe(false);
+      const reasonCodes = result.violations.map((v: { reasonCode: string }) => v.reasonCode);
+      expect(reasonCodes).toContain('signature-required');
+      expect(reasonCodes).toContain('sbom-required');
+      expect(reasonCodes).toContain('attestation-required');
+    });
+
+    it('counts compliantCount and violatingArtifactIds correctly across mixed artifacts', () => {
+      const manifest = createManifest([
+        createArtifact({ id: 'ok', type: 'static-web-bundle', packaging: 'static-files', trustState: 'signed' }),
+        createArtifact({ id: 'bad', type: 'node-service', packaging: 'npm' }),
+      ]);
+
+      const result = validator.validateArtifactPolicy(manifest, {
+        requireTrustState: ['signed', 'attested'],
+      });
+
+      expect(result.compliant).toBe(false);
+      expect(result.compliantCount).toBe(1);
+      expect(result.violatingArtifactIds).toEqual(['bad']);
+      expect(result.checkedCount).toBe(2);
+    });
+  });
 });
 
 function createManifest(artifacts: ArtifactManifest['artifacts']): ArtifactManifest {
@@ -278,6 +444,10 @@ function createArtifact(params: {
   type: ArtifactManifest['artifacts'][number]['metadata']['type'];
   packaging: ArtifactManifest['artifacts'][number]['metadata']['packaging'];
   artifactRef?: string;
+  trustState?: ArtifactManifest['artifacts'][number]['metadata']['trustState'];
+  signature?: ArtifactManifest['artifacts'][number]['metadata']['signature'];
+  sbomRef?: ArtifactManifest['artifacts'][number]['metadata']['sbomRef'];
+  attestation?: ArtifactManifest['artifacts'][number]['metadata']['attestation'];
 }): ArtifactManifest['artifacts'][number] {
   return {
     id: params.id,
@@ -292,6 +462,10 @@ function createArtifact(params: {
       timestamp: new Date().toISOString(),
       sizeBytes: 1,
       ...(params.artifactRef !== undefined ? { artifactRef: params.artifactRef } : {}),
+      ...(params.trustState !== undefined ? { trustState: params.trustState } : {}),
+      ...(params.signature !== undefined ? { signature: params.signature } : {}),
+      ...(params.sbomRef !== undefined ? { sbomRef: params.sbomRef } : {}),
+      ...(params.attestation !== undefined ? { attestation: params.attestation } : {}),
     },
     fingerprint: {
       algorithm: 'sha256',

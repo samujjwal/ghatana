@@ -88,9 +88,10 @@ function checkProductDeploymentContracts(registry, deploymentTargets) {
     }
 
     const envFile = localDeployment.envFile;
+    const requireEnvFile = localDeployment.requireEnvFile !== false;
     if (typeof envFile !== 'string' || envFile.length === 0) {
       warnings.push(`Product ${productId}: deployment.local.envFile is not declared`);
-    } else if (!existsSync(join(repoRoot, envFile))) {
+    } else if (requireEnvFile && !existsSync(join(repoRoot, envFile))) {
       warnings.push(`Product ${productId}: env file ${envFile} is not present locally`);
     }
 

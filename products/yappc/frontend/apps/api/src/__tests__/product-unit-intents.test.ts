@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import productUnitIntentRoutes from '../routes/product-unit-intents';
 import type { ProductUnitIntent } from '@ghatana/kernel-product-contracts';
 
@@ -7,11 +7,15 @@ describe('product-unit-intent routes', () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
+    delete process.env.KERNEL_LIFECYCLE_BASE_URL;
+    delete process.env.KERNEL_LIFECYCLE_AUTH_TOKEN;
+    process.env.DATACLOUD_AUTH_TOKEN = 'datacloud-token';
     app = Fastify();
     await app.register(productUnitIntentRoutes, { prefix: '/api/v1' });
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     await app.close();
   });
 
@@ -131,6 +135,27 @@ describe('product-unit-intent routes', () => {
   });
 
   it('queues apply when explicit permission is present', async () => {
+    process.env.KERNEL_LIFECYCLE_BASE_URL = 'https://kernel.example';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        schemaVersion: '1.0.0',
+        intentId: 'intent-1',
+        status: 'applied',
+        productUnitId: 'external-demo',
+        providerMode: 'bootstrap',
+        registryProviderId: 'ghatana-file-registry',
+        sourceProviderId: 'github',
+        lifecycleEventRefs: ['kernel://event/1'],
+        provenanceRefs: ['evidence://artifact-intelligence'],
+        runtimeTruthRefs: ['kernel://runtime/1'],
+        blockedReasons: [],
+        errors: [],
+        correlationId: 'corr-apply',
+      }),
+    } as Response);
+
     const response = await app.inject({
       method: 'POST',
       url: '/api/v1/yappc/product-unit-intents',
@@ -178,8 +203,7 @@ describe('product-unit-intent routes', () => {
   });
 
   it('rejects platform mode when Data Cloud provider client is not configured', async () => {
-    // Set DATACLOUD_AUTH_TOKEN to undefined to simulate missing client
-    process.env.DATACLOUD_AUTH_TOKEN = undefined;
+    delete process.env.DATACLOUD_AUTH_TOKEN;
     
     const response = await app.inject({
       method: 'POST',
@@ -236,9 +260,131 @@ describe('product-unit-intent routes', () => {
   });
 
   it('marks result providerMode as platform in platform mode', async () => {
-    // This test would require mocking the Data Cloud provider client
-    // For now, we'll skip it as it requires external dependencies
-    // In a real scenario, this would test that platform mode returns providerMode: platform
+    process.env.KERNEL_LIFECYCLE_BASE_URL = 'https://kernel.example';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        schemaVersion: '1.0.0',
+        intentId: 'intent-1',
+        status: 'previewed',
+        productUnitId: 'external-demo',
+        providerMode: 'platform',
+        registryProviderId: 'ghatana-file-registry',
+        sourceProviderId: 'github',
+        lifecycleEventRefs: ['kernel://event/1'],
+        provenanceRefs: ['datacloud://memory/ref-1'],
+        runtimeTruthRefs: ['kernel://runtime/1'],
+        blockedReasons: [],
+        errors: [],
+        correlationId: 'corr-platform',
+      }),
+    } as Response);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/product-unit-intents',
+      headers: authHeaders(),
+      payload: {
+        intent: buildIntent({ intentType: 'promote-candidate' }),
+        evidence: { evidenceRefs: ['datacloud://memory/ref-1'] },
+        providerMode: 'platform',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.providerMode).toBe('platform');
+    expect(body.status).toBe('accepted');
+  });
+
+  describe('blocked fallback behavior', () => {
+    it('returns blocked status when KERNEL_BASE_URL is not configured', async () => {
+      const savedUrl = process.env.KERNEL_LIFECYCLE_BASE_URL;
+      process.env.KERNEL_LIFECYCLE_BASE_URL = '';
+      try {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/v1/yappc/product-unit-intents',
+          headers: { ...authHeaders(), 'x-yappc-intent-apply': 'true' },
+          payload: {
+            intent: buildIntent({ intentType: 'promote-candidate' }),
+            evidence: { evidenceRefs: ['evidence://artifact-intelligence'] },
+            providerMode: 'bootstrap',
+            mode: 'apply',
+          },
+        });
+
+        const body = response.json();
+        expect(response.statusCode).toBe(503);
+        expect(body.status).toBe('blocked');
+        expect(body.blockedReasons).toContain('kernel-lifecycle-service-unavailable');
+      } finally {
+        if (savedUrl === undefined) {
+          delete process.env.KERNEL_LIFECYCLE_BASE_URL;
+        } else {
+          process.env.KERNEL_LIFECYCLE_BASE_URL = savedUrl;
+        }
+      }
+    });
+
+    it('responds with status: blocked when Kernel returns a 500 error', async () => {
+      const savedUrl = process.env.KERNEL_LIFECYCLE_BASE_URL;
+      process.env.KERNEL_LIFECYCLE_BASE_URL = 'http://localhost:19999';
+      try {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/v1/yappc/product-unit-intents',
+          headers: { ...authHeaders(), 'x-yappc-intent-apply': 'true' },
+          payload: {
+            intent: buildIntent({ intentType: 'promote-candidate' }),
+            evidence: { evidenceRefs: ['evidence://artifact-intelligence'] },
+            providerMode: 'bootstrap',
+            mode: 'apply',
+          },
+        });
+
+        const body = response.json();
+        expect(response.statusCode).toBe(503);
+        expect(body.status).toBe('blocked');
+        expect(
+          body.blockedReasons?.includes('kernel-service-unreachable') ||
+            body.blockedReasons?.some((r: string) => r.startsWith('kernel-service-http-')),
+        ).toBeTruthy();
+      } finally {
+        if (savedUrl === undefined) {
+          delete process.env.KERNEL_LIFECYCLE_BASE_URL;
+        } else {
+          process.env.KERNEL_LIFECYCLE_BASE_URL = savedUrl;
+        }
+      }
+    });
+
+    it('never returns status: applied in blocked scenario', async () => {
+      const savedUrl = process.env.KERNEL_LIFECYCLE_BASE_URL;
+      process.env.KERNEL_LIFECYCLE_BASE_URL = '';
+      try {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/v1/yappc/product-unit-intents',
+          headers: { ...authHeaders(), 'x-yappc-intent-apply': 'true' },
+          payload: {
+            intent: buildIntent({ intentType: 'promote-candidate' }),
+            evidence: { evidenceRefs: ['evidence://artifact-intelligence'] },
+            mode: 'apply',
+          },
+        });
+
+        const body = response.json();
+        expect(body.status).not.toBe('applied');
+      } finally {
+        if (savedUrl === undefined) {
+          delete process.env.KERNEL_LIFECYCLE_BASE_URL;
+        } else {
+          process.env.KERNEL_LIFECYCLE_BASE_URL = savedUrl;
+        }
+      }
+    });
   });
 });
 

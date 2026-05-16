@@ -104,10 +104,38 @@ export interface KernelLifecycleApiResponse {
   readonly body: unknown;
 }
 
+export interface KernelLifecycleActor {
+  readonly actorId: string;
+  readonly tenantId?: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+  readonly roles: readonly string[];
+  readonly capabilities: readonly string[];
+}
+
+export interface KernelLifecycleAuthContext {
+  readonly productUnitId?: string;
+  readonly runId?: string;
+  readonly phase?: ProductLifecyclePhase;
+  readonly correlationId?: string;
+}
+
+export interface KernelLifecycleAuthorizer {
+  authenticate(request: KernelLifecycleApiRequest): Promise<KernelLifecycleActor | null>;
+  authorizeProductUnitRead(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+  authorizeLifecyclePlan(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+  authorizeLifecycleExecute(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+  authorizeManifestRead(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+  authorizeApprovalRequest(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+  authorizeApprovalDecision(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
+}
+
 export interface KernelLifecycleApiHandlersOptions {
   readonly service: KernelLifecycleService;
   readonly requireScopeHeaders?: boolean;
   readonly allowUnscopedLocalDevelopment?: boolean;
+  readonly authorizer?: KernelLifecycleAuthorizer;
+  readonly requireAuthentication?: boolean;
 }
 
 export interface KernelLifecycleRouteMetadata {
@@ -136,15 +164,20 @@ export class KernelLifecycleApiHandlers {
   private readonly service: KernelLifecycleService;
   private readonly requireScopeHeaders: boolean;
   private readonly allowUnscopedLocalDevelopment: boolean;
+  private readonly authorizer: KernelLifecycleAuthorizer | undefined;
+  private readonly requireAuthentication: boolean;
 
   constructor(options: KernelLifecycleApiHandlersOptions) {
     this.service = options.service;
     this.requireScopeHeaders = options.requireScopeHeaders ?? true;
     this.allowUnscopedLocalDevelopment = options.allowUnscopedLocalDevelopment ?? false;
+    this.authorizer = options.authorizer;
+    this.requireAuthentication = options.requireAuthentication ?? false;
   }
 
   async listProductUnits(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
     return this.handle(request, async (context) => {
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', {});
       const productUnits = await this.service.listProductUnits({
         correlationId: context.correlationId,
         ...(context.scope === undefined ? {} : { scope: context.scope }),
@@ -156,6 +189,7 @@ export class KernelLifecycleApiHandlers {
   async getProductUnit(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
     return this.handle(request, async (context) => {
       const productUnitId = requireParam(context.params, 'productUnitId');
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', { productUnitId });
       const productUnit = await this.service.getProductUnit(productUnitId, {
         correlationId: context.correlationId,
         ...(context.scope === undefined ? {} : { scope: context.scope }),
@@ -169,6 +203,7 @@ export class KernelLifecycleApiHandlers {
       const productUnitId = requireParam(context.params, 'productUnitId');
       const body = PlanBodySchema.parse(request.body ?? {});
       const correlationId = body.correlationId ?? context.correlationId;
+      await this.enforceAuth(request, context, 'authorizeLifecyclePlan', { productUnitId, correlationId });
       const plan = await this.service.createLifecyclePlan(productUnitId, body.phase, {
         correlationId,
         ...(context.scope === undefined ? {} : { scope: context.scope }),
@@ -187,6 +222,7 @@ export class KernelLifecycleApiHandlers {
       const productUnitId = requireParam(context.params, 'productUnitId');
       const body = ExecuteBodySchema.parse(request.body ?? {});
       const correlationId = body.correlationId ?? context.correlationId;
+      await this.enforceAuth(request, context, 'authorizeLifecycleExecute', { productUnitId, correlationId });
       const result = await this.service.runLifecyclePhase(productUnitId, body.phase, {
         dryRun: body.dryRun,
         correlationId,
@@ -204,6 +240,7 @@ export class KernelLifecycleApiHandlers {
   async listLifecycleRuns(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
     return this.handle(request, async (context) => {
       const productUnitId = requireParam(context.params, 'productUnitId');
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', { productUnitId });
       const phase = optionalPhase(context.query.phase);
       const correlationIdQuery = optionalString(context.query.correlationId);
       const runs = await this.service.listLifecycleRuns(productUnitId, {
@@ -218,6 +255,7 @@ export class KernelLifecycleApiHandlers {
     return this.handle(request, async (context) => {
       const productUnitId = requireParam(context.params, 'productUnitId');
       const runId = requireParam(context.params, 'runId');
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', { productUnitId, runId });
       const run = await this.service.getLifecycleRun(productUnitId, runId);
       return this.ok(toLifecycleSummaryResponse(run), context.correlationId);
     });
@@ -242,6 +280,7 @@ export class KernelLifecycleApiHandlers {
   async requestApproval(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
     return this.handle(request, async (context) => {
       const parsed = ApprovalRequestBodySchema.parse(request.body ?? {});
+      await this.enforceAuth(request, context, 'authorizeApprovalRequest', { productUnitId: parsed.productUnitId });
       const approvalRequest: ApprovalRequest = toApprovalRequest(parsed, context.correlationId);
       const result = await this.service.requestApproval(approvalRequest);
       return this.created(result, context.correlationId);
@@ -251,6 +290,7 @@ export class KernelLifecycleApiHandlers {
   async submitApprovalDecision(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
     return this.handle(request, async (context) => {
       const approvalId = requireParam(context.params, 'approvalId');
+      await this.enforceAuth(request, context, 'authorizeApprovalDecision', {});
       const parsedDecision = ApprovalDecisionBodySchema.parse(request.body ?? {});
       const decision: ApprovalDecision = toApprovalDecision(parsedDecision);
       if (decision.approvalId !== approvalId) {
@@ -272,10 +312,50 @@ export class KernelLifecycleApiHandlers {
     return this.handle(request, async (context) => {
       const productUnitId = requireParam(context.params, 'productUnitId');
       const runId = requireParam(context.params, 'runId');
+      await this.enforceAuth(request, context, 'authorizeManifestRead', { productUnitId, runId });
       const phase = optionalPhase(context.query.phase);
       const manifest = await this.service.getManifest(productUnitId, runId, manifestType, phase);
       return this.ok(manifest, context.correlationId);
     });
+  }
+
+  private async enforceAuth(
+    request: KernelLifecycleApiRequest,
+    context: HandlerContext,
+    check: keyof Omit<KernelLifecycleAuthorizer, 'authenticate'>,
+    authContext: KernelLifecycleAuthContext,
+  ): Promise<void> {
+    if (this.authorizer === undefined) {
+      if (this.requireAuthentication && !this.allowUnscopedLocalDevelopment) {
+        throw new KernelLifecycleError({
+          reasonCode: 'authentication-required',
+          message: 'Kernel lifecycle API requires an authorizer when requireAuthentication is true',
+          correlationId: context.correlationId,
+        });
+      }
+      return;
+    }
+
+    const actor = await this.authorizer.authenticate(request);
+    if (actor === null) {
+      throw new KernelLifecycleError({
+        reasonCode: 'authentication-required',
+        message: 'Authentication required',
+        correlationId: context.correlationId,
+      });
+    }
+
+    const allowed = await this.authorizer[check](actor, {
+      ...authContext,
+      ...(authContext.correlationId === undefined ? { correlationId: context.correlationId } : {}),
+    });
+    if (!allowed) {
+      throw new KernelLifecycleError({
+        reasonCode: 'authorization-failed',
+        message: `Authorization denied for operation: ${check}`,
+        correlationId: context.correlationId,
+      });
+    }
   }
 
   private async handle(
@@ -466,6 +546,9 @@ function statusCodeForReason(reasonCode: string): number {
   }
   if (reasonCode === 'approval-required') {
     return 409;
+  }
+  if (reasonCode === 'authentication-required') {
+    return 401;
   }
   if (reasonCode === 'scope-headers-required' || reasonCode === 'authorization-failed') {
     return 403;

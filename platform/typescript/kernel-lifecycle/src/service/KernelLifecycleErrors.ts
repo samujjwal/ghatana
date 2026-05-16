@@ -11,6 +11,16 @@ export interface KernelLifecycleErrorOptions {
   readonly cause?: unknown;
 }
 
+export interface LifecycleTruthReadErrorOptions {
+  readonly correlationId?: string;
+  readonly productUnitId?: string;
+  readonly runId?: string;
+  readonly phase?: ProductLifecyclePhase;
+  readonly filePath: string;
+  readonly operation: string;
+  readonly cause?: unknown;
+}
+
 export class KernelLifecycleError extends Error {
   readonly reasonCode: string;
   readonly correlationId: string | undefined;
@@ -98,5 +108,62 @@ export class ArtifactMissingError extends KernelLifecycleError {
 export class ExecutionFailedError extends KernelLifecycleError {
   constructor(message: string, options: Omit<KernelLifecycleErrorOptions, 'reasonCode' | 'message'> = {}) {
     super({ ...options, reasonCode: 'execution-failed', message });
+  }
+}
+
+export class LifecycleTruthReadError extends KernelLifecycleError {
+  constructor(options: LifecycleTruthReadErrorOptions) {
+    super({
+      reasonCode: 'lifecycle-truth-read-failed',
+      message: `Lifecycle truth read failed during ${options.operation}: ${options.filePath}`,
+      ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
+      ...(options.productUnitId === undefined ? {} : { productUnitId: options.productUnitId }),
+      ...(options.runId === undefined ? {} : { runId: options.runId }),
+      ...(options.phase === undefined ? {} : { phase: options.phase }),
+      safeDetails: {
+        filePath: options.filePath,
+        operation: options.operation,
+        reasonCode: 'lifecycle-truth-read-failed',
+      },
+      ...(options.cause === undefined ? {} : { cause: options.cause }),
+    });
+  }
+}
+
+export class LifecycleManifestCorruptError extends KernelLifecycleError {
+  constructor(options: LifecycleTruthReadErrorOptions) {
+    super({
+      reasonCode: 'lifecycle-manifest-corrupt',
+      message: `Lifecycle manifest is corrupt or unparseable during ${options.operation}: ${options.filePath}`,
+      ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
+      ...(options.productUnitId === undefined ? {} : { productUnitId: options.productUnitId }),
+      ...(options.runId === undefined ? {} : { runId: options.runId }),
+      ...(options.phase === undefined ? {} : { phase: options.phase }),
+      safeDetails: {
+        filePath: options.filePath,
+        operation: options.operation,
+        reasonCode: 'lifecycle-manifest-corrupt',
+      },
+      ...(options.cause === undefined ? {} : { cause: options.cause }),
+    });
+  }
+}
+
+export class LifecycleRunIndexUnavailableError extends KernelLifecycleError {
+  constructor(options: LifecycleTruthReadErrorOptions) {
+    super({
+      reasonCode: 'lifecycle-run-index-unavailable',
+      message: `Lifecycle run index is unavailable during ${options.operation}: ${options.filePath}`,
+      ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
+      ...(options.productUnitId === undefined ? {} : { productUnitId: options.productUnitId }),
+      ...(options.runId === undefined ? {} : { runId: options.runId }),
+      ...(options.phase === undefined ? {} : { phase: options.phase }),
+      safeDetails: {
+        filePath: options.filePath,
+        operation: options.operation,
+        reasonCode: 'lifecycle-run-index-unavailable',
+      },
+      ...(options.cause === undefined ? {} : { cause: options.cause }),
+    });
   }
 }

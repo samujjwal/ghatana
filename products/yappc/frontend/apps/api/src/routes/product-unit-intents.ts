@@ -17,7 +17,6 @@ import {
   RiskHotspotReportSchema,
   SemanticArtifactReferenceSchema,
   type ProductUnitIntent,
-  type ProductUnitIntentApplicationReasonCode,
   type ProductUnitIntentApplicationResult,
   type ProductUnitIntentApplicationStatus,
   type ProductUnitIntentApplyMode,
@@ -77,19 +76,21 @@ interface ApplyProductUnitIntentOptions {
   readonly kernelAuthToken?: string;
 }
 
+interface ProductUnitIntentRouteRuntimeConfig {
+  readonly dataCloudBaseUrl: string;
+  readonly dataCloudTenantId: string;
+  readonly dataCloudWorkspaceId: string;
+  readonly dataCloudProjectId: string;
+  readonly dataCloudAuthToken?: string;
+  readonly kernelBaseUrl?: string;
+  readonly kernelAuthToken?: string;
+}
+
 export default async function productUnitIntentRoutes(fastify: FastifyInstance): Promise<void> {
-  const dataCloudBaseUrl = process.env.DATACLOUD_PROVIDER_BASE_URL ?? 'http://localhost:8080';
-  const dataCloudTenantId = process.env.DATACLOUD_TENANT_ID ?? 'default-tenant';
-  const dataCloudWorkspaceId = process.env.DATACLOUD_WORKSPACE_ID ?? 'default-workspace';
-  const dataCloudProjectId = process.env.DATACLOUD_PROJECT_ID ?? 'default-project';
-  const dataCloudAuthToken = process.env.DATACLOUD_AUTH_TOKEN;
-
-  const kernelBaseUrl = process.env.KERNEL_LIFECYCLE_BASE_URL;
-  const kernelAuthToken = process.env.KERNEL_LIFECYCLE_AUTH_TOKEN;
-
   fastify.post<{ Body: ProductUnitIntentRequestBody }>(
     '/yappc/product-unit-intents',
     async (request, reply) => {
+      const runtimeConfig = readRouteRuntimeConfig();
       const actor = authenticatedActor(request);
       if (actor === null) {
         return reply.status(401).send({ error: 'Authentication required' });
@@ -134,15 +135,19 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
       if (providerMode === 'platform') {
         const hasDataCloudEvidenceRef = evidenceRefsForKernel.some(isDataCloudEvidenceRef);
 
-        if (!hasDataCloudEvidenceRef && dataCloudAuthToken !== undefined && dataCloudAuthToken.trim().length > 0) {
+        if (
+          !hasDataCloudEvidenceRef &&
+          runtimeConfig.dataCloudAuthToken !== undefined &&
+          runtimeConfig.dataCloudAuthToken.trim().length > 0
+        ) {
           const persistedEvidenceRefs = await persistEvidenceToDataCloud(
             request.body?.evidence,
             {
-              baseUrl: dataCloudBaseUrl,
-              tenantId: dataCloudTenantId,
-              workspaceId: dataCloudWorkspaceId,
-              projectId: dataCloudProjectId,
-              authToken: dataCloudAuthToken,
+              baseUrl: runtimeConfig.dataCloudBaseUrl,
+              tenantId: runtimeConfig.dataCloudTenantId,
+              workspaceId: runtimeConfig.dataCloudWorkspaceId,
+              projectId: runtimeConfig.dataCloudProjectId,
+              authToken: runtimeConfig.dataCloudAuthToken,
             },
             intent.intentId,
             intent.scope.tenantId,
@@ -167,7 +172,10 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
           } satisfies ProductUnitIntentResponse);
         }
 
-        if (dataCloudAuthToken === undefined || dataCloudAuthToken.trim().length === 0) {
+        if (
+          runtimeConfig.dataCloudAuthToken === undefined ||
+          runtimeConfig.dataCloudAuthToken.trim().length === 0
+        ) {
           return reply.status(503).send({
             intentId: intent.intentId,
             status: 'blocked',
@@ -193,14 +201,15 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
         allowWrite: requestedAction === 'apply',
         evidenceRefs: evidenceRefsForKernel,
         correlationId: request.id,
-        kernelBaseUrl,
-        kernelAuthToken,
+        kernelBaseUrl: runtimeConfig.kernelBaseUrl,
+        kernelAuthToken: runtimeConfig.kernelAuthToken,
       });
 
       const kernelResult = ProductUnitIntentApplicationResultSchema.parse(applicationResult);
       const status = mapKernelStatusToYappcStatus(kernelResult.status);
+      const statusCode = mapKernelResultToHttpStatus(kernelResult);
 
-      return reply.status(kernelResult.status === 'applied' ? 202 : 200).send({
+      return reply.status(statusCode).send({
         intentId: kernelResult.intentId,
         status,
         evidenceRef: kernelResult.provenanceRefs[0],
@@ -218,67 +227,123 @@ async function applyProductUnitIntent(
 ): Promise<ProductUnitIntentApplicationResult> {
   const correlationId = options.correlationId;
   if (options.kernelBaseUrl === undefined || options.kernelBaseUrl.trim().length === 0) {
-    return buildFallbackApplicationResult(intent, options, correlationId, []);
+    if (!options.allowWrite) {
+      return buildPreviewOnlyApplicationResult(intent, options.mode, correlationId, options.evidenceRefs);
+    }
+
+    return buildBlockedApplicationResult(intent, options.mode, correlationId, [
+      'kernel-lifecycle-service-unavailable',
+    ]);
   }
 
   const endpoint = new URL('/api/v1/kernel/lifecycle/product-unit-intents', options.kernelBaseUrl);
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(options.kernelAuthToken ? { authorization: `Bearer ${options.kernelAuthToken}` } : {}),
-    },
-    body: JSON.stringify({
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-correlation-id': correlationId,
+        ...(intent.scope.tenantId ? { 'x-ghatana-tenant-id': intent.scope.tenantId } : {}),
+        ...(intent.scope.workspaceId ? { 'x-ghatana-workspace-id': intent.scope.workspaceId } : {}),
+        ...(intent.scope.projectId ? { 'x-ghatana-project-id': intent.scope.projectId } : {}),
+        ...(options.kernelAuthToken ? { authorization: `Bearer ${options.kernelAuthToken}` } : {}),
+      },
+      body: JSON.stringify({
+        intent,
+        providerMode: options.mode,
+        requestedAction: options.allowWrite ? 'apply' : 'preview',
+        evidenceRefs: options.evidenceRefs,
+        correlationId,
+      }),
+    });
+  } catch {
+    return buildBlockedApplicationResult(
       intent,
-      providerMode: options.mode,
-      requestedAction: options.allowWrite ? 'apply' : 'preview',
-      evidenceRefs: options.evidenceRefs,
+      options.mode,
       correlationId,
-    }),
-  });
+      ['kernel-service-unreachable'],
+    );
+  }
 
   if (!response.ok) {
-    return buildFallbackApplicationResult(intent, options, correlationId, [`kernel-service-http-${response.status}`]);
+    return buildBlockedApplicationResult(
+      intent,
+      options.mode,
+      correlationId,
+      [`kernel-service-http-${response.status}`],
+    );
   }
 
   const payload = (await response.json()) as unknown;
   const parsed = ProductUnitIntentApplicationResultSchema.safeParse(payload);
   if (!parsed.success) {
-    return buildFallbackApplicationResult(intent, options, correlationId, ['kernel-service-response-invalid']);
+    return buildBlockedApplicationResult(
+      intent,
+      options.mode,
+      correlationId,
+      ['kernel-service-response-invalid'],
+    );
   }
 
   return parsed.data;
 }
 
-function buildFallbackApplicationResult(
-  intent: ProductUnitIntent,
-  options: ApplyProductUnitIntentOptions,
-  correlationId: string,
-  blockedReasons: readonly string[],
-): ProductUnitIntentApplicationResult {
-  const status: ProductUnitIntentApplicationStatus = blockedReasons.length > 0
-    ? 'blocked'
-    : options.allowWrite
-      ? 'applied'
-      : 'previewed';
+function readRouteRuntimeConfig(): ProductUnitIntentRouteRuntimeConfig {
+  return {
+    dataCloudBaseUrl: process.env.DATACLOUD_PROVIDER_BASE_URL ?? 'http://localhost:8080',
+    dataCloudTenantId: process.env.DATACLOUD_TENANT_ID ?? 'default-tenant',
+    dataCloudWorkspaceId: process.env.DATACLOUD_WORKSPACE_ID ?? 'default-workspace',
+    dataCloudProjectId: process.env.DATACLOUD_PROJECT_ID ?? 'default-project',
+    dataCloudAuthToken: process.env.DATACLOUD_AUTH_TOKEN,
+    kernelBaseUrl: process.env.KERNEL_LIFECYCLE_BASE_URL,
+    kernelAuthToken: process.env.KERNEL_LIFECYCLE_AUTH_TOKEN,
+  };
+}
 
+function buildPreviewOnlyApplicationResult(
+  intent: ProductUnitIntent,
+  mode: 'bootstrap' | 'platform',
+  correlationId: string,
+  evidenceRefs: readonly string[],
+): ProductUnitIntentApplicationResult {
   return {
     schemaVersion: '1.0.0',
     intentId: intent.intentId,
-    status,
+    status: 'previewed',
     productUnitId: intent.productUnit.id,
-    providerMode: options.mode,
+    providerMode: mode,
     registryProviderId: intent.target.registryProvider,
     sourceProviderId: intent.target.sourceProvider,
-    ...(status === 'previewed' ? { previewRef: buildPreviewRef(intent) } : {}),
-    ...(status === 'applied' ? { applicationRef: `kernel://product-unit-intents/${encodeURIComponent(intent.intentId)}` } : {}),
     lifecycleEventRefs: [],
-    provenanceRefs: options.evidenceRefs,
+    provenanceRefs: evidenceRefs,
     runtimeTruthRefs: [],
-    blockedReasons: blockedReasons as readonly ProductUnitIntentApplicationReasonCode[],
+    blockedReasons: [],
     errors: [],
     correlationId,
-    appliedAt: new Date().toISOString(),
+  };
+}
+
+function buildBlockedApplicationResult(
+  intent: ProductUnitIntent,
+  mode: 'bootstrap' | 'platform',
+  correlationId: string,
+  blockedReasons: readonly string[],
+): ProductUnitIntentApplicationResult {
+  return {
+    schemaVersion: '1.0.0',
+    intentId: intent.intentId,
+    status: 'blocked',
+    productUnitId: intent.productUnit.id,
+    providerMode: mode,
+    registryProviderId: intent.target.registryProvider,
+    sourceProviderId: intent.target.sourceProvider,
+    lifecycleEventRefs: [],
+    provenanceRefs: [],
+    runtimeTruthRefs: [],
+    blockedReasons,
+    errors: blockedReasons.map((code) => `Intent application blocked: ${code}`),
+    correlationId,
   };
 }
 
@@ -297,6 +362,30 @@ function mapKernelStatusToYappcStatus(
     default:
       return 'accepted';
   }
+}
+
+function mapKernelResultToHttpStatus(result: ProductUnitIntentApplicationResult): number {
+  if (result.status === 'applied') {
+    return 202;
+  }
+  if (result.status === 'previewed') {
+    return 200;
+  }
+  if (result.status === 'failed') {
+    return 500;
+  }
+  if (
+    result.blockedReasons.some(
+      (reason) =>
+        reason === 'kernel-lifecycle-service-unavailable' ||
+        reason === 'kernel-service-unreachable' ||
+        reason === 'kernel-service-response-invalid' ||
+        reason.startsWith('kernel-service-http-'),
+    )
+  ) {
+    return 503;
+  }
+  return 409;
 }
 
 function authenticatedActor(request: FastifyRequest): string | null {

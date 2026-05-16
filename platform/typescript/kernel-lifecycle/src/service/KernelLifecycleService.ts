@@ -29,6 +29,8 @@ import {
   ApprovalRequiredError,
   ExecutionFailedError,
   KernelLifecycleError,
+  LifecycleManifestCorruptError,
+  LifecycleRunIndexUnavailableError,
   ProductUnitNotFoundError,
   ProviderUnavailableError,
 } from './KernelLifecycleErrors.js';
@@ -789,8 +791,21 @@ export class KernelLifecycleService {
       return entries
         .filter((entry) => entry.isDirectory())
         .map((entry) => entry.name as ProductLifecyclePhase);
-    } catch {
-      return [];
+    } catch (error: unknown) {
+      if (this.isNodeFileNotFound(error)) {
+        return [];
+      }
+      this.logger.error('Lifecycle truth read failed', {
+        reasonCode: 'lifecycle-run-index-unavailable',
+        productUnitId,
+        filePath: productRoot,
+      });
+      throw new LifecycleRunIndexUnavailableError({
+        productUnitId,
+        filePath: productRoot,
+        operation: 'listPhaseDirectories',
+        cause: error,
+      });
     }
   }
 
@@ -932,10 +947,44 @@ export class KernelLifecycleService {
   }
 
   private async readJsonIfExists<TValue>(filePath: string): Promise<TValue | null> {
+    let raw: string;
     try {
-      return JSON.parse(await fs.readFile(filePath, 'utf-8')) as TValue;
-    } catch {
-      return null;
+      raw = await fs.readFile(filePath, 'utf-8');
+    } catch (error: unknown) {
+      if (this.isNodeFileNotFound(error)) {
+        return null;
+      }
+      this.logger.error('Lifecycle truth read failed', {
+        reasonCode: 'lifecycle-truth-read-failed',
+        filePath,
+      });
+      throw new LifecycleRunIndexUnavailableError({
+        filePath,
+        operation: 'readJsonIfExists',
+        cause: error,
+      });
     }
+    try {
+      return JSON.parse(raw) as TValue;
+    } catch (error: unknown) {
+      this.logger.error('Lifecycle truth read failed', {
+        reasonCode: 'lifecycle-manifest-corrupt',
+        filePath,
+      });
+      throw new LifecycleManifestCorruptError({
+        filePath,
+        operation: 'readJsonIfExists',
+        cause: error,
+      });
+    }
+  }
+
+  private isNodeFileNotFound(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: unknown }).code === 'ENOENT'
+    );
   }
 }
