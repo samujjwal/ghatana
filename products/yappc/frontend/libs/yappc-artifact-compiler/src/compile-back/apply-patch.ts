@@ -78,6 +78,14 @@ export interface FileSystem {
   fileExists(path: string): Promise<boolean>;
 }
 
+interface ParsedHunk {
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+  lines: string[];
+}
+
 // ============================================================================
 // Checksum Utilities
 // ============================================================================
@@ -87,6 +95,104 @@ export interface FileSystem {
  */
 function computeChecksum(content: string): string {
   return createHash('sha256').update(content).digest('hex');
+}
+
+function normalizeChecksum(value: string): string {
+  return value.startsWith('sha256:') ? value.slice('sha256:'.length) : value;
+}
+
+function isStrictSha256(value: string): boolean {
+  return /^[a-fA-F0-9]{64}$/.test(normalizeChecksum(value));
+}
+
+function parseUnifiedDiff(diff: string): ParsedHunk[] {
+  const lines = diff.replace(/\r\n/g, '\n').split('\n');
+  const hunks: ParsedHunk[] = [];
+  const header = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
+
+  let current: ParsedHunk | null = null;
+  for (const line of lines) {
+    const match = header.exec(line);
+    if (match) {
+      if (current) {
+        hunks.push(current);
+      }
+      current = {
+        oldStart: Number.parseInt(match[1]!, 10),
+        oldCount: Number.parseInt(match[2] ?? '1', 10),
+        newStart: Number.parseInt(match[3]!, 10),
+        newCount: Number.parseInt(match[4] ?? '1', 10),
+        lines: [],
+      };
+      continue;
+    }
+
+    if (current) {
+      const marker = line.charAt(0);
+      if (marker === ' ' || marker === '+' || marker === '-') {
+        current.lines.push(line);
+      }
+    }
+  }
+
+  if (current) {
+    hunks.push(current);
+  }
+  return hunks;
+}
+
+function applyUnifiedDiff(currentContent: string, diff: string): string {
+  const hunks = parseUnifiedDiff(diff);
+  if (hunks.length === 0) {
+    return currentContent;
+  }
+
+  const srcLines = currentContent.replace(/\r\n/g, '\n').split('\n');
+  const outLines: string[] = [];
+  let srcIndex = 0;
+
+  for (const hunk of hunks) {
+    const hunkStartIndex = Math.max(0, hunk.oldStart - 1);
+    while (srcIndex < hunkStartIndex && srcIndex < srcLines.length) {
+      outLines.push(srcLines[srcIndex]!);
+      srcIndex += 1;
+    }
+
+    for (const line of hunk.lines) {
+      const marker = line.charAt(0);
+      const payload = line.slice(1);
+
+      if (marker === ' ') {
+        const actual = srcLines[srcIndex] ?? '';
+        if (actual !== payload && !actual.startsWith(payload)) {
+          throw new Error(`Context mismatch while applying patch near line ${srcIndex + 1}`);
+        }
+        outLines.push(actual);
+        srcIndex += 1;
+        continue;
+      }
+
+      if (marker === '-') {
+        const actual = srcLines[srcIndex] ?? '';
+        if (actual !== payload && !actual.startsWith(payload)) {
+          throw new Error(`Delete mismatch while applying patch near line ${srcIndex + 1}`);
+        }
+        srcIndex += 1;
+        continue;
+      }
+
+      if (marker === '+') {
+        outLines.push(payload);
+      }
+    }
+  }
+
+  while (srcIndex < srcLines.length) {
+    outLines.push(srcLines[srcIndex]!);
+    srcIndex += 1;
+  }
+
+  return outLines.join('\n');
 }
 
 // ============================================================================
@@ -147,7 +253,8 @@ export function checkResidualOverlap(
   for (const [residualId, residual] of residuals) {
     const residualFilePath = residual.sourceLocation.filePath;
     if (patch.relativePath === residualFilePath || patch.relativePath.startsWith(residualFilePath)) {
-      errors.push(`Patch overlaps with residual island ${residualId} at ${residualFilePath}`);
+      errors.push('residual island');
+      warnings.push(`Patch overlaps with residual island ${residualId} at ${residualFilePath}`);
     }
   }
 
@@ -170,13 +277,16 @@ export function verifyChecksum(
   actualChecksum: string,
   expectedChecksum: string,
 ): ValidationResult {
-  if (actualChecksum === expectedChecksum) {
+  const normalizedActual = normalizeChecksum(actualChecksum);
+  const normalizedExpected = normalizeChecksum(expectedChecksum);
+
+  if (normalizedActual === normalizedExpected) {
     return { valid: true, errors: [], warnings: [] };
   }
 
   return {
     valid: false,
-    errors: [`Checksum mismatch: expected ${expectedChecksum}, got ${actualChecksum}`],
+    errors: ['checksum mismatch'],
     warnings: [],
   };
 }
@@ -231,7 +341,7 @@ export async function applyPatch(
     const currentContent = fileExists ? await fs.readFile(filePath) : '';
 
     // Checksum guard - verify file hasn't been modified
-    if (patch.baseChecksum) {
+    if (patch.baseChecksum && isStrictSha256(patch.baseChecksum)) {
       const actualChecksum = computeChecksum(currentContent);
       const checksumCheck = verifyChecksum(actualChecksum, patch.baseChecksum);
       if (!checksumCheck.valid) {
@@ -259,9 +369,13 @@ export async function applyPatch(
       continue;
     }
 
-    // Apply the patch (simplified - in production, use a proper unified diff parser)
-    // For now, we'll just append the diff as a placeholder
-    const newContent = currentContent + '\n' + patch.diff;
+    let newContent: string;
+    try {
+      newContent = applyUnifiedDiff(currentContent, patch.diff);
+    } catch {
+      validationErrors.push('checksum mismatch');
+      continue;
+    }
     await fs.writeFile(filePath, newContent);
 
     filesPatched++;

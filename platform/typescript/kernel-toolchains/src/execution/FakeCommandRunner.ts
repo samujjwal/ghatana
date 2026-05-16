@@ -11,7 +11,7 @@ export class FakeCommandRunner implements CommandRunner {
   readonly invocations: FakeCommandInvocation[] = [];
   private readonly results: CommandResult[];
 
-  constructor(results: readonly CommandResult[] = [{ exitCode: 0, stdout: '', stderr: '', durationMs: 0 }]) {
+  constructor(results: readonly CommandResult[] = [{ exitCode: 0, stdout: '', stderr: '', durationMs: 0, pid: 9999 }]) {
     this.results = [...results];
   }
 

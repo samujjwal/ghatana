@@ -91,8 +91,10 @@ public final class ArtifactGraphRepository {
                 INSERT INTO artifact_nodes (
                     node_id, node_type, node_name, file_path, content_snippet,
                     properties_json, tags_json, tenant_id, project_id, content_checksum,
+                    source_location_json, extractor_id, extractor_version, confidence, provenance,
+                    privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref,
                     created_at, updated_at, snapshot_id, version_id, is_tombstone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (tenant_id, node_id) DO UPDATE SET
                     node_type = EXCLUDED.node_type,
                     node_name = EXCLUDED.node_name,
@@ -101,6 +103,15 @@ public final class ArtifactGraphRepository {
                     properties_json = EXCLUDED.properties_json,
                     tags_json = EXCLUDED.tags_json,
                     content_checksum = EXCLUDED.content_checksum,
+                    source_location_json = EXCLUDED.source_location_json,
+                    extractor_id = EXCLUDED.extractor_id,
+                    extractor_version = EXCLUDED.extractor_version,
+                    confidence = EXCLUDED.confidence,
+                    provenance = EXCLUDED.provenance,
+                    privacy_security_flags_json = EXCLUDED.privacy_security_flags_json,
+                    residual_fragment_ids_json = EXCLUDED.residual_fragment_ids_json,
+                    source_ref = EXCLUDED.source_ref,
+                    symbol_ref = EXCLUDED.symbol_ref,
                     updated_at = EXCLUDED.updated_at,
                     snapshot_id = EXCLUDED.snapshot_id,
                     version_id = EXCLUDED.version_id,
@@ -134,12 +145,25 @@ public final class ArtifactGraphRepository {
                     statement.setString(8, tenantId);
                     statement.setString(9, productId);
                     statement.setString(10, newChecksum);
+                    statement.setString(11, writeJson(node.sourceLocation()));
+                    statement.setString(12, node.extractorId());
+                    statement.setString(13, node.extractorVersion());
+                    if (node.confidence() != null) {
+                        statement.setDouble(14, node.confidence());
+                    } else {
+                        statement.setNull(14, java.sql.Types.DOUBLE);
+                    }
+                    statement.setString(15, node.provenance());
+                    statement.setString(16, writeJson(node.privacySecurityFlags()));
+                    statement.setString(17, writeJson(node.residualFragmentIds()));
+                    statement.setString(18, node.sourceRef());
+                    statement.setString(19, node.symbolRef());
                     Instant now = Instant.now();
-                    statement.setTimestamp(11, Timestamp.from(now));
-                    statement.setTimestamp(12, Timestamp.from(now));
-                    statement.setString(13, snapshotId);
-                    statement.setString(14, versionId);
-                    statement.setBoolean(15, false); // is_tombstone
+                    statement.setTimestamp(20, Timestamp.from(now));
+                    statement.setTimestamp(21, Timestamp.from(now));
+                    statement.setString(22, snapshotId);
+                    statement.setString(23, versionId);
+                    statement.setBoolean(24, false); // is_tombstone
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -165,10 +189,15 @@ public final class ArtifactGraphRepository {
             String sql = """
                 INSERT INTO artifact_edges (
                     source_node_id, target_node_id, relationship_type,
-                    properties_json, tenant_id, project_id, created_at, updated_at, snapshot_id, version_id, is_tombstone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    properties_json, edge_id, confidence, bidirectional, edge_metadata_json,
+                    tenant_id, project_id, created_at, updated_at, snapshot_id, version_id, is_tombstone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (tenant_id, source_node_id, target_node_id, relationship_type) DO UPDATE SET
                     properties_json = EXCLUDED.properties_json,
+                    edge_id = EXCLUDED.edge_id,
+                    confidence = EXCLUDED.confidence,
+                    bidirectional = EXCLUDED.bidirectional,
+                    edge_metadata_json = EXCLUDED.edge_metadata_json,
                     updated_at = EXCLUDED.updated_at,
                     snapshot_id = EXCLUDED.snapshot_id,
                     version_id = EXCLUDED.version_id,
@@ -181,14 +210,26 @@ public final class ArtifactGraphRepository {
                     statement.setString(2, edge.targetNodeId());
                     statement.setString(3, edge.relationshipType());
                     statement.setString(4, writeJson(edge.properties()));
-                    statement.setString(5, tenantId);
-                    statement.setString(6, productId);
+                    statement.setString(5, edge.edgeId());
+                    if (edge.confidence() != null) {
+                        statement.setDouble(6, edge.confidence());
+                    } else {
+                        statement.setNull(6, java.sql.Types.DOUBLE);
+                    }
+                    if (edge.bidirectional() != null) {
+                        statement.setBoolean(7, edge.bidirectional());
+                    } else {
+                        statement.setNull(7, java.sql.Types.BOOLEAN);
+                    }
+                    statement.setString(8, writeJson(edge.metadata()));
+                    statement.setString(9, tenantId);
+                    statement.setString(10, productId);
                     Instant now = Instant.now();
-                    statement.setTimestamp(7, Timestamp.from(now));
-                    statement.setTimestamp(8, Timestamp.from(now));
-                    statement.setString(9, snapshotId);
-                    statement.setString(10, versionId);
-                    statement.setBoolean(11, false); // is_tombstone
+                    statement.setTimestamp(11, Timestamp.from(now));
+                    statement.setTimestamp(12, Timestamp.from(now));
+                    statement.setString(13, snapshotId != null ? snapshotId : edge.snapshotId());
+                    statement.setString(14, versionId != null ? versionId : edge.versionId());
+                    statement.setBoolean(15, false); // is_tombstone
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -232,7 +273,9 @@ public final class ArtifactGraphRepository {
             String tombstoneFilter = includeTombstones ? "" : " AND is_tombstone = false";
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                       properties_json, tags_json, tenant_id, project_id
+                      properties_json, tags_json, tenant_id, project_id,
+                      source_location_json, extractor_id, extractor_version, confidence, provenance,
+                      privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
                 WHERE tenant_id = ? AND project_id = ?
                 """ + tombstoneFilter + """
@@ -263,7 +306,9 @@ public final class ArtifactGraphRepository {
             String placeholders = nodeIds.stream().map(id -> "?").collect(Collectors.joining(", "));
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                       properties_json, tags_json, tenant_id, project_id
+                      properties_json, tags_json, tenant_id, project_id,
+                      source_location_json, extractor_id, extractor_version, confidence, provenance,
+                      privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
                 WHERE tenant_id = ? AND node_id IN (%s)
                 """.formatted(placeholders);
@@ -295,7 +340,8 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String tombstoneFilter = includeTombstones ? "" : " AND is_tombstone = false";
             String sql = """
-                SELECT source_node_id, target_node_id, relationship_type, properties_json
+                  SELECT source_node_id, target_node_id, relationship_type, properties_json,
+                      edge_id, confidence, bidirectional, edge_metadata_json, snapshot_id, version_id
                 FROM artifact_edges
                 WHERE tenant_id = ? AND project_id = ?
                 """ + tombstoneFilter + """
@@ -450,7 +496,9 @@ public final class ArtifactGraphRepository {
             
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                      properties_json, tags_json, tenant_id, project_id, updated_at
+                        properties_json, tags_json, tenant_id, project_id, updated_at,
+                        source_location_json, extractor_id, extractor_version, confidence, provenance,
+                        privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
                 WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """
@@ -494,7 +542,8 @@ public final class ArtifactGraphRepository {
             }
             
             String sql = """
-                SELECT source_node_id, target_node_id, relationship_type, properties_json, updated_at
+                  SELECT source_node_id, target_node_id, relationship_type, properties_json, updated_at,
+                      edge_id, confidence, bidirectional, edge_metadata_json, snapshot_id, version_id
                 FROM artifact_edges
                 WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """
@@ -530,7 +579,9 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                       properties_json, tags_json, tenant_id, project_id, snapshot_id
+                      properties_json, tags_json, tenant_id, project_id, snapshot_id,
+                      source_location_json, extractor_id, extractor_version, confidence, provenance,
+                      privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
                 WHERE tenant_id = ? AND project_id = ? AND snapshot_id IN (?, ?)
                 ORDER BY snapshot_id
@@ -549,26 +600,7 @@ public final class ArtifactGraphRepository {
                     
                     while (resultSet.next()) {
                         String snapshotId = resultSet.getString("snapshot_id");
-                        ArtifactNodeDto node = new ArtifactNodeDto(
-                            resultSet.getString("node_id"),
-                            resultSet.getString("node_type"),
-                            resultSet.getString("node_name"),
-                            resultSet.getString("file_path"),
-                            resultSet.getString("content_snippet"),
-                            readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
-                            readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
-                            resultSet.getString("tenant_id"),
-                            resultSet.getString("project_id"),
-                            null, // sourceLocation
-                            null, // extractorId
-                            null, // extractorVersion
-                            null, // confidence
-                            null, // provenance
-                            null, // privacySecurityFlags
-                            null, // residualFragmentIds
-                            null, // sourceRef
-                            null  // symbolRef
-                        );
+                        ArtifactNodeDto node = mapNode(resultSet);
                         
                         if (snapshotId.equals(fromSnapshotId)) {
                             fromNodes.put(node.id(), node);
@@ -638,26 +670,28 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO artifact_unresolved_edges (
-                    id, snapshot_id, source_node_id, target_ref, relationship,
-                    target_kind_hint, confidence, metadata, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id, tenant_id, project_id, snapshot_id, source_node_id, target_ref, relationship,
+                    target_kind_hint, confidence, metadata_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (UnresolvedEdgeRecord edge : unresolvedEdges) {
                     statement.setString(1, edge.id());
-                    statement.setString(2, snapshotId);
-                    statement.setString(3, edge.sourceNodeId());
-                    statement.setString(4, edge.targetRef());
-                    statement.setString(5, edge.relationship());
-                    statement.setString(6, edge.targetKindHint());
+                    statement.setString(2, tenantId);
+                    statement.setString(3, productId);
+                    statement.setString(4, snapshotId);
+                    statement.setString(5, edge.sourceNodeId());
+                    statement.setString(6, edge.targetRef());
+                    statement.setString(7, edge.relationship());
+                    statement.setString(8, edge.targetKindHint());
                     if (edge.confidence() != null) {
-                        statement.setBigDecimal(7, java.math.BigDecimal.valueOf(edge.confidence()));
+                        statement.setBigDecimal(9, java.math.BigDecimal.valueOf(edge.confidence()));
                     } else {
-                        statement.setNull(7, java.sql.Types.NUMERIC);
+                        statement.setNull(9, java.sql.Types.NUMERIC);
                     }
-                    statement.setString(8, writeJson(edge.metadata()));
-                    statement.setTimestamp(9, Timestamp.from(Instant.now()));
+                    statement.setString(10, writeJson(edge.metadata()));
+                    statement.setTimestamp(11, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -679,20 +713,22 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO artifact_edge_resolution_records (
-                    id, unresolved_edge_id, status, resolved_target_id,
-                    candidate_ids, review_required, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    id, tenant_id, project_id, unresolved_edge_id, status, resolved_target_id,
+                    candidate_ids_json, review_required, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (EdgeResolutionRecord record : records) {
                     statement.setString(1, record.id());
-                    statement.setString(2, record.unresolvedEdgeId());
-                    statement.setString(3, record.status());
-                    statement.setString(4, record.resolvedTargetId());
-                    statement.setString(5, writeJson(record.candidateIds()));
-                    statement.setBoolean(6, record.reviewRequired());
-                    statement.setTimestamp(7, Timestamp.from(Instant.now()));
+                    statement.setString(2, tenantId);
+                    statement.setString(3, productId);
+                    statement.setString(4, record.unresolvedEdgeId());
+                    statement.setString(5, record.status());
+                    statement.setString(6, record.resolvedTargetId());
+                    statement.setString(7, writeJson(record.candidateIds()));
+                    statement.setBoolean(8, record.reviewRequired());
+                    statement.setTimestamp(9, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -714,25 +750,27 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO residual_islands (
-                    id, snapshot_id, island_type, summary, file_count,
-                    confidence, metadata, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    id, tenant_id, project_id, snapshot_id, island_type, summary, file_count,
+                    confidence, metadata_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (ResidualIslandRecord island : islands) {
                     statement.setString(1, island.id());
-                    statement.setString(2, snapshotId);
-                    statement.setString(3, island.islandType());
-                    statement.setString(4, island.summary());
-                    statement.setInt(5, island.fileCount());
+                    statement.setString(2, tenantId);
+                    statement.setString(3, productId);
+                    statement.setString(4, snapshotId);
+                    statement.setString(5, island.islandType());
+                    statement.setString(6, island.summary());
+                    statement.setInt(7, island.fileCount());
                     if (island.confidence() != null) {
-                        statement.setBigDecimal(6, java.math.BigDecimal.valueOf(island.confidence()));
+                        statement.setBigDecimal(8, java.math.BigDecimal.valueOf(island.confidence()));
                     } else {
-                        statement.setNull(6, java.sql.Types.NUMERIC);
+                        statement.setNull(8, java.sql.Types.NUMERIC);
                     }
-                    statement.setString(7, writeJson(island.metadata()));
-                    statement.setTimestamp(8, Timestamp.from(Instant.now()));
+                    statement.setString(9, writeJson(island.metadata()));
+                    statement.setTimestamp(10, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -810,30 +848,30 @@ public final class ArtifactGraphRepository {
             readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
             resultSet.getString("tenant_id"),
             resultSet.getString("project_id"),
-            null, // sourceLocation
-            null, // extractorId
-            null, // extractorVersion
-            null, // confidence
-            null, // provenance
-            null, // privacySecurityFlags
-            null, // residualFragmentIds
-            null, // sourceRef
-            null  // symbolRef
+            readJson(resultSet.getString("source_location_json"), OBJECT_MAP, Map.of()),
+            resultSet.getString("extractor_id"),
+            resultSet.getString("extractor_version"),
+            resultSet.getObject("confidence") != null ? resultSet.getDouble("confidence") : null,
+            resultSet.getString("provenance"),
+            readJson(resultSet.getString("privacy_security_flags_json"), STRING_LIST, List.of()),
+            readJson(resultSet.getString("residual_fragment_ids_json"), STRING_LIST, List.of()),
+            resultSet.getString("source_ref"),
+            resultSet.getString("symbol_ref")
         );
     }
 
     private ArtifactEdgeDto mapEdge(ResultSet resultSet) throws SQLException {
         return new ArtifactEdgeDto(
-            null, // edgeId
+            resultSet.getString("edge_id"),
             resultSet.getString("source_node_id"),
             resultSet.getString("target_node_id"),
             resultSet.getString("relationship_type"),
             readJson(resultSet.getString("properties_json"), OBJECT_MAP, Map.of()),
-            null, // confidence
-            null, // bidirectional
-            null, // metadata
-            null, // snapshotId
-            null  // versionId
+            resultSet.getObject("confidence") != null ? resultSet.getDouble("confidence") : null,
+            resultSet.getObject("bidirectional") != null ? resultSet.getBoolean("bidirectional") : null,
+            readJson(resultSet.getString("edge_metadata_json"), OBJECT_MAP, Map.of()),
+            resultSet.getString("snapshot_id"),
+            resultSet.getString("version_id")
         );
     }
 

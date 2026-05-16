@@ -14,6 +14,7 @@ import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ArtifactGraphController;
+import com.ghatana.yappc.api.ImportController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.api.RunApiController;
 import com.ghatana.yappc.api.ObserveApiController;
@@ -48,6 +49,7 @@ import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
+import com.ghatana.yappc.services.compiler.ArtifactCompileJobService;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
@@ -559,6 +561,71 @@ public class LifecycleServiceModule extends AbstractModule {
     ArtifactGraphRepository artifactGraphRepository(DataSource dataSource, ObjectMapper objectMapper, Executor executor) {
         logger.info("Creating ArtifactGraphRepository (YAPPC-ArtifactCompiler)");
         return new ArtifactGraphRepository(dataSource, objectMapper, executor);
+    }
+
+    /** Provides source provider registry for governed repository import. */
+    @Provides
+    com.ghatana.yappc.services.source.SourceProviderRegistry sourceProviderRegistry() {
+        logger.info("Creating SourceProviderRegistry (YAPPC-ArtifactCompiler)");
+        return com.ghatana.yappc.services.source.SourceProviderRegistry.defaultRegistry();
+    }
+
+    /** Provides TS extractor worker adapter executed as a process. */
+    @Provides
+    ArtifactCompileJobService.TsExtractorWorker tsExtractorWorker(ObjectMapper objectMapper) {
+        String workerCommand = System.getenv().getOrDefault("YAPPC_TS_EXTRACTOR_WORKER_CMD", "");
+        logger.info("Creating ProcessTsExtractorWorker (configured={})", !workerCommand.isBlank());
+        return new com.ghatana.yappc.services.compiler.ProcessTsExtractorWorker(
+            objectMapper,
+            Executors.newVirtualThreadPerTaskExecutor(),
+            workerCommand
+        );
+    }
+
+    /** Provides Java source->snapshot->extraction->ingest compile orchestrator. */
+    @Provides
+    ArtifactCompileJobService artifactCompileJobService(
+        com.ghatana.yappc.services.source.SourceProviderRegistry sourceProviderRegistry,
+        ArtifactCompileJobService.TsExtractorWorker tsExtractorWorker,
+        ArtifactGraphService artifactGraphService
+    ) {
+        logger.info("Creating ArtifactCompileJobService (YAPPC-ArtifactCompiler)");
+        return new ArtifactCompileJobService(sourceProviderRegistry, tsExtractorWorker, artifactGraphService);
+    }
+
+    /** Provides durable source import job repository backed by source_import_jobs table. */
+    @Provides
+    com.ghatana.yappc.storage.SourceImportJobRepository sourceImportJobRepository(DataSource dataSource) {
+        logger.info("Creating SourceImportJobRepository (YAPPC-ArtifactCompiler)");
+        return new com.ghatana.yappc.storage.SourceImportJobRepository(dataSource);
+    }
+
+    /** Provides source import job service with durable persistence and progress tracking. */
+    @Provides
+    com.ghatana.yappc.services.import_.SourceImportJobService sourceImportJobService(
+        com.ghatana.yappc.storage.SourceImportJobRepository sourceImportJobRepository
+    ) {
+        logger.info("Creating SourceImportJobService (YAPPC-ArtifactCompiler)");
+        return com.ghatana.yappc.services.import_.SourceImportJobService.create(sourceImportJobRepository);
+    }
+
+    /** Provides import validation service for governed import-source requests. */
+    @Provides
+    com.ghatana.yappc.services.import_.ImportValidationService importValidationService() {
+        logger.info("Creating ImportValidationService (YAPPC-ArtifactCompiler)");
+        return new com.ghatana.yappc.services.import_.ImportValidationServiceImpl();
+    }
+
+    /** Provides ImportController for artifact import API and durable job status polling. */
+    @Provides
+    ImportController importController(
+        ObjectMapper objectMapper,
+        com.ghatana.yappc.services.import_.ImportValidationService importValidationService,
+        com.ghatana.yappc.services.import_.SourceImportJobService sourceImportJobService,
+        ArtifactCompileJobService artifactCompileJobService
+    ) {
+        logger.info("Creating ImportController (YAPPC-ArtifactCompiler)");
+        return new ImportController(objectMapper, importValidationService, sourceImportJobService, artifactCompileJobService);
     }
 
     /** Provides {@link ArtifactModelVersionRepository} for artifact model version history. */

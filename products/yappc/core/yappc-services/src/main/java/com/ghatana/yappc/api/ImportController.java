@@ -14,8 +14,13 @@ package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.yappc.services.compiler.ArtifactCompileJobService;
 import com.ghatana.yappc.services.import_.ImportValidationService;
 import com.ghatana.yappc.services.import_.ImportValidationResult;
+import com.ghatana.yappc.services.import_.SourceImportJobRequest;
+import com.ghatana.yappc.services.import_.SourceImportJobService;
+import com.ghatana.yappc.services.source.SourceLocator;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -24,10 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static com.ghatana.yappc.api.HttpResponses.badRequest400;
 import static com.ghatana.yappc.api.HttpResponses.ok200Json;
-import static io.activej.http.HttpResponse.*;
 
 /**
  * Production-grade controller for governed import requests.
@@ -38,13 +43,19 @@ public final class ImportController {
 
     private final ObjectMapper objectMapper;
     private final ImportValidationService validationService;
+    private final SourceImportJobService sourceImportJobService;
+    private final ArtifactCompileJobService artifactCompileJobService;
 
     public ImportController(
             @NotNull ObjectMapper objectMapper,
-            @NotNull ImportValidationService validationService
+            @NotNull ImportValidationService validationService,
+            @NotNull SourceImportJobService sourceImportJobService,
+            @NotNull ArtifactCompileJobService artifactCompileJobService
     ) {
         this.objectMapper = objectMapper;
         this.validationService = validationService;
+        this.sourceImportJobService = Objects.requireNonNull(sourceImportJobService, "sourceImportJobService must not be null");
+        this.artifactCompileJobService = Objects.requireNonNull(artifactCompileJobService, "artifactCompileJobService must not be null");
     }
 
     public Promise<HttpResponse> createImportJob(HttpRequest request) {
@@ -69,6 +80,20 @@ public final class ImportController {
                             .build());
                     }
 
+                    String tenantId = principal.getTenantId();
+                    String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                    String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                    if (workspaceId == null || workspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                        return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                            .build());
+                    }
+                    if (!scopedProjectId.equals(req.projectId())) {
+                        return Promise.of(HttpResponse.ofCode(403)
+                            .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                            .build());
+                    }
+
                     // Validate import source
                     ImportValidationResult validationResult = validationService.validateImportSource(req);
                     if (!validationResult.isValid()) {
@@ -77,13 +102,33 @@ public final class ImportController {
                         return Promise.of(badRequest400("Import source validation failed: " + validationResult.errors()));
                     }
 
-                    // Create import job
-                    ImportJobResponse response = createImportJob(req, principal);
+                    SourceImportJobRequest jobRequest = new SourceImportJobRequest(
+                        scopedProjectId,
+                        workspaceId,
+                        tenantId,
+                        sourceLocatorValue(req),
+                        req.sourceType(),
+                        principal.getName(),
+                        Map.of("correlationId", req.correlationId() == null ? "" : req.correlationId())
+                    );
 
-                    log.info("Import job created: jobId={}, projectId={}, sourceType={}", 
-                            response.jobId(), req.projectId(), req.sourceType());
-
-                    return Promise.of(ok200Json(objectMapper.writeValueAsString(response)));
+                    return sourceImportJobService.submitJob(jobRequest)
+                        .map(jobId -> {
+                            triggerAsyncCompile(jobId, principal, tenantId, workspaceId, scopedProjectId, req);
+                            ImportJobResponse response = new ImportJobResponse(
+                                jobId,
+                                scopedProjectId,
+                                req.sourceType(),
+                                ImportJobStatus.PENDING,
+                                "Import job submitted",
+                                java.time.Instant.now().toString(),
+                                tenantId,
+                                principal.getName()
+                            );
+                            log.info("Import job created: jobId={}, projectId={}, sourceType={}",
+                                response.jobId(), scopedProjectId, req.sourceType());
+                            return ok200Json(objectMapper.writeValueAsString(response));
+                        });
 
                 } catch (Exception e) {
                     log.error("Error creating import job", e);
@@ -94,7 +139,10 @@ public final class ImportController {
     }
 
     public Promise<HttpResponse> getImportJobStatus(HttpRequest request) {
-        String jobId = request.getQueryParameter("jobId");
+        String jobId = request.getPathParameter("jobId");
+        if (jobId == null || jobId.isBlank()) {
+            jobId = request.getQueryParameter("jobId");
+        }
         
         if (jobId == null || jobId.isBlank()) {
             return Promise.of(badRequest400("jobId is required"));
@@ -102,47 +150,90 @@ public final class ImportController {
 
         log.debug("Getting import job status: jobId={}", jobId);
 
-        // Get job status
-        ImportJobStatusResponse response = getJobStatus(jobId);
+        return sourceImportJobService.getJobStatus(jobId)
+            .map(job -> {
+                if (job == null) {
+                    return HttpResponse.ofCode(404)
+                        .withJson("{\"error\":\"Source import job not found\"}")
+                        .build();
+                }
+                ImportJobStatusResponse response = new ImportJobStatusResponse(
+                    job.jobId(),
+                    mapStatus(job.status()),
+                    (int) Math.round(job.progress().percentage()),
+                    job.progress().totalSteps(),
+                    job.progress().currentPhase(),
+                    java.time.Instant.now().toString()
+                );
+                try {
+                    return ok200Json(objectMapper.writeValueAsString(response));
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    log.error("Error serializing job status", e);
+                    return badRequest400("Error serializing response");
+                }
+            });
+    }
 
-        try {
-            return Promise.of(ok200Json(objectMapper.writeValueAsString(response)));
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            log.error("Error serializing job status", e);
-            return Promise.of(badRequest400("Error serializing response"));
+    private void triggerAsyncCompile(
+        String jobId,
+        Principal principal,
+        String tenantId,
+        String workspaceId,
+        String projectId,
+        ImportRequest req
+    ) {
+        sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.VALIDATING)
+            .then(ignored -> sourceImportJobService.updateProgress(jobId, 1, 5, 20, "VALIDATING"))
+            .then(ignored -> artifactCompileJobService.compile(new ArtifactCompileJobService.CompileJobRequest(
+                jobId,
+                tenantId,
+                workspaceId,
+                projectId,
+                principal.getName(),
+                new SourceLocator(req.sourceType(), sourceLocatorValue(req), null, null, null)
+            )))
+            .then(result -> {
+                if (result.success()) {
+                    return sourceImportJobService.updateProgress(jobId, 5, 5, 100, "COMPLETED")
+                        .then(ignored -> sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.COMPLETED));
+                }
+                return sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.FAILED);
+            })
+            .whenException(error -> {
+                log.error("Source import compile failed: jobId={}", jobId, error);
+                sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.FAILED)
+                    .whenException(statusError -> log.error("Failed to mark job as failed: jobId={}", jobId, statusError));
+            });
+    }
+
+    private static String sourceLocatorValue(ImportRequest req) {
+        if (req.source() != null && !req.source().isBlank()) {
+            return req.source();
         }
+        if (req.sourceUrl() != null && !req.sourceUrl().isBlank()) {
+            return req.sourceUrl();
+        }
+        if (req.sourceData() != null && !req.sourceData().isBlank()) {
+            return req.sourceData();
+        }
+        throw new IllegalArgumentException("Either source, sourceUrl, or sourceData must be provided");
     }
 
-    private ImportJobResponse createImportJob(ImportRequest req, Principal principal) {
-        String jobId = "import-" + java.util.UUID.randomUUID().toString();
-        
-        return new ImportJobResponse(
-                jobId,
-                req.projectId(),
-                req.sourceType(),
-                ImportJobStatus.PENDING,
-                "Import job created",
-                java.time.Instant.now().toString(),
-                principal.getTenantId(),
-                principal.getName()
-        );
-    }
-
-    private ImportJobStatusResponse getJobStatus(String jobId) {
-        // In production, this would query the actual job status from storage
-        // For now, return a simulated response
-        return new ImportJobStatusResponse(
-                jobId,
-                ImportJobStatus.PENDING,
-                0,
-                100,
-                "Job is pending",
-                java.time.Instant.now().toString()
-        );
+    private static ImportJobStatus mapStatus(SourceImportJob.JobStatus status) {
+        return switch (status) {
+            case SUBMITTED -> ImportJobStatus.PENDING;
+            case VALIDATING -> ImportJobStatus.VALIDATING;
+            case DECOMPILING, MAPPING -> ImportJobStatus.IMPORTING;
+            case RESIDUAL_REVIEW_REQUIRED -> ImportJobStatus.MAPPING;
+            case COMPLETED -> ImportJobStatus.COMPLETED;
+            case FAILED -> ImportJobStatus.FAILED;
+            case CANCELLED -> ImportJobStatus.CANCELLED;
+        };
     }
 
     public record ImportRequest(
             String sourceType,
+            String source,
             String projectId,
             String workspaceId,
             String sourceUrl,

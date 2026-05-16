@@ -258,7 +258,7 @@ describe('KernelLifecycleService', () => {
 
     await expect(
       service.getManifest('digital-marketing', 'run-1', 'lifecycle-result', 'build', { correlationId: 'corr-1' }),
-    ).rejects.toMatchObject<Partial<ManifestNotFoundError>>({
+    ).rejects.toMatchObject({
       reasonCode: 'manifest-not-found',
       safeDetails: { manifestType: 'lifecycle-result' },
     });
@@ -275,7 +275,7 @@ describe('KernelLifecycleService', () => {
       },
     });
 
-    await expect(service.listProductUnits()).rejects.toMatchObject<Partial<ProviderUnavailableError>>({
+    await expect(service.listProductUnits()).rejects.toMatchObject({
       reasonCode: 'provider-unavailable',
       safeDetails: { missingProviders: ['memory'] },
     });
@@ -319,7 +319,7 @@ describe('KernelLifecycleService', () => {
       },
     });
 
-    await expect(service.listProductUnits({ providerMode: 'platform' })).rejects.toMatchObject<Partial<ProviderUnavailableError>>({
+    await expect(service.listProductUnits({ providerMode: 'platform' })).rejects.toMatchObject({
       reasonCode: 'provider-unavailable',
       safeDetails: {
         invalidBackingStores: expect.arrayContaining([
@@ -450,8 +450,27 @@ describe('KernelLifecycleService', () => {
       providerContext: createBootstrapProviderContext(),
     });
 
-    await expect(service.listPendingApprovals()).rejects.toMatchObject<Partial<ProviderUnavailableError>>({
+    await expect(service.listPendingApprovals()).rejects.toMatchObject({
       reasonCode: 'provider-unavailable',
+    });
+  });
+
+  it('fails provider-mode operations when provider mode is platform but required providers are missing', async () => {
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext: {
+        ...createBootstrapProviderContext(),
+        mode: 'platform',
+        memory: undefined, // Missing required provider for platform mode
+      },
+    });
+
+    await expect(
+      service.createLifecyclePlan('digital-marketing', 'build', { providerMode: 'platform' }),
+    ).rejects.toMatchObject({
+      reasonCode: 'provider-unavailable',
+      safeDetails: { missingProviders: ['memory'] },
     });
   });
 });
@@ -460,6 +479,7 @@ function createRegistryProvider(productUnits: readonly ProductUnit[]): RegistryP
   return {
     providerId: 'test-registry',
     version: '1.0.0',
+    backingStore: 'file',
     capabilities: ['product-units'],
     getProductUnit: async (productUnitId) => productUnits.find((unit) => unit.id === productUnitId) ?? null,
     listProductUnits: async () => productUnits,
@@ -474,6 +494,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     events: {
       providerId: 'events',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['events'],
       appendEvent: vi.fn().mockResolvedValue({ success: true, ref: 'events.jsonl' }),
       listEvents: vi.fn().mockResolvedValue([]),
@@ -481,6 +502,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     artifacts: {
       providerId: 'artifacts',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['artifact-manifests'],
       recordArtifactManifest: vi.fn().mockResolvedValue({ success: true, ref: 'artifact.json' }),
       listArtifactManifests: vi.fn().mockResolvedValue([]),
@@ -488,6 +510,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     health: {
       providerId: 'health',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['health'],
       recordHealthSnapshot: vi.fn().mockResolvedValue({ success: true, ref: 'health.json' }),
       getLatestHealthSnapshot: vi.fn().mockResolvedValue(null),
@@ -495,6 +518,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     approvals: {
       providerId: 'approvals',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['approvals'],
       requestLifecycleApproval: vi.fn().mockResolvedValue({ success: true, ref: 'approval.json' }),
       decideLifecycleApproval: vi.fn().mockResolvedValue({ success: true, ref: 'approval.json' }),
@@ -502,6 +526,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     provenance: {
       providerId: 'provenance',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['provenance'],
       recordProvenance: vi.fn().mockResolvedValue({ success: true, ref: 'provenance.json' }),
       listProvenance: vi.fn().mockResolvedValue([]),
@@ -509,6 +534,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     memory: {
       providerId: 'memory',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['memory'],
       recordMemory: vi.fn().mockResolvedValue({ success: true, ref: 'memory.json' }),
       listMemory: vi.fn().mockResolvedValue([]),
@@ -516,6 +542,7 @@ function createBootstrapProviderContext(): KernelLifecycleProviderContext {
     runtimeTruth: {
       providerId: 'runtime-truth',
       version: '1.0.0',
+      backingStore: 'file',
       capabilities: ['runtime-truth'],
       recordRuntimeTruth: vi.fn().mockResolvedValue({ success: true, ref: 'runtime-truth.json' }),
       getRuntimeTruth: vi.fn().mockResolvedValue(null),

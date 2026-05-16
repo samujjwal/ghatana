@@ -8,7 +8,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { createDefaultProviderRegistry, SynthesisPipeline, type GraphNode, getCanonicalExtractors } from 'yappc-artifact-compiler';
 import { getAuditService } from '../services/audit/audit.service';
 import {
@@ -118,6 +118,12 @@ const sourceImportStepTemplates: readonly Omit<SourceImportProgressStep, 'status
   { id: 'prepare_review', label: 'Prepare review-required import payload', percent: 90 },
   { id: 'audit', label: 'Record governed import audit event', percent: 100 },
 ];
+
+const legacyTsImportApiEnabled =
+  process.env.YAPPC_ARTIFACT_COMPILER_LEGACY_TS_IMPORT_API === 'true';
+
+const javaImportApiBaseUrl =
+  process.env.YAPPC_ARTIFACT_COMPILER_IMPORT_API_BASE_URL ?? 'http://localhost:8080';
 
 function getHeaderValue(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) {
@@ -455,6 +461,37 @@ async function readRemoteSource(source: string): Promise<string> {
   return text;
 }
 
+async function proxyImportToJava(
+  request: FastifyRequest<{ Body: SourceImportRequest }>,
+  reply: FastifyReply,
+): Promise<unknown> {
+  const tenantId = getHeaderValue(request.headers['x-tenant-id']);
+  const workspaceId = getHeaderValue(request.headers['x-workspace-id']);
+  const projectId = getHeaderValue(request.headers['x-project-id']);
+
+  const response = await fetch(`${javaImportApiBaseUrl}/api/v1/yappc/artifact/import-source`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(tenantId ? { 'x-tenant-id': tenantId } : {}),
+      ...(workspaceId ? { 'x-workspace-id': workspaceId } : {}),
+      ...(projectId ? { 'x-project-id': projectId } : {}),
+    },
+    body: JSON.stringify(request.body ?? {}),
+  });
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const payload = contentType.includes('application/json')
+    ? await response.json()
+    : { success: response.ok, message: await response.text() };
+
+  if (!response.ok) {
+    return reply.status(response.status).send(payload);
+  }
+
+  return payload;
+}
+
 async function logSourceImportAudit(
   request: FastifyRequest,
   context: SourceImportAuditContext,
@@ -510,6 +547,28 @@ export default async function sourceImportRoutes(fastify: FastifyInstance): Prom
   fastify.post<{ Body: SourceImportRequest }>(
     '/yappc/artifact/import-source',
     async (request, reply) => {
+      if (!legacyTsImportApiEnabled) {
+        try {
+          return await proxyImportToJava(request, reply);
+        } catch (error) {
+          request.log.error({ error }, 'Java artifact import API proxy failed');
+          return reply.status(502).send({
+            success: false,
+            files: [],
+            warnings: [],
+            errors: ['Java artifact import API unavailable.'],
+            metadata: {
+              sourceType: request.body?.sourceType ?? 'unknown',
+              source: request.body?.source ?? '',
+              importedAt: new Date().toISOString(),
+              dependencies: [],
+              fileCount: 0,
+              totalSize: 0,
+            },
+          });
+        }
+      }
+
       const tenantId = getHeaderValue(request.headers['x-tenant-id']);
       const workspaceId = getHeaderValue(request.headers['x-workspace-id']);
       const projectScopeId = getHeaderValue(request.headers['x-project-id']);

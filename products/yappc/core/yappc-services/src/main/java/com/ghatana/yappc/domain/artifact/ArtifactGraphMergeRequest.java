@@ -9,7 +9,7 @@ import java.util.Map;
  * @doc.pattern DataTransferObject
  */
 public record ArtifactGraphMergeRequest(
-    String productId,
+    String projectId,
     String tenantId,
     Map<String, Object> baseModel,
     Map<String, Object> leftModel,

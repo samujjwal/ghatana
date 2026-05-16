@@ -125,7 +125,7 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
 
     // dev phase: the Vite dev server is long-running; write processes.json, skip dist validation.
     if (context.phase === 'dev') {
-      await this.writeProcessesJson(context, step.id, durationMs);
+      await this.writeProcessesJson(context, step.id, durationMs, commandResult.pid);
       return createToolchainExecutionResult(context, {
         status: 'succeeded',
         steps: [
@@ -140,6 +140,7 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
         ],
         artifacts: [],
         durationMs,
+        evidenceRefs: [`process:${context.productId}:${context.surface.type}:${commandResult.pid}`],
         observability: createCommandObservability(step.id, commandResult, durationMs),
       });
     }
@@ -293,6 +294,7 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     context: ToolchainAdapterContext,
     stepId: string,
     durationMs: number,
+    pid: number,
   ): Promise<void> {
     const outputDir = context.outputDir ?? path.join(this.repoRoot, '.kernel', 'out', 'dev');
     await fs.mkdir(outputDir, { recursive: true });
@@ -307,9 +309,10 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
       startedAt: new Date().toISOString(),
       stepId,
       durationMs,
+      pid,
       packageDirectory,
       script: this.mapPhaseToScript('dev', context.surfaceConfig, undefined),
-      note: 'Vite dev server completes when terminated. PID not captured in batch mode.',
+      note: 'Vite dev server completes when terminated. PID captured for process supervision.',
     };
 
     await fs.writeFile(

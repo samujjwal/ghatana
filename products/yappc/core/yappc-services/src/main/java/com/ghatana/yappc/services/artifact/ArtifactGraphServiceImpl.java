@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.UUID;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -84,25 +85,44 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     @Override
     public Promise<ArtifactGraphResponse> ingestGraph(ArtifactRequestScope scope, ArtifactGraphIngestRequest request) {
-        String cacheKey = cacheKey(scope.tenantId(), scope.productId());
+        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
         log.info("Ingesting artifact graph for product {} ({} nodes, {} edges)",
-                scope.productId(), request.nodes().size(), request.edges().size());
+            scope.projectId(), request.nodes().size(), request.edges().size());
 
-        String snapshotId = extractStringMetadata(request, Set.of("snapshotId", "snapshot_id", "snapshotRef"));
-        String versionId = extractStringMetadata(request, Set.of("versionId", "version_id", "modelVersion"));
-        String contentChecksum = extractStringMetadata(request, Set.of("contentChecksum", "content_checksum", "graphChecksum"));
+        String snapshotId = firstNonBlank(
+            request.snapshotId(),
+            request.snapshotRef(),
+            extractStringMetadata(request, Set.of("snapshotId", "snapshot_id", "snapshotRef"))
+        );
+        String versionId = firstNonBlank(
+            request.versionId(),
+            extractStringMetadata(request, Set.of("versionId", "version_id", "modelVersion"))
+        );
+        String contentChecksum = firstNonBlank(
+            request.contentChecksum(),
+            extractStringMetadata(request, Set.of("contentChecksum", "content_checksum", "graphChecksum"))
+        );
+
+        List<ArtifactGraphRepository.UnresolvedEdgeRecord> unresolvedEdges = mapUnresolvedEdges(request.unresolvedEdges());
+        List<ArtifactGraphRepository.EdgeResolutionRecord> resolutionRecords =
+            mapEdgeResolutionRecords(request.edgeResolutionRecords());
+        List<ArtifactGraphRepository.ResidualIslandRecord> residualIslands =
+            mapResidualIslands(request.residualIslandIds());
 
         // P4-2: Use incremental upsert instead of delete-then-insert
         // Only insert/update nodes that have changed based on checksum
-        return repository.upsertNodes(scope.productId(), scope.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
-            .then(saved -> repository.upsertEdges(scope.productId(), scope.tenantId(), request.edges(), snapshotId, versionId))
+        return repository.upsertNodes(scope.projectId(), scope.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
+            .then(saved -> repository.upsertEdges(scope.projectId(), scope.tenantId(), request.edges(), snapshotId, versionId))
+            .then(v -> repository.saveUnresolvedEdges(scope.projectId(), scope.tenantId(), snapshotId, unresolvedEdges))
+            .then(v -> repository.saveEdgeResolutionRecords(scope.projectId(), scope.tenantId(), resolutionRecords))
+            .then(v -> repository.saveResidualIslands(scope.projectId(), scope.tenantId(), snapshotId, residualIslands))
                 .then(v -> {
                     nodeCache.invalidate(cacheKey);
                     edgeCache.invalidate(cacheKey);
                     if (versionRepository != null) {
                         ArtifactModelVersion version = new ArtifactModelVersion(
                                 java.util.UUID.randomUUID().toString(),
-                    scope.productId(),
+                    scope.projectId(),
                     scope.tenantId(),
                                 snapshotId,
                                 "Incrementally upserted " + request.nodes().size() + " nodes and " + request.edges().size() + " edges",
@@ -125,7 +145,139 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                             "Artifact graph incrementally upserted successfully"
                     ));
                 })
-                .whenException(e -> log.error("Failed to incrementally upsert artifact graph for product {}", scope.productId(), e));
+                .whenException(e -> log.error("Failed to incrementally upsert artifact graph for project {}", scope.projectId(), e));
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static List<ArtifactGraphRepository.UnresolvedEdgeRecord> mapUnresolvedEdges(List<Map<String, Object>> unresolvedEdges) {
+        if (unresolvedEdges == null || unresolvedEdges.isEmpty()) {
+            return List.of();
+        }
+
+        List<ArtifactGraphRepository.UnresolvedEdgeRecord> mapped = new ArrayList<>(unresolvedEdges.size());
+        for (Map<String, Object> edge : unresolvedEdges) {
+            if (edge == null || edge.isEmpty()) {
+                continue;
+            }
+            String sourceNodeId = stringValue(edge, "sourceNodeId", stringValue(edge, "source_id", null));
+            String targetRef = stringValue(edge, "targetRef", stringValue(edge, "target_ref", null));
+            String relationship = stringValue(edge, "relationship", null);
+            if (sourceNodeId == null || targetRef == null || relationship == null) {
+                continue;
+            }
+            mapped.add(new ArtifactGraphRepository.UnresolvedEdgeRecord(
+                stringValue(edge, "id", UUID.randomUUID().toString()),
+                sourceNodeId,
+                targetRef,
+                relationship,
+                stringValue(edge, "targetKindHint", stringValue(edge, "target_kind_hint", null)),
+                doubleValue(edge, "confidence"),
+                mapValue(edge, "metadata")
+            ));
+        }
+        return mapped;
+    }
+
+    private static List<ArtifactGraphRepository.EdgeResolutionRecord> mapEdgeResolutionRecords(List<Map<String, Object>> resolutionRecords) {
+        if (resolutionRecords == null || resolutionRecords.isEmpty()) {
+            return List.of();
+        }
+
+        List<ArtifactGraphRepository.EdgeResolutionRecord> mapped = new ArrayList<>(resolutionRecords.size());
+        for (Map<String, Object> record : resolutionRecords) {
+            if (record == null || record.isEmpty()) {
+                continue;
+            }
+            String unresolvedEdgeId = stringValue(record, "unresolvedEdgeId", stringValue(record, "edgeId", null));
+            if (unresolvedEdgeId == null) {
+                continue;
+            }
+            mapped.add(new ArtifactGraphRepository.EdgeResolutionRecord(
+                stringValue(record, "id", UUID.randomUUID().toString()),
+                unresolvedEdgeId,
+                stringValue(record, "status", "UNKNOWN"),
+                stringValue(record, "resolvedTargetId", stringValue(record, "resolved_to_id", null)),
+                listOfStrings(record.get("candidateIds")),
+                booleanValue(record, "reviewRequired")
+            ));
+        }
+        return mapped;
+    }
+
+    private static List<ArtifactGraphRepository.ResidualIslandRecord> mapResidualIslands(List<String> residualIslandIds) {
+        if (residualIslandIds == null || residualIslandIds.isEmpty()) {
+            return List.of();
+        }
+        return residualIslandIds.stream()
+            .map(id -> new ArtifactGraphRepository.ResidualIslandRecord(id, "unknown", "residual:" + id, 0, null, Map.of()))
+            .toList();
+    }
+
+    private static String stringValue(Map<String, Object> values, String key, String fallback) {
+        Object value = values.get(key);
+        if (value instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return fallback;
+    }
+
+    private static Double doubleValue(Map<String, Object> values, String key) {
+        Object value = values.get(key);
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value instanceof String text) {
+            try {
+                return Double.parseDouble(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> mapValue(Map<String, Object> values, String key) {
+        Object value = values.get(key);
+        if (value instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        return Map.of();
+    }
+
+    private static boolean booleanValue(Map<String, Object> values, String key) {
+        Object value = values.get(key);
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String text) {
+            return Boolean.parseBoolean(text);
+        }
+        return false;
+    }
+
+    private static List<String> listOfStrings(Object value) {
+        if (value instanceof List<?> list) {
+            List<String> mapped = new ArrayList<>(list.size());
+            for (Object item : list) {
+                if (item != null) {
+                    mapped.add(String.valueOf(item));
+                }
+            }
+            return mapped;
+        }
+        return List.of();
     }
 
     private static String extractStringMetadata(ArtifactGraphIngestRequest request, Set<String> keys) {
@@ -159,9 +311,9 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     @Override
     public Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactRequestScope scope, ArtifactGraphAnalysisRequest request) {
-        String cacheKey = cacheKey(scope.tenantId(), scope.productId());
+        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
         log.info("Analyzing artifact graph for product {} with algorithms {}",
-                scope.productId(), request.algorithmTypes());
+            scope.projectId(), request.algorithmTypes());
 
         Promise<List<ArtifactNodeDto>> nodesPromise;
         Promise<List<ArtifactEdgeDto>> edgesPromise;
@@ -173,8 +325,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             nodesPromise = Promise.of(cachedNodes);
             edgesPromise = Promise.of(cachedEdges);
         } else {
-            nodesPromise = repository.findNodesByProduct(scope.productId(), scope.tenantId(), 10000);
-            edgesPromise = repository.findEdgesByProduct(scope.productId(), scope.tenantId());
+            nodesPromise = repository.findNodesByProduct(scope.projectId(), scope.tenantId(), 10000);
+            edgesPromise = repository.findEdgesByProduct(scope.projectId(), scope.tenantId());
         }
 
         // P4-2: Move heavy JGraphT work to blocking executor to prevent event loop blocking
@@ -344,7 +496,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     @Override
     public Promise<ArtifactGraphResponse> mergeModels(ArtifactRequestScope scope, ArtifactGraphMergeRequest request) {
         log.info("Merging artifact models for product {} with strategy {}",
-                scope.productId(), request.resolutionStrategy());
+            scope.projectId(), request.resolutionStrategy());
 
         SemanticMergeEngine mergeEngine = new SemanticMergeEngine(request.resolutionStrategy());
         SemanticMergeEngine.MergeResult result = mergeEngine.merge(request);
@@ -358,7 +510,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         if (versionRepository != null) {
             ArtifactModelVersion mergeVersion = new ArtifactModelVersion(
                     java.util.UUID.randomUUID().toString(),
-                    scope.productId(),
+                    scope.projectId(),
                     scope.tenantId(),
                     null,
                     "Merge with strategy " + request.resolutionStrategy() + " resulting in " + result.conflicts().size() + " conflicts",
@@ -385,14 +537,14 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
      * P3-1: Returns typed ArtifactGraphQueryResponse with items, nextCursor, totalEstimate, and scope metadata.
      */
     @Override
-    public Promise<ArtifactGraphQueryResponse> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize) {
-        String cacheKey = cacheKey(tenantId, productId);
+    public Promise<ArtifactGraphQueryResponse> queryGraph(String projectId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize) {
+        String cacheKey = cacheKey(tenantId, projectId);
         
         // P1-13: Use repository pagination instead of full fetch
         int effectivePageSize = pageSize > 0 ? pageSize : 100;
         
-        Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = repository.findNodesPaginated(productId, tenantId, cursor, effectivePageSize);
-        Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = repository.findEdgesPaginated(productId, tenantId, cursor, effectivePageSize);
+        Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = repository.findNodesPaginated(projectId, tenantId, cursor, effectivePageSize);
+        Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = repository.findEdgesPaginated(projectId, tenantId, cursor, effectivePageSize);
 
         return nodesPromise.combine(edgesPromise, (nodesPageResult, edgesPageResult) -> {
             List<ArtifactNodeDto> nodes = nodesPageResult.items();
@@ -441,14 +593,13 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                             .collect(Collectors.groupingBy(ArtifactNodeDto::type, Collectors.counting()));
                     items.put("nodeTypeDistribution", typeCounts);
                 }
-                default -> items.put("error", "Unknown query type: " + queryType);
             }
             
             // P3-1: Build typed response with scope metadata
             boolean hasMore = nodesPageResult.nextCursor() != null;
             ArtifactGraphQueryResponse.ScopeMetadata scope = new ArtifactGraphQueryResponse.ScopeMetadata(
                 tenantId,
-                productId,
+                projectId,
                 queryType,
                 effectivePageSize,
                 hasMore
@@ -466,8 +617,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     @Override
-    public Promise<ArtifactGraphResponse> analyzeResidual(String productId, String tenantId, List<Map<String, Object>> residualIslands) {
-        log.info("Analyzing {} residual islands for product {}", residualIslands.size(), productId);
+    public Promise<ArtifactGraphResponse> analyzeResidual(String projectId, String tenantId, List<Map<String, Object>> residualIslands) {
+        log.info("Analyzing {} residual islands for project {}", residualIslands.size(), projectId);
         List<Map<String, Object>> enriched = residualIslands.stream()
                 .map(island -> {
                     Map<String, Object> copy = new LinkedHashMap<>(island);
@@ -630,7 +781,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return null;
     }
 
-    private String cacheKey(String tenantId, String productId) {
-        return tenantId + ":" + productId;
+    private String cacheKey(String tenantId, String projectId) {
+        return tenantId + ":" + projectId;
     }
 }

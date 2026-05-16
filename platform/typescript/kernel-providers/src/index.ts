@@ -46,3 +46,45 @@ export {
   FileBootstrapGateProvider,
   type FileBootstrapGateProviderOptions,
 } from "./gates/FileBootstrapGateProvider.js";
+export {
+  RegistryValidationGateProvider,
+} from "./gates/RegistryValidationGateProvider.js";
+export {
+  ManifestValidationGateProvider,
+} from "./gates/ManifestValidationGateProvider.js";
+export {
+  BridgeComplianceGateProvider,
+} from "./gates/BridgeComplianceGateProvider.js";
+export {
+  UnitTestCoverageGateProvider,
+} from "./gates/UnitTestCoverageGateProvider.js";
+export {
+  DataCloudLifecycleEventProvider,
+  type DataCloudLifecycleEventProviderOptions,
+} from "./events/DataCloudLifecycleEventProvider.js";
+export {
+  DataCloudArtifactProvider,
+  type DataCloudArtifactProviderOptions,
+  type DataCloudArtifactManifestWriteOptions,
+} from "./artifacts/DataCloudArtifactProvider.js";
+export {
+  DataCloudHealthProvider,
+  type DataCloudHealthProviderOptions,
+  type DataCloudLifecycleHealthSnapshotWriteOptions,
+} from "./health/DataCloudHealthProvider.js";
+export {
+  DataCloudApprovalProvider,
+  type DataCloudApprovalProviderOptions,
+} from "./approvals/DataCloudApprovalProvider.js";
+export {
+  DataCloudProvenanceProvider,
+  type DataCloudProvenanceProviderOptions,
+} from "./provenance/DataCloudProvenanceProvider.js";
+export {
+  DataCloudMemoryProvider,
+  type DataCloudMemoryProviderOptions,
+} from "./memory/DataCloudMemoryProvider.js";
+export {
+  DataCloudRuntimeTruthProvider,
+  type DataCloudRuntimeTruthProviderOptions,
+} from "./runtime-truth/DataCloudRuntimeTruthProvider.js";

@@ -10,6 +10,7 @@ import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +47,8 @@ public class ArtifactGraphController {
      * POST /api/v1/yappc/artifact/graph/ingest
      * Ingest artifact nodes and edges extracted by the TypeScript scanner.
      *
-     * <p>Tenant and product scope are resolved from the authenticated principal.
-     * Any tenantId/productId in the payload that conflicts with the principal is rejected.
+    * <p>Tenant and project scope are resolved from the authenticated principal.
+    * Any tenantId/projectId in the payload that conflicts with the principal is rejected.
      * 
      * <p>P0-7: Workspace/project scope is resolved from principal/resource registry.
      * Graph validation is performed before service call to ensure data integrity.
@@ -79,14 +80,29 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        // P0-7: Resolve workspace/project from principal/resource registry
-                        // For now, use productId from payload but validate it matches principal's accessible products
-                        // Integration target: resolve workspace/project scope from resource registry.
-                        String projectId = ingestRequest.productId();
-                        if (projectId == null || projectId.isBlank()) {
-                            log.warn("Missing productId in ingest request");
+                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                            log.warn("Missing X-Workspace-ID or X-Project-ID scope header in ingest request");
                             return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"Bad Request: missing productId\"}")
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                                .build());
+                        }
+
+                        if (ingestRequest.projectId() != null && !ingestRequest.projectId().isBlank()
+                            && !scopedProjectId.equals(ingestRequest.projectId())) {
+                            log.warn("Project scope mismatch in ingest: scopedProjectId={}, requestProjectId={}",
+                                scopedProjectId, ingestRequest.projectId());
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                                .build());
+                        }
+
+                        String projectId = scopedProjectId;
+                        if (projectId.isBlank()) {
+                            log.warn("Missing projectId in ingest request");
+                            return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"Bad Request: missing projectId\"}")
                                 .build());
                         }
 
@@ -181,13 +197,27 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
+                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                            return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                                .build());
+                        }
+                        if (analysisRequest.projectId() != null && !analysisRequest.projectId().isBlank()
+                                && !scopedProjectId.equals(analysisRequest.projectId())) {
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                                .build());
+                        }
+
                         ArtifactGraphAnalysisRequest scopedRequest = new ArtifactGraphAnalysisRequest(
-                            analysisRequest.productId(),
+                            scopedProjectId,
                             tenantId,
                             analysisRequest.algorithmTypes(),
                             analysisRequest.nodeIds()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.productId(), tenantId);
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId);
 
                         return artifactGraphService.analyzeGraph(scope, scopedRequest)
                                 .map(result -> {
@@ -237,15 +267,29 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
+                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                            return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                                .build());
+                        }
+                        if (mergeRequest.projectId() != null && !mergeRequest.projectId().isBlank()
+                                && !scopedProjectId.equals(mergeRequest.projectId())) {
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                                .build());
+                        }
+
                         ArtifactGraphMergeRequest scopedRequest = new ArtifactGraphMergeRequest(
-                            mergeRequest.productId(),
+                            scopedProjectId,
                             tenantId,
                             mergeRequest.baseModel(),
                             mergeRequest.leftModel(),
                             mergeRequest.rightModel(),
                             mergeRequest.resolutionStrategy()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.productId(), tenantId);
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId);
 
                         return artifactGraphService.mergeModels(scope, scopedRequest)
                                 .map(result -> {
@@ -292,13 +336,26 @@ public class ArtifactGraphController {
                     try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
-                        String productId = (String) payload.get("productId");
+                        String projectId = (String) payload.get("projectId");
                         String queryType = (String) payload.get("queryType");
                         @SuppressWarnings("unchecked")
                         List<String> seedIds = (List<String>) payload.getOrDefault("seedIds", List.of());
 
-                        if (productId == null || queryType == null) {
-                            return Promise.of(badRequest400("Missing required fields: productId, queryType"));
+                        if (queryType == null) {
+                            return Promise.of(badRequest400("Missing required fields: projectId, queryType"));
+                        }
+
+                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                            return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                                .build());
+                        }
+                        if (projectId != null && !projectId.isBlank() && !scopedProjectId.equals(projectId)) {
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                                .build());
                         }
 
                         // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
@@ -311,7 +368,7 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.queryGraph(productId, tenantId, queryType, seedIds, null, 100)
+                        return artifactGraphService.queryGraph(scopedProjectId, tenantId, queryType, seedIds, null, 100)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -356,12 +413,21 @@ public class ArtifactGraphController {
                     try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
-                        String productId = (String) payload.get("productId");
+                        String projectId = (String) payload.get("projectId");
                         @SuppressWarnings("unchecked")
                         List<Map<String, Object>> islands = (List<Map<String, Object>>) payload.getOrDefault("residualIslands", List.of());
 
-                        if (productId == null) {
-                            return Promise.of(badRequest400("Missing productId"));
+                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+                            return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                                .build());
+                        }
+                        if (projectId != null && !projectId.isBlank() && !scopedProjectId.equals(projectId)) {
+                            return Promise.of(HttpResponse.ofCode(403)
+                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
+                                .build());
                         }
 
                         // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
@@ -374,7 +440,7 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.analyzeResidual(productId, tenantId, islands)
+                        return artifactGraphService.analyzeResidual(scopedProjectId, tenantId, islands)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));

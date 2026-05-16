@@ -13,6 +13,32 @@ message SnapshotRef {
   string branch = 4;
 }
 
+message SourceLocator {
+  string provider = 1;
+  string repo_id = 2;
+  string ref = 3;
+  string path = 4;
+  string credential_ref = 5;
+}
+
+message SnapshotFile {
+  string relative_path = 1;
+  string absolute_path = 2;
+  int64 size_bytes = 3;
+  string last_modified_at = 4;
+  bool materialized = 5;
+}
+
+message RepositorySnapshot {
+  string snapshot_id = 1;
+  SnapshotRef snapshot_ref = 2;
+  string local_root_path = 3;
+  string content_checksum = 4;
+  string snapshot_at = 5;
+  repeated SnapshotFile files = 6;
+  map<string, string> diagnostics = 7;
+}
+
 // SourceLocation tracks precise source file positions
 message SourceLocation {
   string file_path = 1;
@@ -89,6 +115,13 @@ message EdgeResolutionRecord {
   repeated string candidate_ids = 4;
   bool review_required = 5;
   string resolution_method = 6;
+}
+
+message ResidualIsland {
+  string id = 1;
+  string kind = 2;
+  string summary = 3;
+  double confidence = 4;
 }
 
 // IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.
@@ -190,6 +223,37 @@ message ArtifactGraphMergeResponse {
   repeated MergeConflict conflicts = 3;
   map<string, string> field_provenance = 4;
   int64 conflict_count = 5;
+}
+
+message ChangePlan {
+  string id = 1;
+  string snapshot_id = 2;
+  string version_id = 3;
+  string created_at = 4;
+  string model_checksum = 5;
+}
+
+message FilePatch {
+  string relative_path = 1;
+  string patch_diff = 2;
+  string emitter_id = 3;
+  string source_change_op_id = 4;
+  string base_checksum = 5;
+  string target_checksum = 6;
+}
+
+message PatchSet {
+  string id = 1;
+  string change_plan_id = 2;
+  string status = 3;
+  repeated FilePatch file_patches = 4;
+}
+
+message ReviewBundle {
+  string id = 1;
+  string patch_set_id = 2;
+  string status = 3;
+  bool review_required = 4;
 }
 
 message MergeConflict {

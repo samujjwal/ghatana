@@ -8,11 +8,15 @@
  */
 
 import * as path from "node:path";
-import type { KernelLifecycleProviderContext } from "@ghatana/kernel-product-contracts";
+import type { KernelLifecycleProviderContext, GateProvider } from "@ghatana/kernel-product-contracts";
 import { FileApprovalProvider } from "../approvals/FileApprovalProvider.js";
 import { FileArtifactProvider } from "../artifacts/FileArtifactProvider.js";
 import { FileLifecycleEventProvider } from "../events/FileLifecycleEventProvider.js";
 import { FileBootstrapGateProvider } from "../gates/FileBootstrapGateProvider.js";
+import { RegistryValidationGateProvider } from "../gates/RegistryValidationGateProvider.js";
+import { ManifestValidationGateProvider } from "../gates/ManifestValidationGateProvider.js";
+import { BridgeComplianceGateProvider } from "../gates/BridgeComplianceGateProvider.js";
+import { UnitTestCoverageGateProvider } from "../gates/UnitTestCoverageGateProvider.js";
 import { FileHealthProvider } from "../health/FileHealthProvider.js";
 import { FileMemoryProvider } from "../memory/FileMemoryProvider.js";
 import { FileProvenanceProvider } from "../provenance/FileProvenanceProvider.js";
@@ -70,7 +74,7 @@ export interface BootstrapKernelProviders {
   readonly artifacts: FileArtifactProvider;
   readonly health: FileHealthProvider;
   readonly approvals: FileApprovalProvider;
-  readonly gates: Record<string, FileBootstrapGateProvider>;
+  readonly gates: Record<string, GateProvider>;
   readonly provenance: FileProvenanceProvider;
   readonly memory: FileMemoryProvider;
   readonly runtimeTruth: FileRuntimeTruthProvider;
@@ -98,57 +102,63 @@ export function createBootstrapKernelProviders(
   });
   const health = new FileHealthProvider({ outputDirectory: outputRoot });
   const approvals = new FileApprovalProvider({ outputDirectory: outputRoot });
+  // Register concrete gate providers for supported gates
+  // Gates without concrete providers will return NOT_READY
   const gates = {
-    "dev-environment-check": new FileBootstrapGateProvider(),
-    "local-dependency-resolution": new FileBootstrapGateProvider(),
-    "registry-validation": new FileBootstrapGateProvider(),
-    "manifest-validation": new FileBootstrapGateProvider(),
-    "lifecycle-contract-validation": new FileBootstrapGateProvider(),
-    "bridge-compliance": new FileBootstrapGateProvider(),
-    "dmos-boundary-workflow-coverage": new FileBootstrapGateProvider(),
-    "marketing-consent-boundary": new FileBootstrapGateProvider(),
-    "non-regulated-customer-data-minimization": new FileBootstrapGateProvider(),
-    "unit-test-coverage": new FileBootstrapGateProvider(),
-    "integration-test-coverage": new FileBootstrapGateProvider(),
-    "contract-test-coverage": new FileBootstrapGateProvider(),
-    "backend-check": new FileBootstrapGateProvider(),
-    "web-route-contract": new FileBootstrapGateProvider(),
-    "typecheck": new FileBootstrapGateProvider(),
-    "unit-test": new FileBootstrapGateProvider(),
-    "conformance": new FileBootstrapGateProvider(),
-    "web-typecheck": new FileBootstrapGateProvider(),
-    "lint": new FileBootstrapGateProvider(),
-    "web-bundle-budget": new FileBootstrapGateProvider(),
-    "web-a11y-readiness": new FileBootstrapGateProvider(),
-    "web-i18n-readiness": new FileBootstrapGateProvider(),
-    "container-image-integrity": new FileBootstrapGateProvider(),
-    "security-scan": new FileBootstrapGateProvider(),
-    "license-policy": new FileBootstrapGateProvider(),
-    "bundle-budget": new FileBootstrapGateProvider(),
-    "container-scan": new FileBootstrapGateProvider(),
-    "image-vulnerability-scan": new FileBootstrapGateProvider(),
-    "artifact-validation": new FileBootstrapGateProvider(),
-    "environment-validation": new FileBootstrapGateProvider(),
-    "health-check": new FileBootstrapGateProvider(),
-    "observability-check": new FileBootstrapGateProvider(),
-    "privacy-check": new FileBootstrapGateProvider(),
-    "e2e": new FileBootstrapGateProvider(),
-    "performance": new FileBootstrapGateProvider(),
-    "rollback-plan": new FileBootstrapGateProvider(),
-    "approval": new FileBootstrapGateProvider(),
-    "artifact-manifest-integrity": new FileBootstrapGateProvider(),
-    "supply-chain-provenance": new FileBootstrapGateProvider(),
-    "deployment-readiness": new FileBootstrapGateProvider(),
-    "environment-configuration-validation": new FileBootstrapGateProvider(),
-    "promotion-policy": new FileBootstrapGateProvider(),
-    "promotion-readiness": new FileBootstrapGateProvider(),
-    "target-environment-validation": new FileBootstrapGateProvider(),
-    "data-migration-validation": new FileBootstrapGateProvider(),
-    "runtime-readiness": new FileBootstrapGateProvider(),
-    "health-slo": new FileBootstrapGateProvider(),
-    "rollback-safety": new FileBootstrapGateProvider(),
-    "rollback-readiness": new FileBootstrapGateProvider(),
-    "rollback-impact-analysis": new FileBootstrapGateProvider(),
+    // Concrete implementations for critical gates
+    "registry-validation": new RegistryValidationGateProvider(),
+    "manifest-validation": new ManifestValidationGateProvider(),
+    "bridge-compliance": new BridgeComplianceGateProvider(),
+    "unit-test-coverage": new UnitTestCoverageGateProvider(),
+    
+    // Fallback providers for gates not yet implemented with concrete checks
+    // These will return NOT_READY when evaluated
+    "dev-environment-check": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "local-dependency-resolution": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "lifecycle-contract-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "dmos-boundary-workflow-coverage": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "marketing-consent-boundary": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "non-regulated-customer-data-minimization": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "integration-test-coverage": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "contract-test-coverage": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "backend-check": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "web-route-contract": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "typecheck": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "unit-test": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "conformance": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "web-typecheck": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "lint": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "web-bundle-budget": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "web-a11y-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "web-i18n-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "container-image-integrity": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "security-scan": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "license-policy": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "bundle-budget": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "container-scan": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "image-vulnerability-scan": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "artifact-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "environment-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "health-check": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "observability-check": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "privacy-check": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "e2e": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "performance": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "rollback-plan": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "approval": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "artifact-manifest-integrity": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "supply-chain-provenance": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "deployment-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "environment-configuration-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "promotion-policy": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "promotion-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "target-environment-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "data-migration-validation": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "runtime-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "health-slo": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "rollback-safety": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "rollback-readiness": new FileBootstrapGateProvider({ supportedGates: [] }),
+    "rollback-impact-analysis": new FileBootstrapGateProvider({ supportedGates: [] }),
   } as const;
   const provenance = new FileProvenanceProvider({ outputDirectory: outputRoot });
   const memory = new FileMemoryProvider({ outputDirectory: outputRoot });

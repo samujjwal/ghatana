@@ -15,7 +15,7 @@
  *   - "https://github.com/owner/repo/tree/branch"
  */
 
-import { mkdir, writeFile, rm } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type {
@@ -239,18 +239,6 @@ export class GitHubProvider implements SourceProvider {
 
     try {
       const snapshot = await this.doResolve(parsed, normalizedInput, token, options);
-      
-      // P1-2: Cleanup temp files unless keepTempFiles is true
-      if (!options?.keepTempFiles) {
-        setImmediate(async () => {
-          try {
-            await rm(snapshot.localRootPath, { recursive: true, force: true });
-          } catch (err) {
-            console.warn(`[GitHubProvider] Failed to cleanup temp directory: ${snapshot.localRootPath}`, err);
-          }
-        });
-      }
-      
       return snapshot;
     } catch (err) {
       if (err instanceof SourceProviderError) throw err;

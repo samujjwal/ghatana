@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * @doc.type class
@@ -114,6 +115,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             new InMemoryLearnApiController(),
             new InMemoryEvolveApiController(),
             lifecycleController,
+            mock(ImportController.class),
             new InMemoryArtifactGraphController(),
             new PageArtifactController(
                 new InMemoryPageArtifactRepository(),

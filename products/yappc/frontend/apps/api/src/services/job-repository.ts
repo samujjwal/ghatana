@@ -17,7 +17,18 @@ import { homedir } from 'os';
 import { getPrismaClient, type PrismaClient } from '../database/client';
 
 export type SourceImportType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip' | 'github' | 'gitlab' | 'local-folder';
-export type SourceImportJobStatus = 'VALIDATING' | 'FETCHING_SOURCE' | 'REVIEW_REQUIRED' | 'REJECTED' | 'FAILED';
+export type SourceImportJobStatus =
+  | 'SUBMITTED'
+  | 'VALIDATING'
+  | 'FETCHING_SOURCE'
+  | 'DECOMPILING'
+  | 'MAPPING'
+  | 'RESIDUAL_REVIEW_REQUIRED'
+  | 'REVIEW_REQUIRED'
+  | 'REJECTED'
+  | 'FAILED'
+  | 'COMPLETED'
+  | 'CANCELLED';
 export type SourceImportProgressStepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export interface SourceImportProgressStep {
@@ -241,7 +252,7 @@ export class DatabaseJobRepository implements JobRepository {
       WHERE project_id = ${projectId}
       ORDER BY updated_at DESC
     `;
-    return rows.map((row) => parseStoredJob(row.job_data));
+    return rows.map((row: SourceImportJobRow) => parseStoredJob(row.job_data));
   }
 
   async update(id: string, updates: Partial<SourceImportJob>): Promise<SourceImportJob | null> {

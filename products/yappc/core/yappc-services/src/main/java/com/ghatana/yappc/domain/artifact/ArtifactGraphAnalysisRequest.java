@@ -9,7 +9,7 @@ import java.util.List;
  * @doc.pattern DataTransferObject
  */
 public record ArtifactGraphAnalysisRequest(
-    String productId,
+    String projectId,
     String tenantId,
     List<String> algorithmTypes,
     List<String> nodeIds

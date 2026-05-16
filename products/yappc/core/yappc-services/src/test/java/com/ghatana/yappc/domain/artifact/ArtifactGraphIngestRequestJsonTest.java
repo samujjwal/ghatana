@@ -99,7 +99,7 @@ class ArtifactGraphIngestRequestJsonTest {
         ArtifactGraphIngestRequest deserialized = objectMapper.readValue(json, ArtifactGraphIngestRequest.class);
 
         // Verify
-        assertEquals(request.productId(), deserialized.productId());
+        assertEquals(request.projectId(), deserialized.projectId());
         assertEquals(request.tenantId(), deserialized.tenantId());
         assertEquals(request.snapshotRef(), deserialized.snapshotRef());
         assertEquals(request.snapshotId(), deserialized.snapshotId());

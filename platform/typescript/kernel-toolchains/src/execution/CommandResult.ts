@@ -10,4 +10,5 @@ export interface CommandResult {
   readonly cancelled?: boolean;
   readonly stdoutTruncated?: boolean;
   readonly stderrTruncated?: boolean;
+  readonly pid: number;
 }

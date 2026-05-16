@@ -17,6 +17,7 @@ export interface FileBootstrapGateProviderOptions {
   readonly providerId?: string;
   readonly version?: string;
   readonly capabilities?: readonly string[];
+  readonly supportedGates?: readonly string[];
 }
 
 export class FileBootstrapGateProvider implements GateProvider {
@@ -24,12 +25,18 @@ export class FileBootstrapGateProvider implements GateProvider {
   readonly version: string;
   readonly backingStore = "file" as const;
   readonly capabilities: readonly string[];
+  private readonly supportedGates: Set<string>;
 
   constructor(options: FileBootstrapGateProviderOptions = {}) {
     this.providerId = options.providerId ?? "file-bootstrap-gates";
     this.version = options.version ?? "1.0.0";
     this.capabilities = options.capabilities ?? ["gates", "bootstrap-mode", "file-backed"];
+    // Track whether supportedGates was explicitly provided
+    this.supportedGates = new Set(options.supportedGates);
+    this.explicitSupportedGates = options.supportedGates !== undefined;
   }
+
+  private readonly explicitSupportedGates: boolean;
 
   async evaluateGate(request: GateEvaluationRequest): Promise<GateEvaluationResult> {
     const startedAt = Date.now();
@@ -45,10 +52,23 @@ export class FileBootstrapGateProvider implements GateProvider {
       };
     }
 
+    // Return NOT_READY for unsupported gates when supportedGates is explicitly configured
+    if (this.explicitSupportedGates && !this.supportedGates.has(gateId)) {
+      return {
+        gateId,
+        passed: false,
+        reason: `Gate ${gateId} is NOT_READY in bootstrap mode - no concrete provider implementation found`,
+        evidence: [],
+        evaluatedAt: new Date().toISOString(),
+        duration: Date.now() - startedAt,
+      };
+    }
+
+    // For supported gates (or backward compatibility when supportedGates not provided), return synthetic success
     return {
       gateId,
       passed: true,
-      reason: `Bootstrap gate ${gateId} passed`,
+      reason: `Bootstrap gate ${gateId} passed (synthetic - replace with concrete provider)`,
       evidence: [`bootstrap-gate:${gateId}`],
       evaluatedAt: new Date().toISOString(),
       duration: Date.now() - startedAt,

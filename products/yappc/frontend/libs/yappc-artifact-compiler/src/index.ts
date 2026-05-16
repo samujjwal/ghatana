@@ -20,3 +20,4 @@ export * from "./extractors/index";
 export * from "./synthesis/index";
 export * from "./merge/index";
 export * from "./builder/index";
+export * from "./worker/ts-extractor-worker";

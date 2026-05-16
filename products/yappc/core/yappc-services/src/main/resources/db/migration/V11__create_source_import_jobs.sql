@@ -1,5 +1,8 @@
 -- V11__create_source_import_jobs.sql
 -- P2.6: Durable job tables for async source import jobs with progress tracking, audit, and cancellation support
+-- NOTE: This migration intentionally overlaps some snapshot/tombstone columns later repeated in V14.
+-- Both migrations remain idempotent by design because historical environments may have applied them in different sequences.
+-- New schema evolution for artifact graph fidelity should be added in dedicated migrations (for example V16+), not by extending this overlap.
 
 -- Add content_checksum to artifact_nodes for incremental upsert (P4.4)
 ALTER TABLE artifact_nodes ADD COLUMN IF NOT EXISTS content_checksum VARCHAR(64);

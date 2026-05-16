@@ -104,7 +104,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     // dev phase: the process is long-running; write processes.json and return immediately.
     // Do NOT validate dist/jar outputs for dev — the server runs in the foreground.
     if (context.phase === 'dev') {
-      await this.writeProcessesJson(context, step.id, durationMs);
+      await this.writeProcessesJson(context, step.id, durationMs, commandResult.pid);
       return createToolchainExecutionResult(context, {
         status: 'succeeded',
         steps: [
@@ -119,7 +119,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
         ],
         artifacts: [],
         durationMs,
-        evidenceRefs: [`process:${context.productId}:${context.surface.type}`],
+        evidenceRefs: [`process:${context.productId}:${context.surface.type}:${commandResult.pid}`],
         observability: createCommandObservability(step.id, commandResult, durationMs),
       });
     }
@@ -209,6 +209,7 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     context: ToolchainAdapterContext,
     stepId: string,
     durationMs: number,
+    pid: number,
   ): Promise<void> {
     const outputDir = context.outputDir ?? path.join(this.repoRoot, '.kernel', 'out', 'dev');
     await fs.mkdir(outputDir, { recursive: true });
@@ -222,9 +223,10 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       startedAt: new Date().toISOString(),
       stepId,
       durationMs,
+      pid,
       gradleModule,
       task: this.mapPhaseToTask('dev', context.surfaceConfig),
-      note: 'bootRun completes when the server terminates. PID not captured in batch mode.',
+      note: 'bootRun completes when the server terminates. PID captured for process supervision.',
       ...(context.runId ? { runId: context.runId } : {}),
       ...(context.correlationId ? { correlationId: context.correlationId } : {}),
       ...(typeof context.surfaceConfig.healthUrl === 'string'

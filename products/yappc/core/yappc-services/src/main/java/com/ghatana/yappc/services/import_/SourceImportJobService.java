@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -24,6 +23,13 @@ import java.util.function.Consumer;
  * Supports job submission, progress updates, cancellation, and status queries.
  */
 public interface SourceImportJobService {
+
+    /**
+     * Creates a durable SourceImportJobService instance.
+     */
+    static SourceImportJobService create(SourceImportJobRepository jobRepository) {
+        return new SourceImportJobServiceImpl(jobRepository);
+    }
 
     /**
      * Submit a new source import job for execution.
@@ -99,28 +105,6 @@ public interface SourceImportJobService {
 }
 
 /**
- * Request DTO for submitting a source import job.
- */
-record SourceImportJobRequest(
-    String projectId,
-    String workspaceId,
-    String tenantId,
-    String sourceUrl,
-    String sourceType,
-    String submittedBy,
-    Map<String, String> metadata
-) {
-    public SourceImportJobRequest {
-        Objects.requireNonNull(projectId, "projectId is required");
-        Objects.requireNonNull(workspaceId, "workspaceId is required");
-        Objects.requireNonNull(tenantId, "tenantId is required");
-        Objects.requireNonNull(sourceUrl, "sourceUrl is required");
-        Objects.requireNonNull(sourceType, "sourceType is required");
-        Objects.requireNonNull(submittedBy, "submittedBy is required");
-    }
-}
-
-/**
  * Production implementation of SourceImportJobService with durable persistence and async execution.
  * P2.6: Replaces in-memory job storage with database-backed job management.
  */
@@ -129,12 +113,10 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     private static final Logger log = LoggerFactory.getLogger(SourceImportJobServiceImpl.class);
 
     private final SourceImportJobRepository jobRepository;
-    private final Executor blockingExecutor;
     private final Map<String, Consumer<SourceImportJob>> progressCallbacks = new ConcurrentHashMap<>();
 
-    public SourceImportJobServiceImpl(SourceImportJobRepository jobRepository, Executor blockingExecutor) {
+    public SourceImportJobServiceImpl(SourceImportJobRepository jobRepository) {
         this.jobRepository = Objects.requireNonNull(jobRepository, "jobRepository must not be null");
-        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
     }
 
     @Override

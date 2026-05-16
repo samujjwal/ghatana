@@ -39,10 +39,10 @@ public interface ArtifactGraphService {
      * P1-13: Added cursor-based pagination support for large graph queries.
      * P3-1: Returns typed response with items, nextCursor, totalEstimate, and scope metadata.
      */
-    Promise<ArtifactGraphQueryResponse> queryGraph(String productId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize);
+    Promise<ArtifactGraphQueryResponse> queryGraph(String projectId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize);
 
     /**
      * Analyze residual islands (unextractable blocks flagged by the TS scanner).
      */
-    Promise<ArtifactGraphResponse> analyzeResidual(String productId, String tenantId, List<Map<String, Object>> residualIslands);
+    Promise<ArtifactGraphResponse> analyzeResidual(String projectId, String tenantId, List<Map<String, Object>> residualIslands);
 }

@@ -24,6 +24,11 @@ export class SpawnCommandRunner implements CommandRunner {
         detached: process.platform !== 'win32',
       });
 
+      if (child.pid === undefined) {
+        reject(new Error(`Failed to spawn process: PID not available for command ${command}`));
+        return;
+      }
+
       let stdout = '';
       let stderr = '';
       let stdoutBytes = 0;
@@ -119,6 +124,7 @@ export class SpawnCommandRunner implements CommandRunner {
           completedAt: new Date().toISOString(),
           stdoutTruncated,
           stderrTruncated,
+          pid: child.pid!,
           ...(flags.timedOut === undefined ? {} : { timedOut: flags.timedOut }),
           ...(flags.cancelled === undefined ? {} : { cancelled: flags.cancelled }),
         };

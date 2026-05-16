@@ -18,6 +18,7 @@
  */
 
 import { createHash } from 'crypto';
+import * as ts from 'typescript';
 import type { PatchEmitter, ChangeOp, TextPatch, PatchContext } from './types';
 import type { SemanticModelElement } from '../model/types';
 
@@ -69,57 +70,12 @@ function makeDiff(relativePath: string, oldLines: string[], newLines: string[]):
   const header = `--- a/${relativePath}\n+++ b/${relativePath}\n`;
   if (JSON.stringify(oldLines) === JSON.stringify(newLines)) return '';
 
-  const hunks: string[] = [];
-  let i = 0;
-  
-  while (i < Math.max(oldLines.length, newLines.length)) {
-    const oldLine = oldLines[i];
-    const newLine = newLines[i];
-    
-    if (oldLine !== newLine) {
-      // Find the extent of the change
-      let hunkStart = i;
-      let hunkEnd = i;
-      let oldCount = 0;
-      let newCount = 0;
-      
-      // Count consecutive changed lines
-      while (hunkEnd < Math.max(oldLines.length, newLines.length)) {
-        const hunkOldLine = oldLines[hunkEnd];
-        const hunkNewLine = newLines[hunkEnd];
-        if (hunkOldLine !== hunkNewLine) {
-          if (hunkOldLine !== undefined) oldCount++;
-          if (hunkNewLine !== undefined) newCount++;
-          hunkEnd++;
-        } else {
-          break;
-        }
-      }
-      
-      // Include context lines (3 lines before and after)
-      const contextStart = Math.max(0, hunkStart - 3);
-      const contextEnd = Math.min(Math.max(oldLines.length, newLines.length), hunkEnd + 3);
-      
-      const oldHunkLines = oldLines.slice(contextStart, hunkStart)
-        .map(l => ` ${l}`)
-        .concat(oldLines.slice(hunkStart, hunkEnd).map(l => `-${l}`))
-        .concat(oldLines.slice(hunkEnd, contextEnd).map(l => ` ${l}`));
-      
-      const newHunkLines = newLines.slice(contextStart, hunkStart)
-        .map(l => ` ${l}`)
-        .concat(newLines.slice(hunkStart, hunkEnd).map(l => `+${l}`))
-        .concat(newLines.slice(hunkEnd, contextEnd).map(l => ` ${l}`));
-      
-      const hunkHeader = `@@ -${contextStart + 1},${oldCount} +${contextStart + 1},${newCount} @@`;
-      hunks.push(`${hunkHeader}\n${oldHunkLines.join('\n')}\n${newHunkLines.join('\n')}`);
-      
-      i = hunkEnd;
-    } else {
-      i++;
-    }
-  }
-
-  return header + hunks.join('\n');
+  const oldCount = oldLines.length;
+  const newCount = newLines.length;
+  const hunkHeader = `@@ -1,${oldCount} +1,${newCount} @@`;
+  const oldBlock = oldLines.map(line => `-${line}`).join('\n');
+  const newBlock = newLines.map(line => `+${line}`).join('\n');
+  return `${header}${hunkHeader}\n${oldBlock}\n${newBlock}`;
 }
 
 // ============================================================================
@@ -130,30 +86,72 @@ function makeDiff(relativePath: string, oldLines: string[], newLines: string[]):
  * Rename the React component declaration in source.
  * Handles: function Foo, const Foo =, class Foo, export default function Foo.
  */
-function renameComponentInSource(source: string, oldName: string, newName: string): string {
-  // Replace function/const/class declarations
-  let result = source
-    .replace(
-      new RegExp(`(export\\s+(?:default\\s+)?(?:function|class)\\s+)${escapeRe(oldName)}\\b`, 'g'),
-      `$1${newName}`,
-    )
-    .replace(
-      new RegExp(`((?:export\\s+(?:const|let)\\s+))${escapeRe(oldName)}\\b`, 'g'),
-      `$1${newName}`,
-    )
-    .replace(
-      new RegExp(`(const\\s+)${escapeRe(oldName)}(\\s*[=:])`, 'g'),
-      `$1${newName}$2`,
-    );
-  // Replace JSX self-references: <Foo> and <Foo/>
-  result = result
-    .replace(new RegExp(`<${escapeRe(oldName)}(\\s|/>|>)`, 'g'), `<${newName}$1`)
-    .replace(new RegExp(`</${escapeRe(oldName)}>`, 'g'), `</${newName}>`);
+interface TextEdit {
+  start: number;
+  end: number;
+  replacement: string;
+}
+
+function applyTextEdits(source: string, edits: TextEdit[]): string {
+  const sorted = [...edits].sort((a, b) => b.start - a.start);
+  let result = source;
+  for (const edit of sorted) {
+    result = result.slice(0, edit.start) + edit.replacement + result.slice(edit.end);
+  }
   return result;
 }
 
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function createSourceFile(source: string, filePath: string): ts.SourceFile {
+  return ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+}
+
+function renameComponentInSource(source: string, filePath: string, oldName: string, newName: string): { updated: string; range?: Range } {
+  const sourceFile = createSourceFile(source, filePath);
+  const edits: TextEdit[] = [];
+  let firstRange: Range | undefined;
+
+  const maybeAddIdentifierEdit = (identifier: ts.Identifier, rangeNode?: ts.Node): void => {
+    if (identifier.text !== oldName) {
+      return;
+    }
+    if (!firstRange) {
+      const anchorStart = (rangeNode ?? identifier).getStart(sourceFile);
+      const anchorEnd = source.indexOf('\n', anchorStart);
+      const anchorText = source.slice(anchorStart, anchorEnd === -1 ? source.length : anchorEnd);
+      const match: RegExpMatchArray = [anchorText];
+      match.index = anchorStart;
+      firstRange = calculateRange(source, match, 'ComponentDeclaration');
+    }
+    edits.push({
+      start: identifier.getStart(sourceFile),
+      end: identifier.getEnd(),
+      replacement: newName,
+    });
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      maybeAddIdentifierEdit(node.name, node);
+    }
+    if (ts.isClassDeclaration(node) && node.name) {
+      maybeAddIdentifierEdit(node.name, node);
+    }
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+      maybeAddIdentifierEdit(node.name, node.parent?.parent ?? node);
+    }
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxClosingElement(node)) {
+      if (ts.isIdentifier(node.tagName)) {
+        maybeAddIdentifierEdit(node.tagName);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  if (edits.length === 0) {
+    return { updated: source, range: firstRange };
+  }
+  return { updated: applyTextEdits(source, edits), range: firstRange };
 }
 
 /**
@@ -161,10 +159,29 @@ function escapeRe(s: string): string {
  * Inserts before the closing `}` of the first interface/type Props block.
  */
 function addPropToSource(source: string, propLine: string): string {
-  const match = /(interface\s+\w+Props\s*\{[^}]*)(\})/s.exec(source);
-  if (!match) return source;
-  const m1 = match[1]!;
-  return source.slice(0, match.index + m1.length) + `  ${propLine};\n` + source.slice(match.index + m1.length);
+  const sourceFile = createSourceFile(source, 'component.tsx');
+  let insertOffset: number | null = null;
+
+  const visit = (node: ts.Node): void => {
+    if (insertOffset !== null) {
+      return;
+    }
+    if (ts.isInterfaceDeclaration(node) && node.name.text.endsWith('Props')) {
+      insertOffset = node.members.end - 1;
+      return;
+    }
+    if (ts.isTypeAliasDeclaration(node) && node.name.text.endsWith('Props') && ts.isTypeLiteralNode(node.type)) {
+      insertOffset = node.type.members.end - 1;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  if (insertOffset === null) {
+    return source;
+  }
+  return source.slice(0, insertOffset) + `  ${propLine};\n` + source.slice(insertOffset);
 }
 
 // ============================================================================
@@ -234,11 +251,8 @@ export class ReactPatchEmitter implements PatchEmitter {
         if (!oldName || !newName) return [];
         
         // Calculate range for the component declaration
-        const declRegex = new RegExp(`(export\\s+(?:default\\s+)?(?:function|class)\\s+)${escapeRe(oldName)}\\b`);
-        const declMatch = declRegex.exec(source);
-        const range = declMatch ? calculateRange(source, declMatch, 'ComponentDeclaration') : undefined;
-        
-        const newSource = renameComponentInSource(source, oldName, newName);
+        const renamed = renameComponentInSource(source, relativePath, oldName, newName);
+        const newSource = renamed.updated;
         const newLines = newSource.split('\n');
         const diff = makeDiff(relativePath, oldLines, newLines);
         if (!diff) return [];
@@ -246,7 +260,7 @@ export class ReactPatchEmitter implements PatchEmitter {
         return [{
           relativePath,
           diff,
-          ranges: range ? [range] : [],
+          ranges: renamed.range ? [renamed.range] : [],
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,

@@ -415,6 +415,8 @@ async function runLifecycleSmoke() {
   const errors = [];
   const { ArtifactManifestSchema, DeploymentManifestSchema } = await loadManifestValidators();
   const smokeRuns = [
+    { phase: 'validate', args: ['product', 'validate', PRODUCT_ID, '--dry-run', '--json'] },
+    { phase: 'test', args: ['product', 'test', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'build', args: ['product', 'build', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'deploy', args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
@@ -444,6 +446,69 @@ async function runLifecycleSmoke() {
       ArtifactManifestSchema,
       DeploymentManifestSchema,
     }));
+    errors.push(...validateGateEvidence(smokeRun.phase, payload));
+  }
+
+  return errors;
+}
+
+function validateGateEvidence(phase, payload) {
+  const errors = [];
+  const gateResultManifestPath = payload?.manifests?.gateResultManifest;
+
+  if (!gateResultManifestPath) {
+    // gateResultManifest is expected for all phases except dev
+    if (phase !== 'dev') {
+      errors.push(`Lifecycle smoke phase "${phase}" missing gateResultManifest`);
+    }
+    return errors;
+  }
+
+  if (!existsSync(gateResultManifestPath)) {
+    errors.push(`Lifecycle smoke phase "${phase}" gateResultManifest does not exist: ${gateResultManifestPath}`);
+    return errors;
+  }
+
+  try {
+    const gateResults = readJson(gateResultManifestPath);
+    const gateResultsArray = Array.isArray(gateResults) ? gateResults : gateResults?.results;
+
+    if (!Array.isArray(gateResultsArray)) {
+      errors.push(`Lifecycle smoke phase "${phase}" gateResultManifest has invalid format: expected array of results`);
+      return errors;
+    }
+
+    for (const gateResult of gateResultsArray) {
+      const gateId = gateResult?.gateId;
+      const passed = gateResult?.passed;
+      const reason = gateResult?.reason;
+      const evidence = gateResult?.evidence;
+
+      if (passed === true) {
+        // Check for synthetic bootstrap gate success without real evidence
+        if (reason?.includes('synthetic') || reason?.includes('replace with concrete provider')) {
+          errors.push(
+            `Gate "${gateId}" in phase "${phase}" returned synthetic success without real evidence: ${reason}`
+          );
+        }
+        // Check for bootstrap-gate evidence pattern (indicates synthetic pass)
+        if (Array.isArray(evidence) && evidence.some((e) => e?.startsWith('bootstrap-gate:'))) {
+          errors.push(
+            `Gate "${gateId}" in phase "${phase}" has synthetic bootstrap-gate evidence without real implementation`
+          );
+        }
+        // Check for empty evidence when gate passed
+        if (!Array.isArray(evidence) || evidence.length === 0) {
+          errors.push(
+            `Gate "${gateId}" in phase "${phase}" passed but has no evidence`
+          );
+        }
+      }
+    }
+  } catch (err) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" failed to parse gateResultManifest: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   return errors;

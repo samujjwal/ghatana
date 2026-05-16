@@ -787,6 +787,17 @@ async function* walkDirectory(
     const entryName = entry.name as string;
     const absolutePath = join(dir, entryName);
     const relativePath = relative(root, absolutePath).replace(/\\/g, '/');
+    if (relativePath.includes('/vendor/') || relativePath.startsWith('vendor/')) {
+      yield {
+        kind: 'skip',
+        skippedArtifact: createSkippedArtifact(
+          relativePath,
+          'vendor',
+          'Skipped vendor-managed source path.',
+        ),
+      };
+      continue;
+    }
     const excludePattern = findFirstMatchingGlob(relativePath, config.excludeGlobs);
     const ignoredByGitignore = config.respectGitignore !== false && gitignoreMatcher(relativePath);
 
@@ -881,7 +892,7 @@ async function scanFile(
         record: null,
         skippedArtifact: createSkippedArtifact(
           relativePath,
-          'largeFile',
+          'maxFileSize',
           'Skipped file because it exceeds the configured size limit.',
           { sizeBytes: stats.size },
         ),
@@ -929,19 +940,6 @@ async function scanFile(
       : extractImportExportSummary(content, language);
     const eligibility = generated ? [] : determineExtractorEligibility(kind, language, framework);
     const checksum = computeChecksum(content);
-
-    // P1-7: Use new skip source for generated files
-    if (generated) {
-      return {
-        record: null,
-        skippedArtifact: createSkippedArtifact(
-          relativePath,
-          'generated',
-          'Skipped auto-generated file.',
-          { sizeBytes: stats.size },
-        ),
-      };
-    }
 
     return { record: {
       id: buildArtifactId(config.snapshotRef, relativePath),
@@ -997,21 +995,9 @@ export async function scanRepository(
     mergedConfig.rootPath,
   );
 
-  // P1-7: Bounded concurrency for file scanning
-  const concurrency = mergedConfig.concurrency ?? 50;
-  const scanQueue: Array<Promise<void>> = [];
-  const semaphore = {
-    acquired: 0,
-    async acquire(): Promise<void> {
-      while (this.acquired >= concurrency) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      this.acquired++;
-    },
-    release(): void {
-      this.acquired--;
-    },
-  };
+  // P1-7: Bounded concurrency for file scanning with constant-size active worker set.
+  const concurrency = Math.max(1, mergedConfig.concurrency ?? 50);
+  const activeWorkers = new Set<Promise<void>>();
 
   for await (const file of walkDirectory(
     mergedConfig.rootPath,
@@ -1025,43 +1011,33 @@ export async function scanRepository(
       continue;
     }
 
-    // P1-7: Bounded concurrency - wait for available slot
-    const scanPromise = (async () => {
-      await semaphore.acquire();
-      try {
-        const record = await scanFile(
-          file.relativePath,
-          file.absolutePath,
-          mergedConfig,
-          packageBoundaries,
-        );
-        if (record.record) {
-          artifacts.push(record.record);
-        } else {
-          if (record.skippedArtifact) {
-            skippedArtifacts.push(record.skippedArtifact);
-          }
-          ignoredFiles++;
+    const worker = (async () => {
+      const record = await scanFile(
+        file.relativePath,
+        file.absolutePath,
+        mergedConfig,
+        packageBoundaries,
+      );
+      if (record.record) {
+        artifacts.push(record.record);
+      } else {
+        if (record.skippedArtifact) {
+          skippedArtifacts.push(record.skippedArtifact);
         }
-      } finally {
-        semaphore.release();
+        ignoredFiles++;
       }
-    })();
+    })().finally(() => {
+      activeWorkers.delete(worker);
+    });
 
-    scanQueue.push(scanPromise);
-
-    // Wait for some promises to complete if queue is full
-    if (scanQueue.length >= concurrency) {
-      await Promise.race(scanQueue);
-      scanQueue.splice(0, scanQueue.findIndex(p => 
-        // eslint-disable-next-line no-promise-executor-return
-        p.then(() => false, () => false)
-      ));
+    activeWorkers.add(worker);
+    if (activeWorkers.size >= concurrency) {
+      await Promise.race(activeWorkers);
     }
   }
 
   // Wait for all remaining scans to complete
-  await Promise.all(scanQueue);
+  await Promise.all(activeWorkers);
 
   // Compute summary
   const byKind: Record<string, number> = {};

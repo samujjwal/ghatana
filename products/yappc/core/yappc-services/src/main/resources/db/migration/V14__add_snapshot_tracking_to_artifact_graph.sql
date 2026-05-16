@@ -1,6 +1,9 @@
 -- V14__add_snapshot_tracking_to_artifact_graph.sql
 -- P4-4: Add snapshot/version tracking and tombstone support to artifact graph tables
 -- Enables incremental upsert, cross-scan diffing, and history preservation
+-- NOTE: V11 introduced part of this shape for early rollout safety. This migration reasserts the same columns/indexes
+-- with IF NOT EXISTS semantics so environments converging from different baselines stay deterministic.
+-- Keep future changes in forward-only dedicated migrations instead of expanding this overlap.
 
 -- Add snapshot tracking columns to artifact_nodes
 ALTER TABLE artifact_nodes

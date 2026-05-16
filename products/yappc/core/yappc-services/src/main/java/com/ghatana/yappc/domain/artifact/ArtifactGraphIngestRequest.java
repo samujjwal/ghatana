@@ -13,7 +13,7 @@ import java.util.Map;
  * to preserve complete graph lifecycle information across the backend API boundary.
  */
 public record ArtifactGraphIngestRequest(
-    String productId,
+    String projectId,
     String tenantId,
     List<ArtifactNodeDto> nodes,
     List<ArtifactEdgeDto> edges,

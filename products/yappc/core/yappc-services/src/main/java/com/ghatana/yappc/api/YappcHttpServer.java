@@ -37,6 +37,7 @@ public class YappcHttpServer extends HttpServerLauncher {
             LearnApiController learnController,
             EvolveApiController evolveController,
             LifecycleApiController lifecycleController,
+            ImportController importController,
             ArtifactGraphController artifactGraphController,
             PageArtifactController pageArtifactController,
             PreviewSessionApiController previewSessionApiController,
@@ -93,6 +94,8 @@ public class YappcHttpServer extends HttpServerLauncher {
                 .with(HttpMethod.POST, "/api/v1/yappc/lifecycle/execute", secureVersioned(authenticationFilter, routeAuthorizationFilter, lifecycleController::executeFullLifecycle, versionPolicy))
 
                 // Artifact Compiler endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/import-source", secureVersioned(authenticationFilter, routeAuthorizationFilter, importController::createImportJob, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/artifact/import-source/:jobId", secureVersioned(authenticationFilter, routeAuthorizationFilter, importController::getImportJobStatus, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/ingest", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::ingest, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/analyze", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::analyze, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/merge", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::merge, versionPolicy))

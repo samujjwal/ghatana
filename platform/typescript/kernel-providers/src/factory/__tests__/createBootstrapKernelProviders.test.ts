@@ -11,6 +11,7 @@ import {
   FileProvenanceProvider,
   FileRuntimeTruthProvider,
   GhatanaFileRegistryProvider,
+  RegistryValidationGateProvider,
   createBootstrapKernelProviders,
 } from "../..";
 
@@ -26,7 +27,7 @@ describe("createBootstrapKernelProviders", () => {
     expect(providers.artifacts).toBeInstanceOf(FileArtifactProvider);
     expect(providers.health).toBeInstanceOf(FileHealthProvider);
     expect(providers.approvals).toBeInstanceOf(FileApprovalProvider);
-    expect(providers.gates["registry-validation"]).toBeInstanceOf(FileBootstrapGateProvider);
+    expect(providers.gates["registry-validation"]).toBeInstanceOf(RegistryValidationGateProvider);
     expect(providers.provenance).toBeInstanceOf(FileProvenanceProvider);
     expect(providers.memory).toBeInstanceOf(FileMemoryProvider);
     expect(providers.runtimeTruth).toBeInstanceOf(FileRuntimeTruthProvider);

@@ -9,11 +9,11 @@ import java.util.Objects;
  * @doc.pattern DataTransferObject
  */
 public record ArtifactRequestScope(
-        String productId,
+        String projectId,
         String tenantId
 ) {
     public ArtifactRequestScope {
-        Objects.requireNonNull(productId, "productId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
     }
 }
