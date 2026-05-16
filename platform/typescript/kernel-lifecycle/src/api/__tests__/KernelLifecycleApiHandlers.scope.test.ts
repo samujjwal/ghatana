@@ -7,6 +7,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockService(),
       requireScopeHeaders: true,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -26,6 +27,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockService(),
       requireScopeHeaders: true,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -46,6 +48,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
       service: createMockService(),
       requireScopeHeaders: true,
       allowUnscopedLocalDevelopment: true,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -61,6 +64,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockService(),
       requireScopeHeaders: false,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -76,6 +80,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockService(),
       requireScopeHeaders: true,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -98,6 +103,7 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockService(),
       requireScopeHeaders: true,
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {

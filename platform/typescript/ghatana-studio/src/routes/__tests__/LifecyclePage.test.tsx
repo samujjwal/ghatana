@@ -281,7 +281,7 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByText('security-scan')).toBeInTheDocument();
     expect(screen.getByText('web-dist')).toBeInTheDocument();
     expect(screen.getByText('studio.route.lifecycle.environmentLabel: local')).toBeInTheDocument();
-    expect(screen.getByText('studio.route.lifecycle.statusLabel: healthy')).toBeInTheDocument();
+    expect(screen.getAllByText('studio.route.lifecycle.runStatus.healthy').length).toBeGreaterThan(0);
     expect(screen.getAllByText('studio.route.lifecycle.runIdLabel').length).toBeGreaterThan(0);
     expect(screen.getByText('studio.route.lifecycle.failureReasonLabel')).toBeInTheDocument();
     expect(screen.getByText('studio.route.lifecycle.outcome.completedWithoutFailureReason')).toBeInTheDocument();
@@ -319,14 +319,14 @@ describe('LifecyclePage approval queue', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Deploy' }));
 
     expect(screen.getByLabelText('lifecycle-blocked-reasons')).toBeInTheDocument();
-    expect(screen.getByText('phase-not-supported')).toBeInTheDocument();
-    expect(screen.getByText('environment-not-supported')).toBeInTheDocument();
-    expect(screen.getByText('provider-mode-unavailable')).toBeInTheDocument();
-    expect(screen.getByText('lifecycle-execution-not-allowed')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.phase-not-supported')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.environment-not-supported')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.provider-mode-unavailable')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.lifecycle-execution-not-allowed')).toBeInTheDocument();
     expect(screen.getByLabelText('lifecycle-readiness-state')).toBeInTheDocument();
-    expect(screen.getByText('requires-product-gates')).toBeInTheDocument();
-    expect(screen.getByText('security-gate')).toBeInTheDocument();
-    expect(screen.getByText('enable-gates-before-execution')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.requires-product-gates')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.security-gate')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.lifecycle.reasonCode.enable-gates-before-execution')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'studio.route.lifecycle.executePhaseButton' })).toBeDisabled();
   });
 

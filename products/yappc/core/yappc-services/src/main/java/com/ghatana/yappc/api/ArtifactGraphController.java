@@ -119,7 +119,7 @@ public class ArtifactGraphController {
                             ingestRequest.edgeResolutionRecords(),
                             ingestRequest.residualIslandIds()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(projectId, tenantId);
+                        ArtifactRequestScope scope = new ArtifactRequestScope(projectId, tenantId, scopedWorkspaceId);
 
                         // P0-7: Validate graph structure before service call
                         // Basic validation: ensure node IDs are unique and edge targets exist
@@ -217,7 +217,7 @@ public class ArtifactGraphController {
                             analysisRequest.algorithmTypes(),
                             analysisRequest.nodeIds()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId);
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId, scopedWorkspaceId);
 
                         return artifactGraphService.analyzeGraph(scope, scopedRequest)
                                 .map(result -> {
@@ -289,7 +289,7 @@ public class ArtifactGraphController {
                             mergeRequest.rightModel(),
                             mergeRequest.resolutionStrategy()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId);
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId, scopedWorkspaceId);
 
                         return artifactGraphService.mergeModels(scope, scopedRequest)
                                 .map(result -> {
@@ -368,7 +368,21 @@ public class ArtifactGraphController {
                                 .build());
                         }
 
-                        return artifactGraphService.queryGraph(scopedProjectId, tenantId, queryType, seedIds, null, 100)
+                        // P1-8: Parse and validate pagination parameters from payload
+                        String cursor = (String) payload.get("cursor");
+                        Integer limit = parseInteger(payload.get("limit"), 100);
+                        Boolean includeUnresolvedEdges = parseBoolean(payload.get("includeUnresolvedEdges"), false);
+                        String snapshotId = (String) payload.get("snapshotId");
+
+                        // Validate limit is within reasonable bounds
+                        if (limit < 1 || limit > 1000) {
+                            return Promise.of(badRequest400("Invalid limit: must be between 1 and 1000"));
+                        }
+
+                        log.info("Querying artifact graph: projectId={}, queryType={}, cursor={}, limit={}, includeUnresolved={}",
+                            scopedProjectId, queryType, cursor != null ? "present" : "null", limit, includeUnresolvedEdges);
+
+                        return artifactGraphService.queryGraph(scopedProjectId, tenantId, queryType, seedIds, cursor, limit)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -455,5 +469,39 @@ public class ArtifactGraphController {
                     }
                 })
                 .whenException(e -> log.error("Error analyzing residual islands", e));
+    }
+
+    // ============================================================================
+    // Helper Methods
+    // ============================================================================
+
+    /**
+     * Parse an integer value from the payload with a default fallback.
+     */
+    private Integer parseInteger(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Number n) {
+            return n.intValue();
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Parse a boolean value from the payload with a default fallback.
+     */
+    private Boolean parseBoolean(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        return Boolean.parseBoolean(value.toString());
     }
 }

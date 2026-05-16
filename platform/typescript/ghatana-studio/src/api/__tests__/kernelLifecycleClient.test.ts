@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValidationError } from '@ghatana/api';
 import {
   createKernelLifecycleClient,
+  mapKernelLifecycleClientError,
+  KernelLifecycleProviderModeError,
   type LifecyclePlan,
   type LifecycleRun,
 } from '../kernelLifecycleClient';
@@ -442,5 +444,31 @@ describe('kernelLifecycleClient', () => {
     await expect(client.getProductUnit('digital-marketing')).rejects.toBeInstanceOf(
       ValidationError,
     );
+  });
+
+  it('maps kernel lifecycle API errors from the shared ApiError response payload', () => {
+    const mappedError = mapKernelLifecycleClientError({
+      name: 'Error',
+      message: 'Provider unavailable',
+      request: { url: '/api/kernel/product-units', method: 'GET' },
+      response: {
+        data: {
+          reasonCode: 'provider-unavailable',
+          message: 'Provider unavailable',
+          correlationId: 'corr-503',
+          statusCode: 503,
+          safeDetails: { providerId: 'platform-mode' },
+        },
+      },
+      isRetryable: true,
+    });
+
+    expect(mappedError).toBeInstanceOf(KernelLifecycleProviderModeError);
+    expect(mappedError).toMatchObject({
+      code: 'PROVIDER_MODE_UNAVAILABLE',
+      statusCode: 503,
+      correlationId: 'corr-503',
+      details: { providerId: 'platform-mode' },
+    });
   });
 });

@@ -19,7 +19,7 @@ import com.ghatana.yappc.services.import_.ImportValidationService;
 import com.ghatana.yappc.services.import_.ImportValidationResult;
 import com.ghatana.yappc.services.import_.SourceImportJobRequest;
 import com.ghatana.yappc.services.import_.SourceImportJobService;
-import com.ghatana.yappc.services.source.SourceLocator;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -190,7 +190,13 @@ public final class ImportController {
                 workspaceId,
                 projectId,
                 principal.getName(),
-                new SourceLocator(req.sourceType(), sourceLocatorValue(req), null, null, null)
+                SourceLocator.builder()
+                    .provider(req.sourceType())
+                    .repoId(sourceLocatorValue(req))
+                    .tenantId(tenantId)
+                    .workspaceId(workspaceId)
+                    .projectId(projectId)
+                    .build()
             )))
             .then(result -> {
                 if (result.success()) {

@@ -29,10 +29,13 @@ import java.util.stream.Collectors;
  * @doc.purpose JDBC persistence for artifact graph nodes and edges extracted by the compiler scanner
  * @doc.layer infrastructure
  * @doc.pattern Repository
- * 
+ *
  * P4-4: Added snapshot/version ID tracking for incremental upsert and tombstone support for removed files/symbols.
- * Nodes and edges now track which repository snapshot they came from, enabling cross-scan diffing.
+ * Nodes and edges now track which repository scan they came from, enabling cross-scan diffing.
  * Removed nodes are tombstoned rather than hard-deleted to preserve history.
+ *
+ * P0: Updated to include workspace_id for complete tenant/workspace/project scope isolation.
+ * All queries now include workspace scope to prevent cross-workspace data leakage.
  */
 public final class ArtifactGraphRepository {
 
@@ -54,8 +57,8 @@ public final class ArtifactGraphRepository {
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
-    public Promise<Void> saveNodes(String productId, String tenantId, List<ArtifactNodeDto> nodes) {
-        return saveNodes(productId, tenantId, nodes, null, null);
+    public Promise<Void> saveNodes(String productId, String tenantId, String workspaceId, List<ArtifactNodeDto> nodes) {
+        return saveNodes(productId, tenantId, workspaceId, nodes, null, null);
     }
 
     /**
@@ -64,7 +67,7 @@ public final class ArtifactGraphRepository {
      * Version ID enables tracking of graph evolution over time.
      * P1-12: Skip unchanged nodes by checksum comparison to reduce database writes.
      */
-    public Promise<Void> saveNodes(String productId, String tenantId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId) {
+    public Promise<Void> saveNodes(String productId, String tenantId, String workspaceId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId) {
         if (nodes == null || nodes.isEmpty()) {
             return Promise.of(null);
         }
@@ -74,12 +77,13 @@ public final class ArtifactGraphRepository {
             String checksumQuery = """
                 SELECT node_id, content_checksum
                 FROM artifact_nodes
-                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement stmt = connection.prepareStatement(checksumQuery)) {
                 stmt.setString(1, tenantId);
-                stmt.setString(2, productId);
+                stmt.setString(2, workspaceId);
+                stmt.setString(3, productId);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
                         existingChecksums.put(rs.getString("node_id"), rs.getString("content_checksum"));
@@ -90,12 +94,12 @@ public final class ArtifactGraphRepository {
             String sql = """
                 INSERT INTO artifact_nodes (
                     node_id, node_type, node_name, file_path, content_snippet,
-                    properties_json, tags_json, tenant_id, project_id, content_checksum,
+                    properties_json, tags_json, tenant_id, workspace_id, project_id, content_checksum,
                     source_location_json, extractor_id, extractor_version, confidence, provenance,
                     privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref,
                     created_at, updated_at, snapshot_id, version_id, is_tombstone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (tenant_id, node_id) DO UPDATE SET
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (tenant_id, workspace_id, node_id) DO UPDATE SET
                     node_type = EXCLUDED.node_type,
                     node_name = EXCLUDED.node_name,
                     file_path = EXCLUDED.file_path,
@@ -143,27 +147,28 @@ public final class ArtifactGraphRepository {
                     statement.setString(6, writeJson(node.properties()));
                     statement.setString(7, writeJson(node.tags()));
                     statement.setString(8, tenantId);
-                    statement.setString(9, productId);
-                    statement.setString(10, newChecksum);
-                    statement.setString(11, writeJson(node.sourceLocation()));
-                    statement.setString(12, node.extractorId());
-                    statement.setString(13, node.extractorVersion());
+                    statement.setString(9, workspaceId);
+                    statement.setString(10, productId);
+                    statement.setString(11, newChecksum);
+                    statement.setString(12, writeJson(node.sourceLocation()));
+                    statement.setString(13, node.extractorId());
+                    statement.setString(14, node.extractorVersion());
                     if (node.confidence() != null) {
-                        statement.setDouble(14, node.confidence());
+                        statement.setDouble(15, node.confidence());
                     } else {
-                        statement.setNull(14, java.sql.Types.DOUBLE);
+                        statement.setNull(15, java.sql.Types.DOUBLE);
                     }
-                    statement.setString(15, node.provenance());
-                    statement.setString(16, writeJson(node.privacySecurityFlags()));
-                    statement.setString(17, writeJson(node.residualFragmentIds()));
-                    statement.setString(18, node.sourceRef());
-                    statement.setString(19, node.symbolRef());
+                    statement.setString(16, node.provenance());
+                    statement.setString(17, writeJson(node.privacySecurityFlags()));
+                    statement.setString(18, writeJson(node.residualFragmentIds()));
+                    statement.setString(19, node.sourceRef());
+                    statement.setString(20, node.symbolRef());
                     Instant now = Instant.now();
-                    statement.setTimestamp(20, Timestamp.from(now));
                     statement.setTimestamp(21, Timestamp.from(now));
-                    statement.setString(22, snapshotId);
-                    statement.setString(23, versionId);
-                    statement.setBoolean(24, false); // is_tombstone
+                    statement.setTimestamp(22, Timestamp.from(now));
+                    statement.setString(23, snapshotId);
+                    statement.setString(24, versionId);
+                    statement.setBoolean(25, false); // is_tombstone
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -174,14 +179,14 @@ public final class ArtifactGraphRepository {
         }).map(v -> null);
     }
 
-    public Promise<Void> saveEdges(String productId, String tenantId, List<ArtifactEdgeDto> edges) {
-        return saveEdges(productId, tenantId, edges, null, null);
+    public Promise<Void> saveEdges(String productId, String tenantId, String workspaceId, List<ArtifactEdgeDto> edges) {
+        return saveEdges(productId, tenantId, workspaceId, edges, null, null);
     }
 
     /**
      * P4-4: Save edges with snapshot/version ID tracking for incremental upsert.
      */
-    public Promise<Void> saveEdges(String productId, String tenantId, List<ArtifactEdgeDto> edges, String snapshotId, String versionId) {
+    public Promise<Void> saveEdges(String productId, String tenantId, String workspaceId, List<ArtifactEdgeDto> edges, String snapshotId, String versionId) {
         if (edges == null || edges.isEmpty()) {
             return Promise.of(null);
         }
@@ -190,9 +195,9 @@ public final class ArtifactGraphRepository {
                 INSERT INTO artifact_edges (
                     source_node_id, target_node_id, relationship_type,
                     properties_json, edge_id, confidence, bidirectional, edge_metadata_json,
-                    tenant_id, project_id, created_at, updated_at, snapshot_id, version_id, is_tombstone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (tenant_id, source_node_id, target_node_id, relationship_type) DO UPDATE SET
+                    tenant_id, workspace_id, project_id, created_at, updated_at, snapshot_id, version_id, is_tombstone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (tenant_id, workspace_id, source_node_id, target_node_id, relationship_type) DO UPDATE SET
                     properties_json = EXCLUDED.properties_json,
                     edge_id = EXCLUDED.edge_id,
                     confidence = EXCLUDED.confidence,
@@ -223,13 +228,14 @@ public final class ArtifactGraphRepository {
                     }
                     statement.setString(8, writeJson(edge.metadata()));
                     statement.setString(9, tenantId);
-                    statement.setString(10, productId);
+                    statement.setString(10, workspaceId);
+                    statement.setString(11, productId);
                     Instant now = Instant.now();
-                    statement.setTimestamp(11, Timestamp.from(now));
                     statement.setTimestamp(12, Timestamp.from(now));
-                    statement.setString(13, snapshotId != null ? snapshotId : edge.snapshotId());
-                    statement.setString(14, versionId != null ? versionId : edge.versionId());
-                    statement.setBoolean(15, false); // is_tombstone
+                    statement.setTimestamp(13, Timestamp.from(now));
+                    statement.setString(14, snapshotId != null ? snapshotId : edge.snapshotId());
+                    statement.setString(15, versionId != null ? versionId : edge.versionId());
+                    statement.setBoolean(16, false); // is_tombstone
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -247,20 +253,20 @@ public final class ArtifactGraphRepository {
      * P4-2: Alias for saveNodes - provides incremental upsert semantics.
      * Uses ON CONFLICT DO UPDATE to only insert/update changed nodes.
      */
-    public Promise<Void> upsertNodes(String productId, String tenantId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId, String contentChecksum) {
-        return saveNodes(productId, tenantId, nodes, snapshotId, versionId);
+    public Promise<Void> upsertNodes(String productId, String tenantId, String workspaceId, List<ArtifactNodeDto> nodes, String snapshotId, String versionId, String contentChecksum) {
+        return saveNodes(productId, tenantId, workspaceId, nodes, snapshotId, versionId);
     }
 
     /**
      * P4-2: Alias for saveEdges - provides incremental upsert semantics.
      * Uses ON CONFLICT DO UPDATE to only insert/update changed edges.
      */
-    public Promise<Void> upsertEdges(String productId, String tenantId, List<ArtifactEdgeDto> edges, String snapshotId, String versionId) {
-        return saveEdges(productId, tenantId, edges, snapshotId, versionId);
+    public Promise<Void> upsertEdges(String productId, String tenantId, String workspaceId, List<ArtifactEdgeDto> edges, String snapshotId, String versionId) {
+        return saveEdges(productId, tenantId, workspaceId, edges, snapshotId, versionId);
     }
 
-    public Promise<List<ArtifactNodeDto>> findNodesByProduct(String productId, String tenantId, int limit) {
-        return findNodesByProduct(productId, tenantId, limit, false);
+    public Promise<List<ArtifactNodeDto>> findNodesByProduct(String productId, String tenantId, String workspaceId, int limit) {
+        return findNodesByProduct(productId, tenantId, workspaceId, limit, false);
     }
 
     /**
@@ -268,16 +274,16 @@ public final class ArtifactGraphRepository {
      * Active graph queries should exclude tombstones (includeTombstones=false).
      * Historical/diff queries should include tombstones (includeTombstones=true).
      */
-    public Promise<List<ArtifactNodeDto>> findNodesByProduct(String productId, String tenantId, int limit, boolean includeTombstones) {
+    public Promise<List<ArtifactNodeDto>> findNodesByProduct(String productId, String tenantId, String workspaceId, int limit, boolean includeTombstones) {
         return Promise.ofBlocking(executor, () -> {
             String tombstoneFilter = includeTombstones ? "" : " AND is_tombstone = false";
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                      properties_json, tags_json, tenant_id, project_id,
+                      properties_json, tags_json, tenant_id, workspace_id, project_id,
                       source_location_json, extractor_id, extractor_version, confidence, provenance,
                       privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
-                WHERE tenant_id = ? AND project_id = ?
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """ + tombstoneFilter + """
                 ORDER BY updated_at DESC
                 LIMIT ?
@@ -285,8 +291,9 @@ public final class ArtifactGraphRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
-                statement.setInt(3, limit);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                statement.setInt(4, limit);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<ArtifactNodeDto> nodes = new ArrayList<>();
                     while (resultSet.next()) {
@@ -298,7 +305,7 @@ public final class ArtifactGraphRepository {
         });
     }
 
-    public Promise<List<ArtifactNodeDto>> findNodesByIds(List<String> nodeIds, String tenantId) {
+    public Promise<List<ArtifactNodeDto>> findNodesByIds(List<String> nodeIds, String tenantId, String workspaceId) {
         if (nodeIds.isEmpty()) {
             return Promise.of(List.of());
         }
@@ -306,17 +313,18 @@ public final class ArtifactGraphRepository {
             String placeholders = nodeIds.stream().map(id -> "?").collect(Collectors.joining(", "));
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                      properties_json, tags_json, tenant_id, project_id,
+                      properties_json, tags_json, tenant_id, workspace_id, project_id,
                       source_location_json, extractor_id, extractor_version, confidence, provenance,
                       privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
-                WHERE tenant_id = ? AND node_id IN (%s)
+                WHERE tenant_id = ? AND workspace_id = ? AND node_id IN (%s)
                 """.formatted(placeholders);
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
                 for (int index = 0; index < nodeIds.size(); index++) {
-                    statement.setString(index + 2, nodeIds.get(index));
+                    statement.setString(index + 3, nodeIds.get(index));
                 }
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<ArtifactNodeDto> nodes = new ArrayList<>();
@@ -329,27 +337,29 @@ public final class ArtifactGraphRepository {
         });
     }
 
-    public Promise<List<ArtifactEdgeDto>> findEdgesByProduct(String productId, String tenantId) {
-        return findEdgesByProduct(productId, tenantId, false);
+    public Promise<List<ArtifactEdgeDto>> findEdgesByProduct(String productId, String tenantId, String workspaceId) {
+        return findEdgesByProduct(productId, tenantId, workspaceId, false);
     }
 
     /**
      * P4-4: Find edges by product with option to include/exclude tombstoned edges.
      */
-    public Promise<List<ArtifactEdgeDto>> findEdgesByProduct(String productId, String tenantId, boolean includeTombstones) {
+    public Promise<List<ArtifactEdgeDto>> findEdgesByProduct(String productId, String tenantId, String workspaceId, boolean includeTombstones) {
         return Promise.ofBlocking(executor, () -> {
             String tombstoneFilter = includeTombstones ? "" : " AND is_tombstone = false";
             String sql = """
                   SELECT source_node_id, target_node_id, relationship_type, properties_json,
-                      edge_id, confidence, bidirectional, edge_metadata_json, snapshot_id, version_id
+                      edge_id, confidence, bidirectional, edge_metadata_json, tenant_id, workspace_id,
+                      snapshot_id, version_id
                 FROM artifact_edges
-                WHERE tenant_id = ? AND project_id = ?
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """ + tombstoneFilter + """
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<ArtifactEdgeDto> edges = new ArrayList<>();
                     while (resultSet.next()) {
@@ -361,40 +371,42 @@ public final class ArtifactGraphRepository {
         });
     }
 
-    public Promise<Boolean> deleteGraphForProduct(String productId, String tenantId) {
-        return tombstoneGraphForProduct(productId, tenantId);
+    public Promise<Boolean> deleteGraphForProduct(String productId, String tenantId, String workspaceId) {
+        return tombstoneGraphForProduct(productId, tenantId, workspaceId);
     }
 
     /**
      * P4-4: Tombstone all nodes and edges for a product instead of hard delete.
      * This preserves history and enables cross-snapshot diffing.
      */
-    public Promise<Boolean> tombstoneGraphForProduct(String productId, String tenantId) {
+    public Promise<Boolean> tombstoneGraphForProduct(String productId, String tenantId, String workspaceId) {
         return Promise.ofBlocking(executor, () -> {
             try (Connection connection = dataSource.getConnection()) {
                 // Tombstone edges first (foreign key dependency)
                 String tombstoneEdges = """
-                    UPDATE artifact_edges 
+                    UPDATE artifact_edges
                     SET is_tombstone = true, updated_at = ?
-                    WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                    WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
                     """;
                 try (PreparedStatement edgeStmt = connection.prepareStatement(tombstoneEdges)) {
                     edgeStmt.setTimestamp(1, Timestamp.from(Instant.now()));
                     edgeStmt.setString(2, tenantId);
-                    edgeStmt.setString(3, productId);
+                    edgeStmt.setString(3, workspaceId);
+                    edgeStmt.setString(4, productId);
                     int edgeCount = edgeStmt.executeUpdate();
                     log.info("Tombstoned {} edges for product {}", edgeCount, productId);
                 }
                 // Tombstone nodes
                 String tombstoneNodes = """
-                    UPDATE artifact_nodes 
+                    UPDATE artifact_nodes
                     SET is_tombstone = true, updated_at = ?
-                    WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                    WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
                     """;
                 try (PreparedStatement nodeStmt = connection.prepareStatement(tombstoneNodes)) {
                     nodeStmt.setTimestamp(1, Timestamp.from(Instant.now()));
                     nodeStmt.setString(2, tenantId);
-                    nodeStmt.setString(3, productId);
+                    nodeStmt.setString(3, workspaceId);
+                    nodeStmt.setString(4, productId);
                     int nodeCount = nodeStmt.executeUpdate();
                     log.info("Tombstoned {} nodes for product {}", nodeCount, productId);
                     return nodeCount > 0;
@@ -407,24 +419,25 @@ public final class ArtifactGraphRepository {
      * P4-4: Tombstone specific nodes by ID list.
      * Used when files/symbols are removed from the source repository.
      */
-    public Promise<Integer> tombstoneNodes(List<String> nodeIds, String tenantId, String snapshotId) {
+    public Promise<Integer> tombstoneNodes(List<String> nodeIds, String tenantId, String workspaceId, String snapshotId) {
         if (nodeIds == null || nodeIds.isEmpty()) {
             return Promise.of(0);
         }
         return Promise.ofBlocking(executor, () -> {
             String placeholders = nodeIds.stream().map(id -> "?").collect(Collectors.joining(", "));
             String sql = """
-                UPDATE artifact_nodes 
+                UPDATE artifact_nodes
                 SET is_tombstone = true, updated_at = ?, snapshot_id = ?
-                WHERE tenant_id = ? AND node_id IN (%s) AND is_tombstone = false
+                WHERE tenant_id = ? AND workspace_id = ? AND node_id IN (%s) AND is_tombstone = false
                 """.formatted(placeholders);
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setTimestamp(1, Timestamp.from(Instant.now()));
                 statement.setString(2, snapshotId);
                 statement.setString(3, tenantId);
+                statement.setString(4, workspaceId);
                 for (int index = 0; index < nodeIds.size(); index++) {
-                    statement.setString(index + 4, nodeIds.get(index));
+                    statement.setString(index + 5, nodeIds.get(index));
                 }
                 int count = statement.executeUpdate();
                 log.info("Tombstoned {} nodes (snapshotId={})", count, snapshotId);
@@ -436,14 +449,14 @@ public final class ArtifactGraphRepository {
     /**
      * P4-4: Tombstone specific edges by source/target node ID lists.
      */
-    public Promise<Integer> tombstoneEdges(List<String> sourceNodeIds, List<String> targetNodeIds, String tenantId, String snapshotId) {
+    public Promise<Integer> tombstoneEdges(List<String> sourceNodeIds, List<String> targetNodeIds, String tenantId, String workspaceId, String snapshotId) {
         if ((sourceNodeIds == null || sourceNodeIds.isEmpty()) && (targetNodeIds == null || targetNodeIds.isEmpty())) {
             return Promise.of(0);
         }
         return Promise.ofBlocking(executor, () -> {
             StringBuilder sql = new StringBuilder(
                 "UPDATE artifact_edges SET is_tombstone = true, updated_at = ?, snapshot_id = ? " +
-                "WHERE tenant_id = ? AND is_tombstone = false"
+                "WHERE tenant_id = ? AND workspace_id = ? AND is_tombstone = false"
             );
             List<String> params = new ArrayList<>();
             
@@ -463,8 +476,9 @@ public final class ArtifactGraphRepository {
                 statement.setTimestamp(1, Timestamp.from(Instant.now()));
                 statement.setString(2, snapshotId);
                 statement.setString(3, tenantId);
+                statement.setString(4, workspaceId);
                 for (int index = 0; index < params.size(); index++) {
-                    statement.setString(index + 4, params.get(index));
+                    statement.setString(index + 5, params.get(index));
                 }
                 int count = statement.executeUpdate();
                 log.info("Tombstoned {} edges (snapshotId={})", count, snapshotId);

@@ -161,6 +161,63 @@ function lifecycleRunTone(status: string): 'success' | 'warning' | 'danger' | 'n
   return 'neutral';
 }
 
+function lifecycleRunStatusLabel(status: string, t: (key: string) => string): string {
+  if (status === 'healthy' || status === 'ready') {
+    return t('studio.route.lifecycle.runStatus.healthy');
+  }
+  if (status === 'running' || status === 'loading') {
+    return t('studio.route.lifecycle.runStatus.running');
+  }
+  if (status === 'degraded') {
+    return t('studio.route.lifecycle.runStatus.degraded');
+  }
+  if (status === 'pending approval') {
+    return t('studio.route.lifecycle.runStatus.pendingApproval');
+  }
+  if (status === 'requires verification') {
+    return t('studio.route.lifecycle.runStatus.requiresVerification');
+  }
+  if (status === 'failed' || status === 'blocked' || status === 'quarantined') {
+    return t('studio.route.lifecycle.runStatus.failed');
+  }
+  if (status === 'skipped') {
+    return t('studio.route.lifecycle.runStatus.skipped');
+  }
+  if (status === 'planned') {
+    return t('studio.route.lifecycle.runStatus.planned');
+  }
+  if (status === 'obsolete') {
+    return t('studio.route.lifecycle.runStatus.obsolete');
+  }
+  return t('studio.route.lifecycle.runStatus.unknown');
+}
+
+function lifecycleReadinessStatusLabel(status: string, t: (key: string) => string): string {
+  if (status === 'enabled') {
+    return t('studio.route.lifecycle.readinessStatus.enabled');
+  }
+  if (status === 'planned') {
+    return t('studio.route.lifecycle.readinessStatus.planned');
+  }
+  if (status === 'partial') {
+    return t('studio.route.lifecycle.readinessStatus.partial');
+  }
+  if (status === 'disabled') {
+    return t('studio.route.lifecycle.readinessStatus.disabled');
+  }
+  if (status === 'ready') {
+    return t('studio.route.lifecycle.readinessStatus.ready');
+  }
+  if (status === 'degraded') {
+    return t('studio.route.lifecycle.readinessStatus.degraded');
+  }
+  return t('studio.route.lifecycle.readinessStatus.unknown');
+}
+
+function lifecycleReasonCodeLabel(reasonCode: string, t: (key: string) => string): string {
+  return t(`studio.route.lifecycle.reasonCode.${reasonCode}` as never);
+}
+
 export default function LifecyclePage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const runtimeContextUserId = lifecycleData.authenticatedUserId;
@@ -386,7 +443,7 @@ export default function LifecyclePage(): ReactElement {
               <div className="text-xs font-semibold text-amber-800">{t('studio.route.lifecycle.blockedReasonCodesTitle')}</div>
               <ul className="mt-2 space-y-1 text-xs text-amber-900">
                 {blockedReasonCodes.map((code) => (
-                  <li key={code}>{code}</li>
+                  <li key={code}>{lifecycleReasonCodeLabel(code, t)}</li>
                 ))}
               </ul>
             </div>
@@ -398,7 +455,7 @@ export default function LifecyclePage(): ReactElement {
             <div className="rounded-md border border-red-300 bg-red-50 p-3" aria-label="lifecycle-readiness-state">
               <div className="text-xs font-semibold text-red-900">{t('studio.route.lifecycle.readinessTitle')}</div>
               <div className="mt-2 text-xs text-red-900">
-                {t('studio.route.lifecycle.readinessStatusLabel')}: {readinessState.lifecycleStatus}
+                {t('studio.route.lifecycle.readinessStatusLabel')}: {lifecycleReadinessStatusLabel(readinessState.lifecycleStatus, t)}
               </div>
               <div className="mt-1 text-xs text-red-900">
                 {t('studio.route.lifecycle.readinessExecutionAllowedLabel')}: {readinessState.lifecycleExecutionAllowed ? t('studio.route.lifecycle.readinessAllowedValue') : t('studio.route.lifecycle.readinessBlockedValue')}
@@ -408,7 +465,7 @@ export default function LifecyclePage(): ReactElement {
                   <div className="mt-2 text-xs font-semibold text-red-900">{t('studio.route.lifecycle.readinessReasonCodesTitle')}</div>
                   <ul className="mt-1 space-y-1 text-xs text-red-900">
                     {readinessState.reasonCodes.map((reasonCode) => (
-                      <li key={reasonCode}>{reasonCode}</li>
+                      <li key={reasonCode}>{lifecycleReasonCodeLabel(reasonCode, t)}</li>
                     ))}
                   </ul>
                 </>
@@ -418,7 +475,7 @@ export default function LifecyclePage(): ReactElement {
                   <div className="mt-2 text-xs font-semibold text-red-900">{t('studio.route.lifecycle.readinessRequiredGatesTitle')}</div>
                   <ul className="mt-1 space-y-1 text-xs text-red-900">
                     {readinessState.requiredGates.map((requiredGate) => (
-                      <li key={requiredGate}>{requiredGate}</li>
+                      <li key={requiredGate}>{lifecycleReasonCodeLabel(requiredGate, t)}</li>
                     ))}
                   </ul>
                 </>
@@ -428,7 +485,7 @@ export default function LifecyclePage(): ReactElement {
                   <div className="mt-2 text-xs font-semibold text-red-900">{t('studio.route.lifecycle.readinessNextRequiredWorkTitle')}</div>
                   <ul className="mt-1 space-y-1 text-xs text-red-900">
                     {readinessState.nextRequiredWork.map((workItem) => (
-                      <li key={workItem}>{workItem}</li>
+                      <li key={workItem}>{lifecycleReasonCodeLabel(workItem, t)}</li>
                     ))}
                   </ul>
                 </>
@@ -457,7 +514,7 @@ export default function LifecyclePage(): ReactElement {
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-gray-900">{run.phase ?? t('studio.route.lifecycle.unknownValue')}</span>
                         <Badge tone={lifecycleRunTone(run.status)} variant="soft" className="text-xs">
-                          {run.status}
+                          {lifecycleRunStatusLabel(run.status, t)}
                         </Badge>
                       </div>
                       <div className="mt-1 text-xs text-gray-500">{run.correlationId}</div>
@@ -601,7 +658,7 @@ export default function LifecyclePage(): ReactElement {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="font-medium text-gray-900">{t('studio.route.lifecycle.reasonCodeLabel')}:</span>
-              <span className="text-red-900">{selectedRun.failureReasonCode}</span>
+              <span className="text-red-900">{lifecycleReasonCodeLabel(selectedRun.failureReasonCode, t)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-900">{t('studio.route.lifecycle.failedPhaseLabel')}:</span>
@@ -650,7 +707,7 @@ function LifecyclePlanPanel(props: {
       </div>
       <div className="rounded bg-gray-900 px-2 py-1">
         <dt className="text-[11px] uppercase tracking-wide text-gray-400">{t('studio.route.lifecycle.statusLabel')}</dt>
-        <dd className="font-medium">{props.status}</dd>
+        <dd className="font-medium">{lifecycleRunStatusLabel(props.status, t)}</dd>
       </div>
     </dl>
   );
@@ -667,7 +724,7 @@ function LifecycleResultPanel(props: { readonly run: LifecycleRun }): ReactEleme
       <div className="rounded bg-gray-900 px-2 py-1 text-gray-100">
         <span className="text-[11px] uppercase tracking-wide text-gray-400">{t('studio.route.lifecycle.outcomeLabel')}</span>
         <div className="mt-1 font-medium">
-          {run.failureReasonCode === undefined ? t('studio.route.lifecycle.outcome.completedWithoutFailureReason') : `${t('studio.route.lifecycle.outcome.failedPrefix')}: ${run.failureReasonCode}`}
+          {run.failureReasonCode === undefined ? t('studio.route.lifecycle.outcome.completedWithoutFailureReason') : `${t('studio.route.lifecycle.outcome.failedPrefix')}: ${lifecycleReasonCodeLabel(run.failureReasonCode, t)}`}
         </div>
       </div>
       <div className="rounded bg-gray-900 px-2 py-1 text-gray-100">
@@ -681,7 +738,7 @@ function LifecycleResultPanel(props: { readonly run: LifecycleRun }): ReactEleme
       {run.failureReasonCode !== undefined && (
         <div className="rounded bg-red-950/60 px-2 py-1 text-red-100">
           <span className="text-[11px] uppercase tracking-wide text-red-200">{t('studio.route.lifecycle.failureReasonLabel')}</span>
-          <div className="mt-1 font-medium">{run.failureReasonCode}</div>
+          <div className="mt-1 font-medium">{lifecycleReasonCodeLabel(run.failureReasonCode, t)}</div>
         </div>
       )}
     </div>
@@ -697,13 +754,13 @@ function RunDetailPanel(props: { readonly run: LifecycleRun }): ReactElement {
       <DetailRow label={t('studio.route.lifecycle.runIdLabel')} value={run.runId} />
       <DetailRow label={t('studio.route.lifecycle.productUnitLabel')} value={run.productUnitId} />
       <DetailRow label={t('studio.route.lifecycle.phaseLabel')} value={run.phase ?? t('studio.route.lifecycle.unknownValue')} />
-      <DetailRow label={t('studio.route.lifecycle.statusLabel')} value={run.status} />
+      <DetailRow label={t('studio.route.lifecycle.statusLabel')} value={lifecycleRunStatusLabel(run.status, t)} />
       <DetailRow label={t('studio.route.lifecycle.correlationIdLabel')} value={run.correlationId} />
       <DetailRow label={t('studio.route.lifecycle.healthRefLabel')} value={run.healthSnapshotRef ?? t('studio.route.lifecycle.notAvailableValue')} />
       <DetailRow label={t('studio.route.lifecycle.eventsRefLabel')} value={run.eventsRef ?? t('studio.route.lifecycle.notAvailableValue')} />
       <DetailRow
         label={t('studio.route.lifecycle.failureReasonLabel')}
-        value={run.failureReasonCode ?? t('studio.route.lifecycle.noneValue')}
+        value={run.failureReasonCode === undefined ? t('studio.route.lifecycle.noneValue') : lifecycleReasonCodeLabel(run.failureReasonCode, t)}
         tone={run.failureReasonCode === undefined ? 'neutral' : 'danger'}
       />
     </dl>
@@ -863,7 +920,7 @@ function VerifyHealthPanel(props: { readonly manifest?: VerifyHealthReport }): R
   }
   return (
     <div className="space-y-1">
-      <div>{t('studio.route.lifecycle.statusLabel')}: {manifest.status}</div>
+      <div>{t('studio.route.lifecycle.statusLabel')}: {lifecycleRunStatusLabel(manifest.status, t)}</div>
       <div>{t('studio.route.lifecycle.runLabel')}: {manifest.runId}</div>
       <div>{t('studio.route.lifecycle.checkedLabel')}: {manifest.checkedAt ?? t('studio.route.lifecycle.notAvailableValue')}</div>
     </div>

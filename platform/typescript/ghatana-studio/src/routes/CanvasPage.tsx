@@ -3,6 +3,10 @@ import { Badge } from '@ghatana/design-system';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { artifactGraphSummary, residualIslandReport, riskHotspotReport, semanticArtifactReferences } from './yappcWorkflowData';
 
+function canvasRiskLevelLabel(riskLevel: string, t: (key: string) => string): string {
+  return t(`studio.route.canvas.riskLevel.${riskLevel}`);
+}
+
 export default function CanvasPage(): ReactElement {
   const t = useStudioTranslation();
 
@@ -107,7 +111,7 @@ export default function CanvasPage(): ReactElement {
           </Badge>
         </div>
         <p className="text-sm text-red-800">
-          {t('studio.route.canvas.highestRiskPrefix')} {riskHotspotReport.highestRiskLevel}
+          {t('studio.route.canvas.highestRiskPrefix')} {canvasRiskLevelLabel(riskHotspotReport.highestRiskLevel, t)}
         </p>
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-red-900">{t('studio.route.canvas.hotspotsTitle')}</h4>
@@ -116,7 +120,7 @@ export default function CanvasPage(): ReactElement {
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-red-900">{hotspot.artifactId}</span>
                 <Badge tone="danger" variant="soft" className="text-xs">
-                  {hotspot.riskLevel}
+                  {canvasRiskLevelLabel(hotspot.riskLevel, t)}
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-red-800">{hotspot.reason}</p>
@@ -169,7 +173,7 @@ export default function CanvasPage(): ReactElement {
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('studio.route.canvas.riskLevelLabel')}:</span>
                   <Badge tone={artifact.riskLevel === 'critical' ? 'danger' : artifact.riskLevel === 'high' ? 'warning' : 'success'} variant="soft" className="text-xs">
-                    {artifact.riskLevel}
+                    {canvasRiskLevelLabel(artifact.riskLevel, t)}
                   </Badge>
                 </div>
               </div>

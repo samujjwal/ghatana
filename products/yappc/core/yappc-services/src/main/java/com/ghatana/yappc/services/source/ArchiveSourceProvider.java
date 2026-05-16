@@ -1,5 +1,7 @@
 package com.ghatana.yappc.services.source;
 
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
@@ -72,29 +74,37 @@ public final class ArchiveSourceProvider implements SourceProvider {
                     }
 
                     Files.write(target, content);
+                    String fileChecksum = computeContentChecksum(content);
                     files.add(new RepositorySnapshot.SnapshotFile(
                         extractionRoot.relativize(target).toString().replace('\\', '/'),
                         target.toString(),
                         content.length,
                         Instant.now(),
-                        true
+                        fileChecksum
                     ));
                 }
             }
 
             String checksum = computeArchiveChecksum(files);
-            RepositorySnapshot snapshot = new RepositorySnapshot(
-                UUID.randomUUID().toString(),
-                providerId(),
-                archivePath.toString(),
-                null,
-                locator.ref(),
-                extractionRoot.toString(),
-                checksum,
-                Instant.now(),
-                files,
-                List.of(Map.of("level", "info", "message", "Archive extracted safely"))
-            );
+            RepositorySnapshot snapshot = RepositorySnapshot.builder()
+                .snapshotId(UUID.randomUUID().toString())
+                .provider(providerId())
+                .repoId(archivePath.toString())
+                .contentHash(checksum)
+                .materializedRoot(extractionRoot.toString())
+                .checksum(checksum)
+                .files(files)
+                .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
+                    RepositorySnapshot.DiagnosticLevel.INFO,
+                    "ARCHIVE_EXTRACTED",
+                    "Archive extracted safely",
+                    archivePath.toString(),
+                    Instant.now()
+                )))
+                .tenantId(scope.tenantId())
+                .workspaceId(scope.workspaceId())
+                .projectId(scope.projectId())
+                .build();
             return Promise.of(snapshot);
         } catch (IOException e) {
             return Promise.ofException(e);
@@ -113,6 +123,16 @@ public final class ArchiveSourceProvider implements SourceProvider {
     private static Path normalizeArchivePath(String repoId) {
         String normalized = repoId.startsWith("file://") ? repoId.substring("file://".length()) : repoId;
         return Paths.get(normalized).toAbsolutePath().normalize();
+    }
+
+    private static String computeContentChecksum(byte[] content) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(content);
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            return "sha256-unavailable";
+        }
     }
 
     private static String computeArchiveChecksum(List<RepositorySnapshot.SnapshotFile> files) {

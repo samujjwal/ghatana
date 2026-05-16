@@ -111,8 +111,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
         // P4-2: Use incremental upsert instead of delete-then-insert
         // Only insert/update nodes that have changed based on checksum
-        return repository.upsertNodes(scope.projectId(), scope.tenantId(), request.nodes(), snapshotId, versionId, contentChecksum)
-            .then(saved -> repository.upsertEdges(scope.projectId(), scope.tenantId(), request.edges(), snapshotId, versionId))
+        return repository.upsertNodes(scope.projectId(), scope.tenantId(), scope.workspaceId(), request.nodes(), snapshotId, versionId, contentChecksum)
+            .then(saved -> repository.upsertEdges(scope.projectId(), scope.tenantId(), scope.workspaceId(), request.edges(), snapshotId, versionId))
             .then(v -> repository.saveUnresolvedEdges(scope.projectId(), scope.tenantId(), snapshotId, unresolvedEdges))
             .then(v -> repository.saveEdgeResolutionRecords(scope.projectId(), scope.tenantId(), resolutionRecords))
             .then(v -> repository.saveResidualIslands(scope.projectId(), scope.tenantId(), snapshotId, residualIslands))
@@ -325,8 +325,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             nodesPromise = Promise.of(cachedNodes);
             edgesPromise = Promise.of(cachedEdges);
         } else {
-            nodesPromise = repository.findNodesByProduct(scope.projectId(), scope.tenantId(), 10000);
-            edgesPromise = repository.findEdgesByProduct(scope.projectId(), scope.tenantId());
+            nodesPromise = repository.findNodesByProduct(scope.projectId(), scope.tenantId(), scope.workspaceId(), 10000);
+            edgesPromise = repository.findEdgesByProduct(scope.projectId(), scope.tenantId(), scope.workspaceId());
         }
 
         // P4-2: Move heavy JGraphT work to blocking executor to prevent event loop blocking
@@ -545,6 +545,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         
         Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = repository.findNodesPaginated(projectId, tenantId, cursor, effectivePageSize);
         Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = repository.findEdgesPaginated(projectId, tenantId, cursor, effectivePageSize);
+        
 
         return nodesPromise.combine(edgesPromise, (nodesPageResult, edgesPageResult) -> {
             List<ArtifactNodeDto> nodes = nodesPageResult.items();

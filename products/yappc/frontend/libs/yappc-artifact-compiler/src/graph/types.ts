@@ -157,7 +157,18 @@ export const GraphNodeSchema = z.object({
    * Enables cross-scan identity matching independent of snapshot ref.
    */
   symbolRef: z.string().optional(),
-  sourceLocation: SourceLocationSchema,
+  /**
+   * P1: Source location for this node.
+   * Required for source-derived nodes (provenance: exact|inferred).
+   * Optional for synthetic/manual nodes - should be omitted or null.
+   */
+  sourceLocation: SourceLocationSchema.optional(),
+  /**
+   * P1: Reason this node is synthetic (no real source location).
+   * Required when provenance is 'synthesized' or 'manual'.
+   * Describes why the node was created (e.g., 'inferred-root', 'placeholder-for-unresolved').
+   */
+  syntheticReason: z.string().optional(),
   extractorId: z.string().min(1),
   extractorVersion: z.string().min(1),
   confidence: z.number().min(0).max(1),

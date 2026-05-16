@@ -8,6 +8,7 @@
  */
 
 import { ApiClient } from '@ghatana/api';
+import type { ApiError } from '@ghatana/api';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
 import type { DeploymentManifest } from '@ghatana/kernel-deployment';
 import {
@@ -209,10 +210,11 @@ const ProductApprovalGateSchema = z
 
 export const KernelLifecycleApiErrorSchema = z
   .object({
-    error: z.string().trim().min(1),
+    reasonCode: z.string().trim().min(1),
     message: z.string().trim().min(1),
     correlationId: z.string().trim().min(1).optional(),
     statusCode: z.number().int().positive().optional(),
+    safeDetails: z.record(z.string(), z.unknown()).optional(),
     details: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
@@ -298,18 +300,21 @@ export function mapKernelLifecycleClientError(
     return error;
   }
 
-  if (error instanceof Error) {
-    const apiError = KernelLifecycleApiErrorSchema.safeParse(error);
+  const apiErrorPayload = extractKernelLifecycleApiErrorPayload(error);
+  if (apiErrorPayload !== undefined) {
+    const apiError = KernelLifecycleApiErrorSchema.safeParse(apiErrorPayload);
     if (apiError.success) {
-      const { statusCode, message, details } = apiError.data;
+      const { statusCode, correlationId: responseCorrelationId, message, safeDetails, details } = apiError.data;
+      const errorDetails = safeDetails ?? details;
+      const effectiveCorrelationId = correlationId ?? responseCorrelationId;
       if (statusCode === 401) {
-        return new KernelLifecycleAuthError(message, correlationId, details);
+        return new KernelLifecycleAuthError(message, effectiveCorrelationId, errorDetails);
       }
       if (statusCode === 403) {
-        return new KernelLifecycleScopeError(message, correlationId, details);
+        return new KernelLifecycleScopeError(message, effectiveCorrelationId, errorDetails);
       }
       if (statusCode === 503) {
-        return new KernelLifecycleProviderModeError(message, correlationId, details);
+        return new KernelLifecycleProviderModeError(message, effectiveCorrelationId, errorDetails);
       }
     }
   }
@@ -651,4 +656,17 @@ function assertPhase(phase: ProductLifecyclePhase): void {
 
 function encodePathSegment(segment: string): string {
   return encodeURIComponent(segment);
+}
+
+function extractKernelLifecycleApiErrorPayload(
+  error: unknown,
+): unknown | undefined {
+  if (isKernelLifecycleApiError(error)) {
+    return error.response?.data;
+  }
+  return error;
+}
+
+function isKernelLifecycleApiError(error: unknown): error is ApiError {
+  return typeof error === 'object' && error !== null && 'request' in error;
 }

@@ -7,6 +7,10 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
+function homeRunStatusLabel(status: string, t: (key: string) => string): string {
+  return t(`studio.route.lifecycle.runStatus.${status}`);
+}
+
 interface JourneyStep {
   readonly title: string;
   readonly owner: string;
@@ -98,7 +102,7 @@ export default function HomePage(): ReactElement {
         <p className="text-sm leading-6 text-gray-600">
           {snapshot.selectedRun === undefined
             ? t('studio.route.home.healthSummaryEmpty')
-            : `Latest run ${snapshot.selectedRun.runId} is ${snapshot.selectedRun.status}.`}
+            : `${t('studio.route.home.latestRunPrefix')} ${snapshot.selectedRun.runId} ${t('studio.route.home.latestRunSeparator')} ${homeRunStatusLabel(snapshot.selectedRun.status, t)}.`}
         </p>
       </article>
     </section>

@@ -1,5 +1,7 @@
 package com.ghatana.yappc.services.source;
 
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
@@ -63,18 +65,25 @@ public final class LocalFolderSourceProvider implements SourceProvider {
             }
 
             String checksum = computeDirectoryChecksum(candidate, files);
-            RepositorySnapshot snapshot = new RepositorySnapshot(
-                UUID.randomUUID().toString(),
-                providerId(),
-                candidate.toString(),
-                null,
-                locator.ref(),
-                candidate.toString(),
-                checksum,
-                Instant.now(),
-                files,
-                List.of(Map.of("level", "info", "message", "Local folder snapshot resolved"))
-            );
+            RepositorySnapshot snapshot = RepositorySnapshot.builder()
+                .snapshotId(UUID.randomUUID().toString())
+                .provider(providerId())
+                .repoId(candidate.toString())
+                .contentHash(checksum)
+                .materializedRoot(candidate.toString())
+                .checksum(checksum)
+                .files(files)
+                .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
+                    RepositorySnapshot.DiagnosticLevel.INFO,
+                    "LOCAL_FOLDER_RESOLVED",
+                    "Local folder snapshot resolved",
+                    candidate.toString(),
+                    Instant.now()
+                )))
+                .tenantId(scope.tenantId())
+                .workspaceId(scope.workspaceId())
+                .projectId(scope.projectId())
+                .build();
             return Promise.of(snapshot);
         } catch (IOException e) {
             return Promise.ofException(e);
@@ -98,15 +107,29 @@ public final class LocalFolderSourceProvider implements SourceProvider {
     private static RepositorySnapshot.SnapshotFile toSnapshotFile(Path root, Path file) {
         try {
             FileTime lastModified = Files.getLastModifiedTime(file);
+            long size = Files.size(file);
+            // Compute simple checksum from path and size
+            String checksum = computeFileChecksum(file, size);
             return new RepositorySnapshot.SnapshotFile(
                 root.relativize(file).toString().replace('\\', '/'),
                 file.toString(),
-                Files.size(file),
+                size,
                 lastModified.toInstant(),
-                true
+                checksum
             );
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read local file metadata", e);
+        }
+    }
+
+    private static String computeFileChecksum(Path file, long size) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(file.toString().getBytes());
+            digest.update(Long.toString(size).getBytes());
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            return "sha256-unavailable";
         }
     }
 

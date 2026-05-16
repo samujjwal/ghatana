@@ -1,5 +1,7 @@
 package com.ghatana.yappc.services.source;
 
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 
 import java.util.Map;

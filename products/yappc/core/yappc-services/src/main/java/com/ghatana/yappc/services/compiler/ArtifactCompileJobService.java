@@ -6,8 +6,8 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
-import com.ghatana.yappc.services.source.RepositorySnapshot;
-import com.ghatana.yappc.services.source.SourceLocator;
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import com.ghatana.yappc.services.source.SourceProvider;
 import com.ghatana.yappc.services.source.SourceProviderRegistry;
 import io.activej.promise.Promise;
@@ -69,13 +69,13 @@ public final class ArtifactCompileJobService {
             snapshot.snapshotId(),
             snapshot.snapshotId(),
             versionId,
-            snapshot.contentChecksum(),
+            snapshot.checksum(),
             extraction.unresolvedEdges(),
             extraction.edgeResolutionRecords(),
             extraction.residualIslandIds()
         );
 
-        ArtifactRequestScope scope = new ArtifactRequestScope(request.projectId(), request.tenantId());
+        ArtifactRequestScope scope = new ArtifactRequestScope(request.projectId(), request.tenantId(), request.workspaceId());
         return artifactGraphService.ingestGraph(scope, ingestRequest)
             .map(response -> new CompileJobResult(
                 request.jobId(),

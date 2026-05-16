@@ -24,12 +24,16 @@ export type ResidualIslandKind = z.infer<typeof ResidualIslandKindSchema>;
 // Regeneration Strategy
 // ============================================================================
 
+/**
+ * P0: Regeneration strategies for residual islands.
+ * Note: 'placeholder-stub' removed - production code must not emit placeholder stubs.
+ * Use 'require-manual-impl' or 'emit-warning' for unsupported cases.
+ */
 export const RegenerationStrategySchema = z.enum([
   'verbatim-preserve',   // Copy original source as-is
   'best-effort-approximate', // Generate closest possible equivalent
   'emit-warning',        // Emit warning but skip in codegen
   'require-manual-impl', // Flag for human implementation
-  'placeholder-stub',    // Generate stub with TODO comment
 ]);
 
 export type RegenerationStrategy = z.infer<typeof RegenerationStrategySchema>;
@@ -66,7 +70,24 @@ export const ResidualIslandSchema = z.object({
   extractorVersion: z.string().min(1).default('0.0.0'),
   extractedAt: z.string().datetime().default(() => new Date().toISOString()),
   confidence: z.number().min(0).max(1).default(0.5),
-  linkedModelElementIds: z.array(z.string().uuid()).default([]),
+  /**
+   * P0: Model element IDs linked to this residual island.
+   * Accepts deterministic artifact:// URNs or UUIDs - not UUID-only.
+   */
+  linkedModelElementIds: z.array(z.string().refine(
+    (val) => {
+      // Accept UUID format
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+        return true;
+      }
+      // Accept URN format (artifact://...)
+      if (val.startsWith('artifact://')) {
+        return true;
+      }
+      return false;
+    },
+    { message: 'Linked model element ID must be a UUID or artifact:// URN' }
+  )).default([]),
   tags: z.array(z.string()).default([]),
   /**
    * Reference to the raw source fragment (e.g., a specific code block).
@@ -84,10 +105,18 @@ export const ResidualIslandSchema = z.object({
    */
   risk: RiskLevelSchema,
   /**
-   * Related graph node IDs that this residual island references or is referenced by.
-   * Enables tracing relationships between modeled and unmodeled content.
+   * P0: Related graph node IDs that this residual island references or is referenced by.
+   * Accepts deterministic artifact:// URNs or UUIDs.
    */
-  relatedGraphNodeIds: z.array(z.string()),
+  relatedGraphNodeIds: z.array(z.string().refine(
+    (val) => {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) return true;
+      if (val.startsWith('artifact://')) return true;
+      if (val.startsWith('urn:')) return true;
+      return false;
+    },
+    { message: 'Graph node ID must be a UUID or artifact:// URN' }
+  )),
 });
 
 export type ResidualIsland = z.infer<typeof ResidualIslandSchema>;
@@ -96,8 +125,24 @@ export type ResidualIsland = z.infer<typeof ResidualIslandSchema>;
 // Residual Collection
 // ============================================================================
 
+/**
+ * P0: Branded residual ID type for type safety.
+ */
+export type ResidualIslandId = string & { readonly _brand: 'ResidualIslandId' };
+
+export function toResidualIslandId(raw: string): ResidualIslandId {
+  return raw as ResidualIslandId;
+}
+
 export const ResidualCollectionSchema = z.object({
-  modelId: z.string().uuid(),
+  modelId: z.string().refine(
+    (val) => {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) return true;
+      if (val.startsWith('artifact://')) return true;
+      return false;
+    },
+    { message: 'Model ID must be a UUID or artifact:// URN' }
+  ),
   islands: z.array(ResidualIslandSchema).default([]),
   summary: z.object({
     totalIslands: z.number().int().nonnegative(),

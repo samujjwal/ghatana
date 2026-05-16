@@ -27,6 +27,25 @@ type ApprovalDecision = (typeof APPROVAL_DECISIONS)[number];
 type HealthStatus = (typeof HEALTH_STATUSES)[number];
 type RollbackReadiness = (typeof ROLLBACK_READINESS)[number];
 
+function agentRiskLevelLabel(riskLevel: RiskLevel, t: (key: string) => string): string {
+  return t(`studio.route.agents.riskLevel.${riskLevel}`);
+}
+
+function agentGovernanceDecisionLabel(
+  decision: GovernanceDecision | ApprovalDecision,
+  t: (key: string) => string,
+): string {
+  return t(`studio.route.agents.decision.${decision}`);
+}
+
+function agentHealthStatusLabel(status: HealthStatus, t: (key: string) => string): string {
+  return t(`studio.route.agents.healthStatus.${status}`);
+}
+
+function agentRollbackReadinessLabel(readiness: RollbackReadiness, t: (key: string) => string): string {
+  return t(`studio.route.agents.rollbackReadiness.${readiness}`);
+}
+
 interface ProposalCard {
   readonly requestedAction: string;
   readonly productUnitId: string;
@@ -230,7 +249,7 @@ export default function AgentsPage(): ReactElement {
               <div className="flex justify-between">
                 <span className="text-gray-600">Risk Level:</span>
                 <Badge tone={proposal.riskLevel === 'critical' ? 'danger' : proposal.riskLevel === 'high' ? 'warning' : 'success'} variant="soft" className="text-xs">
-                  {proposal.riskLevel}
+                  {agentRiskLevelLabel(proposal.riskLevel, t)}
                 </Badge>
               </div>
             </div>
@@ -241,19 +260,19 @@ export default function AgentsPage(): ReactElement {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Policy:</span>
                   <Badge tone={getDecisionTone(proposal.policyDecision)} variant="soft" className="text-xs">
-                    {proposal.policyDecision}
+                    {agentGovernanceDecisionLabel(proposal.policyDecision, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Mastery:</span>
                   <Badge tone={getDecisionTone(proposal.masteryDecision)} variant="soft" className="text-xs">
-                    {proposal.masteryDecision}
+                    {agentGovernanceDecisionLabel(proposal.masteryDecision, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Approval:</span>
                   <Badge tone={getDecisionTone(proposal.approvalDecision)} variant="soft" className="text-xs">
-                    {proposal.approvalDecision}
+                    {agentGovernanceDecisionLabel(proposal.approvalDecision, t)}
                   </Badge>
                 </div>
               </div>
@@ -265,13 +284,13 @@ export default function AgentsPage(): ReactElement {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Health Status:</span>
                   <Badge tone={getHealthTone(proposal.healthStatus)} variant="soft" className="text-xs">
-                    {proposal.healthStatus}
+                    {agentHealthStatusLabel(proposal.healthStatus, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Rollback Readiness:</span>
                   <Badge tone={getRollbackTone(proposal.rollbackReadiness)} variant="soft" className="text-xs">
-                    {proposal.rollbackReadiness}
+                    {agentRollbackReadinessLabel(proposal.rollbackReadiness, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">

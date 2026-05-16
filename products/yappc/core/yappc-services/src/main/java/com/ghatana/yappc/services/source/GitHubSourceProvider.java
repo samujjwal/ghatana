@@ -2,6 +2,8 @@ package com.ghatana.yappc.services.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
@@ -52,7 +54,7 @@ public final class GitHubSourceProvider implements SourceProvider {
     public Promise<RepositorySnapshot> resolve(SourceLocator locator, ScopeContext scope) {
         try {
             String repo = normalizeRepo(locator.repoId());
-            String ref = (locator.ref() == null || locator.ref().isBlank()) ? "HEAD" : locator.ref();
+            String ref = locator.ref().filter(r -> !r.isBlank()).orElse("HEAD");
             String commitSha = resolveCommitSha(repo, ref);
             JsonNode tree = fetchJson("https://api.github.com/repos/" + repo + "/git/trees/" + commitSha + "?recursive=1");
 
@@ -83,22 +85,29 @@ public final class GitHubSourceProvider implements SourceProvider {
                     filePath.toString(),
                     content.length,
                     Instant.now(),
-                    true
+                    sha
                 ));
             }
 
-            RepositorySnapshot snapshot = new RepositorySnapshot(
-                UUID.randomUUID().toString(),
-                providerId(),
-                repo,
-                commitSha,
-                ref,
-                root.toString(),
-                commitSha,
-                Instant.now(),
-                files,
-                List.of(Map.of("level", "info", "message", "GitHub snapshot materialized", "commitSha", commitSha))
-            );
+            RepositorySnapshot snapshot = RepositorySnapshot.builder()
+                .snapshotId(UUID.randomUUID().toString())
+                .provider(providerId())
+                .repoId(repo)
+                .commitSha(commitSha)
+                .materializedRoot(root.toString())
+                .checksum(commitSha)
+                .files(files)
+                .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
+                    RepositorySnapshot.DiagnosticLevel.INFO,
+                    "GITHUB_SNAPSHOT_MATERIALIZED",
+                    "GitHub snapshot materialized: " + commitSha,
+                    null,
+                    Instant.now()
+                )))
+                .tenantId(scope.tenantId())
+                .workspaceId(scope.workspaceId())
+                .projectId(scope.projectId())
+                .build();
             return Promise.of(snapshot);
         } catch (Exception e) {
             return Promise.ofException(e);

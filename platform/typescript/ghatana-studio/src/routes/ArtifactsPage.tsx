@@ -8,6 +8,10 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
+function artifactStatusLabel(found: boolean, t: (key: string) => string): string {
+  return found ? t('studio.route.artifacts.status.found') : t('studio.route.artifacts.status.missing');
+}
+
 export default function ArtifactsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
@@ -45,7 +49,7 @@ export default function ArtifactsPage(): ReactElement {
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-base font-semibold text-gray-950">{artifact.id}</h3>
               <Badge tone={artifact.found ? 'success' : 'danger'} variant="soft">
-                {artifact.found ? 'found' : 'missing'}
+                {artifactStatusLabel(artifact.found, t)}
               </Badge>
             </div>
             <dl className="grid gap-2 text-sm text-gray-600">

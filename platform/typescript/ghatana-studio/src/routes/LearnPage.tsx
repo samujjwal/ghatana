@@ -3,6 +3,10 @@ import { Badge } from '@ghatana/design-system';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { generatedChangeSetSummary, residualIslandReport, riskHotspotReport } from './yappcWorkflowData';
 
+function learnRiskLevelLabel(riskLevel: string, t: (key: string) => string): string {
+  return t(`studio.route.learn.riskLevel.${riskLevel}`);
+}
+
 export default function LearnPage(): ReactElement {
   const t = useStudioTranslation();
 
@@ -46,7 +50,7 @@ export default function LearnPage(): ReactElement {
               <div className="mt-3 space-y-2">
                 <h5 className="text-xs font-medium text-gray-900">{t('studio.route.learn.whyRecommendedTitle')}</h5>
                 <p className="text-xs text-gray-600">
-                  {t('studio.route.learn.whyRecommendedText', { risk: riskHotspotReport.highestRiskLevel })}
+                  {t('studio.route.learn.whyRecommendedText', { risk: learnRiskLevelLabel(riskHotspotReport.highestRiskLevel, t) })}
                 </p>
               </div>
               <div className="mt-3 space-y-2">
@@ -110,7 +114,7 @@ export default function LearnPage(): ReactElement {
             <div className="flex justify-between">
               <span className="text-blue-800">{t('studio.route.learn.highestRiskPrefix')}:</span>
               <Badge tone={riskHotspotReport.highestRiskLevel === 'critical' ? 'danger' : riskHotspotReport.highestRiskLevel === 'high' ? 'warning' : 'success'} variant="soft" className="text-xs">
-                {riskHotspotReport.highestRiskLevel}
+                {learnRiskLevelLabel(riskHotspotReport.highestRiskLevel, t)}
               </Badge>
             </div>
             <div className="flex justify-between">

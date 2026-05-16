@@ -11,6 +11,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Product unit not found",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -37,6 +38,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Provider unavailable",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -63,6 +65,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Approval required",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -89,6 +92,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Scope headers required",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -115,6 +119,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Authorization failed",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -141,6 +146,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
         message: "Invalid request",
         correlationId: "corr-1",
       })),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {
@@ -163,6 +169,7 @@ describe("KernelLifecycleApiHandlers error mapping", () => {
   it("maps unknown errors to 500", async () => {
     const handlers = createKernelLifecycleApiHandlers({
       service: createMockServiceThatThrows(new Error("Unknown error")),
+      requireAuthentication: false,
     });
 
     const request: KernelLifecycleApiRequest = {

@@ -113,6 +113,86 @@ describe('KernelLifecycleService', () => {
     );
   });
 
+  it('writes sanitized lifecycle plan and result manifests without raw execution details', async () => {
+    const providerContext = createBootstrapProviderContext();
+    const plan = createPlan(repoRoot);
+    const result = createResult(repoRoot);
+    const planner = {
+      plan: vi.fn().mockResolvedValue({
+        ...plan,
+        productUnit: {
+          id: 'digital-marketing',
+          name: 'Digital Marketing',
+        },
+        steps: [
+          {
+            id: 'build-web',
+            stepKind: 'surface',
+            phase: 'build',
+            surface: 'web',
+            adapter: 'pnpm-vite-react',
+            description: 'Build the web surface',
+            dependsOn: [],
+            estimatedDurationMs: 1200,
+            execution: {
+              command: 'pnpm',
+              args: ['build'],
+              workingDirectory: '/tmp/secret-workdir',
+            },
+          },
+        ],
+      }),
+    } as unknown as ProductLifecyclePlanner;
+    const executor = {
+      executePlan: vi.fn().mockResolvedValue({
+        ...result,
+        steps: [
+          {
+            stepId: 'build-web',
+            status: 'succeeded',
+            durationMs: 1200,
+            stdout: 'build output',
+            stderr: 'build warnings',
+            artifacts: [],
+          },
+        ],
+          failure: {
+            stepId: 'build-web',
+            message: 'execution failed',
+            cause: 'internal stack trace',
+          },
+      }),
+    } as unknown as ProductLifecycleExecutor;
+    const service = new KernelLifecycleService({
+      repoRoot,
+      planner,
+      executor,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext,
+      clock: () => '2026-05-14T00:00:00.000Z',
+    });
+
+    await service.runLifecyclePhase('digital-marketing', 'build', {
+      dryRun: false,
+      correlationId: 'corr-1',
+    });
+
+      const persistedPlan = JSON.parse(
+        await fs.readFile(path.join(plan.outputDirectory, 'lifecycle-plan.json'), 'utf-8'),
+      ) as Record<string, unknown>;
+      const persistedResult = JSON.parse(
+        await fs.readFile(path.join(plan.outputDirectory, 'lifecycle-result.json'), 'utf-8'),
+      ) as Record<string, unknown>;
+
+      expect(JSON.stringify(persistedPlan)).not.toContain('pnpm build');
+      expect(JSON.stringify(persistedPlan)).not.toContain('/tmp/secret-workdir');
+      expect(persistedPlan).not.toHaveProperty('productUnit');
+      expect((persistedPlan.steps as Array<Record<string, unknown>>)[0]).not.toHaveProperty('execution');
+      expect((persistedResult.steps as Array<Record<string, unknown>>)[0]).not.toHaveProperty('stdout');
+      expect((persistedResult.steps as Array<Record<string, unknown>>)[0]).not.toHaveProperty('stderr');
+      expect(persistedResult.failure).not.toHaveProperty('cause');
+  });
+
   it('emits lifecycle.plan.created event when creating a plan', async () => {
     const providerContext = createBootstrapProviderContext();
     const plan = createPlan(repoRoot);

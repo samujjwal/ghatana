@@ -18,6 +18,14 @@ function toPhase(action: SafeAction): 'validate' | 'test' | 'build' | 'package' 
   return action;
 }
 
+function developLifecycleStatusLabel(status: string, t: (key: string) => string): string {
+  return t(`studio.route.develop.lifecycleStatus.${status}`);
+}
+
+function developImplementationStatusLabel(status: string, t: (key: string) => string): string {
+  return t(`studio.route.develop.surfaceStatus.${status}`);
+}
+
 export default function DevelopPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
@@ -107,7 +115,7 @@ export default function DevelopPage(): ReactElement {
             </div>
             <div>
               <dt className="font-medium text-gray-900">{t('studio.route.develop.lifecycleLabel')}</dt>
-              <dd>{productUnit?.lifecycleStatus ?? 'unavailable'}</dd>
+              <dd>{productUnit?.lifecycleStatus === undefined ? 'unavailable' : developLifecycleStatusLabel(productUnit.lifecycleStatus, t)}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-900">{t('studio.route.develop.ownerLabel')}</dt>
@@ -166,7 +174,7 @@ export default function DevelopPage(): ReactElement {
             <div key={surface.id} className="rounded-md border border-gray-200 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h4 className="text-sm font-semibold text-gray-950">{surface.type}</h4>
-                <Badge tone="success" variant="soft">{surface.implementationStatus}</Badge>
+                <Badge tone="success" variant="soft">{developImplementationStatusLabel(surface.implementationStatus, t)}</Badge>
               </div>
               <p className="mt-2 text-sm text-gray-600">
                 {surface.packagePath ?? surface.gradleModule ?? surface.sourceRef ?? 'source not reported'}

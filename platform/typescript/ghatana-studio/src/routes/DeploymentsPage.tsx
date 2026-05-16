@@ -7,6 +7,16 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
+function deploymentVerifierStatusLabel(valid: boolean | undefined, t: (key: string) => string): string {
+  if (valid === true) {
+    return t('studio.route.deployments.verifierStatus.valid');
+  }
+  if (valid === false) {
+    return t('studio.route.deployments.verifierStatus.requiresVerification');
+  }
+  return t('studio.route.deployments.verifierStatus.unavailable');
+}
+
 export default function DeploymentsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
@@ -44,7 +54,7 @@ export default function DeploymentsPage(): ReactElement {
             </div>
             <div className="flex justify-between gap-3">
               <dt className="font-medium text-gray-900">Verifier</dt>
-              <dd>{deploymentManifest?.verifierResult?.valid === true ? 'valid' : 'requires verification'}</dd>
+              <dd>{deploymentVerifierStatusLabel(deploymentManifest?.verifierResult?.valid, t)}</dd>
             </div>
           </dl>
         </article>

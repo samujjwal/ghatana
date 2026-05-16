@@ -13,6 +13,7 @@ describe('KernelLifecycleApiHandlers', () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
       requireScopeHeaders: true,
+      requireAuthentication: false,
     });
 
     const response = await handlers.listProductUnits({
@@ -35,7 +36,7 @@ describe('KernelLifecycleApiHandlers', () => {
 
   it('returns ProductUnit list from service with propagated scope and correlation ID', async () => {
     const service = createService();
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.listProductUnits({
       headers: scopedHeaders('corr-2'),
@@ -52,7 +53,7 @@ describe('KernelLifecycleApiHandlers', () => {
 
   it('creates lifecycle plans and returns Studio-compatible plan response', async () => {
     const service = createService();
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.createLifecyclePlan({
       params: { productUnitId: 'digital-marketing' },
@@ -82,7 +83,7 @@ describe('KernelLifecycleApiHandlers', () => {
 
   it('executes dry-run lifecycle phase and returns run response', async () => {
     const service = createService();
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.executeLifecyclePhase({
       params: { productUnitId: 'digital-marketing' },
@@ -114,7 +115,7 @@ describe('KernelLifecycleApiHandlers', () => {
         runId: 'run-1',
       })),
     });
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.getArtifactManifest({
       params: { productUnitId: 'digital-marketing', runId: 'run-1' },
@@ -144,7 +145,7 @@ describe('KernelLifecycleApiHandlers', () => {
         },
       ]),
     });
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.listPendingApprovals({
       headers: scopedHeaders('corr-7'),
@@ -166,7 +167,7 @@ describe('KernelLifecycleApiHandlers', () => {
 
   it('rejects invalid lifecycle phase requests before calling service', async () => {
     const service = createService();
-    const handlers = new KernelLifecycleApiHandlers({ service });
+    const handlers = new KernelLifecycleApiHandlers({ service, requireAuthentication: false });
 
     const response = await handlers.createLifecyclePlan({
       params: { productUnitId: 'digital-marketing' },

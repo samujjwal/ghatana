@@ -9,6 +9,21 @@ import {
 import type { KernelLifecycleService } from '../../service/KernelLifecycleService.js';
 
 describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
+  it('requires authentication by default when no authorizer is configured', async () => {
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.listProductUnits(request('corr-default-auth'));
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body).toMatchObject({
+      reasonCode: 'authentication-required',
+      correlationId: 'corr-default-auth',
+    });
+  });
+
   it('returns 401 when authorizer rejects authentication', async () => {
     const authorizer = createAuthorizer({ authenticate: vi.fn().mockResolvedValue(null) });
     const handlers = new KernelLifecycleApiHandlers({

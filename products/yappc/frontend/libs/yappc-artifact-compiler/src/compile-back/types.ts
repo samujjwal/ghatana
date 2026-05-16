@@ -251,13 +251,15 @@ export function buildChangePlan(
   // Detect removals
   for (const [id, elem] of beforeMap) {
     if (!afterMap.has(id)) {
+      // P0: Kind-aware operation selection - use kind-specific remove operation
+      const removeOpKind = getRemoveOperationKind(elem.kind);
       ops.push({
         id: `op:remove:${id}`,
-        kind: 'remove-component',
+        kind: removeOpKind,
         targetElementId: id,
-        description: `Remove component "${elem.name}"`,
+        description: `Remove ${elem.kind} "${elem.name}"`,
         before: elem,
-        autoApplyConfidence: 0.7,
+        autoApplyConfidence: removeOpKind === 'unsupported-operation' ? 0.0 : 0.7,
       });
     }
   }
@@ -265,13 +267,15 @@ export function buildChangePlan(
   // Detect additions
   for (const [id, elem] of afterMap) {
     if (!beforeMap.has(id)) {
+      // P0: Kind-aware operation selection - use kind-specific add operation
+      const addOpKind = getAddOperationKind(elem.kind);
       ops.push({
         id: `op:add:${id}`,
-        kind: 'add-component',
+        kind: addOpKind,
         targetElementId: id,
-        description: `Add component "${elem.name}"`,
+        description: `Add ${elem.kind} "${elem.name}"`,
         after: elem,
-        autoApplyConfidence: 0.9,
+        autoApplyConfidence: addOpKind === 'unsupported-operation' ? 0.0 : 0.9,
       });
     }
   }
@@ -286,18 +290,20 @@ export function buildChangePlan(
     if (JSON.stringify(beforeElem) === JSON.stringify(afterElem)) continue;
 
     if (beforeElem.name !== afterElem.name) {
+      // P0: Kind-aware rename - only components support rename; other kinds need manual review
+      const renameOpKind = beforeElem.kind === 'component' ? 'rename-component' : 'manual-review';
       ops.push({
         id: `op:rename:${id}`,
-        kind: 'rename-component',
+        kind: renameOpKind,
         targetElementId: id,
-        description: `Rename component "${beforeElem.name}" → "${afterElem.name}"`,
+        description: `Rename ${beforeElem.kind} "${beforeElem.name}" → "${afterElem.name}"`,
         before: beforeElem.name,
         after: afterElem.name,
-        autoApplyConfidence: 0.85,
+        autoApplyConfidence: renameOpKind === 'rename-component' ? 0.85 : 0.3,
       });
     }
 
-    // Kind-specific prop diffing for ComponentModel
+    // P0: Kind-specific diffing - only deeply diff component props; other kinds emit manual-review
     if (beforeElem.kind === 'component' && afterElem.kind === 'component') {
       const beforeProps = (beforeElem as { props?: unknown[] }).props ?? [];
       const afterProps = (afterElem as { props?: unknown[] }).props ?? [];
@@ -360,10 +366,88 @@ export function buildChangePlan(
           });
         }
       }
+    } else if (beforeElem.kind !== afterElem.kind) {
+      // P0: Kind mismatch - emit unsupported-operation as this requires structural changes
+      ops.push({
+        id: `op:kind-mismatch:${id}`,
+        kind: 'unsupported-operation',
+        targetElementId: id,
+        description: `Kind mismatch: "${beforeElem.name}" changed from ${beforeElem.kind} to ${afterElem.kind}`,
+        before: beforeElem,
+        after: afterElem,
+        autoApplyConfidence: 0.0,
+      });
+    } else {
+      // P0: Non-component kinds - emit manual-review for any changes
+      ops.push({
+        id: `op:update:${id}`,
+        kind: 'manual-review',
+        targetElementId: id,
+        description: `Update ${afterElem.kind} "${afterElem.name}" requires manual review`,
+        before: beforeElem,
+        after: afterElem,
+        autoApplyConfidence: 0.3,
+      });
     }
   }
 
   return ops;
+}
+
+// ============================================================================
+// Kind-Aware Operation Helpers
+// ============================================================================
+
+/**
+ * P0: Returns the appropriate add operation kind for a given element kind.
+ * Unsupported kinds return 'unsupported-operation' to prevent incorrect codegen.
+ */
+function getAddOperationKind(kind: string): ChangeOpKind {
+  switch (kind) {
+    case 'component':
+      return 'add-component';
+    case 'page':
+      return 'add-page-route';
+    case 'layout':
+      return 'add-layout';
+    case 'token':
+      return 'add-token';
+    case 'api-endpoint':
+      return 'add-api';
+    case 'data-entity':
+      return 'add-data-entity';
+    case 'workflow':
+      return 'add-workflow';
+    default:
+      // P0: Return unsupported-operation for unhandled kinds
+      return 'unsupported-operation';
+  }
+}
+
+/**
+ * P0: Returns the appropriate remove operation kind for a given element kind.
+ * Unsupported kinds return 'unsupported-operation' to prevent incorrect codegen.
+ */
+function getRemoveOperationKind(kind: string): ChangeOpKind {
+  switch (kind) {
+    case 'component':
+      return 'remove-component';
+    case 'page':
+      return 'remove-page-route';
+    case 'layout':
+      return 'remove-layout';
+    case 'token':
+      return 'remove-token';
+    case 'api-endpoint':
+      return 'remove-api';
+    case 'data-entity':
+      return 'remove-data-entity';
+    case 'workflow':
+      return 'remove-workflow';
+    default:
+      // P0: Return unsupported-operation for unhandled kinds
+      return 'unsupported-operation';
+  }
 }
 
 // ============================================================================

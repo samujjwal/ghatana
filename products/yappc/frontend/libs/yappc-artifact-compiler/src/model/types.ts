@@ -9,6 +9,37 @@
 
 import { z } from 'zod';
 
+// ============================================================================
+// Branded ID Types - deterministic artifact:// URN or UUID
+// ============================================================================
+
+/** Opaque model element ID — deterministic URN or UUID, never a plain name string. */
+export type ModelElementId = string & { readonly _brand: 'ModelElementId' };
+
+export function toModelElementId(raw: string): ModelElementId {
+  return raw as ModelElementId;
+}
+
+/** Schema accepting deterministic artifact:// URNs or UUIDs. */
+export const ModelElementIdSchema = z.string().refine(
+  (val) => {
+    // Accept UUID format
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+      return true;
+    }
+    // Accept URN format (artifact://...)
+    if (val.startsWith('artifact://')) {
+      return true;
+    }
+    // Accept other urn: formats
+    if (val.startsWith('urn:')) {
+      return true;
+    }
+    return false;
+  },
+  { message: 'Model element ID must be a UUID or artifact:// URN' }
+);
+
 export const SourceRefSchema = z.union([
   z.string().min(1),
   z.object({
@@ -25,7 +56,7 @@ export const SourceRefSchema = z.union([
 // ============================================================================
 
 export const ModelElementBaseSchema = z.object({
-  id: z.string().min(1),
+  id: ModelElementIdSchema,
   name: z.string().min(1),
   description: z.string().optional(),
   confidence: z.number().min(0).max(1),
@@ -48,7 +79,7 @@ export const ModelElementBaseSchema = z.object({
    * Graph node IDs that this model element is derived from or associated with.
    * Enables tracing from semantic model back to source graph nodes.
    */
-  graphNodeIds: z.array(z.string().min(1)),
+  graphNodeIds: z.array(ModelElementIdSchema),
   /**
    * Source references (e.g., file paths, symbol refs) that contributed to this element.
    * Provides provenance tracking back to original source locations.
@@ -120,11 +151,11 @@ export const ComponentModelSchema = ModelElementBaseSchema.extend({
   slots: z.array(SlotSchemaSchema).default([]),
   events: z.array(EventSchemaSchema).default([]),
   variants: z.array(ComponentVariantSchema).default([]),
-  stateConnections: z.array(z.string().uuid()).default([]),
-  dataDependencies: z.array(z.string().uuid()).default([]),
-  styleDependencies: z.array(z.string().uuid()).default([]),
+  stateConnections: z.array(ModelElementIdSchema).default([]),
+  dataDependencies: z.array(ModelElementIdSchema).default([]),
+  styleDependencies: z.array(ModelElementIdSchema).default([]),
   accessibility: AccessibilityMetadataSchema.optional(),
-  storyIds: z.array(z.string().uuid()).default([]),
+  storyIds: z.array(ModelElementIdSchema).default([]),
   builderCanvasHints: z.record(z.string(), z.unknown()).default({}),
 });
 
@@ -137,9 +168,9 @@ export type ComponentModel = z.infer<typeof ComponentModelSchema>;
 export const PageModelSchema = ModelElementBaseSchema.extend({
   kind: z.literal('page'),
   routePath: z.string().min(1),
-  layoutId: z.string().uuid().optional(),
-  componentIds: z.array(z.string().uuid()).default([]),
-  dataDependencies: z.array(z.string().uuid()).default([]),
+  layoutId: ModelElementIdSchema.optional(),
+  componentIds: z.array(ModelElementIdSchema).default([]),
+  dataDependencies: z.array(ModelElementIdSchema).default([]),
   authGuard: z.object({
     required: z.boolean(),
     roles: z.array(z.string()).default([]),
@@ -164,9 +195,9 @@ export const LayoutModelSchema = ModelElementBaseSchema.extend({
   templateType: z.enum(['default', 'sidebar', 'header', 'fullscreen', 'modal']),
   slotRegions: z.array(z.object({
     name: z.string().min(1),
-    defaultComponentId: z.string().uuid().optional(),
+    defaultComponentId: ModelElementIdSchema.optional(),
   })).default([]),
-  appliedToPageIds: z.array(z.string().uuid()).default([]),
+  appliedToPageIds: z.array(ModelElementIdSchema).default([]),
 });
 
 export type LayoutModel = z.infer<typeof LayoutModelSchema>;
@@ -229,7 +260,7 @@ export type StyleModel = z.infer<typeof StyleModelSchema>;
 // ============================================================================
 
 export const EntityRelationSchema = z.object({
-  targetEntityId: z.string().uuid(),
+  targetEntityId: ModelElementIdSchema,
   kind: z.enum(['one-to-one', 'one-to-many', 'many-to-one', 'many-to-many']),
   fieldName: z.string().min(1),
   optional: z.boolean().default(false),
@@ -272,7 +303,7 @@ export const DataModelSchema = ModelElementBaseSchema.extend({
     reason: z.string().min(1),
     originalSql: z.string().optional(),
   })).default([]),
-  migrationLineage: z.array(z.string().uuid()).default([]),
+  migrationLineage: z.array(ModelElementIdSchema).default([]),
 });
 
 export type DataModel = z.infer<typeof DataModelSchema>;
@@ -343,7 +374,7 @@ export const StateStoreModelSchema = ModelElementBaseSchema.extend({
     inputPaths: z.array(z.string().min(1)),
     outputType: z.string().optional(),
   })).default([]),
-  connectedComponentIds: z.array(z.string().uuid()).default([]),
+  connectedComponentIds: z.array(ModelElementIdSchema).default([]),
 });
 
 export type StateStoreModel = z.infer<typeof StateStoreModelSchema>;
@@ -355,7 +386,7 @@ export type StateStoreModel = z.infer<typeof StateStoreModelSchema>;
 export const InteractionModelSchema = ModelElementBaseSchema.extend({
   kind: z.literal('interaction'),
   trigger: z.enum(['click', 'hover', 'focus', 'blur', 'submit', 'change', 'scroll', 'keydown', 'custom']),
-  sourceComponentId: z.string().uuid(),
+  sourceComponentId: ModelElementIdSchema,
   targetAction: z.enum(['navigate', 'api-call', 'state-update', 'emit-event', 'toggle', 'validate', 'custom']),
   payloadMapping: z.record(z.string(), z.string()).default({}),
   conditions: z.array(z.string()).default([]),
@@ -383,9 +414,9 @@ export type CacheModel = z.infer<typeof CacheModelSchema>;
 // ============================================================================
 
 export const WorkflowJobSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(), // Changed from z.string().uuid() to z.string()
   name: z.string().min(1),
-  dependsOn: z.array(z.string().uuid()).default([]),
+  dependsOn: z.array(ModelElementIdSchema).default([]),
   parallelGroup: z.string().optional(),
   steps: z.array(z.object({
     name: z.string().min(1),
@@ -433,15 +464,15 @@ export const SemanticProductModelSchema = z.object({
    * P1-8: Deterministic ID from snapshot + graph checksum.
    * Changed from strict UUID to string to support deterministic hashing.
    */
-  id: z.string().min(1),
-  sourceModelRef: z.string().min(1).optional(),
+  id: ModelElementIdSchema,
+  sourceModelRef: ModelElementIdSchema.optional(),
   repositoryRoot: z.string().min(1),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   version: z.number().int().nonnegative(),
   elements: z.array(SemanticModelElementSchema),
-  elementIndex: z.record(z.string(), z.array(z.string().uuid())), // kind -> elementIds
-  residualIslandIds: z.array(z.string().uuid()).default([]),
+  elementIndex: z.record(z.string(), z.array(ModelElementIdSchema)), // kind -> elementIds
+  residualIslandIds: z.array(ModelElementIdSchema).default([]),
 });
 
 export type SemanticProductModel = z.infer<typeof SemanticProductModelSchema>;
@@ -461,10 +492,10 @@ export const ModelChangeKindSchema = z.enum([
 export type ModelChangeKind = z.infer<typeof ModelChangeKindSchema>;
 
 export const ModelChangeSchema = z.object({
-  elementId: z.string().uuid(),
+  elementId: ModelElementIdSchema,
   kind: ModelChangeKindSchema,
-  previousVersion: z.string().uuid().optional(),
-  newVersion: z.string().uuid().optional(),
+  previousVersion: ModelElementIdSchema.optional(),
+  newVersion: ModelElementIdSchema.optional(),
   changedFields: z.array(z.string()).default([]),
   changeReason: z.string().optional(),
   changedAt: z.string().datetime(),
@@ -474,8 +505,8 @@ export const ModelChangeSchema = z.object({
 export type ModelChange = z.infer<typeof ModelChangeSchema>;
 
 export const ModelVersionMetadataSchema = z.object({
-  versionId: z.string().uuid(),
-  previousVersionId: z.string().uuid().optional(),
+  versionId: ModelElementIdSchema,
+  previousVersionId: ModelElementIdSchema.optional(),
   snapshotRef: z.object({
     provider: z.enum(['local-folder', 'github', 'gitlab', 'zip', 'artifact-registry']),
     repoId: z.string().min(1),

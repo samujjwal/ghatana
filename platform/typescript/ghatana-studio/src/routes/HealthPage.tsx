@@ -7,6 +7,34 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
+function healthSignalStatusLabel(status: string, t: (key: string) => string): string {
+  if (status === 'healthy') {
+    return t('studio.route.health.signalStatus.healthy');
+  }
+  if (status === 'degraded') {
+    return t('studio.route.health.signalStatus.degraded');
+  }
+  if (status === 'unhealthy') {
+    return t('studio.route.health.signalStatus.unhealthy');
+  }
+  if (status === 'running') {
+    return t('studio.route.health.signalStatus.running');
+  }
+  if (status === 'loading') {
+    return t('studio.route.health.signalStatus.loading');
+  }
+  if (status === 'unavailable') {
+    return t('studio.route.health.signalStatus.unavailable');
+  }
+  if (status === 'bootstrap') {
+    return t('studio.route.health.providerMode.bootstrap');
+  }
+  if (status === 'platform') {
+    return t('studio.route.health.providerMode.platform');
+  }
+  return t('studio.route.health.signalStatus.unknown');
+}
+
 export default function HealthPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
@@ -14,23 +42,33 @@ export default function HealthPage(): ReactElement {
   const healthSignals = [
     {
       label: 'Kernel lifecycle',
-      status: snapshot.selectedRun?.status ?? describeLifecycleDataStatus(snapshot.status),
+      status: snapshot.selectedRun?.status === undefined
+        ? describeLifecycleDataStatus(snapshot.status)
+        : healthSignalStatusLabel(snapshot.selectedRun.status, t),
     },
     {
       label: 'Data Cloud provider mode',
-      status: snapshot.artifactManifest?.providerMode ?? 'unavailable',
+      status: snapshot.artifactManifest?.providerMode === undefined
+        ? healthSignalStatusLabel('unavailable', t)
+        : healthSignalStatusLabel(snapshot.artifactManifest.providerMode, t),
     },
     {
       label: 'ProductUnit health',
-      status: snapshot.verifyHealthReport?.status ?? 'unknown',
+      status: snapshot.verifyHealthReport?.status === undefined
+        ? healthSignalStatusLabel('unknown', t)
+        : healthSignalStatusLabel(snapshot.verifyHealthReport.status, t),
     },
     {
       label: 'Plugin health',
-      status: snapshot.selectedRun?.manifestRefs?.pluginHealth ?? 'unknown',
+      status: snapshot.selectedRun?.manifestRefs?.pluginHealth === undefined
+        ? healthSignalStatusLabel('unknown', t)
+        : healthSignalStatusLabel(snapshot.selectedRun.manifestRefs.pluginHealth, t),
     },
     {
       label: 'Toolchain health',
-      status: snapshot.selectedRun?.manifestRefs?.toolchainHealth ?? 'unknown',
+      status: snapshot.selectedRun?.manifestRefs?.toolchainHealth === undefined
+        ? healthSignalStatusLabel('unknown', t)
+        : healthSignalStatusLabel(snapshot.selectedRun.manifestRefs.toolchainHealth, t),
     },
   ] as const;
 

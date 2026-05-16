@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
-import com.ghatana.yappc.services.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
@@ -56,20 +56,19 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                     "snapshotRef", Map.of(
                         "provider", snapshot.provider(),
                         "repoId", snapshot.repoId(),
-                        "commitSha", snapshot.commitSha(),
-                        "ref", snapshot.branch(),
-                        "resolvedPath", snapshot.localRootPath(),
+                        "commitSha", snapshot.commitSha().orElse(null),
+                        "ref", null,
+                        "resolvedPath", snapshot.materializedRoot(),
                         "snapshotId", snapshot.snapshotId(),
-                        "checksum", snapshot.contentChecksum(),
-                        "capturedAt", snapshot.snapshotAt().toString()
+                        "checksum", snapshot.checksum(),
+                        "capturedAt", snapshot.createdAt().toString()
                     ),
-                    "localRootPath", snapshot.localRootPath(),
+                    "localRootPath", snapshot.materializedRoot(),
                     "files", snapshot.files().stream().map(file -> Map.of(
                         "relativePath", file.relativePath(),
                         "absolutePath", file.absolutePath(),
                         "sizeBytes", file.sizeBytes(),
-                        "lastModified", file.lastModifiedAt().toString(),
-                        "materialized", file.materialized()
+                        "lastModified", file.lastModified().toString()
                     )).toList(),
                     "diagnostics", snapshot.diagnostics()
                 )

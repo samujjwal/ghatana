@@ -205,7 +205,7 @@ export class KernelLifecycleApiHandlers {
     this.requireScopeHeaders = options.requireScopeHeaders ?? true;
     this.allowUnscopedLocalDevelopment = options.allowUnscopedLocalDevelopment ?? false;
     this.authorizer = options.authorizer;
-    this.requireAuthentication = options.requireAuthentication ?? false;
+    this.requireAuthentication = options.requireAuthentication ?? true;
   }
 
   async listProductUnits(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
