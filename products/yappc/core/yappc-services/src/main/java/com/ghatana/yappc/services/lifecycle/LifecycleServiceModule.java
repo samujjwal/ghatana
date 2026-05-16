@@ -400,13 +400,17 @@ public class LifecycleServiceModule extends AbstractModule {
             @Override
             public io.activej.promise.Promise<java.util.Optional<ArtifactContent>> retrieveArtifact(String artifactId, String tenantId) {
                 return client.findById(tenantId, "yappc-artifacts", artifactId)
-                    .map(opt -> opt.map(entity -> new ArtifactContent(
-                        entity.id(),
-                        (String) entity.data().get("content"),
-                        (String) entity.data().get("contentType"),
-                        ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
-                        (Map<String, String>) entity.data().getOrDefault("metadata", Map.of())
-                    )));
+                    .map(opt -> opt.map(entity -> {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> metadata = (Map<String, String>) entity.data().getOrDefault("metadata", Map.of());
+                        return new ArtifactContent(
+                            entity.id(),
+                            (String) entity.data().get("content"),
+                            (String) entity.data().get("contentType"),
+                            ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
+                            metadata
+                        );
+                    }));
             }
 
             @Override
@@ -419,15 +423,19 @@ public class LifecycleServiceModule extends AbstractModule {
                 return client.query(tenantId, "yappc-artifacts", query)
                     .map(list -> {
                         java.util.List<ArtifactMetadata> metadata = list.stream()
-                            .map(entity -> new ArtifactMetadata(
-                                entity.id(),
-                                (String) entity.data().get("projectId"),
-                                (String) entity.data().get("artifactType"),
-                                (String) entity.data().get("version"),
-                                ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
-                                entity.createdAt().toEpochMilli(),
-                                (Map<String, String>) entity.data().getOrDefault("metadata", Map.of())
-                            ))
+                            .map(entity -> {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> entityMetadata = (Map<String, String>) entity.data().getOrDefault("metadata", Map.of());
+                                return new ArtifactMetadata(
+                                    entity.id(),
+                                    (String) entity.data().get("projectId"),
+                                    (String) entity.data().get("artifactType"),
+                                    (String) entity.data().get("version"),
+                                    ((Number) entity.data().getOrDefault("size", 0L)).longValue(),
+                                    entity.createdAt().toEpochMilli(),
+                                    entityMetadata
+                                );
+                            })
                             .toList();
                         return metadata;
                     });
@@ -562,9 +570,9 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /** Provides {@link ArtifactGraphService} for artifact graph ingest, analysis, merge, and query. */
     @Provides
-    ArtifactGraphService artifactGraphService(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository) {
+    ArtifactGraphService artifactGraphService(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository, Executor executor) {
         logger.info("Creating ArtifactGraphService (YAPPC-ArtifactCompiler)");
-        return new ArtifactGraphServiceImpl(repository, versionRepository);
+        return new ArtifactGraphServiceImpl(repository, versionRepository, executor);
     }
 
     /** Provides {@link ArtifactGraphController} for artifact compiler HTTP routes. */

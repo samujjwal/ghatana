@@ -153,10 +153,14 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return nodesPromise.combine(edgesPromise, (nodes, edges) -> {
             nodeCache.put(cacheKey, nodes);
             edgeCache.put(cacheKey, edges);
-            
-            // Offload JGraphT analysis to blocking executor
-          g(blockingExecutor, () -> runJGraphTAnalysis(nodes, edges, request));
-        }).flatMap(result -> result);
+            return new Object[]{nodes, edges};
+        }).then(pair -> Promise.ofBlocking(blockingExecutor, () -> {
+            @SuppressWarnings("unchecked")
+            List<ArtifactNodeDto> nodeList = (List<ArtifactNodeDto>) pair[0];
+            @SuppressWarnings("unchecked")
+            List<ArtifactEdgeDto> edgeList = (List<ArtifactEdgeDto>) pair[1];
+            return runJGraphTAnalysis(nodeList, edgeList, request);
+        }));
     }
 
     /**

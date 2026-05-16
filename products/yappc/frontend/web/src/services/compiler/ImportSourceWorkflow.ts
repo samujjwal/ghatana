@@ -276,11 +276,26 @@ export async function importSourceToPageArtifacts(
     };
   }
 
+  const toArtifactSourceType = (
+    sourceType: ImportSourceType
+  ): ImportedSourceArtifactInput['sourceType'] => {
+    if (
+      sourceType === 'tsx' ||
+      sourceType === 'route' ||
+      sourceType === 'storybook' ||
+      sourceType === 'artifact' ||
+      sourceType === 'zip'
+    ) {
+      return sourceType;
+    }
+    return 'artifact';
+  };
+
   const artifactInput: ImportedSourceArtifactInput = {
     projectId: options.projectId,
     componentName: importResult.metadata.componentName,
     source: options.source,
-    sourceType: options.sourceType,
+    sourceType: toArtifactSourceType(options.sourceType),
     importedAt: importResult.metadata.importedAt,
     extractedComponents: importResult.extractedComponents,
   };

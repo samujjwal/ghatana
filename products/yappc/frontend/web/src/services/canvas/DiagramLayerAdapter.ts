@@ -100,7 +100,10 @@ export class MermaidDiagramAdapter implements DiagramLayerAdapter {
 
     const custom = canvasNode.metadata.custom as Record<string, unknown> | undefined;
     const diagramType = (custom?.diagramType as string) || 'architecture';
-    const mermaidDefinition = (canvasNode.data.properties?.mermaidDefinition as string) || '';
+    const properties = canvasNode.data.properties as
+      | { mermaidDefinition?: string }
+      | undefined;
+    const mermaidDefinition = properties?.mermaidDefinition ?? '';
 
     return {
       id: canvasNode.id,

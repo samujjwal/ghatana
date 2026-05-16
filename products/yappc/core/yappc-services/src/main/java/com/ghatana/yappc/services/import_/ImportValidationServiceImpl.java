@@ -151,7 +151,8 @@ public final class ImportValidationServiceImpl implements ImportValidationServic
 
     private boolean isValidUrl(String url) {
         try {
-            new java.net.URL(url).toURI();
+            java.net.URI uri = java.net.URI.create(url);
+            uri.toURL();
             return true;
         } catch (Exception e) {
             return false;

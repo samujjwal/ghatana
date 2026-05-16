@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { yappcApi, type Project as ApiProject } from '@/lib/api';
+import { yappcApi } from '@/lib/api';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { useTranslation } from '@ghatana/i18n';
 
@@ -22,14 +22,12 @@ const STATUS_COLORS: Record<string, string> = {
   ARCHIVED: 'bg-surface text-fg-muted',
 };
 
-function toProjectSummary(project: ApiProject): ProjectSummary {
-  const projectLike = project as {
+function toProjectSummary(projectLike: {
     id: string;
     name: string;
     description?: string;
     updatedAt: string;
-  };
-
+  }): ProjectSummary {
   return {
     id: projectLike.id,
     name: projectLike.name,

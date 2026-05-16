@@ -19,6 +19,30 @@ import { logger } from '../../utils/Logger';
 
 type ApiProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'username' | 'email' | 'avatar'>>;
 
+function normalizeApiAuthUser(user: Partial<ApiAuthUser>): ApiAuthUser {
+    const role = ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'].includes(user.role as string)
+        ? user.role as ApiRole
+        : 'VIEWER' as ApiRole;
+
+    const email = typeof user.email === 'string' && user.email.length > 0
+        ? user.email
+        : 'unknown@ghatana.local';
+
+    return {
+        id: typeof user.id === 'string' && user.id.length > 0 ? user.id : 'unknown-user',
+        email,
+        name: typeof user.name === 'string' && user.name.length > 0 ? user.name : email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role,
+        avatar: user.avatar,
+        avatarUrl: user.avatarUrl,
+        tenantId: user.tenantId,
+        workspaceIds: user.workspaceIds,
+        roles: user.roles,
+    };
+}
+
 async function parseJsonResponse<T>(response: Response, context: string): Promise<T> {
     return sharedParseJsonResponse<T>(response, context);
 }
@@ -130,12 +154,7 @@ export class AuthService {
                 const userInfo = await GeneratedAuthService.currentUser();
                 
                 // Ensure role is one of the expected values
-                const normalizedUser = {
-                    ...userInfo,
-                    role: ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'].includes(userInfo.role as string)
-                        ? userInfo.role as ApiRole
-                        : 'VIEWER' as ApiRole,
-                } satisfies ApiAuthUser;
+                const normalizedUser = normalizeApiAuthUser(userInfo);
                 
                 // Reconstruct session from server response
                 const session: AuthSession = {
@@ -187,12 +206,7 @@ export class AuthService {
             const userInfo = await GeneratedAuthService.currentUser();
             
             // Ensure role is one of the expected values
-            const normalizedUser = {
-                ...userInfo,
-                role: ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'].includes(userInfo.role as string)
-                    ? userInfo.role as ApiRole
-                    : 'VIEWER' as ApiRole,
-            } satisfies ApiAuthUser;
+            const normalizedUser = normalizeApiAuthUser(userInfo);
             
             const session = this.createSessionFromApiResponse({
                 ...authData,
@@ -512,14 +526,22 @@ export class AuthService {
     private createSessionFromApiResponse(authData: ApiAuthResponse): AuthSession {
         // In cookie mode, tokens are in httpOnly cookies, not in the response body
         // The response only contains user metadata
-        const hasTokens = 'tokens' in authData && authData.tokens !== undefined;
+        const tokens =
+            'tokens' in authData &&
+            typeof authData.tokens === 'object' &&
+            authData.tokens !== null &&
+            'accessToken' in authData.tokens &&
+            'refreshToken' in authData.tokens &&
+            'expiresIn' in authData.tokens
+                ? authData.tokens as { accessToken: string; refreshToken: string; expiresIn: number }
+                : null;
         
         return {
             user: this.mapApiUser(authData.user),
-            token: hasTokens ? authData.tokens.accessToken : '', // Tokens are in cookies
-            refreshToken: hasTokens ? authData.tokens.refreshToken : '', // Tokens are in cookies
-            expiresAt: hasTokens 
-                ? new Date(Date.now() + authData.tokens.expiresIn * 1000).toISOString()
+            token: tokens?.accessToken ?? '', // Tokens are in cookies
+            refreshToken: tokens?.refreshToken ?? '', // Tokens are in cookies
+            expiresAt: tokens
+                ? new Date(Date.now() + tokens.expiresIn * 1000).toISOString()
                 : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24h for cookie mode
             permissions: this.mapPermissions(authData.user.role),
         };

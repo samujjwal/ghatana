@@ -5,6 +5,7 @@
 package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.intent.IntentInput;
 import io.activej.promise.Promise;
@@ -334,13 +335,13 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
                 .workspaceId(rs.getString("workspace_id"))
                 .intent(fromJson(rs.getString("intent"), IntentInput.class))
                 .status(GenerationRun.RunStatus.valueOf(rs.getString("status")))
-                .artifactIds(fromJson(rs.getString("artifact_ids"), List.class))
+                .artifactIds(fromJson(rs.getString("artifact_ids"), new TypeReference<List<String>>() {}))
                 .reviewStatus(GenerationRun.ReviewStatus.valueOf(rs.getString("review_status")))
                 .previewSessionId(rs.getString("preview_session_id"))
                 .createdAt(rs.getTimestamp("created_at").toInstant())
                 .completedAt(rs.getTimestamp("completed_at") != null ? rs.getTimestamp("completed_at").toInstant() : null)
-                .provenance(fromJson(rs.getString("provenance"), Map.class))
-                .metadata(fromJson(rs.getString("metadata"), Map.class))
+                .provenance(fromJson(rs.getString("provenance"), new TypeReference<Map<String, Object>>() {}))
+                .metadata(fromJson(rs.getString("metadata"), new TypeReference<Map<String, Object>>() {}))
                 .contentDigest(rs.getString("content_digest"))
                 .build();
         } catch (JsonProcessingException e) {
@@ -358,5 +359,12 @@ public final class JdbcGenerationRunRepository implements GenerationRunRepositor
             return null;
         }
         return objectMapper.readValue(json, clazz);
+    }
+
+    private <T> T fromJson(String json, TypeReference<T> typeRef) throws JsonProcessingException {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        return objectMapper.readValue(json, typeRef);
     }
 }

@@ -263,7 +263,9 @@ async function createProjectApi(data: {
     workspaceId: data.ownerWorkspaceId,
   };
 
-  const payload = (await yappcApi.projects.create(request)) as unknown;
+  const payload = (await yappcApi.projects.create(
+    request as Parameters<typeof yappcApi.projects.create>[0]
+  )) as unknown;
   if (isRecord(payload) && isRecord(payload.project)) {
     const response = payload as ProjectResponseContract;
     return response.project as Project;
@@ -376,7 +378,7 @@ async function refreshProjectAI(
 async function fetchAvailableForInclusion(
   workspaceId: string
 ): Promise<Project[]> {
-  const data = await yappcApi.projects.availableForInclusion(workspaceId);
+  const data = (await yappcApi.projects.availableForInclusion(workspaceId)) as unknown;
   if (Array.isArray(data)) {
     return data;
   }

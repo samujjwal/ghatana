@@ -91,7 +91,11 @@ export default function Component() {
                 type: settings.type as UpdateProjectRequestContract['type'],
             };
 
-            return yappcApi.projects.updateScoped(projectId, workspaceScopeId, request) as unknown as ProjectContract;
+            return yappcApi.projects.updateScoped(
+                projectId,
+                workspaceScopeId,
+                request as Parameters<typeof yappcApi.projects.updateScoped>[2]
+            ) as unknown as ProjectContract;
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['project', projectId] });

@@ -168,7 +168,7 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     @Override
     public Promise<SourceImportJob> getJobStatus(String jobId) {
         return jobRepository.findJobById(jobId)
-            .whenComplete(job -> {
+            .whenComplete((job, e) -> {
                 if (job != null) {
                     notifyProgressCallbacks(job);
                 }
@@ -185,7 +185,7 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
                 } else {
                     log.warn("Job {} could not be cancelled (not found or not in cancellable state)", jobId);
                 }
-                return cancelled;
+                return Promise.of(cancelled);
             });
     }
 
@@ -202,29 +202,25 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     @Override
     public Promise<Void> updateProgress(String jobId, int currentStep, int totalSteps, double percentage, String currentPhase) {
         return jobRepository.updateProgress(jobId, currentStep, totalSteps, percentage, currentPhase)
-            .then(v -> {
-                // Fetch updated job to notify callbacks
-                return jobRepository.findJobById(jobId)
-                    .whenComplete(job -> {
-                        if (job != null) {
-                            notifyProgressCallbacks(job);
-                        }
-                    });
-            });
+            .then(v -> jobRepository.findJobById(jobId))
+            .whenComplete((job, e) -> {
+                if (job != null) {
+                    notifyProgressCallbacks(job);
+                }
+            })
+            .map(v -> null);
     }
 
     @Override
     public Promise<Void> updateStatus(String jobId, SourceImportJob.JobStatus status) {
         return jobRepository.updateStatus(jobId, status)
-            .then(v -> {
-                // Fetch updated job to notify callbacks
-                return jobRepository.findJobById(jobId)
-                    .whenComplete(job -> {
-                        if (job != null) {
-                            notifyProgressCallbacks(job);
-                        }
-                    });
-            });
+            .then(v -> jobRepository.findJobById(jobId))
+            .whenComplete((job, e) -> {
+                if (job != null) {
+                    notifyProgressCallbacks(job);
+                }
+            })
+            .map(v -> null);
     }
 
     @Override
