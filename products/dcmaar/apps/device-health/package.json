@@ -103,8 +103,8 @@
     "p-queue": "^9.1.2",
     "p-retry": "^8.0.0",
     "pako": "^2.1.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-error-boundary": "^6.1.1",
     "ws": "^8.20.0"
   },
