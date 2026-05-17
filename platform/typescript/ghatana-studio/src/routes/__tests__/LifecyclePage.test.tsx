@@ -331,6 +331,33 @@ describe('LifecyclePage approval queue', () => {
     expect(screen.getByRole('button', { name: 'studio.route.lifecycle.executePhaseButton' })).toBeDisabled();
   });
 
+  it('shows explicit non-pilot messaging for products outside Digital Marketing lifecycle pilot', () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        snapshot: {
+          ...createContextValue().snapshot,
+          runtimeMode: 'configured',
+          productUnit: {
+            ...createContextValue().snapshot.productUnit!,
+            id: 'phr',
+            name: 'PHR',
+            lifecycleStatus: 'planned',
+            metadata: {
+              environments: ['local'],
+              lifecycleExecutionAllowed: false,
+            },
+          },
+        },
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    expect(screen.getByLabelText('lifecycle-pilot-readiness')).toBeInTheDocument();
+    expect(screen.getByText('Current product unit: phr')).toBeInTheDocument();
+    expect(screen.getByText(/Only Digital Marketing is lifecycle-enabled in this phase/)).toBeInTheDocument();
+  });
+
   it('renders manifest remediation guidance for missing manifest states', () => {
     useStudioLifecycleDataMock.mockReturnValue(createContextValue());
 

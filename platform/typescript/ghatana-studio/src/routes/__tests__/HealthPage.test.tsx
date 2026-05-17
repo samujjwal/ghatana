@@ -75,10 +75,15 @@ describe('HealthPage', () => {
 
     render(<HealthPage />);
 
+    expect(screen.getByLabelText('composed-health-model')).toBeInTheDocument();
+    expect(screen.getByText('Bootstrap truth')).toBeInTheDocument();
+    expect(screen.getByText('Platform truth')).toBeInTheDocument();
+    expect(screen.getByText('Provider health')).toBeInTheDocument();
+    expect(screen.getByText('Product health')).toBeInTheDocument();
     expect(screen.getByText('studio.route.health.signalStatus.healthy')).toBeInTheDocument();
-    expect(screen.getByText('studio.route.health.providerMode.bootstrap')).toBeInTheDocument();
-    expect(screen.getByText('studio.route.health.signalStatus.unhealthy')).toBeInTheDocument();
-    expect(screen.getByText('studio.route.health.signalStatus.degraded')).toBeInTheDocument();
+    expect(screen.getAllByText('studio.route.health.providerMode.bootstrap').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('studio.route.health.signalStatus.unhealthy').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('studio.route.health.signalStatus.degraded').length).toBeGreaterThan(0);
     expect(screen.getByText('studio.route.health.signalStatus.unavailable')).toBeInTheDocument();
   });
 });

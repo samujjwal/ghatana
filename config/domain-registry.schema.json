@@ -134,6 +134,26 @@
         "reasonCodes": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "phase": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "exitCriteria": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "blockingGaps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "evidenceRequired": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "phaseOwner": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

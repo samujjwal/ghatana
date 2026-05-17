@@ -2,12 +2,14 @@
 // Authoritative Source: config/documentation-truth-scope.json
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
+
+const DOC_SCOPE_FILE = path.join(repoRoot, 'config', 'documentation-truth-scope.json');
 
 const CLAIM_PATTERN = /\b(fully implemented|production-ready|complete|enabled|executable|supports)\b/i;
 const CLASSIFICATION_PATTERN = /\b(Existing and executable|Existing but partial|Declared only|Target architecture|Anti-pattern)\b/i;
@@ -35,19 +37,21 @@ function loadDomainRegistry() {
   }
 }
 
+function loadDocumentationScope() {
+  try {
+    const scope = JSON.parse(readFileSync(DOC_SCOPE_FILE, 'utf8'));
+    return {
+      includeFiles: new Set((scope.includeFiles ?? []).map((file) => normalize(file))),
+      archivedPathSegments: (scope.archivedPathSegments ?? []).map(normalize),
+    };
+  } catch {
+    return null;
+  }
+}
+
 function shouldScan(relativePath) {
   const normalized = normalize(relativePath);
-  if (/\/(?:adr|archive)\//i.test(normalized)) {
-    return false;
-  }
-  if (/(PLAN|CHECKLIST|TRACKER|IMPLEMENTATION|ADR)-?.*\.md$/i.test(path.basename(normalized))) {
-    return false;
-  }
-  return (
-    normalized === 'docs/architecture/DOMAIN_WORKSTREAM_MAP.md' ||
-    /(?:CURRENT_STATE|TRUTH)\.md$/i.test(path.basename(normalized)) ||
-    normalized.includes('/truth/')
-  );
+  return normalized === 'docs/architecture/DOMAIN_WORKSTREAM_MAP.md';
 }
 
 function normalize(filePath) {
@@ -55,10 +59,18 @@ function normalize(filePath) {
 }
 
 function listFiles() {
+  const documentationScope = loadDocumentationScope();
   try {
+    if (documentationScope) {
+      return [...documentationScope.includeFiles]
+        .filter((file) => existsSync(path.join(repoRoot, file)))
+        .filter((file) => !documentationScope.archivedPathSegments.some((segment) => file.startsWith(segment)))
+        .filter((file, index, files) => files.indexOf(file) === index);
+    }
+
     return execFileSync(
       'rg',
-      ['--files', 'docs', 'config', '.', '-g', '*.md', '-g', '*.markdown', '-g', '*PLAN*.md', '-g', '*ARCHITECTURE*.md'],
+      ['--files', 'docs', 'config', '-g', '*.md', '-g', '*.markdown', '-g', '*.json'],
       { cwd: repoRoot, encoding: 'utf8' },
     )
       .split(/\r?\n/)
@@ -68,55 +80,38 @@ function listFiles() {
       .filter((file) => shouldScan(file));
   } catch {
     const files = [];
-    for (const rootSegment of ['docs', 'config']) {
-      const absoluteRoot = path.join(repoRoot, rootSegment);
-      if (!existsSync(absoluteRoot)) {
+    for (const scopeFile of [...(documentationScope?.includeFiles ?? [])]) {
+      const absolutePath = path.join(repoRoot, scopeFile);
+      if (!existsSync(absolutePath)) {
         continue;
       }
-      walkDirectory(absoluteRoot, files);
+      files.push(normalize(scopeFile));
     }
-    return files;
-  }
-}
-
-function walkDirectory(directory, files) {
-  for (const entry of readdirSync(directory)) {
-    const fullPath = path.join(directory, entry);
-    const relativePath = normalize(path.relative(repoRoot, fullPath));
-    const stats = statSync(fullPath);
-    if (stats.isDirectory()) {
-      walkDirectory(fullPath, files);
-      continue;
-    }
-    if (/(\.md|\.markdown)$/i.test(entry) && shouldScan(relativePath)) {
-      files.push(relativePath);
-    }
+    return files.filter((file) => shouldScan(file));
   }
 }
 
 export function findCurrentStateClaimViolations(files, options = {}) {
   const violations = [];
   const domainRegistry = options.domainRegistry ?? loadDomainRegistry();
-  
-  // Build domain classification lookup
-  const domainClassifications = new Map();
-  for (const domain of domainRegistry.domains || []) {
-    const normalizedClassification = normalizeClassification(domain.classification);
-    domainClassifications.set(domain.id, normalizedClassification);
-  }
 
   for (const file of files) {
     const lines = file.source.split(/\r?\n/);
 
     for (let index = 0; index < lines.length; index += 1) {
       const line = lines[index];
+      if (isClassificationLabel(line)) {
+        continue;
+      }
       if (!CLAIM_PATTERN.test(line)) {
         continue;
       }
 
       const window = lines.slice(Math.max(0, index - 2), Math.min(lines.length, index + 3)).join(' ');
       if (!CLASSIFICATION_PATTERN.test(window)) {
-        violations.push(`${file.path}:${index + 1}: current-state claim '${line.trim()}' is unclassified. Add one of: Existing and executable, Existing but partial, Declared only, Target architecture, Anti-pattern.`);
+        const registryClassification = lookupRegistryClassification(file.path, domainRegistry);
+        const registryHint = registryClassification === 'unknown' ? '' : ` Registry classification for this file: ${registryClassification}.`;
+        violations.push(`${file.path}:${index + 1}: current-state claim '${line.trim()}' is unclassified. Add one of: Existing and executable, Existing but partial, Declared only, Target architecture, Anti-pattern.${registryHint}`);
       }
 
       // Validate executability claims against registry state
@@ -132,6 +127,30 @@ export function findCurrentStateClaimViolations(files, options = {}) {
   }
 
   return violations;
+}
+
+function isClassificationLabel(line) {
+  return /^\s*(current-state\s+classification|classification)\s*:/i.test(line);
+}
+
+function lookupRegistryClassification(filePath, domainRegistry) {
+  const normalizedFilePath = normalize(filePath);
+
+  for (const domain of domainRegistry.domains ?? []) {
+    const classification = normalizeClassification(domain.classification);
+    const candidateLocations = [
+      ...(domain.primaryLocations ?? []),
+      ...(domain.secondaryLocations ?? []),
+      ...(domain.currentStateEvidence ?? []),
+      ...(domain.sourceOfTruth ? [domain.sourceOfTruth] : []),
+    ];
+
+    if (candidateLocations.some((location) => normalize(location) === normalizedFilePath)) {
+      return classification;
+    }
+  }
+
+  return 'unknown';
 }
 
 function normalizeClassification(classification) {
@@ -194,6 +213,8 @@ export function checkCurrentStateClaims(options = {}) {
   }));
   return findCurrentStateClaimViolations(files);
 }
+
+export { listFiles, shouldScan };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const violations = checkCurrentStateClaims();

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -309,17 +310,17 @@ public final class HitlController {
                         tenantPolicy.escalationDestination()));
                 }
 
-                List<Promise<ResolutionOutcome>> actions = new ArrayList<>(matchingOverdueItems.size());
+                List<Promise<Optional<ResolutionOutcome>>> actions = new ArrayList<>(matchingOverdueItems.size());
                 for (ReviewItem item : matchingOverdueItems) {
                     TenantHitlPolicy policy = resolvePolicy(item.getTenantId());
                     actions.add(applyOverdueAction(item, policy)
                         .map(outcome -> {
                             publishOverdueEvent(outcome.item(), outcome.action(), policy);
-                            return outcome;
+                            return Optional.of(outcome);
                         })
                         .then(Promise::of, error -> {
                             log.warn("[hitl] overdue escalation failed reviewId={}: {}", item.getReviewId(), error.getMessage());
-                            return Promise.of(null);
+                            return Promise.of(Optional.empty());
                         }));
                 }
 
@@ -331,10 +332,11 @@ public final class HitlController {
                         OverdueAction lastAction = resolvePolicy(tenantId).overdueAction();
                         String destinationType = null;
                         String destination = null;
-                        for (ResolutionOutcome outcome : resolved) {
-                            if (outcome == null) {
+                        for (Optional<ResolutionOutcome> maybeOutcome : resolved) {
+                            if (maybeOutcome == null || maybeOutcome.isEmpty()) {
                                 continue;
                             }
+                            ResolutionOutcome outcome = maybeOutcome.get();
                             lastAction = outcome.action();
                             if (outcome.destinationType() != null) {
                                 destinationType = outcome.destinationType();

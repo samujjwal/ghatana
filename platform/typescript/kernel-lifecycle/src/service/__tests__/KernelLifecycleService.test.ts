@@ -555,6 +555,39 @@ describe('KernelLifecycleService', () => {
     });
   });
 
+  it.each([
+    'events',
+    'artifacts',
+    'health',
+    'approvals',
+    'provenance',
+    'memory',
+    'runtimeTruth',
+  ] as const)('fails closed in platform mode when required provider %s is missing', async (missingProvider) => {
+    type MutableProviderContext = {
+      -readonly [K in keyof KernelLifecycleProviderContext]: KernelLifecycleProviderContext[K];
+    };
+
+    const providerContext: MutableProviderContext = {
+      ...createBootstrapProviderContext(),
+      mode: 'platform',
+    };
+    providerContext[missingProvider] = undefined;
+
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createRegistryProvider([productUnit]),
+      providerContext,
+    });
+
+    await expect(
+      service.createLifecyclePlan('digital-marketing', 'build', { providerMode: 'platform' }),
+    ).rejects.toMatchObject({
+      reasonCode: 'provider-unavailable',
+      safeDetails: { missingProviders: [missingProvider] },
+    });
+  });
+
   it('applies ProductUnitIntent via intent-capable registry and records event/runtime/provenance refs', async () => {
     const service = new KernelLifecycleService({
       repoRoot,

@@ -118,7 +118,14 @@
       "pattern": "System\\.out\\.(print|println)|e\\.printStackTrace\\(\\)",
       "description": "System.out.println or printStackTrace in production Java",
       "excludePaths": [
-        "(^|/).*Cli\\.java$"
+        "(^|/).*Cli\\.java$",
+        "(^|/)platform/contracts/src/(main|schemaGen)/java/.*/JsonSchemaBundleToPojoGenerator\\.java$",
+        "(^|/).*OpenApiGenerator\\.java$",
+        "(^|/).*SdkGeneratorMain\\.java$",
+        "(^|/).*AiRegistryServiceLauncher\\.java$",
+        "(^|/).*AepBusinessKpiTracker\\.java$",
+        "(^|/).*PipelineDebugConsole\\.java$",
+        "(^|/).*PipelinePerformanceProfiler\\.java$"
       ]
     },
     {

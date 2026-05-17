@@ -10,6 +10,8 @@ import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.ghatana.finance.kernel.FinanceCapabilities;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -37,6 +39,8 @@ import java.util.Set;
  * @since 1.0.0
  */
 public class FinanceKernelPlugin implements KernelPlugin {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FinanceKernelPlugin.class);
 
     private final PluginManifest manifest;
     @SuppressWarnings("unused")
@@ -159,42 +163,42 @@ public class FinanceKernelPlugin implements KernelPlugin {
     }
 
     private void startTradeProcessingService() {
-        System.out.println("Starting Finance trade processing service...");
+        LOGGER.info("Starting Finance trade processing service");
     }
 
     private void startRiskManagementService() {
-        System.out.println("Starting Finance risk management service...");
+        LOGGER.info("Starting Finance risk management service");
     }
 
     private void startComplianceService() {
-        System.out.println("Starting Finance compliance service...");
+        LOGGER.info("Starting Finance compliance service");
     }
 
     private void startPortfolioService() {
-        System.out.println("Starting Finance portfolio service...");
+        LOGGER.info("Starting Finance portfolio service");
     }
 
     private void startMarketDataService() {
-        System.out.println("Starting Finance market data service...");
+        LOGGER.info("Starting Finance market data service");
     }
 
     private void stopTradeProcessingService() {
-        System.out.println("Stopping Finance trade processing service...");
+        LOGGER.info("Stopping Finance trade processing service");
     }
 
     private void stopRiskManagementService() {
-        System.out.println("Stopping Finance risk management service...");
+        LOGGER.info("Stopping Finance risk management service");
     }
 
     private void stopComplianceService() {
-        System.out.println("Stopping Finance compliance service...");
+        LOGGER.info("Stopping Finance compliance service");
     }
 
     private void stopPortfolioService() {
-        System.out.println("Stopping Finance portfolio service...");
+        LOGGER.info("Stopping Finance portfolio service");
     }
 
     private void stopMarketDataService() {
-        System.out.println("Stopping Finance market data service...");
+        LOGGER.info("Stopping Finance market data service");
     }
 }

@@ -30,6 +30,7 @@
     "@ghatana/i18n": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/platform-events": "workspace:*",
+    "@ghatana/product-shell": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
     "@ghatana/ui-builder": "workspace:*",

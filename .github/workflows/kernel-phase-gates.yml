@@ -1,0 +1,286 @@
+name: Kernel Phase Gates
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "config/**"
+      - "docs/**"
+      - "scripts/**"
+      - "platform/**"
+      - "products/**"
+      - ".github/workflows/kernel-phase-gates.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "config/**"
+      - "docs/**"
+      - "scripts/**"
+      - "platform/**"
+      - "products/**"
+      - ".github/workflows/kernel-phase-gates.yml"
+
+concurrency:
+  group: kernel-phase-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
+
+jobs:
+  phase0-coherence:
+    name: phase0-coherence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 0 gate
+        run: pnpm check:phase0
+
+  phase1-studio:
+    name: phase1-studio
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 1 gate
+        run: pnpm check:phase1
+
+  phase2-dm-pilot:
+    name: phase2-dm-pilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 2 gate
+        run: pnpm check:phase2
+
+      - name: Upload Digital Marketing evidence pack
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-dm-evidence
+          path: |
+            .kernel/evidence/digital-marketing/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  phase3-kernel:
+    name: phase3-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 3 gate
+        run: pnpm check:phase3
+
+  phase4-agentic:
+    name: phase4-agentic
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 4 gate
+        run: pnpm check:phase4
+
+  phase5-data-cloud:
+    name: phase5-data-cloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 5 gate
+        run: pnpm check:phase5
+
+      - name: Upload Data Cloud provider evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-data-cloud-evidence
+          path: |
+            .kernel/evidence/data-cloud/**
+            build/reports/architecture/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  phase6-artifact-intelligence:
+    name: phase6-artifact-intelligence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 6 gate
+        run: pnpm check:phase6
+
+      - name: Upload artifact intelligence evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-artifact-intelligence-evidence
+          path: |
+            .kernel/evidence/artifact-intelligence/**
+            build/reports/artifact-intelligence/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  phase7-shape:
+    name: phase7-shape
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 7 gate
+        run: pnpm check:phase7
+
+  phase8-cleanup:
+    name: phase8-cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Phase 8 gate
+        run: pnpm check:phase8
+
+      - name: Upload phase reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-reports
+          path: |
+            build/reports/**
+            .kernel/evidence/**
+          if-no-files-found: warn
+          retention-days: 7

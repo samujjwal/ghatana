@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { StudioLifecycleDataContextValue } from '../../data/StudioLifecycleDataContext';
 import CanvasPage from '../CanvasPage';
 
 const useStudioTranslationMock = vi.fn<() => (key: string) => string>();
+const useStudioLifecycleDataMock = vi.fn<() => StudioLifecycleDataContextValue>();
 
 vi.mock('../../i18n/studioTranslations', () => ({
   useStudioTranslation: () => useStudioTranslationMock(),
+}));
+
+vi.mock('../../data/StudioLifecycleDataContext', () => ({
+  useStudioLifecycleData: () => useStudioLifecycleDataMock(),
 }));
 
 vi.mock('../yappcWorkflowData', () => ({
@@ -56,6 +62,38 @@ vi.mock('../yappcWorkflowData', () => ({
 describe('CanvasPage', () => {
   beforeEach(() => {
     useStudioTranslationMock.mockReturnValue((key: string) => key);
+    useStudioLifecycleDataMock.mockReturnValue({
+      snapshot: {
+        status: 'ready',
+        runtimeMode: 'configured',
+        availableProductUnits: [],
+        lifecycleRuns: [],
+        pendingApprovals: [],
+        manifestLoadState: {
+          gateResultManifest: { status: 'loaded' },
+          artifactManifest: { status: 'loaded' },
+          deploymentManifest: { status: 'missing' },
+          verifyHealthReport: { status: 'missing' },
+        },
+      },
+      selectedProductUnitId: 'digital-marketing',
+      selectedRunId: null,
+      selectedEnvironment: 'local',
+      selectedProviderMode: 'platform',
+      intentOperation: { status: 'idle' },
+      authenticatedUserId: 'user-1',
+      selectProductUnit: vi.fn(),
+      selectRun: vi.fn(),
+      setEnvironment: vi.fn(),
+      setProviderMode: vi.fn(),
+      createPlan: vi.fn(),
+      executePhase: vi.fn(),
+      requestApproval: vi.fn(),
+      submitApprovalDecision: vi.fn(),
+      previewProductUnitIntent: vi.fn(),
+      applyProductUnitIntent: vi.fn(),
+      refresh: vi.fn(),
+    });
   });
 
   it('renders translated canvas risk labels instead of raw risk codes', () => {

@@ -6,10 +6,16 @@
  * @doc.layer platform
  */
 
-import type { MouseEvent, ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useMemo } from 'react';
-import { Link, Route, Routes, useLocation } from 'react-router';
-import { Badge, DashboardLayout, EmptyState, ErrorBoundary } from '@ghatana/design-system';
+import { Route, Routes, useLocation } from 'react-router';
+import { Badge, EmptyState, ErrorBoundary } from '@ghatana/design-system';
+import {
+  ProductShell,
+  useProductShellConfig,
+  type ProductRouteCapability,
+  type ProductShellConfig,
+} from '@ghatana/product-shell';
 
 import AgentsPage from './routes/AgentsPage';
 import ArtifactsPage from './routes/ArtifactsPage';
@@ -22,10 +28,10 @@ import HomePage from './routes/HomePage';
 import IdeasPage from './routes/IdeasPage';
 import LearnPage from './routes/LearnPage';
 import LifecyclePage from './routes/LifecyclePage';
+import { getStudioCapabilityState } from './api/kernelLifecycleClient';
 import {
   findStudioNavItemFromItems,
   resolveStudioNavItems,
-  resolveStudioRouteCapabilityState,
   type StudioNavItem,
   type StudioRouteStatus,
 } from './navigation/studioNavigation';
@@ -38,111 +44,6 @@ interface RouteShellProps {
   readonly title: string;
   readonly description: string;
   readonly status: StudioRouteStatus;
-}
-
-function Sidebar(): ReactElement {
-  const location = useLocation();
-  const t = useStudioTranslation();
-  const lifecycleData = useStudioLifecycleData();
-  const runtimeConfigured = lifecycleData.authenticatedUserId !== undefined;
-
-  const navItems = useMemo(
-    () =>
-      resolveStudioNavItems(
-        resolveStudioRouteCapabilityState({
-          runtimeConfigured,
-          lifecycleStatus: lifecycleData.snapshot.status,
-          productUnit: lifecycleData.snapshot.productUnit,
-        }),
-      ),
-    [runtimeConfigured, lifecycleData.snapshot.status, lifecycleData.snapshot.productUnit],
-  );
-
-  return (
-    <div className="h-full border-r border-gray-200 bg-white p-4">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">{t('studio.brand.title')}</h1>
-        <p className="text-sm text-gray-500">{t('studio.brand.subtitle')}</p>
-      </div>
-
-      <nav className="space-y-1" aria-label="Studio navigation">
-        {navItems.filter((item: StudioNavItem) => item.isCustomerVisible && item.exposure !== 'hidden').map(
-          (item: StudioNavItem) => {
-            const isActive = location.pathname === item.path;
-            const isDisabled = item.exposure === 'disabled';
-
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : isDisabled
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                {...(isDisabled ? { onClick: (e: MouseEvent) => e.preventDefault(), 'aria-disabled': true as const } : {})}
-              >
-                <span>{t(item.labelKey)}</span>
-                <div className="flex items-center gap-2">
-                  {item.exposure === 'preview' && (
-                    <span className="text-xs font-normal text-purple-600">Preview</span>
-                  )}
-                  {item.status !== 'ready' ? (
-                    <span className="text-xs font-normal text-gray-500">
-                      {t(`studio.status.${item.status}`)}
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-            );
-          },
-        )}
-      </nav>
-    </div>
-  );
-}
-
-function StudioHeader(): ReactElement {
-  const location = useLocation();
-  const t = useStudioTranslation();
-  const lifecycleData = useStudioLifecycleData();
-  const runtimeConfigured = lifecycleData.authenticatedUserId !== undefined;
-  const activeItem = findStudioNavItemFromItems(
-    location.pathname,
-    resolveStudioNavItems(
-      resolveStudioRouteCapabilityState({
-        runtimeConfigured,
-        lifecycleStatus: lifecycleData.snapshot.status,
-        productUnit: lifecycleData.snapshot.productUnit,
-      }),
-    ),
-  );
-  const pageTitle = activeItem === undefined ? t('studio.route.notFound.title') : t(activeItem.labelKey);
-
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-6 py-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">{pageTitle}</h2>
-        <p className="text-sm text-gray-500">
-          {activeItem ? `${activeItem.ownership} ${t('studio.header.ownershipSuffix')}` : t('studio.header.unknownRoute')}
-        </p>
-      </div>
-      <div className="flex items-center gap-4 text-sm text-gray-500">
-        <span>{STUDIO_ENVIRONMENT_CONFIG.version}</span>
-        <a
-          href={STUDIO_ENVIRONMENT_CONFIG.docsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-700"
-        >
-          {t('studio.header.documentation')}
-        </a>
-      </div>
-    </div>
-  );
 }
 
 interface RouteAccessGuardProps {
@@ -247,25 +148,73 @@ function logStudioError(errorContext: { readonly error: Error }): void {
 }
 
 export default function App(): ReactElement {
+  const location = useLocation();
   const t = useStudioTranslation();
   const lifecycleData = useStudioLifecycleData();
   const runtimeConfigured = lifecycleData.authenticatedUserId !== undefined;
   const navItems = resolveStudioNavItems(
-    resolveStudioRouteCapabilityState({
+    getStudioCapabilityState({
       runtimeConfigured,
       lifecycleStatus: lifecycleData.snapshot.status,
+      selectedProviderMode: lifecycleData.selectedProviderMode,
       productUnit: lifecycleData.snapshot.productUnit,
+      selectedRun: lifecycleData.snapshot.selectedRun,
+      manifestLoadState: lifecycleData.snapshot.manifestLoadState,
     }),
   );
+  const shellRoutes = useMemo(
+    () =>
+      navItems.map((item): ProductRouteCapability => ({
+        path: item.path,
+        label: item.label,
+        description: item.requiredCapability,
+        lifecycle: item.exposure === 'preview' ? 'preview' : 'stable',
+        discoverable: item.isCustomerVisible && item.exposure !== 'hidden',
+      })),
+    [navItems],
+  );
+  const activeItem = findStudioNavItemFromItems(location.pathname, navItems);
+  const shellConfig = useProductShellConfig({
+    productName: t('studio.brand.title'),
+    logo: <span className="text-sm font-semibold tracking-tight text-blue-700">GS</span>,
+    currentRole: 'viewer',
+    roleOrder: { viewer: 0 },
+    routes: shellRoutes,
+    headerActions: (
+      <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="text-right">
+          <h2 className="text-sm font-medium text-gray-700">
+            {activeItem === undefined ? t('studio.route.notFound.title') : t(activeItem.labelKey)}
+          </h2>
+          <p className="text-xs text-gray-500">
+            {activeItem ? `${activeItem.ownership} ${t('studio.header.ownershipSuffix')}` : t('studio.header.unknownRoute')}
+          </p>
+        </div>
+        <span>{STUDIO_ENVIRONMENT_CONFIG.version}</span>
+        <a
+          href={STUDIO_ENVIRONMENT_CONFIG.docsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-700"
+        >
+          {t('studio.header.documentation')}
+        </a>
+      </div>
+    ),
+    sidebarFooter: (
+      <p className="text-xs text-gray-500">{t('studio.brand.subtitle')}</p>
+    ),
+  } satisfies ProductShellConfig);
   const routeById = Object.fromEntries(navItems.map((item) => [item.id, item])) as Record<string, StudioNavItem>;
 
   return (
     <ErrorBoundary onError={logStudioError} resetButtonText={t('studio.app.retryStudio')}>
-      <DashboardLayout
-        sidebar={<Sidebar />}
-        header={<StudioHeader />}
-        padding="lg"
-        contentClassName="bg-gray-50"
+      <ProductShell
+        config={shellConfig}
+        contentClassName="bg-gray-50 pt-20 p-6"
+        mainContentId="main-content"
+        mainContentTabIndex={-1}
+        mainContentRole="main"
       >
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -282,7 +231,7 @@ export default function App(): ReactElement {
           <Route path="/settings" element={<RouteAccessGuard navItem={routeById.settings}><SettingsRoute /></RouteAccessGuard>} />
           <Route path="*" element={<NotFoundRoute />} />
         </Routes>
-      </DashboardLayout>
+      </ProductShell>
     </ErrorBoundary>
   );
 }

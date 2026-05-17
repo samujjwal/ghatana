@@ -25,6 +25,11 @@ export default function DeploymentsPage(): ReactElement {
   const t = useStudioTranslation();
   const snapshot = lifecycleData.snapshot;
   const deploymentManifest = snapshot.deploymentManifest;
+  const deploymentManifestStatus = snapshot.manifestLoadState.deploymentManifest.status;
+  const deploymentManifestMessage = snapshot.manifestLoadState.deploymentManifest.message;
+  const verifyHealthStatus = snapshot.manifestLoadState.verifyHealthReport.status;
+  const deploymentManifestRef = snapshot.selectedRun?.manifestRefs?.['deployment-manifest'];
+  const verifyHealthRef = snapshot.selectedRun?.manifestRefs?.['verify-health-report'] ?? snapshot.selectedRun?.healthSnapshotRef;
   const serviceNames = Object.keys(deploymentManifest?.services ?? {});
 
   return (
@@ -40,6 +45,28 @@ export default function DeploymentsPage(): ReactElement {
           {t('studio.route.deployments.description')}
         </p>
       </div>
+
+      <article className="studio-card space-y-2" aria-label="deployment-manifest-state">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-gray-950">Deployment evidence state</h3>
+          <Badge tone={deploymentManifestStatus === 'loaded' ? 'success' : deploymentManifestStatus === 'missing' ? 'warning' : 'danger'} variant="soft" className="text-xs">
+            deployment-manifest: {deploymentManifestStatus}
+          </Badge>
+        </div>
+        <p className="text-xs text-gray-600">verify-health-report: {verifyHealthStatus}</p>
+        {deploymentManifestStatus !== 'loaded' && (
+          <p className="text-sm text-amber-700">
+            Deployment manifest evidence is incomplete. Run deploy/verify lifecycle phases and refresh this view.
+          </p>
+        )}
+        {deploymentManifestMessage !== undefined && (
+          <p className="text-xs text-gray-600">{deploymentManifestMessage}</p>
+        )}
+        <ul className="space-y-1 text-xs text-gray-600">
+          <li className="font-mono">deployment-manifest: {deploymentManifestRef ?? 'not reported'}</li>
+          <li className="font-mono">verify-health-report: {verifyHealthRef ?? 'not reported'}</li>
+        </ul>
+      </article>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <article className="studio-card space-y-3">

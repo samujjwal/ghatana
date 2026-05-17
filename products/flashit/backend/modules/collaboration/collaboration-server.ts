@@ -26,6 +26,31 @@ const subClient = pubClient.duplicate();
 // Prisma client
 const prisma = new PrismaClient();
 
+function logInfo(message: string, context?: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level: 'info',
+    service: 'flashit-collaboration',
+    message,
+    ...(context ?? {}),
+  };
+  process.stdout.write(`${JSON.stringify(payload)}\n`);
+}
+
+function logError(message: string, error?: unknown, context?: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    service: 'flashit-collaboration',
+    message,
+    error: error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : error,
+    ...(context ?? {}),
+  };
+  process.stderr.write(`${JSON.stringify(payload)}\n`);
+}
+
 // Collaboration event types
 export type CollaborationEventType =
   | 'sphere_shared' | 'sphere_unshared' | 'sphere_joined' | 'sphere_left'
@@ -142,7 +167,7 @@ export class CollaborationServer {
 
         next();
       } catch (error) {
-        console.error('Socket authentication failed:', error);
+        logError('Socket authentication failed', error);
         next(new Error('Authentication failed'));
       }
     });
@@ -153,7 +178,7 @@ export class CollaborationServer {
    */
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`User ${socket.data.auth.userId} connected`);
+      logInfo('User connected', { userId: socket.data.auth.userId });
 
       // Handle sphere joining
       socket.on('join_sphere', async (data) => {
@@ -276,7 +301,7 @@ export class CollaborationServer {
       socket.emit('sphere_joined', { sphereId, sessionId });
 
     } catch (error) {
-      console.error('Failed to join sphere:', error);
+      logError('Failed to join sphere', error, { userId, sphereId });
       socket.emit('error', { message: 'Failed to join sphere' });
     }
   }
@@ -323,7 +348,7 @@ export class CollaborationServer {
       socket.emit('sphere_left', { sphereId });
 
     } catch (error) {
-      console.error('Failed to leave sphere:', error);
+      logError('Failed to leave sphere', error, { userId, sphereId });
       socket.emit('error', { message: 'Failed to leave sphere' });
     }
   }
@@ -388,7 +413,7 @@ export class CollaborationServer {
       });
 
     } catch (error) {
-      console.error('Failed to start editing moment:', error);
+      logError('Failed to start editing moment', error, { userId, sphereId, momentId });
       socket.emit('error', { message: 'Failed to start editing session' });
     }
   }
@@ -455,7 +480,7 @@ export class CollaborationServer {
       }
 
     } catch (error) {
-      console.error('Failed to handle edit operation:', error);
+      logError('Failed to handle edit operation', error, { userId, momentId });
       socket.emit('error', { message: 'Failed to apply edit operation' });
     }
   }
@@ -493,7 +518,7 @@ export class CollaborationServer {
       });
 
     } catch (error) {
-      console.error('Failed to update presence:', error);
+      logError('Failed to update presence', error, { userId: session.userId, sphereId: session.sphereId });
     }
   }
 
@@ -559,7 +584,7 @@ export class CollaborationServer {
       }
 
     } catch (error) {
-      console.error('Failed to create comment:', error);
+      logError('Failed to create comment', error, { userId, sphereId, momentId });
       socket.emit('error', { message: 'Failed to create comment' });
     }
   }
@@ -614,7 +639,7 @@ export class CollaborationServer {
       }
 
     } catch (error) {
-      console.error('Failed to handle reaction:', error);
+      logError('Failed to handle reaction', error, { userId, sphereId, momentId });
       socket.emit('error', { message: 'Failed to handle reaction' });
     }
   }
@@ -671,11 +696,11 @@ export class CollaborationServer {
         this.activeSessions.delete(socket.id);
 
       } catch (error) {
-        console.error('Failed to handle disconnection:', error);
+        logError('Failed to handle disconnection', error, { userId });
       }
     }
 
-    console.log(`User ${userId} disconnected`);
+    logInfo('User disconnected', { userId });
   }
 
   /**
@@ -690,7 +715,7 @@ export class CollaborationServer {
 
       return result[0]?.has_permission || false;
     } catch (error) {
-      console.error('Failed to check permission:', error);
+      logError('Failed to check permission', error, { userId, sphereId, requiredPermission });
       return false;
     }
   }
@@ -834,7 +859,7 @@ export class CollaborationServer {
         });
 
       } catch (error) {
-        console.error('Cleanup task failed:', error);
+        logError('Cleanup task failed', error);
       }
     }, 5 * 60 * 1000); // Every 5 minutes
   }

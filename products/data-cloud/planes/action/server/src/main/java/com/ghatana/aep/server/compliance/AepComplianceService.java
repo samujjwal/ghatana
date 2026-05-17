@@ -466,7 +466,7 @@ public final class AepComplianceService {
                             String warning = "cleanup-hook failed: " + error.getMessage();
                             warnings.add(warning);
                             log.warn("[compliance] {} for {} tenant='{}'", warning, redactSubjectId(subjectId), tenantId);
-                            return Promise.of(null);
+                            return Promise.complete();
                         }))
                 .toList();
 

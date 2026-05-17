@@ -1,5 +1,28 @@
 import { buildApp } from './app.js';
 
+type LogLevel = 'error';
+
+const writeStructuredLog = (level: LogLevel, message: string, error?: unknown): void => {
+  const payload: Record<string, unknown> = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'data-cloud-action-gateway',
+    message,
+  };
+
+  if (error instanceof Error) {
+    payload['error'] = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  } else if (error !== undefined) {
+    payload['error'] = String(error);
+  }
+
+  process.stderr.write(`${JSON.stringify(payload)}\n`);
+};
+
 // ── Configuration ──────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env['PORT'] ?? '3002', 10);
 const AEP_BACKEND_URL = process.env['AEP_BACKEND_URL'] ?? 'http://localhost:8090';
@@ -25,7 +48,7 @@ const BACKEND_BREAKER_FAILURE_THRESHOLD = parseInt(
 const BACKEND_BREAKER_OPEN_MS = parseInt(process.env['BACKEND_BREAKER_OPEN_MS'] ?? '30000', 10);
 
 if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable must be set');
+  writeStructuredLog('error', 'FATAL: JWT_SECRET environment variable must be set');
   process.exit(1);
 }
 
@@ -53,7 +76,7 @@ const start = async () => {
     });
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
   } catch (err) {
-    console.error(err);
+    writeStructuredLog('error', 'Failed to start data-cloud action gateway', err);
     process.exit(1);
   }
 };

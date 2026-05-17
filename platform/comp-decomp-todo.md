@@ -1,8 +1,8 @@
 # Artifact Compiler/Decompiler Production Implementation TODO
 
 **Source**: Derived from `docs/archive/comp-decomp-todo-2026-04-18.md` audit
-**Status**: COMPLETED - Phases 1-5 and Phase 6.1
-**Last Updated**: 2026-05-16
+**Status**: COMPLETED - Phases 1-6.3
+**Last Updated**: 2026-05-17
 
 ## Overview
 
@@ -23,9 +23,12 @@ The Artifact Compiler/Decompiler is **production-ready foundation completed**.
 8. Scanner semantics consolidation - COMPLETED
 
 **Remaining Work:**
-- Phase 6.2: Clean stale docs (in progress)
-- Phase 6.3: Normalize naming from product/project across all APIs
-- Contract compatibility test for Java and TS
+- None
+
+**Verification Evidence (2026-05-17):**
+- `pnpm check:yappc-artifact-intelligence-boundary` passed
+- `./gradlew :products:yappc:core:yappc-services:test --tests '*ContractCompatibilityTest' --tests '*ProcessTsExtractorWorkerContractTest' --tests '*JavaArtifactExtractorTest' --tests '*ArtifactCompileJobServiceIntegrationTest'` passed with BUILD SUCCESSFUL
+- Contract naming normalization validated in `ContractCompatibilityTest` (canonical `projectId`, no legacy `productId` in canonical artifact-compiler contract fields)
 
 ## Implementation Phases
 
@@ -172,12 +175,14 @@ The Artifact Compiler/Decompiler is **production-ready foundation completed**.
 - **Owner**: Docs
 - **Done when**: Current docs match implementation, archived docs not used as source of truth
 - **Test**: Docs link/source-of-truth check
+- **Status**: COMPLETED (2026-05-17)
 
 #### Task 6.3: Normalize naming from product/project across all APIs
 - **Files**: Proto, Java DTOs, TS generated client, UI code
 - **Owner**: Contract only
 - **Done when**: One term canonical externally, internal aliases removed
 - **Test**: Contract lint test
+- **Status**: COMPLETED (2026-05-17)
 
 ## File-by-File Implementation Plan
 

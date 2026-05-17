@@ -138,6 +138,7 @@ export function validateProductRegistryDocument(registry, options = {}) {
 
     const lifecycleEnabled = product.lifecycle?.enabled === true;
     const lifecycleStatus = product.lifecycleStatus;
+    const lifecycleExecutionAllowed = product.lifecycleExecutionAllowed === true;
 
     if (lifecycleEnabled && lifecycleStatus !== 'enabled') {
       issues.push(issue(productId, 'lifecycle', 'lifecycle.enabled=true requires lifecycleStatus=enabled', 'Set lifecycleStatus to enabled or disable lifecycle.enabled.'));
@@ -158,12 +159,8 @@ export function validateProductRegistryDocument(registry, options = {}) {
       }
     }
 
-    if ((productId === 'data-cloud' || productId === 'yappc') && (lifecycleEnabled || lifecycleStatus === 'enabled')) {
-      issues.push(issue(productId, 'lifecycle', 'Data Cloud and YAPPC must not be treated as ordinary lifecycle-enabled products', 'Keep these products fail-closed until platform-provider bootstrap/provider rules are implemented.'));
-    }
-
-    if ((productId === 'phr' || productId === 'finance' || productId === 'flashit') && (lifecycleEnabled || lifecycleStatus === 'enabled')) {
-      issues.push(issue(productId, 'lifecycle', `${productId} must not be lifecycle-enabled until readiness gates are satisfied`, `Complete lifecycleReadiness requirements for ${productId} before enabling lifecycle execution.`));
+    if (productId !== 'digital-marketing' && (lifecycleEnabled || lifecycleStatus === 'enabled' || lifecycleExecutionAllowed)) {
+      issues.push(issue(productId, 'lifecycle', 'Only digital-marketing may be lifecycle-enabled or lifecycleExecutionAllowed=true until explicitly promoted', 'Set lifecycle.enabled, lifecycleStatus, and lifecycleExecutionAllowed to disabled/false unless this is the Digital Marketing pilot.'));
     }
 
     if (product.conformance?.bridge === true) {

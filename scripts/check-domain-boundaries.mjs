@@ -115,12 +115,22 @@ function productFromPath(filePath, productIds) {
   return null;
 }
 
+function isActiveBoundaryException(exception, now = new Date()) {
+  if (!exception.expiresAt) {
+    return false;
+  }
+
+  const expiryDate = new Date(exception.expiresAt);
+  return !Number.isNaN(expiryDate.getTime()) && expiryDate >= now;
+}
+
 export function analyzeBoundaryViolations(files, options) {
   const productIds = options.productIds;
   const productPackageOwners = options.productPackageOwners;
   const domainRegistry = options.domainRegistry || { domains: [] };
   const boundaryExceptions = options.boundaryExceptions || { exceptions: [] };
   const violations = [];
+  const now = new Date();
 
   // Build domain boundary policy lookup
   const domainBoundaryPolicies = new Map();
@@ -133,6 +143,10 @@ export function analyzeBoundaryViolations(files, options) {
   // Build exception lookup for allowlist support
   const exceptionLookup = new Map();
   for (const exception of boundaryExceptions.exceptions || []) {
+    if (!isActiveBoundaryException(exception, now)) {
+      continue;
+    }
+
     const key = `${exception.sourceFile}:${exception.targetImport || exception.ownershipViolation}`;
     exceptionLookup.set(key, exception);
   }

@@ -103,5 +103,8 @@ describe('AgentsPage', () => {
     expect(screen.getByText('studio.route.agents.decision.pending')).toBeInTheDocument();
     expect(screen.getByText('studio.route.agents.healthStatus.unknown')).toBeInTheDocument();
     expect(screen.getByText('studio.route.agents.rollbackReadiness.ready')).toBeInTheDocument();
+    expect(screen.getByLabelText('agent-readiness-dependencies')).toBeInTheDocument();
+    expect(screen.getByText('AEP action runtime: configured')).toBeInTheDocument();
+    expect(screen.getByText('evidence:lifecycle-events')).toBeInTheDocument();
   });
 });

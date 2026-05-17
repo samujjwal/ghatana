@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
+import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
+import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { artifactGraphSummary, residualIslandReport, riskHotspotReport, semanticArtifactReferences } from './yappcWorkflowData';
+import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
 
 type TranslateFn = (key: StudioTranslationKey) => string;
 
@@ -15,6 +18,28 @@ function canvasRiskLevelLabel(riskLevel: string, t: TranslateFn): string {
 
 export default function CanvasPage(): ReactElement {
   const t = useStudioTranslation();
+  const lifecycleData = useStudioLifecycleData();
+  const capabilityState = getStudioCapabilityState({
+    runtimeConfigured: lifecycleData.authenticatedUserId !== undefined,
+    lifecycleStatus: lifecycleData.snapshot.status,
+    selectedProviderMode: lifecycleData.selectedProviderMode,
+    productUnit: lifecycleData.snapshot.productUnit,
+    selectedRun: lifecycleData.snapshot.selectedRun,
+    manifestLoadState: lifecycleData.snapshot.manifestLoadState,
+  });
+  const handoffReady = lifecycleData.previewProductUnitIntent !== undefined && lifecycleData.applyProductUnitIntent !== undefined;
+  const currentStatusLabel = capabilityState.runtimeConfigured
+    ? capabilityState.lifecycleConfigured
+      ? capabilityState.dataCloudEvidenceReady
+        ? 'ready'
+        : 'evidence pending'
+      : 'lifecycle not configured'
+    : 'runtime not configured';
+  const requiredNextActionLabel = handoffReady
+    ? capabilityState.dataCloudEvidenceReady
+      ? 'Export ProductUnitIntent candidates from Canvas and validate Kernel handoff evidence.'
+      : 'Complete lifecycle/runtime evidence prerequisites before promotion.'
+    : 'Configure lifecycle client preview/apply handlers for ProductUnitIntent handoff.';
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {
     if (confidence >= 0.9) return 'success';
@@ -30,6 +55,15 @@ export default function CanvasPage(): ReactElement {
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-gray-600">{t('studio.route.canvas.description')}</p>
       </div>
+
+      <IdeationRouteStatusPanel
+        ownershipLabel="YAPPC"
+        currentStatusLabel={currentStatusLabel}
+        requiredNextActionLabel={requiredNextActionLabel}
+        handoffReady={handoffReady}
+        handoffReadinessLabel={handoffReady ? 'handoff ready' : 'handoff unavailable'}
+        evidenceRefs={[artifactGraphSummary.evidenceId, residualIslandReport.evidenceId, riskHotspotReport.evidenceId]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Artifact Graph */}

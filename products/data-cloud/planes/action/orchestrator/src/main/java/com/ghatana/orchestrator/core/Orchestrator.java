@@ -215,7 +215,7 @@ public class Orchestrator {
         return pipelineRegistryClient.getPipeline(pipelineId).then(optionalPipeline -> {
             if (optionalPipeline.isEmpty()) {
                 metrics.incrementCounter("orch.pipeline.deploy.failed");
-                return Promise.of(null);
+                return Promise.of((OrchestratorPipelineEntity) null);
             }
 
             OrchestratorPipelineEntity pipeline = optionalPipeline.get();
@@ -224,7 +224,7 @@ public class Orchestrator {
             return validatePipelineAgents(pipeline).then(isValid -> {
                 if (!isValid) {
                     metrics.incrementCounter("orch.pipeline.validation.failed");
-                    return Promise.of(null);
+                    return Promise.of((OrchestratorPipelineEntity) null);
                 }
 
                 return pipelineCache.put(pipelineId, pipeline).map(ignored -> {

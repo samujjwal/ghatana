@@ -2,6 +2,8 @@ package com.ghatana.kernel.loader;
 
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.PluginRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -24,6 +26,8 @@ import java.util.ServiceLoader;
  * @doc.pattern Service
  */
 public class PluginLoader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginLoader.class);
+
     private final PluginRegistry pluginRegistry;
     private final String pluginDirectory;
 
@@ -41,7 +45,7 @@ public class PluginLoader {
         try {
             Path pluginPath = Path.of(pluginDirectory);
             if (!Files.exists(pluginPath)) {
-                System.out.println("Plugin directory does not exist: " + pluginDirectory);
+                LOGGER.warn("Plugin directory does not exist: {}", pluginDirectory);
                 return;
             }
 
@@ -62,7 +66,7 @@ public class PluginLoader {
      */
     public void loadPlugin(Path pluginJar) {
         try {
-            System.out.println("Loading plugin from: " + pluginJar);
+            LOGGER.info("Loading plugin from: {}", pluginJar);
 
             // Load plugin JAR
             try (URLClassLoader classLoader = createPluginClassLoader(pluginJar)) {
@@ -70,12 +74,12 @@ public class PluginLoader {
                 ServiceLoader<KernelPlugin> loader = ServiceLoader.load(KernelPlugin.class, classLoader);
 
                 for (KernelPlugin plugin : loader) {
-                    System.out.println("Found plugin: " + plugin.getModuleId() + " v" + plugin.getVersion());
+                    LOGGER.info("Found plugin: {} v{}", plugin.getModuleId(), plugin.getVersion());
 
                     // Validate and register plugin
                     pluginRegistry.registerPlugin(plugin);
 
-                    System.out.println("Successfully registered plugin: " + plugin.getModuleId());
+                    LOGGER.info("Successfully registered plugin: {}", plugin.getModuleId());
                 }
             }
         } catch (Exception e) {
@@ -91,7 +95,7 @@ public class PluginLoader {
     public void unloadPlugin(String pluginId) {
         try {
             pluginRegistry.unregisterPlugin(pluginId);
-            System.out.println("Successfully unloaded plugin: " + pluginId);
+            LOGGER.info("Successfully unloaded plugin: {}", pluginId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to unload plugin: " + pluginId, e);
         }

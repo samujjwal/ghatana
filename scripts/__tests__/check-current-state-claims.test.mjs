@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { findCurrentStateClaimViolations } from '../check-current-state-claims.mjs';
+import { findCurrentStateClaimViolations, shouldScan } from '../check-current-state-claims.mjs';
+
+test('scanner fallback includes governance doc and registry json', () => {
+  assert.equal(shouldScan('docs/architecture/DOMAIN_WORKSTREAM_MAP.md'), true);
+  assert.equal(shouldScan('config/domain-registry.json'), false);
+  assert.equal(shouldScan('config/canonical-product-registry.json'), false);
+  assert.equal(shouldScan('platform/typescript/kernel-lifecycle/README.md'), false);
+});
+
+test('scanner excludes archived docs', () => {
+  assert.equal(shouldScan('docs/archive/legacy-plan.md'), false);
+  assert.equal(shouldScan('docs/adr/2026-04-18-example.md'), false);
+});
 
 test('unclassified current-state claim fails', () => {
   const violations = findCurrentStateClaimViolations([
@@ -11,10 +23,12 @@ test('unclassified current-state claim fails', () => {
     },
   ]);
 
-  assert.equal(violations.length, 1);
+  assert.equal(violations.length, 2);
+  assert(violations.some((v) => v.includes('unclassified')));
+  assert(violations.some((v) => v.includes('lacks evidence')));
 });
 
-test('classified claim passes', () => {
+test('classified claim without evidence fails', () => {
   const violations = findCurrentStateClaimViolations([
     {
       path: 'docs/example.md',
@@ -22,7 +36,8 @@ test('classified claim passes', () => {
     },
   ]);
 
-  assert.deepEqual(violations, []);
+  assert.equal(violations.length, 1);
+  assert(violations.some((v) => v.includes('lacks evidence')));
 });
 
 test('target architecture section passes', () => {

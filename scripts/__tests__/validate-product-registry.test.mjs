@@ -148,6 +148,7 @@ test('platform provider enabled fails', () => {
   const registry = createRegistry();
   registry.registry['data-cloud'].lifecycleStatus = 'enabled';
   registry.registry['data-cloud'].lifecycle = { enabled: true };
+  registry.registry['data-cloud'].lifecycleExecutionAllowed = true;
 
   const issues = validateProductRegistryDocument(registry, {
     schema,
@@ -158,7 +159,7 @@ test('platform provider enabled fails', () => {
     runArtifactCheck: () => 'ok',
   });
 
-  assert(issues.some((problem) => problem.message.includes('must not be treated as ordinary lifecycle-enabled products')));
+  assert(issues.some((problem) => problem.message.includes('Only digital-marketing may be lifecycle-enabled or lifecycleExecutionAllowed=true until explicitly promoted')));
 });
 
 test('disabled product yaml must remain fail closed', () => {

@@ -63,6 +63,12 @@ export function checkProductRegistryDrift(options = {}) {
   }
 
   for (const [productId, product] of Object.entries(registry.registry)) {
+    const lifecycleEnabled = product.lifecycle?.enabled === true;
+    const lifecycleStatus = product.lifecycleStatus;
+    const lifecycleExecutionAllowed = product.lifecycleExecutionAllowed === true;
+    const isDemoExample = product.kind === 'demo/example';
+    const requiresWorkspaceWiring = !isDemoExample || lifecycleEnabled || lifecycleExecutionAllowed;
+
     // Validate pnpmPackages exist in pnpm-workspace.yaml
     if (pnpmWorkspace && Array.isArray(product.pnpmPackages)) {
       for (const pkg of product.pnpmPackages) {
@@ -78,7 +84,7 @@ export function checkProductRegistryDrift(options = {}) {
     }
 
     // Validate Gradle modules exist in generated includes or root settings
-    if (Array.isArray(product.gradleModules)) {
+    if (Array.isArray(product.gradleModules) && requiresWorkspaceWiring) {
       for (const module of product.gradleModules) {
         const includeStatement = `include("${module}")`;
         if (!gradleIncludes.includes(includeStatement) && !settingsGradle.includes(includeStatement)) {
@@ -90,10 +96,18 @@ export function checkProductRegistryDrift(options = {}) {
       }
     }
 
-    // Validate lifecycle-enabled products have required fields
-    const lifecycleEnabled = product.lifecycle?.enabled === true;
-    const lifecycleStatus = product.lifecycleStatus;
+    if (Array.isArray(product.gradleModules) && !requiresWorkspaceWiring) {
+      if (
+        !product.lifecycleReadiness?.reasonCodes ||
+        product.lifecycleReadiness.reasonCodes.length === 0
+      ) {
+        violations.push(
+          `${productId}: demo/example product is not workspace-wired; add lifecycleReadiness.reasonCodes to document explicit drift exemption.`,
+        );
+      }
+    }
 
+    // Validate lifecycle-enabled products have required fields
     if (lifecycleEnabled) {
       if (lifecycleStatus !== 'enabled') {
         violations.push(

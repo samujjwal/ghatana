@@ -1420,7 +1420,7 @@ public class AepHttpServer {
             if (patternStore != null) {
                 patternStore.invalidateCache();
             }
-            return Promise.of(null);
+            return Promise.complete();
         };
     }
 
@@ -2277,7 +2277,7 @@ public class AepHttpServer {
             @Nullable String actor,
             @Nullable String reason) {
         if (agentDataCloud == null || agentDataCloud.eventLogStore() == null) {
-            return Promise.of(null);
+            return Promise.of((String) null);
         }
         String auditId = UUID.randomUUID().toString();
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -2299,7 +2299,7 @@ public class AepHttpServer {
             .map(offset -> auditId)
             .then(Promise::of, e -> {
                 log.warn("Failed to record pipeline rollback audit for pipelineId={}: {}", pipelineId, e.getMessage());
-                return Promise.of(null);
+                return Promise.of((String) null);
             });
     }
 

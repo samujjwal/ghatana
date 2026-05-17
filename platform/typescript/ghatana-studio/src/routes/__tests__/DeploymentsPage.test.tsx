@@ -66,5 +66,7 @@ describe('DeploymentsPage', () => {
     render(<DeploymentsPage />);
 
     expect(screen.getByText('studio.route.deployments.verifierStatus.requiresVerification')).toBeInTheDocument();
+    expect(screen.getByLabelText('deployment-manifest-state')).toBeInTheDocument();
+    expect(screen.getByText('deployment-manifest: missing')).toBeInTheDocument();
   });
 });

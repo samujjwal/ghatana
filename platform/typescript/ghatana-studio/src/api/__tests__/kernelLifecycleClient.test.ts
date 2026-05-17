@@ -3,6 +3,7 @@ import { ValidationError } from '@ghatana/api';
 import type { ProductUnitIntent } from '@ghatana/kernel-product-contracts';
 import {
   createKernelLifecycleClient,
+  getStudioCapabilityState,
   mapKernelLifecycleClientError,
   KernelLifecycleAuthError,
   KernelLifecycleScopeError,
@@ -683,6 +684,57 @@ describe('kernelLifecycleClient', () => {
       correlationId: 'corr-conflict',
       message: 'Conflict detected',
       details: { conflictingRunId: 'run-2' },
+    });
+  });
+
+  it('derives capability state with provider mode and evidence context', () => {
+    const capability = getStudioCapabilityState({
+      runtimeConfigured: true,
+      lifecycleStatus: 'ready',
+      selectedProviderMode: 'platform',
+      productUnit: {
+        lifecycleExecutionAllowed: true,
+      },
+      selectedRun: {
+        eventsRef: 'events/ref.json',
+      },
+      manifestLoadState: {
+        gateResultManifest: { status: 'missing' },
+        artifactManifest: { status: 'missing' },
+        deploymentManifest: { status: 'missing' },
+        verifyHealthReport: { status: 'missing' },
+      },
+    });
+
+    expect(capability).toEqual({
+      runtimeConfigured: true,
+      lifecycleConfigured: true,
+      lifecycleExecutionAllowed: true,
+      dataCloudEvidenceReady: true,
+    });
+  });
+
+  it('fails closed for platform mode when lifecycle evidence is unavailable', () => {
+    const capability = getStudioCapabilityState({
+      runtimeConfigured: true,
+      lifecycleStatus: 'ready',
+      selectedProviderMode: 'platform',
+      productUnit: {
+        lifecycleExecutionAllowed: true,
+      },
+      manifestLoadState: {
+        gateResultManifest: { status: 'missing' },
+        artifactManifest: { status: 'missing' },
+        deploymentManifest: { status: 'missing' },
+        verifyHealthReport: { status: 'missing' },
+      },
+    });
+
+    expect(capability).toEqual({
+      runtimeConfigured: true,
+      lifecycleConfigured: true,
+      lifecycleExecutionAllowed: true,
+      dataCloudEvidenceReady: false,
     });
   });
 });

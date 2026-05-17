@@ -20,6 +20,11 @@ export default function ArtifactsPage(): ReactElement {
   const t = useStudioTranslation();
   const snapshot = lifecycleData.snapshot;
   const artifacts = snapshot.artifactManifest?.artifacts ?? [];
+  const artifactManifestStatus = snapshot.manifestLoadState.artifactManifest.status;
+  const artifactManifestMessage = snapshot.manifestLoadState.artifactManifest.message;
+  const lifecycleResultRef = snapshot.selectedRun?.manifestRefs?.['lifecycle-result'];
+  const artifactManifestRef = snapshot.selectedRun?.manifestRefs?.['artifact-manifest'];
+  const verifyHealthRef = snapshot.selectedRun?.healthSnapshotRef;
   const intelligence = resolveArtifactIntelligence(snapshot.productUnit?.metadata);
 
   return (
@@ -35,6 +40,28 @@ export default function ArtifactsPage(): ReactElement {
           {t('studio.route.artifacts.description')}
         </p>
       </div>
+
+      <article className="studio-card space-y-2" aria-label="artifact-manifest-state">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-gray-950">Manifest evidence state</h3>
+          <Badge tone={artifactManifestStatus === 'loaded' ? 'success' : artifactManifestStatus === 'missing' ? 'warning' : 'danger'} variant="soft" className="text-xs">
+            artifact-manifest: {artifactManifestStatus}
+          </Badge>
+        </div>
+        {artifactManifestStatus !== 'loaded' && (
+          <p className="text-sm text-amber-700">
+            Manifest evidence is not fully available yet. Run lifecycle build/package and refresh this view.
+          </p>
+        )}
+        {artifactManifestMessage !== undefined && (
+          <p className="text-xs text-gray-600">{artifactManifestMessage}</p>
+        )}
+        <ul className="space-y-1 text-xs text-gray-600">
+          <li className="font-mono">lifecycle-result: {lifecycleResultRef ?? 'not reported'}</li>
+          <li className="font-mono">artifact-manifest: {artifactManifestRef ?? 'not reported'}</li>
+          <li className="font-mono">verify-health: {verifyHealthRef ?? 'not reported'}</li>
+        </ul>
+      </article>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {artifacts.length === 0 ? (

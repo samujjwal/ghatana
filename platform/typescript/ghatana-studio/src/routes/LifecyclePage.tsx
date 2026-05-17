@@ -9,13 +9,13 @@ import type {
   LifecycleRun,
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
+import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
 import type { DeploymentManifest } from '@ghatana/kernel-deployment';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
-import { resolveStudioRouteCapabilityState } from '../navigation/studioNavigation';
 
 const LIFECYCLE_PHASES = ['validate', 'test', 'build', 'package', 'deploy', 'verify'] as const;
 const DEFAULT_ENVIRONMENTS = ['local'] as const;
@@ -240,11 +240,21 @@ export default function LifecyclePage(): ReactElement {
   const selectedRun = selectedRunId
     ? lifecycleData.snapshot.lifecycleRuns.find((run) => run.runId === selectedRunId)
     : lifecycleData.snapshot.selectedRun;
-  const capabilityState = resolveStudioRouteCapabilityState({
+  const capabilityState = getStudioCapabilityState({
     runtimeConfigured: lifecycleData.authenticatedUserId !== undefined,
     lifecycleStatus: lifecycleData.snapshot.status,
+    selectedProviderMode: lifecycleData.selectedProviderMode,
     productUnit: lifecycleData.snapshot.productUnit,
+    selectedRun: lifecycleData.snapshot.selectedRun,
+    manifestLoadState: lifecycleData.snapshot.manifestLoadState,
   });
+  const currentProductUnitId = lifecycleData.snapshot.productUnit?.id ?? 'unknown';
+  const isDigitalMarketingPilot = currentProductUnitId === 'digital-marketing';
+  const pilotReadinessLabel = isDigitalMarketingPilot
+    ? readinessState.lifecycleExecutionAllowed
+      ? 'Digital Marketing pilot ready'
+      : 'Digital Marketing pilot blocked'
+    : 'Non-pilot product';
   const activeEnvironment = environmentOptions.includes(environment)
     ? environment
     : environmentOptions[0] ?? DEFAULT_ENVIRONMENTS[0];
@@ -324,6 +334,21 @@ export default function LifecyclePage(): ReactElement {
           {t('studio.route.lifecycle.description')}
         </p>
       </div>
+
+      <article className="rounded-md border border-blue-200 bg-blue-50 p-4" aria-label="lifecycle-pilot-readiness">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-blue-900">Lifecycle pilot readiness</h3>
+          <Badge tone={isDigitalMarketingPilot && readinessState.lifecycleExecutionAllowed ? 'success' : 'warning'} variant="soft" className="text-xs">
+            {pilotReadinessLabel}
+          </Badge>
+        </div>
+        <p className="mt-2 text-xs text-blue-900">Current product unit: {currentProductUnitId}</p>
+        {!isDigitalMarketingPilot && (
+          <p className="mt-1 text-xs text-blue-900">
+            Only Digital Marketing is lifecycle-enabled in this phase. Non-pilot products remain fail-closed until promotion gates pass.
+          </p>
+        )}
+      </article>
 
       {/* Controls */}
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">

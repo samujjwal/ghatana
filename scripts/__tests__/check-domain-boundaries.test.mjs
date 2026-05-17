@@ -28,6 +28,28 @@ test('product importing public @ghatana package passes', () => {
   assert.deepEqual(violations, []);
 });
 
+test('shared package importing product implementation fails', () => {
+  const violations = analyzeBoundaryViolations([
+    {
+      path: 'platform/typescript/design-system/src/Button.tsx',
+      source: "import { productWidget } from '../../../../products/flashit/web/src/widget.js';",
+    },
+  ], { productIds, productPackageOwners });
+
+  assert(violations.some((violation) => violation.includes('shared TypeScript package imports product implementation path')));
+});
+
+test('product code bypassing platform public exports fails', () => {
+  const violations = analyzeBoundaryViolations([
+    {
+      path: 'products/flashit/web/src/App.tsx',
+      source: "import { internalThing } from '../../../../platform/typescript/design-system/src/internal.js';",
+    },
+  ], { productIds, productPackageOwners });
+
+  assert(violations.some((violation) => violation.includes('product code bypasses platform public exports')));
+});
+
 test('kernel importing products yappc fails', () => {
   const violations = analyzeBoundaryViolations([
     {
@@ -175,7 +197,7 @@ test('expired exceptions are rejected', () => {
     },
   ], { productIds, productPackageOwners, domainRegistry, boundaryExceptions });
 
-  assert(violations.some((violation) => violation.includes('forbidden by boundary policy')));
+  assert(violations.some((violation) => violation.includes('forbidden by boundary policy') || violation.includes('platform code imports product implementation path')));
 });
 
 test('actionable remediation messages included', () => {

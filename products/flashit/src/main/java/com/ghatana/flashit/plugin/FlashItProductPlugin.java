@@ -6,6 +6,8 @@ import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -21,6 +23,8 @@ import java.util.Set;
  * @doc.pattern Service
  */
 public class FlashItProductPlugin implements KernelPlugin {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FlashItProductPlugin.class);
 
     private static final PluginManifest MANIFEST = PluginManifest.builder()
             .pluginId("flashit")
@@ -102,17 +106,17 @@ public class FlashItProductPlugin implements KernelPlugin {
 
     @Override
     public Promise<Void> start() {
-        System.out.println("Starting FlashIt moment capture service...");
-        System.out.println("Starting FlashIt reflection engine...");
-        System.out.println("Starting FlashIt context search...");
+        LOGGER.info("Starting FlashIt moment capture service");
+        LOGGER.info("Starting FlashIt reflection engine");
+        LOGGER.info("Starting FlashIt context search");
         return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
-        System.out.println("Stopping FlashIt moment capture service...");
-        System.out.println("Stopping FlashIt reflection engine...");
-        System.out.println("Stopping FlashIt context search...");
+        LOGGER.info("Stopping FlashIt moment capture service");
+        LOGGER.info("Stopping FlashIt reflection engine");
+        LOGGER.info("Stopping FlashIt context search");
         return Promise.complete();
     }
 }

@@ -25,6 +25,31 @@ const redis = new Redis({
 // Prisma client
 const prisma = new PrismaClient();
 
+function logInfo(message: string, context?: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level: 'info',
+    service: 'flashit-notification',
+    message,
+    ...(context ?? {}),
+  };
+  process.stdout.write(`${JSON.stringify(payload)}\n`);
+}
+
+function logError(message: string, error?: unknown, context?: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level: 'error',
+    service: 'flashit-notification',
+    message,
+    error: error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : error,
+    ...(context ?? {}),
+  };
+  process.stderr.write(`${JSON.stringify(payload)}\n`);
+}
+
 // Queue configuration
 const NOTIFICATION_QUEUE = 'flashit:notifications';
 
@@ -212,7 +237,7 @@ export class NotificationService {
     // Check user preferences
     const preferences = await this.getUserPreferences(userId);
     if (!this.shouldSendNotification(template, preferences, options.channels)) {
-      console.log(`Notification blocked by user preferences: ${templateType} for user ${userId}`);
+      logInfo('Notification blocked by user preferences', { templateType, userId });
       return '';
     }
 
@@ -414,7 +439,7 @@ export class NotificationService {
         return currentTime >= start && currentTime <= end;
       }
     } catch (error) {
-      console.error('Failed to check quiet hours:', error);
+      logError('Failed to check quiet hours', error);
       return false;
     }
   }
@@ -697,13 +722,13 @@ export class PushNotificationService {
     try {
       await webpush.sendNotification(subscription, payload);
     } catch (error: any) {
-      console.error('Failed to send push notification:', error);
+      logError('Failed to send push notification', error, { endpoint: subscription?.endpoint });
       // Remove invalid subscriptions
       if (error.statusCode === 410 || error.statusCode === 404) {
         await prisma.pushSubscription.delete({
           where: { endpoint: subscription.endpoint },
         }).catch(err => {
-          console.error('Failed to remove invalid push subscription:', err);
+          logError('Failed to remove invalid push subscription', err, { endpoint: subscription?.endpoint });
         });
       }
     }
@@ -759,7 +784,7 @@ const notificationWorker = new Worker<NotificationJob>(
           }
           results.push({ channel, status: 'sent' });
         } catch (error) {
-          console.error(`Failed to send ${channel} notification:`, error);
+          logError('Failed to send channel notification', error, { channel, userId: data.userId });
           results.push({ channel, status: 'failed', error: error.message });
         }
       }
@@ -769,7 +794,7 @@ const notificationWorker = new Worker<NotificationJob>(
       return { results };
 
     } catch (error: any) {
-      console.error('Notification job failed:', error);
+      logError('Notification job failed', error, { userId: data.userId, jobId: job.id });
       throw error;
     }
   },
@@ -796,7 +821,7 @@ async function renderNotificationContent(template: NotificationTemplate, data: R
 async function sendInAppNotification(userId: string, content: any, data: any) {
   // Store in-app notification in activity feed (already handled by collaboration events)
   // This would be handled by the collaboration event system
-  console.log(`In-app notification sent to ${userId}: ${content.title}`);
+  logInfo('In-app notification sent', { userId, title: content.title, data });
 }
 
 async function sendPushToUser(userId: string, content: any) {
@@ -828,23 +853,23 @@ async function sendPushToUser(userId: string, content: any) {
       where: { id: subscription.id },
       data: { lastUsedAt: new Date() },
     }).catch(err => {
-      console.error('Failed to update push subscription last used:', err);
+      logError('Failed to update push subscription last used', err, { subscriptionId: subscription.id, userId });
     });
   }
 }
 
 // Worker event handlers
 notificationWorker.on('completed', (job) => {
-  console.log(`Notification job ${job.id} completed successfully`);
+  logInfo('Notification job completed successfully', { jobId: job.id });
 });
 
 notificationWorker.on('failed', (job, err) => {
-  console.error(`Notification job ${job?.id} failed:`, err);
+  logError('Notification job failed', err, { jobId: job?.id });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down notification worker...');
+  logInfo('Shutting down notification worker');
   await notificationWorker.close();
   await prisma.$disconnect();
   await redis.quit();

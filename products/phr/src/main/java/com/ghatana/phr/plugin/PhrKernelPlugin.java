@@ -10,6 +10,8 @@ import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.ghatana.phr.kernel.PhrCapabilities;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -38,6 +40,8 @@ import java.util.Set;
  * @since 1.0.0
  */
 public class PhrKernelPlugin implements KernelPlugin {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PhrKernelPlugin.class);
 
     private final PluginManifest manifest;
     @SuppressWarnings("unused")
@@ -155,42 +159,42 @@ public class PhrKernelPlugin implements KernelPlugin {
     }
 
     private void startPatientRecordService() {
-        System.out.println("Starting PHR patient record service...");
+        LOGGER.info("Starting PHR patient record service");
     }
 
     private void startConsentService() {
-        System.out.println("Starting PHR consent service...");
+        LOGGER.info("Starting PHR consent service");
     }
 
     private void startFHIRService() {
-        System.out.println("Starting PHR FHIR service...");
+        LOGGER.info("Starting PHR FHIR service");
     }
 
     private void startAppointmentService() {
-        System.out.println("Starting PHR appointment service...");
+        LOGGER.info("Starting PHR appointment service");
     }
 
     private void startMedicationService() {
-        System.out.println("Starting PHR medication service...");
+        LOGGER.info("Starting PHR medication service");
     }
 
     private void stopPatientRecordService() {
-        System.out.println("Stopping PHR patient record service...");
+        LOGGER.info("Stopping PHR patient record service");
     }
 
     private void stopConsentService() {
-        System.out.println("Stopping PHR consent service...");
+        LOGGER.info("Stopping PHR consent service");
     }
 
     private void stopFHIRService() {
-        System.out.println("Stopping PHR FHIR service...");
+        LOGGER.info("Stopping PHR FHIR service");
     }
 
     private void stopAppointmentService() {
-        System.out.println("Stopping PHR appointment service...");
+        LOGGER.info("Stopping PHR appointment service");
     }
 
     private void stopMedicationService() {
-        System.out.println("Stopping PHR medication service...");
+        LOGGER.info("Stopping PHR medication service");
     }
 }

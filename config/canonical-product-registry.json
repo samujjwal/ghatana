@@ -52,6 +52,26 @@
       },
       "metadata": {
         "owner": "PHR Team",
+        "lifecycleReadiness": {
+          "reasonCodes": [
+            "disabled-observed",
+            "requires-product-owner-executable-surface-definition",
+            "requires-lifecycle-profile",
+            "demo-product-not-execution-ready"
+          ],
+          "requiredGates": [
+            "org-model-governance",
+            "integration-contract-readiness",
+            "demo-scope-review"
+          ],
+          "nextRequiredWork": [
+            "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
+            "Add governance and integration evidence before lifecycle execution"
+          ],
+          "evidenceRefs": [
+            "products/virtual-org"
+          ]
+        },
         "created": "2026-03-19",
         "documentation": "products/phr/README.md",
         "status": "active"
@@ -1335,6 +1355,26 @@
         "documentation": "products/software-org/README.md",
         "status": "active"
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "requires-product-owner-executable-surface-definition",
+          "requires-lifecycle-profile",
+          "demo-product-not-execution-ready"
+        ],
+        "requiredGates": [
+          "org-model-governance",
+          "integration-contract-readiness",
+          "demo-scope-review"
+        ],
+        "nextRequiredWork": [
+          "Keep software-org disabled until product owners define executable lifecycle surfaces",
+          "Add governance and integration evidence before lifecycle execution"
+        ],
+        "evidenceRefs": [
+          "products/software-org"
+        ]
+      },
       "lifecycleExecutionAllowed": false
     },
     "virtual-org": {
@@ -1386,6 +1426,26 @@
         "created": "2026-03-19",
         "documentation": "products/virtual-org/README.md",
         "status": "active"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "disabled-observed",
+          "requires-product-owner-executable-surface-definition",
+          "requires-lifecycle-profile",
+          "demo-product-not-execution-ready"
+        ],
+        "requiredGates": [
+          "org-model-governance",
+          "integration-contract-readiness",
+          "demo-scope-review"
+        ],
+        "nextRequiredWork": [
+          "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
+          "Add governance and integration evidence before lifecycle execution"
+        ],
+        "evidenceRefs": [
+          "products/virtual-org"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },

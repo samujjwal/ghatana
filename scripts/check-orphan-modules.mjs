@@ -28,7 +28,7 @@ function loadOrphanAllowlist() {
   return readJson(allowlistPath);
 }
 
-function isAllowlisted(allowlist, relativePath, missingFile) {
+function getAllowlistEntry(allowlist, relativePath, missingFile) {
   const normalizedPath = normalize(relativePath);
   for (const entry of allowlist.allowlist ?? []) {
     if (normalize(entry.path) === normalizedPath && entry.missingFile === missingFile) {
@@ -37,13 +37,17 @@ function isAllowlisted(allowlist, relativePath, missingFile) {
         const reviewDate = new Date(entry.reviewBy);
         if (reviewDate < new Date()) {
           console.warn(`Warning: Allowlist entry expired for ${relativePath}:${missingFile} (expired ${entry.reviewBy})`);
-          return false;
+          return null;
         }
       }
-      return true;
+      return entry;
     }
   }
-  return false;
+  return null;
+}
+
+function isAllowlisted(allowlist, relativePath, missingFile) {
+  return getAllowlistEntry(allowlist, relativePath, missingFile) !== null;
 }
 
 function isShellOnlyDirectory(directoryPath) {
@@ -116,6 +120,60 @@ function getDirectoryEntries(directoryPath) {
   }
 }
 
+function inferOwner(relativePath) {
+  if (relativePath.startsWith('platform/typescript/')) {
+    return 'Platform Team';
+  }
+
+  if (relativePath.startsWith('platform/java/')) {
+    return 'Platform Team';
+  }
+
+  if (relativePath.startsWith('products/')) {
+    const [, , productId] = relativePath.split('/');
+    return productId ? `${productId} owner` : 'Product Owner';
+  }
+
+  return 'Platform Team';
+}
+
+function buildOrphanRemediation(type, missingFile) {
+  if (type === 'typescript' && missingFile === 'package.json') {
+    return 'Add package.json with package metadata and tsconfig.json, or remove the orphan directory.';
+  }
+
+  if (type === 'typescript' && missingFile === 'tsconfig.json') {
+    return 'Add tsconfig.json or document the module as an approved JavaScript-only exception.';
+  }
+
+  if (type === 'java' && missingFile === 'build.gradle.kts') {
+    return 'Add build.gradle.kts and module wiring, or remove the orphan Java module directory.';
+  }
+
+  return 'Remove the orphan module or add an allowlist entry with a review date.';
+}
+
+function buildValidationCommand(type) {
+  if (type === 'java') {
+    return 'pnpm check:orphan-modules && pnpm check:cleanup-gate';
+  }
+
+  return 'pnpm check:orphan-modules && pnpm check:cleanup-gate';
+}
+
+function createOrphanRecord(relativePath, type, reason, missingFile, allowlistEntry) {
+  return {
+    todoId: allowlistEntry?.ticketRef ?? 'P0-T08',
+    owner: allowlistEntry?.owner ?? inferOwner(relativePath),
+    path: relativePath,
+    type,
+    reason,
+    missingFile,
+    action: buildOrphanRemediation(type, missingFile),
+    validationCommand: buildValidationCommand(type),
+  };
+}
+
 export function findOrphanModules(options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const allowlist = options.allowlist ?? loadOrphanAllowlist();
@@ -148,12 +206,13 @@ export function findOrphanModules(options = {}) {
 
       // Check for shell-only directory (index.ts only, no package.json)
       if (isShellOnlyDirectory(pkgPath)) {
-        if (!isAllowlisted(allowlist, relativePath, 'package.json')) {
+        const allowlistEntry = getAllowlistEntry(allowlist, relativePath, 'package.json');
+        if (!allowlistEntry) {
           violations.push(
             `${relativePath}: folder-only shell with no package.json. ` +
               'Remediation: Add package.json or remove the orphan directory.',
           );
-          orphans.push({ path: relativePath, reason: 'shell-only-directory', type: 'typescript' });
+          orphans.push(createOrphanRecord(relativePath, 'typescript', 'shell-only-directory', 'package.json', allowlistEntry));
         }
         continue;
       }
@@ -176,12 +235,13 @@ export function findOrphanModules(options = {}) {
             continue;
           }
 
-          if (!isAllowlisted(allowlist, relativePath, required)) {
+          const allowlistEntry = getAllowlistEntry(allowlist, relativePath, required);
+          if (!allowlistEntry) {
             violations.push(
               `${relativePath}: missing required file '${required}'. ` +
                 'Remediation: Add the file or allowlist in config/orphan-module-allowlist.json.',
             );
-            orphans.push({ path: relativePath, reason: `missing-${required}`, type: 'typescript' });
+            orphans.push(createOrphanRecord(relativePath, 'typescript', `missing-${required}`, required, allowlistEntry));
           }
         }
       }
@@ -214,12 +274,13 @@ export function findOrphanModules(options = {}) {
       const entries = getDirectoryEntries(modPath);
       for (const required of REQUIRED_JAVA_FILES) {
         if (!entries.includes(required)) {
-          if (!isAllowlisted(allowlist, relativePath, required)) {
+          const allowlistEntry = getAllowlistEntry(allowlist, relativePath, required);
+          if (!allowlistEntry) {
             violations.push(
               `${relativePath}: missing required file '${required}'. ` +
                 'Remediation: Add the file or allowlist in config/orphan-module-allowlist.json.',
             );
-            orphans.push({ path: relativePath, reason: `missing-${required}`, type: 'java' });
+            orphans.push(createOrphanRecord(relativePath, 'java', `missing-${required}`, required, allowlistEntry));
           }
         }
       }
@@ -255,6 +316,29 @@ function writeReport(orphans) {
   }
 }
 
+function printOrphanSummary(orphans) {
+  if (orphans.length === 0) {
+    return;
+  }
+
+  const grouped = new Map();
+  for (const orphan of orphans) {
+    const bucket = grouped.get(orphan.type) ?? [];
+    bucket.push(orphan);
+    grouped.set(orphan.type, bucket);
+  }
+
+  console.error('\nActionable orphan inventory:');
+  for (const [type, records] of grouped.entries()) {
+    console.error(`\n${type.toUpperCase()}:`);
+    for (const orphan of records) {
+      console.error(` - [${orphan.todoId}] ${orphan.owner} ${orphan.path}`);
+      console.error(`   Action: ${orphan.action}`);
+      console.error(`   Validation: ${orphan.validationCommand}`);
+    }
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { violations, orphans } = checkOrphanModules();
 
@@ -266,6 +350,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
 
   console.error('FAIL: orphan module checks found violations:');
+  printOrphanSummary(orphans);
   for (const violation of violations) {
     console.error(` - ${violation}`);
   }

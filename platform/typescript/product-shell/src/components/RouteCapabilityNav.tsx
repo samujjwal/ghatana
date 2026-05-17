@@ -46,7 +46,7 @@ function groupRoutes(routes: readonly ProductRouteCapability[]): Map<string, Pro
 
 const defaultNavLinkClass = ({ isActive }: { isActive: boolean }): string =>
   [
-    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors select-none',
+    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
     isActive
       ? 'bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/40 dark:text-indigo-300'
       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700',

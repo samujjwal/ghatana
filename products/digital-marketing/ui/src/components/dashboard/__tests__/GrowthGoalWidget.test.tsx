@@ -32,7 +32,7 @@ describe('P2-023: GrowthGoalWidget', () => {
     vi.clearAllMocks();
   });
 
-  it('should render "Coming soon" placeholder when feature flag is disabled', () => {
+  it('should render "Currently unavailable" placeholder when feature flag is disabled', () => {
     mockIsFeatureEnabled.mockReturnValue(false);
 
     // Act
@@ -41,7 +41,7 @@ describe('P2-023: GrowthGoalWidget', () => {
     // Assert
     const widget = screen.getByTestId('growth-goal-widget');
     expect(widget).toBeInTheDocument();
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(screen.getByText('Currently unavailable')).toBeInTheDocument();
     expect(screen.getByText('Growth Goals')).toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe('P2-023: GrowthGoalWidget', () => {
     render(<GrowthGoalWidget />);
 
     // Assert
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(screen.getByText('Currently unavailable')).toBeInTheDocument();
   });
 
   it('should expose unavailable state test id when feature is disabled', () => {
@@ -118,6 +118,6 @@ describe('P2-023: GrowthGoalWidget', () => {
     render(<GrowthGoalWidget />);
 
     // Assert
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(screen.getByText('Currently unavailable')).toBeInTheDocument();
   });
 });

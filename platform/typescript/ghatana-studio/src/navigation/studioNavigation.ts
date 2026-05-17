@@ -23,6 +23,14 @@ export type StudioRouteStatus = 'ready' | 'empty' | 'degraded' | 'blocked';
 
 export type RouteExposurePolicy = 'visible' | 'disabled' | 'hidden' | 'preview';
 
+export type StudioStatusReasonCode =
+  | 'available'
+  | 'runtime-pending'
+  | 'lifecycle-pending'
+  | 'data-cloud-evidence-pending'
+  | 'pilot-only'
+  | 'not-applicable';
+
 export interface StudioNavItem {
   readonly id: StudioRouteId;
   readonly path: string;
@@ -31,6 +39,10 @@ export interface StudioNavItem {
   readonly ownership: StudioRouteOwnership;
   readonly requiredCapability: string;
   readonly status: StudioRouteStatus;
+  readonly statusReasonCode: StudioStatusReasonCode;
+  readonly statusMessageKey: `studio.navigation.status.${StudioRouteId}`;
+  readonly requiredNextAction: string;
+  readonly evidenceRefs: readonly string[];
   readonly isCustomerVisible: boolean;
   readonly exposure: RouteExposurePolicy;
 }
@@ -51,6 +63,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'studio',
     requiredCapability: 'studio.shell.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.home',
+    requiredNextAction: 'None',
+    evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -62,6 +78,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'yappc',
     requiredCapability: 'yappc.ideas.view',
     status: 'degraded',
+    statusReasonCode: 'runtime-pending',
+    statusMessageKey: 'studio.navigation.status.ideas',
+    requiredNextAction: 'Configure runtime context and ProductUnitIntent handoff.',
+    evidenceRefs: ['platform/kernel-todo.md', 'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -73,6 +93,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'yappc',
     requiredCapability: 'yappc.blueprints.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.blueprints',
+    requiredNextAction: 'None',
+    evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -84,6 +108,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'yappc',
     requiredCapability: 'yappc.canvas.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.canvas',
+    requiredNextAction: 'None',
+    evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -95,6 +123,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'kernel',
     requiredCapability: 'kernel.development.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.develop',
+    requiredNextAction: 'None',
+    evidenceRefs: ['platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts'],
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -106,6 +138,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'kernel',
     requiredCapability: 'kernel.lifecycle.view',
     status: 'degraded',
+    statusReasonCode: 'lifecycle-pending',
+    statusMessageKey: 'studio.navigation.status.lifecycle',
+    requiredNextAction: 'Enable lifecycle runtime configuration for selected product units.',
+    evidenceRefs: ['platform/kernel-todo.md', 'products/digital-marketing/kernel-product.yaml'],
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -117,6 +153,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'data-cloud',
     requiredCapability: 'data-cloud.agent-evidence.view',
     status: 'degraded',
+    statusReasonCode: 'data-cloud-evidence-pending',
+    statusMessageKey: 'studio.navigation.status.agents',
+    requiredNextAction: 'Provide Data Cloud-backed agent evidence providers and traces.',
+    evidenceRefs: ['platform/typescript/kernel-product-contracts/src/agentic', 'platform/kernel-todo.md'],
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -128,6 +168,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'kernel',
     requiredCapability: 'kernel.artifacts.view',
     status: 'empty',
+    statusReasonCode: 'data-cloud-evidence-pending',
+    statusMessageKey: 'studio.navigation.status.artifacts',
+    requiredNextAction: 'Generate artifact manifests from lifecycle runs and surface evidence.',
+    evidenceRefs: ['platform/typescript/kernel-artifacts', 'platform/kernel-todo.md'],
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -139,6 +183,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'kernel',
     requiredCapability: 'kernel.deployments.view',
     status: 'blocked',
+    statusReasonCode: 'pilot-only',
+    statusMessageKey: 'studio.navigation.status.deployments',
+    requiredNextAction: 'Keep deployment execution limited to the Digital Marketing pilot.',
+    evidenceRefs: ['config/canonical-product-registry.json', 'scripts/check-digital-marketing-lifecycle-pilot.mjs'],
     isCustomerVisible: true,
     exposure: 'hidden',
   },
@@ -150,6 +198,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'data-cloud',
     requiredCapability: 'data-cloud.runtime-truth.view',
     status: 'degraded',
+    statusReasonCode: 'data-cloud-evidence-pending',
+    statusMessageKey: 'studio.navigation.status.health',
+    requiredNextAction: 'Publish runtime truth and provider health snapshots.',
+    evidenceRefs: ['platform/typescript/kernel-providers', 'platform/kernel-todo.md'],
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -161,6 +213,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'yappc',
     requiredCapability: 'yappc.learning.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.learn',
+    requiredNextAction: 'None',
+    evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -172,6 +228,10 @@ export const STUDIO_NAV_ITEMS = [
     ownership: 'shared',
     requiredCapability: 'studio.settings.view',
     status: 'ready',
+    statusReasonCode: 'available',
+    statusMessageKey: 'studio.navigation.status.settings',
+    requiredNextAction: 'None',
+    evidenceRefs: ['platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts'],
     isCustomerVisible: true,
     exposure: 'visible',
   },

@@ -338,13 +338,13 @@ public class SseStreamingHandler {
                 }
                 if (item.isEmpty()) {
                     notificationQueues.remove(queue);
-                    return Promise.of(null);
+                    return Promise.of((ByteBuf) null);
                 }
                 return Promise.of(ByteBuf.wrapForReading(item.get()));
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 notificationQueues.remove(queue);
-                return Promise.of(null);
+                return Promise.of((ByteBuf) null);
             }
         });
 
@@ -431,9 +431,9 @@ public class SseStreamingHandler {
         });
 
         ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
-            if (!subscription.isActive()) return Promise.of(null);
+            if (!subscription.isActive()) return Promise.of((ByteBuf) null);
             try {
-                if (!subscription.isActive()) return Promise.of(null);
+                if (!subscription.isActive()) return Promise.of((ByteBuf) null);
                 Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
                 if (item == null) {
                     return Promise.of(ByteBuf.wrapForReading(buildSseFrame("heartbeat",
@@ -442,7 +442,7 @@ public class SseStreamingHandler {
                 return Promise.of(item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                return Promise.of(null);
+                return Promise.of((ByteBuf) null);
             }
         });
 
@@ -527,7 +527,7 @@ public class SseStreamingHandler {
                 return Promise.of(item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                return Promise.of(null);
+                return Promise.of((ByteBuf) null);
             }
         });
 
@@ -826,9 +826,9 @@ public class SseStreamingHandler {
 
         ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
             boolean cancelled = subscription != null && subscription.isCancelled();
-            if (cancelled) return Promise.of(null);
+            if (cancelled) return Promise.of((ByteBuf) null);
             try {
-                if (subscription != null && subscription.isCancelled()) return Promise.of(null);
+                if (subscription != null && subscription.isCancelled()) return Promise.of((ByteBuf) null);
                 Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
                 if (item == null) {
                     return Promise.of(ByteBuf.wrapForReading(buildSseFrame("heartbeat",
@@ -837,7 +837,7 @@ public class SseStreamingHandler {
                 return Promise.of(item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                return Promise.of(null);
+                return Promise.of((ByteBuf) null);
             }
         });
         log.info("[query-stream] stream opened tenant={} collection={}", tenantId, collection);

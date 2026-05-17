@@ -120,6 +120,11 @@ export default function AgentsPage(): ReactElement {
     ];
   }, [lifecycleData.snapshot.productUnit, lifecycleData.snapshot.selectedRun, executionResultByCorrelationId]);
 
+  const missingEvidenceRefs = useMemo(
+    () => proposals.flatMap((proposal) => proposal.evidenceRefs.filter((ref) => ref.endsWith('-unavailable'))),
+    [proposals],
+  );
+
   const executeProposal = async (proposal: ProposalCard): Promise<void> => {
     if (!agentLifecycleClient || runtimeContext.status !== 'configured') {
       return;
@@ -223,6 +228,26 @@ export default function AgentsPage(): ReactElement {
           </p>
         </article>
       )}
+
+      <article className="studio-card space-y-3" aria-label="agent-readiness-dependencies">
+        <h3 className="text-base font-semibold text-gray-950">Agent readiness dependencies</h3>
+        <ul className="space-y-1 text-sm text-gray-700">
+          <li>AEP action runtime: {runtimeContext.status === 'configured' ? 'configured' : 'missing'}</li>
+          <li>Policy provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
+          <li>Mastery provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
+          <li>Approval provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
+        </ul>
+        {missingEvidenceRefs.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium text-amber-900">Missing evidence state</h4>
+            <ul className="mt-1 space-y-1 text-xs text-amber-800">
+              {missingEvidenceRefs.map((evidenceRef) => (
+                <li key={evidenceRef} className="font-mono">{evidenceRef}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </article>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {proposals.map((proposal) => (

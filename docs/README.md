@@ -47,7 +47,7 @@
 
 ## Scripts Reference
 
-Key scripts in `scripts/` — all are executable and documented with comments at the top.
+Key scripts in `scripts/` are documented, and each one has top-of-file comments.
 
 | Script | Purpose |
 |--------|---------|

@@ -1,0 +1,165 @@
+{
+  "productId": "digital-marketing",
+  "checkedAt": "2026-05-17T19:02:04.829Z",
+  "smokeEnabled": true,
+  "checks": {
+    "plannedPhases": [
+      {
+        "phase": "validate",
+        "status": "ok"
+      },
+      {
+        "phase": "build",
+        "status": "ok"
+      },
+      {
+        "phase": "test",
+        "status": "ok"
+      },
+      {
+        "phase": "package",
+        "status": "ok"
+      },
+      {
+        "phase": "deploy",
+        "status": "ok"
+      },
+      {
+        "phase": "verify",
+        "status": "ok"
+      },
+      {
+        "phase": "rollback",
+        "status": "ok"
+      }
+    ],
+    "smokePhases": [
+      {
+        "phase": "validate",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-06-480d6e64",
+        "correlationId": "corr-2026-05-17T19-02-06-480d6e64",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/validate/2026-05-17T19-02-06-480d6e64/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/validate/2026-05-17T19-02-06-480d6e64/digital-marketing/2026-05-17T19-02-06-480d6e64/validate/lifecycle-result.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/validate/2026-05-17T19-02-06-480d6e64/digital-marketing/2026-05-17T19-02-06-480d6e64/validate/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/validate/2026-05-17T19-02-06-480d6e64/digital-marketing/2026-05-17T19-02-06-480d6e64/validate/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/validate/2026-05-17T19-02-06-480d6e64/digital-marketing/2026-05-17T19-02-06-480d6e64/validate/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-06-480d6e64",
+          "correlationId": "corr-2026-05-17T19-02-06-480d6e64",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "test",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-06-720412a9",
+        "correlationId": "corr-2026-05-17T19-02-06-720412a9",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/test/2026-05-17T19-02-06-720412a9/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/test/2026-05-17T19-02-06-720412a9/digital-marketing/2026-05-17T19-02-06-720412a9/test/lifecycle-result.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/test/2026-05-17T19-02-06-720412a9/digital-marketing/2026-05-17T19-02-06-720412a9/test/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/test/2026-05-17T19-02-06-720412a9/digital-marketing/2026-05-17T19-02-06-720412a9/test/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/test/2026-05-17T19-02-06-720412a9/digital-marketing/2026-05-17T19-02-06-720412a9/test/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-06-720412a9",
+          "correlationId": "corr-2026-05-17T19-02-06-720412a9",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "build",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-07-bffa4901",
+        "correlationId": "corr-2026-05-17T19-02-07-bffa4901",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/digital-marketing/2026-05-17T19-02-07-bffa4901/build/lifecycle-result.json",
+          "artifactManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/digital-marketing/2026-05-17T19-02-07-bffa4901/build/artifact-manifest.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/digital-marketing/2026-05-17T19-02-07-bffa4901/build/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/digital-marketing/2026-05-17T19-02-07-bffa4901/build/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/build/2026-05-17T19-02-07-bffa4901/digital-marketing/2026-05-17T19-02-07-bffa4901/build/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-07-bffa4901",
+          "correlationId": "corr-2026-05-17T19-02-07-bffa4901",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "package",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-07-7689f9fc",
+        "correlationId": "corr-2026-05-17T19-02-07-7689f9fc",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/digital-marketing/2026-05-17T19-02-07-7689f9fc/package/lifecycle-result.json",
+          "artifactManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/digital-marketing/2026-05-17T19-02-07-7689f9fc/package/artifact-manifest.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/digital-marketing/2026-05-17T19-02-07-7689f9fc/package/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/digital-marketing/2026-05-17T19-02-07-7689f9fc/package/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/package/2026-05-17T19-02-07-7689f9fc/digital-marketing/2026-05-17T19-02-07-7689f9fc/package/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-07-7689f9fc",
+          "correlationId": "corr-2026-05-17T19-02-07-7689f9fc",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "deploy",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-07-799217c0",
+        "correlationId": "corr-2026-05-17T19-02-07-799217c0",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/digital-marketing/2026-05-17T19-02-07-799217c0/deploy/lifecycle-result.json",
+          "deploymentManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/digital-marketing/2026-05-17T19-02-07-799217c0/deploy/deployment-manifest.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/digital-marketing/2026-05-17T19-02-07-799217c0/deploy/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/digital-marketing/2026-05-17T19-02-07-799217c0/deploy/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/deploy/2026-05-17T19-02-07-799217c0/digital-marketing/2026-05-17T19-02-07-799217c0/deploy/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-07-799217c0",
+          "correlationId": "corr-2026-05-17T19-02-07-799217c0",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "verify",
+        "status": "ok",
+        "runId": "2026-05-17T19-02-08-220ef690",
+        "correlationId": "corr-2026-05-17T19-02-08-220ef690",
+        "providerMode": "bootstrap",
+        "manifests": {
+          "lifecyclePlan": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/lifecycle-plan.json",
+          "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/digital-marketing/2026-05-17T19-02-08-220ef690/verify/lifecycle-result.json",
+          "verifyHealthReport": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/digital-marketing/2026-05-17T19-02-08-220ef690/verify/verify-health-report.json",
+          "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/digital-marketing/2026-05-17T19-02-08-220ef690/verify/lifecycle-health-snapshot.json",
+          "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/digital-marketing/2026-05-17T19-02-08-220ef690/verify/gate-result-manifest.json",
+          "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel/out/products/digital-marketing/verify/2026-05-17T19-02-08-220ef690/digital-marketing/2026-05-17T19-02-08-220ef690/verify/lifecycle-events.json",
+          "runId": "2026-05-17T19-02-08-220ef690",
+          "correlationId": "corr-2026-05-17T19-02-08-220ef690",
+          "providerMode": "bootstrap"
+        }
+      }
+    ],
+    "failureScenarios": [
+      {
+        "id": "deploy-requires-approval-id",
+        "status": "ok",
+        "expectedError": "--require-approval requires --approval-id"
+      },
+      {
+        "id": "platform-mode-provider-bridge-unavailable",
+        "status": "ok",
+        "expectedError": "Kernel platform mode requires the Data Cloud-backed provider bridge"
+      }
+    ],
+    "composeProof": []
+  },
+  "summary": {
+    "status": "passed",
+    "errorCount": 0,
+    "warningCount": 0
+  },
+  "errors": [],
+  "warnings": []
+}

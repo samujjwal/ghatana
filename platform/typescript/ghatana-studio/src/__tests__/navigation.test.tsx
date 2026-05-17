@@ -11,6 +11,7 @@ import {
   resolveStudioNavItems,
   resolveStudioRouteCapabilityState,
   STUDIO_NAV_ITEMS,
+  type RouteExposurePolicy,
   type StudioNavItem,
 } from '../navigation/studioNavigation';
 import { STUDIO_TRANSLATIONS } from '../i18n/studioTranslations';
@@ -30,6 +31,141 @@ function renderApp(initialEntry: string = '/'): void {
   );
 }
 
+type CapabilityScenario = {
+  readonly name: string;
+  readonly input: {
+    readonly runtimeConfigured: boolean;
+    readonly lifecycleStatus: 'unconfigured' | 'loading' | 'ready' | 'degraded';
+    readonly productUnit?: {
+      readonly lifecycleExecutionAllowed?: boolean;
+      readonly metadata?: {
+        readonly lifecycleExecutionAllowed?: boolean;
+      };
+    };
+  };
+  readonly expectedCapability: {
+    readonly runtimeConfigured: boolean;
+    readonly lifecycleConfigured: boolean;
+    readonly lifecycleExecutionAllowed: boolean;
+    readonly dataCloudEvidenceReady: boolean;
+  };
+  readonly expectedExposureByRoute: Record<StudioNavItem['id'], RouteExposurePolicy>;
+};
+
+const CAPABILITY_MATRIX_SCENARIOS: readonly CapabilityScenario[] = [
+  {
+    name: 'runtime unconfigured',
+    input: {
+      runtimeConfigured: false,
+      lifecycleStatus: 'unconfigured',
+    },
+    expectedCapability: {
+      runtimeConfigured: false,
+      lifecycleConfigured: false,
+      lifecycleExecutionAllowed: false,
+      dataCloudEvidenceReady: false,
+    },
+    expectedExposureByRoute: {
+      home: 'visible',
+      ideas: 'disabled',
+      blueprints: 'visible',
+      canvas: 'visible',
+      develop: 'disabled',
+      lifecycle: 'disabled',
+      agents: 'disabled',
+      artifacts: 'disabled',
+      deployments: 'hidden',
+      health: 'disabled',
+      learn: 'visible',
+      settings: 'visible',
+    },
+  },
+  {
+    name: 'runtime configured but lifecycle not configured',
+    input: {
+      runtimeConfigured: true,
+      lifecycleStatus: 'unconfigured',
+    },
+    expectedCapability: {
+      runtimeConfigured: true,
+      lifecycleConfigured: false,
+      lifecycleExecutionAllowed: false,
+      dataCloudEvidenceReady: false,
+    },
+    expectedExposureByRoute: {
+      home: 'visible',
+      ideas: 'disabled',
+      blueprints: 'visible',
+      canvas: 'visible',
+      develop: 'disabled',
+      lifecycle: 'disabled',
+      agents: 'disabled',
+      artifacts: 'disabled',
+      deployments: 'hidden',
+      health: 'disabled',
+      learn: 'visible',
+      settings: 'visible',
+    },
+  },
+  {
+    name: 'lifecycle configured without execution allowance',
+    input: {
+      runtimeConfigured: true,
+      lifecycleStatus: 'ready',
+    },
+    expectedCapability: {
+      runtimeConfigured: true,
+      lifecycleConfigured: true,
+      lifecycleExecutionAllowed: false,
+      dataCloudEvidenceReady: false,
+    },
+    expectedExposureByRoute: {
+      home: 'visible',
+      ideas: 'disabled',
+      blueprints: 'visible',
+      canvas: 'visible',
+      develop: 'visible',
+      lifecycle: 'visible',
+      agents: 'disabled',
+      artifacts: 'disabled',
+      deployments: 'hidden',
+      health: 'disabled',
+      learn: 'visible',
+      settings: 'visible',
+    },
+  },
+  {
+    name: 'lifecycle configured with execution allowance',
+    input: {
+      runtimeConfigured: true,
+      lifecycleStatus: 'ready',
+      productUnit: {
+        lifecycleExecutionAllowed: true,
+      },
+    },
+    expectedCapability: {
+      runtimeConfigured: true,
+      lifecycleConfigured: true,
+      lifecycleExecutionAllowed: true,
+      dataCloudEvidenceReady: true,
+    },
+    expectedExposureByRoute: {
+      home: 'visible',
+      ideas: 'disabled',
+      blueprints: 'visible',
+      canvas: 'visible',
+      develop: 'visible',
+      lifecycle: 'visible',
+      agents: 'visible',
+      artifacts: 'visible',
+      deployments: 'preview',
+      health: 'visible',
+      learn: 'visible',
+      settings: 'visible',
+    },
+  },
+];
+
 describe('@ghatana/ghatana-studio - Navigation', () => {
   describe('Route Navigation', () => {
     it('should render App component', () => {
@@ -48,6 +184,15 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
     it('should have translations for every canonical navigation label key', () => {
       for (const item of STUDIO_NAV_ITEMS) {
         expect(STUDIO_TRANSLATIONS[item.labelKey]).toBe(item.label);
+      }
+    });
+
+    it('should include route status metadata for every navigation item', () => {
+      for (const item of STUDIO_NAV_ITEMS) {
+        expect(item.statusReasonCode.length).toBeGreaterThan(0);
+        expect(item.statusMessageKey).toBe(`studio.navigation.status.${item.id}`);
+        expect(item.requiredNextAction.length).toBeGreaterThan(0);
+        expect(item.evidenceRefs.length).toBeGreaterThan(0);
       }
     });
 
@@ -132,7 +277,7 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
   describe('Sidebar Navigation', () => {
     it('should render sidebar with all sections', () => {
       renderApp();
-      expect(screen.getByRole('navigation', { name: /studio navigation/i })).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: /product navigation/i })).toBeInTheDocument();
       expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
@@ -149,7 +294,7 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
         cleanup();
         renderApp(item.path);
 
-        expect(screen.getByRole('navigation', { name: /studio navigation/i })).toBeInTheDocument();
+        expect(screen.getByRole('navigation', { name: /product navigation/i })).toBeInTheDocument();
         expect(screen.getByRole('main')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: new RegExp(item.label, 'i') })).toHaveAttribute(
           'aria-current',
@@ -167,13 +312,11 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
     });
 
     it('should render but disable routes with exposure: disabled', () => {
-      renderApp();
       const disabledRoutes = UNCONFIGURED_NAV_ITEMS.filter((item) => item.exposure === 'disabled');
       for (const route of disabledRoutes) {
-        const link = screen.getByRole('link', { name: new RegExp(route.label, 'i') });
-        expect(link).toBeInTheDocument();
-        expect(link).toHaveClass('cursor-not-allowed');
-        expect(link).toHaveAttribute('aria-disabled', 'true');
+        cleanup();
+        renderApp(route.path);
+        expect(screen.getByText('Route access is disabled in this runtime mode.')).toBeInTheDocument();
       }
     });
 
@@ -187,5 +330,24 @@ describe('@ghatana/ghatana-studio - Navigation', () => {
         expect(link).not.toHaveAttribute('aria-disabled');
       }
     });
+  });
+
+  describe('Capability Matrix', () => {
+    it.each(CAPABILITY_MATRIX_SCENARIOS)(
+      'should resolve capability and exposure for $name',
+      (scenario) => {
+        const capability = resolveStudioRouteCapabilityState(scenario.input);
+        expect(capability).toEqual(scenario.expectedCapability);
+
+        const resolvedItems = resolveStudioNavItems(capability);
+        const exposures = new Map(
+          resolvedItems.map((item) => [item.id, item.exposure]),
+        );
+
+        for (const route of STUDIO_NAV_ITEMS) {
+          expect(exposures.get(route.id)).toBe(scenario.expectedExposureByRoute[route.id]);
+        }
+      },
+    );
   });
 });

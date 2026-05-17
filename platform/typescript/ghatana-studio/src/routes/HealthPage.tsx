@@ -42,6 +42,22 @@ export default function HealthPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
   const snapshot = lifecycleData.snapshot;
+  const pluginHealthRaw = snapshot.selectedRun?.manifestRefs?.pluginHealth;
+  const toolchainHealthRaw = snapshot.selectedRun?.manifestRefs?.toolchainHealth;
+  const providerHealthRaw =
+    pluginHealthRaw === 'unhealthy' || toolchainHealthRaw === 'unhealthy'
+      ? 'unhealthy'
+      : pluginHealthRaw === 'degraded' || toolchainHealthRaw === 'degraded'
+        ? 'degraded'
+        : pluginHealthRaw === undefined && toolchainHealthRaw === undefined
+          ? 'unknown'
+          : 'healthy';
+  const composedHealthModel = {
+    bootstrapTruth: snapshot.runtimeMode === 'configured' ? 'running' : 'unavailable',
+    platformTruth: snapshot.artifactManifest?.providerMode ?? 'unknown',
+    providerHealth: providerHealthRaw,
+    productHealth: snapshot.verifyHealthReport?.status ?? 'unknown',
+  } as const;
   const healthSignals = [
     {
       label: 'Kernel lifecycle',
@@ -88,6 +104,28 @@ export default function HealthPage(): ReactElement {
           {t('studio.route.health.description')}
         </p>
       </div>
+
+      <article className="studio-card space-y-2" aria-label="composed-health-model">
+        <h3 className="text-base font-semibold text-gray-950">Composed health model</h3>
+        <dl className="grid gap-2 text-sm text-gray-700 md:grid-cols-2">
+          <div className="flex justify-between gap-3">
+            <dt className="font-medium text-gray-900">Bootstrap truth</dt>
+            <dd>{healthSignalStatusLabel(composedHealthModel.bootstrapTruth, t)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="font-medium text-gray-900">Platform truth</dt>
+            <dd>{healthSignalStatusLabel(composedHealthModel.platformTruth, t)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="font-medium text-gray-900">Provider health</dt>
+            <dd>{healthSignalStatusLabel(composedHealthModel.providerHealth, t)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="font-medium text-gray-900">Product health</dt>
+            <dd>{healthSignalStatusLabel(composedHealthModel.productHealth, t)}</dd>
+          </div>
+        </dl>
+      </article>
 
       <div className="grid gap-3">
         {healthSignals.map((signal) => (

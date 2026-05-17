@@ -1135,39 +1135,35 @@ export class KernelLifecycleService {
   }
 
   private safePlan(plan: ProductLifecyclePlan): ProductLifecyclePlan {
+    const { productUnit: _productUnit, ...safePlanRoot } = plan;
     return {
-      ...plan,
-      productUnit: undefined,
+      ...safePlanRoot,
       steps: plan.steps.map((step) => this.safePlanStep(step)),
     };
   }
 
   private safeResult(result: ProductLifecycleResult): ProductLifecycleResult {
+    const safeFailure = result.failure === undefined
+      ? undefined
+      : (() => {
+          const { cause: _cause, ...failureWithoutCause } = result.failure;
+          return failureWithoutCause;
+        })();
     return {
       ...result,
       steps: result.steps.map((step) => this.safeResultStep(step)),
-      failure: result.failure === undefined
-        ? undefined
-        : {
-            ...result.failure,
-            cause: undefined,
-          },
+      ...(safeFailure === undefined ? {} : { failure: safeFailure }),
     };
   }
 
   private safePlanStep(step: ProductLifecyclePlan['steps'][number]): ProductLifecyclePlan['steps'][number] {
-    return {
-      ...step,
-      execution: undefined,
-    };
+    const { execution: _execution, ...safeStep } = step;
+    return safeStep;
   }
 
   private safeResultStep(step: ProductLifecycleResult['steps'][number]): ProductLifecycleResult['steps'][number] {
-    return {
-      ...step,
-      stdout: undefined,
-      stderr: undefined,
-    };
+    const { stdout: _stdout, stderr: _stderr, ...safeStep } = step;
+    return safeStep;
   }
 
   private manifestRefsToRecord(value: ProductLifecycleResult['manifestRefs']): Record<string, string> {

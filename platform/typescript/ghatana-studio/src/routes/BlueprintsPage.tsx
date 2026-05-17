@@ -1,8 +1,10 @@
 import { type ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
+import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { dependencyGraphEvidence, generatedChangeSetSummary, productShapeEvidence, yappcProductUnitIntentCandidate } from './yappcWorkflowData';
+import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
 
 export default function BlueprintsPage(): ReactElement {
   const t = useStudioTranslation();
@@ -12,6 +14,27 @@ export default function BlueprintsPage(): ReactElement {
   const handoffResult = lifecycleData.intentOperation.status === 'success' ? lifecycleData.intentOperation.result : undefined;
   const handoffError = lifecycleData.intentOperation.status === 'error' ? lifecycleData.intentOperation.errorMessage : undefined;
   const isSubmitting = lifecycleData.intentOperation.status === 'loading';
+  const capabilityState = getStudioCapabilityState({
+    runtimeConfigured: lifecycleData.authenticatedUserId !== undefined,
+    lifecycleStatus: lifecycleData.snapshot.status,
+    selectedProviderMode: lifecycleData.selectedProviderMode,
+    productUnit: lifecycleData.snapshot.productUnit,
+    selectedRun: lifecycleData.snapshot.selectedRun,
+    manifestLoadState: lifecycleData.snapshot.manifestLoadState,
+  });
+  const handoffReady = lifecycleData.previewProductUnitIntent !== undefined && lifecycleData.applyProductUnitIntent !== undefined;
+  const currentStatusLabel = capabilityState.runtimeConfigured
+    ? capabilityState.lifecycleConfigured
+      ? capabilityState.dataCloudEvidenceReady
+        ? 'ready'
+        : 'evidence pending'
+      : 'lifecycle not configured'
+    : 'runtime not configured';
+  const requiredNextActionLabel = handoffReady
+    ? capabilityState.dataCloudEvidenceReady
+      ? 'Validate ProductUnitIntent export against Kernel preview/apply responses.'
+      : 'Complete lifecycle/runtime evidence prerequisites before promotion.'
+    : 'Configure lifecycle client preview/apply handlers for ProductUnitIntent handoff.';
 
   async function previewIntent(): Promise<void> {
     if (lifecycleData.previewProductUnitIntent === undefined) {
@@ -60,6 +83,18 @@ export default function BlueprintsPage(): ReactElement {
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-gray-600">{t('studio.route.blueprints.description')}</p>
       </div>
+
+      <IdeationRouteStatusPanel
+        ownershipLabel="YAPPC"
+        currentStatusLabel={currentStatusLabel}
+        requiredNextActionLabel={requiredNextActionLabel}
+        handoffReady={handoffReady}
+        handoffReadinessLabel={handoffReady ? 'handoff ready' : 'handoff unavailable'}
+        evidenceRefs={[
+          yappcProductUnitIntentCandidate.intentId,
+          ...(provenance?.evidenceRefs ?? []),
+        ]}
+      />
 
       {/* ProductUnitIntent Readiness */}
       <article className="studio-card space-y-3" aria-labelledby="intent-readiness-title">

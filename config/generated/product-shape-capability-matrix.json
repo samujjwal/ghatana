@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-16T00:08:40.747Z",
+  "generated": "2026-05-17T15:38:05.483Z",
   "matrix": [
     {
       "productId": "audio-video",
@@ -1397,7 +1397,10 @@
       "missingProviders": [],
       "gatesNeeded": [
         "a11y",
+        "demo-scope-review",
         "i18n",
+        "integration-contract-readiness",
+        "org-model-governance",
         "privacy",
         "security"
       ],
@@ -1502,12 +1505,19 @@
       "requiredCapabilities": [],
       "capabilityGaps": [],
       "reasonCodes": [
-        "disabled-observed"
+        "demo-product-not-execution-ready",
+        "disabled-observed",
+        "requires-lifecycle-profile",
+        "requires-product-owner-executable-surface-definition"
       ],
       "nextActions": [
+        "Keep software-org disabled until product owners define executable lifecycle surfaces",
+        "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": [],
+      "readinessEvidence": [
+        "products/software-org"
+      ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"
     },
@@ -1691,7 +1701,10 @@
       "missingProviders": [],
       "gatesNeeded": [
         "a11y",
+        "demo-scope-review",
         "i18n",
+        "integration-contract-readiness",
+        "org-model-governance",
         "privacy",
         "security"
       ],
@@ -1796,12 +1809,19 @@
       "requiredCapabilities": [],
       "capabilityGaps": [],
       "reasonCodes": [
-        "disabled-observed"
+        "demo-product-not-execution-ready",
+        "disabled-observed",
+        "requires-lifecycle-profile",
+        "requires-product-owner-executable-surface-definition"
       ],
       "nextActions": [
+        "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
+        "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": [],
+      "readinessEvidence": [
+        "products/virtual-org"
+      ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"
     },

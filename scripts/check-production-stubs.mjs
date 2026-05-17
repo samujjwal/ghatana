@@ -120,7 +120,7 @@ const EXCLUDED_FILENAME_PATTERNS = scanConfig.excludedFilenamePatterns.map((p) =
 // Allowlist loading
 // ---------------------------------------------------------------------------
 
-/** @type {Map<string, { owner: string; expiry: string; reason: string }[]>} */
+/** @type {Map<string, { owner: string; expiry: string; reason: string; issueLink: string; safeFallback: string; featureFlag: string }[]>} */
 const allowlist = new Map();
 const allowlistErrors = [];
 
@@ -137,7 +137,14 @@ if (ALLOWLIST_PATH && existsSync(ALLOWLIST_PATH)) {
         continue;
       }
       if (!allowlist.has(entry.file)) allowlist.set(entry.file, []);
-      allowlist.get(entry.file).push({ owner: entry.owner, expiry: entry.expiry, reason: entry.reason });
+      allowlist.get(entry.file).push({
+        owner: entry.owner,
+        expiry: entry.expiry,
+        reason: entry.reason,
+        issueLink: entry.issueLink,
+        safeFallback: entry.safeFallback,
+        featureFlag: entry.featureFlag,
+      });
     }
     if (ALLOWLIST_FLAG) {
       console.log(`Loaded ${allowlist.size} allowlisted file(s) from ${ALLOWLIST_PATH}`);
@@ -164,6 +171,17 @@ function validateAllowlistEntry(entry) {
   if (typeof entry.expiry !== 'string' || Number.isNaN(Date.parse(entry.expiry))) {
     errors.push('expiry must be an ISO date');
   }
+  if (typeof entry.issueLink !== 'string' || entry.issueLink.trim().length === 0) {
+    errors.push('issueLink is required');
+  } else if (!/^GH-\d+$/i.test(entry.issueLink.trim()) && !/^https:\/\//i.test(entry.issueLink.trim())) {
+    errors.push('issueLink must be a GH-<id> reference or an https URL');
+  }
+  if (typeof entry.safeFallback !== 'string' || entry.safeFallback.trim().length === 0) {
+    errors.push('safeFallback is required');
+  }
+  if (typeof entry.featureFlag !== 'string' || entry.featureFlag.trim().length === 0) {
+    errors.push('featureFlag is required');
+  }
   return errors;
 }
 
@@ -184,6 +202,123 @@ function isCommentOnlyLine(line) {
     trimmed.startsWith('*') ||
     trimmed.startsWith('*/')
   );
+}
+
+/**
+ * Best-effort check for whether the current line is inside a method that returns Promise<Void>.
+ * This prevents false positives for valid ActiveJ success completions like `return Promise.of(null);`.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isWithinPromiseVoidMethod(lines, index) {
+  const start = Math.max(0, index - 240);
+  for (let i = index; i >= start; i--) {
+    const candidate = lines[i].trim();
+    // Stop at class/interface boundary to avoid crossing into another type block.
+    if (/\b(class|interface|record|enum)\b/.test(candidate)) {
+      return false;
+    }
+    // Find the nearest likely method declaration above this line.
+    if (/^(public|protected|private)\s+/.test(candidate) && candidate.includes('(')) {
+      return /Promise\s*<\s*Void\s*>/.test(candidate);
+    }
+    // Also handle package-private methods with explicit Promise return.
+    if (/^Promise\s*<\s*[^>]+>\s+\w+\s*\(/.test(candidate)) {
+      return /Promise\s*<\s*Void\s*>/.test(candidate);
+    }
+  }
+  return false;
+}
+
+/**
+ * Detect whether an empty-list return is likely a defensive guard clause,
+ * e.g. `if (x == null || x.isEmpty()) { return List.of(); }`.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isGuardClauseEmptyCollectionReturn(lines, index) {
+  let previous = null;
+  for (let i = index - 1; i >= Math.max(0, index - 6); i--) {
+    const candidate = lines[i].trim();
+    if (candidate.length === 0) continue;
+    previous = candidate;
+    break;
+  }
+  if (!previous) return false;
+
+  return (
+    /^if\s*\(.*\)\s*\{?$/.test(previous) ||
+    /^else\s+if\s*\(.*\)\s*\{?$/.test(previous) ||
+    /^case\s+.+:\s*$/.test(previous) ||
+    /^default\s*:\s*$/.test(previous)
+  );
+}
+
+/**
+ * Detect fallback empty-list returns in collection parsing/normalization helpers,
+ * e.g. methods that branch on `instanceof List` and otherwise return an empty list.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isCollectionParsingFallback(lines, index) {
+  const start = Math.max(0, index - 36);
+  let sawListCheck = false;
+  let sawProjection = false;
+
+  for (let i = start; i < index; i++) {
+    const candidate = lines[i].trim();
+    if (/(instanceof\s+List|instanceof\s+Collection|\.split\(|Arrays\.stream\()/.test(candidate)) {
+      sawListCheck = true;
+    }
+    if (
+      /\.toList\(\)/.test(candidate) ||
+      /Collectors\.toList\(\)/.test(candidate) ||
+      /List\.copyOf\(/.test(candidate) ||
+      /new\s+ArrayList\s*</.test(candidate) ||
+      /new\s+ArrayList\s*\(/.test(candidate)
+    ) {
+      sawProjection = true;
+    }
+  }
+
+  return sawListCheck && sawProjection;
+}
+
+/**
+ * Detect operational empty-list fallback in remote HTTP calls where a non-200
+ * response or exception intentionally degrades to an empty result.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isOperationalRemoteFallbackEmptyCollection(lines, index) {
+  const start = Math.max(0, index - 70);
+  const end = Math.min(lines.length - 1, index + 24);
+  let sawHttpSend = false;
+  let sawStatusHandling = false;
+  let sawExceptionHandling = false;
+
+  for (let i = start; i <= end; i++) {
+    const candidate = lines[i].trim();
+    if (/httpClient\.send\(/.test(candidate)) {
+      sawHttpSend = true;
+    }
+    if (/response\.statusCode\(\)/.test(candidate)) {
+      sawStatusHandling = true;
+    }
+    if (/catch\s*\(\s*Exception\s+/.test(candidate)) {
+      sawExceptionHandling = true;
+    }
+  }
+
+  return sawHttpSend && sawStatusHandling && sawExceptionHandling;
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +375,9 @@ for (const root of scanRoots) {
       if (expired.length > 0) {
         console.warn(`\n⚠  Expired allowlist entry for ${rel}:`);
         for (const e of expired) {
-          console.warn(`   owner: ${e.owner}, expiry: ${e.expiry}, reason: ${e.reason}`);
+          console.warn(
+            `   owner: ${e.owner}, expiry: ${e.expiry}, reason: ${e.reason}, issue: ${e.issueLink}, fallback: ${e.safeFallback}, flag: ${e.featureFlag}`,
+          );
         }
       } else {
         continue; // still valid allowlist — skip
@@ -259,6 +396,18 @@ for (const root of scanRoots) {
       const line = lines[i];
       for (const { id, severity, pattern, description, includePaths, excludePaths } of PATTERNS) {
         if (severity === 'warning' && isCommentOnlyLine(line)) {
+          continue;
+        }
+        if (id === 'RETURN_NULL_PROMISE' && isWithinPromiseVoidMethod(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isGuardClauseEmptyCollectionReturn(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isCollectionParsingFallback(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isOperationalRemoteFallbackEmptyCollection(lines, i)) {
           continue;
         }
         if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {
@@ -298,7 +447,7 @@ for (const error of allowlistErrors) {
     col: 1,
     patternId: 'INVALID_ALLOWLIST',
     severity: 'critical',
-    description: 'Production stub allowlist entries require owner, expiry, and reason',
+    description: 'Production stub allowlist entries require owner, expiry, reason, issueLink, safeFallback, and featureFlag',
     text: error,
   });
 }

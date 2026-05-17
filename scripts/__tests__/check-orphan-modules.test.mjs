@@ -135,8 +135,12 @@ test('orphans array contains correct metadata', () => {
   try {
     const { orphans } = findOrphanModules({ repoRoot: root, allowlist: { allowlist: [] } });
     assert(orphans.length > 0, 'expected at least one orphan');
+    assert.equal(orphans[0].todoId, 'P0-T08');
+    assert.equal(orphans[0].owner, 'Platform Team');
+    assert.equal(orphans[0].validationCommand, 'pnpm check:orphan-modules && pnpm check:cleanup-gate');
     assert.equal(orphans[0].type, 'typescript');
     assert.equal(orphans[0].reason, 'shell-only-directory');
+    assert(orphans[0].action.includes('package.json') || orphans[0].action.includes('allowlist'));
     assert(orphans[0].path.includes('my-shell'));
   } finally {
     cleanFixture(root);

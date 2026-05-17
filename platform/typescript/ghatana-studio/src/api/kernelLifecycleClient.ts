@@ -269,6 +269,97 @@ export const KernelLifecycleApiErrorSchema = z
 
 export type KernelLifecycleApiError = z.infer<typeof KernelLifecycleApiErrorSchema>;
 
+export type StudioCapabilityLifecycleStatus = 'unconfigured' | 'loading' | 'ready' | 'degraded';
+export type StudioCapabilityProviderMode = 'bootstrap' | 'platform';
+export type StudioManifestLoadStatus =
+  | 'loaded'
+  | 'missing'
+  | 'corrupt'
+  | 'unauthorized'
+  | 'unavailable';
+
+export interface StudioCapabilityManifestLoadState {
+  readonly gateResultManifest: { readonly status: StudioManifestLoadStatus };
+  readonly artifactManifest: { readonly status: StudioManifestLoadStatus };
+  readonly deploymentManifest: { readonly status: StudioManifestLoadStatus };
+  readonly verifyHealthReport: { readonly status: StudioManifestLoadStatus };
+}
+
+export interface StudioCapabilityState {
+  readonly runtimeConfigured: boolean;
+  readonly lifecycleConfigured: boolean;
+  readonly lifecycleExecutionAllowed: boolean;
+  readonly dataCloudEvidenceReady: boolean;
+}
+
+export interface StudioCapabilityStateInput {
+  readonly runtimeConfigured: boolean;
+  readonly lifecycleStatus: StudioCapabilityLifecycleStatus;
+  readonly selectedProviderMode: StudioCapabilityProviderMode;
+  readonly productUnit?: {
+    readonly lifecycleExecutionAllowed?: boolean;
+    readonly metadata?: {
+      readonly lifecycleExecutionAllowed?: boolean;
+    };
+  };
+  readonly selectedRun?: {
+    readonly manifestRefs?: Record<string, string>;
+    readonly approvalRefs?: readonly string[];
+    readonly eventsRef?: string;
+    readonly healthSnapshotRef?: string;
+  };
+  readonly manifestLoadState?: StudioCapabilityManifestLoadState;
+}
+
+function hasLoadedManifestEvidence(manifestLoadState: StudioCapabilityManifestLoadState | undefined): boolean {
+  if (manifestLoadState === undefined) {
+    return false;
+  }
+
+  return (
+    manifestLoadState.gateResultManifest.status === 'loaded'
+    || manifestLoadState.artifactManifest.status === 'loaded'
+    || manifestLoadState.deploymentManifest.status === 'loaded'
+    || manifestLoadState.verifyHealthReport.status === 'loaded'
+  );
+}
+
+function hasRunEvidence(selectedRun: StudioCapabilityStateInput['selectedRun']): boolean {
+  if (selectedRun === undefined) {
+    return false;
+  }
+
+  return (
+    selectedRun.eventsRef !== undefined
+    || selectedRun.healthSnapshotRef !== undefined
+    || Object.keys(selectedRun.manifestRefs ?? {}).length > 0
+    || (selectedRun.approvalRefs?.length ?? 0) > 0
+  );
+}
+
+export function getStudioCapabilityState(input: StudioCapabilityStateInput): StudioCapabilityState {
+  const lifecycleConfigured = input.lifecycleStatus !== 'unconfigured' && input.productUnit !== undefined;
+  const lifecycleExecutionAllowed =
+    input.productUnit?.lifecycleExecutionAllowed
+    ?? input.productUnit?.metadata?.lifecycleExecutionAllowed
+    ?? false;
+  const providerEvidenceReady =
+    input.selectedProviderMode === 'bootstrap'
+      ? true
+      : hasLoadedManifestEvidence(input.manifestLoadState) || hasRunEvidence(input.selectedRun);
+
+  return {
+    runtimeConfigured: input.runtimeConfigured,
+    lifecycleConfigured,
+    lifecycleExecutionAllowed,
+    dataCloudEvidenceReady:
+      input.runtimeConfigured
+      && lifecycleConfigured
+      && lifecycleExecutionAllowed
+      && providerEvidenceReady,
+  };
+}
+
 /**
  * Authentication context required for lifecycle mutations.
  */

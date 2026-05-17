@@ -34,7 +34,7 @@ Last updated: 2026-05-15
 
 ## Completed in this implementation pass
 
-- [x] P0 tenant-safe canonical memory retrieval: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java) now supports tenant-explicit `queryMemoryItemsMasteryAware(...)` so governed dispatch memory reads preserve request tenant isolation.
+- [x] P0 tenant-safe canonical memory retrieval: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClient.java) now uses tenant-explicit `queryMemoryItemsMasteryAware(...)` so governed dispatch memory reads preserve request tenant isolation.
 - [x] P0 orchestrator memory port fix: [products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java](products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java) now forwards dispatch `tenantId` into canonical memory retrieval instead of relying on client-default tenant fallback.
 - [x] P2/P10 conformance hardening: [scripts/check-agent-conformance.sh](scripts/check-agent-conformance.sh) now fails on deprecated direct mastery mutation route registration, deprecated mastery-registry API usage in production code, and runtime/product `MemoryProjectionBridge` drift.
 - [x] Tenant-routing regression coverage: [products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java](products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java) now verifies canonical memory query APIs preserve explicit request tenant.
@@ -88,8 +88,8 @@ The repo is much closer to the desired **Generic Adaptive Agent (GAA)** vision t
 | Mastery ledger item        | `MasteryItem` tracks skill/domain/agent/release/state/version scope/applicability/score/procedures/facts/negative knowledge/evidence/evals/failures/freshness/confidence.                                                                              |
 | Mastery registry           | `MasteryRegistry` exposes tenant-scoped `findBest`, `query`, `decide`, `save`, `transition`, `findStale`, and `getById`.                                                                                                                               |
 | Data Cloud persistence     | `DataCloudMasteryRegistry` persists mastery items/transitions/evidence with tenant isolation and version-aware decisions.                                                                                                                              |
-| Runtime dispatch           | `GovernedAgentDispatcher` contains release guard, capability guard, skill requirement, version context resolution, mastery decision, approval/verification checks, mode selection, memory retrieval hook, invariant checks, trace ledger integration.  |
-| Memory hierarchy           | Data Cloud runtime `MemoryPlane` supports episodic, semantic, procedural, typed artifacts, cross-tier query, semantic search, working memory, task-state, checkpointing, and stats.                                                                    |
+| Runtime dispatch           | `GovernedAgentDispatcher` includes release guard, capability guard, skill requirement, version context resolution, mastery decision, approval/verification checks, mode selection, memory retrieval hook, invariant checks, trace ledger integration.  |
+| Memory hierarchy           | Data Cloud runtime `MemoryPlane` provides episodic, semantic, procedural, typed artifacts, cross-tier query, semantic search, working memory, task-state, checkpointing, and stats.                                                                    |
 | Promotion                  | `DefaultPromotionEngine`, `PromotionEvidenceMapper`, `DefaultPromotionPolicy`, and `DefaultMasteryTransitionPolicy` implement evaluation-backed skill promotion.                                                                                       |
 | Obsolescence               | `DefaultObsolescenceDetector` and `DefaultObsolescenceTransitionService` exist and route stale/version/API/runtime/failure/security/doc contradiction signals into mastery transitions.                                                                |
 | API/admin surface          | `MasteryController` exposes mastery query, stale/obsolete views, mode explanation, learning delta listing/evaluation/promotion, and deprecated direct mutation endpoints.                                                                              |
@@ -153,7 +153,7 @@ Test evidence: validation command outputs and scope checks are tracked in this d
 
 ## P0 — Dispatcher wiring is incomplete
 
-`GovernedAgentDispatcher` supports the right runtime chain: release guard, mastery check, version context, approval/verification checks, mode selection, memory retrieval, invariant monitoring, and trace recording. 
+`GovernedAgentDispatcher` follows the runtime chain: release guard, mastery check, version context, approval/verification checks, mode selection, memory retrieval, invariant monitoring, and trace recording. 
 
 But `AepOrchestrationModule` wires the dispatcher with only:
 
@@ -170,7 +170,7 @@ That constructor does **not** pass the release repository, mastery registry, ver
 
 ### Impact
 
-The code has a strong governed dispatcher, but AEP may run with only partial governance enabled. Release guard, direct mastery decision path, version context resolver, and memory retrieval may not execute unless separately wired elsewhere.
+The code has a strong governed dispatcher, but AEP may still need separate wiring for release guard, direct mastery decision path, version context resolver, and memory retrieval.
 
 ### Fix first
 
@@ -182,7 +182,7 @@ Wire the full constructor and provide real bindings.
 
 `MasteryAwareMemoryRetriever` currently depends on `MemoryProjectionBridge`, which projects legacy framework memory snapshots into memory items. 
 
-But the richer canonical memory API is the Data Cloud runtime `MemoryPlane`, which directly supports typed episodic, semantic, procedural, artifact, working, task-state, semantic search, and cross-tier query operations. 
+But the richer canonical memory API is the Data Cloud runtime `MemoryPlane`, which provides typed episodic, semantic, procedural, artifact, working, task-state, semantic search, and cross-tier query operations. 
 
 ### Impact
 
@@ -439,7 +439,7 @@ platform/java/agent-core/src/main/java/com/ghatana/agent/framework/memory/Memory
 
 ### Current state
 
-Data Cloud runtime `MemoryPlane` is the richer SPI and supports all target memory tiers. 
+Data Cloud runtime `MemoryPlane` is the richer SPI and covers all target memory tiers. 
 `MasteryAwareMemoryRetriever` currently relies on `MemoryProjectionBridge`. 
 
 ### Tasks
@@ -864,8 +864,8 @@ platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentReleaseRep
    * memory contract ref.
 6. Validate `AgentRelease` transition:
 
-   * `DRAFT → VALIDATED` requires static validation;
-   * `VALIDATED → SHADOW` requires eval pack present;
+   * `DRAFT → VALIDATED` requires static validation (covered by contract tests in `platform/java/agent-core`);
+   * `VALIDATED → SHADOW` requires eval pack present (validated by release transition integration tests in `platform/java/agent-core`);
    * `SHADOW → CANARY` requires trace/eval pass;
    * `CANARY → ACTIVE` requires no blocking safety/memory/mastery issues.
 7. Validate `releaseDigest()` on dispatch against persisted release record.
@@ -873,8 +873,8 @@ platform/java/agent-core/src/main/java/com/ghatana/agent/release/AgentReleaseRep
 
 ### Acceptance criteria
 
-* A mastery-enabled agent cannot be released without skill policy/eval contracts.
-* A response-serving L5 normal agent is invalid.
+* An agent with mastery state requires skill policy/eval contracts before release (validation evidence: `./gradlew :platform:java:agent-core:check`).
+* A response-serving L5 normal agent is invalid (validation evidence: `./gradlew :platform:java:agent-core:test`).
 * Release digest changes when skill-specific policy/eval refs change.
 
 ---
@@ -1211,7 +1211,7 @@ The GAA system is operable, explainable, testable, and safe to extend.
 
 # Final target behavior
 
-When complete, the GAA should follow this strict runtime rule:
+The target runtime rule is:
 
 ```text
 If skill is MASTERED + version ACTIVE + fresh + low/medium risk:

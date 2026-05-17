@@ -84,5 +84,7 @@ describe('ArtifactsPage', () => {
 
     expect(screen.getByText('studio.route.artifacts.status.found')).toBeInTheDocument();
     expect(screen.getByText('studio.route.artifacts.status.missing')).toBeInTheDocument();
+    expect(screen.getByLabelText('artifact-manifest-state')).toBeInTheDocument();
+    expect(screen.getByText('artifact-manifest: missing')).toBeInTheDocument();
   });
 });
