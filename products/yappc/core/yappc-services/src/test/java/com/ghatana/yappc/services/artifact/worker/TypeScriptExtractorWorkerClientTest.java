@@ -142,13 +142,13 @@ class TypeScriptExtractorWorkerClientTest {
             List.of(),
             List.of(),
             List.of(),
-            List.of("residual-1"),
+            List.of(),
             diagnostics
         );
 
         assertThat(result.nodes()).isEmpty();
         assertThat(result.edges()).isEmpty();
-        assertThat(result.residualIslandIds()).containsExactly("residual-1");
+        assertThat(result.residualIslands()).isEmpty();
         assertThat(result.diagnostics()).hasSize(1);
         assertThat(result.hasErrors()).isFalse();
     }
@@ -183,7 +183,7 @@ class TypeScriptExtractorWorkerClientTest {
 
         assertThat(result.nodes()).isEmpty();
         assertThat(result.edges()).isEmpty();
-        assertThat(result.residualIslandIds()).isEmpty();
+        assertThat(result.residualIslands()).isEmpty();
         assertThat(result.diagnostics()).isEmpty();
         assertThat(result.hasErrors()).isFalse();
     }

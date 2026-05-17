@@ -47,6 +47,7 @@ import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import com.ghatana.yappc.storage.RepositorySnapshotRepository;
+import com.ghatana.yappc.storage.SemanticModelRepository;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
@@ -593,6 +594,7 @@ public class LifecycleServiceModule extends AbstractModule {
         ArtifactCompileJobService.TsExtractorWorker tsExtractorWorker,
         ArtifactGraphService artifactGraphService,
         RepositorySnapshotRepository repositorySnapshotRepository,
+        SemanticModelRepository semanticModelRepository,
         RepositoryInventoryScanner repositoryInventoryScanner,
         ArtifactCompileJobService.JavaArtifactExtractor javaArtifactExtractor
     ) {
@@ -602,6 +604,7 @@ public class LifecycleServiceModule extends AbstractModule {
             tsExtractorWorker,
             artifactGraphService,
             repositorySnapshotRepository,
+            semanticModelRepository,
             repositoryInventoryScanner,
             javaArtifactExtractor
         );

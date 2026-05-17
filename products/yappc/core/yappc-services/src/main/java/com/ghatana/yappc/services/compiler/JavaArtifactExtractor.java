@@ -10,6 +10,7 @@ import com.ghatana.yappc.services.source.SourceProvider;
 import io.activej.promise.Promise;
 
 import java.nio.file.Path;
+import java.util.concurrent.Executor;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,13 +36,19 @@ public final class JavaArtifactExtractor {
     private static final double DEFAULT_CONFIDENCE = 0.9;
 
     private final JavaSourceParser javaSourceParser;
+    private final Executor executor;
 
     public JavaArtifactExtractor() {
-        this(new JavaSourceParser());
+        this(new JavaSourceParser(), Runnable::run);
     }
 
     public JavaArtifactExtractor(JavaSourceParser javaSourceParser) {
+        this(javaSourceParser, Runnable::run);
+    }
+
+    public JavaArtifactExtractor(JavaSourceParser javaSourceParser, Executor executor) {
         this.javaSourceParser = javaSourceParser;
+        this.executor = executor;
     }
 
     /**
@@ -54,7 +61,7 @@ public final class JavaArtifactExtractor {
             RepositorySnapshot snapshot,
             List<RepositorySnapshot.SnapshotFile> javaFiles,
             SourceProvider.ScopeContext scope) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             List<ArtifactNodeDto> nodes = new ArrayList<>();
             List<ArtifactEdgeDto> edges = new ArrayList<>();
             List<Map<String, Object>> unresolvedEdges = new ArrayList<>();
@@ -139,26 +146,23 @@ public final class JavaArtifactExtractor {
 
             ArtifactNodeDto node = new ArtifactNodeDto(
                 nodeId,
-                "class", // type
-                className, // label
-                className, // name
+                "class",
+                className,
                 file.relativePath(),
-                null, // content
+                null,
                 properties,
-                List.of("java", "source"), // tags
-                EXTRACTOR_ID, // sourceRef
-                qualifiedName, // symbolRef
+                List.of("java", "source"),
+                scope.tenantId(),
+                scope.projectId(),
                 sourceLocation,
                 EXTRACTOR_ID,
                 EXTRACTOR_VERSION,
                 DEFAULT_CONFIDENCE,
-                "java-source-parser", // provenance
-                List.of(), // privacySecurityFlags
-                List.of(), // residualFragmentIds
-                Map.of(), // metadata
-                scope.tenantId(),
-                scope.projectId(),
-                scope.workspaceId()
+                "java-source-parser",
+                List.of(),
+                List.of(),
+                EXTRACTOR_ID,
+                qualifiedName
             );
 
             nodes.add(node);
@@ -194,22 +198,15 @@ public final class JavaArtifactExtractor {
 
             ArtifactEdgeDto edge = new ArtifactEdgeDto(
                 edgeId,
-                edgeId,
                 sourceId,
                 importStr,
-                sourceId,
-                importStr,
-                "imports", // kind
-                "imports", // type
-                "depends-on", // relationshipType
-                DEFAULT_CONFIDENCE,
-                false, // bidirectional
+                "depends-on",
                 properties,
+                DEFAULT_CONFIDENCE,
+                false,
                 Map.of(),
-                sourceId,
-                importStr,
                 snapshot.snapshotId(),
-                null // versionId
+                null
             );
 
             edges.add(edge);
@@ -291,23 +288,30 @@ public final class JavaArtifactExtractor {
             "fileSize", String.valueOf(file.sizeBytes())
         );
 
+        String checksum;
+        try {
+            checksum = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(error.getBytes())
+                .toString()
+                .substring(0, 16);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            checksum = UUID.randomUUID().toString().substring(0, 16);
+        }
+
         return new ResidualIslandDto(
             islandId,
             "parse-error",
             "Java file could not be parsed: " + error,
             "// Parse error: " + error,
             file.relativePath() + ":1:1-1:1",
-            java.security.MessageDigest.getInstance("SHA-256")
-                .digest(error.getBytes())
-                .toString()
-                .substring(0, 16),
+            checksum,
             "ref:" + islandId,
             error,
             0.3,
             true,
             0.7,
-            1,
             metadata,
+            1,
             null,
             null,
             null,
@@ -335,23 +339,30 @@ public final class JavaArtifactExtractor {
             "fileSize", String.valueOf(file.sizeBytes())
         );
 
+        String checksum;
+        try {
+            checksum = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(error.getBytes())
+                .toString()
+                .substring(0, 16);
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            checksum = UUID.randomUUID().toString().substring(0, 16);
+        }
+
         return new ResidualIslandDto(
             islandId,
             "extraction-error",
             "Java file extraction failed: " + error,
             "// Extraction error: " + error,
             file.relativePath() + ":1:1-1:1",
-            java.security.MessageDigest.getInstance("SHA-256")
-                .digest(error.getBytes())
-                .toString()
-                .substring(0, 16),
+            checksum,
             "ref:" + islandId,
             error,
             0.2,
             true,
             0.8,
-            1,
             metadata,
+            1,
             null,
             null,
             null,

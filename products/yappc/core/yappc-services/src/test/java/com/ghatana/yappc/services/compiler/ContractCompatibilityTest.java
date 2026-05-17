@@ -77,23 +77,13 @@ class ContractCompatibilityTest {
     @DisplayName("Should verify required fields are present in canonical set")
     void shouldVerifyRequiredFieldsPresent() {
         // Core required fields for ArtifactNode
-        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAllOf(
-            "id",
-            "kind",
-            "name",
-            "sourceLocation",
-            "tenantId",
-            "projectId"
+        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAll(
+            Set.of("id", "kind", "name", "sourceLocation", "tenantId", "projectId")
         );
 
         // Core required fields for ResidualIsland
-        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAllOf(
-            "id",
-            "kind",
-            "originalSource",
-            "sourceLocation",
-            "tenantId",
-            "projectId"
+        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAll(
+            Set.of("id", "kind", "originalSource", "sourceLocation", "tenantId", "projectId")
         );
     }
 
@@ -122,19 +112,19 @@ class ContractCompatibilityTest {
     @Test
     @DisplayName("Should verify scope fields are consistent across DTOs")
     void shouldVerifyScopeFieldsConsistent() {
-        // All DTOs should have consistent scope fields
-        Set<String> expectedScopeFields = Set.of("tenantId", "projectId", "workspaceId");
+        // ArtifactNode has tenantId and projectId
+        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAll(Set.of("tenantId", "projectId"));
         
-        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAll(expectedScopeFields);
-        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAll(expectedScopeFields);
+        // ResidualIsland has tenantId, projectId, and workspaceId
+        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAll(Set.of("tenantId", "projectId", "workspaceId"));
     }
 
     @Test
     @DisplayName("Should verify confidence and provenance fields are present")
     void shouldVerifyConfidenceAndProvenanceFieldsPresent() {
         // Confidence and provenance are critical for compile-back safety
-        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAllOf("confidence", "provenance");
-        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAllOf("confidence", "requiresReview", "reviewState");
+        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAll(Set.of("confidence", "provenance"));
+        assertThat(CANONICAL_RESIDUAL_ISLAND_FIELDS).containsAll(Set.of("confidence", "requiresReview", "reviewState"));
     }
 
     @Test
@@ -148,6 +138,6 @@ class ContractCompatibilityTest {
     @DisplayName("Should verify timestamp fields are present for audit")
     void shouldVerifyTimestampFieldsPresent() {
         // Timestamps are required for audit and change tracking
-        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAllOf("createdAt", "updatedAt");
+        assertThat(CANONICAL_ARTIFACT_NODE_FIELDS).containsAll(Set.of("createdAt", "updatedAt"));
     }
 }

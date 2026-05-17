@@ -86,7 +86,7 @@ class ArtifactGraphServicePaginationTest {
             assertEquals("cursor-abc123", result.nextCursor());
             assertNotNull(result.scope());
             assertEquals("tenant-123", result.scope().tenantId());
-            assertEquals("product-456", result.scope().productId());
+            assertEquals("product-456", result.scope().projectId());
             assertEquals("workspace-789", result.scope().workspaceId());
             return Promise.of(null);
         });
