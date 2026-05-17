@@ -317,7 +317,7 @@ describe('pageArtifactPersistence — conflict detection', () => {
 
     const graphRequest = JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body));
     expect(graphRequest).toMatchObject({
-      productId: 'artifact-1:graph',
+      projectId: 'artifact-1:graph',
       tenantId: scope.tenantId,
       nodes: expect.arrayContaining([
         expect.objectContaining({

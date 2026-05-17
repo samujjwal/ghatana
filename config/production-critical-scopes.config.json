@@ -66,6 +66,8 @@
     "templates/",
     "code-audits/",
     "integration-tests/",
+    "k6-tests/",
+    "/example/",
     "frontend/dist/",
     "frontend/build/",
     "frontend/generated/",
@@ -77,6 +79,9 @@
     "\\.spec\\.[jt]sx?$",
     "\\.stories\\.[jt]sx?$",
     "vitest\\.setup\\.[jt]s$",
+    "(^|/)test-(import|setup|seed)\\.(mjs|js|ts)$",
+    "(^|/)generate-.*\\.(mjs|js|ts)$",
+    "(^|/)seed\\.[jt]s$",
     "Test\\.java$",
     "IT\\.java$",
     "Spec\\.java$",
@@ -111,18 +116,21 @@
       "id": "SYSOUT_JAVA",
       "severity": "warning",
       "pattern": "System\\.out\\.(print|println)|e\\.printStackTrace\\(\\)",
-      "description": "System.out.println or printStackTrace in production Java"
+      "description": "System.out.println or printStackTrace in production Java",
+      "excludePaths": [
+        "(^|/).*Cli\\.java$"
+      ]
     },
     {
       "id": "RETURN_EMPTY_LIST",
       "severity": "warning",
-      "pattern": "return\\s+(Collections\\.emptyList\\(\\)|List\\.of\\(\\)|new ArrayList<>\\(\\)|\\[\\])\\s*;",
+      "pattern": "^\\s*return\\s+(Collections\\.emptyList\\(\\)|List\\.of\\(\\)|new ArrayList<>\\(\\)|\\[\\])\\s*;\\s*$",
       "description": "Method unconditionally returns empty collection — may be a stub"
     },
     {
       "id": "RETURN_NULL_PROMISE",
       "severity": "warning",
-      "pattern": "return\\s+Promise\\.of\\(null\\)\\s*;",
+      "pattern": "^\\s*return\\s+Promise\\.of\\(null\\)\\s*;\\s*$",
       "description": "Method returns Promise.of(null) — likely a stub ActiveJ promise"
     },
     {

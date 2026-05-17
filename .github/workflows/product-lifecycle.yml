@@ -262,6 +262,33 @@ jobs:
       - name: Gradle check
         run: ./gradlew check --no-daemon --stacktrace
 
+  check-studio-browser-e2e:
+    name: Check Studio Browser E2E
+    needs: build-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm --dir platform/typescript/ghatana-studio exec playwright install --with-deps chromium
+
+      - name: Run Studio browser E2E
+        run: pnpm --dir platform/typescript/ghatana-studio test:e2e
+
   check-digital-marketing:
     name: Check Digital Marketing Lifecycle Pilot
     needs: build-kernel
@@ -290,10 +317,13 @@ jobs:
           path: .
 
       - name: Check Digital Marketing lifecycle pilot
-        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci
 
       - name: Smoke Digital Marketing lifecycle pilot
-        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-smoke
+
+      - name: Compose-backed deploy/verify proof (best-effort)
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --compose-proof --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-compose
 
       - name: Validate build phase plan
         run: node ./scripts/kernel-product.mjs product plan digital-marketing build --json
@@ -318,6 +348,14 @@ jobs:
           path: |
             .kernel/out/**
             config/generated/product-shape-capability-matrix.json
+
+      - name: Upload Digital Marketing evidence packs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: digital-marketing-lifecycle-evidence-packs
+          path: |
+            .kernel/out/products/digital-marketing/evidence/**
             docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md
             **/test-results/**
             **/coverage/**

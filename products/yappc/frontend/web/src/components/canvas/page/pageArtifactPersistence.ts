@@ -95,7 +95,7 @@ interface ArtifactGraphIngestEdgeDto {
 }
 
 interface ArtifactGraphIngestRequest {
-  readonly productId: string;
+  readonly projectId: string;
   readonly tenantId: string;
   readonly nodes: readonly ArtifactGraphIngestNodeDto[];
   readonly edges: readonly ArtifactGraphIngestEdgeDto[];
@@ -265,7 +265,7 @@ function buildArtifactGraphIngestRequest(
   scope: PageArtifactScope,
 ): ArtifactGraphIngestRequest {
   return {
-    productId: graph.graphId,
+    projectId: graph.graphId,
     tenantId: scope.tenantId,
     nodes: graph.nodes.map((node) => ({
       id: node.id,

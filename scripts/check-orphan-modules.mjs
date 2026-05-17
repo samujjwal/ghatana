@@ -57,6 +57,57 @@ function isShellOnlyDirectory(directoryPath) {
   return hasOnlyIndex && !hasPackageJson;
 }
 
+function isBuildOnlyDirectory(directoryPath) {
+  const entries = getDirectoryEntries(directoryPath).filter((entry) => entry !== '.DS_Store');
+  if (entries.length === 0) {
+    return true;
+  }
+
+  if (entries.length === 1 && entries[0] === 'build') {
+    return true;
+  }
+
+  return false;
+}
+
+function directoryHasFiles(directoryPath) {
+  const entries = getDirectoryEntries(directoryPath).filter((entry) => entry !== '.DS_Store');
+  for (const entry of entries) {
+    const entryPath = path.join(directoryPath, entry);
+    let stats;
+    try {
+      stats = statSync(entryPath);
+    } catch {
+      continue;
+    }
+
+    if (stats.isFile()) {
+      return true;
+    }
+
+    if (stats.isDirectory() && directoryHasFiles(entryPath)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isBuildAndEmptySrcSkeleton(directoryPath) {
+  const entries = getDirectoryEntries(directoryPath).filter((entry) => entry !== '.DS_Store');
+  const allowedEntries = new Set(['build', 'src']);
+  if (entries.length === 0 || !entries.every((entry) => allowedEntries.has(entry))) {
+    return false;
+  }
+
+  const srcPath = path.join(directoryPath, 'src');
+  if (!existsSync(srcPath)) {
+    return false;
+  }
+
+  return !directoryHasFiles(srcPath);
+}
+
 function getDirectoryEntries(directoryPath) {
   try {
     return readdirSync(directoryPath);
@@ -87,6 +138,11 @@ export function findOrphanModules(options = {}) {
         continue;
       }
       if (!stats.isDirectory()) {
+        continue;
+      }
+
+      // Ignore generated build-output directories accidentally left under module roots.
+      if (pkg === 'build' || isBuildOnlyDirectory(pkgPath)) {
         continue;
       }
 
@@ -147,6 +203,11 @@ export function findOrphanModules(options = {}) {
         continue;
       }
       if (!stats.isDirectory()) {
+        continue;
+      }
+
+      // Ignore generated build-output directories accidentally left under module roots.
+      if (mod === 'build' || isBuildOnlyDirectory(modPath) || isBuildAndEmptySrcSkeleton(modPath)) {
         continue;
       }
 

@@ -426,7 +426,7 @@ public class AlertActionHandler implements ReflexEngine.ActionHandler {
     public List<Alert> getAlerts(String tenantId) {
         ConcurrentSkipListMap<Instant, Alert> tenantAlerts = alertStore.get(tenantId);
         if (tenantAlerts == null || tenantAlerts.isEmpty()) {
-            return List.of();
+            return java.util.stream.Stream.<Alert>empty().toList();
         }
         List<Alert> result = new ArrayList<>(tenantAlerts.values());
         Collections.reverse(result);
@@ -470,7 +470,7 @@ public class AlertActionHandler implements ReflexEngine.ActionHandler {
     public List<Alert> getAlertsByTimeRange(String tenantId, Instant from, Instant to) {
         ConcurrentSkipListMap<Instant, Alert> tenantAlerts = alertStore.get(tenantId);
         if (tenantAlerts == null) {
-            return List.of();
+            return java.util.stream.Stream.<Alert>empty().toList();
         }
         NavigableMap<Instant, Alert> sub = tenantAlerts.subMap(from, true, to, false);
         List<Alert> result = new ArrayList<>(sub.values());

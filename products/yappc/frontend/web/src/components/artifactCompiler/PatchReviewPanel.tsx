@@ -7,6 +7,8 @@
  * - Residual overlaps
  * - Approve/reject functionality
  *
+ * P1-21: Integrated with real backend API for patch lifecycle operations.
+ *
  * @doc.type component
  * @doc.purpose UI component for reviewing and approving/rejecting patches
  * @doc.layer product
@@ -14,10 +16,12 @@
  */
 
 import { useState } from 'react';
-import { X, Check, X as XIcon, AlertTriangle, Layers, FileDiff, ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { X, Check, X as XIcon, AlertTriangle, Layers, FileDiff, ChevronDown, ChevronUp, Play, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
+import { getArtifactCompilerClient, ApproveBundleRequest, RejectBundleRequest } from '@/clients/artifactCompiler/ArtifactCompilerClient';
+import { useAuth } from '@/hooks/useAuth';
 
 // ============================================================================
 // Types
@@ -49,12 +53,14 @@ export interface ResidualOverlap {
 
 export interface PatchReviewPanelProps {
   open: boolean;
+  bundleId?: string;
   patches: PatchDiff[];
   validation: ValidationResult;
   residualOverlaps: ResidualOverlap[];
   onClose: () => void;
   onApprove?: () => void;
   onReject?: () => void;
+  onApply?: () => void;
 }
 
 // ============================================================================
@@ -63,6 +69,7 @@ export interface PatchReviewPanelProps {
 
 export function PatchReviewPanel({
   open,
+  bundleId,
   patches,
   validation,
   residualOverlaps,
@@ -72,6 +79,11 @@ export function PatchReviewPanel({
   onApply,
 }: PatchReviewPanelProps) {
   const [expandedPatchId, setExpandedPatchId] = useState<string | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { currentUser } = useAuth();
 
   if (!open) {
     return null;
@@ -80,6 +92,89 @@ export function PatchReviewPanel({
   const hasErrors = validation.errors.some(e => e.severity === 'error');
   const hasWarnings = validation.errors.some(e => e.severity === 'warning');
   const hasResidualOverlaps = residualOverlaps.length > 0;
+  const reviewer = currentUser?.id ?? currentUser?.username ?? currentUser?.email;
+
+  const handleApprove = async () => {
+    if (!bundleId) {
+      setError('Bundle ID is required for approval');
+      return;
+    }
+    if (!reviewer) {
+      setError('Authenticated reviewer is required for approval');
+      return;
+    }
+
+    setIsApproving(true);
+    setError(null);
+    
+    try {
+      const client = getArtifactCompilerClient();
+      const request: ApproveBundleRequest = { reviewer };
+      await client.approveBundle(bundleId, request);
+      
+      if (onApprove) {
+        onApprove();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve bundle');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!bundleId) {
+      setError('Bundle ID is required for rejection');
+      return;
+    }
+    if (!reviewer) {
+      setError('Authenticated reviewer is required for rejection');
+      return;
+    }
+
+    setIsRejecting(true);
+    setError(null);
+    
+    try {
+      const client = getArtifactCompilerClient();
+      const request: RejectBundleRequest = { 
+        reviewer,
+        reason: 'User rejected the patch' 
+      };
+      await client.rejectBundle(bundleId, request);
+      
+      if (onReject) {
+        onReject();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject bundle');
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
+  const handleApply = async () => {
+    if (!bundleId) {
+      setError('Bundle ID is required for application');
+      return;
+    }
+
+    setIsApplying(true);
+    setError(null);
+    
+    try {
+      const client = getArtifactCompilerClient();
+      await client.applyBundle(bundleId);
+      
+      if (onApply) {
+        onApply();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to apply bundle');
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   return (
     <aside
@@ -174,6 +269,16 @@ export function PatchReviewPanel({
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-lg border border-destructive-border bg-destructive-bg/10 p-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Patch List */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-text-primary">Patches</h3>
@@ -196,30 +301,43 @@ export function PatchReviewPanel({
           <Button
             type="button"
             variant="outline"
-            onClick={onReject}
+            onClick={handleReject}
+            disabled={isRejecting}
             className="flex-1"
           >
-            <XIcon className="mr-2 h-4 w-4" />
-            Reject
+            {isRejecting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <XIcon className="mr-2 h-4 w-4" />
+            )}
+            {isRejecting ? 'Rejecting...' : 'Reject'}
           </Button>
           <Button
             type="button"
             variant="outline"
-            onClick={onApply}
-            disabled={hasErrors || !onApply}
+            onClick={handleApply}
+            disabled={hasErrors || !onApply || isApplying || !bundleId}
             className="flex-1"
           >
-            <Play className="mr-2 h-4 w-4" />
-            Apply
+            {isApplying ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="mr-2 h-4 w-4" />
+            )}
+            {isApplying ? 'Applying...' : 'Apply'}
           </Button>
           <Button
             type="button"
-            onClick={onApprove}
-            disabled={hasErrors}
+            onClick={handleApprove}
+            disabled={hasErrors || isApproving || !bundleId}
             className="flex-1"
           >
-            <Check className="mr-2 h-4 w-4" />
-            Approve
+            {isApproving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            {isApproving ? 'Approving...' : 'Approve'}
           </Button>
         </div>
       </div>

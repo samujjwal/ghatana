@@ -26,7 +26,7 @@ export const ARCHITECTURE_ACTIONS: ActionDefinition[] = [
         description: 'Add a service node to the architecture',
         priority: 10,
         handler: async (context: ActionContext) => {
-            console.log('Adding service node', context);
+            void context;
             // Handler implementation will be added in Phase 3
         },
         isEnabled: (context) => context.layer === 'architecture',
@@ -41,7 +41,7 @@ export const ARCHITECTURE_ACTIONS: ActionDefinition[] = [
         description: 'Add a database node to the architecture',
         priority: 9,
         handler: async (context: ActionContext) => {
-            console.log('Adding database node', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'architecture',
         isVisible: (context) => context.layer === 'architecture',
@@ -55,7 +55,7 @@ export const ARCHITECTURE_ACTIONS: ActionDefinition[] = [
         description: 'Define an API contract between services',
         priority: 8,
         handler: async (context: ActionContext) => {
-            console.log('Adding API contract', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'architecture',
         isVisible: (context) => context.layer === 'architecture',
@@ -69,7 +69,7 @@ export const ARCHITECTURE_ACTIONS: ActionDefinition[] = [
         description: 'Create connection between services',
         priority: 7,
         handler: async (context: ActionContext) => {
-            console.log('Connecting services', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'architecture' && context.selection === 'multiple',
         isVisible: (context) => context.layer === 'architecture',
@@ -83,7 +83,7 @@ export const ARCHITECTURE_ACTIONS: ActionDefinition[] = [
         description: 'Define system or service boundary',
         priority: 6,
         handler: async (context: ActionContext) => {
-            console.log('Defining boundary', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'architecture',
         isVisible: (context) => context.layer === 'architecture',
@@ -104,7 +104,7 @@ export const DESIGN_ACTIONS: ActionDefinition[] = [
         description: 'Add a UI component to the design',
         priority: 10,
         handler: async (context: ActionContext) => {
-            console.log('Adding component', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'design',
         isVisible: (context) => context.layer === 'design',
@@ -118,7 +118,7 @@ export const DESIGN_ACTIONS: ActionDefinition[] = [
         description: 'Add a screen or page to the design',
         priority: 9,
         handler: async (context: ActionContext) => {
-            console.log('Adding screen', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'design',
         isVisible: (context) => context.layer === 'design',
@@ -132,7 +132,7 @@ export const DESIGN_ACTIONS: ActionDefinition[] = [
         description: 'Create a user flow diagram',
         priority: 8,
         handler: async (context: ActionContext) => {
-            console.log('Adding user flow', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'design',
         isVisible: (context) => context.layer === 'design',
@@ -146,7 +146,7 @@ export const DESIGN_ACTIONS: ActionDefinition[] = [
         description: 'Create a wireframe mockup',
         priority: 7,
         handler: async (context: ActionContext) => {
-            console.log('Adding wireframe', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'design',
         isVisible: (context) => context.layer === 'design',
@@ -160,7 +160,7 @@ export const DESIGN_ACTIONS: ActionDefinition[] = [
         description: 'Create navigation link between screens',
         priority: 6,
         handler: async (context: ActionContext) => {
-            console.log('Linking screens', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'design' && context.selection === 'multiple',
         isVisible: (context) => context.layer === 'design',
@@ -181,7 +181,7 @@ export const COMPONENT_ACTIONS: ActionDefinition[] = [
         description: 'Add a detailed component specification',
         priority: 10,
         handler: async (context: ActionContext) => {
-            console.log('Adding component detail', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'component',
         isVisible: (context) => context.layer === 'component',
@@ -195,7 +195,7 @@ export const COMPONENT_ACTIONS: ActionDefinition[] = [
         description: 'Define component state',
         priority: 9,
         handler: async (context: ActionContext) => {
-            console.log('Adding state', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'component',
         isVisible: (context) => context.layer === 'component',
@@ -209,7 +209,7 @@ export const COMPONENT_ACTIONS: ActionDefinition[] = [
         description: 'Define component event handler',
         priority: 8,
         handler: async (context: ActionContext) => {
-            console.log('Adding event', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'component',
         isVisible: (context) => context.layer === 'component',
@@ -223,7 +223,7 @@ export const COMPONENT_ACTIONS: ActionDefinition[] = [
         description: 'Define component properties',
         priority: 7,
         handler: async (context: ActionContext) => {
-            console.log('Adding props', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'component',
         isVisible: (context) => context.layer === 'component',
@@ -237,7 +237,7 @@ export const COMPONENT_ACTIONS: ActionDefinition[] = [
         description: 'Define user interaction',
         priority: 6,
         handler: async (context: ActionContext) => {
-            console.log('Adding interaction', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'component',
         isVisible: (context) => context.layer === 'component',
@@ -258,7 +258,7 @@ export const IMPLEMENTATION_ACTIONS: ActionDefinition[] = [
         description: 'Add a code block',
         priority: 10,
         handler: async (context: ActionContext) => {
-            console.log('Adding code block', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'implementation',
         isVisible: (context) => context.layer === 'implementation',
@@ -272,7 +272,7 @@ export const IMPLEMENTATION_ACTIONS: ActionDefinition[] = [
         description: 'Define a function',
         priority: 9,
         handler: async (context: ActionContext) => {
-            console.log('Adding function', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'implementation',
         isVisible: (context) => context.layer === 'implementation',
@@ -286,7 +286,7 @@ export const IMPLEMENTATION_ACTIONS: ActionDefinition[] = [
         description: 'Define a class',
         priority: 8,
         handler: async (context: ActionContext) => {
-            console.log('Adding class', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'implementation',
         isVisible: (context) => context.layer === 'implementation',
@@ -300,7 +300,7 @@ export const IMPLEMENTATION_ACTIONS: ActionDefinition[] = [
         description: 'Define a data structure',
         priority: 7,
         handler: async (context: ActionContext) => {
-            console.log('Adding data structure', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'implementation',
         isVisible: (context) => context.layer === 'implementation',
@@ -314,7 +314,7 @@ export const IMPLEMENTATION_ACTIONS: ActionDefinition[] = [
         description: 'Define an algorithm flow',
         priority: 6,
         handler: async (context: ActionContext) => {
-            console.log('Adding algorithm', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'implementation',
         isVisible: (context) => context.layer === 'implementation',
@@ -335,7 +335,7 @@ export const DETAIL_ACTIONS: ActionDefinition[] = [
         description: 'Edit code inline',
         priority: 10,
         handler: async (context: ActionContext) => {
-            console.log('Editing code', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'detail',
         isVisible: (context) => context.layer === 'detail',
@@ -349,7 +349,7 @@ export const DETAIL_ACTIONS: ActionDefinition[] = [
         description: 'Add debugging breakpoint',
         priority: 9,
         handler: async (context: ActionContext) => {
-            console.log('Adding breakpoint', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'detail',
         isVisible: (context) => context.layer === 'detail',
@@ -363,7 +363,7 @@ export const DETAIL_ACTIONS: ActionDefinition[] = [
         description: 'Add code comment',
         priority: 8,
         handler: async (context: ActionContext) => {
-            console.log('Adding comment', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'detail',
         isVisible: (context) => context.layer === 'detail',
@@ -377,7 +377,7 @@ export const DETAIL_ACTIONS: ActionDefinition[] = [
         description: 'Inspect variable value',
         priority: 7,
         handler: async (context: ActionContext) => {
-            console.log('Inspecting variable', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'detail',
         isVisible: (context) => context.layer === 'detail',
@@ -391,7 +391,7 @@ export const DETAIL_ACTIONS: ActionDefinition[] = [
         description: 'Add debug logging statement',
         priority: 6,
         handler: async (context: ActionContext) => {
-            console.log('Adding debug log', context);
+            void context;
         },
         isEnabled: (context) => context.layer === 'detail',
         isVisible: (context) => context.layer === 'detail',
@@ -411,7 +411,7 @@ export const UNIVERSAL_LAYER_ACTIONS: ActionDefinition[] = [
         description: 'Add a shape element',
         priority: 5,
         handler: async (context: ActionContext) => {
-            console.log('Adding shape', context);
+            void context;
         },
     },
     {
@@ -423,7 +423,7 @@ export const UNIVERSAL_LAYER_ACTIONS: ActionDefinition[] = [
         description: 'Add a text element',
         priority: 5,
         handler: async (context: ActionContext) => {
-            console.log('Adding text', context);
+            void context;
         },
     },
     {
@@ -435,7 +435,7 @@ export const UNIVERSAL_LAYER_ACTIONS: ActionDefinition[] = [
         description: 'Add a frame container',
         priority: 5,
         handler: async (context: ActionContext) => {
-            console.log('Adding frame', context);
+            void context;
         },
     },
     {
@@ -447,7 +447,7 @@ export const UNIVERSAL_LAYER_ACTIONS: ActionDefinition[] = [
         description: 'Draw freehand annotation',
         priority: 4,
         handler: async (context: ActionContext) => {
-            console.log('Drawing annotation', context);
+            void context;
         },
     },
     {
@@ -459,7 +459,7 @@ export const UNIVERSAL_LAYER_ACTIONS: ActionDefinition[] = [
         description: 'Insert an image',
         priority: 4,
         handler: async (context: ActionContext) => {
-            console.log('Inserting image', context);
+            void context;
         },
     },
 ];

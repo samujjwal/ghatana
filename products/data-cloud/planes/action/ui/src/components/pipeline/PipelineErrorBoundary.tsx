@@ -30,8 +30,8 @@ export class PipelineErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[PipelineErrorBoundary] Caught render error:', error, info.componentStack);
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Rendering fallback UI is the fail-closed behavior for pipeline crashes.
   }
 
   private handleReset = () => {

@@ -129,16 +129,16 @@ function mapEdgeToPayload(edge: GraphEdge): ArtifactEdgePayload {
 export interface SynthesisEngineOptions {
   readonly apiBaseUrl?: string;
   readonly tenantId: string;
-  readonly productId: string;
+  readonly projectId: string;
 }
 
 export class SynthesisEngine {
   private readonly tenantId: string;
-  private readonly productId: string;
+  private readonly projectId: string;
 
   constructor(options: SynthesisEngineOptions) {
     this.tenantId = options.tenantId;
-    this.productId = options.productId;
+    this.projectId = options.projectId;
   }
 
   /**
@@ -146,9 +146,9 @@ export class SynthesisEngine {
    */
   async ingest(graph: ArtifactGraph): Promise<{ success: boolean; nodeCount: number; edgeCount: number }> {
     const payload = {
-      productId: this.productId,
+      projectId: this.projectId,
       tenantId: this.tenantId,
-      nodes: graph.nodes.map(n => mapNodeToPayload(n, this.tenantId, this.productId)),
+      nodes: graph.nodes.map(n => mapNodeToPayload(n, this.tenantId, this.projectId)),
       edges: graph.edges.map(mapEdgeToPayload),
     };
 
@@ -173,7 +173,7 @@ export class SynthesisEngine {
     nodeIds?: readonly string[]
   ): Promise<readonly AnalysisResult[]> {
     const payload = {
-      productId: this.productId,
+      projectId: this.projectId,
       tenantId: this.tenantId,
       algorithmTypes: [...algorithmTypes],
       nodeIds: nodeIds ? [...nodeIds] : undefined,
@@ -188,7 +188,7 @@ export class SynthesisEngine {
    */
   async query(queryType: string, seedIds?: readonly string[]): Promise<QueryResult> {
     const query: Record<string, string> = {
-      productId: this.productId,
+      projectId: this.projectId,
       tenantId: this.tenantId,
       queryType,
     };
@@ -210,7 +210,7 @@ export class SynthesisEngine {
     resolutionStrategy = 'auto-resolve'
   ): Promise<{ success: boolean; mergedModel: Record<string, unknown> }> {
     const payload = {
-      productId: this.productId,
+      projectId: this.projectId,
       tenantId: this.tenantId,
       baseModel,
       leftModel,
@@ -239,7 +239,7 @@ export class SynthesisEngine {
     count: number;
   }> {
     const payload = {
-      productId: this.productId,
+      projectId: this.projectId,
       tenantId: this.tenantId,
       residualIslands: islands.map(i => ({
         id: i.id,

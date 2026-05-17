@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { I18nProvider } from '@ghatana/i18n';
+import { ThemeProvider } from '@ghatana/theme';
 import App from './App';
 import { createKernelLifecycleClient } from './api/kernelLifecycleClient';
 import { StudioLifecycleDataProvider } from './data/StudioLifecycleDataContext';
@@ -31,14 +32,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         resources: STUDIO_I18N_RESOURCES,
       }}
     >
-      <StudioLifecycleDataProvider
-        client={kernelLifecycleClient}
-        runtimeContext={runtimeContext}
-      >
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </StudioLifecycleDataProvider>
+      <ThemeProvider>
+        <StudioLifecycleDataProvider
+          client={kernelLifecycleClient}
+          runtimeContext={runtimeContext}
+        >
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </StudioLifecycleDataProvider>
+      </ThemeProvider>
     </I18nProvider>
   </React.StrictMode>,
 );

@@ -63,7 +63,7 @@ export interface ImportJob {
 export interface SourceImportPanelProps {
   open: boolean;
   onClose: () => void;
-  productId: string;
+  projectId: string;
   tenantId: string;
   onImportComplete?: (jobId: string, result: ArtifactGraphIngestResponse) => void;
 }
@@ -75,7 +75,7 @@ export interface SourceImportPanelProps {
 export function SourceImportPanel({
   open,
   onClose,
-  productId,
+  projectId,
   tenantId,
   onImportComplete,
 }: SourceImportPanelProps) {

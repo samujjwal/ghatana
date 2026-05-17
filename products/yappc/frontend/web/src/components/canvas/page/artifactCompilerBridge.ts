@@ -162,12 +162,12 @@ export function compileSemanticModelToPageArtifacts(
     ];
   }
 
-  const productId = model.id ?? 'semantic-model';
-  const productName = model.repositoryRoot ?? productId;
-  const graphId = `${productId}:graph`;
+  const projectId = model.id ?? 'semantic-model';
+  const productName = model.repositoryRoot ?? projectId;
+  const graphId = `${projectId}:graph`;
   const importedAt = new Date().toISOString();
   const pageSummaries: readonly SemanticPageGraphSummary[] = pageElements.map((page, index) => ({
-    artifactId: page.id ?? `${productId}-page-${index + 1}`,
+    artifactId: page.id ?? `${projectId}-page-${index + 1}`,
     name: page.name ?? `Page ${index + 1}`,
     index,
   }));
@@ -177,7 +177,7 @@ export function compileSemanticModelToPageArtifacts(
 
   return pageElements.map((page, index) => {
     const pageSummary = pageSummaries[index];
-    const artifactId = pageSummary?.artifactId ?? `${productId}-page-${index + 1}`;
+    const artifactId = pageSummary?.artifactId ?? `${projectId}-page-${index + 1}`;
     const document = resolveBuilderDocument(page, createdBy);
     
     // P6.3: residualIslands may not exist on elements, default to empty array
@@ -199,10 +199,9 @@ export function compileSemanticModelToPageArtifacts(
       artifactGraph: buildSemanticModelGraphSnapshot({
         artifactId,
         graphId,
-        projectId: productId,
-        productId,
+        projectId: projectId,
         productName,
-        source: productId,
+        source: projectId,
         importedAt,
         pageName: page.name ?? document.name,
         pageIndex: pageSummary?.index ?? index,
@@ -458,7 +457,6 @@ function buildSemanticModelGraphSnapshot(params: {
   readonly artifactId: string;
   readonly graphId: string;
   readonly projectId: string;
-  readonly productId: string;
   readonly productName: string;
   readonly source: string;
   readonly importedAt: string;
@@ -470,7 +468,7 @@ function buildSemanticModelGraphSnapshot(params: {
   readonly confidence: number;
   readonly provenance?: EnhancedProvenance;
 }): PageArtifactGraphSnapshot {
-  const productNodeId = `${params.productId}:product`;
+  const productNodeId = `${params.projectId}:product`;
   const pageNodeId = `${params.artifactId}:page`;
   const peerPageNodes = params.pages
     .filter((page) => page.artifactId !== params.artifactId)

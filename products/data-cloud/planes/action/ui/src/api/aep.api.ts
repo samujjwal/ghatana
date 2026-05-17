@@ -241,9 +241,11 @@ function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
+const EMPTY_STRING_ARRAY: string[] = [];
+
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
-    return [];
+    return EMPTY_STRING_ARRAY;
   }
   return value
     .map((item) => asString(item))

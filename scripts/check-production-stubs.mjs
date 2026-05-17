@@ -167,6 +167,25 @@ function validateAllowlistEntry(entry) {
   return errors;
 }
 
+/**
+ * Skip warning-pattern matches on comment-only lines to avoid counting
+ * JSDoc/examples as production violations.
+ *
+ * Critical patterns remain fully scanned, including comments.
+ *
+ * @param {string} line
+ * @returns {boolean}
+ */
+function isCommentOnlyLine(line) {
+  const trimmed = line.trim();
+  return (
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/*') ||
+    trimmed.startsWith('*') ||
+    trimmed.startsWith('*/')
+  );
+}
+
 // ---------------------------------------------------------------------------
 // File walking
 // ---------------------------------------------------------------------------
@@ -239,6 +258,9 @@ for (const root of scanRoots) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       for (const { id, severity, pattern, description, includePaths, excludePaths } of PATTERNS) {
+        if (severity === 'warning' && isCommentOnlyLine(line)) {
+          continue;
+        }
         if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {
           continue;
         }

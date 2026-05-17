@@ -244,6 +244,125 @@ export interface PatchReviewResponse {
   };
 }
 
+export interface PlanPatchRequest {
+  baseModelId: string;
+  targetModelId: string;
+}
+
+export interface PlanPatchResponse {
+  success: boolean;
+  planId: string;
+  baseModelId: string;
+  targetModelId: string;
+  operationCount: number;
+  autoApplicableCount: number;
+  reviewRequiredCount: number;
+  createdAt: string;
+  scope: {
+    tenantId: string;
+    workspaceId: string;
+    projectId: string;
+  };
+}
+
+export interface GeneratePatchRequest {
+  planId: string;
+}
+
+export interface GeneratePatchResponse {
+  success: boolean;
+  patchSetId: string;
+  planId: string;
+  status: string;
+  fileCount: number;
+  createdAt: string;
+  scope: {
+    tenantId: string;
+    workspaceId: string;
+    projectId: string;
+  };
+}
+
+export interface ValidatePatchRequest {
+  patchSetId: string;
+}
+
+export interface ValidatePatchResponse {
+  success: boolean;
+  planId: string;
+  valid: boolean;
+  errorCount: number;
+  warningCount: number;
+  validatedAt: string;
+  validatorId: string;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface CreateReviewBundleRequest {
+  patchSetId: string;
+  snapshotId?: string;
+  versionId?: string;
+}
+
+export interface CreateReviewBundleResponse {
+  success: boolean;
+  bundleId: string;
+  patchSetId: string;
+  status: string;
+  createdAt: string;
+  scope: {
+    tenantId: string;
+    workspaceId: string;
+    projectId: string;
+  };
+}
+
+export interface ApproveBundleRequest {
+  reviewer: string;
+}
+
+export interface ApproveBundleResponse {
+  success: boolean;
+  bundleId: string;
+  status: string;
+  reviewedBy: string;
+}
+
+export interface RejectBundleRequest {
+  reviewer: string;
+  reason?: string;
+}
+
+export interface RejectBundleResponse {
+  success: boolean;
+  bundleId: string;
+  status: string;
+  reviewedBy: string;
+}
+
+export interface ApplyBundleResponse {
+  success: boolean;
+  bundleId: string;
+  status: string;
+}
+
+export interface RollbackBundleResponse {
+  success: boolean;
+  bundleId: string;
+  status: string;
+}
+
+export interface ListBundlesResponse {
+  success: boolean;
+  bundles: unknown[];
+  scope: {
+    tenantId: string;
+    workspaceId: string;
+    projectId: string;
+  };
+}
+
 // ============================================================================
 // Artifact Compiler Client
 // ============================================================================
@@ -359,6 +478,149 @@ export class ArtifactCompilerClient {
       const response = await this.httpClient.post<ApiResponse<PatchReviewResponse>>(
         '/api/v1/yappc/artifact/patch/review',
         request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Plan a patch by comparing two model versions.
+   * POST /api/v1/yappc/artifact/patch/plan
+   */
+  async planPatch(request: PlanPatchRequest): Promise<ApiResponse<PlanPatchResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<PlanPatchResponse>>(
+        '/api/v1/yappc/artifact/patch/plan',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Generate a patch set from a plan.
+   * POST /api/v1/yappc/artifact/patch/generate
+   */
+  async generatePatch(request: GeneratePatchRequest): Promise<ApiResponse<GeneratePatchResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<GeneratePatchResponse>>(
+        '/api/v1/yappc/artifact/patch/generate',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Validate a patch set.
+   * POST /api/v1/yappc/artifact/patch/validate
+   */
+  async validatePatch(request: ValidatePatchRequest): Promise<ApiResponse<ValidatePatchResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<ValidatePatchResponse>>(
+        '/api/v1/yappc/artifact/patch/validate',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Create a review bundle for a patch set.
+   * POST /api/v1/yappc/artifact/patch/bundles
+   */
+  async createReviewBundle(request: CreateReviewBundleRequest): Promise<ApiResponse<CreateReviewBundleResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<CreateReviewBundleResponse>>(
+        '/api/v1/yappc/artifact/patch/bundles',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Approve a review bundle.
+   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/approve
+   */
+  async approveBundle(bundleId: string, request: ApproveBundleRequest): Promise<ApiResponse<ApproveBundleResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<ApproveBundleResponse>>(
+        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/approve`,
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Reject a review bundle.
+   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/reject
+   */
+  async rejectBundle(bundleId: string, request: RejectBundleRequest): Promise<ApiResponse<RejectBundleResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<RejectBundleResponse>>(
+        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/reject`,
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Apply a review bundle.
+   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/apply
+   */
+  async applyBundle(bundleId: string): Promise<ApiResponse<ApplyBundleResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<ApplyBundleResponse>>(
+        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/apply`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: Rollback a review bundle.
+   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/rollback
+   */
+  async rollbackBundle(bundleId: string): Promise<ApiResponse<RollbackBundleResponse>> {
+    try {
+      const response = await this.httpClient.post<ApiResponse<RollbackBundleResponse>>(
+        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/rollback`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * P1-21: List all review bundles for the scoped project.
+   * GET /api/v1/yappc/artifact/patch/bundles
+   */
+  async listBundles(): Promise<ApiResponse<ListBundlesResponse>> {
+    try {
+      const response = await this.httpClient.get<ApiResponse<ListBundlesResponse>>(
+        '/api/v1/yappc/artifact/patch/bundles'
       );
       return response.data;
     } catch (error) {

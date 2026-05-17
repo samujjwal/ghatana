@@ -32,6 +32,10 @@ const SPEED_TEST_TIMEOUT_MS = 30000;
 const SPEED_TEST_MIN_INTERVAL_MS = 60 * 60 * 1000; // 1 hour between tests
 const MAX_SPEED_HISTORY = 10;
 
+const logInfo = (_message: string): void => {};
+const logWarn = (_message: string): void => {};
+const logError = (_message: string, _error?: unknown): void => {};
+
 // Bandwidth thresholds (bytes per second)
 const BANDWIDTH_THRESHOLDS = {
   excellent: 5_000_000, // 5 MB/s (40 Mbps)
@@ -114,13 +118,13 @@ class BandwidthEstimationService {
 
     // Skip if tested recently
     if (lastTest && (now - lastTest) < SPEED_TEST_MIN_INTERVAL_MS) {
-      console.log('[Bandwidth] Skipping speed test - tested recently');
+      logInfo('[Bandwidth] Skipping speed test - tested recently');
       return null;
     }
 
     // Skip if offline
     if (!networkMonitor.isOnline()) {
-      console.log('[Bandwidth] Skipping speed test - offline');
+      logInfo('[Bandwidth] Skipping speed test - offline');
       return null;
     }
 
@@ -132,7 +136,7 @@ class BandwidthEstimationService {
    */
   async runSpeedTest(): Promise<SpeedTestResult> {
     if (this.state.isTestRunning) {
-      console.log('[Bandwidth] Speed test already running');
+      logInfo('[Bandwidth] Speed test already running');
       return this.createResult(this.state.currentSpeedBps);
     }
 
@@ -191,11 +195,11 @@ class BandwidthEstimationService {
       );
 
       this.notifyListeners();
-      console.log(`[Bandwidth] Speed test complete: ${result.speedMbps.toFixed(2)} Mbps (${result.quality})`);
+      logInfo(`[Bandwidth] Speed test complete: ${result.speedMbps.toFixed(2)} Mbps (${result.quality})`);
 
       return result;
     } catch (error) {
-      console.error('[Bandwidth] Speed test failed:', error);
+      logError('[Bandwidth] Speed test failed', error);
       this.state.isTestRunning = false;
       this.notifyListeners();
 
@@ -261,11 +265,11 @@ class BandwidthEstimationService {
     const wasOnline = this.state.currentSpeedBps > 0;
     const isOnline = networkState.isConnected;
 
-    console.log(`[Bandwidth] Network changed: ${networkState.type}, connected: ${isOnline}`);
+    logInfo(`[Bandwidth] Network changed: ${networkState.type}, connected: ${isOnline}`);
 
     // Handle going offline
     if (wasOnline && !isOnline) {
-      console.log('[Bandwidth] Gone offline - pausing all uploads');
+      logWarn('[Bandwidth] Gone offline - pausing all uploads');
       await this.pauseAllUploads('Network disconnected');
       this.state.quality = 'unknown';
       this.state.currentSpeedBps = 0;
@@ -275,7 +279,7 @@ class BandwidthEstimationService {
 
     // Handle coming online
     if (!wasOnline && isOnline) {
-      console.log('[Bandwidth] Come online - running speed test');
+      logInfo('[Bandwidth] Come online - running speed test');
       await this.runSpeedTest();
       await this.resumePausedUploads();
       return;
@@ -287,10 +291,10 @@ class BandwidthEstimationService {
       const wifiOnly = wifiOnlyRaw !== null ? JSON.parse(wifiOnlyRaw) : false;
 
       if (wifiOnly && networkState.type === 'cellular') {
-        console.log('[Bandwidth] Switched to cellular with WiFi-only mode - pausing uploads');
+        logWarn('[Bandwidth] Switched to cellular with WiFi-only mode - pausing uploads');
         await this.pauseAllUploads('Switched to cellular network (WiFi-only mode)');
       } else if (wifiOnly && networkState.type === 'wifi') {
-        console.log('[Bandwidth] Switched to WiFi - resuming uploads');
+        logInfo('[Bandwidth] Switched to WiFi - resuming uploads');
         await this.resumePausedUploads();
       }
 
@@ -315,7 +319,7 @@ class BandwidthEstimationService {
       }
     }
 
-    console.log(`[Bandwidth] Paused ${this.pausedUploads.size} uploads: ${reason}`);
+    logInfo(`[Bandwidth] Paused ${this.pausedUploads.size} uploads: ${reason}`);
   }
 
   /**
@@ -326,7 +330,7 @@ class BandwidthEstimationService {
       uploadProgressService.resumeUpload(uploadId);
     }
 
-    console.log(`[Bandwidth] Resumed ${this.pausedUploads.size} uploads`);
+    logInfo(`[Bandwidth] Resumed ${this.pausedUploads.size} uploads`);
     this.pausedUploads.clear();
   }
 
@@ -369,7 +373,7 @@ class BandwidthEstimationService {
 
       await AsyncStorage.setItem(key, JSON.stringify(history));
     } catch (error) {
-      console.error('[Bandwidth] Failed to store speed result:', error);
+      logError('[Bandwidth] Failed to store speed result', error);
     }
   }
 
@@ -392,6 +396,7 @@ class BandwidthEstimationService {
       const sum = history.reduce((a, b) => a + b, 0);
       return sum / history.length;
     } catch (error) {
+      void error;
       return this.getDefaultSpeed(networkType);
     }
   }
@@ -443,7 +448,7 @@ class BandwidthEstimationService {
       const networkType = networkMonitor.getNetworkType();
       this.state.estimatedSpeedBps = await this.getAverageSpeed(networkType);
     } catch (error) {
-      console.error('[Bandwidth] Failed to load stored state:', error);
+      logError('[Bandwidth] Failed to load stored state', error);
     }
   }
 

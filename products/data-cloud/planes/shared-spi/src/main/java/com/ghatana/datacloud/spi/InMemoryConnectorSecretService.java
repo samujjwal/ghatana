@@ -76,7 +76,7 @@ public class InMemoryConnectorSecretService implements ConnectorSecretService {
         SecretEntry entry = secretStore.get(key);
         
         if (entry == null) {
-            return Promise.of(null);
+            return Promise.of((SecretValue) null);
         }
         
         // Update last accessed time
@@ -118,7 +118,7 @@ public class InMemoryConnectorSecretService implements ConnectorSecretService {
         SecretEntry entry = secretStore.get(key);
         
         if (entry == null) {
-            return Promise.of(null);
+            return Promise.complete();
         }
         
         SecretEntry rotated = new SecretEntry(
@@ -153,7 +153,7 @@ public class InMemoryConnectorSecretService implements ConnectorSecretService {
             }
         });
         
-        return Promise.of((Void) null);
+        return Promise.complete();
     }
     
     @Override
@@ -170,7 +170,7 @@ public class InMemoryConnectorSecretService implements ConnectorSecretService {
             }
         });
         
-        return Promise.of((Void) null);
+        return Promise.complete();
     }
     
     @Override
@@ -191,7 +191,7 @@ public class InMemoryConnectorSecretService implements ConnectorSecretService {
         log.info("[P1-04] Audit secret access: tenantId={}, secretRef={}, action={}, principalId={}",
             tenantId, secretRef, action, principalId);
         // In production, this would write to an audit log
-        return Promise.of((Void) null);
+        return Promise.complete();
     }
     
     private Map<String, Object> redactMetadata(Map<String, Object> metadata) {

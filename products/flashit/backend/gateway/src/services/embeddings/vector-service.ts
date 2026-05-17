@@ -15,6 +15,7 @@ import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma.js';
 import { withRetry, circuitBreakers, withTimeout } from '../../lib/resilience.js';
 import { requireAiSecret, isAiDisabled } from '../../lib/ai-mode.js';
+import { systemLogger } from '../../lib/logger.js';
 
 // Types
 export interface SimilarMoment {
@@ -199,7 +200,7 @@ export class VectorEmbeddingService {
       this.isRedisAvailable = true;
       return true;
     } catch {
-      console.warn('Redis not available, embeddings will use sync mode');
+      systemLogger.warn('Redis not available, embeddings will use sync mode');
       this.isRedisAvailable = false;
       return false;
     }
@@ -277,13 +278,13 @@ export class VectorEmbeddingService {
         });
         return job.id!;
       } catch (error) {
-        console.error('Failed to enqueue embedding job:', error);
+        systemLogger.error('Failed to enqueue embedding job', error);
       }
     }
 
     // Fallback: Return a job ID
     const jobId = `sync-embed-${Date.now()}`;
-    console.warn(`Embedding queued with fallback ID: ${jobId}. Configure Redis for async processing.`);
+    systemLogger.warn('Embedding queued with fallback ID. Configure Redis for async processing.', { jobId });
     return jobId;
   }
 
@@ -300,7 +301,7 @@ export class VectorEmbeddingService {
 
     // If no OpenAI key configured, return empty results
     if (!process.env.OPENAI_API_KEY) {
-      console.warn('OPENAI_API_KEY not configured, vector search unavailable');
+      systemLogger.warn('OPENAI_API_KEY not configured, vector search unavailable');
       return [];
     }
 
@@ -351,11 +352,11 @@ export class VectorEmbeddingService {
     } catch (error: any) {
       // Check if this is a pgvector extension error
       if (error.message?.includes('vector') || error.message?.includes('operator does not exist')) {
-        console.warn('pgvector extension not available, falling back to text search');
+        systemLogger.warn('pgvector extension not available, falling back to text search');
         return this.fallbackTextSearch(query, sphereIds, options);
       }
       
-      console.error('Vector search failed:', error);
+      systemLogger.error('Vector search failed', error);
       return [];
     }
   }
@@ -414,7 +415,7 @@ export class VectorEmbeddingService {
       }));
 
     } catch (error) {
-      console.error('Fallback text search failed:', error);
+      systemLogger.error('Fallback text search failed', error);
       return [];
     }
   }
@@ -429,7 +430,7 @@ export class VectorEmbeddingService {
     contentType: 'text' | 'transcript' | 'combined' = 'combined'
   ): Promise<string | null> {
     if (!process.env.OPENAI_API_KEY) {
-      console.warn('OPENAI_API_KEY not configured, skipping embedding generation');
+      systemLogger.warn('OPENAI_API_KEY not configured, skipping embedding generation');
       return null;
     }
 
@@ -477,7 +478,7 @@ export class VectorEmbeddingService {
       return embeddingModel.id;
 
     } catch (error: any) {
-      console.error('Failed to embed moment:', error);
+      systemLogger.error('Failed to embed moment', error, { momentId, contentType });
       return null;
     }
   }

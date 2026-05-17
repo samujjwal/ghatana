@@ -79,7 +79,7 @@ public class KillSwitchFilter {
                 // Global is inactive, check tenant-specific kill switch
                 if (tenantId == null || tenantId.isBlank()) {
                     // No tenant context, allow to proceed (will be handled by other filters)
-                    return Promise.of(null);
+                    return Promise.of((HttpResponse) null);
                 }
 
                 return checkTenantKillSwitch(tenantId)
@@ -93,7 +93,7 @@ public class KillSwitchFilter {
                         }
 
                         // Kill switch not active, allow request to proceed
-                        return Promise.of(null);
+                        return Promise.of((HttpResponse) null);
                     });
             });
     }

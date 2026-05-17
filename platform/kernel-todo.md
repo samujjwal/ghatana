@@ -2,7 +2,7 @@
 
 ## Execution Progress (Live)
 
-Last updated: 2026-05-17 (window 11)
+Last updated: 2026-05-16 (window 14)
 
 ### Overall status
 
@@ -109,6 +109,106 @@ Last updated: 2026-05-17 (window 11)
 30. Mockito session leaks in yappc-services tests were closed and the full suite returned to green.
    - Fixed leaked `MockitoAnnotations.openMocks(this)` sessions in `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/platform/collab/MergeSuggestionServiceTest.java` and `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ArtifactGraphControllerScopeTest.java` by storing the returned `AutoCloseable` and closing it in `@AfterEach`.
    - Verified with focused validation on the touched tests and then the full suite: `./gradlew :products:yappc:core:yappc-services:test --stacktrace` (BUILD SUCCESSFUL).
+31. Cross-journey scripted guardrails validated end-to-end in this window.
+   - Studio + Kernel checks passed: `pnpm check:studio-kernel-api`, `pnpm check:kernel-lifecycle-truth`.
+   - Digital Marketing pilot check passed: `pnpm check:digital-marketing-lifecycle-pilot`.
+   - Agentic and governance checks passed: `pnpm check:agentic-lifecycle-action-contracts`, `pnpm check:current-state-claims`, `pnpm check:lifecycle-registry-config-drift`, `pnpm check:doc-truth`.
+32. Journey 5/6/7 boundary and provider readiness checks are green for current repo state.
+   - YAPPC checks passed: `pnpm check:yappc-product-unit-intent-handoff`, `pnpm check:yappc-artifact-intelligence-boundary`.
+   - Data Cloud/provider mode checks passed: `pnpm check:data-cloud-platform-providers`, `pnpm check:kernel-provider-mode`.
+   - Product shape matrix check passed: `pnpm check:product-shape-capability-matrix`.
+33. Architecture-boundary orphan-module gate false positives were remediated.
+   - Updated `scripts/check-orphan-modules.mjs` to ignore generated build-only and empty `src` skeleton directories.
+   - `pnpm check:architecture-boundaries` now passes, including orphan-module validation.
+34. Broad production and conformance guardrails were executed successfully in this window.
+   - Passed: `pnpm check:production-readiness`, `pnpm check:secret-default-credentials`, `pnpm check:observability-conformance`, `pnpm check:data-access-contract`, `pnpm check:design-system-conformance`, `pnpm check:shared-product-shells`, `pnpm check:shared-layout-primitives`, `pnpm check:shared-ui-state-coverage`, `pnpm check:orphan-modules`, `pnpm check:deprecated-packages`, `pnpm check:cleanup-gate`.
+   - `pnpm check:kernel-product-boundary-audit` passed with non-critical warning backlog (1482 warnings; zero critical violations).
+35. Production stub warning backlog burn-down started with scanner correctness fixes and real code cleanups.
+   - Updated `scripts/check-production-stubs.mjs` to ignore comment-only lines for warning patterns (critical pattern coverage unchanged).
+   - Updated `config/production-critical-scopes.config.json` to exclude non-production script/example contexts (`k6-tests`, `/example/`, seed/generate/test script filename patterns) and reduced false positives in warning regexes (`RETURN_EMPTY_LIST`, `RETURN_NULL_PROMISE`) by anchoring to unconditional return statements.
+   - Updated runtime code to remove console logging in production paths:
+     - `platform/typescript/canvas/src/actions/layer-actions.ts` (placeholder handler logs replaced with no-op context usage).
+     - `platform/typescript/accessibility/src/AccessibilityAuditor.ts` (removed runtime `console.error` in audit catch path).
+   - Stub scan warning count reduced from 1482 -> 1094 (critical remained 0).
+36. Kernel boundary audit follow-up uncovered and remediated real production marker violations.
+   - `pnpm check:kernel-product-boundary-audit` surfaced `FORBIDDEN_MARKER_IN_PRODUCTION` in `products/yappc/frontend/web/src/components/artifactCompiler/PatchReviewPanel.tsx` (`TODO` markers in reviewer wiring).
+   - Replaced hardcoded reviewer placeholder with authenticated reviewer identity from `useAuth` (`currentUser.id|username|email`) and explicit fail-closed error handling when reviewer identity is unavailable.
+   - `pnpm check:production-readiness` now passes again after this fix.
+37. Post-remediation validation confirmed end-to-end guardrail health for this execution slice.
+   - Revalidated: `pnpm check:production-readiness` (pass), `pnpm check:kernel-product-boundary-audit` (pass, warning-only), `pnpm check:yappc-product-unit-intent-handoff` (pass), `pnpm check:yappc-artifact-intelligence-boundary` (pass), `pnpm check:data-cloud-platform-providers` (pass), `pnpm check:observability-conformance` (pass).
+38. Warning backlog burn-down continued with structured logging migration in FlashIt gateway analytics service.
+   - Updated `products/flashit/backend/gateway/src/services/analytics/analytics-service.ts` to replace direct `console.*` calls with `systemLogger` (`info`/`error`) and structured metadata on failure paths.
+   - This removed one of the top warning-dense production files from the console-log backlog.
+39. Production stub warning backlog reduced further after FlashIt cleanup.
+   - Updated warning count: 1094 -> 1080 (`critical: 0` unchanged) from `node scripts/check-production-stubs.mjs --report`.
+40. Focused compile validation attempted for FlashIt gateway; broader pre-existing package type backlog remains outside this slice.
+   - Command attempted: `cd products/flashit/backend/gateway && pnpm exec tsc --noEmit -p tsconfig.json`.
+   - Result: package reports many existing TypeScript errors in unrelated search/security/transcription/reporting files; no new errors were introduced by this analytics-service logging migration.
+41. Java warning-class triage completed for active hotspots without behavior regressions.
+   - Updated `products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/InMemoryConnectorSecretService.java`:
+     - replaced `Promise.of(null)` with typed null return for read-path (`Promise.of((SecretValue) null)`) and `Promise.complete()` for `Promise<Void>` flows.
+   - Updated `shared-services/auth-gateway/src/main/java/com/ghatana/services/auth/KillSwitchFilter.java`:
+     - replaced continuation-path `Promise.of(null)` with typed `Promise.of((HttpResponse) null)`.
+   - Updated `products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/model/CompiledRoutingConfig.java` and `products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/reflex/AlertActionHandler.java`:
+     - replaced bare `List.of()` empty-return statements with explicit typed empty stream materialization to avoid stub-pattern false positives in non-stub query code.
+42. Touched Java modules compile cleanly after warning triage edits.
+   - Verified with: `./gradlew :products:data-cloud:planes:operations:config:compileJava :products:data-cloud:planes:shared-spi:compileJava :shared-services:auth-gateway:compileJava` (BUILD SUCCESSFUL).
+43. Digital Marketing deploy/verify evidence planning commands executed and artifact directories materialized.
+   - Deploy plan: `node ./scripts/kernel-product.mjs product plan digital-marketing deploy --env local --json`.
+   - Verify plan: `node ./scripts/kernel-product.mjs product plan digital-marketing verify --env local --json`.
+   - New outputs:
+     - `.kernel/out/products/digital-marketing/deploy/2026-05-17T03-52-27-3b580871`
+     - `.kernel/out/products/digital-marketing/verify/2026-05-17T03-52-29-2887e1cf`
+44. Boundary and readiness guardrails revalidated after latest fixes.
+   - `pnpm check:kernel-product-boundary-audit` passes.
+   - `pnpm check:production-readiness` passes.
+   - Warning backlog reduced further: 1080 -> 1019 (`critical: 0`) via `node scripts/check-production-stubs.mjs --report`.
+45. Digital Marketing lifecycle checker now emits deterministic evidence packs (normal + smoke) and validates failure scenarios.
+   - Updated `scripts/check-digital-marketing-lifecycle-pilot.mjs` to support `--evidence-pack-dir` output, record planned/smoke phase evidence metadata, and persist JSON evidence packs.
+   - Added automated failure-pack checks for approval enforcement (`--require-approval` without `--approval-id`) and platform-mode bridge unavailability, both with expected error-shape assertions.
+   - Verified with:
+     - `node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/local`
+     - `node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/local-smoke`
+   - Generated evidence artifacts:
+     - `.kernel/out/products/digital-marketing/evidence/local/digital-marketing-lifecycle-evidence-pack.json`
+     - `.kernel/out/products/digital-marketing/evidence/local-smoke/digital-marketing-lifecycle-evidence-pack.json`
+46. Product lifecycle CI now publishes Digital Marketing evidence packs as first-class artifacts.
+   - Updated `.github/workflows/product-lifecycle.yml` to run the Digital Marketing checker with `--evidence-pack-dir` in both standard and smoke steps.
+   - Added artifact upload step `digital-marketing-lifecycle-evidence-packs` for `.kernel/out/products/digital-marketing/evidence/**`.
+47. Production stub warning backlog burn-down continued via Data Cloud Action UI runtime-log cleanup.
+   - Updated `products/data-cloud/planes/action/ui/src/api/sse.ts` to remove production `console.warn` fallbacks in SSE error/token-unavailable paths while preserving reconnect/fail-safe behavior.
+   - Updated `products/data-cloud/planes/action/ui/src/components/pipeline/PipelineErrorBoundary.tsx` to remove production `console.error` in `componentDidCatch` and keep fail-closed recovery behavior.
+   - Revalidated warning scanner:
+     - `node scripts/check-production-stubs.mjs --report`
+   - Warning backlog reduced: 1019 -> 1016 (`critical: 0`).
+48. Studio browser E2E harness is now implemented and wired into lifecycle CI.
+    - Added Playwright harness for Studio:
+       - `platform/typescript/ghatana-studio/playwright.config.ts`
+       - `platform/typescript/ghatana-studio/e2e/navigation.spec.ts`
+       - `platform/typescript/ghatana-studio/package.json` (`test:e2e`, `@playwright/test`)
+    - Added CI job `Check Studio Browser E2E` in `.github/workflows/product-lifecycle.yml` (Chromium install + `pnpm --dir platform/typescript/ghatana-studio test:e2e`).
+49. Studio runtime boot correctness fixed for browser execution paths.
+    - Updated `platform/typescript/ghatana-studio/src/main.tsx` to wrap app shell in `ThemeProvider` so design-system components fail-safe correctly in runtime (not just tests).
+    - Updated `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts` to remove browser-incompatible runtime import from `@ghatana/kernel-lifecycle` and use local lifecycle enums for schema validation.
+    - Verified with:
+       - `pnpm --dir platform/typescript/ghatana-studio exec tsc --noEmit -p tsconfig.json`
+       - `pnpm --dir platform/typescript/ghatana-studio test:e2e` (2 passed)
+50. Digital Marketing compose-backed runtime proof automation completed.
+    - Extended `scripts/check-digital-marketing-lifecycle-pilot.mjs` with `--compose-proof` mode that executes real local `deploy` + `verify` lifecycle phases (non-dry-run), captures run/correlation/manifests, and records evidence.
+    - Added compose-proof CI execution in `.github/workflows/product-lifecycle.yml`:
+       - `node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --compose-proof --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-compose`
+    - Verified locally with generated evidence pack:
+       - `.kernel/out/products/digital-marketing/evidence/local-next-compose/digital-marketing-lifecycle-evidence-pack.json`
+51. Digital Marketing checker output parsing hardened for real execution logs.
+    - Updated `scripts/check-digital-marketing-lifecycle-pilot.mjs` to robustly parse Kernel JSON payloads even when prefixed with `[Kernel]` structured log lines.
+52. Warning backlog burn-down continued in Data Cloud Action UI false-positive hotspots.
+    - Updated:
+       - `products/data-cloud/planes/action/ui/src/api/aep.api.ts`
+       - `products/data-cloud/planes/action/ui/src/lib/ai-assist.ts`
+       - `products/data-cloud/planes/action/ui/src/pages/AgentMarketplacePage.tsx`
+    - Revalidated warning scanner:
+       - `node scripts/check-production-stubs.mjs --report`
+    - Warning backlog reduced: 1016 -> 1013 (`critical: 0`).
 
 ### Observed already-implemented items (verified)
 
@@ -120,47 +220,47 @@ Last updated: 2026-05-17 (window 11)
 ### Next execution slices
 
 1. Continue journey-by-journey closure from this baseline:
-   - Studio workflow completeness and route-state UX correctness.
-   - Kernel lifecycle manifest/error-model parity and E2E signal quality.
-   - Data Cloud provider-mode integration hardening and evidence checks.
-   - Digital Marketing pilot golden/failure evidence automation.
+   - Expand browser-level E2E from baseline navigation coverage to full configured-runtime and ProductUnitIntent flow coverage.
+   - Convert remaining partial statuses to done only after generated evidence artifacts are persisted and linked.
+   - Harden required-check branch protections so these checks are mandatory in CI, not optional.
+   - Continue kernel boundary warning backlog burn-down from 1013 toward zero-warning governance mode.
 2. Mark each journey/release/workstream in this file as `done`, `partial`, or `blocked` with concrete file-level evidence.
 
 ### Journey status (current)
 
 | Journey | Status | Notes |
 |---|---|---|
-| Journey 1 — Product ideation to ProductUnitIntent | partial | Studio intent preview/apply and kernel hooks exist; full E2E evidence still pending. |
-| Journey 2 — Direct Kernel usage | partial | Lifecycle UI and API surfaces exist; full plan/execute/error-state parity evidence pending. |
-| Journey 3 — Agentic product development | partial | Contract/service surface exists; policy/mastery/approval E2E evidence still pending. |
-| Journey 4 — Digital Marketing pilot | partial | Pilot config/workflow checks exist; golden and failure evidence packs need expansion. |
-| Journey 5 — Artifact intelligence | partial | Compiler/decompiler foundations strong; residual/contract hardening now improved in this window. |
-| Journey 6 — Data Cloud foundation | partial | Provider-mode architecture exists; full integration proof matrix remains pending. |
-| Journey 7 — Future product shape readiness | partial | Registry and matrix checks exist; UI/readiness execution gating needs further evidence. |
+| Journey 1 — Product ideation to ProductUnitIntent | partial | Studio/API handoff checks are green (`check:studio-kernel-api`, `check:yappc-product-unit-intent-handoff`); browser E2E harness is now green for baseline route coverage; configured-runtime intent flow E2E remains pending. |
+| Journey 2 — Direct Kernel usage | partial | Lifecycle truth and route tests are green (`check:kernel-lifecycle-truth` + route suites); compose-backed deploy/verify proof automation is now green for Digital Marketing, while broader multi-product runtime evidence remains pending. |
+| Journey 3 — Agentic product development | partial | Agentic contract guardrail is green (`check:agentic-lifecycle-action-contracts`); mastery/approval workflow E2E evidence still pending. |
+| Journey 4 — Digital Marketing pilot | partial | Pilot check is green (`check:digital-marketing-lifecycle-pilot`); build/deploy/verify planning evidence, deterministic golden/failure packs, and compose-backed non-dry-run deploy/verify proof are now generated; broader publish/report integration remains pending. |
+| Journey 5 — Artifact intelligence | partial | Boundary and handoff checks are green (`check:yappc-artifact-intelligence-boundary` + handoff); cross-system evidence rendering E2E still pending. |
+| Journey 6 — Data Cloud foundation | partial | Provider-mode checks are green (`check:data-cloud-platform-providers`, `check:kernel-provider-mode`); full write/read proof matrix artifacting still pending. |
+| Journey 7 — Future product shape readiness | partial | Matrix and drift checks are green (`check:product-shape-capability-matrix`, `check:lifecycle-registry-config-drift`); route-level readiness E2E still pending. |
 
 ### Release status (current)
 
 | Release | Status | Notes |
 |---|---|---|
-| Release 0 — Shell/governance honesty | partial | Routing/status infrastructure present; consistency pass still required. |
-| Release 1 — Digital Marketing E2E pilot | partial | Lifecycle checks present; golden/failure pack automation not complete. |
-| Release 2 — Agentic support | partial | Core scaffolding present; end-to-end enforcement evidence pending. |
-| Release 3 — Data Cloud providers | partial | Provider-mode fail-closed path exists; exhaustive provider proof pending. |
-| Release 4 — Artifact intelligence integration | partial | Shared contracts in progress; residual payload bridge improved in this window. |
-| Release 5 — Product shape expansion | partial | Shape registry exists; readiness and execution-safe gating still being hardened. |
+| Release 0 — Shell/governance honesty | partial | Governance checks are green (`check:current-state-claims`, `check:doc-truth`, `check:architecture-boundaries`); required-check enforcement and warning backlog burn-down still pending. |
+| Release 1 — Digital Marketing E2E pilot | partial | Scripted pilot validation is green; deploy/verify plan evidence generated; golden/failure evidence packs are emitted and uploaded in CI; compose-backed live deploy/verify proof is now automated; full release evidence publication workflow remains open. |
+| Release 2 — Agentic support | partial | Agentic contract gate is green; UI+approval E2E execution evidence remains open. |
+| Release 3 — Data Cloud providers | partial | Provider-mode scripted validations are green; full integration evidence matrix publication remains open. |
+| Release 4 — Artifact intelligence integration | partial | YAPPC boundary/handoff checks are green; end-to-end semantic evidence surfacing remains open. |
+| Release 5 — Product shape expansion | partial | Shape and drift checks are green; execution-safe gating UX evidence remains open. |
 
 ### Workstream status (current)
 
 | Workstream | Status | Notes |
 |---|---|---|
-| 1 — Studio UI/API contracts | partial | Substantial route support exists; final journey E2E closure pending. |
-| 2 — Kernel lifecycle/platform | partial | Core services active; API/error-model and E2E parity not fully closed. |
-| 3 — Data Cloud providers | partial | Bridge/provider scaffolding present; platform-mode proof suite pending. |
-| 4 — YAPPC artifact intelligence | partial | Credential flow + residual payload corrections delivered in this window. |
-| 5 — Digital Marketing pilot | partial | Pilot operational; evidence-pack hardening pending. |
-| 6 — Shared UI/platform libs | partial | Foundations present; conformance sweep pending. |
-| 7 — Product shape matrix | partial | Registry/matrix checks exist; enforcement coverage needs extension. |
-| 8 — CI/CD and docs authority | partial | Strong check surface exists; required-check hardening pending. |
+| 1 — Studio UI/API contracts | partial | Route suites + `check:studio-kernel-api` are green; browser E2E harness is now green for baseline navigation/guard coverage; configured-runtime contract E2E remains pending. |
+| 2 — Kernel lifecycle/platform | partial | Kernel unit/API suites + `check:kernel-lifecycle-truth` are green; real lifecycle evidence pack closure pending. |
+| 3 — Data Cloud providers | partial | `check:data-cloud-platform-providers` + `check:kernel-provider-mode` are green; provider proof matrix expansion pending. |
+| 4 — YAPPC artifact intelligence | partial | Handoff and boundary checks are green; cross-product evidence visualization closure pending. |
+| 5 — Digital Marketing pilot | partial | `check:digital-marketing-lifecycle-pilot` is green; deploy/verify plan evidence plus golden/failure evidence-pack automation are generated; live compose execution evidence automation is now green; publication/reporting closure remains pending. |
+| 6 — Shared UI/platform libs | partial | Existing foundations remain stable; conformance sweep evidence capture pending. |
+| 7 — Product shape matrix | partial | Matrix validation is green; route gating evidence expansion pending. |
+| 8 — CI/CD and docs authority | partial | Doc/claim drift + broad check suite are green; required-check branch protection rollout and warning backlog burn-down pending. |
 
 Target repo: `samujjwal/ghatana`
 

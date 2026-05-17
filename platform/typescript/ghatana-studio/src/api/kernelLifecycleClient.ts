@@ -12,11 +12,6 @@ import type { ApiError } from '@ghatana/api';
 import type { ArtifactManifest } from '@ghatana/kernel-artifacts';
 import type { DeploymentManifest } from '@ghatana/kernel-deployment';
 import {
-  FAILURE_REASON_CODES,
-  LIFECYCLE_RUN_STATUSES,
-  PRODUCT_LIFECYCLE_PHASES,
-} from '@ghatana/kernel-lifecycle';
-import {
   ProductUnitIntent,
   ProductUnitIntentApplicationResult,
   ProductUnitIntentApplicationResultSchema,
@@ -26,6 +21,55 @@ import {
 } from '@ghatana/kernel-product-contracts';
 import type { ProductApprovalGate } from '@ghatana/kernel-release';
 import { z } from 'zod';
+
+const PRODUCT_LIFECYCLE_PHASES = [
+  'create',
+  'bootstrap',
+  'dev',
+  'validate',
+  'test',
+  'build',
+  'package',
+  'release',
+  'deploy',
+  'verify',
+  'promote',
+  'rollback',
+  'operate',
+  'retire',
+] as const;
+
+const LIFECYCLE_RUN_STATUSES = [
+  'healthy',
+  'degraded',
+  'blocked',
+  'failed',
+  'skipped',
+  'planned',
+  'running',
+  'pending approval',
+  'requires verification',
+  'obsolete',
+  'quarantined',
+  'unknown',
+] as const;
+
+const FAILURE_REASON_CODES = [
+  'adapter-failed',
+  'gate-failed',
+  'artifact-missing',
+  'manifest-write-failed',
+  'approval-required',
+  'policy-denied',
+  'provider-unavailable',
+  'run-not-found',
+  'manifest-not-found',
+  'execution-failed',
+  'scope-headers-required',
+  'authorization-failed',
+  'not-ready',
+  'lifecycle-not-enabled',
+] as const;
 
 const ProductUnitListSchema = z.array(ProductUnitSchema);
 

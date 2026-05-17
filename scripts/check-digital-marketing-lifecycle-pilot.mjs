@@ -14,7 +14,7 @@
  * - Compose file exists and has Kernel labels
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +38,21 @@ const GENERATED_MANIFEST_KEYS = [
 function parseArgs(argv) {
   return {
     smoke: argv.includes('--smoke'),
+    composeProof: argv.includes('--compose-proof'),
+    evidencePackDir: readFlagValue(argv, '--evidence-pack-dir'),
   };
+}
+
+function readFlagValue(argv, flagName) {
+  const flagIndex = argv.indexOf(flagName);
+  if (flagIndex === -1) {
+    return undefined;
+  }
+  const value = argv[flagIndex + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`Missing value for option ${flagName}`);
+  }
+  return value;
 }
 
 function loadRegistry() {
@@ -127,6 +141,17 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
   const errors = [];
   const warnings = [];
+  const evidence = {
+    productId: PRODUCT_ID,
+    checkedAt: new Date().toISOString(),
+    smokeEnabled: options.smoke,
+    checks: {
+      plannedPhases: [],
+      smokePhases: [],
+      failureScenarios: [],
+      composeProof: [],
+    },
+  };
 
   // 1. Check registry lifecycle status
   const registry = loadRegistry();
@@ -367,9 +392,21 @@ async function main() {
   const planPhases = ['validate', 'build', 'test', 'package'];
   for (const phase of planPhases) {
     try {
-      runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--json']);
+      const planPayload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--json']);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'ok',
+        runId: planPayload?.plan?.runId,
+        correlationId: planPayload?.plan?.correlationId,
+        providerMode: planPayload?.plan?.providerMode,
+      });
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase}": ${err instanceof Error ? err.message : String(err)}`);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -377,21 +414,45 @@ async function main() {
   for (const phase of ['deploy', 'verify']) {
     try {
       const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'ok',
+        runId: payload?.plan?.runId,
+        correlationId: payload?.plan?.correlationId,
+        providerMode: payload?.plan?.providerMode,
+      });
       if (phase === 'deploy' && !hasApprovalRequirements(payload)) {
         errors.push('Deploy plan must emit approvalRequirements from canonical approvals config');
       }
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
   for (const phase of ['rollback']) {
     try {
       const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'ok',
+        runId: payload?.plan?.runId,
+        correlationId: payload?.plan?.correlationId,
+        providerMode: payload?.plan?.providerMode,
+      });
       if (!hasApprovalRequirements(payload)) {
         errors.push(`${phase} plan must emit approvalRequirements from canonical approvals config`);
       }
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
+      evidence.checks.plannedPhases.push({
+        phase,
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -420,11 +481,165 @@ async function main() {
   errors.push(...validateProvenanceAndStudioContracts());
 
   if (options.smoke) {
-    const smokeErrors = await runLifecycleSmoke();
+    const smokeResult = await runLifecycleSmoke();
+    const smokeErrors = smokeResult.errors;
+    evidence.checks.smokePhases = smokeResult.phases;
     errors.push(...smokeErrors);
   }
 
+  const failureScenariosResult = runFailureScenarios();
+  evidence.checks.failureScenarios = failureScenariosResult.scenarios;
+  errors.push(...failureScenariosResult.errors);
+
+  if (options.composeProof) {
+    const composeProofResult = runComposeProof(config);
+    evidence.checks.composeProof = composeProofResult.steps;
+    errors.push(...composeProofResult.errors);
+    warnings.push(...composeProofResult.warnings);
+  }
+
+  if (options.evidencePackDir !== undefined) {
+    writeEvidencePack(options.evidencePackDir, {
+      ...evidence,
+      summary: {
+        status: errors.length === 0 ? 'passed' : 'failed',
+        errorCount: errors.length,
+        warningCount: warnings.length,
+      },
+      errors,
+      warnings,
+    });
+  }
+
   reportAndExit(errors, warnings);
+}
+
+function runComposeProof(config) {
+  const errors = [];
+  const warnings = [];
+  const steps = [];
+
+  if (!isDockerComposeReady()) {
+    warnings.push(
+      'Compose-backed proof skipped: docker compose is unavailable or daemon is not running in current environment.',
+    );
+    steps.push({
+      step: 'environment-check',
+      status: 'blocked',
+      reason: 'docker-compose-unavailable',
+    });
+    return { errors, warnings, steps };
+  }
+
+  const deployConfig = config?.deployment?.local;
+  const envFilePath = deployConfig?.envFile;
+  if (!asNonEmptyString(envFilePath)) {
+    warnings.push('Compose-backed proof skipped: deployment.local.envFile is not configured in kernel-product.yaml.');
+    steps.push({
+      step: 'environment-check',
+      status: 'blocked',
+      reason: 'missing-env-file-config',
+    });
+    return { errors, warnings, steps };
+  }
+
+  const envFileAbsolutePath = join(repoRoot, envFilePath);
+  if (!existsSync(envFileAbsolutePath)) {
+    warnings.push(`Compose-backed proof skipped: required env file does not exist (${envFilePath}).`);
+    steps.push({
+      step: 'environment-check',
+      status: 'blocked',
+      reason: 'missing-env-file',
+      envFile: envFilePath,
+    });
+    return { errors, warnings, steps };
+  }
+
+  const proofSteps = [
+    {
+      step: 'deploy',
+      args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--json'],
+      timeoutMs: 240_000,
+    },
+    {
+      step: 'verify',
+      args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--json'],
+      timeoutMs: 240_000,
+    },
+  ];
+
+  for (const proofStep of proofSteps) {
+    const execution = runKernelProductSafely(proofStep.args, proofStep.timeoutMs);
+    if (!execution.ok) {
+      errors.push(`Compose proof ${proofStep.step} failed: ${execution.error}`);
+      steps.push({
+        step: proofStep.step,
+        status: 'failed',
+        error: execution.error,
+      });
+      continue;
+    }
+
+    steps.push({
+      step: proofStep.step,
+      status: 'ok',
+      runId: execution.payload?.plan?.runId,
+      correlationId: execution.payload?.plan?.correlationId,
+      resultStatus: execution.payload?.result?.status,
+      manifests: execution.payload?.manifests ?? {},
+    });
+  }
+
+  return { errors, warnings, steps };
+}
+
+function isDockerComposeReady() {
+  try {
+    execFileSync('docker', ['compose', 'version'], {
+      cwd: repoRoot,
+      stdio: 'ignore',
+      timeout: 20_000,
+    });
+    execFileSync('docker', ['info'], {
+      cwd: repoRoot,
+      stdio: 'ignore',
+      timeout: 20_000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function runKernelProductSafely(args, timeoutMs) {
+  try {
+    const output = execFileSync(
+      process.execPath,
+      [join(repoRoot, 'scripts', 'kernel-product.mjs'), ...args],
+      { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8', timeout: timeoutMs },
+    );
+    return { ok: true, payload: parseKernelJsonOutput(output) };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'stderr' in error
+          ? String(error.stderr)
+          : String(error);
+    return { ok: false, error: message };
+  }
+}
+
+function parseKernelJsonOutput(output) {
+  const trimmed = output.trim();
+  const payloadMarker = '{\n  "plan":';
+  const markerIndex = trimmed.indexOf(payloadMarker);
+  const jsonStartIndex = markerIndex >= 0 ? markerIndex : trimmed.lastIndexOf('{');
+  if (jsonStartIndex === -1) {
+    throw new Error(`Kernel output does not contain JSON payload: ${trimmed.slice(0, 200)}`);
+  }
+  const candidate = trimmed.slice(jsonStartIndex);
+  return JSON.parse(candidate);
 }
 
 function validateProvenanceAndStudioContracts() {
@@ -479,6 +694,7 @@ function validateProvenanceAndStudioContracts() {
 
 async function runLifecycleSmoke() {
   const errors = [];
+  const phases = [];
   const { ArtifactManifestSchema, DeploymentManifestSchema } = await loadManifestValidators();
   const smokeRuns = [
     { phase: 'validate', args: ['product', 'validate', PRODUCT_ID, '--dry-run', '--json'] },
@@ -502,6 +718,11 @@ async function runLifecycleSmoke() {
         continue;
       }
       errors.push(`Lifecycle smoke failed for phase "${smokeRun.phase}": ${err instanceof Error ? err.message : String(err)}`);
+      phases.push({
+        phase: smokeRun.phase,
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
       continue;
     }
 
@@ -515,9 +736,76 @@ async function runLifecycleSmoke() {
       DeploymentManifestSchema,
     }));
     errors.push(...validateGateEvidence(smokeRun.phase, payload));
+
+    phases.push({
+      phase: smokeRun.phase,
+      status: 'ok',
+      runId: payload?.plan?.runId,
+      correlationId: payload?.plan?.correlationId,
+      providerMode: payload?.plan?.providerMode,
+      manifests: payload?.manifests ?? {},
+    });
   }
 
-  return errors;
+  return { errors, phases };
+}
+
+function runFailureScenarios() {
+  const errors = [];
+  const scenarios = [];
+
+  const cases = [
+    {
+      id: 'deploy-requires-approval-id',
+      args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--require-approval', '--json'],
+      expected: '--require-approval requires --approval-id',
+    },
+    {
+      id: 'platform-mode-provider-bridge-unavailable',
+      args: ['product', 'plan', PRODUCT_ID, 'deploy', '--mode', 'platform', '--env', 'local', '--json'],
+      expected: 'Kernel platform mode requires the Data Cloud-backed provider bridge',
+    },
+  ];
+
+  for (const scenario of cases) {
+    try {
+      runKernelProduct(scenario.args);
+      errors.push(`Failure scenario "${scenario.id}" unexpectedly succeeded`);
+      scenarios.push({
+        id: scenario.id,
+        status: 'failed',
+        reason: 'unexpected-success',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes(scenario.expected)) {
+        errors.push(
+          `Failure scenario "${scenario.id}" returned unexpected error. Expected to include "${scenario.expected}", got: ${message}`,
+        );
+        scenarios.push({
+          id: scenario.id,
+          status: 'failed',
+          reason: 'unexpected-error-shape',
+          message,
+        });
+        continue;
+      }
+      scenarios.push({
+        id: scenario.id,
+        status: 'ok',
+        expectedError: scenario.expected,
+      });
+    }
+  }
+
+  return { errors, scenarios };
+}
+
+function writeEvidencePack(relativeDir, reportPayload) {
+  const outputDir = join(repoRoot, relativeDir);
+  mkdirSync(outputDir, { recursive: true });
+  const reportPath = join(outputDir, 'digital-marketing-lifecycle-evidence-pack.json');
+  writeFileSync(reportPath, `${JSON.stringify(reportPayload, null, 2)}\n`, 'utf8');
 }
 
 function validateLifecycleEvidenceRefs(phase, payload) {

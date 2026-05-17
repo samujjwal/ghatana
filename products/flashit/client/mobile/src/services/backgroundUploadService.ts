@@ -22,6 +22,9 @@ import { offlineQueueService } from "./offlineQueue";
 
 const BACKGROUND_UPLOAD_TASK = "BACKGROUND_UPLOAD_TASK";
 
+const logInfo = (_message: string): void => {};
+const logError = (_message: string, _error?: unknown): void => {};
+
 interface BackgroundTaskOptions {
   minimumInterval?: number; // Seconds (iOS only, min 900s = 15min)
   stopOnTerminate?: boolean; // Android only
@@ -39,11 +42,11 @@ export class BackgroundUploadService {
   private defineTask() {
     TaskManager.defineTask(BACKGROUND_UPLOAD_TASK, async () => {
       try {
-        console.log("[BackgroundUpload] Task triggered");
+        logInfo("[BackgroundUpload] Task triggered");
 
         // Check network connectivity
         if (!networkMonitor.isOnline()) {
-          console.log("[BackgroundUpload] No network, skipping");
+          logInfo("[BackgroundUpload] No network, skipping");
           return BackgroundFetch.BackgroundFetchResult.NoData;
         }
 
@@ -51,13 +54,11 @@ export class BackgroundUploadService {
         const pendingItems = await offlineQueueService.getPendingItems();
 
         if (pendingItems.length === 0) {
-          console.log("[BackgroundUpload] No pending items");
+          logInfo("[BackgroundUpload] No pending items");
           return BackgroundFetch.BackgroundFetchResult.NoData;
         }
 
-        console.log(
-          `[BackgroundUpload] Processing ${pendingItems.length} items`,
-        );
+        logInfo(`[BackgroundUpload] Processing ${pendingItems.length} items`);
 
         // Start upload manager if not already running
         if (!uploadManager.isRunning()) {
@@ -71,13 +72,13 @@ export class BackgroundUploadService {
         const remainingItems = await offlineQueueService.getPendingItems();
         const uploaded = pendingItems.length - remainingItems.length;
 
-        console.log(`[BackgroundUpload] Uploaded ${uploaded} items`);
+        logInfo(`[BackgroundUpload] Uploaded ${uploaded} items`);
 
         return uploaded > 0
           ? BackgroundFetch.BackgroundFetchResult.NewData
           : BackgroundFetch.BackgroundFetchResult.NoData;
       } catch (error) {
-        console.error("[BackgroundUpload] Task failed:", error);
+        logError("[BackgroundUpload] Task failed", error);
         return BackgroundFetch.BackgroundFetchResult.Failed;
       }
     });
@@ -98,7 +99,7 @@ export class BackgroundUploadService {
       );
 
       if (isTaskDefined) {
-        console.log("[BackgroundUpload] Task already defined");
+        logInfo("[BackgroundUpload] Task already defined");
         this.isRegistered = true;
         return true;
       }
@@ -113,11 +114,11 @@ export class BackgroundUploadService {
         startOnBoot: options.startOnBoot ?? true, // Start on device boot (Android)
       });
 
-      console.log("[BackgroundUpload] Task registered successfully");
+      logInfo("[BackgroundUpload] Task registered successfully");
       this.isRunning = true;
       return true;
     } catch (error) {
-      console.error("[BackgroundUpload] Failed to register task:", error);
+      logError("[BackgroundUpload] Failed to register task", error);
       return false;
     }
   }
@@ -131,10 +132,10 @@ export class BackgroundUploadService {
       await BackgroundFetch.unregisterTaskAsync(BACKGROUND_UPLOAD_TASK);
       this.isRegistered = false;
       this.isRunning = false;
-      console.log("[BackgroundUpload] Task unregistered");
+      logInfo("[BackgroundUpload] Task unregistered");
       return true;
     } catch (error) {
-      console.error("[BackgroundUpload] Failed to unregister task:", error);
+      logError("[BackgroundUpload] Failed to unregister task", error);
       return false;
     }
   }
@@ -154,7 +155,7 @@ export class BackgroundUploadService {
         status === BackgroundFetch.BackgroundFetchStatus.Available
       );
     } catch (error) {
-      console.error("[BackgroundUpload] Failed to check task status:", error);
+      logError("[BackgroundUpload] Failed to check task status", error);
       return false;
     }
   }
@@ -194,7 +195,7 @@ export class BackgroundUploadService {
         message,
       };
     } catch (error) {
-      console.error("[BackgroundUpload] Failed to get status:", error);
+      logError("[BackgroundUpload] Failed to get status", error);
       return {
         available: false,
         status: null,
@@ -210,20 +211,20 @@ export class BackgroundUploadService {
    */
   async triggerManually(): Promise<void> {
     try {
-      console.log("[BackgroundUpload] Manual trigger");
+      logInfo("[BackgroundUpload] Manual trigger");
 
       const taskName = BACKGROUND_UPLOAD_TASK;
       const taskFn = TaskManager.isTaskDefined(taskName);
 
       if (!taskFn) {
-        console.error("[BackgroundUpload] Task not defined");
+        logError("[BackgroundUpload] Task not defined");
         return;
       }
 
       // Execute the task function directly
       // Note: This is for testing only, doesn't use actual background fetch
       if (!networkMonitor.isOnline()) {
-        console.log("[BackgroundUpload] No network");
+        logInfo("[BackgroundUpload] No network");
         return;
       }
 
@@ -231,9 +232,9 @@ export class BackgroundUploadService {
         uploadManager.start();
       }
 
-      console.log("[BackgroundUpload] Upload manager started");
+      logInfo("[BackgroundUpload] Upload manager started");
     } catch (error) {
-      console.error("[BackgroundUpload] Manual trigger failed:", error);
+      logError("[BackgroundUpload] Manual trigger failed", error);
     }
   }
 

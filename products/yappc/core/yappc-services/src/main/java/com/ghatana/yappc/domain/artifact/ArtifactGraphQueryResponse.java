@@ -36,7 +36,7 @@ public record ArtifactGraphQueryResponse(
     public record ScopeMetadata(
         String tenantId,
         String workspaceId,
-        String productId,
+        String projectId,
         String queryType,
         int pageSize,
         boolean hasMore,

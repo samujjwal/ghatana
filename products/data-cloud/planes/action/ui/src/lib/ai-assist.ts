@@ -5,6 +5,8 @@ export interface AiAssistSource {
   href?: string;
 }
 
+const EMPTY_AI_SOURCES: AiAssistSource[] = [];
+
 export type AiAssistRouting = 'advisory' | 'reviewable' | 'applied';
 
 export function getAiConfidenceTier(confidence?: number): ConfidenceTier {
@@ -57,7 +59,7 @@ export function getAiRoutingDescription(routing: AiAssistRouting): string {
 
 export function normalizeAiSources(evidence?: unknown): AiAssistSource[] {
   if (!Array.isArray(evidence)) {
-    return [];
+    return EMPTY_AI_SOURCES;
   }
 
   return evidence

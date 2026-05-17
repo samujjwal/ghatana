@@ -319,7 +319,6 @@ export class AccessibilityAuditor {
       );
       return this.buildComprehensiveReport(axeResults);
     } catch (error) {
-      console.error("Accessibility audit failed:", error);
       throw error;
     }
   }

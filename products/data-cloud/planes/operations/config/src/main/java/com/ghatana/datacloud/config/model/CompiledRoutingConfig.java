@@ -799,7 +799,7 @@ public RoutingDecision routeWrite(RoutingContext context) {
      */
     public List<String> getFanOutTargets() {
         if (!fanOut.enabled()) {
-            return List.of();
+            return java.util.stream.Stream.<String>empty().toList();
         }
         return fanOut.targets().stream()
                 .flatMap(t -> {

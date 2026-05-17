@@ -42,7 +42,7 @@ describe('ArtifactGraphMergeReviewService', () => {
     const request = buildArtifactGraphMergeReviewRequest(graphSnapshot, 'tenant-1');
 
     expect(request).toMatchObject({
-      productId: 'commerce-app:graph',
+      projectId: 'commerce-app:graph',
       tenantId: 'tenant-1',
       resolutionStrategy: 'merge',
       baseModel: {

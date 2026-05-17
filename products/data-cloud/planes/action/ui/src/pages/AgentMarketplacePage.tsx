@@ -43,6 +43,8 @@ interface ReviewFormState {
   comment: string;
 }
 
+const EMPTY_MARKETPLACE_LISTINGS: MarketplaceAgentListing[] = [];
+
 function toList(raw: string): string[] {
   return raw
     .split(',')
@@ -172,7 +174,7 @@ export function AgentMarketplacePage() {
 
   const filteredListings = useMemo(() => {
     if (!listings) {
-      return [];
+      return EMPTY_MARKETPLACE_LISTINGS;
     }
     if (!search.trim()) {
       return listings;

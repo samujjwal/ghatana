@@ -16,7 +16,7 @@ import type { PageArtifactGraphSnapshot } from '@/components/canvas/page/pageArt
 export type ArtifactGraphMergeResolutionStrategy = 'merge' | 'union' | 'right-wins' | 'left-wins';
 
 export interface ArtifactGraphMergeReviewRequest {
-  readonly productId: string;
+  readonly projectId: string;
   readonly tenantId: string;
   readonly baseModel: Record<string, unknown>;
   readonly leftModel: Record<string, unknown>;
@@ -80,7 +80,7 @@ export function buildArtifactGraphMergeReviewRequest(
 ): ArtifactGraphMergeReviewRequest {
   const incomingModel = toSnapshotModel(snapshot);
   return {
-    productId: snapshot.graphId,
+    projectId: snapshot.graphId,
     tenantId,
     baseModel: options.baseModel ?? {
       graphId: snapshot.graphId,
@@ -120,8 +120,8 @@ function isArtifactGraphMergeReviewResponse(value: unknown): value is ArtifactGr
 export async function runArtifactGraphMergeReview(
   request: ArtifactGraphMergeReviewRequest,
 ): Promise<ArtifactGraphMergeReviewResult> {
-  if (!request.productId || !request.tenantId) {
-    throw new Error('runArtifactGraphMergeReview: productId and tenantId are required');
+  if (!request.projectId || !request.tenantId) {
+    throw new Error('runArtifactGraphMergeReview: projectId and tenantId are required');
   }
 
   let response: Response;

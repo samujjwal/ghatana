@@ -187,7 +187,7 @@ interface GraphQueryResponse {
   totalEstimate: number;
   scope: {
     tenantId: string;
-    productId: string;
+    projectId: string;
     queryType: string;
     pageSize: number;
     hasMore: boolean;

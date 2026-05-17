@@ -11,6 +11,7 @@
 import { Queue, Job, Worker } from 'bullmq';
 import Redis from 'ioredis';
 import { prisma } from '../../lib/prisma.js';
+import { systemLogger } from '../../lib/logger.js';
 
 // Redis connection
 const redis = new Redis({
@@ -121,7 +122,7 @@ export class MetricsCollector {
       await redis.zremrangebyrank(redisKey, 0, -1001);
 
     } catch (error) {
-      console.error('Failed to record metric:', error);
+      systemLogger.error('Failed to record metric', error, { metricName, type, userId, sphereId });
     }
   }
 
@@ -170,7 +171,7 @@ export class MetricsCollector {
       }));
 
     } catch (error) {
-      console.error('Failed to get realtime metrics:', error);
+      systemLogger.error('Failed to get realtime metrics', error, { metricName, userId, sphereId });
       return [];
     }
   }
@@ -259,18 +260,18 @@ export class AnalyticsAggregator {
    */
   static async aggregateDailyAnalytics(date: Date): Promise<boolean> {
     try {
-      console.log(`Starting daily aggregation for ${date.toISOString().split('T')[0]}`);
+      systemLogger.info('Starting daily aggregation', { date: date.toISOString().split('T')[0] });
 
       // Call the database function
       await prisma.$executeRaw`
         SELECT analytics.aggregate_daily_analytics(${date.toISOString().split('T')[0]}::DATE)
       `;
 
-      console.log('Daily aggregation completed successfully');
+      systemLogger.info('Daily aggregation completed successfully');
       return true;
 
     } catch (error) {
-      console.error('Daily aggregation failed:', error);
+      systemLogger.error('Daily aggregation failed', error, { date: date.toISOString().split('T')[0] });
       return false;
     }
   }
@@ -347,7 +348,7 @@ export class AnalyticsAggregator {
       };
 
     } catch (error) {
-      console.error('Weekly summary generation failed:', error);
+      systemLogger.error('Weekly summary generation failed', error, { userId, weekStart: weekStart.toISOString() });
       return null;
     }
   }
@@ -463,7 +464,7 @@ export class AnalyticsAggregator {
       };
 
     } catch (error) {
-      console.error('Failed to get user dashboard data:', error);
+      systemLogger.error('Failed to get user dashboard data', error, { userId });
       return null;
     }
   }
@@ -541,7 +542,7 @@ export class InsightsGenerator {
       return [];
 
     } catch (error) {
-      console.error('Failed to generate insights:', error);
+      systemLogger.error('Failed to generate insights', error, { userId });
       return [];
     }
   }
@@ -618,7 +619,7 @@ export class InsightsGenerator {
       return insight;
 
     } catch (error) {
-      console.error('Failed to generate mood pattern insights:', error);
+      systemLogger.error('Failed to generate mood pattern insights', error, { userId });
       return null;
     }
   }
@@ -699,7 +700,7 @@ export class InsightsGenerator {
       return insights;
 
     } catch (error) {
-      console.error('Failed to generate productivity insights:', error);
+      systemLogger.error('Failed to generate productivity insights', error, { userId });
       return [];
     }
   }
@@ -816,7 +817,7 @@ const analyticsWorker = new Worker<AnalyticsJobData>(
       await job.updateProgress(100);
 
     } catch (error: any) {
-      console.error(`Analytics job ${data.jobType} failed:`, error);
+      systemLogger.error('Analytics job failed', error, { jobType: data.jobType });
       throw error;
     }
   },
@@ -828,16 +829,16 @@ const analyticsWorker = new Worker<AnalyticsJobData>(
 
 // Worker event handlers
 analyticsWorker.on('completed', (job) => {
-  console.log(`Analytics job ${job.data.jobType} completed successfully`);
+  systemLogger.info('Analytics job completed successfully', { jobType: job.data.jobType });
 });
 
 analyticsWorker.on('failed', (job, err) => {
-  console.error(`Analytics job ${job?.data.jobType} failed:`, err);
+  systemLogger.error('Analytics job failed', err, { jobType: job?.data.jobType });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down analytics worker...');
+  systemLogger.info('Shutting down analytics worker');
   await analyticsWorker.close();
   await prisma.$disconnect();
   await redis.quit();

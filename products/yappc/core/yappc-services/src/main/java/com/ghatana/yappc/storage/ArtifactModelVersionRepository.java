@@ -67,7 +67,7 @@ public final class ArtifactModelVersionRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, version.versionId());
-                statement.setString(2, version.productId());
+                statement.setString(2, version.projectId());
                 statement.setString(3, version.tenantId());
                 statement.setString(4, version.parentVersionId());
                 statement.setString(5, version.commitMessage());
@@ -80,10 +80,10 @@ public final class ArtifactModelVersionRepository {
                 statement.executeUpdate();
             }
             return version;
-        }).whenResult(v -> log.info("Saved artifact model version {} for product {}", v.versionId(), v.productId()));
+        }).whenResult(v -> log.info("Saved artifact model version {} for project {}", v.versionId(), v.projectId()));
     }
 
-    public Promise<List<ArtifactModelVersion>> findVersionsByProduct(String productId, String tenantId, int limit) {
+    public Promise<List<ArtifactModelVersion>> findVersionsByProduct(String projectId, String tenantId, int limit) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT version_id, product_id, tenant_id, parent_version_id, commit_message,
@@ -97,7 +97,7 @@ public final class ArtifactModelVersionRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
+                statement.setString(2, projectId);
                 statement.setInt(3, limit);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<ArtifactModelVersion> versions = new ArrayList<>();
@@ -110,7 +110,7 @@ public final class ArtifactModelVersionRepository {
         });
     }
 
-    public Promise<ArtifactModelVersion> findVersionById(String versionId, String productId, String tenantId) {
+    public Promise<ArtifactModelVersion> findVersionById(String versionId, String projectId, String tenantId) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT version_id, product_id, tenant_id, parent_version_id, commit_message,
@@ -122,7 +122,7 @@ public final class ArtifactModelVersionRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
+                statement.setString(2, projectId);
                 statement.setString(3, versionId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
@@ -134,7 +134,7 @@ public final class ArtifactModelVersionRepository {
         });
     }
 
-    public Promise<String> findLatestVersionId(String productId, String tenantId) {
+    public Promise<String> findLatestVersionId(String projectId, String tenantId) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT version_id FROM artifact_model_versions
@@ -145,7 +145,7 @@ public final class ArtifactModelVersionRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
+                statement.setString(2, projectId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         return resultSet.getString("version_id");

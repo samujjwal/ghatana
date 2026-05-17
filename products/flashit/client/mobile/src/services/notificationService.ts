@@ -22,6 +22,9 @@ const STORAGE_KEYS = {
   LAST_NOTIFICATION: "@notifications_lastNotification",
 };
 
+const logInfo = (_message: string): void => {};
+const logError = (_message: string, _error?: unknown): void => {};
+
 /**
  * Notification preferences.
  */
@@ -125,9 +128,9 @@ class NotificationService {
       this.setupListeners();
 
       this.initialized = true;
-      console.log("[Notifications] Initialized");
+      logInfo("[Notifications] Initialized");
     } catch (error) {
-      console.error("[Notifications] Init error:", error);
+      logError("[Notifications] Init error", error);
     }
   }
 
@@ -167,9 +170,7 @@ class NotificationService {
    */
   async registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-      console.log(
-        "[Notifications] Not a physical device, skipping registration",
-      );
+      logInfo("[Notifications] Not a physical device, skipping registration");
       return null;
     }
 
@@ -186,7 +187,7 @@ class NotificationService {
       }
 
       if (finalStatus !== "granted") {
-        console.log("[Notifications] Permission denied");
+        logInfo("[Notifications] Permission denied");
         return null;
       }
 
@@ -198,10 +199,10 @@ class NotificationService {
       this.pushToken = tokenResult.data;
       await AsyncStorage.setItem(STORAGE_KEYS.PUSH_TOKEN, this.pushToken);
 
-      console.log("[Notifications] Push token:", this.pushToken);
+      logInfo("[Notifications] Push token acquired");
       return this.pushToken;
     } catch (error) {
-      console.error("[Notifications] Registration error:", error);
+      logError("[Notifications] Registration error", error);
       return null;
     }
   }
@@ -266,18 +267,18 @@ class NotificationService {
       try {
         handler(data);
       } catch (error) {
-        console.error("[Notifications] Handler error:", error);
+        logError("[Notifications] Handler error", error);
       }
     });
 
-    console.log("[Notifications] Received:", data.type, source);
+    logInfo(`[Notifications] Received: ${data.type} (${source})`);
   }
 
   /**
    * Handle notification tap (deep linking).
    */
   private handleNotificationTap(data: PushNotificationData): void {
-    console.log("[Notifications] Tapped:", data.type);
+    logInfo(`[Notifications] Tapped: ${data.type}`);
 
     // Navigate based on notification type
     if (data.actionUrl) {
@@ -324,7 +325,7 @@ class NotificationService {
       const path = url.startsWith("/") ? url : `/${url}`;
       router.push(path as any);
     } catch (error) {
-      console.error("[Notifications] Navigation error:", error);
+      logError("[Notifications] Navigation error", error);
     }
   }
 
@@ -481,7 +482,7 @@ class NotificationService {
     authToken: string,
   ): Promise<void> {
     if (!this.pushToken) {
-      console.log("[Notifications] No push token to register");
+      logInfo("[Notifications] No push token to register");
       return;
     }
 
@@ -503,9 +504,9 @@ class NotificationService {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      console.log("[Notifications] Token registered with backend");
+      logInfo("[Notifications] Token registered with backend");
     } catch (error) {
-      console.error("[Notifications] Failed to register token:", error);
+      logError("[Notifications] Failed to register token", error);
     }
   }
 

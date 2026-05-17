@@ -124,7 +124,6 @@ export function subscribeToAepStream(
 
     source.onerror = (e) => {
       if (onError) onError(e);
-      else console.warn('[sse] AEP stream error', e);
 
       // EventSource goes to CLOSED state on error — schedule reconnect if not manually closed.
       if (!closed && source.readyState === EventSource.CLOSED) {
@@ -169,8 +168,6 @@ export function subscribeToAepStream(
     const params = new URLSearchParams({ tenantId });
     if (sseToken) {
       params.set('token', sseToken);
-    } else {
-      console.warn('[sse] SSE token unavailable — stream will be unauthenticated');
     }
 
     const url = `${API_BASE_URL}/events/stream?${params.toString()}`;

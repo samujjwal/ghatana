@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public record ArtifactModelVersion(
     String versionId,
-    String productId,
+    String projectId,
     String tenantId,
     String parentVersionId,
     String commitMessage,
