@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +34,8 @@ public class MemoryStoreAdapter implements MemoryStore {
     private static final Logger log = LoggerFactory.getLogger(MemoryStoreAdapter.class);
 
     private final MemoryPlane memoryPlane;
+    private final Map<String, String> preferencesByKey = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, String>> preferencesByNamespace = new ConcurrentHashMap<>();
 
     public MemoryStoreAdapter(@NotNull MemoryPlane memoryPlane) {
         this.memoryPlane = Objects.requireNonNull(memoryPlane, "memoryPlane");
@@ -144,21 +147,25 @@ public class MemoryStoreAdapter implements MemoryStore {
     @Override
     @NotNull
     public Promise<Preference> storePreference(@NotNull Preference preference) {
-        // Preferences stored via working memory or dedicated preference store
         log.debug("Storing preference: {}.{}", preference.getNamespace(), preference.getKey());
+        preferencesByKey.put(preference.getKey(), preference.getValue());
+        preferencesByNamespace
+                .computeIfAbsent(preference.getNamespace(), ignored -> new ConcurrentHashMap<>())
+                .put(preference.getKey(), preference.getValue());
         return Promise.of(preference);
     }
 
     @Override
     @NotNull
     public Promise<String> getPreference(@NotNull String key) {
-        return Promise.of(null);
+        return Promise.of(preferencesByKey.get(key));
     }
 
     @Override
     @NotNull
     public Promise<Map<String, String>> getPreferences(@NotNull String namespace) {
-        return Promise.of(Map.of());
+        Map<String, String> namespacePrefs = preferencesByNamespace.get(namespace);
+        return Promise.of(namespacePrefs == null ? Map.of() : Map.copyOf(namespacePrefs));
     }
 
     // ========== MANAGEMENT ==========
@@ -174,7 +181,10 @@ public class MemoryStoreAdapter implements MemoryStore {
     @NotNull
     public Promise<Integer> clearMemory() {
         log.warn("clearMemory() called — delegating to memory plane");
-        return Promise.of(0);
+        int cleared = preferencesByKey.size();
+        preferencesByKey.clear();
+        preferencesByNamespace.clear();
+        return Promise.of(cleared);
     }
 
     @Override

@@ -411,9 +411,21 @@ public class ValidationEngine {
         if (eventTypeRegistry == null) {
             return List.of();
         }
-        // Return all event types accessible by this tenant
-        // The registry's exists() method is used per-type during operator validation
-        return List.of();
+
+        // EventTypeRegistry currently exposes exists/isActive checks, not list APIs.
+        // Probe a conservative catalog subset so validation context can carry
+        // tenant-relevant known types when available.
+        List<String> candidateEventTypes = List.of(
+                "com.ghatana.financial.TransactionEvent",
+                "com.ghatana.security.AlertEvent",
+                "com.ghatana.identity.AuthEvent",
+                "com.ghatana.platform.WorkflowEvent",
+                "com.ghatana.system.HealthEvent"
+        );
+
+        return candidateEventTypes.stream()
+                .filter(eventType -> eventTypeRegistry.exists(eventType, tenantId))
+                .toList();
     }
 
     /**

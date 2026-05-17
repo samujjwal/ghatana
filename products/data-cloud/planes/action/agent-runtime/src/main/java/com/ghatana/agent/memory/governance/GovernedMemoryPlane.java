@@ -150,7 +150,7 @@ public final class GovernedMemoryPlane implements MemoryPlane {
                     // Check if procedure is obsolete/retired and filter out by default
                     String masteryState = procedure.getLabels().get("masteryState");
                     if ("OBSOLETE".equals(masteryState) || "RETIRED".equals(masteryState)) {
-                        return Promise.of(null);
+                        return Promise.of((EnhancedProcedure) null);
                     }
                     return Promise.of(procedure);
                 });

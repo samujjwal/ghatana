@@ -17,6 +17,9 @@
 package com.ghatana.datacloud.plugins.trino;
 
 import com.ghatana.datacloud.plugins.trino.EventCloudMetadata.EventCloudColumnHandle;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.trino.spi.connector.RecordCursor;
@@ -49,6 +52,7 @@ import java.util.Map;
 public class EventCloudRecordCursor implements RecordCursor {
 
     private static final int BATCH_SIZE = 1000;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final EventCloudConnectorConfig config;
     private final EventCloudSplit split;
@@ -153,8 +157,10 @@ public class EventCloudRecordCursor implements RecordCursor {
                 // Return empty list on error (could throw exception in production)
                 return List.of();
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return List.of();
+        } catch (IOException e) {
             return List.of();
         }
     }
@@ -186,10 +192,35 @@ public class EventCloudRecordCursor implements RecordCursor {
 
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> parseResponse(String json) {
-        // Simple JSON parsing - in production use Jackson
-        // This is a stub that returns empty for now
-        // Real implementation would parse the JSON response
-        return new ArrayList<>();
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(json);
+
+            if (root.isArray()) {
+                return OBJECT_MAPPER.convertValue(root, new TypeReference<List<Map<String, Object>>>() {});
+            }
+
+            JsonNode recordsNode = root.path("events");
+            if (!recordsNode.isArray()) {
+                recordsNode = root.path("eventTypes");
+            }
+            if (!recordsNode.isArray()) {
+                recordsNode = root.path("streams");
+            }
+            if (!recordsNode.isArray()) {
+                recordsNode = root.path("items");
+            }
+            if (!recordsNode.isArray()) {
+                recordsNode = root.path("data");
+            }
+
+            if (!recordsNode.isArray()) {
+                return List.of();
+            }
+
+            return OBJECT_MAPPER.convertValue(recordsNode, new TypeReference<List<Map<String, Object>>>() {});
+        } catch (Exception ignored) {
+            return List.of();
+        }
     }
 
     private long estimateRowBytes(Map<String, Object> row) {

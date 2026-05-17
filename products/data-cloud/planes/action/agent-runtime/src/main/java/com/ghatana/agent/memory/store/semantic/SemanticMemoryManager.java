@@ -2,6 +2,8 @@ package com.ghatana.agent.memory.store.semantic;
 
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
 import com.ghatana.agent.memory.model.fact.FactVersion;
+import com.ghatana.agent.memory.model.Validity;
+import com.ghatana.agent.memory.model.ValidityStatus;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.MemoryQuery;
 import io.activej.promise.Promise;
@@ -129,8 +131,37 @@ public class SemanticMemoryManager {
     @NotNull
     public Promise<EnhancedFact> invalidate(@NotNull String factId, @NotNull String reason) {
         log.info("Invalidating fact {}: {}", factId, reason);
-        // In a full impl: load fact, set validity to DISPUTED, save
-        return Promise.of(null);
+        MemoryQuery query = MemoryQuery.builder()
+            .limit(200)
+            .build();
+
+        return memoryPlane.queryFacts(query)
+            .then(facts -> facts.stream()
+                .filter(f -> factId.equals(f.getId()))
+                .findFirst()
+                .<Promise<EnhancedFact>>map(existing -> {
+                    EnhancedFact disputed = EnhancedFact.builder()
+                        .id(existing.getId())
+                        .agentId(existing.getAgentId())
+                        .subject(existing.getSubject())
+                        .predicate(existing.getPredicate())
+                        .object(existing.getObject())
+                        .confidence(existing.getConfidence())
+                        .provenance(existing.getProvenance())
+                            .validity(Validity.builder()
+                                .confidence(existing.getValidity().getConfidence())
+                                .lastVerified(existing.getValidity().getLastVerified())
+                                .decayRate(existing.getValidity().getDecayRate())
+                                .status(ValidityStatus.STALE)
+                                .build())
+                        .versionHistory(existing.getVersionHistory())
+                        .createdAt(existing.getCreatedAt())
+                        .updatedAt(Instant.now())
+                        .build();
+                    return memoryPlane.storeFact(disputed);
+                })
+                .orElseGet(() -> Promise.ofException(new IllegalArgumentException(
+                    "Fact not found for invalidation: " + factId))));
     }
 
     private boolean tripleMatches(EnhancedFact a, EnhancedFact b) {

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation of service discovery service.
@@ -128,16 +129,91 @@ public class DefaultServiceDiscoveryService implements ServiceDiscoveryService {
     }
 
     private List<DiscoveredService> discoverFromRegistry(String scope, Map<String, Object> context) {
-        // Placeholder for service registry integration
-        // In production, this would query a service registry (Consul, etcd, Kubernetes API)
-        logger.debug("Service registry discovery not yet implemented");
-        return List.of();
+        Object entries = context == null ? null : context.get("serviceRegistryEntries");
+        if (!(entries instanceof List<?> rawEntries)) {
+            return List.of();
+        }
+
+        List<DiscoveredService> services = new ArrayList<>();
+        for (Object raw : rawEntries) {
+            if (!(raw instanceof Map<?, ?> map)) {
+                continue;
+            }
+
+            Object serviceId = map.get("serviceId");
+            Object serviceName = map.get("serviceName");
+            Object protocol = map.get("protocol");
+            Object endpoint = map.get("endpoint");
+            Object metadata = map.get("metadata");
+
+            if (!(serviceId instanceof String sid) || sid.isBlank()) {
+                continue;
+            }
+            if (!(serviceName instanceof String name) || name.isBlank()) {
+                continue;
+            }
+            if (!(endpoint instanceof String ep) || ep.isBlank()) {
+                continue;
+            }
+
+            ServiceHealth health = ServiceHealth.HEALTHY;
+            Object rawHealth = map.get("health");
+            if (rawHealth instanceof String hs) {
+                try {
+                    health = ServiceHealth.valueOf(hs.trim().toUpperCase());
+                } catch (IllegalArgumentException ignored) {
+                    health = ServiceHealth.UNKNOWN;
+                }
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, String> castMetadata = metadata instanceof Map<?, ?>
+                    ? ((Map<?, ?>) metadata).entrySet().stream()
+                            .filter(e -> e.getKey() != null && e.getValue() != null)
+                            .collect(Collectors.toMap(
+                                    e -> String.valueOf(e.getKey()),
+                                    e -> String.valueOf(e.getValue()),
+                                    (left, right) -> right))
+                    : Map.of();
+
+            services.add(new DiscoveredService(
+                    sid,
+                    name,
+                    protocol instanceof String p && !p.isBlank() ? p : "http",
+                    ep,
+                    castMetadata,
+                    health
+            ));
+        }
+
+        return services;
     }
 
     private List<DiscoveredService> discoverFromEndpoints(String scope, Map<String, Object> context) {
-        // Placeholder for endpoint scanning
-        // In production, this would scan common endpoint ranges
-        logger.debug("Endpoint scanning not yet implemented");
-        return List.of();
+        Object endpoints = context == null ? null : context.get("candidateEndpoints");
+        if (!(endpoints instanceof List<?> rawEndpoints)) {
+            return List.of();
+        }
+
+        List<DiscoveredService> services = new ArrayList<>();
+        int index = 0;
+        for (Object candidate : rawEndpoints) {
+            if (!(candidate instanceof String endpoint) || endpoint.isBlank()) {
+                continue;
+            }
+
+            String serviceName = "scanned-service-" + index;
+            services.add(new DiscoveredService(
+                    "scan-" + index,
+                    serviceName,
+                    endpoint.startsWith("https://") ? "https" : "http",
+                    endpoint,
+                    Map.of("source", "endpoint-scan", "scope", scope == null ? "default" : scope),
+                    ServiceHealth.UNKNOWN
+            ));
+            index++;
+        }
+
+        return services;
     }
 }

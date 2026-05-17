@@ -313,7 +313,7 @@ function isOperationalRemoteFallbackEmptyCollection(lines, index) {
     if (/response\.statusCode\(\)/.test(candidate)) {
       sawStatusHandling = true;
     }
-    if (/catch\s*\(\s*Exception\s+/.test(candidate)) {
+    if (/catch\s*\(/.test(candidate)) {
       sawExceptionHandling = true;
     }
   }
@@ -345,6 +345,70 @@ function isTsArrayParsingFallback(lines, index) {
   }
 
   return sawArrayGuard && sawProjection;
+}
+
+/**
+ * Detect structural leaf-accessor methods that intentionally return empty
+ * sub-pattern collections (not stubs), such as getPatterns/getSubPatterns.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isStructuralLeafAccessorEmptyCollection(lines, index) {
+  const start = Math.max(0, index - 180);
+  const localWindow = lines.slice(start, index + 1).join('\n');
+
+  const isLeafPatternAccessor = /public\s+List\s*<\s*IPatternSpec\s*>\s+getPatterns\s*\(\s*\)/.test(localWindow)
+    && /extends\s+AbstractPatternSpec/.test(localWindow);
+
+  const isAbstractSubPatternAccessor = /public\s+List\s*<\s*UnifiedOperator\s*>\s+getSubPatterns\s*\(\s*\)/.test(localWindow)
+    && /abstract\s+class\s+.*PatternOperator|class\s+AbstractPatternOperator/.test(localWindow);
+
+  return isLeafPatternAccessor || isAbstractSubPatternAccessor;
+}
+
+/**
+ * Detect lambda-based collection initializers (for example computeIfAbsent)
+ * where `return new ArrayList<>()` is a state initialization path, not a stub.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isCollectionInitializerLambdaReturn(lines, index) {
+  const current = lines[index].trim();
+  if (!/^return\s+new\s+ArrayList\s*</.test(current) && !/^return\s+new\s+ArrayList\s*\(/.test(current)) {
+    return false;
+  }
+
+  const start = Math.max(0, index - 10);
+  for (let i = start; i < index; i++) {
+    const candidate = lines[i].trim();
+    if (/computeIfAbsent\(/.test(candidate) || /\.compute\(/.test(candidate) || /->\s*\{/.test(candidate)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Detect parser fallback branches returning empty collections on malformed input
+ * or decode failures (for example parseFacts JSON parse fallback).
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isParserFallbackEmptyCollection(lines, index) {
+  const start = Math.max(0, index - 140);
+  const localWindow = lines.slice(start, index + 1).join('\n');
+
+  const inParseMethod = /(private|protected|public)\s+List\s*<[^>]+>\s+parse[A-Za-z0-9_]*\s*\(/.test(localWindow);
+  const hasFailureHandling = /catch\s*\(|log\.(warn|debug)\(|unexpected response|parse failed|malformed|!\w+\.isArray\(\)/i.test(localWindow);
+
+  return inParseMethod && hasFailureHandling;
 }
 
 // ---------------------------------------------------------------------------
@@ -437,6 +501,15 @@ for (const root of scanRoots) {
           continue;
         }
         if (id === 'RETURN_EMPTY_LIST' && isTsArrayParsingFallback(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isStructuralLeafAccessorEmptyCollection(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isCollectionInitializerLambdaReturn(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isParserFallbackEmptyCollection(lines, i)) {
           continue;
         }
         if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {

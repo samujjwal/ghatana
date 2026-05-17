@@ -177,7 +177,7 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     public Promise<Void> store(DataRecord record, String tenantId) {
         try {
             storeInternal(record, tenantId, null);
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             return Promise.ofException(e);
         }
@@ -194,7 +194,7 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     public Promise<Void> storeWithEmbedding(DataRecord record, String tenantId, float[] embedding) {
         try {
             storeInternal(record, tenantId, embedding);
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             return Promise.ofException(e);
         }
