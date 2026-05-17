@@ -127,6 +127,7 @@ public final class ResidualIslandService {
             islandType,
             summary,
             sourceSpan,
+            Map.of(),
             sourceSpan,
             checksum,
             rawFragmentRef,

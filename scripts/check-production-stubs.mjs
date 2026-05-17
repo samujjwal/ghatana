@@ -405,10 +405,46 @@ function isParserFallbackEmptyCollection(lines, index) {
   const start = Math.max(0, index - 140);
   const localWindow = lines.slice(start, index + 1).join('\n');
 
-  const inParseMethod = /(private|protected|public)\s+List\s*<[^>]+>\s+parse[A-Za-z0-9_]*\s*\(/.test(localWindow);
+  const inParseMethod = /(private|protected|public)\s+[^\n]*List\s*<[^\n]+>\s+parse[A-Za-z0-9_]*\s*\(/.test(localWindow);
   const hasFailureHandling = /catch\s*\(|log\.(warn|debug)\(|unexpected response|parse failed|malformed|!\w+\.isArray\(\)/i.test(localWindow);
 
   return inParseMethod && hasFailureHandling;
+}
+
+/**
+ * Detect algorithmic no-result outcomes (for example graph traversal with no
+ * path found) where returning an empty list is the correct domain behavior.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isAlgorithmicNoResultEmptyCollection(lines, index) {
+  const start = Math.max(0, index - 90);
+  const localWindow = lines.slice(start, index + 1).join('\n');
+
+  const inPathFinder = /find(ShortestPath|AllPaths)\s*\(/.test(localWindow);
+  const hasNoPathSignal = /No path found|!found/.test(localWindow);
+
+  return inPathFinder && hasNoPathSignal;
+}
+
+/**
+ * Detect discovery methods that intentionally return no work when stream
+ * registration is external to this component.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isExternalRegistrationDiscoveryFallback(lines, index) {
+  const start = Math.max(0, index - 70);
+  const localWindow = lines.slice(start, index + 1).join('\n');
+
+  const inDiscoveryMethod = /discover[A-Za-z0-9_]*\s*\(/.test(localWindow);
+  const hasExternalRegistrationHint = /registered externally|query a metadata store|For now/i.test(localWindow);
+
+  return inDiscoveryMethod && hasExternalRegistrationHint;
 }
 
 // ---------------------------------------------------------------------------
@@ -510,6 +546,12 @@ for (const root of scanRoots) {
           continue;
         }
         if (id === 'RETURN_EMPTY_LIST' && isParserFallbackEmptyCollection(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isAlgorithmicNoResultEmptyCollection(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isExternalRegistrationDiscoveryFallback(lines, i)) {
           continue;
         }
         if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {

@@ -8,8 +8,10 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -161,56 +163,46 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return null;
     }
 
-    private static List<ArtifactGraphRepository.UnresolvedEdgeRecord> mapUnresolvedEdges(List<Map<String, Object>> unresolvedEdges) {
+    private static List<ArtifactGraphRepository.UnresolvedEdgeRecord> mapUnresolvedEdges(List<UnresolvedGraphEdgeDto> unresolvedEdges) {
         if (unresolvedEdges == null || unresolvedEdges.isEmpty()) {
             return List.of();
         }
 
         List<ArtifactGraphRepository.UnresolvedEdgeRecord> mapped = new ArrayList<>(unresolvedEdges.size());
-        for (Map<String, Object> edge : unresolvedEdges) {
-            if (edge == null || edge.isEmpty()) {
-                continue;
-            }
-            String sourceNodeId = stringValue(edge, "sourceNodeId", stringValue(edge, "source_id", null));
-            String targetRef = stringValue(edge, "targetRef", stringValue(edge, "target_ref", null));
-            String relationshipType = stringValue(edge, "relationshipType", null);
-            if (sourceNodeId == null || targetRef == null || relationshipType == null) {
-                continue;
+        for (UnresolvedGraphEdgeDto edge : unresolvedEdges) {
+            if (edge == null) {
+                throw new IllegalArgumentException("Unresolved edge payload contains null entry");
             }
             mapped.add(new ArtifactGraphRepository.UnresolvedEdgeRecord(
-                stringValue(edge, "id", UUID.randomUUID().toString()),
-                sourceNodeId,
-                targetRef,
-                relationshipType,
-                stringValue(edge, "targetKindHint", stringValue(edge, "target_kind_hint", null)),
-                doubleValue(edge, "confidence"),
-                mapValue(edge, "metadata")
+                firstNonBlank(edge.id(), UUID.randomUUID().toString()),
+                edge.sourceNodeId(),
+                edge.targetRef(),
+                edge.relationshipType(),
+                edge.targetKindHint(),
+                edge.confidence(),
+                edge.metadata() == null ? Map.of() : edge.metadata()
             ));
         }
         return mapped;
     }
 
-    private static List<ArtifactGraphRepository.EdgeResolutionRecord> mapEdgeResolutionRecords(List<Map<String, Object>> resolutionRecords) {
+    private static List<ArtifactGraphRepository.EdgeResolutionRecord> mapEdgeResolutionRecords(List<EdgeResolutionRecordDto> resolutionRecords) {
         if (resolutionRecords == null || resolutionRecords.isEmpty()) {
             return List.of();
         }
 
         List<ArtifactGraphRepository.EdgeResolutionRecord> mapped = new ArrayList<>(resolutionRecords.size());
-        for (Map<String, Object> record : resolutionRecords) {
-            if (record == null || record.isEmpty()) {
-                continue;
-            }
-            String unresolvedEdgeId = stringValue(record, "unresolvedEdgeId", stringValue(record, "edgeId", null));
-            if (unresolvedEdgeId == null) {
-                continue;
+        for (EdgeResolutionRecordDto record : resolutionRecords) {
+            if (record == null) {
+                throw new IllegalArgumentException("Edge resolution record payload contains null entry");
             }
             mapped.add(new ArtifactGraphRepository.EdgeResolutionRecord(
-                stringValue(record, "id", UUID.randomUUID().toString()),
-                unresolvedEdgeId,
-                stringValue(record, "status", "UNKNOWN"),
-                stringValue(record, "resolvedTargetId", stringValue(record, "resolved_to_id", null)),
-                listOfStrings(record.get("candidateIds")),
-                booleanValue(record, "reviewRequired")
+                firstNonBlank(record.id(), UUID.randomUUID().toString()),
+                record.unresolvedEdgeId(),
+                record.status(),
+                record.resolvedTargetId(),
+                record.candidateIds() == null ? List.of() : record.candidateIds(),
+                record.reviewRequired()
             ));
         }
         return mapped;
@@ -254,6 +246,13 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                     dto.islandType() != null ? dto.islandType() : "unknown",
                     dto.summary(),
                     dto.originalSource(), // P0: Map original source for round-trip fidelity
+                    dto.sourceLocation() == null ? Map.of() : Map.of(
+                        "filePath", dto.sourceLocation().filePath(),
+                        "startLine", dto.sourceLocation().startLine(),
+                        "startColumn", dto.sourceLocation().startColumn(),
+                        "endLine", dto.sourceLocation().endLine(),
+                        "endColumn", dto.sourceLocation().endColumn()
+                    ),
                     dto.sourceSpan(),
                     dto.checksum(),
                     dto.rawFragmentRef(),
@@ -270,62 +269,6 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                 );
             })
             .toList();
-    }
-
-    private static String stringValue(Map<String, Object> values, String key, String fallback) {
-        Object value = values.get(key);
-        if (value instanceof String text && !text.isBlank()) {
-            return text;
-        }
-        return fallback;
-    }
-
-    private static Double doubleValue(Map<String, Object> values, String key) {
-        Object value = values.get(key);
-        if (value instanceof Number number) {
-            return number.doubleValue();
-        }
-        if (value instanceof String text) {
-            try {
-                return Double.parseDouble(text);
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> mapValue(Map<String, Object> values, String key) {
-        Object value = values.get(key);
-        if (value instanceof Map<?, ?> map) {
-            return (Map<String, Object>) map;
-        }
-        return Map.of();
-    }
-
-    private static boolean booleanValue(Map<String, Object> values, String key) {
-        Object value = values.get(key);
-        if (value instanceof Boolean bool) {
-            return bool;
-        }
-        if (value instanceof String text) {
-            return Boolean.parseBoolean(text);
-        }
-        return false;
-    }
-
-    private static List<String> listOfStrings(Object value) {
-        if (value instanceof List<?> list) {
-            List<String> mapped = new ArrayList<>(list.size());
-            for (Object item : list) {
-                if (item != null) {
-                    mapped.add(String.valueOf(item));
-                }
-            }
-            return mapped;
-        }
-        return List.of();
     }
 
     private static String extractStringMetadata(ArtifactGraphIngestRequest request, Set<String> keys) {

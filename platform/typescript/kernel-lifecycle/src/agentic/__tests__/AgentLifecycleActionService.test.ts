@@ -276,4 +276,25 @@ describe('AgentLifecycleActionService', () => {
     await expect(service.handle({ ...request, proposedPlanRef: 'pnpm deploy' })).rejects.toThrow();
     expect(planner.plan).not.toHaveBeenCalled();
   });
+
+  it('returns denied result when evidence refs are missing for required verification', async () => {
+    const { service, planner, executor } = createService({
+      checks: {
+        approval: () => 'not-required',
+      },
+    });
+
+    const result = await service.handle({
+      ...request,
+      evidenceRefs: [],
+      requiredVerification: [{ verificationId: 'verify-health', kind: 'health', required: true }],
+    });
+
+    expect(result.policyDecision).toBe('allowed');
+    expect(result.approvalDecision).toBe('not-required');
+    expect(result.failure?.reasonCode).toBe('missing-evidence');
+    expect(result.failure?.details).toContain('evidence');
+    expect(planner.plan).toHaveBeenCalled();
+    expect(executor.executePlan).not.toHaveBeenCalled();
+  });
 });

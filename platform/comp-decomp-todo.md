@@ -1,306 +1,427 @@
-# Artifact Compiler/Decompiler Production Implementation TODO
+## Audit execution basis
 
-**Source**: Derived from `docs/archive/comp-decomp-todo-2026-04-18.md` audit
-**Status**: COMPLETED - Phases 1-6.3
-**Last Updated**: 2026-05-17
+Executed against `samujjwal/ghatana` at commit `e10d360a3fe5b0298cdb4b02cc0d4cd62148202f`.
 
-## Overview
+This audit is based on the complete codebase state visible at the target commit snapshot, not only the commit diff. I used current code, configs, scripts, committed lifecycle evidence, registry files, and canonical uploaded guidance as source of truth. I did not run repository commands locally; validation status below is based on committed scripts/evidence and repository inspection.
 
-This document tracks the production-grade implementation of all tasks required to make the Artifact Compiler/Decompiler system production-ready. All tasks must be implemented with zero compromises, following guidelines from `.github/copilot-instructions.md`.
+The repo already contains phase scripts, domain registry classifications, lifecycle evidence, and several executable governance checks, so this is **not** a start-from-zero plan. The highest-value next work is to make the partial areas consistently executable, portable, CI-backed, and aligned with phase terminology.
 
-## Current Maturity Level
+---
 
-The Artifact Compiler/Decompiler is **production-ready foundation completed**.
+# A. Executive summary
 
-**Completed Milestones:**
-1. Java/TypeScript contract alignment - COMPLETED
-2. Source acquisition with governed credentials - COMPLETED
-3. Residual preservation with full fidelity - COMPLETED
-4. Compile-back with Java governance - COMPLETED
-5. Backend graph persistence with semantic model - COMPLETED
-6. Stable repository snapshots and inventory - COMPLETED
-7. Frontend UX for import and patch review - COMPLETED
-8. Scanner semantics consolidation - COMPLETED
+## What is close to world-class
 
-**Remaining Work:**
-- None
+The repo has a strong governance foundation. `package.json` already defines phase-level checks from `check:phase0` through `check:phase8`, plus `check:world-class-platform-readiness`, Kernel checks, product-shape checks, Digital Marketing lifecycle checks, Data Cloud provider checks, Studio/API checks, artifact intelligence checks, production stub checks, deprecated package checks, and architecture boundary checks. 
 
-**Verification Evidence (2026-05-17):**
-- `pnpm check:yappc-artifact-intelligence-boundary` passed
-- `./gradlew :products:yappc:core:yappc-services:test --tests '*ContractCompatibilityTest' --tests '*ProcessTsExtractorWorkerContractTest' --tests '*JavaArtifactExtractorTest' --tests '*ArtifactCompileJobServiceIntegrationTest'` passed with BUILD SUCCESSFUL
-- Contract naming normalization validated in `ContractCompatibilityTest` (canonical `projectId`, no legacy `productId` in canonical artifact-compiler contract fields)
+The canonical product registry correctly treats **Digital Marketing** as the executable lifecycle pilot. Its registry entry has lifecycle enabled, ready migration status, backend and web surfaces, Gradle and pnpm adapters, required artifacts, local deployment, bridge conformance, and `lifecycleExecutionAllowed: true`. 
 
-## Implementation Phases
+Digital Marketing has committed lifecycle evidence showing planned phases passing and smoke execution passing for `validate`, `test`, `build`, `package`, `deploy`, and `verify`, with lifecycle plans, lifecycle results, artifact manifests, deployment manifests, verify health reports, lifecycle health snapshots, gate result manifests, lifecycle events, run IDs, correlation IDs, and bootstrap provider mode recorded. 
 
-### Phase 1: Contract and Fidelity Hardening (P0)
+Kernel contracts are no longer merely aspirational. `ProductUnitIntent` exists as a public contract with application result, provider mode, registry/source provider IDs, lifecycle event refs, provenance refs, runtime truth refs, blocked reasons, and errors.  Agentic lifecycle contracts also exist with policy, mastery, approval, verification, rollback, privacy classification, retention, redaction, and raw-command blocking. 
 
-**Goal**: Java, TypeScript, and proto agree on the same compiler/decompiler contract.
+Ghatana Studio has a canonical navigation model for Home, Ideas, Blueprints, Canvas, Develop, Lifecycle, Agents, Artifacts, Deployments, Health, Learn, and Settings, with ownership, status, exposure policy, evidence refs, and capability gating. 
 
-#### Task 1.1: Make proto the single source of truth
-- **Files**: `artifact_compiler.proto`, `ArtifactCompilerClient.ts`
-- **Owner**: Contract only
-- **Done when**: Java DTOs, TS worker IO, TS client, and proto agree exactly
-- **Test**: Generated contract compatibility test
+## What is still missing or risky
 
-#### Task 1.2: Preserve full residual islands across Java ingest/persistence
-- **Files**: `ArtifactGraphIngestRequest.java`, `ResidualIslandDto.java`, `ArtifactGraphServiceImpl.java`, `ArtifactGraphRepository.java`
-- **Owner**: Java canonical, TS detection allowed
-- **Done when**: Original source, span, checksum, raw fragment, risk, and review state survive source→worker→backend
-- **Test**: `ArtifactGraphServiceResidualPreservationTest.java`
+Several domains remain **existing but partial**, including Platform Coherence & Governance, artifact/provenance, deployment/release, Data Cloud runtime truth, AEP agent runtime governance, semantic artifact intelligence, canvas/diagramming, UI builder preview, design system registry/generator, and Ghatana Studio route/data surfaces. The domain registry explicitly records these classifications and blocking gaps.  
 
-#### Task 1.3: Fix source provider credentials and GitLab correctness
-- **Files**: `SourceCredentialResolver.java`, `GitHubSourceProvider.java`, `GitLabSourceProvider.java`
-- **Owner**: Java
-- **Done when**: Private repo imports use governed credential refs and GitLab project/file paths are encoded and paginated correctly
-- **Test**: GitHub/GitLab provider integration tests
+The implementation tracker still uses **Release** terminology, while the current planning model should use **Phase** terminology. This creates avoidable confusion and should be reconciled into one phase-based status model. 
 
-#### Task 1.4: Remove public unscoped import job access
-- **Files**: `SourceImportJobRepository.java`, `SourceImportJobService.java`
-- **Owner**: Java
-- **Done when**: Every read/list/update requires tenant/workspace/project
-- **Test**: `SourceImportJobRepositoryScopeTest.java`
+The Digital Marketing evidence pack stores absolute local filesystem paths under `/Users/samujjwal/Development/ghatana/...`. That is useful as local proof but not ideal as portable CI/runtime truth. The next hardening step should emit logical refs or repo-relative refs and archive the underlying evidence in CI. 
 
-#### Task 1.5: Add graph validation service
-- **Files**: `ArtifactGraphValidator.java`, `ArtifactGraphController.java`
-- **Owner**: Java
-- **Done when**: Centralized validation for node IDs, resolved edges, unresolved edges, source locations, provenance, confidence, residual refs, snapshot consistency
-- **Test**: `ArtifactGraphValidatorTest.java`
+Data Cloud and YAPPC are correctly classified as **platform-provider** products with lifecycle execution disabled, but their platform-provider path is still partial. Data Cloud needs bootstrap/platform separation and runtime truth provider completion; YAPPC needs creator lifecycle separation, ProductUnitIntent export proof, and artifact intelligence evidence contracts before ordinary lifecycle execution should be considered. 
 
-### Phase 2: Stable Repository Snapshot and Inventory (P0-P1)
+---
 
-**Goal**: Every source import produces an immutable, deterministic, auditable snapshot and inventory.
+# B. Goal and status register
 
-#### Task 2.1: Persist repository snapshots
-- **Files**: `RepositorySnapshotRepository.java`, snapshot migrations
-- **Owner**: Java
-- **Done when**: Immutable snapshots, files, diagnostics, checksums, source locator refs, tenant/workspace/project persisted
-- **Test**: `RepositorySnapshotRepositoryTest.java`
+| Goal ID | Goal                               |                         Correct owner | Current status                                   | Evidence                                                                                        | Gap                                                                                           |   Phase |
+| ------- | ---------------------------------- | ------------------------------------: | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------: |
+| G-01    | Platform Coherence & Governance    |                              Platform | Existing but partial                             | `config/domain-registry.json` defines governance domain, source of truth, checks, phase `[0,8]` | Boundary enforcement and current-state claim review remain partially manual                   |    0, 8 |
+| G-02    | Phase-based execution model        |                              Platform | Existing but partial                             | `package.json` has `check:phase0` through `check:phase8`                                        | Tracker/docs still use “Release” terminology                                                  |    0, 8 |
+| G-03    | Ghatana Studio unified shell       |                              Platform | Existing but partial                             | Studio nav model has route ownership/status/exposure                                            | Some route/data surfaces remain partial/degraded/disabled                                     |       1 |
+| G-04    | ProductUnitIntent handoff          |                        Kernel + YAPPC | Existing but partial                             | Contract, applier, Studio Blueprints route exist                                                | Needs full YAPPC UI/API → Kernel preview/apply → runtime truth/provenance E2E proof           | 1, 3, 6 |
+| G-05    | Kernel lifecycle truth             |            Product Development Kernel | Existing and executable for pilot                | Domain registry marks Kernel lifecycle executable; Digital Marketing evidence passes            | Needs more product-shape validation without enabling unsafe execution                         | 2, 3, 7 |
+| G-06    | Digital Marketing lifecycle pilot  |                      Product + Kernel | Existing and executable                          | Registry enabled and evidence pack passed                                                       | Needs portable CI evidence, rollback/promotion runtime proof, and local absolute path cleanup |       2 |
+| G-07    | Toolchain adapters                 |                                Kernel | Existing and executable for current pilot        | Domain registry marks toolchain runtime executable                                              | Mobile and future product-shape adapters remain planned/partial                               |    3, 7 |
+| G-08    | Artifact/provenance chain          |                   Kernel + Data Cloud | Existing but partial                             | Artifact/provenance domain classified partial                                                   | Need stronger run → artifact → deployment → provenance linkage across providers               |    3, 5 |
+| G-09    | Deployment/release/rollback        |                                Kernel | Existing but partial                             | Deployment/release domain classified partial                                                    | Promotion semantics and rollback evidence coverage incomplete                                 |       3 |
+| G-10    | Agentic product development        |               Kernel + AEP/Data Cloud | Existing but partial                             | Agent contract and service exist                                                                | Needs AEP/Data Cloud-backed end-to-end execution, approval UI, and trace ledger proof         |       4 |
+| G-11    | Data Cloud platform-mode providers |                            Data Cloud | Existing but partial                             | Data Cloud runtime truth domain classified partial                                              | Provider coverage incomplete; lifecycle execution correctly disabled                          |       5 |
+| G-12    | Artifact intelligence              | YAPPC + Kernel contracts + Data Cloud | Existing but partial                             | Semantic artifact intelligence domain classified partial                                        | Semantic persistence and residual reporting remain partial                                    |       6 |
+| G-13    | Future product shape readiness     |                   Platform + Products | Existing but partial / declared only             | PHR and FlashIt are planned/disabled; Data Cloud/YAPPC platform-provider disabled               | Need product-shape matrix hardening without premature lifecycle enablement                    |       7 |
+| G-14    | O11y/security/privacy/testing      |                              Platform | Mixed: executable core, partial product coverage | Domain registry marks security, observability, and testing executable                           | Product-by-product conformance and CI artifact evidence still need expansion                  |       8 |
 
-#### Task 2.2: Replace Java inventory scanner with canonical deterministic scanner
-- **Files**: `RepositoryInventoryScanner.java`
-- **Owner**: Java
-- **Done when**: Stable sorted walk, authoritative `.gitignore`, include/exclude rules, generated/vendor/binary/large skip reasons, package/workspace boundary detection
-- **Test**: `RepositoryInventoryScannerGoldenTest.java`
+---
 
-#### Task 2.3: Fix archive provider determinism
-- **Files**: `ArchiveSourceProvider.java`
-- **Owner**: Java
-- **Done when**: Tar/tar.gz support, content-based snapshot ID (not path-based), canonical inventory after extraction
-- **Test**: `ArchiveSourceProviderDeterministicTest.java`
+# C. System architecture map
 
-### Phase 3: Graph Correctness and Semantic Model Persistence (P1)
+```text
+Ghatana Studio
+  Status: existing but partial
+  Owns: unified shell, route exposure, customer UX, lifecycle visibility
+  Must not own: lifecycle truth or product domain logic
 
-**Goal**: Backend stores source-faithful graph and provenance-rich semantic model.
+YAPPC
+  Status: existing but partial
+  Owns: ideation, blueprinting, canvas workflows, ProductUnitIntent export, artifact intelligence
+  Must not own: Kernel lifecycle execution
 
-#### Task 3.1: Persist unresolved edges separately
-- **Files**: `ArtifactGraphRepository.java`, migrations
-- **Owner**: Java
-- **Done when**: Unresolved edges persisted separately from resolved edges
-- **Test**: Graph unresolved edge lifecycle test
+Product Development Kernel
+  Status: existing and executable for Digital Marketing pilot
+  Owns: ProductUnit contracts, ProductUnitIntent application, lifecycle plans/results, adapters, gates, artifacts, deployments, approvals, runtime truth contracts
 
-#### Task 3.2: Persist edge resolution records
-- **Files**: `ArtifactGraphRepository.java`, migrations
-- **Owner**: Java
-- **Done when**: Resolution records tracked for cross-snapshot drift
-- **Test**: Edge resolution record persistence test
+Data Cloud
+  Status: existing but partial
+  Owns: runtime truth, events, provenance, memory, knowledge, provider bridges, AEP/action foundation
+  Must not be required for Kernel bootstrap mode
 
-#### Task 3.3: Persist semantic model versions
-- **Files**: `ArtifactCompileJobService.java`, semantic model DTO/repository/migration
-- **Owner**: Java canonical, TS synthesis helper
-- **Done when**: Model elements have provenance, confidence, graph-node mapping, residual refs, version history
-- **Test**: Semantic model synthesis/persistence integration test
+AEP / agents
+  Status: existing but partial
+  Owns: governed action execution and agent runtime integration
+  Must execute through Kernel contracts for product lifecycle work
 
-### Phase 4: Java-Governed Compile-Back (P0-P1)
+Digital Marketing
+  Status: executable pilot
+  Owns: domain behavior and product-specific lifecycle config
+  Proves: validate/test/build/package/deploy/verify through Kernel
 
-**Goal**: Model edits produce safe, minimal, validated, reviewable patches.
-
-#### Task 4.1: Add Java patch lifecycle controller
-- **Files**: `ArtifactPatchController.java`
-- **Owner**: Java
-- **Done when**: Create change plan, build patch set, validate, create review bundle, approve/reject, apply, rollback, status endpoints
-- **Test**: `ArtifactPatchControllerScopeTest.java`
-
-#### Task 4.2: Add Java patch service
-- **Files**: `ArtifactPatchService.java`
-- **Owner**: Java canonical with TS emitter workers
-- **Done when**: Java-governed patch workflow, TS patch worker for React/TS emitters, residual-overlap validation, no-op round-trip validation
-- **Test**: `ArtifactPatchServiceRoundTripTest.java`
-
-#### Task 4.3: Add patch persistence
-- **Files**: `PatchSetRepository.java`, patch migrations
-- **Owner**: Java
-- **Done when**: Change plans, patch sets, file patches, validation results, review bundles, rollback metadata persisted
-- **Test**: `PatchSetRepositoryTest.java`
-
-#### Task 4.4: Strictly validate TS worker contract
-- **Files**: `ProcessTsExtractorWorker.java`, `ts-extractor-worker.ts`
-- **Owner**: Hybrid Java-orchestrated TS worker
-- **Done when**: Worker cannot emit legacy fallback edge fields or lossy residuals
-- **Test**: Java/TS worker contract tests
-
-### Phase 5: UX Integration (P1)
-
-**Goal**: Users can import, inspect, edit, validate, and review changes with low cognitive load.
-
-#### Task 5.1: Build import UX
-- **Files**: `ArtifactImportPanel.tsx`, `ArtifactImportSummary.tsx`
-- **Owner**: TypeScript frontend
-- **Done when**: Source provider picker, repo/ref/archive/local input, progress, import summary, confidence/residual/skipped sections
-- **Test**: Component + Playwright tests
-
-#### Task 5.2: Build patch review UX
-- **Files**: `PatchReviewPanel.tsx`
-- **Owner**: TypeScript frontend
-- **Done when**: Display backend review bundle, diffs, validation errors, residual overlaps, approve/reject/apply actions
-- **Test**: `artifact-patch-review.spec.ts`
-
-#### Task 5.3: Use generated API client
-- **Files**: `ArtifactCompilerClient.ts`
-- **Owner**: Contract only
-- **Done when**: Manual DTOs replaced with generated client/types
-- **Test**: `ArtifactCompilerClient.contract.test.ts`
-
-### Phase 6: Consolidation and Cleanup (P2-P3)
-
-**Goal**: Remove duplicates, consolidate semantics, clean stale docs.
-
-#### Task 6.1: Consolidate Java and TypeScript scanner semantics
-- **Files**: `RepositoryInventoryScanner.java`, `scanner.ts`
-- **Owner**: Java canonical, TS worker helper
-- **Done when**: TS scanner cannot disagree with canonical inventory contract
-- **Test**: Cross-runtime scanner fixture parity test
-
-#### Task 6.2: Clean stale docs and TODOs
-- **Files**: `platform/comp-decomp-todo.md`, archived docs
-- **Owner**: Docs
-- **Done when**: Current docs match implementation, archived docs not used as source of truth
-- **Test**: Docs link/source-of-truth check
-- **Status**: COMPLETED (2026-05-17)
-
-#### Task 6.3: Normalize naming from product/project across all APIs
-- **Files**: Proto, Java DTOs, TS generated client, UI code
-- **Owner**: Contract only
-- **Done when**: One term canonical externally, internal aliases removed
-- **Test**: Contract lint test
-- **Status**: COMPLETED (2026-05-17)
-
-## File-by-File Implementation Plan
-
-### P0 Tasks (Must complete first)
-
-| Priority | Phase | File path | Action | Required change | Tests |
-|----------|-------|-----------|--------|-----------------|-------|
-| P0 | Contract foundation | `artifact_compiler.proto` | MODIFY | Make canonical source for all types, remove product_id naming drift | Generated-contract compatibility tests |
-| P0 | Contract foundation | `ArtifactCompilerClient.ts` | REPLACE | Replace manual DTOs with generated client, fix projectId/relationshipType | `ArtifactCompilerClient.contract.test.ts` |
-| P0 | Worker contract | `ProcessTsExtractorWorker.java` | MODIFY | Enforce generated schema, reject legacy fallbacks, add command allowlist | `ProcessTsExtractorWorkerContractTest.java` |
-| P0 | Worker contract | `ts-extractor-worker.ts` | MODIFY | Emit exact generated contract fields, return full residuals not just IDs | `ts-extractor-worker.contract.test.ts` |
-| P0 | Residual fidelity | `ArtifactGraphIngestRequest.java` | MODIFY | Replace residualIslandIds with typed List<ResidualIslandDto>, add typed unresolved/resolution DTOs | `ArtifactGraphIngestRequestRoundTripTest.java` |
-| P0 | Residual fidelity | `ResidualIslandDto.java` | ADD | Add fields matching TS/proto: id, kind, originalSource, sourceLocation, checksum, risk, etc. | `ResidualIslandDtoRoundTripTest.java` |
-| P0 | Residual fidelity | `ArtifactGraphServiceImpl.java` | MODIFY | Stop synthesizing residuals from IDs, persist exact payload, reject lossy ingest | `ArtifactGraphServiceResidualPreservationTest.java` |
-| P0 | Graph validation | `ArtifactGraphController.java` | MODIFY | Move validation to ArtifactGraphValidator, typed residual request, scope helper | `ArtifactGraphControllerScopeTest.java` |
-| P0 | Graph validation | `ArtifactGraphValidator.java` | ADD | Validate node IDs, resolved/unresolved edges, source locations, provenance, confidence, residual refs, snapshot consistency | `ArtifactGraphValidatorTest.java` |
-| P0 | Source import isolation | `SourceImportJobRepository.java` | MODIFY | Remove deprecated unscoped findJobById, add workspace/project filters to all list methods | `SourceImportJobRepositoryScopeTest.java` |
-| P0 | Source import isolation | `SourceImportJobService.java` | MODIFY | Remove public unscoped lookup, add retry/resume/cancel with persisted cancellation token | `SourceImportJobServiceLifecycleTest.java` |
-| P0 | Source credentials | `SourceCredentialResolver.java` | ADD | Resolve governed credential refs without logging secrets, enforce tenant/workspace/project ownership | `SourceCredentialResolverTest.java` |
-| P0 | GitHub provider | `GitHubSourceProvider.java` | MODIFY | Use SourceCredentialResolver, authoritative .gitignore, real bounded parallel fetch, archive fallback | `GitHubSourceProviderCommitPinnedTest.java` |
-| P0 | GitLab provider | `GitLabSourceProvider.java` | MODIFY | URL-encode project/file paths, paginate tree, use credentials, fail closed on incomplete tree | `GitLabSourceProviderUrlEncodingTest.java` |
-| P0 | Patch backend | `ArtifactPatchController.java` | ADD | Create change plan, build patch set, validate, review bundle, approve/reject, apply, rollback endpoints | `ArtifactPatchControllerScopeTest.java` |
-| P0 | Patch backend | `ArtifactPatchService.java` | ADD | Java-governed patch workflow, TS patch worker for React/TS, residual-overlap validation | `ArtifactPatchServiceRoundTripTest.java` |
-| P0 | Patch backend | `PatchSetRepository.java` | ADD | Persist change plans, patch sets, file patches, validation results, review bundles, rollback metadata | `PatchSetRepositoryTest.java` |
-
-### P1 Tasks
-
-| Priority | Phase | File path | Action | Required change | Tests |
-|----------|-------|-----------|--------|-----------------|-------|
-| P1 | Inventory canonicalization | `RepositoryInventoryScanner.java` | REPLACE | Canonical scanner with stable sorted walk, authoritative .gitignore, skip reasons, package boundaries | `RepositoryInventoryScannerGoldenTest.java` |
-| P1 | TS scanner boundary | `scanner.ts` | MODIFY | Mark as worker-local or align to Java canonical contract, remove conflicting semantics | `scanner.contract.test.ts` |
-| P1 | Archive provider | `ArchiveSourceProvider.java` | MODIFY | Add tar/tar.gz support, content-based snapshot ID, canonical inventory after extraction | `ArchiveSourceProviderDeterministicTest.java` |
-| P1 | Snapshot persistence | `RepositorySnapshotRepository.java` | ADD | Persist immutable snapshots, files, diagnostics, checksums, source locator refs, tenant/workspace/project | `RepositorySnapshotRepositoryTest.java` |
-| P1 | Snapshot schema | Migration file | ADD | Add repository_snapshots, repository_snapshot_files tables with indexes | Migration test |
-| P1 | Compile orchestration | `ArtifactCompileJobService.java` | MODIFY | Persist snapshot before extraction, run canonical inventory, route to appropriate extractors, persist semantic model | `ArtifactCompileJobServiceIntegrationTest.java` |
-| P1 | Java extractor | `JavaSourceParser.java` | MODIFY | Treat as extractor plugin, include source locations, symbol refs, unresolved refs, confidence/provenance | `JavaArtifactExtractorTest.java` |
-| P1 | TS patch worker | `patch-coordinator.ts` | MODIFY | Keep as worker library, require injected logger, add no-op zero-diff mode | `patch-coordinator.roundtrip.test.ts` |
-| P1 | Frontend UX | `ArtifactImportPanel.tsx` | ADD/MODIFY | Source provider picker, progress, import summary, confidence/residual/skipped sections | Component + Playwright tests |
-| P1 | Frontend UX | `PatchReviewPanel.tsx` | ADD | Display review bundle, diffs, validation errors, residual overlaps, approve/reject/apply | `artifact-patch-review.spec.ts` |
-
-### P2-P3 Tasks
-
-| Priority | Phase | File path | Action | Required change | Tests |
-|----------|-------|-----------|--------|-----------------|-------|
-| P2 | Cleanup | `platform/comp-decomp-todo.md` | DEPRECATE_OR_MOVE | Do not use as implementation source of truth if stale | Docs lint/check |
-| P2 | Cleanup | Archived docs | KEEP_ARCHIVED | Ensure no current code links to them as authoritative | Link check |
-| P3 | Naming normalization | All contract files | MODIFY | Normalize from product/project across all APIs | Contract lint test |
-
-## Exit Criteria
-
-### Phase 1: Contract and Fidelity Hardening
-- TS worker output round-trips into Java DTOs without adapter hacks
-- Contract tests fail if any field drifts
-- Residual source, span, checksum, and raw fragment ref survive ingest
-
-### Phase 2: Stable Repository Snapshot and Inventory
-- Same commit/source produces same snapshot ID and same ordered inventory
-- .gitignore, generated, vendor, binary, and large files explicitly handled
-- Snapshot can be reloaded and used for re-scan/drift detection
-
-### Phase 3: Graph Correctness and Semantic Model Persistence
-- No fake resolved edges
-- Unresolved references are explicit
-- Semantic model can be traced back to graph nodes/source spans
-
-### Phase 4: Java-Governed Compile-Back
-- No-op source→model→patch produces zero diff
-- Simple component prop edit produces minimal patch
-- Low-confidence/residual-overlap changes require review
-- Patch apply/rollback is audited and scoped
-
-### Phase 5: UX Integration
-- UI never hides residuals or low-confidence changes
-- UI cannot apply patch without backend validation/review state
-- E2E import→model→edit→patch review path passes
-
-### Phase 6: Consolidation and Cleanup
-- Current docs match implementation
-- Archived docs not used as source of truth
-- One term canonical externally, internal aliases removed
-
-## Test Fixtures Required
-
-```
-products/yappc/core/yappc-services/src/test/resources/fixtures/artifact-compiler/
-  - small-react-app
-  - react-router-app
-  - nextjs-app
-  - prisma-fullstack-app
-  - java-service
-  - openapi-client-app
-  - github-actions-workflow-project
-  - pnpm-monorepo
-  - polyglot-frontend-backend-db-workflow-app
+PHR / Finance / FlashIt / others
+  Status: shape-validation targets
+  Own: product domain behavior and product-specific gates
+  Must not force Kernel into product-specific assumptions
 ```
 
-## Critical Questions Answered
+This matches the uploaded audit standard: one capability, one correct owner, one canonical contract, one reusable implementation, many consumers, and no hidden duplicates or boundary leaks. 
 
-1. **Is the current system truly round-trip capable?** No - backend patch lifecycle missing
-2. **Can it scan a full GitHub repo today?** Partial - needs credentialRef, authoritative .gitignore, deterministic inventory
-3. **Are artifact IDs deterministic?** Partial - needs snapshotRef requirement
-4. **Are graph edges valid and resolved?** Partial - needs central validator
-5. **Is there a complete synthesis pipeline?** Partial - needs semantic model persistence
-6. **Is compile-back/patch generation implemented?** Partial, TS-library only - needs Java governance
-7. **Are residual islands preserved?** Partial - needs full payload ingestion
-8. **Are source import jobs durable?** Partial - needs unscoped removal, phase result persistence
-9. **Is tenant/workspace/project scope enforced consistently?** Partial - needs unscoped removal
-10. **Is backend artifact graph logic in the right canonical module?** Partial - needs knowledge-graph inspection
-11. **Are there duplicate or conflicting implementations?** Yes - needs canonical Java inventory + generated contracts
-12. **What is the smallest milestone that makes the foundation trustworthy?** Stable Repository IR and Source Snapshot Compiler
+---
 
-## Implementation Notes
+# D. Journey-by-journey findings
 
-- All Java code must follow ActiveJ Promise patterns, never block event loop
-- All TypeScript code must be fully typed, no `any` types
-- All public Java APIs require @doc.* tags
-- All changes must include appropriate unit/integration tests
-- Follow existing Ghatana naming conventions and architecture patterns
-- Reuse existing platform modules before creating new abstractions
-- No hardcoded secrets or unsafe defaults
-- Observability (logging, metrics, tracing) required for all critical flows
+## Journey 1 — Product ideation to ProductUnitIntent
+
+**Current flow:** ProductUnitIntent is a typed Kernel contract, the lifecycle applier delegates to `KernelLifecycleService`, and Studio’s Blueprints route displays ProductUnitIntent candidate data, evidence refs, provenance, preview/apply buttons, and handoff result state.   
+
+**Status:** Existing but partial.
+
+**Gaps:** The contract and UI exist, but this still needs full E2E proof from YAPPC creator/canvas/API through Kernel preview/apply, including runtime truth, provenance, event refs, failure states, and CI evidence.
+
+**Required TODOs:** Add/complete E2E tests for YAPPC export → Studio preview/apply → Kernel application result. Ensure Blueprints route has no hardcoded user-facing status strings and emits observable error states instead of relying only on context-captured errors.
+
+---
+
+## Journey 2 — Direct Product Development Kernel usage
+
+**Current flow:** Kernel lifecycle is executable for Digital Marketing. The root scripts include lifecycle build/test/validate/package/deploy/verify commands, phase checks, Kernel platform lifecycle checks, and Digital Marketing lifecycle pilot checks. 
+
+**Status:** Existing and executable for the pilot; partial as a general platform capability.
+
+**Gaps:** Digital Marketing is validated; future product shapes are not all execution-ready. Studio exposes lifecycle routes but some remain degraded/disabled until runtime and Data Cloud evidence are ready.  
+
+**Required TODOs:** Keep Digital Marketing as the only fully executable pilot until future product gates/adapters are proven. Add richer run-history, approval, artifact, deployment, and health panels backed by real lifecycle manifests.
+
+---
+
+## Journey 3 — Agentic product development
+
+**Current flow:** AgentLifecycleActionRequest exists with strict schema validation, policy/mastery/approval/verification fields, evidence refs, rollback plan refs, privacy fields, and raw-command rejection.  AgentLifecycleActionService validates requests, enforces provider requirements in platform mode, records runtime truth/provenance/memory when providers exist, and uses Kernel planner/executor boundaries.  
+
+**Status:** Existing but partial.
+
+**Gaps:** Contract and service are strong, but AEP/Data Cloud end-to-end runtime proof, trace ledger, central agent registry governance, approval UI, and failure/rollback proof still need to be completed.
+
+**Required TODOs:** Wire AEP/Action Plane execution through `AgentLifecycleActionService`, add Data Cloud-backed governance providers, expose approvals and audit trails in Studio, and test denial/approval/verification/failure paths.
+
+---
+
+## Journey 4 — Digital Marketing lifecycle pilot
+
+**Current flow:** Digital Marketing has lifecycle enabled in the product registry and has a detailed `kernel-product.yaml` with required manifests, plugin bindings, policy packs, backend/web surfaces, adapters, expected outputs, gates, local deployment config, provider modes, approvals, package config, and verify checks.   
+
+**Status:** Existing and executable.
+
+**Gaps:** Evidence pack confirms validate/test/build/package/deploy/verify smoke phases, but rollback is only shown as planned phase `ok`, not as a smoke-executed phase with a rollback manifest. Evidence paths are absolute local paths, which should be converted to portable evidence references. 
+
+**Required TODOs:** Add rollback and approval-path smoke proof, emit repo-relative/logical evidence refs, archive `.kernel/out` manifests in CI, and include promotion/rollback validation once safe.
+
+---
+
+## Journey 5 — Artifact intelligence
+
+**Current flow:** Semantic artifact intelligence is represented in Kernel contracts and boundary checks, and YAPPC is registered as a platform-provider product with artifact-intelligence readiness requirements.  
+
+**Status:** Existing but partial.
+
+**Gaps:** Semantic model persistence, residual island reporting, Data Cloud graph/provenance storage, and Studio visualization are still partial. Kernel must continue consuming references/evidence only, not YAPPC internals.
+
+**Required TODOs:** Complete semantic evidence contracts, residual island reports, RiskHotspotReport, Data Cloud graph storage, and Studio visualizations. Strengthen `check:yappc-artifact-intelligence-boundary`.
+
+---
+
+## Journey 6 — Data Cloud foundation
+
+**Current flow:** Data Cloud is a platform-provider product with many modules and provider bridge locations, but lifecycle execution is disabled. The registry lists blockers: platform-provider mode, bootstrap/platform separation, and runtime truth provider requirements. 
+
+**Status:** Existing but partial.
+
+**Gaps:** Platform mode depends on incomplete provider coverage. Data Cloud must remain disabled for ordinary lifecycle execution until Kernel can build/deploy it without depending on Data Cloud providers.
+
+**Required TODOs:** Complete Data Cloud-backed providers for events, artifacts, health, provenance, memory, runtime truth, telemetry, and policy evidence. Add circular bootstrap checks that prove Kernel bootstrap mode can build/deploy Data Cloud independently.
+
+---
+
+## Journey 7 — Future product shape readiness
+
+**Current flow:** PHR, FlashIt, Data Cloud, and YAPPC are explicitly not ordinary executable lifecycle products. PHR is planned/disabled and requires healthcare gates such as consent, PII classification, audit evidence, FHIR contract validation, and tenant-data sovereignty.  FlashIt is planned/disabled and requires mobile adapters, preview-security gates, personal data classification, and IPA/AAB artifact contracts. 
+
+**Status:** Existing but partial / declared only depending product.
+
+**Gaps:** Future shape readiness is correctly modeled, but not execution-ready. The next step is matrix hardening, not migration.
+
+**Required TODOs:** Keep PHR/FlashIt/Data Cloud/YAPPC execution disabled until required gates/adapters/manifests are proven. Expand product shape matrix with exact missing Kernel, Data Cloud, YAPPC, and product-owned gaps.
+
+---
+
+# E. Audit dimension findings
+
+## 1. Architecture and ownership
+
+The domain registry is a strong source of truth. It separates Platform Coherence, Kernel lifecycle, toolchain runtime, artifact/provenance, deployment/release, Data Cloud runtime truth, AEP governance, semantic artifact intelligence, canvas, UI builder, design system, Studio, product packs, event streaming, security/privacy, observability, and testing.   
+
+**Main issue:** Domain registry and phase scripts are ahead of some docs/tracker terminology.
+
+## 2. UI/UX
+
+Studio has a coherent route model with ownership and exposure gates. 
+
+**Main issue:** Some routes are intentionally disabled/degraded, and route-body i18n/status vocabulary is not fully complete.
+
+## 3. API contracts
+
+ProductUnitIntent and AgentLifecycleAction contracts are strong and schema-backed.  
+
+**Main issue:** More E2E contract tests are needed across YAPPC → Studio → Kernel → Data Cloud.
+
+## 4. Backend and storage
+
+Bootstrap file-backed lifecycle evidence is strong for Digital Marketing, but Data Cloud platform-mode providers remain partial.  
+
+## 5. AI/ML-native behavior
+
+Agentic contracts include evidence, approvals, verification, mastery, privacy, retention, and redaction. 
+
+**Main issue:** Agent execution is not yet fully proven through AEP/Data Cloud runtime truth.
+
+## 6. Observability/security/privacy/i18n/a11y
+
+Security, observability, and testing domains are classified executable, but product-by-product proof still varies. 
+
+## 7. Testing and CI/CD
+
+The repo has extensive checks and phase scripts.  The copilot rules prohibit TODO/FIXME in production paths, stubs in production-critical paths, test-only mocks in production, object-literal assertions, and disabled tests without issue references. 
+
+**Main issue:** Remaining production-stub warning backlog and CI portability of generated evidence.
+
+## 8. Cleanup and consolidation
+
+The domain registry explicitly calls out deprecated split canvas packages, deprecated package aliases, partial current-state claim checks, and partially manual boundary enforcement. 
+
+## 9. Current-state vs target-state discipline
+
+This is mostly implemented through registry classifications, but implementation tracker language still creates confusion because it mixes “Release” and “Workstream” terminology while the current governance model uses phases. 
+
+---
+
+# F. Capability ownership matrix
+
+| Capability              | Correct owner                         | Current status                | Problem                                     | Required fix                               |   Phase |
+| ----------------------- | ------------------------------------- | ----------------------------- | ------------------------------------------- | ------------------------------------------ | ------: |
+| Phase governance        | Platform Coherence                    | Existing but partial          | Tracker still says Release                  | Convert tracker/docs to phase model        |    0, 8 |
+| Studio shell            | Platform Studio                       | Existing but partial          | Disabled/degraded route surfaces remain     | Complete route data states and tests       |       1 |
+| ProductUnitIntent       | Kernel contracts + YAPPC producer     | Existing but partial          | E2E proof incomplete                        | Add YAPPC → Kernel preview/apply tests     |    1, 3 |
+| Kernel lifecycle        | Product Development Kernel            | Existing executable for pilot | Needs non-pilot shape hardening             | Keep execution limited; expand matrix      | 2, 3, 7 |
+| Digital Marketing pilot | Product + Kernel                      | Existing executable           | Absolute evidence paths; rollback smoke gap | Portable evidence + rollback proof         |       2 |
+| Data Cloud providers    | Data Cloud                            | Existing but partial          | Platform provider coverage incomplete       | Complete provider bridge contracts         |       5 |
+| Agentic lifecycle       | Kernel + AEP/Data Cloud               | Existing but partial          | Runtime/AEP proof incomplete                | Wire governance providers and trace ledger |       4 |
+| Artifact intelligence   | YAPPC + Kernel contracts + Data Cloud | Existing but partial          | Persistence/residual reporting partial      | Complete semantic evidence flow            |       6 |
+| Canvas/UI builder       | Platform libraries                    | Existing but partial          | Deprecated split package/preview gates      | Remove aliases, harden preview security    |    1, 8 |
+| Testing/governance      | Platform                              | Existing executable           | Warning backlog and portability gaps        | Burn down stubs and evidence drift         |       8 |
+
+---
+
+# G. Phase-by-phase implementation plan and TODOs
+
+## Phase 0 — Current-state baseline and coherence
+
+| TODO ID | File(s)                                                                                | Current issue                                                         | Required change                                                                                    | Validation                                                          |
+| ------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| P0-01   | `docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md`                    | Uses “Release 0” terminology                                          | Convert to phase terminology and add phase/journey/dimension crosswalk                             | `pnpm check:current-state-claims && pnpm check:doc-claims-evidence` |
+| P0-02   | `config/domain-registry.json`, `scripts/validate-domain-registry.mjs`                  | Some classifications are accurate but still manually interpreted      | Require every domain to include phase, journey, owner, evidence, blocking gaps, exit criteria      | `pnpm check:domain-registry && pnpm check:phase0`                   |
+| P0-03   | `scripts/check-current-state-claims.mjs`                                               | Complete/partial claims can drift between tracker and domain registry | Fail when tracker says complete but domain registry says partial without explicit scoped rationale | `pnpm check:current-state-claims`                                   |
+| P0-04   | `scripts/check-domain-boundaries.mjs`, `scripts/check-platform-product-boundaries.mjs` | Boundary enforcement remains partially manual                         | Add strict mode for Kernel/YAPPC/Data Cloud/provider boundaries                                    | `pnpm check:architecture-boundaries`                                |
+
+## Phase 1 — Unified Studio shell, terminology, and navigation
+
+| TODO ID | File(s)                                                                        | Current issue                                                              | Required change                                                                            | Validation                                                                                                      |
+| ------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| P1-01   | `platform/typescript/ghatana-studio/src/navigation/studioNavigation.ts`        | Good route model, but disabled/degraded routes still require runtime proof | Add per-route journey/dimension mapping and evidence-required fields                       | `pnpm check:phase1`                                                                                             |
+| P1-02   | `platform/typescript/ghatana-studio/src/routes/*.tsx`                          | Some route-body strings/statuses remain literal                            | Move all customer-facing route strings/status labels to i18n/status vocabulary             | `pnpm --dir platform/typescript/ghatana-studio test && pnpm --dir platform/typescript/ghatana-studio test:a11y` |
+| P1-03   | `BlueprintsPage.tsx`, `StudioLifecycleDataContext`                             | ProductUnitIntent UI exists but needs stronger failure telemetry           | Add observable error reason codes and visible error diagnostics for preview/apply failures | `pnpm check:studio-kernel-api`                                                                                  |
+| P1-04   | `AgentsPage.tsx`, `ArtifactsPage.tsx`, `HealthPage.tsx`, `DeploymentsPage.tsx` | Several routes are disabled/degraded due missing runtime evidence          | Add explicit blocked/degraded panels tied to provider readiness evidence                   | `pnpm check:shared-ui-state-coverage`                                                                           |
+
+## Phase 2 — Digital Marketing lifecycle pilot E2E
+
+| TODO ID | File(s)                                                                                       | Current issue                                                                    | Required change                                                     | Validation                                                                                                       |
+| ------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| P2-01   | `.kernel/evidence/digital-marketing/*`, `scripts/check-digital-marketing-lifecycle-pilot.mjs` | Evidence uses absolute local paths                                               | Emit repo-relative/logical manifest refs and archive evidence in CI | `pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing` |
+| P2-02   | `products/digital-marketing/kernel-product.yaml`                                              | Rollback is planned but not proven as smoke runtime path                         | Add rollback smoke proof with rollback manifest and health snapshot | `pnpm check:phase2`                                                                                              |
+| P2-03   | `products/digital-marketing/kernel-product.yaml`, `platform/typescript/kernel-release`        | Promote/rollback approval paths are declared but need stronger proof             | Add approval accepted/rejected/pending runtime evidence tests       | `pnpm check:product-deployment-contracts && pnpm check:kernel-lifecycle-truth`                                   |
+| P2-04   | Digital Marketing UI/API route tests                                                          | Pilot backend/web execution is strong, but customer UI proof should be recursive | Add Studio-visible lifecycle pilot E2E flow                         | `pnpm check:audited-e2e-workflow`                                                                                |
+
+## Phase 3 — Kernel hardening
+
+| TODO ID | File(s)                                                                   | Current issue                                                                 | Required change                                                                    | Validation                                                                           |
+| ------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| P3-01   | `platform/typescript/kernel-artifacts`, `kernel-providers/src/provenance` | Artifact/provenance is partial                                                | Link lifecycle run → artifact manifest → deployment manifest → provenance refs     | `pnpm check:product-artifact-contracts`                                              |
+| P3-02   | `platform/typescript/kernel-deployment`, `kernel-release`                 | Promotion semantics need broader evidence                                     | Add promotion and rollback contract tests with manifest refs and health refs       | `pnpm check:product-deployment-contracts`                                            |
+| P3-03   | `platform/typescript/kernel-lifecycle`                                    | Kernel executable for pilot, but product-general readiness must remain strict | Add product-shape-only mode tests for PHR/FlashIt/Data Cloud/YAPPC                 | `pnpm check:kernel-platform-lifecycle && pnpm check:product-shape-capability-matrix` |
+| P3-04   | `scripts/kernel-product.mjs`                                              | Need prevent raw tool bypass and hidden product assumptions                   | Add explicit checks that lifecycle execution always goes through adapter contracts | `pnpm check:toolchain-adapter-contracts`                                             |
+
+## Phase 4 — Agentic development through Kernel contracts
+
+| TODO ID | File(s)                                                        | Current issue                                      | Required change                                                                              | Validation                                                                                                             |
+| ------- | -------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| P4-01   | `AgentLifecycleActionService.ts`, Data Cloud Action Plane      | Service exists, AEP E2E proof partial              | Wire AEP gateway/server to submit governed Kernel lifecycle action requests                  | `pnpm check:agentic-lifecycle-action-contracts`                                                                        |
+| P4-02   | `platform/typescript/ghatana-studio/src/routes/AgentsPage.tsx` | Agent UI needs provider-backed trace/approval data | Add policy/mastery/approval/verification trace panels                                        | `pnpm check:phase4`                                                                                                    |
+| P4-03   | `products/data-cloud/planes/action/**`                         | Agent runtime governance partial                   | Add central registry + trace ledger + rollback/fallback proof                                | `./gradlew :platform:java:agent-core:check && pnpm check:phase4`                                                       |
+| P4-04   | Agent lifecycle tests                                          | Need negative-path proof                           | Add tests for raw-command denial, missing evidence, approval rejection, verification failure | `pnpm --dir platform/typescript/kernel-product-contracts test && pnpm --dir platform/typescript/kernel-lifecycle test` |
+
+## Phase 5 — Data Cloud platform-mode providers
+
+| TODO ID | File(s)                                            | Current issue                                                                | Required change                                                                                    | Validation                                         |
+| ------- | -------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| P5-01   | `products/data-cloud/libs/kernel-bridge-providers` | Provider coverage incomplete                                                 | Complete event/artifact/health/provenance/memory/runtime truth/telemetry/policy evidence providers | `pnpm check:data-cloud-platform-providers`         |
+| P5-02   | `scripts/check-kernel-provider-mode.mjs`           | Need stronger bootstrap/platform separation proof                            | Add test that Data Cloud can be built/deployed in bootstrap mode without Data Cloud providers      | `pnpm check:kernel-provider-mode`                  |
+| P5-03   | `config/canonical-product-registry.json`           | Data Cloud lifecycle disabled correctly, but reason codes must stay explicit | Keep disabled until bootstrap/platform proof exists; fail if accidentally enabled                  | `pnpm check:product-registry && pnpm check:phase5` |
+| P5-04   | Data Cloud runtime truth docs/tests                | Runtime truth provider partial                                               | Add durable tenant-scoped runtime truth tests and query proof                                      | `pnpm check:data-access-contract`                  |
+
+## Phase 6 — Artifact intelligence integration
+
+| TODO ID | File(s)                                                                  | Current issue                                                       | Required change                                                                                | Validation                                        |
+| ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| P6-01   | `platform/typescript/kernel-product-contracts/src/artifact-intelligence` | Semantic artifact contracts exist but persistence/reporting partial | Finalize `SemanticArtifactReference`, `ArtifactGraphSummary`, residual island and risk reports | `pnpm check:yappc-artifact-intelligence-boundary` |
+| P6-02   | `products/yappc/**artifact*`, `products/yappc/kernel-bridge`             | Need reference-only handoff to Kernel                               | Ensure Kernel consumes only shared semantic refs/evidence, never YAPPC internals               | `pnpm check:yappc-artifact-intelligence-boundary` |
+| P6-03   | Data Cloud graph/provenance modules                                      | Semantic graph storage partial                                      | Store artifact graph, provenance, and memory refs in Data Cloud                                | `pnpm check:data-cloud-platform-providers`        |
+| P6-04   | Studio artifact/risk pages                                               | Visualization partial                                               | Add residual island/risk hotspot panels with evidence refs                                     | `pnpm check:phase6`                               |
+
+## Phase 7 — Future product shape readiness
+
+| TODO ID | File(s)                                  | Current issue                                                        | Required change                                                                                      | Validation                                                                                    |
+| ------- | ---------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| P7-01   | `config/canonical-product-registry.json` | Product shapes are modeled but not all readiness gaps are executable | Ensure PHR, Finance, FlashIt, Data Cloud, YAPPC each has explicit blocker/gate/adapter matrix        | `pnpm check:product-shape-capability-matrix`                                                  |
+| P7-02   | `products/phr/kernel-product.yaml`       | PHR requires regulated gates                                         | Add/validate consent, PII, audit, FHIR, sovereignty gates before enabling execution                  | `pnpm check:product-registry`                                                                 |
+| P7-03   | `products/flashit/kernel-product.yaml`   | Mobile lifecycle requires unready adapters/artifacts                 | Keep execution disabled until xcode-ios/gradle-android and IPA/AAB manifests are real                | `pnpm check:flashit-client-conformance`                                                       |
+| P7-04   | Finance lifecycle configs                | Finance validates compliance-heavy shape                             | Add shape proof for backend-heavy, operator/portal/SDK, compliance gates without premature execution | `pnpm check:finance-transaction-workflow-proof && pnpm check:product-shape-capability-matrix` |
+
+## Phase 8 — Production hardening, CI/CD, docs, cleanup
+
+| TODO ID | File(s)                                                              | Current issue                                          | Required change                                                                                     | Validation                                                        |
+| ------- | -------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| P8-01   | `scripts/check-production-stubs.mjs`, allowlist                      | Production-stub warning backlog remains                | Burn down warnings; keep zero critical violations                                                   | `pnpm check:production-stubs`                                     |
+| P8-02   | `platform/typescript/LIBRARY_GOVERNANCE.md`, deprecated packages     | Deprecated aliases/split canvas packages still flagged | Delete deprecated facades or block them fully with fix-forward migration                            | `pnpm check:deprecated-packages && pnpm check:deprecated-imports` |
+| P8-03   | `.kernel/evidence/**`, evidence generation scripts                   | Local absolute paths reduce CI portability             | Emit portable evidence refs and publish artifact bundles                                            | `pnpm check:phase8`                                               |
+| P8-04   | Docs under `docs/**`, `platform/kernel-todo.md`                      | Multiple status/truth surfaces can drift               | Make one authoritative status source and reference it everywhere else                               | `pnpm check:doc-truth && pnpm check:doc-claims-evidence`          |
+| P8-05   | `scripts/check-cleanup-gate.mjs`, `scripts/check-orphan-modules.mjs` | Cleanup needs permanent enforcement                    | Fail on orphan modules, stale generated artifacts, deprecated package names, and folder-only shells | `pnpm check:cleanup-gate && pnpm check:orphan-modules`            |
+
+---
+
+# H. Validation command suite
+
+Baseline:
+
+```bash
+pnpm build
+pnpm test
+pnpm typecheck
+pnpm build:platform
+pnpm build:kernel-lifecycle-platform
+pnpm check:kernel-platform-lifecycle
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:product-shape-capability-matrix
+pnpm check:lifecycle-registry-config-drift
+pnpm check:design-system-conformance
+pnpm check:shared-product-shells
+pnpm check:shared-layout-primitives
+pnpm check:shared-ui-state-coverage
+pnpm check:production-readiness
+pnpm check:secret-default-credentials
+pnpm check:observability-conformance
+pnpm check:data-access-contract
+./gradlew build
+./gradlew check
+```
+
+Phase suite already present in the repo:
+
+```bash
+pnpm check:phase0
+pnpm check:phase1
+pnpm check:phase2
+pnpm check:phase3
+pnpm check:phase4
+pnpm check:phase5
+pnpm check:phase6
+pnpm check:phase7
+pnpm check:phase8
+pnpm check:world-class-platform-readiness
+```
+
+High-priority targeted commands:
+
+```bash
+pnpm check:domain-registry
+pnpm check:domain-boundaries
+pnpm check:architecture-boundaries
+pnpm check:current-state-claims
+pnpm check:doc-claims-evidence
+pnpm check:kernel-provider-mode
+pnpm check:data-cloud-platform-providers
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm check:agentic-lifecycle-action-contracts
+pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing
+pnpm check:production-stubs
+pnpm check:deprecated-packages
+pnpm check:deprecated-imports
+pnpm check:cleanup-gate
+pnpm check:orphan-modules
+```
+
+---
+
+# Top 10 fixes
+
+1. Convert tracker/docs from release/workstream language to phase/journey/dimension language.
+2. Normalize Digital Marketing lifecycle evidence paths from absolute local paths to portable evidence refs.
+3. Add rollback smoke proof and rollback manifest evidence for Digital Marketing.
+4. Complete Data Cloud platform-mode provider coverage.
+5. Add YAPPC → Kernel ProductUnitIntent E2E proof.
+6. Wire AgentLifecycleActionService through AEP/Data Cloud runtime proof.
+7. Complete artifact/provenance run linkage.
+8. Complete release/promotion/rollback contract proof.
+9. Finish semantic artifact graph/residual island/risk hotspot flow.
+10. Burn down production-stub warnings and deprecated package aliases.
+
+# Top 10 cleanup/removal actions
+
+1. Remove or phase-rewrite “Release” status headings in active implementation docs.
+2. Delete or block deprecated split canvas packages and aliases.
+3. Remove stale target-state claims that are not evidence-backed.
+4. Remove absolute local evidence paths from committed evidence packs.
+5. Remove or quarantine legacy docs that duplicate canonical Kernel/product truth.
+6. Remove product-specific assumptions from platform-level checks.
+7. Remove any placeholder/stub adapter paths that can fake success.
+8. Remove disabled tests without issue references.
+9. Remove folder-only shell packages.
+10. Remove duplicate UI/status/error patterns once shared Studio/design-system patterns exist.

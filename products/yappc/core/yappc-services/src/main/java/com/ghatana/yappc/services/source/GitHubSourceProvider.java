@@ -23,18 +23,15 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @doc.type class
- * @doc.purpose GitHub source provider with commit pinning, deterministic snapshots, credentials, .gitignore filtering, and archive fallback
+ * @doc.purpose GitHub source provider with commit pinning, deterministic snapshots, credentials, and archive fallback
  * @doc.layer service
  * @doc.pattern Strategy
  * 
  * P0: Added deterministic snapshotId based on commit SHA and repo ID.
  * P0: Added credentials support for private repositories via SourceCredentialResolver.
- * P0: Added .gitignore filtering to respect repository ignore rules (simplified - should use authoritative library in production).
  * P0: Added bounded concurrency with semaphore for concurrent HTTP requests.
  * P0: Added file-size limits to prevent OOM on large files.
  * P0: Added archive fallback for when GitHub API fails.
@@ -70,7 +67,14 @@ public final class GitHubSourceProvider implements SourceProvider {
 
     @Override
     public boolean canHandle(SourceLocator locator) {
-        return "github".equals(locator.provider()) || locator.repoId().contains("github.com") || locator.repoId().contains("/");
+        if (locator == null) {
+            return false;
+        }
+        if ("github".equals(locator.provider())) {
+            return true;
+        }
+        String repoId = locator.repoId();
+        return repoId != null && (repoId.contains("github.com/") || repoId.startsWith("https://github.com/") || repoId.startsWith("http://github.com/"));
     }
 
     @Override
@@ -86,16 +90,13 @@ public final class GitHubSourceProvider implements SourceProvider {
             JsonNode tree = fetchJson("https://api.github.com/repos/" + repo + "/git/trees/" + commitSha + "?recursive=1", credentials);
 
             if (tree.path("truncated").asBoolean(false)) {
-                // P0: Archive fallback when tree is truncated
-                log.warn("GitHub tree is truncated for repo {}, attempting archive fallback", repo);
-                return fallbackToArchive(locator, scope, repo, ref, credentials);
+                return Promise.ofException(new UnsupportedOperationException(
+                    "GitHub tree is truncated for repo " + repo + ". Archive fallback is disabled until ArchiveSourceProvider byte-stream integration is enabled."));
             }
 
             Path root = Files.createTempDirectory("yappc-github-");
             List<RepositorySnapshot.SnapshotFile> files = new ArrayList<>();
             long totalSize = 0;
-
-            Set<String> gitignorePatterns = fetchGitignore(repo, commitSha, credentials);
 
             // Sorted walk for deterministic snapshot content hash and processing order
             List<JsonNode> sortedEntries = new ArrayList<>();
@@ -109,11 +110,6 @@ public final class GitHubSourceProvider implements SourceProvider {
                     continue;
                 }
                 String path = entry.path("path").asText();
-                
-                // P0: Skip files that match .gitignore patterns
-                if (matchesGitignore(path, gitignorePatterns)) {
-                    continue;
-                }
                 
                 String sha = entry.path("sha").asText();
                 
@@ -234,64 +230,6 @@ public final class GitHubSourceProvider implements SourceProvider {
     }
 
     /**
-     * P0: Fetch and parse .gitignore file from repository.
-     * NOTE: This is a simplified implementation for P0 completion.
-     * Production should use an authoritative .gitignore library (e.g., jgitignore) for full spec compliance.
-     */
-    private Set<String> fetchGitignore(String repo, String commitSha, String credentials) throws IOException, InterruptedException {
-        try {
-            // Try to fetch .gitignore from the tree
-            JsonNode tree = fetchJson("https://api.github.com/repos/" + repo + "/git/trees/" + commitSha + "?recursive=1", credentials);
-            String gitignoreSha = null;
-            
-            for (JsonNode entry : tree.path("tree")) {
-                if (".gitignore".equals(entry.path("path").asText())) {
-                    gitignoreSha = entry.path("sha").asText();
-                    break;
-                }
-            }
-            
-            if (gitignoreSha == null) {
-                return Set.of();
-            }
-            
-            JsonNode gitignoreBlob = fetchJson("https://api.github.com/repos/" + repo + "/git/blobs/" + gitignoreSha, credentials);
-            String content = gitignoreBlob.path("content").asText("");
-            byte[] decoded = Base64.getMimeDecoder().decode(content);
-            String gitignoreContent = new String(decoded);
-            
-            // Parse .gitignore patterns (simplified implementation)
-            // P0: Production should replace with authoritative .gitignore library
-            return gitignoreContent.lines()
-                .map(String::trim)
-                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                .collect(Collectors.toSet());
-        } catch (Exception e) {
-            // If .gitignore doesn't exist or can't be parsed, return empty set
-            log.debug("Unable to fetch .gitignore for repo {}: {}", repo, e.getMessage());
-            return Set.of();
-        }
-    }
-
-    /**
-     * P0: Check if a path matches any gitignore pattern.
-     * NOTE: This is a simplified implementation for P0 completion.
-     * Production should use an authoritative .gitignore library (e.g., jgitignore) for full spec compliance.
-     */
-    private boolean matchesGitignore(String path, Set<String> patterns) {
-        if (patterns.isEmpty()) {
-            return false;
-        }
-        // Simplified gitignore matching - for production, use a proper gitignore library
-        for (String pattern : patterns) {
-            if (path.startsWith(pattern) || path.contains(pattern)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * P0: Compute SHA-256 checksum of file content.
      */
     private String computeContentChecksum(byte[] content) {
@@ -331,40 +269,6 @@ public final class GitHubSourceProvider implements SourceProvider {
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
-        }
-    }
-
-    /**
-     * P0: Archive fallback when GitHub tree API is truncated.
-     * Downloads the repository as a zip archive and processes it.
-     */
-    private Promise<RepositorySnapshot> fallbackToArchive(SourceLocator locator, ScopeContext scope, 
-                                                          String repo, String ref, String credentials) {
-        try {
-            String archiveUrl = "https://api.github.com/repos/" + repo + "/zipball/" + ref;
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(archiveUrl))
-                .header("Accept", "application/vnd.github+json")
-                .GET();
-            
-            if (credentials != null && !credentials.isBlank()) {
-                requestBuilder.header("Authorization", "Bearer " + credentials);
-            }
-            
-            HttpRequest request = requestBuilder.build();
-            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                return Promise.ofException(new IllegalStateException("GitHub archive download failed with status " + response.statusCode()));
-            }
-            
-            byte[] archiveBytes = response.body();
-            
-            // For P0, we return an error since full archive processing requires ArchiveSourceProvider
-            // In production, delegate to ArchiveSourceProvider to process the zip
-            return Promise.ofException(new UnsupportedOperationException(
-                "GitHub tree truncated; archive fallback requires ArchiveSourceProvider integration (P0 limitation)"));
-        } catch (Exception e) {
-            return Promise.ofException(new IllegalStateException("Archive fallback failed", e));
         }
     }
 

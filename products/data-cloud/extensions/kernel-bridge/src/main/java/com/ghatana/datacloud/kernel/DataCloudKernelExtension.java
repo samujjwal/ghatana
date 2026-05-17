@@ -166,6 +166,7 @@ public final class DataCloudKernelExtension extends AbstractKernelExtension {
             DataCloudKernelAdapter adapter) {
         context.registerService(DataCloudEventProvider.class, new DataCloudEventProvider(adapter, bridgeContext));
         context.registerService(DataCloudArtifactProvider.class, new DataCloudArtifactProvider(adapter, bridgeContext));
+        context.registerService(DataCloudArtifactGraphProvider.class, new DataCloudArtifactGraphProvider(adapter, bridgeContext));
         context.registerService(DataCloudHealthProvider.class, new DataCloudHealthProvider(adapter, bridgeContext));
         context.registerService(DataCloudProvenanceProvider.class, new DataCloudProvenanceProvider(adapter, bridgeContext));
         context.registerService(DataCloudMemoryProvider.class, new DataCloudMemoryProvider(adapter, bridgeContext));

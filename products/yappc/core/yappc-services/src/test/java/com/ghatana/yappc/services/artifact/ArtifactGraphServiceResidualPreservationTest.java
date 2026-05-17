@@ -80,7 +80,7 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
             "t1", "p1", "w1", "snap-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             "p1", "t1",
             List.of(), List.of(),
             null, "snap-1", "ver-1", "checksum-1",
@@ -114,7 +114,7 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
     @Test
     @DisplayName("empty residualIslands triggers saveResidualIslands with empty list, not placeholder records")
     void emptyResidualIslandsSavesEmptyList() {
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             "p1", "t1",
             List.of(), List.of(),
             null, "snap-2", "ver-2", "checksum-2",

@@ -496,7 +496,7 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
             sample.stop(publishLatency);
 
             LOG.debug("Published event {} to topic {}", event.getId(), topic);
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             publishErrors.increment();
             LOG.error("Failed to publish event {} to topic {}: {}", event.getId(), topic, e.getMessage());
@@ -542,7 +542,7 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
                 sample.stop(publishLatency);
 
                 LOG.debug("Published {} events in batch", events.size());
-                return Promise.of(null);
+                return Promise.complete();
             } catch (Exception e) {
                 if (config.isExactlyOnceEnabled()) {
                     producer.abortTransaction();
@@ -609,10 +609,10 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
                 adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
                 LOG.info("Topic created: {}", topic);
             }
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             LOG.warn("Could not ensure topic exists: {} - {}", topic, e.getMessage());
-            return Promise.of(null);
+            return Promise.complete();
         }
     }
 

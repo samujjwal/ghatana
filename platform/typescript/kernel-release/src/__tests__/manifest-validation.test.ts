@@ -184,6 +184,77 @@ describe('Promotion plan manifest validation', () => {
       expect((error as Error).message).toContain('not found');
     }
   });
+
+  it('should validate promotion plan includes manifest refs and health refs', async () => {
+    const deploymentManifest = {
+      schemaVersion: '1.0.0',
+      runId: 'run-123',
+      correlationId: 'corr-456',
+      productId: 'test-product',
+      productUnitId: 'test-unit',
+      deploymentId: 'deploy-789',
+      version: '1.0.0',
+      environment: 'production',
+      deploymentStatus: 'succeeded' as const,
+      timestamp: new Date().toISOString(),
+      surfaces: [],
+      deploymentMetadata: {
+        sourceReleaseId: 'release-1',
+        sourceReleaseVersion: '1.0.0',
+        deploymentStrategy: 'rolling' as const,
+        deploymentTrigger: 'manual',
+        triggeredBy: 'test-user',
+      },
+      healthChecks: [
+        {
+          checkId: 'health-1',
+          checkName: 'readiness',
+          status: 'passed' as const,
+          checkedAt: new Date().toISOString(),
+        },
+      ],
+      provenanceRefs: ['provenance-ref-1'],
+    };
+
+    const plan = ProductPromotionPlanSchema.parse({
+      productId: 'test-product',
+      sourceEnvironment: 'staging',
+      targetEnvironment: 'production',
+      promotionRequirements: {
+        artifactManifest: true,
+        deploymentManifest: true,
+        releaseManifest: true,
+        securityChecks: true,
+        privacyChecks: true,
+        licenseChecks: true,
+        conformanceChecks: true,
+        e2eChecks: true,
+        performanceChecks: true,
+      },
+      manifestPaths: {
+        deploymentManifest: 'deploy/deployment-manifest.json',
+      },
+      approvalGate: {
+        required: false,
+        approvers: [],
+        approved: true,
+      },
+      rollbackPlan: {
+        strategy: 'previous-artifact',
+        previousArtifact: 'v0.9.0',
+      },
+    });
+
+    // Create deployment manifest with refs
+    await fs.mkdir(path.join(tempDir, 'deploy'), { recursive: true });
+    await fs.writeFile(
+      path.join(tempDir, 'deploy', 'deployment-manifest.json'),
+      JSON.stringify(deploymentManifest)
+    );
+
+    const result = await promotionManager.createPromotionPlan(plan);
+    expect(result.productId).toBe('test-product');
+  });
 });
 
 describe('Rollback plan manifest validation', () => {
@@ -247,6 +318,58 @@ describe('Rollback plan manifest validation', () => {
     // Create manifest file
     await fs.mkdir(path.join(tempDir, 'rollback'), { recursive: true });
     await fs.writeFile(path.join(tempDir, 'rollback', 'rollback-manifest.json'), '{}');
+
+    const result = await rollbackManager.createRollbackPlan(plan);
+    expect(result.productId).toBe('test-product');
+  });
+
+  it('should validate rollback manifest includes runId and correlationId', async () => {
+    const rollbackManifest = {
+      schemaVersion: '1.0.0',
+      runId: 'run-123',
+      correlationId: 'corr-456',
+      productId: 'test-product',
+      productUnitId: 'test-unit',
+      deploymentId: 'deploy-789',
+      version: '0.9.0',
+      environment: 'production',
+      deploymentStatus: 'succeeded' as const,
+      timestamp: new Date().toISOString(),
+      surfaces: [],
+      deploymentMetadata: {
+        sourceReleaseId: 'release-1',
+        sourceReleaseVersion: '0.9.0',
+        deploymentStrategy: 'rolling' as const,
+        deploymentTrigger: 'manual',
+        triggeredBy: 'test-user',
+      },
+      healthChecks: [],
+      provenanceRefs: ['provenance-ref-1'],
+    };
+
+    const plan = ProductRollbackPlanSchema.parse({
+      productId: 'test-product',
+      environment: 'production',
+      currentVersion: '1.0.0',
+      targetVersion: '0.9.0',
+      strategy: 'previous-artifact',
+      reason: 'Critical bug',
+      rollbackBy: 'test-user',
+      timestamp: new Date().toISOString(),
+      manifestPath: 'rollback/rollback-manifest.json',
+      verificationPlan: {
+        healthChecks: true,
+        smokeTests: true,
+        metrics: true,
+      },
+    });
+
+    // Create manifest file with refs
+    await fs.mkdir(path.join(tempDir, 'rollback'), { recursive: true });
+    await fs.writeFile(
+      path.join(tempDir, 'rollback', 'rollback-manifest.json'),
+      JSON.stringify(rollbackManifest)
+    );
 
     const result = await rollbackManager.createRollbackPlan(plan);
     expect(result.productId).toBe('test-product');

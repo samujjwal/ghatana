@@ -132,6 +132,95 @@ describe('Data Cloud Kernel provider bridge', () => {
       error: 'optional Data Cloud provider write skipped: provider unavailable',
     });
   });
+
+  it('queries runtime truth with tenant-scoped isolation', async () => {
+    const calls: CapturedRequest[] = [];
+    const client = new DataCloudKernelProviderClient({
+      baseUrl: 'https://data-cloud.local',
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+      fetchImpl: async (input, init) => {
+        calls.push(capture(input, init));
+        return jsonResponse({
+          productUnitId: 'digital-marketing',
+          observedAt: '2026-05-14T00:00:00.000Z',
+        });
+      },
+    });
+    const provider = new DataCloudRuntimeTruthProvider(client);
+
+    const result = await provider.getRuntimeTruth('digital-marketing');
+
+    expect(result).toEqual({
+      productUnitId: 'digital-marketing',
+      observedAt: '2026-05-14T00:00:00.000Z',
+    });
+    expect(calls[0]?.url).toBe('https://data-cloud.local/api/v1/kernel/providers/runtime-truth/digital-marketing/latest');
+    expect(calls[0]?.headers['x-ghatana-tenant-id']).toBe('tenant-1');
+  });
+
+  it('returns null when runtime truth snapshot not found', async () => {
+    const client = new DataCloudKernelProviderClient({
+      baseUrl: 'https://data-cloud.local',
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+      fetchImpl: async () => jsonResponse({ error: 'not found' }, 404),
+    });
+    const provider = new DataCloudRuntimeTruthProvider(client);
+
+    const result = await provider.getRuntimeTruth('digital-marketing');
+
+    expect(result).toBeNull();
+  });
+
+  it('provides query proof by recording and retrieving runtime truth', async () => {
+    const calls: CapturedRequest[] = [];
+    const client = new DataCloudKernelProviderClient({
+      baseUrl: 'https://data-cloud.local',
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+      fetchImpl: async (input, init) => {
+        calls.push(capture(input, init));
+        const url = String(input);
+        if (url.includes('runtime-truth/digital-marketing/latest')) {
+          return jsonResponse({
+            productUnitId: 'digital-marketing',
+            runId: 'run-1',
+            phase: 'build',
+            status: 'healthy',
+            observedAt: '2026-05-14T00:00:00.000Z',
+            evidenceRefs: ['artifact:manifest'],
+            providerMode: 'platform',
+          });
+        }
+        return jsonResponse({ success: true, ref: 'truth/ref' });
+      },
+    });
+    const provider = new DataCloudRuntimeTruthProvider(client);
+    const snapshot = {
+      productUnitId: 'digital-marketing',
+      runId: 'run-1',
+      phase: 'build' as const,
+      status: 'healthy',
+      observedAt: '2026-05-14T00:00:00.000Z',
+      evidenceRefs: ['artifact:manifest'],
+      providerMode: 'platform' as const,
+    };
+
+    await provider.recordRuntimeTruth(snapshot, {
+      required: true,
+      correlationId: 'corr-1',
+    });
+
+    const retrieved = await provider.getRuntimeTruth('digital-marketing');
+
+    expect(retrieved).toEqual(snapshot);
+    expect(calls[0]?.url).toBe('https://data-cloud.local/api/v1/kernel/providers/runtime-truth');
+    expect(calls[1]?.url).toBe('https://data-cloud.local/api/v1/kernel/providers/runtime-truth/digital-marketing/latest');
+  });
 });
 
 interface CapturedRequest {

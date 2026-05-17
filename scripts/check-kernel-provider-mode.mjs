@@ -77,6 +77,12 @@ requireAll('platform/typescript/kernel-providers/src/factory/createBootstrapKern
   'FileRuntimeTruthProvider',
 ]);
 
+// Ensure bootstrap providers don't depend on Data Cloud providers
+const bootstrapProviders = read('platform/typescript/kernel-providers/src/factory/createBootstrapKernelProviders.ts');
+if (bootstrapProviders.includes('DataCloud') || bootstrapProviders.includes('data-cloud')) {
+  errors.push('Bootstrap providers must not depend on Data Cloud providers');
+}
+
 requireAll('products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelExtension.java', [
   'DataCloud',
   'Lifecycle',

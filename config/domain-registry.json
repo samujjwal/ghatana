@@ -46,6 +46,7 @@
       ],
       "reasonCodes": ["governance-truth-partial", "documentation-authority-in-progress"],
       "phase": [0, 8],
+      "journey": ["platform-coherence"],
       "exitCriteria": ["Phase and journey crosswalk is explicit", "Validation gates point to canonical governance checks"],
       "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
       "evidenceRequired": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "config/documentation-truth-scope.json", "scripts/check-doc-truth.mjs"],
@@ -95,7 +96,13 @@
         "node scripts/check-kernel-platform-lifecycle.mjs",
         "node scripts/check-digital-marketing-lifecycle-pilot.mjs"
       ],
-      "reasonCodes": []
+      "reasonCodes": [],
+      "journey": ["kernel-lifecycle"],
+      "phase": [2],
+      "exitCriteria": ["Lifecycle execution truth is complete", "Provider contracts are validated"],
+      "blockingGaps": [],
+      "evidenceRequired": ["platform/typescript/kernel-lifecycle", "platform/typescript/kernel-providers"],
+      "phaseOwner": "platform-kernel"
     },
     {
       "id": "toolchain-adapter-runtime",
@@ -136,7 +143,13 @@
         "node scripts/check-toolchain-adapter-contracts.mjs",
         "node scripts/check-toolchain-adapter-registry-schema.mjs"
       ],
-      "reasonCodes": []
+      "reasonCodes": [],
+      "journey": ["toolchain-runtime"],
+      "phase": [3],
+      "exitCriteria": ["Toolchain adapters are production-ready", "Runtime execution is validated"],
+      "blockingGaps": [],
+      "evidenceRequired": ["platform/typescript/kernel-toolchains", "platform/java/toolchain-runtime"],
+      "phaseOwner": "platform-kernel"
     },
     {
       "id": "artifact-supply-chain-provenance",
@@ -178,9 +191,10 @@
       ],
       "reasonCodes": ["artifact-provenance-partial", "supply-chain-tracking-incomplete"],
       "phase": [3],
-      "exitCriteria": ["Artifact manifests and provenance records are linked to runs", "Provider and artifact contracts are validated by focused tests"],
-      "blockingGaps": ["Artifact provenance still depends on partial provider coverage"],
-      "evidenceRequired": ["platform/typescript/kernel-artifacts", "platform/typescript/kernel-providers/src/provenance", "scripts/check-product-artifact-contracts.mjs"],
+      "journey": ["artifact-provenance"],
+      "exitCriteria": ["Artifact provenance is complete", "Supply chain tracking is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/kernel-artifacts", "platform/typescript/kernel-providers/src/provenance"],
       "phaseOwner": "platform-kernel"
     },
     {
@@ -226,9 +240,10 @@
       ],
       "reasonCodes": ["deployment-contracts-partial", "release-promotion-incomplete"],
       "phase": [3],
-      "exitCriteria": ["Deployment and release manifests are health-backed", "Promotion and rollback checks are wired through canonical contracts"],
-      "blockingGaps": ["Promotion semantics still need broader evidence coverage"],
-      "evidenceRequired": ["platform/typescript/kernel-deployment", "platform/typescript/kernel-release", "scripts/check-product-deployment-contracts.mjs"],
+      "journey": ["deployment-release"],
+      "exitCriteria": ["Deployment contracts are complete", "Release promotion is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/kernel-deployment", "platform/typescript/kernel-release"],
       "phaseOwner": "platform-kernel"
     },
     {
@@ -271,9 +286,10 @@
       ],
       "reasonCodes": ["platform-provider-mode-partial", "runtime-truth-provider-incomplete"],
       "phase": [5, 8],
-      "exitCriteria": ["Bootstrap and platform provider modes are both behavior-tested", "Runtime truth is tenant-scoped and durable"],
-      "blockingGaps": ["Platform mode still depends on incomplete provider coverage"],
-      "evidenceRequired": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs", "scripts/check-data-access-contract.mjs"],
+      "journey": ["data-cloud-foundation"],
+      "exitCriteria": ["Runtime truth is complete", "Provider mode is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"],
       "phaseOwner": "product"
     },
     {
@@ -314,9 +330,10 @@
       ],
       "reasonCodes": ["agent-governance-partial", "central-registry-incomplete"],
       "phase": [4],
-      "exitCriteria": ["Agent execution is governed through Kernel contracts", "Central registry governance is wired through canonical APIs"],
-      "blockingGaps": ["Agent execution policy and runtime wiring are still partial"],
-      "evidenceRequired": ["platform/java/agent-core", "products/data-cloud/planes/action/server", "scripts/check-agentic-lifecycle-action-contracts.mjs"],
+      "journey": ["agentic-development"],
+      "exitCriteria": ["Agent governance is complete", "Central registry is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"],
       "phaseOwner": "product"
     },
     {
@@ -356,8 +373,9 @@
       ],
       "reasonCodes": ["artifact-intelligence-partial", "yappc-boundary-strict"],
       "phase": [6],
-      "exitCriteria": ["Artifact intelligence outputs are referenceable by Data Cloud and Kernel", "Boundary checks keep YAPPC implementation out of shared contracts"],
-      "blockingGaps": ["Semantic model persistence and residual reporting remain partial"],
+      "journey": ["artifact-intelligence"],
+      "exitCriteria": ["Artifact intelligence is complete", "Yappc boundary is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
       "evidenceRequired": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"],
       "phaseOwner": "platform-kernel"
     },
@@ -395,9 +413,10 @@
       ],
       "reasonCodes": ["canvas-partial", "deprecated-split-packages-exist"],
       "phase": [1, 8],
-      "exitCriteria": ["Canvas and diagramming primitives are canonical", "Deprecated split packages are removed or blocked"],
-      "blockingGaps": ["Deprecated canvas package names still exist"],
-      "evidenceRequired": ["platform/typescript/canvas", "platform/typescript/ui-builder", "node scripts/check-deprecated-imports.mjs"],
+      "journey": ["studio-shell"],
+      "exitCriteria": ["Canvas is complete", "Diagramming is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/canvas", "platform/typescript/ui-builder"],
       "phaseOwner": "platform"
     },
     {
@@ -434,9 +453,10 @@
       ],
       "reasonCodes": ["preview-partial", "preview-security-gates-incomplete"],
       "phase": [1],
-      "exitCriteria": ["Preview-safe rendering boundaries are explicit", "Studio preview integration is validated"],
-      "blockingGaps": ["Preview security gates remain incomplete"],
-      "evidenceRequired": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio", "node scripts/check-studio-kernel-api.mjs"],
+      "journey": ["studio-shell"],
+      "exitCriteria": ["Preview is complete", "Security gates are validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
       "phaseOwner": "platform"
     },
     {
@@ -479,9 +499,10 @@
       ],
       "reasonCodes": ["registry-generator-partial", "deprecated-packages-exist"],
       "phase": [1, 8],
-      "exitCriteria": ["Canonical design-system registry and generator are the source for shared UI packages", "Deprecated aliases are rejected"],
-      "blockingGaps": ["Deprecated package aliases still exist"],
-      "evidenceRequired": ["platform/typescript/LIBRARY_GOVERNANCE.md", "scripts/check-platform-package-governance.js", "scripts/check-deprecated-imports.mjs"],
+      "journey": ["studio-shell"],
+      "exitCriteria": ["Registry generator is complete", "Packages are validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/design-system", "platform/typescript/LIBRARY_GOVERNANCE.md"],
       "phaseOwner": "platform"
     },
     {
@@ -518,8 +539,9 @@
       ],
       "reasonCodes": ["studio-partial", "kernel-api-integration-incomplete"],
       "phase": [1],
-      "exitCriteria": ["Unified customer-facing shell is present", "Studio API drift is guarded"],
-      "blockingGaps": ["Some route and data surfaces are still partial"],
+      "journey": ["studio-shell"],
+      "exitCriteria": ["Studio is complete", "Kernel API is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
       "evidenceRequired": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"],
       "phaseOwner": "platform"
     },
@@ -562,9 +584,10 @@
       ],
       "reasonCodes": ["domain-packs-partial", "manifest-conformance-incomplete"],
       "phase": [7],
-      "exitCriteria": ["Domain-pack manifests map cleanly to the product registry", "Conformance checks cover all product packs"],
-      "blockingGaps": ["Some product packs still need manifest alignment"],
-      "evidenceRequired": ["scripts/check-product-manifest-contracts.mjs", "scripts/check-product-conformance.mjs"],
+      "journey": ["future-product-shape"],
+      "exitCriteria": ["Domain packs are complete", "Manifest conformance is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"],
       "phaseOwner": "product"
     },
     {
@@ -602,9 +625,10 @@
       ],
       "reasonCodes": ["event-streaming-partial", "operational-graph-incomplete"],
       "phase": [3, 5],
-      "exitCriteria": ["Event and realtime contracts are wired to operational graph surfaces", "OpenAPI contract checks pass for event paths"],
-      "blockingGaps": ["Operational graph reporting remains partial"],
-      "evidenceRequired": ["platform/typescript/events", "platform/typescript/realtime", "node scripts/check-openapi-contract-canonical.mjs"],
+      "journey": ["data-cloud-foundation"],
+      "exitCriteria": ["Event streaming is complete", "Operational graph is validated"],
+      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
+      "evidenceRequired": ["platform/typescript/events", "platform/typescript/realtime"],
       "phaseOwner": "platform"
     },
     {
@@ -647,7 +671,13 @@
         "node scripts/check-secret-default-credentials.mjs",
         "./gradlew :platform:java:security:check"
       ],
-      "reasonCodes": []
+      "reasonCodes": [],
+      "journey": ["platform-coherence"],
+      "phase": [8],
+      "exitCriteria": ["Security workflows are complete", "Privacy compliance is validated"],
+      "blockingGaps": [],
+      "evidenceRequired": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"],
+      "phaseOwner": "platform"
     },
     {
       "id": "observability-health-operations",
@@ -688,7 +718,13 @@
         "pnpm --dir platform/typescript/kernel-providers test",
         "./gradlew :platform:java:observability:check"
       ],
-      "reasonCodes": []
+      "reasonCodes": [],
+      "journey": ["platform-coherence"],
+      "phase": [8],
+      "exitCriteria": ["Observability conformance is validated", "Health checks are complete"],
+      "blockingGaps": [],
+      "evidenceRequired": ["platform/java/observability", "scripts/check-observability-conformance.mjs"],
+      "phaseOwner": "platform"
     },
     {
       "id": "testing-verification-quality-gates",
@@ -730,7 +766,13 @@
         "./gradlew check",
         "node scripts/check-production-stubs.mjs"
       ],
-      "reasonCodes": []
+      "reasonCodes": [],
+      "journey": ["platform-coherence"],
+      "phase": [8],
+      "exitCriteria": ["Testing infrastructure is complete", "Quality gates are validated"],
+      "blockingGaps": [],
+      "evidenceRequired": ["platform/java/testing", "scripts/check-production-stubs.mjs"],
+      "phaseOwner": "platform"
     }
   ]
 }

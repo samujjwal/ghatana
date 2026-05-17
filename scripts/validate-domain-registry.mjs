@@ -64,6 +64,22 @@ function validateStringArray(domain, field, issues, { minItems = 0 } = {}) {
   });
 }
 
+function validateIntegerArray(domain, field, issues, { minItems = 0 } = {}) {
+  const value = domain[field];
+  if (!Array.isArray(value)) {
+    issues.push(formatIssue(domain.id ?? '<unknown>', field, 'must be an array', `Set ${field} to an array of integers.`));
+    return;
+  }
+  if (value.length < minItems) {
+    issues.push(formatIssue(domain.id ?? '<unknown>', field, `must include at least ${minItems} item(s)`, `Add at least ${minItems} ${field} entry.`));
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== 'number' || !Number.isInteger(entry)) {
+      issues.push(formatIssue(domain.id ?? '<unknown>', `${field}[${index}]`, 'must be an integer', `Replace ${field}[${index}] with an integer.`));
+    }
+  });
+}
+
 export function validateDomainRegistryDocument(document, options = {}) {
   const issues = [];
   const productIds = options.productIds ?? new Set();
@@ -151,6 +167,18 @@ export function validateDomainRegistryDocument(document, options = {}) {
     // Validate fullRegressionChecks
     if (!Array.isArray(domain.fullRegressionChecks) || domain.fullRegressionChecks.length === 0) {
       issues.push(formatIssue(domainId, 'fullRegressionChecks', 'must be a non-empty array', 'Add at least one full regression check command.'));
+    }
+
+    // Validate journey field (required for all domains)
+    validateStringArray(domain, 'journey', issues, { minItems: 1 });
+
+    // Validate phase, exitCriteria, blockingGaps, evidenceRequired, phaseOwner (required for all domains)
+    validateIntegerArray(domain, 'phase', issues, { minItems: 1 });
+    validateStringArray(domain, 'exitCriteria', issues, { minItems: 1 });
+    validateStringArray(domain, 'blockingGaps', issues);
+    validateStringArray(domain, 'evidenceRequired', issues, { minItems: 1 });
+    if (!isNonEmptyString(domain.phaseOwner)) {
+      issues.push(formatIssue(domainId, 'phaseOwner', 'must be a non-empty string', 'Set phaseOwner to the owning team or individual for this phase.'));
     }
 
     // Validate reasonCodes for non-executable classifications

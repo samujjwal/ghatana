@@ -1,0 +1,285 @@
+# Ghatana Digital Marketing — Continuous Integration
+#
+# Runs on every push and pull request that touches the digital-marketing product.
+# Validates lifecycle pilot readiness, emits repo-relative manifest refs, and archives evidence.
+#
+# Jobs:
+#   1. validate-lifecycle-pilot — Run check-digital-marketing-lifecycle-pilot with evidence archiving
+#   2. build-and-test — Gradle build + unit & integration tests (JVM 21)
+#   3. build-ui — pnpm build for the digital-marketing UI module (if present)
+#   4. docker-build — Build & push the Docker image to the Gitea registry
+
+name: digital-marketing-ci
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+    paths:
+      - "products/digital-marketing/**"
+      - "platform/java/**"
+      - "platform/typescript/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "products/digital-marketing/**"
+      - "platform/java/**"
+      - "platform/typescript/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+
+env:
+  JAVA_VERSION: "21"
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/digital-marketing
+  EVIDENCE_DIR: .kernel/evidence/digital-marketing
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Validate Lifecycle Pilot with Evidence Archiving
+  # ---------------------------------------------------------------------------
+  validate-lifecycle-pilot:
+    name: Validate Lifecycle Pilot
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create evidence directory
+        run: mkdir -p ${{ env.EVIDENCE_DIR }}
+
+      - name: Run lifecycle pilot check with evidence archiving
+        run: pnpm check:digital-marketing-lifecycle-pilot --smoke --evidence-pack-dir ${{ env.EVIDENCE_DIR }}
+        continue-on-error: false
+
+      - name: Validate manifest refs are repo-relative
+        run: |
+          EVIDENCE_FILE="${{ env.EVIDENCE_DIR }}/digital-marketing-lifecycle-evidence-pack.json"
+          if [ ! -f "$EVIDENCE_FILE" ]; then
+            echo "Error: Evidence file not found at $EVIDENCE_FILE"
+            exit 1
+          fi
+          # Check that manifest refs don't contain absolute paths
+          if grep -q '"\/Users\/' "$EVIDENCE_FILE" || grep -q '"\/home\/' "$EVIDENCE_FILE"; then
+            echo "Error: Evidence pack contains absolute paths instead of repo-relative paths"
+            exit 1
+          fi
+          echo "Manifest refs are repo-relative"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digital-marketing-evidence-${{ gitea.sha }}
+          path: ${{ env.EVIDENCE_DIR }}
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build & Test (Gradle)
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    name: Build and Test (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+    # Allow Docker socket access for Testcontainers
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Build (compile only)
+        run: ./gradlew :products:digital-marketing:dm-domain:compileJava --no-daemon --parallel
+
+      - name: Run unit tests
+        run: |
+          ./gradlew :products:digital-marketing:dm-domain:test \
+            --no-daemon \
+            --tests "com.ghatana.digitalmarketing.*" \
+            --info
+        continue-on-error: false
+
+      - name: Run integration tests
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: |
+          ./gradlew :products:digital-marketing:dm-domain:integrationTest \
+            --no-daemon \
+            --info || \
+          ./gradlew :products:digital-marketing:dm-domain:test \
+            --tests "*IntegrationTest" \
+            --no-daemon \
+            --info
+
+      - name: Run checkstyle
+        run: ./gradlew :products:digital-marketing:dm-domain:checkstyleMain --no-daemon
+
+      - name: Run PMD
+        run: ./gradlew :products:digital-marketing:dm-domain:pmdMain --no-daemon
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-java-dm
+          path: products/digital-marketing/**/build/reports/tests/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Build UI (pnpm)
+  # ---------------------------------------------------------------------------
+  build-ui:
+    name: Build UI
+    runs-on: ubuntu-latest
+    # Only runs if a UI directory exists
+    if: hashFiles('products/digital-marketing/ui/package.json') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Install UI dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/digital-marketing/ui
+
+      - name: Lint UI
+        run: pnpm lint
+        working-directory: products/digital-marketing/ui
+
+      - name: Build UI
+        run: pnpm build
+        working-directory: products/digital-marketing/ui
+
+      - name: Run UI tests
+        run: pnpm test --passWithNoTests
+        working-directory: products/digital-marketing/ui
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Docker build
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (for Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Build production JAR
+        run: |
+          ./gradlew :products:digital-marketing:dm-api:bootJar --no-daemon || \
+          ./gradlew :products:digital-marketing:dm-api:jar --no-daemon
+
+      # QEMU enables cross-compilation for non-native architectures (arm64).
+      - name: Set up QEMU (for multi-arch cross-compilation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Log in to Gitea Container Registry
+        if: gitea.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Extract Docker metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image (multi-arch: amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: products/digital-marketing
+          file: products/digital-marketing/dm-api/Dockerfile
+          # Build both AMD64 (standard x86) and ARM64 (AWS Graviton / Apple M-series)
+          platforms: linux/amd64,linux/arm64
+          push: ${{ gitea.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true   # Generate SLSA provenance attestation
+          sbom: true         # Attach SBOM to the manifest index
+          # On PRs build amd64-only locally (arm64 requires push for manifest)
+          load: false

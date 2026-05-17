@@ -19,6 +19,27 @@ export type StudioRouteOwnership =
   | 'data-cloud'
   | 'shared';
 
+export type StudioJourney =
+  | 'product-ideation-to-intent'
+  | 'direct-kernel-usage'
+  | 'agentic-development'
+  | 'digital-marketing-pilot'
+  | 'artifact-intelligence'
+  | 'lifecycle-operations'
+  | 'governance-compliance'
+  | 'observability-health'
+  | 'learning-adaptation';
+
+export type StudioDimension =
+  | 'ideation'
+  | 'blueprinting'
+  | 'development'
+  | 'lifecycle'
+  | 'governance'
+  | 'observability'
+  | 'learning'
+  | 'settings';
+
 export type StudioRouteStatus = 'ready' | 'empty' | 'degraded' | 'blocked';
 
 export type RouteExposurePolicy = 'visible' | 'disabled' | 'hidden' | 'preview';
@@ -43,6 +64,9 @@ export interface StudioNavItem {
   readonly statusMessageKey: `studio.navigation.status.${StudioRouteId}`;
   readonly requiredNextAction: string;
   readonly evidenceRefs: readonly string[];
+  readonly evidenceRequired: readonly string[];
+  readonly journey: readonly StudioJourney[];
+  readonly dimension: StudioDimension;
   readonly isCustomerVisible: boolean;
   readonly exposure: RouteExposurePolicy;
 }
@@ -67,6 +91,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.home',
     requiredNextAction: 'None',
     evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
+    evidenceRequired: [],
+    journey: ['direct-kernel-usage', 'lifecycle-operations'],
+    dimension: 'settings',
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -82,6 +109,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.ideas',
     requiredNextAction: 'Configure runtime context and ProductUnitIntent handoff.',
     evidenceRefs: ['platform/kernel-todo.md', 'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
+    evidenceRequired: ['platform/typescript/kernel-product-contracts/src', 'platform/typescript/kernel-lifecycle/src'],
+    journey: ['product-ideation-to-intent'],
+    dimension: 'ideation',
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -97,6 +127,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.blueprints',
     requiredNextAction: 'None',
     evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
+    evidenceRequired: ['platform/typescript/kernel-product-contracts/src'],
+    journey: ['product-ideation-to-intent'],
+    dimension: 'blueprinting',
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -112,6 +145,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.canvas',
     requiredNextAction: 'None',
     evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
+    evidenceRequired: ['platform/typescript/kernel-product-contracts/src'],
+    journey: ['product-ideation-to-intent'],
+    dimension: 'blueprinting',
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -127,6 +163,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.develop',
     requiredNextAction: 'None',
     evidenceRefs: ['platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts'],
+    evidenceRequired: ['platform/typescript/kernel-lifecycle/src'],
+    journey: ['direct-kernel-usage'],
+    dimension: 'development',
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -142,6 +181,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.lifecycle',
     requiredNextAction: 'Enable lifecycle runtime configuration for selected product units.',
     evidenceRefs: ['platform/kernel-todo.md', 'products/digital-marketing/kernel-product.yaml'],
+    evidenceRequired: ['platform/typescript/kernel-lifecycle/src', 'platform/typescript/kernel-release/src'],
+    journey: ['direct-kernel-usage', 'digital-marketing-pilot', 'lifecycle-operations'],
+    dimension: 'lifecycle',
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -157,6 +199,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.agents',
     requiredNextAction: 'Provide Data Cloud-backed agent evidence providers and traces.',
     evidenceRefs: ['platform/typescript/kernel-product-contracts/src/agentic', 'platform/kernel-todo.md'],
+    evidenceRequired: ['platform/java/agent-core', 'scripts/check-data-cloud-platform-providers.mjs'],
+    journey: ['agentic-development', 'governance-compliance'],
+    dimension: 'governance',
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -172,6 +217,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.artifacts',
     requiredNextAction: 'Generate artifact manifests from lifecycle runs and surface evidence.',
     evidenceRefs: ['platform/typescript/kernel-artifacts', 'platform/kernel-todo.md'],
+    evidenceRequired: ['platform/typescript/kernel-artifacts', 'platform/typescript/kernel-providers/src/provenance'],
+    journey: ['artifact-intelligence', 'lifecycle-operations'],
+    dimension: 'development',
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -187,6 +235,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.deployments',
     requiredNextAction: 'Keep deployment execution limited to the Digital Marketing pilot.',
     evidenceRefs: ['config/canonical-product-registry.json', 'scripts/check-digital-marketing-lifecycle-pilot.mjs'],
+    evidenceRequired: ['platform/typescript/kernel-deployment', 'platform/typescript/kernel-release'],
+    journey: ['digital-marketing-pilot', 'lifecycle-operations'],
+    dimension: 'lifecycle',
     isCustomerVisible: true,
     exposure: 'hidden',
   },
@@ -202,6 +253,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.health',
     requiredNextAction: 'Publish runtime truth and provider health snapshots.',
     evidenceRefs: ['platform/typescript/kernel-providers', 'platform/kernel-todo.md'],
+    evidenceRequired: ['platform/typescript/kernel-providers', 'scripts/check-data-cloud-platform-providers.mjs'],
+    journey: ['observability-health'],
+    dimension: 'observability',
     isCustomerVisible: true,
     exposure: 'disabled',
   },
@@ -217,6 +271,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.learn',
     requiredNextAction: 'None',
     evidenceRefs: ['docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md'],
+    evidenceRequired: [],
+    journey: ['learning-adaptation'],
+    dimension: 'learning',
     isCustomerVisible: true,
     exposure: 'visible',
   },
@@ -232,6 +289,9 @@ export const STUDIO_NAV_ITEMS = [
     statusMessageKey: 'studio.navigation.status.settings',
     requiredNextAction: 'None',
     evidenceRefs: ['platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts'],
+    evidenceRequired: [],
+    journey: ['direct-kernel-usage'],
+    dimension: 'settings',
     isCustomerVisible: true,
     exposure: 'visible',
   },

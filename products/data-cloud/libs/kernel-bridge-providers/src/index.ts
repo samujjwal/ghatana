@@ -18,6 +18,9 @@ import type {
   LifecycleProvenanceRecord,
   LifecycleRuntimeTruthProvider,
   LifecycleRuntimeTruthSnapshot,
+  MetricValue,
+  TelemetryEvent,
+  TelemetryProvider,
 } from '@ghatana/kernel-product-contracts';
 import { z } from 'zod';
 
@@ -55,6 +58,21 @@ const MemoryRecordSchema = z.object({
 const RuntimeTruthSnapshotSchema = z.object({
   productUnitId: z.string(),
   observedAt: z.string(),
+});
+
+const MetricValueSchema = z.object({
+  metricName: z.string(),
+  value: z.number(),
+  unit: z.string().optional(),
+  timestamp: z.string(),
+  labels: z.record(z.string()).optional(),
+});
+
+const TelemetryEventSchema = z.object({
+  eventId: z.string(),
+  eventType: z.string(),
+  timestamp: z.string(),
+  properties: z.record(z.unknown()).optional(),
 });
 
 const KernelLifecycleEventSchema = z.object({
@@ -420,6 +438,7 @@ abstract class DataCloudProviderBase {
 export class DataCloudLifecycleEventProvider extends DataCloudProviderBase implements LifecycleEventProvider {
   readonly providerId = 'data-cloud-lifecycle-events';
   readonly capabilities = ['lifecycle-events', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -437,6 +456,7 @@ export class DataCloudLifecycleEventProvider extends DataCloudProviderBase imple
 export class DataCloudArtifactProvider extends DataCloudProviderBase implements LifecycleArtifactProvider {
   readonly providerId = 'data-cloud-artifacts';
   readonly capabilities = ['artifact-manifests', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -454,6 +474,7 @@ export class DataCloudArtifactProvider extends DataCloudProviderBase implements 
 export class DataCloudHealthProvider extends DataCloudProviderBase implements LifecycleHealthProvider {
   readonly providerId = 'data-cloud-health';
   readonly capabilities = ['health-snapshots', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -473,6 +494,7 @@ export class DataCloudHealthProvider extends DataCloudProviderBase implements Li
 export class DataCloudApprovalProvider extends DataCloudProviderBase implements LifecycleApprovalProvider {
   readonly providerId = 'data-cloud-approvals';
   readonly capabilities = ['approvals', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -490,6 +512,7 @@ export class DataCloudApprovalProvider extends DataCloudProviderBase implements 
 export class DataCloudProvenanceProvider extends DataCloudProviderBase implements LifecycleProvenanceProvider {
   readonly providerId = 'data-cloud-provenance';
   readonly capabilities = ['provenance', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -507,6 +530,7 @@ export class DataCloudProvenanceProvider extends DataCloudProviderBase implement
 export class DataCloudMemoryProvider extends DataCloudProviderBase implements LifecycleMemoryProvider {
   readonly providerId = 'data-cloud-memory';
   readonly capabilities = ['memory', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -524,6 +548,7 @@ export class DataCloudMemoryProvider extends DataCloudProviderBase implements Li
 export class DataCloudRuntimeTruthProvider extends DataCloudProviderBase implements LifecycleRuntimeTruthProvider {
   readonly providerId = 'data-cloud-runtime-truth';
   readonly capabilities = ['runtime-truth', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
 
   constructor(client: DataCloudKernelProviderClient) {
     super(client);
@@ -537,6 +562,60 @@ export class DataCloudRuntimeTruthProvider extends DataCloudProviderBase impleme
     const response = await this.client.get(`/api/v1/kernel/providers/runtime-truth/${encodeURIComponent(productUnitId)}/latest`);
     const result = RuntimeTruthSnapshotSchema.safeParse(response);
     return result.success ? result.data : null;
+  }
+}
+
+export class DataCloudPolicyEvidenceProvider extends DataCloudProviderBase implements LifecycleEventProvider {
+  readonly providerId = 'data-cloud-policy-evidence';
+  readonly capabilities = ['policy-evidence', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
+
+  constructor(client: DataCloudKernelProviderClient) {
+    super(client);
+  }
+
+  async appendEvent(event: KernelLifecycleEvent, options: LifecycleProviderWriteOptions): Promise<LifecycleProviderResult> {
+    return this.write('/api/v1/kernel/providers/policy-evidence', { event }, options);
+  }
+
+  async listEvents(query: LifecycleProviderQuery): Promise<readonly KernelLifecycleEvent[]> {
+    return this.list('/api/v1/kernel/providers/policy-evidence', query, KernelLifecycleEventSchema);
+  }
+}
+
+export class DataCloudTelemetryProvider extends DataCloudProviderBase implements TelemetryProvider {
+  readonly providerId = 'data-cloud-telemetry';
+  readonly capabilities = ['telemetry', 'platform-mode', 'data-cloud-backed'];
+  readonly backingStore = 'data-cloud';
+
+  constructor(client: DataCloudKernelProviderClient) {
+    super(client);
+  }
+
+  async recordMetric(metric: MetricValue): Promise<void> {
+    await this.write('/api/v1/kernel/providers/telemetry/metrics', { metric }, { required: false, correlationId: '' });
+  }
+
+  async emitEvent(event: TelemetryEvent): Promise<void> {
+    await this.write('/api/v1/kernel/providers/telemetry/events', { event }, { required: false, correlationId: '' });
+  }
+
+  async getMetrics(productUnitId: string): Promise<readonly MetricValue[]> {
+    const response = await this.client.get(`/api/v1/kernel/providers/telemetry/metrics/${encodeURIComponent(productUnitId)}`);
+    const result = z.array(MetricValueSchema).safeParse(response);
+    if (!result.success) {
+      throw new Error(`Data Cloud provider metrics response has invalid shape: ${result.error.message}`);
+    }
+    return result.data;
+  }
+
+  async getEvents(productUnitId: string): Promise<readonly TelemetryEvent[]> {
+    const response = await this.client.get(`/api/v1/kernel/providers/telemetry/events/${encodeURIComponent(productUnitId)}`);
+    const result = z.array(TelemetryEventSchema).safeParse(response);
+    if (!result.success) {
+      throw new Error(`Data Cloud provider events response has invalid shape: ${result.error.message}`);
+    }
+    return result.data;
   }
 }
 
@@ -554,6 +633,30 @@ export function createDataCloudKernelProviderContext(
     memory: new DataCloudMemoryProvider(client),
     runtimeTruth: new DataCloudRuntimeTruthProvider(client),
   };
+}
+
+/**
+ * Creates a Data Cloud telemetry provider for use outside the lifecycle context.
+ * This provider is not part of the KernelLifecycleProviderContext contract
+ * but is available for direct telemetry recording.
+ */
+export function createDataCloudTelemetryProvider(
+  options: DataCloudKernelProviderClientOptions,
+): DataCloudTelemetryProvider {
+  const client = new DataCloudKernelProviderClient(options);
+  return new DataCloudTelemetryProvider(client);
+}
+
+/**
+ * Creates a Data Cloud policy evidence provider for use outside the lifecycle context.
+ * This provider is not part of the KernelLifecycleProviderContext contract
+ * but is available for direct policy evidence recording.
+ */
+export function createDataCloudPolicyEvidenceProvider(
+  options: DataCloudKernelProviderClientOptions,
+): DataCloudPolicyEvidenceProvider {
+  const client = new DataCloudKernelProviderClient(options);
+  return new DataCloudPolicyEvidenceProvider(client);
 }
 
 function parseProviderResult(value: unknown): LifecycleProviderResult {

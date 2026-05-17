@@ -357,7 +357,7 @@ public class AutoDocumentationGenerator {
         try {
             DatasetDocumentation doc = documentationStore.get(datasetId);
             if (doc == null) {
-                return Promise.of(null);
+                return Promise.of((String) null);
             }
 
             StringBuilder md = new StringBuilder();

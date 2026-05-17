@@ -3,7 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export type ArtifactGraphQueryRequest = {
-    query: string;
-    parameters?: Record<string, any>;
+    queryType: string;
+    seedNodeIds?: Array<string>;
+    cursor?: string;
+    limit?: number;
+    snapshotId?: string;
+    includeUnresolvedEdges?: boolean;
 };
 

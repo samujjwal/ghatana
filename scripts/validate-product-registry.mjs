@@ -163,6 +163,31 @@ export function validateProductRegistryDocument(registry, options = {}) {
       issues.push(issue(productId, 'lifecycle', 'Only digital-marketing may be lifecycle-enabled or lifecycleExecutionAllowed=true until explicitly promoted', 'Set lifecycle.enabled, lifecycleStatus, and lifecycleExecutionAllowed to disabled/false unless this is the Digital Marketing pilot.'));
     }
 
+    // Data Cloud-specific: lifecycle must stay disabled until bootstrap/platform proof exists
+    if (productId === 'data-cloud' && lifecycleExecutionAllowed) {
+      issues.push(issue(productId, 'lifecycleExecutionAllowed', 'Data Cloud lifecycle must remain disabled until bootstrap/platform proof exists', 'Set lifecycleExecutionAllowed to false and ensure bootstrap-build-without-platform-providers and platform-provider-health gates are satisfied before enabling.'));
+    }
+
+    // FlashIt-specific: lifecycle must stay disabled until IPA/AAB manifests are real
+    if (productId === 'flashit' && lifecycleExecutionAllowed) {
+      const missingManifests = product.lifecycleReadiness?.missingManifests ?? [];
+      if (missingManifests.includes('mobile-ipa-artifact-manifest') || missingManifests.includes('mobile-aab-artifact-manifest')) {
+        issues.push(issue(productId, 'lifecycleExecutionAllowed', 'FlashIt lifecycle must remain disabled until IPA/AAB manifests are real', 'Set lifecycleExecutionAllowed to false and ensure mobile-ipa-artifact-manifest and mobile-aab-artifact-manifest are satisfied before enabling.'));
+      }
+    }
+
+    // Finance-specific: lifecycle must stay disabled until operator/portal/SDK adapters are ready and compliance gates are satisfied
+    if (productId === 'finance' && lifecycleExecutionAllowed) {
+      const adapterMatrix = product.lifecycleReadiness?.blockerGateAdapterMatrix;
+      if (adapterMatrix?.adapters) {
+        const incompleteAdapters = adapterMatrix.adapters.filter(a => a.required && a.status !== 'implemented');
+        if (incompleteAdapters.length > 0) {
+          const adapterIds = incompleteAdapters.map(a => a.adapterId).join(', ');
+          issues.push(issue(productId, 'lifecycleExecutionAllowed', `Finance lifecycle must remain disabled until adapters are ready: ${adapterIds}`, 'Set lifecycleExecutionAllowed to false and ensure all required adapters have status "implemented" before enabling.'));
+        }
+      }
+    }
+
     if (product.conformance?.bridge === true) {
       const bridgeAdapters = product.conformance.bridgeAdapters ?? [];
       if (!Array.isArray(bridgeAdapters) || bridgeAdapters.length === 0) {

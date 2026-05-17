@@ -62,6 +62,43 @@ interface ProposalCard {
   readonly rollbackReadiness: RollbackReadiness;
   readonly healthStatus: HealthStatus;
   readonly correlationId: string;
+  readonly policyTrace?: readonly PolicyTraceEntry[];
+  readonly masteryTrace?: readonly MasteryTraceEntry[];
+  readonly approvalTrace?: readonly ApprovalTraceEntry[];
+  readonly verificationTrace?: readonly VerificationTraceEntry[];
+}
+
+interface PolicyTraceEntry {
+  readonly timestamp: string;
+  readonly policyId: string;
+  readonly decision: GovernanceDecision;
+  readonly reason: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+interface MasteryTraceEntry {
+  readonly timestamp: string;
+  readonly skillId: string;
+  readonly fromState: string;
+  readonly toState: string;
+  readonly decision: GovernanceDecision;
+  readonly reason: string;
+}
+
+interface ApprovalTraceEntry {
+  readonly timestamp: string;
+  readonly approvalId: string;
+  readonly approver: string;
+  readonly decision: ApprovalDecision;
+  readonly reason: string;
+}
+
+interface VerificationTraceEntry {
+  readonly timestamp: string;
+  readonly verificationId: string;
+  readonly kind: string;
+  readonly status: 'passed' | 'failed' | 'pending';
+  readonly details: string;
 }
 
 export default function AgentsPage(): ReactElement {
@@ -336,6 +373,89 @@ export default function AgentsPage(): ReactElement {
                 ))}
               </ul>
             </div>
+
+            {proposal.policyTrace && proposal.policyTrace.length > 0 && (
+              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <h4 className="text-sm font-medium text-gray-900">Policy Trace</h4>
+                <ul className="space-y-2 text-xs">
+                  {proposal.policyTrace.map((entry, idx) => (
+                    <li key={idx} className="border-l-2 border-gray-300 pl-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">{entry.policyId}</span>
+                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                          {entry.decision}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-gray-600">{entry.reason}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {proposal.masteryTrace && proposal.masteryTrace.length > 0 && (
+              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <h4 className="text-sm font-medium text-gray-900">Mastery Trace</h4>
+                <ul className="space-y-2 text-xs">
+                  {proposal.masteryTrace.map((entry, idx) => (
+                    <li key={idx} className="border-l-2 border-gray-300 pl-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">{entry.skillId}</span>
+                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                          {entry.decision}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-gray-600">
+                        {entry.fromState} → {entry.toState}
+                      </div>
+                      <div className="mt-1 text-gray-500">{entry.reason}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {proposal.approvalTrace && proposal.approvalTrace.length > 0 && (
+              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <h4 className="text-sm font-medium text-gray-900">Approval Trace</h4>
+                <ul className="space-y-2 text-xs">
+                  {proposal.approvalTrace.map((entry, idx) => (
+                    <li key={idx} className="border-l-2 border-gray-300 pl-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">{entry.approver}</span>
+                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                          {entry.decision}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-gray-600">{entry.reason}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {proposal.verificationTrace && proposal.verificationTrace.length > 0 && (
+              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <h4 className="text-sm font-medium text-gray-900">Verification Trace</h4>
+                <ul className="space-y-2 text-xs">
+                  {proposal.verificationTrace.map((entry, idx) => (
+                    <li key={idx} className="border-l-2 border-gray-300 pl-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">{entry.verificationId}</span>
+                        <Badge tone={entry.status === 'passed' ? 'success' : entry.status === 'failed' ? 'danger' : 'warning'} variant="soft" className="text-xs">
+                          {entry.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-gray-600">{entry.kind}: {entry.details}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {proposal.approvalDecision === 'pending' && (

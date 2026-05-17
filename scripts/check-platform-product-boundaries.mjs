@@ -155,11 +155,12 @@ export function checkPlatformProductBoundaries(options = {}) {
       source: readFileSync(path.join(repoRoot, file), 'utf8'),
     })),
   ];
+  const strictMode = options.strictMode ?? false;
 
-  return findBoundaryViolations(files, rules);
+  return findBoundaryViolations(files, rules, strictMode);
 }
 
-export function findBoundaryViolations(files, rules) {
+export function findBoundaryViolations(files, rules, strictMode = false) {
   const violations = [];
   const productNames = rules.productNames ?? [];
   const allowlist = rules.allowlist ?? [];
@@ -185,19 +186,21 @@ export function findBoundaryViolations(files, rules) {
       // Rule: kernel must not import YAPPC/Data Cloud internals (more specific, checked first)
       if (isKernelFile && relTarget?.startsWith('products/')) {
         if (relTarget.startsWith('products/yappc/') && !isLegalBridgeLocation(relTarget, legalBridgeLocations)) {
-          if (!isAllowlisted(filePath, specifier, 'kernel-no-yappc-internals', allowlist)) {
+          // In strict mode, bypass allowlist for Kernel/YAPPC boundaries
+          if (strictMode || !isAllowlisted(filePath, specifier, 'kernel-no-yappc-internals', allowlist)) {
             violations.push(
               `${filePath}: kernel code imports YAPPC internals '${specifier}'. ` +
-                'Remediation: Use bridge/provider contracts only.',
+                `Remediation: Use bridge/provider contracts only.${strictMode ? ' (strict mode: allowlist ignored)' : ''}`,
             );
           }
           handledBySpecificRule = true;
         }
         if (relTarget.startsWith('products/data-cloud/') && !isLegalBridgeLocation(relTarget, legalBridgeLocations)) {
-          if (!isAllowlisted(filePath, specifier, 'kernel-no-data-cloud-internals', allowlist)) {
+          // In strict mode, bypass allowlist for Kernel/Data Cloud boundaries
+          if (strictMode || !isAllowlisted(filePath, specifier, 'kernel-no-data-cloud-internals', allowlist)) {
             violations.push(
               `${filePath}: kernel code imports Data Cloud internals '${specifier}'. ` +
-                'Remediation: Use bridge/provider contracts only.',
+                `Remediation: Use bridge/provider contracts only.${strictMode ? ' (strict mode: allowlist ignored)' : ''}`,
             );
           }
           handledBySpecificRule = true;
@@ -266,14 +269,15 @@ export function findBoundaryViolations(files, rules) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const violations = checkPlatformProductBoundaries();
+  const strictMode = process.argv.includes('--strict');
+  const violations = checkPlatformProductBoundaries({ strictMode });
 
   if (violations.length === 0) {
-    console.log('OK: platform/product boundary checks passed.');
+    console.log(`OK: platform/product boundary checks passed.${strictMode ? ' (strict mode)' : ''}`);
     process.exit(0);
   }
 
-  console.error('FAIL: platform/product boundary checks found violations:');
+  console.error(`FAIL: platform/product boundary checks found violations${strictMode ? ' (strict mode - allowlist ignored)' : ''}:`);
   for (const violation of violations) {
     console.error(` - ${violation}`);
   }

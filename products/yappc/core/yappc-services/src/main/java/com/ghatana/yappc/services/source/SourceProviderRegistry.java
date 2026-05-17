@@ -33,12 +33,21 @@ public final class SourceProviderRegistry {
     }
 
     public static SourceProviderRegistry defaultRegistry() {
+        return defaultRegistry(SourceCredentialResolver.envBacked());
+    }
+
+    public static SourceProviderRegistry defaultRegistry(SourceCredentialRepository credentialRepository) {
+        Objects.requireNonNull(credentialRepository, "credentialRepository must not be null");
+        return defaultRegistry(SourceCredentialResolver.governed(credentialRepository));
+    }
+
+    public static SourceProviderRegistry defaultRegistry(SourceCredentialResolver credentialResolver) {
         return new SourceProviderRegistry()
-            .register(new GitHubSourceProvider())
+            .register(new GitHubSourceProvider(java.net.http.HttpClient.newHttpClient(), new com.fasterxml.jackson.databind.ObjectMapper(), credentialResolver))
             .register(new LocalFolderSourceProvider())
             .register(new ArchiveSourceProvider())
             // P1-14: Register GitLab source provider
-            .register(new GitLabSourceProvider());
+            .register(new GitLabSourceProvider(java.net.http.HttpClient.newHttpClient(), new com.fasterxml.jackson.databind.ObjectMapper(), credentialResolver));
     }
 
     public Collection<SourceProvider> providers() {
@@ -70,6 +79,14 @@ public final class SourceProviderRegistry {
      * @return Optional containing the provider if found
      */
     public Optional<SourceProvider> findProvider(SourceLocator locator) {
+        if (locator == null) {
+            return Optional.empty();
+        }
+        // Exact provider ID match first; only fall back to canHandle when provider is missing/unknown.
+        SourceProvider exact = providers.get(locator.provider());
+        if (exact != null) {
+            return Optional.of(exact);
+        }
         for (SourceProvider provider : providers.values()) {
             if (provider.canHandle(locator)) {
                 return Optional.of(provider);
@@ -98,6 +115,13 @@ public final class SourceProviderRegistry {
      * @return promise of the repository snapshot
      */
     public Promise<RepositorySnapshot> resolve(SourceLocator locator, SourceProvider.ScopeContext scope) {
+        if (locator == null) {
+            return Promise.ofException(new IllegalArgumentException("Source locator must not be null"));
+        }
+        SourceProvider exact = providers.get(locator.provider());
+        if (exact != null) {
+            return exact.resolve(locator, scope);
+        }
         for (SourceProvider provider : providers.values()) {
             if (provider.canHandle(locator)) {
                 return provider.resolve(locator, scope);

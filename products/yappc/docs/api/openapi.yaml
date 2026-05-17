@@ -3462,7 +3462,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ArtifactGraphRequest"
+              $ref: "#/components/schemas/ArtifactGraphIngestRequest"
       responses:
         "200":
           description: Ingest result
@@ -3493,7 +3493,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ArtifactGraphRequest"
+              $ref: "#/components/schemas/ArtifactGraphAnalysisRequest"
       responses:
         "200":
           description: Analysis result
@@ -3524,7 +3524,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ArtifactGraphRequest"
+              $ref: "#/components/schemas/ArtifactGraphMergeRequest"
       responses:
         "200":
           description: Merge result
@@ -3586,7 +3586,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ArtifactGraphRequest"
+              $ref: "#/components/schemas/ResidualAnalysisRequest"
       responses:
         "200":
           description: Residual analysis result
@@ -7735,24 +7735,317 @@ components:
           type: object
           additionalProperties: true
 
-    ArtifactGraphRequest:
+    ArtifactSourceLocation:
       type: object
+      required: [filePath, startLine, startColumn, endLine, endColumn]
       properties:
-        artifacts:
+        filePath:
+          type: string
+        startLine:
+          type: integer
+          minimum: 1
+        startColumn:
+          type: integer
+          minimum: 1
+        endLine:
+          type: integer
+          minimum: 1
+        endColumn:
+          type: integer
+          minimum: 1
+
+    ArtifactNodeRequest:
+      type: object
+      required: [id, type]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        filePath:
+          type: string
+        content:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        tags:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        sourceLocation:
+          $ref: "#/components/schemas/ArtifactSourceLocation"
+        extractorId:
+          type: string
+        extractorVersion:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        provenance:
+          type: string
+        privacySecurityFlags:
+          type: array
+          items:
+            type: string
+        residualFragmentIds:
+          type: array
+          items:
+            type: string
+        sourceRef:
+          type: string
+        symbolRef:
+          type: string
+
+    ArtifactEdgeRequest:
+      type: object
+      required: [edgeId, sourceNodeId, targetNodeId, relationshipType]
+      properties:
+        edgeId:
+          type: string
+        sourceNodeId:
+          type: string
+        targetNodeId:
+          type: string
+        relationshipType:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        bidirectional:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+        snapshotId:
+          type: string
+        versionId:
+          type: string
+
+    UnresolvedGraphEdgeRequest:
+      type: object
+      required: [sourceNodeId, targetRef, relationshipType]
+      properties:
+        id:
+          type: string
+        sourceNodeId:
+          type: string
+        targetRef:
+          type: string
+        relationshipType:
+          type: string
+        targetKindHint:
+          type: string
+        sourceLocation:
+          $ref: "#/components/schemas/ArtifactSourceLocation"
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        workspaceId:
+          type: string
+
+    EdgeResolutionRecordRequest:
+      type: object
+      required: [unresolvedEdgeId, status]
+      properties:
+        id:
+          type: string
+        unresolvedEdgeId:
+          type: string
+        status:
+          type: string
+        resolvedTargetId:
+          type: string
+        candidateIds:
+          type: array
+          items:
+            type: string
+        reviewRequired:
+          type: boolean
+        resolutionMethod:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        workspaceId:
+          type: string
+
+    ResidualIslandRequest:
+      type: object
+      required: [id, islandType, sourceSpan, originalSource, checksum, rawFragmentRef]
+      properties:
+        id:
+          type: string
+        islandType:
+          type: string
+        summary:
+          type: string
+        originalSource:
+          type: string
+        sourceLocation:
+          $ref: "#/components/schemas/ArtifactSourceLocation"
+        sourceSpan:
+          type: string
+        checksum:
+          type: string
+        rawFragmentRef:
+          type: string
+        reason:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        reviewRequired:
+          type: boolean
+        riskScore:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        fileCount:
+          type: integer
+          minimum: 0
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        workspaceId:
+          type: string
+        snapshotId:
+          type: string
+
+    ArtifactGraphIngestRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        snapshotRef:
+          type: string
+        snapshotId:
+          type: string
+        versionId:
+          type: string
+        contentChecksum:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactNodeRequest"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactEdgeRequest"
+        unresolvedEdges:
+          type: array
+          items:
+            $ref: "#/components/schemas/UnresolvedGraphEdgeRequest"
+        edgeResolutionRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/EdgeResolutionRecordRequest"
+        residualIslands:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidualIslandRequest"
+
+    ArtifactGraphAnalysisRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        algorithmTypes:
+          type: array
+          items:
+            type: string
+        nodeIds:
+          type: array
+          items:
+            type: string
+
+    ArtifactGraphMergeRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        baseModel:
+          type: object
+          additionalProperties: true
+        leftModel:
+          type: object
+          additionalProperties: true
+        rightModel:
+          type: object
+          additionalProperties: true
+        resolutionStrategy:
+          type: string
 
     ArtifactGraphQueryRequest:
       type: object
-      required: [query]
+      required: [queryType]
       properties:
-        query:
+        queryType:
           type: string
-        parameters:
-          type: object
-          additionalProperties: true
+        seedNodeIds:
+          type: array
+          items:
+            type: string
+        cursor:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        snapshotId:
+          type: string
+        includeUnresolvedEdges:
+          type: boolean
+
+    ResidualAnalysisRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+        tenantId:
+          type: string
+        workspaceId:
+          type: string
+        residualIslands:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResidualIslandRequest"
 
     # ── Preview Session ───────────────────────────────────────────────────────────
 

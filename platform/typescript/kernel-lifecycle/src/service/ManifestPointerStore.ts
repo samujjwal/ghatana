@@ -151,6 +151,7 @@ export class ManifestPointerStore {
     if (manifestType === 'gate-result-manifest') return refs.gateResultManifest;
     if (manifestType === 'artifact-manifest') return refs.artifactManifest;
     if (manifestType === 'deployment-manifest') return refs.deploymentManifest;
+    if (manifestType === 'rollback-manifest') return refs.rollbackManifest;
     if (manifestType === 'verify-health-report') return refs.verifyHealthReport;
     if (manifestType === 'lifecycle-health-snapshot') return refs.lifecycleHealthSnapshot;
     return undefined;

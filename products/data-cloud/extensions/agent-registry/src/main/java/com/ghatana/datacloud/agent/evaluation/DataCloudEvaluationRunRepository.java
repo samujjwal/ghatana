@@ -127,10 +127,10 @@ public final class DataCloudEvaluationRunRepository {
      * @return promise of updated evaluation run
      */
     @NotNull
-    public Promise<EvaluationRun> updateState(@NotNull String runId, @NotNull RunState state) {
+    public Promise<@Nullable EvaluationRun> updateState(@NotNull String runId, @NotNull RunState state) {
         EvaluationRun existing = runs.get(runId);
         if (existing == null) {
-            return Promise.of(null);
+            return Promise.of((EvaluationRun) null);
         }
 
         EvaluationRun updated = new EvaluationRun(

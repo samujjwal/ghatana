@@ -27,6 +27,7 @@ import com.ghatana.agent.mastery.MasteryRegistry;
 import com.ghatana.agent.memory.MemoryRetriever;
 import com.ghatana.agent.pluggability.AgentCapabilityManifest;
 import com.ghatana.agent.pluggability.InteractionMode;
+import com.ghatana.agent.registry.AgentRuntimeGovernanceRegistry;
 import com.ghatana.agent.release.AgentInstanceConfig;
 import com.ghatana.agent.release.AgentRelease;
 import com.ghatana.agent.release.AgentReleaseRepository;
@@ -96,12 +97,14 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
     private final MasteryAwareModeSelector modeSelector;
     @Nullable
     private final MemoryRetriever memoryRetriever;
+    @Nullable
+    private final AgentRuntimeGovernanceRegistry governanceRegistry;
 
     public GovernedAgentDispatcher(
             @NotNull AgentDispatcher delegate,
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger) {
-        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -109,7 +112,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
             @Nullable AgentReleaseRepository releaseRepository) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -118,7 +121,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull AgentTraceLedger traceLedger,
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, null, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, null, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -128,7 +131,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, null, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, null, null, null);
     }
 
     public GovernedAgentDispatcher(
@@ -143,6 +146,22 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable TaskClassifier taskClassifier,
             @Nullable MasteryAwareModeSelector modeSelector,
             @Nullable MemoryRetriever memoryRetriever) {
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, masteryRegistry, versionContextResolver, taskClassifier, modeSelector, memoryRetriever, null);
+    }
+
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @Nullable AgentReleaseRepository releaseRepository,
+            @Nullable AgentRunTracer agentRunTracer,
+            @Nullable AgentCapabilityManifest capabilityManifest,
+            @Nullable MasteryRegistry masteryRegistry,
+            @Nullable VersionContextResolver versionContextResolver,
+            @Nullable TaskClassifier taskClassifier,
+            @Nullable MasteryAwareModeSelector modeSelector,
+            @Nullable MemoryRetriever memoryRetriever,
+            @Nullable AgentRuntimeGovernanceRegistry governanceRegistry) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
         this.invariantMonitor = Objects.requireNonNull(invariantMonitor, "invariantMonitor");
         this.traceLedger = Objects.requireNonNull(traceLedger, "traceLedger");
@@ -154,6 +173,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
         this.taskClassifier = taskClassifier;
         this.modeSelector = modeSelector;
         this.memoryRetriever = memoryRetriever;
+        this.governanceRegistry = governanceRegistry;
     }
 
     /**
@@ -165,7 +185,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull InvariantMonitor invariantMonitor,
             @NotNull AgentTraceLedger traceLedger,
             @Nullable MasteryAwareModeSelector modeSelector) {
-        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, modeSelector, null);
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, modeSelector, null, null);
     }
 
     /**
@@ -177,7 +197,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @NotNull AgentTraceLedger traceLedger,
             @Nullable MasteryAwareModeSelector modeSelector,
             @Nullable AgentReleaseRepository releaseRepository) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, modeSelector, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, null, null, null, null, null, modeSelector, null, null);
     }
 
     /**
@@ -191,7 +211,18 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
             @Nullable AgentReleaseRepository releaseRepository,
             @Nullable AgentRunTracer agentRunTracer,
             @Nullable AgentCapabilityManifest capabilityManifest) {
-        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, modeSelector, null);
+        this(delegate, invariantMonitor, traceLedger, releaseRepository, agentRunTracer, capabilityManifest, null, null, null, modeSelector, null, null);
+    }
+
+    /**
+     * Convenience constructor — with governance registry.
+     */
+    public GovernedAgentDispatcher(
+            @NotNull AgentDispatcher delegate,
+            @NotNull InvariantMonitor invariantMonitor,
+            @NotNull AgentTraceLedger traceLedger,
+            @Nullable AgentRuntimeGovernanceRegistry governanceRegistry) {
+        this(delegate, invariantMonitor, traceLedger, null, null, null, null, null, null, null, null, governanceRegistry);
     }
 
     @Override
@@ -283,7 +314,7 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
     }
 
     /**
-     * Creates a denied result and records it in the trace ledger.
+     * Creates a denied result and records it in the trace ledger and governance registry.
      */
     private <O> Promise<AgentResult<O>> denyDispatch(
             String agentId, String traceId, String tenantId, String reason) {
@@ -294,7 +325,18 @@ public class GovernedAgentDispatcher implements AgentDispatcher {
                 TraceEventType.ACTION_DENIED,
                 "Dispatch denied: " + reason,
                 Map.of("agentId", agentId, "reason", reason));
-        return traceLedger.append(denialEvent)
+        
+        // Record decision to governance registry if available
+        Promise<Void> governancePromise = governanceRegistry != null
+                ? governanceRegistry.recordDecision(
+                        agentId, tenantId,
+                        AgentRuntimeGovernanceRegistry.GovernanceDecision.DENIED,
+                        reason,
+                        Map.of("traceId", traceId))
+                : Promise.of(null);
+        
+        return governancePromise
+                .then(ignored -> traceLedger.append(denialEvent))
                 .map(v -> AgentResult.<O>builder()
                         .status(AgentResultStatus.DENIED)
                         .confidence(0.0)

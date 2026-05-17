@@ -36,10 +36,10 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -58,15 +58,15 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node1 = new ArtifactNodeDto(
             "node-1", "component", "Button1", "/src/Button1.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button1.tsx", "src/Button1.tsx#component:Button1"
         );
         ArtifactNodeDto node2 = new ArtifactNodeDto(
             "node-1", "component", "Button2", "/src/Button2.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button2.tsx", "src/Button2.tsx#component:Button2"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node1, node2), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -85,14 +85,14 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
             "edge-1", "non-existent-node", "node-1", "imports",
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -111,14 +111,14 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
             "edge-1", "node-1", "non-existent-node", "imports",
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -137,14 +137,14 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
             "edge-1", "node-1", "node-1", "",
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -163,10 +163,10 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "wrong-tenant", PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, "wrong-tenant", List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -188,7 +188,7 @@ class ArtifactGraphValidatorTest {
             TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of(residual)
@@ -210,7 +210,7 @@ class ArtifactGraphValidatorTest {
             TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of(residual)
@@ -228,8 +228,8 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.9, "test", List.of(),
-            List.of("orphaned-residual-id"), null, null
+            "extractor-1", "1.0", 0.9, "exact", List.of(),
+            List.of("orphaned-residual-id"), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
         ArtifactGraphValidator.ValidationResult result =
@@ -245,10 +245,10 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 1.5, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 1.5, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -267,10 +267,10 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
-            "extractor-1", "1.0", 0.3, "test", List.of(), List.of(), null, null
+            "extractor-1", "1.0", 0.3, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()

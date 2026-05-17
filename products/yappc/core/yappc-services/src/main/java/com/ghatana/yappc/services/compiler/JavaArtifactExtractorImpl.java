@@ -2,7 +2,10 @@ package com.ghatana.yappc.services.compiler;
 
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
 import com.ghatana.yappc.services.source.SourceProvider;
@@ -56,9 +59,10 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
         return Promise.ofBlocking(executor, () -> {
             List<ArtifactNodeDto> nodes = new ArrayList<>();
             List<ArtifactEdgeDto> edges = new ArrayList<>();
-            List<Map<String, Object>> unresolvedEdges = new ArrayList<>();
-            List<Map<String, Object>> edgeResolutionRecords = new ArrayList<>();
+            List<UnresolvedGraphEdgeDto> unresolvedEdges = new ArrayList<>();
+            List<EdgeResolutionRecordDto> edgeResolutionRecords = new ArrayList<>();
             List<ResidualIslandDto> residualIslands = new ArrayList<>();
+            List<SemanticModelDto> semanticModels = new ArrayList<>();
             
             // Track all symbols for unresolved reference detection
             Map<String, String> symbolLocations = new HashMap<>();
@@ -117,7 +121,8 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                 edges,
                 unresolvedEdges,
                 edgeResolutionRecords,
-                residualIslands
+                residualIslands,
+                semanticModels
             );
         });
     }
@@ -326,7 +331,7 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
         Map<String, String> symbolLocations,
         List<RepositorySnapshot.SnapshotFile> javaFiles,
         RepositorySnapshot snapshot,
-        List<Map<String, Object>> unresolvedEdges
+        List<UnresolvedGraphEdgeDto> unresolvedEdges
     ) {
         // Collect all imports from parsed files
         for (RepositorySnapshot.SnapshotFile file : javaFiles) {
@@ -338,17 +343,22 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                 for (String importStr : imports) {
                     // Check if import is resolved (exists in symbol locations)
                     if (!symbolLocations.containsKey(importStr)) {
-                        unresolvedEdges.add(Map.of(
-                            "sourceNodeId", buildNodeId(snapshot.snapshotId(), file.relativePath(), "file", ""),
-                            "targetRef", importStr,
-                            "relationshipType", "imports",
-                            "targetKindHint", "import",
-                            "confidence", 0.5,
-                            "metadata", Map.of(
+                        unresolvedEdges.add(new UnresolvedGraphEdgeDto(
+                            UUID.randomUUID().toString(),
+                            buildNodeId(snapshot.snapshotId(), file.relativePath(), "file", ""),
+                            importStr,
+                            "imports",
+                            "import",
+                            null,
+                            0.5,
+                            Map.of(
                                 "reason", "import-not-found-in-snapshot",
                                 "provenance", "javaparser-unresolved",
                                 "sourceFile", file.relativePath()
-                            )
+                            ),
+                            null,
+                            null,
+                            null
                         ));
                     }
                 }

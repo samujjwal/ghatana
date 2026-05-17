@@ -179,4 +179,20 @@ export class AgentsService {
             },
         });
     }
+    /**
+     * Request AI assistant response
+     * @param requestBody
+     * @returns any Assistant response
+     * @throws ApiError
+     */
+    public static assistWithAi(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/ai/assist',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 }

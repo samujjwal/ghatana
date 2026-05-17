@@ -470,9 +470,11 @@ export const auth = {
       body,
       'auth.ssoCallback',
     ),
-  // Delegates to generated AuthService.validateToken.
+  // Delegates to generated AuthService.validateSession.
   validate: (): Promise<{ valid: boolean }> => {
-    return GeneratedAuthService.validateToken().then(response => ({ valid: response.valid || false }));
+    return GeneratedAuthService.validateSession().then((response) => ({
+      valid: Boolean(response.user?.id),
+    }));
   },
   // Delegates to generated AuthService.currentUser.
   me: (): Promise<UserProfile> => {

@@ -185,6 +185,38 @@ public final class RepositorySnapshotRepository {
         });
     }
 
+    public Promise<Optional<RepositorySnapshot>> findById(String snapshotId, String tenantId, String workspaceId, String projectId) {
+        Objects.requireNonNull(snapshotId, "snapshotId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
+
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT snapshot_id, provider, repo_id, commit_sha, materialized_root,
+                       checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
+                       created_by, diagnostics_json, source_locator_json
+                FROM repository_snapshots
+                WHERE snapshot_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
+                """;
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, snapshotId);
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId);
+                        return Optional.of(mapSnapshot(rs, files));
+                    }
+                    return Optional.<RepositorySnapshot>empty();
+                }
+            }
+        });
+    }
+
     /**
      * Find snapshots by tenant, workspace, and project scope.
      *
@@ -287,6 +319,36 @@ public final class RepositorySnapshotRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, contentHash);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(rs.getString("snapshot_id"));
+                    }
+                    return Optional.<String>empty();
+                }
+            }
+        });
+    }
+
+    public Promise<Optional<String>> findByContentHash(String contentHash, String tenantId, String workspaceId, String projectId) {
+        Objects.requireNonNull(contentHash, "contentHash must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
+
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT snapshot_id
+                FROM repository_snapshots
+                WHERE content_hash = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
+                LIMIT 1
+                """;
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, contentHash);
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(rs.getString("snapshot_id"));
@@ -438,16 +500,16 @@ public final class RepositorySnapshotRepository {
         if (sourceLocator == null) {
             return null;
         }
-        return objectMapper.writeValueAsString(Map.of(
-            "provider", sourceLocator.provider(),
-            "repoId", sourceLocator.repoId(),
-            "ref", sourceLocator.ref().orElse(null),
-            "path", sourceLocator.path().orElse(null),
-            "credentialRef", sourceLocator.credentialRef().orElse(null),
-            "tenantId", sourceLocator.tenantId(),
-            "workspaceId", sourceLocator.workspaceId(),
-            "projectId", sourceLocator.projectId()
-        ));
+        java.util.Map<String, String> payload = new java.util.LinkedHashMap<>();
+        payload.put("provider", sourceLocator.provider());
+        payload.put("repoId", sourceLocator.repoId());
+        sourceLocator.ref().ifPresent(ref -> payload.put("ref", ref));
+        sourceLocator.path().ifPresent(path -> payload.put("path", path));
+        sourceLocator.credentialRef().ifPresent(credentialRef -> payload.put("credentialRef", credentialRef));
+        payload.put("tenantId", sourceLocator.tenantId());
+        payload.put("workspaceId", sourceLocator.workspaceId());
+        payload.put("projectId", sourceLocator.projectId());
+        return objectMapper.writeValueAsString(payload);
     }
 
     /**

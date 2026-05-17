@@ -1154,6 +1154,7 @@ export class ProductLifecyclePlanner {
       'gate-result-manifest',
       'artifact-manifest',
       'deployment-manifest',
+      'rollback-manifest',
       'verify-health-report',
       'lifecycle-health-snapshot',
       'lifecycle-events',

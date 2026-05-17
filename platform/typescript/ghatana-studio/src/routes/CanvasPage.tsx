@@ -31,15 +31,15 @@ export default function CanvasPage(): ReactElement {
   const currentStatusLabel = capabilityState.runtimeConfigured
     ? capabilityState.lifecycleConfigured
       ? capabilityState.dataCloudEvidenceReady
-        ? 'ready'
-        : 'evidence pending'
-      : 'lifecycle not configured'
-    : 'runtime not configured';
+        ? t('studio.route.canvas.status.ready')
+        : t('studio.route.canvas.status.evidencePending')
+      : t('studio.route.canvas.status.lifecycleNotConfigured')
+    : t('studio.route.canvas.status.runtimeNotConfigured');
   const requiredNextActionLabel = handoffReady
     ? capabilityState.dataCloudEvidenceReady
-      ? 'Export ProductUnitIntent candidates from Canvas and validate Kernel handoff evidence.'
-      : 'Complete lifecycle/runtime evidence prerequisites before promotion.'
-    : 'Configure lifecycle client preview/apply handlers for ProductUnitIntent handoff.';
+      ? t('studio.route.canvas.action.exportCandidates')
+      : t('studio.route.canvas.action.completeEvidence')
+    : t('studio.route.canvas.action.configureHandoff');
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {
     if (confidence >= 0.9) return 'success';
@@ -57,11 +57,11 @@ export default function CanvasPage(): ReactElement {
       </div>
 
       <IdeationRouteStatusPanel
-        ownershipLabel="YAPPC"
+        ownershipLabel={t('studio.route.canvas.ownershipLabel.yappc')}
         currentStatusLabel={currentStatusLabel}
         requiredNextActionLabel={requiredNextActionLabel}
         handoffReady={handoffReady}
-        handoffReadinessLabel={handoffReady ? 'handoff ready' : 'handoff unavailable'}
+        handoffReadinessLabel={handoffReady ? t('studio.route.canvas.handoffStatus.ready') : t('studio.route.canvas.handoffStatus.unavailable')}
         evidenceRefs={[artifactGraphSummary.evidenceId, residualIslandReport.evidenceId, riskHotspotReport.evidenceId]}
       />
 
@@ -73,7 +73,7 @@ export default function CanvasPage(): ReactElement {
               {t('studio.route.canvas.artifactGraphTitle')}
             </h3>
             <Badge tone={getConfidenceTone(artifactGraphSummary.confidence)} variant="soft" className="text-xs">
-              {Math.round(artifactGraphSummary.confidence * 100)}% confidence
+              {Math.round(artifactGraphSummary.confidence * 100)}{t('studio.route.canvas.confidenceSuffix')}
             </Badge>
           </div>
           <div className="space-y-2 text-sm">
@@ -109,7 +109,7 @@ export default function CanvasPage(): ReactElement {
               {t('studio.route.canvas.residualIslandsTitle')}
             </h3>
             <Badge tone={getConfidenceTone(residualIslandReport.confidence)} variant="soft" className="text-xs">
-              {Math.round(residualIslandReport.confidence * 100)}% confidence
+              {Math.round(residualIslandReport.confidence * 100)}{t('studio.route.canvas.confidenceSuffix')}
             </Badge>
           </div>
           <p className="text-sm text-amber-800">
@@ -147,7 +147,7 @@ export default function CanvasPage(): ReactElement {
             {t('studio.route.canvas.riskHotspotsTitle')}
           </h3>
           <Badge tone={getConfidenceTone(riskHotspotReport.confidence)} variant="soft" className="text-xs">
-            {Math.round(riskHotspotReport.confidence * 100)}% confidence
+            {Math.round(riskHotspotReport.confidence * 100)}{t('studio.route.canvas.confidenceSuffix')}
           </Badge>
         </div>
         <p className="text-sm text-red-800">
@@ -202,7 +202,7 @@ export default function CanvasPage(): ReactElement {
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-medium text-gray-900">{artifact.displayName}</h4>
                 <Badge tone={getConfidenceTone(artifact.confidence)} variant="soft" className="text-xs">
-                  {Math.round(artifact.confidence * 100)}%
+                  {Math.round(artifact.confidence * 100)}{t('studio.route.canvas.confidenceSuffix')}
                 </Badge>
               </div>
               <div className="mt-2 space-y-1 text-xs">

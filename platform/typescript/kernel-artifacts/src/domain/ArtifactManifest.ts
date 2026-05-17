@@ -159,6 +159,7 @@ export interface ArtifactManifest {
   phase: string;
   surface?: string;
   sourceRef?: string;
+  provenanceRef?: string;
   generatedBy?: ArtifactManifestGeneratedBy;
   timestamp: string;
   artifacts: ArtifactEntry[];
@@ -220,6 +221,7 @@ export const ArtifactManifestSchema = z.object({
   phase: z.string().min(1),
   surface: z.string().min(1).optional(),
   sourceRef: z.string().min(1).optional(),
+  provenanceRef: z.string().min(1).optional(),
   generatedBy: z.object({
     providerId: z.string().min(1).optional(),
     adapterId: z.string().min(1).optional(),
@@ -278,6 +280,7 @@ export class ArtifactManifestGenerator {
     phase: string;
     surface?: string;
     sourceRef?: string;
+    provenanceRef?: string;
     generatedBy?: ArtifactManifestGeneratedBy;
     artifacts: ArtifactEntryInput[];
   }): ArtifactManifest {
@@ -291,6 +294,7 @@ export class ArtifactManifestGenerator {
       phase: params.phase,
       ...(params.surface !== undefined ? { surface: params.surface } : {}),
       ...(params.sourceRef !== undefined ? { sourceRef: params.sourceRef } : {}),
+      ...(params.provenanceRef !== undefined ? { provenanceRef: params.provenanceRef } : {}),
       ...(params.generatedBy !== undefined ? { generatedBy: params.generatedBy } : {}),
       timestamp: new Date().toISOString(),
       artifacts: params.artifacts.map((artifact) => ({

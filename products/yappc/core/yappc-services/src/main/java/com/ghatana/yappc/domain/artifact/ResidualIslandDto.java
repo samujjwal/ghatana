@@ -37,6 +37,11 @@ public record ResidualIslandDto(
     String originalSource,
 
     /**
+        * Structured source location. This is the canonical location representation for persistence and validation.
+        */
+        SourceLocation sourceLocation,
+
+        /**
      * Source span as "file:startLine:startCol-endLine:endCol".
      * Required for round-trip fidelity; never synthesized.
      */
@@ -87,4 +92,53 @@ public record ResidualIslandDto(
     String workspaceId,
     String snapshotId
 ) {
+    public ResidualIslandDto(
+        String id,
+        String islandType,
+        String summary,
+        String originalSource,
+        String sourceSpan,
+        String checksum,
+        String rawFragmentRef,
+        String reason,
+        Double confidence,
+        Boolean reviewRequired,
+        Double riskScore,
+        Map<String, String> metadata,
+        Integer fileCount,
+        String tenantId,
+        String projectId,
+        String workspaceId,
+        String snapshotId
+    ) {
+        this(
+            id,
+            islandType,
+            summary,
+            originalSource,
+            null,
+            sourceSpan,
+            checksum,
+            rawFragmentRef,
+            reason,
+            confidence,
+            reviewRequired,
+            riskScore,
+            metadata,
+            fileCount,
+            tenantId,
+            projectId,
+            workspaceId,
+            snapshotId
+        );
+    }
+
+    public record SourceLocation(
+        String filePath,
+        int startLine,
+        int startColumn,
+        int endLine,
+        int endColumn
+    ) {
+    }
 }

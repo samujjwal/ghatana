@@ -13,7 +13,7 @@ This tracker records implementation progress for the unified product development
 | Blocked | Work cannot continue without a dependency, decision, or missing contract. |
 | Complete | Implementation and focused validation are complete. |
 
-## Release 0 - Core Truth and Studio Foundation
+## Phase 0 - Current-state baseline and coherence
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ This tracker records implementation progress for the unified product development
 | Add contract tests for ProductUnit and ProductUnitIntent | Complete | `pnpm --dir platform/typescript/kernel-product-contracts test`; 100% coverage command for `src/product-unit/**/*.ts` | ProductUnit and ProductUnitIntent now have schema-backed contract coverage for executable and draft paths. |
 | Synchronize governance truth with registry evidence | Complete | `node scripts/validate-product-registry.mjs`; `node scripts/check-product-workspace-registration.mjs`; `node scripts/generate-product-registry-artifacts.mjs --check`; `node scripts/check-product-shape-capability-matrix.mjs` | Canonical product registry now enforces the Digital Marketing-only lifecycle pilot rule, generated artifacts stay in sync, and workspace wiring matches the registry without unresolved or implicit product-module drift. |
 
-## Workstream 2 - ProductUnit and Intent Contracts
+## Phase 0 Journey 2 - ProductUnit and Intent Contracts
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -34,7 +34,7 @@ This tracker records implementation progress for the unified product development
 | 2.3 Lifecycle event contract expansion | Complete | `pnpm --dir platform/typescript/kernel-product-contracts test`; `pnpm --dir platform/typescript/kernel-product-contracts typecheck`; `pnpm --dir platform/typescript/kernel-product-contracts build`; `pnpm --dir platform/typescript/kernel-product-contracts exec vitest run --coverage --coverage.include='src/events/KernelLifecycleEvent.ts'` | Added canonical lifecycle event types, metadata schema, payload schemas, validation helpers, and compatibility tests for every required event family. |
 | 2.4 Provider mode and lifecycle provider contracts | Complete | `pnpm --dir platform/typescript/kernel-product-contracts test`; `pnpm --dir platform/typescript/kernel-product-contracts typecheck`; `pnpm --dir platform/typescript/kernel-product-contracts build`; `pnpm --dir platform/typescript/kernel-product-contracts exec vitest run --coverage --coverage.include='src/provider/LifecycleProviders.ts'` | Added bootstrap/platform mode support, lifecycle provider capability contracts, provider context, and fail-closed required-provider helper. |
 
-## Workstream 1 - Studio Unified Product Experience
+## Phase 1 Journey 1 - Studio Unified Product Experience
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -46,7 +46,7 @@ This tracker records implementation progress for the unified product development
 | 1.6-1.11 Production Studio route implementations | Complete | `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio test -- --run`; `pnpm --dir platform/typescript/ghatana-studio test:a11y`; `pnpm --dir platform/typescript/ghatana-studio build`; focused `StudioLifecycleDataContext` coverage reports 100% statements, functions, and lines | Develop, Lifecycle, Agents, Artifacts, Deployments, and Health now consume a shared typed Studio lifecycle data context backed by `KernelLifecycleClient` when configured, expose explicit unconfigured/loading/degraded states, validate manifest-shaped data, keep raw command execution absent, and avoid browser-runtime imports of Node-only Kernel package surfaces. |
 | 1.12 Agentic review console update | Complete | `pnpm --dir platform/typescript/ghatana-studio test -- src/__tests__/sections.test.tsx --run`; `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio build`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD` | Static AI review section replaced with Agentic Development Review showing evidence confidence, approvals, rollback, policy, mastery, verification, approve/reject, and audit trail state. |
 
-## Workstream 3 - Bootstrap Lifecycle Persistence Providers
+## Phase 2 Journey 3 - Bootstrap Lifecycle Persistence Providers
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -60,7 +60,7 @@ This tracker records implementation progress for the unified product development
 | 3.8 File-backed provenance provider | Complete | `pnpm --dir platform/typescript/kernel-providers test`; `pnpm --dir platform/typescript/kernel-providers typecheck`; `pnpm --dir platform/typescript/kernel-providers build`; focused coverage command for `src/provenance/FileProvenanceProvider.ts` | Added provenance record persistence, deduplication by provenance id, product/run filtering, correlation validation, malformed-store fail-closed behavior, and 100% statements, branches, functions, and lines coverage for the provider source. |
 | 3.9 File-backed runtime truth provider | Complete | `pnpm --dir platform/typescript/kernel-providers test`; `pnpm --dir platform/typescript/kernel-providers typecheck`; `pnpm --dir platform/typescript/kernel-providers build`; focused coverage command for `src/runtime-truth/FileRuntimeTruthProvider.ts` | Added runtime truth snapshot persistence, replacement by product/run/phase, latest pointer writes, latest product lookup, required write fail-closed behavior, and 100% statements, branches, functions, and lines coverage for the provider source. |
 
-## Workstream 4 - Kernel Lifecycle Execution Truth
+## Phase 2 Journey 4 - Kernel Lifecycle Execution Truth
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ This tracker records implementation progress for the unified product development
 | 4.8 LifecycleManifestWriter atomic manifests and lifecycle events | Complete | `pnpm --dir platform/typescript/kernel-lifecycle test`; `pnpm --dir platform/typescript/kernel-lifecycle typecheck`; `pnpm --dir platform/typescript/kernel-lifecycle build`; `pnpm --dir platform/typescript/kernel-product-contracts test`; `pnpm --dir platform/typescript/kernel-product-contracts typecheck`; `pnpm --dir platform/typescript/kernel-product-contracts build`; `pnpm --dir platform/typescript/kernel-lifecycle exec vitest run src/manifest/__tests__/LifecycleManifestWriter.test.ts --coverage --coverage.include='src/manifest/LifecycleManifestWriter.ts'` | `LifecycleManifestWriter` now writes all lifecycle manifest families including `lifecycle-events`, validates event manifests from the lifecycle event provider, writes JSON atomically with temp-file rename, records `manifestRefs.lifecycleEvents` and `eventsRef`, and keeps focused coverage at 100% statements, branches, functions, and lines. |
 | 4.9 Lifecycle provider context alignment | Complete | `pnpm --dir platform/typescript/kernel-lifecycle test`; `pnpm --dir platform/typescript/kernel-lifecycle typecheck`; `pnpm --dir platform/typescript/kernel-lifecycle build`; `pnpm --dir platform/typescript/kernel-product-contracts test`; `pnpm --dir platform/typescript/kernel-product-contracts typecheck`; `pnpm --dir platform/typescript/kernel-product-contracts build`; `pnpm --dir platform/typescript/kernel-lifecycle exec vitest run src/providers/__tests__/LifecycleProviderContext.test.ts --coverage --coverage.include='src/providers/LifecycleProviderContext.ts'` | Replaced the legacy broad lifecycle provider context with a lifecycle truth context that extends `KernelLifecycleProviderContext`, keeps explicit bootstrap/platform mode, includes narrow registry/source extensions where needed, and adds `requireLifecycleContextProvider()` fail-closed missing-provider behavior with 100% focused coverage. |
 
-## Workstream 5 - Toolchain Adapter Production Readiness
+## Phase 3 Journey 5 - Toolchain Adapter Production Readiness
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ This tracker records implementation progress for the unified product development
 | 5.5 Compose local adapter production readiness | Complete | `pnpm --dir platform/typescript/kernel-toolchains test`; `pnpm --dir platform/typescript/kernel-toolchains typecheck`; `pnpm --dir platform/typescript/kernel-toolchains build`; `pnpm --dir platform/typescript/kernel-lifecycle test`; `pnpm --dir platform/typescript/kernel-toolchains exec vitest run src/adapters/__tests__/ComposeLocalAdapter.test.ts --coverage --coverage.include='src/adapters/ComposeLocalAdapter.ts'` | Compose local now returns deployment manifest refs, verify health report refs, manifest evidence refs, parsed service statuses, health check result data, Digital Marketing compose label validation, `requireEnvFile` fail-closed behavior, and redacted env-file logging. Focused coverage reports 100% functions and lines, 98.31% statements, and 89.06% branches. |
 | 5.6 Toolchain adapter registry configuration alignment | Complete | `pnpm --dir platform/typescript/kernel-toolchains test`; `pnpm --dir platform/typescript/kernel-toolchains typecheck`; `pnpm --dir platform/typescript/kernel-toolchains build`; `pnpm --dir platform/typescript/kernel-toolchains exec vitest run src/__tests__/ToolchainAdapterRegistry.test.ts --coverage --coverage.include='src/ToolchainAdapterRegistry.ts'` | Added readiness, production approval, bootstrap/platform mode support, lifecycle enablement, and mobile feature-flag metadata for every registered adapter. Execution-ready adapters are marked lifecycle-enabled; partial/planned adapters stay blocked; FlashIt mobile adapters require feature flags until production-ready. Focused registry coverage reports 100% statements, functions, and lines with 84.9% branches. |
 
-## Workstream 6 - Kernel Artifacts, Deployment, Release
+## Phase 3 Journey 6 - Kernel Artifacts, Deployment, Release
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -96,7 +96,7 @@ This tracker records implementation progress for the unified product development
 | 6.5 Deployment verifier typed health reports | Complete | `pnpm --dir platform/typescript/kernel-deployment test`; `pnpm --dir platform/typescript/kernel-deployment typecheck`; `pnpm --dir platform/typescript/kernel-deployment build`; `pnpm --dir platform/typescript/kernel-deployment exec vitest run src/verifier/__tests__/DeploymentVerifier.test.ts --coverage --coverage.include='src/verifier/DeploymentVerifier.ts'` | Verifier now emits typed `verify-health-report` data with schema version, generated timestamp, check ids, attempt counts, timeout-aware errors, retry/backoff handling, and per-check evidence refs. Focused coverage reports 100% statements, branches, functions, and lines. |
 | 6.6 Product approval gate lifecycle integration | Complete | `pnpm --dir platform/typescript/kernel-release test`; `pnpm --dir platform/typescript/kernel-release typecheck`; `pnpm --dir platform/typescript/kernel-release build`; `pnpm --dir platform/typescript/kernel-release exec vitest run src/__tests__/ProductApprovalGate.test.ts --coverage --coverage.include='src/ProductApprovalGate.ts'`; `pnpm --dir platform/typescript/kernel-lifecycle test`; `pnpm --dir platform/typescript/kernel-lifecycle typecheck`; `pnpm --dir platform/typescript/kernel-lifecycle build`; `pnpm --dir platform/typescript/kernel-providers test`; `pnpm --dir platform/typescript/kernel-providers typecheck`; `pnpm --dir platform/typescript/kernel-providers build`; `pnpm --dir platform/typescript/ghatana-studio test -- --run`; `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio build` | Approval gates now carry lifecycle identity, environment, action, risk, requester, decision timestamp, evidence refs, and policy validation. Rejections require reasons, duplicate approvals are blocked unless explicitly configured, bootstrap approval provider writes the richer gate shape, lifecycle execution requests required approvals and fails closed before adapter execution, and Studio approval client fixtures validate against the production schema. Focused ProductApprovalGate coverage reports 100% statements, branches, functions, and lines. |
 
-## Workstream 7 - Kernel CLI and Scripts
+## Phase 2 Journey 7 - Kernel CLI and Scripts
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -106,7 +106,7 @@ This tracker records implementation progress for the unified product development
 | 7.4 Product shape capability matrix generator hardening | Complete | `node scripts/generate-product-shape-capability-matrix.mjs`; `node scripts/check-product-shape-capability-matrix.mjs` | Generator now emits product kind, shape mode, lifecycle/profile status, required adapters, adapter readiness, missing manifests, missing providers, gates needed, execution readiness, reason codes, and next actions without inventing adapters or overclaiming disabled/planned products. |
 | 7.5 Production stubs checker hardening | Complete | `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD --allowlist=config/production-stubs.allowlist.json`; invalid allowlist smoke command returns critical `INVALID_ALLOWLIST`; full `node scripts/check-production-stubs.mjs` intentionally fails on existing repository-wide production violations | Added bridge allow-all/no-op patterns, `Promise.of(true)` production default detection, lifecycle result truncation detection, default empty allowlist, and allowlist owner/expiry/reason enforcement. Full scan currently reports pre-existing critical/warning violations outside this slice; no broad allowlist was added. |
 
-## Workstream 8 - Data Cloud Platform Mode
+## Phase 5 Journey 8 - Data Cloud Platform Mode
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -116,7 +116,7 @@ This tracker records implementation progress for the unified product development
 | 8.4 DataCloudKernelExtension required ports and health snapshot | Complete | `./gradlew :products:data-cloud:extensions:kernel-bridge:test --tests '*DataCloudKernelExtensionTest' --tests '*DataCloudProviderTest' --no-daemon`; `./gradlew :products:data-cloud:extensions:kernel-bridge:test --tests '*DataCloudProviderTest' --tests '*DataCloudKernelExtensionTest' --tests '*DataCloudKernelBridgeMappingTest' --no-daemon` | Extension constructor now requires Data Cloud client, authorization, audit, health, and a tenant bridge-context resolver; lifecycle hooks report health snapshots on initialize/start/stop; initialization registers adapter plus Data Cloud event, artifact, health, provenance, memory, knowledge, runtime truth, and policy evidence providers. |
 | 8.5 Data Cloud-backed Kernel providers | Complete | `./gradlew :products:data-cloud:extensions:kernel-bridge:compileJava :products:data-cloud:extensions:kernel-bridge:compileTestJava --no-daemon`; `./gradlew :products:data-cloud:extensions:kernel-bridge:test --tests '*DataCloudProviderTest' --tests '*DataCloudKernelExtensionTest' --no-daemon`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD` | Added product-owned Data Cloud-backed provider classes for events, artifacts, health, provenance, memory, knowledge, runtime truth, and policy evidence. Providers persist through the Data Cloud adapter, carry tenant scope, surface typed `DataCloudProviderException` failures, and do not silently fall back to bootstrap/file mode. |
 
-## Workstream 9 - YAPPC Artifact Intelligence and Studio Creator Experience
+## Phase 6 Journey 9 - YAPPC Artifact Intelligence and Studio Creator Experience
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -125,7 +125,7 @@ This tracker records implementation progress for the unified product development
 | 9.3 YAPPC creator UI artifact intelligence integration | Complete | `pnpm --dir products/yappc/frontend/web exec vitest run src/services/canvas/commands/__tests__/ProductUnitIntentExportService.test.ts --coverage --coverage.include='src/services/canvas/commands/ProductUnitIntentExportService.ts'`; `pnpm --dir products/yappc/frontend/web exec vitest run src/components/canvas/page/__tests__/PageDesigner.test.tsx`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `git diff --check -- products/yappc/kernel-bridge platform/typescript/kernel-product-contracts products/yappc/frontend/web docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md pnpm-lock.yaml` | Added contract-backed YAPPC ProductUnitIntent export service, 100% focused coverage for the new service, Data Cloud evidence persistence in platform mode with fail-closed endpoint requirements, bootstrap handoff through backend APIs, and PageDesigner artifact-intelligence evidence panel plus guarded "Send ProductUnitIntent to Kernel" action. The frontend does not write Kernel registry files directly. The prior generated API `form-data` test-resolution drift is now resolved through browser-safe shims and workspace alias alignment. |
 | 9.4 Studio YAPPC workflow routes | Complete | `pnpm --dir platform/typescript/ghatana-studio test -- --run`; `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio build`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `git diff --check -- products/yappc/kernel-bridge platform/typescript/kernel-product-contracts products/yappc/frontend/web platform/typescript/ghatana-studio docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md pnpm-lock.yaml` | Added Studio Ideas, Blueprints, Canvas, and Learn route components backed by ProductUnitIntent and artifact-intelligence contracts. Routes show candidate status, typed send-to-Kernel action surface, artifact graph summaries, residual islands, risk hotspots, generated change-set evidence, recommendations, and degraded Data Cloud evidence state without importing YAPPC compiler/scanner/plugin internals. |
 
-## Workstream 10 - Agentic Lifecycle Development
+## Phase 4 Journey 10 - Agentic Lifecycle Development
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -135,7 +135,7 @@ This tracker records implementation progress for the unified product development
 | 10.4 Data Cloud/AEP agentic integration | Complete | `./gradlew :products:data-cloud:planes:action:agent-runtime:compileJava :products:data-cloud:planes:action:agent-runtime:compileTestJava --no-daemon`; `./gradlew :products:data-cloud:planes:action:agent-runtime:test --tests '*DataCloudAgentTraceLedgerTest' --tests '*ToolExecutorBoundaryTest' --no-daemon`; `./gradlew :products:data-cloud:planes:action:orchestrator:compileJava :products:data-cloud:planes:action:orchestrator:compileTestJava --no-daemon`; `pnpm --dir products/data-cloud/planes/action/gateway test -- src/__tests__/agentic-lifecycle-actions.test.ts`; `pnpm --dir products/data-cloud/planes/action/gateway build`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `git diff --check -- products/data-cloud/planes/action/agent-runtime products/data-cloud/planes/action/orchestrator products/data-cloud/planes/action/gateway docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md pnpm-lock.yaml` | Added DataCloudAgentTraceLedger backed by Data Cloud EventLogStore, wired AEP orchestration to use it through the existing AgentTraceLedger SPI, kept governed dispatcher hash-chain support for Data Cloud-backed ledgers, and added a gateway route that requires the Kernel AgentLifecycleActionService port and fails closed instead of proxying agentic lifecycle work to raw backend tools. Existing governed memory/mastery quarantine paths remain enforced through GovernedMemoryPlane and GovernedAgentDispatcher boundaries. |
 | 10.5 Studio agent action proposal review | Complete | `pnpm --dir platform/typescript/ghatana-studio test -- src/__tests__/sections.test.tsx --run`; `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio build`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `git diff --check -- platform/typescript/ghatana-studio docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md` | Replaced static AI review content with a contract-backed Agentic Development Review showing proposal evidence, confidence, risk, policy, mastery, approval, verification, rollback, approve/reject actions, and audit trail updates. |
 
-## Workstream 11 - Digital Marketing Pilot
+## Phase 2 Journey 11 - Digital Marketing Pilot
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -145,7 +145,7 @@ This tracker records implementation progress for the unified product development
 | 11.4 Digital Marketing compose lifecycle labels | Complete | `node scripts/check-digital-marketing-lifecycle-pilot.mjs`; `node scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke`; `node scripts/check-production-stubs.mjs --changed-only --base-ref=HEAD`; `git diff --check -- config/canonical-product-registry.json products/digital-marketing scripts/check-digital-marketing-lifecycle-pilot.mjs docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md pnpm-lock.yaml` | Compose services now include productUnit, surface, lifecycle, environment, artifact ref, and health path labels; no secret defaults were introduced. The pilot checker enforces the richer label contract. |
 | 11.5 Digital Marketing kernel bridge domain adapters and gates | Complete | `./gradlew :products:digital-marketing:dm-kernel-bridge:compileJava :products:digital-marketing:dm-kernel-bridge:compileTestJava --no-daemon`; `./gradlew :products:digital-marketing:dm-kernel-bridge:test --tests '*DigitalMarketingKernelAdapterContractTest' --tests '*DigitalMarketingKernelBridgeBoundaryTest' --tests '*DigitalMarketingKernelAdapterImplTest' --tests '*NotificationRetryAndDlqTest' --tests '*OpaAuthorizationServiceTest' --no-daemon`; `./gradlew :products:digital-marketing:dm-api:compileJava --no-daemon`; `./gradlew :products:digital-marketing:dm-integration-tests:compileTestJava --no-daemon` | Removed permissive risk and notification defaults from the product kernel adapter contract, removed the production-source feature-flag fallback constructor, wired the API through an explicit environment feature-flag plugin, and added bridge boundary tests proving product policy ownership and no embedded lifecycle runner or shell execution in `dm-kernel-bridge`. |
 
-## Workstream 12 - Future Product Shape Readiness
+## Phase 7 Journey 12 - Future Product Shape Readiness
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -156,7 +156,7 @@ This tracker records implementation progress for the unified product development
 | 12.5 YAPPC readiness guardrails | Complete | `node scripts/generate-product-shape-capability-matrix.mjs`; `node scripts/check-product-shape-capability-matrix.mjs` | YAPPC remains disabled as a platform-provider lifecycle target while ProductUnitIntent export and artifact-intelligence evidence contracts are surfaced as the allowed Kernel boundary. |
 | 12.6 Aura/DCMAAR/TutorPutor/Audio-Video readiness guardrails | Complete | `node scripts/generate-product-shape-capability-matrix.mjs`; `node scripts/check-product-shape-capability-matrix.mjs` | Future and partial products now carry product-local shape-only reason codes, required gates, evidence refs, and next required work instead of fake adapters or executable readiness claims. |
 
-## Workstream 13 - Observability, Security, Privacy, i18n, a11y
+## Phase 8 Journey 13 - Observability, Security, Privacy, i18n, a11y
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |
@@ -166,7 +166,7 @@ This tracker records implementation progress for the unified product development
 | 13.4 i18n conformance | Complete | `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio test -- --run`; `pnpm --dir platform/typescript/ghatana-studio test:a11y`; `pnpm --dir platform/typescript/ghatana-studio build`; navigation label key-existence coverage | Studio imports `@ghatana/i18n`, initializes Studio resources in `main.tsx`, and uses typed translation keys for canonical navigation, shell branding, status vocabulary, header copy, settings, not-found route copy, and customer-facing route body copy across Home, Ideas, Blueprints, Canvas, Develop, Lifecycle, Agents, Artifacts, Deployments, Health, and Learn. |
 | 13.5 Accessibility conformance | Complete | `pnpm --dir platform/typescript/ghatana-studio test:a11y`; `pnpm --dir platform/typescript/ghatana-studio test -- --run`; `pnpm --dir platform/typescript/ghatana-studio type-check`; `pnpm --dir platform/typescript/ghatana-studio build` | Studio now has semantic navigation/main landmarks, active route `aria-current` coverage for every customer-visible route, non-color-only status text, and explicit visible focus styling for links/buttons/select controls. |
 
-## Workstream 14 - Validation and CI/CD
+## Phase 8 Journey 14 - Validation and CI/CD
 
 | Task | Status | Evidence | Notes |
 | --- | --- | --- | --- |

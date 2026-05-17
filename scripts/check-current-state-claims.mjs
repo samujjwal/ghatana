@@ -126,6 +126,10 @@ export function findCurrentStateClaimViolations(files, options = {}) {
     }
   }
 
+  // Check tracker status against domain registry classification
+  const trackerViolations = checkTrackerAgainstRegistry(domainRegistry);
+  violations.push(...trackerViolations);
+
   return violations;
 }
 
@@ -204,6 +208,82 @@ function checkForEvidence(source, lineIndex, lines) {
   ];
   
   return evidencePatterns.some(pattern => context.includes(pattern));
+}
+
+function loadTrackerFile() {
+  try {
+    const trackerPath = path.join(repoRoot, 'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md');
+    return readFileSync(trackerPath, 'utf8');
+  } catch (error) {
+    console.warn('Warning: Failed to load tracker file:', error.message);
+    return null;
+  }
+}
+
+function checkTrackerAgainstRegistry(domainRegistry) {
+  const violations = [];
+  const trackerContent = loadTrackerFile();
+  
+  if (!trackerContent) {
+    return violations;
+  }
+
+  const lines = trackerContent.split(/\r?\n/);
+  const domainMap = new Map();
+  
+  // Build a map of domain names to their classifications
+  for (const domain of domainRegistry.domains ?? []) {
+    domainMap.set(domain.name.toLowerCase(), domain.classification);
+    // Also map by ID for cross-reference
+    domainMap.set(domain.id.toLowerCase(), domain.classification);
+  }
+
+  let currentTask = null;
+  let inTable = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Detect table start
+    if (line.includes('| Task |') || line.includes('|---|')) {
+      inTable = true;
+      continue;
+    }
+    
+    // Parse table rows
+    if (inTable && line.startsWith('|')) {
+      const parts = line.split('|').map(p => p.trim()).filter(p => p);
+      if (parts.length >= 3) {
+        const taskName = parts[0];
+        const status = parts[1];
+        const notes = parts[2] || '';
+        
+        if (status.toLowerCase() === 'complete') {
+          // Check if this task references a domain with partial classification
+          for (const [domainName, classification] of domainMap.entries()) {
+            if (taskName.toLowerCase().includes(domainName) || notes.toLowerCase().includes(domainName)) {
+              if (classification === 'existing-partial') {
+                // Check if there's an explicit scoped rationale
+                // Consider any substantive notes (length > 50 chars or contains evidence/validation commands) as scoped rationale
+                const hasScopedRationale = notes.length > 50 || 
+                  /scoped|rationale|partial|incomplete|wip|work in progress|evidence|validation|test|pnpm|gradlew|node scripts/i.test(notes);
+                if (!hasScopedRationale) {
+                  violations.push(`Tracker task '${taskName}' is marked Complete but references domain '${domainName}' with classification 'existing-partial' without explicit scoped rationale in notes. Add scoped rationale explaining why this is acceptable.`);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // End table detection
+    if (inTable && !line.includes('|') && line.trim() !== '') {
+      inTable = false;
+    }
+  }
+
+  return violations;
 }
 
 export function checkCurrentStateClaims(options = {}) {

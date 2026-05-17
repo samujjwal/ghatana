@@ -180,6 +180,46 @@ function assertApprovalSafety(plan, options) {
   }
 }
 
+function assertAdapterContractCompliance(plan, registry) {
+  const errors = [];
+  
+  // Check that all steps have adapter references
+  const stepsWithoutAdapter = plan.steps.filter((step) => !step.adapter);
+  if (stepsWithoutAdapter.length > 0) {
+    errors.push(
+      `Lifecycle execution requires all steps to have adapter contracts; ${stepsWithoutAdapter.length} steps missing adapter: ${stepsWithoutAdapter.map((s) => s.stepId).join(', ')}`,
+    );
+  }
+
+  // Check that all adapter IDs are registered in the bridge
+  const adapterIds = new Set(plan.steps.map((step) => step.adapter).filter(Boolean));
+  const registeredAdapters = new Set(
+    typeof registry.getAll === 'function'
+      ? registry.getAll().map((adapter) => adapter.id)
+      : [],
+  );
+  const unregisteredAdapters = [...adapterIds].filter((id) => !registeredAdapters.has(id));
+  if (unregisteredAdapters.length > 0) {
+    errors.push(
+      `Lifecycle execution requires all adapters to be registered; unregistered adapters: ${unregisteredAdapters.join(', ')}`,
+    );
+  }
+
+  // Check that no step attempts to bypass adapter with raw command execution
+  const stepsWithRawCommand = plan.steps.filter((step) => 
+    step.command && !step.adapter
+  );
+  if (stepsWithRawCommand.length > 0) {
+    errors.push(
+      `Lifecycle execution must go through adapter contracts; ${stepsWithRawCommand.length} steps attempt raw command execution: ${stepsWithRawCommand.map((s) => s.stepId).join(', ')}`,
+    );
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Adapter contract compliance check failed:\n${errors.map((e) => `  - ${e}`).join('\n')}`);
+  }
+}
+
 function createDryRunGateProviders(plan) {
   return Object.fromEntries(
     (plan.gates ?? []).map((gate) => [
@@ -309,7 +349,11 @@ async function main() {
       : providerContext;
 
     // Build real adapter registry with safe SpawnCommandRunner
-    const { bridge } = createDefaultToolchainAdapterRegistry({ repoRoot });
+    const { registry, bridge } = createDefaultToolchainAdapterRegistry({ repoRoot });
+    
+    // Enforce adapter contract compliance before execution
+    assertAdapterContractCompliance(plan, registry);
+    
     const runner = new ProductLifecycleStepRunner(bridge);
     const executor = new ProductLifecycleExecutor(runner, collector);
     const executionService = createLifecycleService({

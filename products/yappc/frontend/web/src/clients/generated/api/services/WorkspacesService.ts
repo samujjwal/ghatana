@@ -243,4 +243,15 @@ export class WorkspacesService {
             },
         });
     }
+    /**
+     * Get workspace settings
+     * @returns any Workspace settings
+     * @throws ApiError
+     */
+    public static getWorkspaceSettings(): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/settings',
+        });
+    }
 }

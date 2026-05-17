@@ -1,7 +1,7 @@
 import { type ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
-import { useStudioTranslation } from '../i18n/studioTranslations';
+import { useStudioTranslation, type StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { dependencyGraphEvidence, generatedChangeSetSummary, productShapeEvidence, yappcProductUnitIntentCandidate } from './yappcWorkflowData';
 import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
@@ -26,15 +26,15 @@ export default function BlueprintsPage(): ReactElement {
   const currentStatusLabel = capabilityState.runtimeConfigured
     ? capabilityState.lifecycleConfigured
       ? capabilityState.dataCloudEvidenceReady
-        ? 'ready'
-        : 'evidence pending'
-      : 'lifecycle not configured'
-    : 'runtime not configured';
+        ? t('studio.route.blueprints.status.ready')
+        : t('studio.route.blueprints.status.evidencePending')
+      : t('studio.route.blueprints.status.lifecycleNotConfigured')
+    : t('studio.route.blueprints.status.runtimeNotConfigured');
   const requiredNextActionLabel = handoffReady
     ? capabilityState.dataCloudEvidenceReady
-      ? 'Validate ProductUnitIntent export against Kernel preview/apply responses.'
-      : 'Complete lifecycle/runtime evidence prerequisites before promotion.'
-    : 'Configure lifecycle client preview/apply handlers for ProductUnitIntent handoff.';
+      ? t('studio.route.blueprints.action.validateIntent')
+      : t('studio.route.blueprints.action.completeEvidence')
+    : t('studio.route.blueprints.action.configureHandoff');
 
   async function previewIntent(): Promise<void> {
     if (lifecycleData.previewProductUnitIntent === undefined) {
@@ -85,11 +85,11 @@ export default function BlueprintsPage(): ReactElement {
       </div>
 
       <IdeationRouteStatusPanel
-        ownershipLabel="YAPPC"
+        ownershipLabel={t('studio.route.blueprints.ownershipLabel.yappc')}
         currentStatusLabel={currentStatusLabel}
         requiredNextActionLabel={requiredNextActionLabel}
         handoffReady={handoffReady}
-        handoffReadinessLabel={handoffReady ? 'handoff ready' : 'handoff unavailable'}
+        handoffReadinessLabel={handoffReady ? t('studio.route.blueprints.handoffStatus.ready') : t('studio.route.blueprints.handoffStatus.unavailable')}
         evidenceRefs={[
           yappcProductUnitIntentCandidate.intentId,
           ...(provenance?.evidenceRefs ?? []),
@@ -117,12 +117,12 @@ export default function BlueprintsPage(): ReactElement {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">{t('studio.route.blueprints.lifecycleProfileLabel')}:</span>
-            <span className="font-medium text-gray-900">{requestedLifecycle?.profile ?? 'not set'}</span>
+            <span className="font-medium text-gray-900">{requestedLifecycle?.profile ?? t('studio.route.blueprints.notSetValue')}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">{t('studio.route.blueprints.enableExecutionLabel')}:</span>
             <Badge tone={requestedLifecycle?.enableExecution === true ? 'success' : 'neutral'} variant="soft" className="text-xs">
-              {requestedLifecycle?.enableExecution === true ? 'Enabled' : 'Disabled'}
+              {requestedLifecycle?.enableExecution === true ? t('studio.route.blueprints.enableExecution.enabled') : t('studio.route.blueprints.enableExecution.disabled')}
             </Badge>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function BlueprintsPage(): ReactElement {
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900">{t('studio.route.blueprints.provenanceTitle')}</h4>
           <ul className="space-y-1 text-xs text-gray-600">
-            <li className="font-mono">{provenance?.sourceSystem ?? 'unknown'}</li>
+            <li className="font-mono">{provenance?.sourceSystem ?? t('studio.route.blueprints.provenance.unknown')}</li>
             {(provenance?.evidenceRefs ?? []).map((ref) => (
               <li key={ref} className="font-mono">{ref}</li>
             ))}
@@ -179,7 +179,28 @@ export default function BlueprintsPage(): ReactElement {
         {lifecycleData.previewProductUnitIntent === undefined || lifecycleData.applyProductUnitIntent === undefined ? (
           <p className="text-xs text-red-700">{t('studio.route.blueprints.handoffUnavailable')}</p>
         ) : null}
-        {handoffError !== undefined ? (
+        {lifecycleData.intentOperation.status === 'error' && lifecycleData.intentOperation.errorReasonCode !== undefined ? (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3" aria-label="error-diagnostics">
+            <div className="text-xs font-semibold text-red-900">{t('studio.route.intentError.diagnosticsTitle')}</div>
+            <div className="mt-2 space-y-1 text-xs text-red-900">
+              <div className="flex justify-between">
+                <span className="font-medium">{t('studio.route.intentError.reasonCodeLabel')}:</span>
+                <span className="font-mono">{t(`studio.route.intentError.reasonCode.${lifecycleData.intentOperation.errorReasonCode.replace(/-/g, '')}` as StudioTranslationKey)}</span>
+              </div>
+              {lifecycleData.intentOperation.errorDetails && Object.keys(lifecycleData.intentOperation.errorDetails).length > 0 && (
+                <div className="mt-2">
+                  <span className="font-medium">{t('studio.route.intentError.detailsLabel')}:</span>
+                  <ul className="mt-1 space-y-1 font-mono text-red-800">
+                    {Object.entries(lifecycleData.intentOperation.errorDetails).map(([key, value]) => (
+                      <li key={key}>{key}: {String(value)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+        {handoffError !== undefined && lifecycleData.intentOperation.errorReasonCode === undefined ? (
           <p className="text-xs text-red-700">{handoffError}</p>
         ) : null}
         {handoffResult !== undefined ? (
@@ -201,7 +222,7 @@ export default function BlueprintsPage(): ReactElement {
               {t('studio.route.blueprints.productShapeTitle')}
             </h3>
             <Badge tone={getConfidenceTone(productShapeEvidence.confidence)} variant="soft" className="text-xs">
-              {Math.round(productShapeEvidence.confidence * 100)}% confidence
+              {Math.round(productShapeEvidence.confidence * 100)}{t('studio.route.blueprints.confidenceSuffix')}
             </Badge>
           </div>
           <div className="space-y-2 text-sm">

@@ -965,13 +965,14 @@ public final class ArtifactGraphRepository {
             String sql = """
                 INSERT INTO residual_islands (
                     id, tenant_id, project_id, snapshot_id, workspace_id, island_type, summary, 
-                    original_source, source_span, checksum, raw_fragment_ref, reason,
+                    original_source, source_location_json, source_span, checksum, raw_fragment_ref, reason,
                     confidence, review_required, risk_score, file_count, metadata_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (tenant_id, workspace_id, project_id, id) DO UPDATE SET
                     island_type = EXCLUDED.island_type,
                     summary = EXCLUDED.summary,
                     original_source = EXCLUDED.original_source,
+                    source_location_json = EXCLUDED.source_location_json,
                     source_span = EXCLUDED.source_span,
                     checksum = EXCLUDED.checksum,
                     raw_fragment_ref = EXCLUDED.raw_fragment_ref,
@@ -993,24 +994,25 @@ public final class ArtifactGraphRepository {
                     statement.setString(6, island.islandType());
                     statement.setString(7, island.summary());
                     statement.setString(8, island.originalSource());
-                    statement.setString(9, island.sourceSpan());
-                    statement.setString(10, island.checksum());
-                    statement.setString(11, island.rawFragmentRef());
-                    statement.setString(12, island.reason());
+                    statement.setString(9, writeJson(island.sourceLocation()));
+                    statement.setString(10, island.sourceSpan());
+                    statement.setString(11, island.checksum());
+                    statement.setString(12, island.rawFragmentRef());
+                    statement.setString(13, island.reason());
                     if (!Double.isNaN(island.confidence())) {
-                        statement.setBigDecimal(13, java.math.BigDecimal.valueOf(island.confidence()));
+                        statement.setBigDecimal(14, java.math.BigDecimal.valueOf(island.confidence()));
                     } else {
-                        statement.setNull(13, java.sql.Types.NUMERIC);
+                        statement.setNull(14, java.sql.Types.NUMERIC);
                     }
-                    statement.setBoolean(14, island.reviewRequired());
+                    statement.setBoolean(15, island.reviewRequired());
                     if (!Double.isNaN(island.riskScore())) {
-                        statement.setBigDecimal(15, java.math.BigDecimal.valueOf(island.riskScore()));
+                        statement.setBigDecimal(16, java.math.BigDecimal.valueOf(island.riskScore()));
                     } else {
-                        statement.setNull(15, java.sql.Types.NUMERIC);
+                        statement.setNull(16, java.sql.Types.NUMERIC);
                     }
-                    statement.setInt(16, island.fileCount());
-                    statement.setString(17, writeJson(island.metadata()));
-                    statement.setTimestamp(18, Timestamp.from(Instant.now()));
+                    statement.setInt(17, island.fileCount());
+                    statement.setString(18, writeJson(island.metadata()));
+                    statement.setTimestamp(19, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -1052,6 +1054,7 @@ public final class ArtifactGraphRepository {
         String islandType,
         String summary,
         String originalSource, // P0: Added for round-trip fidelity
+        Map<String, Object> sourceLocation,
         String sourceSpan,
         String checksum,
         String rawFragmentRef,

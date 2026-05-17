@@ -8,8 +8,9 @@ import lombok.Value;
  * Contract for pipeline deployment response.
  *
  * <p><b>Purpose</b><br>
- * Encapsulates deployment result (deploymentId, status, pipelineId, tenantId, error)
- * returned from orchestrator deployment endpoint to clients.
+ * Encapsulates deployment result (deploymentId, status, pipelineId, tenantId, error, runId)
+ * returned from orchestrator deployment endpoint to clients. The runId references the governed
+ * Kernel lifecycle run for traceability and evidence correlation.
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
@@ -18,11 +19,12 @@ import lombok.Value;
  *     .pipelineId("fraud-detection-pipeline")
  *     .tenantId("acme-corp")
  *     .status("DEPLOYED")
+ *     .runId("kernel-run-67890")
  *     .build();
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Deployment response contract
+ * @doc.purpose Deployment response contract with Kernel lifecycle integration
  * @doc.layer contracts
  * @doc.pattern Value Object
  */
@@ -66,6 +68,13 @@ public class DeploymentResponse {
      * Can be null if not yet set.
      */
     private final String timestamp;
+
+    /**
+     * Kernel lifecycle run ID for traceability and evidence correlation.
+     * References the governed Kernel lifecycle run that was submitted for this deployment.
+     * Null if the deployment did not go through the Kernel lifecycle system.
+     */
+    private final String runId;
 
     /**
      * Check if deployment succeeded.

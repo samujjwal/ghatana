@@ -2,8 +2,10 @@ package com.ghatana.yappc.services.compiler;
 
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
 import com.ghatana.yappc.services.source.SourceProvider;
@@ -64,8 +66,8 @@ public final class JavaArtifactExtractor {
         return Promise.ofBlocking(executor, () -> {
             List<ArtifactNodeDto> nodes = new ArrayList<>();
             List<ArtifactEdgeDto> edges = new ArrayList<>();
-            List<Map<String, Object>> unresolvedEdges = new ArrayList<>();
-            List<Map<String, Object>> edgeResolutionRecords = new ArrayList<>();
+            List<UnresolvedGraphEdgeDto> unresolvedEdges = new ArrayList<>();
+            List<EdgeResolutionRecordDto> edgeResolutionRecords = new ArrayList<>();
             List<ResidualIslandDto> residualIslands = new ArrayList<>();
             List<SemanticModelDto> semanticModels = new ArrayList<>();
 
@@ -102,7 +104,8 @@ public final class JavaArtifactExtractor {
                 edges,
                 unresolvedEdges,
                 edgeResolutionRecords,
-                residualIslands
+                residualIslands,
+                semanticModels
             );
         });
     }

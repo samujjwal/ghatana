@@ -292,6 +292,22 @@ export class ProjectsService {
         });
     }
     /**
+     * Save canvas snapshot for a project
+     * @param requestBody
+     * @returns any Canvas saved
+     * @throws ApiError
+     */
+    public static saveCanvas(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/canvas',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Get activity log for a project
      * @param projectId
      * @returns ActivityEntry Activity log
@@ -387,6 +403,151 @@ export class ProjectsService {
             path: {
                 'projectId': projectId,
             },
+        });
+    }
+    /**
+     * Get collaboration activity feed
+     * @returns any Activity feed
+     * @throws ApiError
+     */
+    public static getActivityFeed(): CancelablePromise<Array<Record<string, any>>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/activity',
+        });
+    }
+    /**
+     * Get billing summary view model
+     * @returns any Billing summary
+     * @throws ApiError
+     */
+    public static getBillingSummary(): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/billing',
+        });
+    }
+    /**
+     * Get collaboration calendar events
+     * @returns any Calendar events
+     * @throws ApiError
+     */
+    public static getCalendarEvents(): CancelablePromise<Array<Record<string, any>>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/calendar/events',
+        });
+    }
+    /**
+     * List collaboration message channels
+     * @returns any Channel list
+     * @throws ApiError
+     */
+    public static listMessageChannels(): CancelablePromise<Array<Record<string, any>>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/messages/channels',
+        });
+    }
+    /**
+     * Get messages for a channel
+     * @param channelId
+     * @returns any Channel messages
+     * @throws ApiError
+     */
+    public static getMessageChannel(
+        channelId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/messages/channels/{channelId}',
+            path: {
+                'channelId': channelId,
+            },
+        });
+    }
+    /**
+     * Get on-call schedule
+     * @returns any On-call schedule
+     * @throws ApiError
+     */
+    public static getOncallSchedule(): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/oncall',
+        });
+    }
+    /**
+     * List artifacts for a project
+     * @param projectId
+     * @returns any Project artifact list
+     * @throws ApiError
+     */
+    public static listProjectArtifacts(
+        projectId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/projects/{projectId}/artifacts',
+            path: {
+                'projectId': projectId,
+            },
+        });
+    }
+    /**
+     * Get project backlog
+     * @param projectId
+     * @returns any Backlog items
+     * @throws ApiError
+     */
+    public static getProjectBacklog(
+        projectId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/projects/{projectId}/backlog',
+            path: {
+                'projectId': projectId,
+            },
+        });
+    }
+    /**
+     * Get current sprint for a project
+     * @param projectId
+     * @returns any Current sprint
+     * @throws ApiError
+     */
+    public static getCurrentProjectSprint(
+        projectId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/projects/{projectId}/sprints/current',
+            path: {
+                'projectId': projectId,
+            },
+        });
+    }
+    /**
+     * Get service topology model
+     * @returns any Service topology
+     * @throws ApiError
+     */
+    public static getServiceTopology(): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/services/topology',
+        });
+    }
+    /**
+     * Get team hub view model
+     * @returns any Team hub payload
+     * @throws ApiError
+     */
+    public static getTeamHub(): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/teams/hub',
         });
     }
 }

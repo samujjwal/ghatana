@@ -71,7 +71,7 @@ class ArtifactGraphControllerScopeTest {
         when(request.getAttachment(Principal.class)).thenReturn(principal);
 
         // Request body with mismatched tenantId
-        ArtifactGraphIngestRequest ingestRequest = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest ingestRequest = ArtifactGraphIngestRequest.fromLegacyMaps(
             "product-456",
             "tenant-mismatch", // Different from principal tenant
             List.of(new ArtifactNodeDto("node1", "CODE_MODULE", "Test", null, null, Map.<String, Object>of(), List.<String>of(), null, null, null, null, null, (Double)null, null, null, null, null, null)),

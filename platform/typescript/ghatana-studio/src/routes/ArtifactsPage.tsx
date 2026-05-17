@@ -41,27 +41,48 @@ export default function ArtifactsPage(): ReactElement {
         </p>
       </div>
 
-      <article className="studio-card space-y-2" aria-label="artifact-manifest-state">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-gray-950">Manifest evidence state</h3>
-          <Badge tone={artifactManifestStatus === 'loaded' ? 'success' : artifactManifestStatus === 'missing' ? 'warning' : 'danger'} variant="soft" className="text-xs">
-            artifact-manifest: {artifactManifestStatus}
-          </Badge>
-        </div>
-        {artifactManifestStatus !== 'loaded' && (
-          <p className="text-sm text-amber-700">
-            Manifest evidence is not fully available yet. Run lifecycle build/package and refresh this view.
-          </p>
-        )}
-        {artifactManifestMessage !== undefined && (
-          <p className="text-xs text-gray-600">{artifactManifestMessage}</p>
-        )}
-        <ul className="space-y-1 text-xs text-gray-600">
-          <li className="font-mono">lifecycle-result: {lifecycleResultRef ?? 'not reported'}</li>
-          <li className="font-mono">artifact-manifest: {artifactManifestRef ?? 'not reported'}</li>
-          <li className="font-mono">verify-health: {verifyHealthRef ?? 'not reported'}</li>
-        </ul>
-      </article>
+      {artifactManifestStatus === 'missing' || artifactManifestStatus === 'unavailable' || artifactManifestStatus === 'corrupt' || artifactManifestStatus === 'unauthorized' ? (
+        <article className="rounded-md border border-red-200 bg-red-50 p-4" aria-label="provider-readiness-blocked">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-red-900">{t('studio.route.providerReadiness.blockedTitle')}</h3>
+            <Badge tone="danger" variant="soft" className="text-xs">
+              {artifactManifestStatus}
+            </Badge>
+          </div>
+          <p className="mt-2 text-sm text-red-800">{t('studio.route.providerReadiness.blockedMessage')}</p>
+          <div className="mt-3 space-y-1">
+            <h4 className="text-xs font-medium text-red-900">{t('studio.route.providerReadiness.missingEvidence')}</h4>
+            <ul className="space-y-1 text-xs text-red-700">
+              {lifecycleResultRef === undefined || lifecycleResultRef === 'not reported' ? (
+                <li className="font-mono">lifecycle-result: not reported</li>
+              ) : null}
+              {artifactManifestRef === undefined || artifactManifestRef === 'not reported' ? (
+                <li className="font-mono">artifact-manifest: not reported</li>
+              ) : null}
+              {verifyHealthRef === undefined || verifyHealthRef === 'not reported' ? (
+                <li className="font-mono">verify-health: not reported</li>
+              ) : null}
+            </ul>
+          </div>
+        </article>
+      ) : artifactManifestStatus === 'loaded' ? (
+        <article className="studio-card space-y-2" aria-label="artifact-manifest-state">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-950">Manifest evidence state</h3>
+            <Badge tone="success" variant="soft" className="text-xs">
+              artifact-manifest: {artifactManifestStatus}
+            </Badge>
+          </div>
+          {artifactManifestMessage !== undefined && (
+            <p className="text-xs text-gray-600">{artifactManifestMessage}</p>
+          )}
+          <ul className="space-y-1 text-xs text-gray-600">
+            <li className="font-mono">lifecycle-result: {lifecycleResultRef ?? 'not reported'}</li>
+            <li className="font-mono">artifact-manifest: {artifactManifestRef ?? 'not reported'}</li>
+            <li className="font-mono">verify-health: {verifyHealthRef ?? 'not reported'}</li>
+          </ul>
+        </article>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {artifacts.length === 0 ? (

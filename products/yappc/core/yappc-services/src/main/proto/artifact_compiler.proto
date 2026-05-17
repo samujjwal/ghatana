@@ -177,11 +177,11 @@ message ResidualIsland {
   double risk_score = 12; // P1-19: Added risk score
   map<string, string> metadata = 13;
   int32 file_count = 14; // P1-19: Added file count
-  
-  string tenant_id = 13; // P1-19: Added tenant scope
-  string project_id = 14; // P1-19: Added project scope
-  string workspace_id = 15; // P1-19: Added workspace scope
-  string snapshot_id = 16; // P1-19: Added snapshot ID
+
+  string tenant_id = 15; // P1-19: Added tenant scope
+  string project_id = 16; // P1-19: Added project scope
+  string workspace_id = 17; // P1-19: Added workspace scope
+  string snapshot_id = 18; // P1-19: Added snapshot ID
 }
 
 // IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.

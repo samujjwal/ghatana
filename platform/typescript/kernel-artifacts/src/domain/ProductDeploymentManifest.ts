@@ -5,7 +5,10 @@ import { z } from 'zod';
  */
 export interface ProductDeploymentManifest {
   schemaVersion: string;
+  runId?: string;
+  correlationId?: string;
   productId: string;
+  productUnitId?: string;
   deploymentId: string;
   version: string;
   environment: string;
@@ -14,6 +17,7 @@ export interface ProductDeploymentManifest {
   surfaces: DeploymentSurfaceManifest[];
   deploymentMetadata: DeploymentMetadata;
   healthChecks: HealthCheckResult[];
+  provenanceRefs?: string[];
 }
 
 /**
@@ -57,7 +61,10 @@ export interface HealthCheckResult {
  */
 export const ProductDeploymentManifestSchema = z.object({
   schemaVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+  runId: z.string().min(1).optional(),
+  correlationId: z.string().min(1).optional(),
   productId: z.string().min(1),
+  productUnitId: z.string().min(1).optional(),
   deploymentId: z.string().min(1),
   version: z.string().min(1),
   environment: z.string().min(1),
@@ -91,6 +98,7 @@ export const ProductDeploymentManifestSchema = z.object({
       details: z.string().optional(),
     }),
   ),
+  provenanceRefs: z.array(z.string().min(1)).optional(),
 });
 
 export type ProductDeploymentManifestInput = z.infer<typeof ProductDeploymentManifestSchema>;

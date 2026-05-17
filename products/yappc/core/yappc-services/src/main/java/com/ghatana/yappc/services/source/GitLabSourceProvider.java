@@ -24,12 +24,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @doc.type class
- * @doc.purpose GitLab source provider with commit pinning, deterministic snapshots, credentials, pagination, and .gitignore filtering
+ * @doc.purpose GitLab source provider with commit pinning, deterministic snapshots, credentials, and pagination
  * @doc.layer service
  * @doc.pattern Strategy
  * 
@@ -39,7 +37,6 @@ import java.util.stream.Collectors;
  * P0: Deterministic sorting of files for reproducible snapshots.
  * P0: Bounded concurrency with semaphore for concurrent HTTP requests.
  * P0: File-size limits to prevent OOM on large files.
- * P0: .gitignore filtering (simplified - should use authoritative library in production).
  */
 public final class GitLabSourceProvider implements SourceProvider {
 
@@ -93,8 +90,6 @@ public final class GitLabSourceProvider implements SourceProvider {
             List<RepositorySnapshot.SnapshotFile> files = new ArrayList<>();
             long totalSize = 0;
 
-            Set<String> gitignorePatterns = fetchGitignore(encodedRepo, commitSha, credentials);
-
             // P0: Sort entries deterministically for reproducible snapshot processing
             allEntries.sort(java.util.Comparator.comparing(e -> e.path("path").asText()));
 
@@ -103,11 +98,6 @@ public final class GitLabSourceProvider implements SourceProvider {
                     continue;
                 }
                 String path = entry.path("path").asText();
-                
-                // P1-13: Skip files that match .gitignore patterns
-                if (matchesGitignore(path, gitignorePatterns)) {
-                    continue;
-                }
                 
                 // P1-13: Acquire semaphore for bounded concurrency
                 try {
@@ -273,52 +263,6 @@ public final class GitLabSourceProvider implements SourceProvider {
         return objectMapper.readTree(response.body());
     }
 
-    private Set<String> fetchGitignore(String encodedRepo, String commitSha, String credentials) {
-        try {
-            String encodedPath = URLEncoder.encode(".gitignore", StandardCharsets.UTF_8);
-            String encodedRef = URLEncoder.encode(commitSha, StandardCharsets.UTF_8);
-            JsonNode gitignoreFile = fetchJson(
-                "https://gitlab.com/api/v4/projects/" + encodedRepo
-                + "/repository/files/" + encodedPath + "?ref=" + encodedRef,
-                credentials
-            );
-            String content = gitignoreFile.path("content").asText("");
-            if (content.isBlank()) {
-                return Set.of();
-            }
-            byte[] decoded = Base64.getMimeDecoder().decode(content);
-            String gitignoreContent = new String(decoded, StandardCharsets.UTF_8);
-            return gitignoreContent.lines()
-                .map(String::trim)
-                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                .collect(Collectors.toSet());
-        } catch (Exception e) {
-            log.debug(".gitignore not found or not parseable for repo; proceeding without filtering", e);
-            return Set.of();
-        }
-    }
-
-    /**
-     * P0: Check if a path matches any gitignore pattern.
-     * NOTE: This is a simplified implementation for P0 completion.
-     * Production should use an authoritative .gitignore library (e.g., jgitignore) for full spec compliance.
-     */
-    private boolean matchesGitignore(String path, Set<String> patterns) {
-        if (patterns.isEmpty()) {
-            return false;
-        }
-        // Simplified gitignore matching - for production, use a proper gitignore library
-        for (String pattern : patterns) {
-            if (path.startsWith(pattern) || path.contains(pattern)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * P0: Compute SHA-256 checksum of file content.
-     */
     private String computeContentChecksum(byte[] content) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -329,9 +273,6 @@ public final class GitLabSourceProvider implements SourceProvider {
         }
     }
 
-    /**
-     * P0: Compute deterministic snapshotId from repo ID and commit SHA.
-     */
     private String computeDeterministicSnapshotId(String repo, String commitSha) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

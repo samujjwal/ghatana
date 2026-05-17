@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -121,18 +124,22 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             Map<String, Object> response = objectMapper.convertValue(responseNode, MAP_TYPE);
             List<ArtifactNodeDto> nodes = mapNodes(asListOfMaps(response.get("nodes")));
             List<ArtifactEdgeDto> edges = mapEdges(asListOfMaps(response.get("edges")));
+            List<UnresolvedGraphEdgeDto> unresolvedEdges = mapUnresolvedEdges(asListOfMaps(response.get("unresolvedEdges")));
+            List<EdgeResolutionRecordDto> edgeResolutionRecords = mapEdgeResolutionRecords(asListOfMaps(response.get("edgeResolutionRecords")));
             List<ResidualIslandDto> residualIslands = mapResidualIslands(
                 response.get("residualIslands"),
                 response.get("residualIslandIds"),
                 snapshot
             );
+            List<SemanticModelDto> semanticModels = mapSemanticModels(asListOfMaps(response.get("semanticModels")), snapshot);
 
             return new ArtifactCompileJobService.ExtractionResult(
                 nodes,
                 edges,
-                asListOfMaps(response.get("unresolvedEdges")),
-                asListOfMaps(response.get("edgeResolutionRecords")),
-                residualIslands
+                unresolvedEdges,
+                edgeResolutionRecords,
+                residualIslands,
+                semanticModels
             );
         } catch (IllegalArgumentException e) {
             log.error("TypeScript extractor worker output schema validation failed", e);
@@ -325,6 +332,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 firstNonBlank(asString(island.get("islandType")), "unknown_file"),
                 firstNonBlank(asString(island.get("summary")), "Residual island from extractor"),
                 asString(island.get("originalSource")), // P0: Original source for round-trip
+                parseResidualSourceLocation(island.get("sourceLocation")),
                 asString(island.get("sourceSpan")),
                 asString(island.get("checksum")),
                 asString(island.get("rawFragmentRef")),
@@ -341,6 +349,103 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             ));
         }
         return result;
+    }
+
+    private static ResidualIslandDto.SourceLocation parseResidualSourceLocation(Object value) {
+        if (!(value instanceof Map<?, ?> raw)) {
+            return null;
+        }
+        String filePath = asString(raw.get("filePath"));
+        if (filePath == null || filePath.isBlank()) {
+            return null;
+        }
+        return new ResidualIslandDto.SourceLocation(
+            filePath,
+            asInteger(raw.get("startLine")) == null ? 0 : asInteger(raw.get("startLine")),
+            asInteger(raw.get("startColumn")) == null ? 0 : asInteger(raw.get("startColumn")),
+            asInteger(raw.get("endLine")) == null ? 0 : asInteger(raw.get("endLine")),
+            asInteger(raw.get("endColumn")) == null ? 0 : asInteger(raw.get("endColumn"))
+        );
+    }
+
+    private static List<UnresolvedGraphEdgeDto> mapUnresolvedEdges(List<Map<String, Object>> rawEdges) {
+        List<UnresolvedGraphEdgeDto> edges = new ArrayList<>(rawEdges.size());
+        for (Map<String, Object> edge : rawEdges) {
+            String sourceNodeId = asString(edge.get("sourceNodeId"));
+            String targetRef = asString(edge.get("targetRef"));
+            String relationshipType = asString(edge.get("relationshipType"));
+            if (sourceNodeId == null || targetRef == null || relationshipType == null) {
+                throw new IllegalArgumentException("Unresolved edge missing required fields sourceNodeId/targetRef/relationshipType");
+            }
+            edges.add(new UnresolvedGraphEdgeDto(
+                asString(edge.get("id")),
+                sourceNodeId,
+                targetRef,
+                relationshipType,
+                asString(edge.get("targetKindHint")),
+                null,
+                asDouble(edge.get("confidence")),
+                mapOrEmpty(edge.get("metadata")),
+                asString(edge.get("tenantId")),
+                asString(edge.get("projectId")),
+                asString(edge.get("workspaceId"))
+            ));
+        }
+        return edges;
+    }
+
+    private static List<EdgeResolutionRecordDto> mapEdgeResolutionRecords(List<Map<String, Object>> records) {
+        List<EdgeResolutionRecordDto> mapped = new ArrayList<>(records.size());
+        for (Map<String, Object> record : records) {
+            String unresolvedEdgeId = asString(record.get("unresolvedEdgeId"));
+            String status = asString(record.get("status"));
+            if (unresolvedEdgeId == null || status == null) {
+                throw new IllegalArgumentException("Edge resolution record missing unresolvedEdgeId/status");
+            }
+            mapped.add(new EdgeResolutionRecordDto(
+                asString(record.get("id")),
+                unresolvedEdgeId,
+                status,
+                asString(record.get("resolvedTargetId")),
+                asListOfStrings(record.get("candidateIds")),
+                Boolean.TRUE.equals(asBoolean(record.get("reviewRequired"))),
+                asString(record.get("resolutionMethod")),
+                mapOrEmpty(record.get("metadata")),
+                asString(record.get("tenantId")),
+                asString(record.get("projectId")),
+                asString(record.get("workspaceId"))
+            ));
+        }
+        return mapped;
+    }
+
+    private static List<SemanticModelDto> mapSemanticModels(List<Map<String, Object>> models, RepositorySnapshot snapshot) {
+        if (models.isEmpty()) {
+            return List.of();
+        }
+        List<SemanticModelDto> mapped = new ArrayList<>(models.size());
+        for (Map<String, Object> model : models) {
+            String elementId = asString(model.get("elementId"));
+            String elementType = firstNonBlank(asString(model.get("elementType")), "unknown");
+            String name = firstNonBlank(asString(model.get("name")), elementId);
+            if (elementId == null || name == null) {
+                continue;
+            }
+            mapped.add(SemanticModelDto.builder()
+                .id(firstNonBlank(asString(model.get("id")), java.util.UUID.randomUUID().toString()))
+                .elementId(elementId)
+                .elementType(elementType)
+                .name(name)
+                .qualifiedName(asString(model.get("qualifiedName")))
+                .filePath(asString(model.get("filePath")))
+                .provenance(firstNonBlank(asString(model.get("provenance")), "ts-extractor"))
+                .snapshotId(firstNonBlank(asString(model.get("snapshotId")), snapshot.snapshotId()))
+                .tenantId(asString(model.get("tenantId")))
+                .workspaceId(asString(model.get("workspaceId")))
+                .projectId(asString(model.get("projectId")))
+                .build());
+        }
+        return mapped;
     }
 
     private static Integer asInteger(Object value) {

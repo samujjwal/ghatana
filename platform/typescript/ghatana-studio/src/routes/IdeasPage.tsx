@@ -1,7 +1,7 @@
 import { type ReactElement } from 'react';
 import { isProductUnitIntent } from '@ghatana/kernel-product-contracts';
 import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
-import { useStudioTranslation } from '../i18n/studioTranslations';
+import { useStudioTranslation, type StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { yappcProductUnitIntentCandidate } from './yappcWorkflowData';
 import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
@@ -25,15 +25,15 @@ export default function IdeasPage(): ReactElement {
   const currentStatusLabel = capabilityState.runtimeConfigured
     ? capabilityState.lifecycleConfigured
       ? capabilityState.dataCloudEvidenceReady
-        ? 'ready'
-        : 'evidence pending'
-      : 'lifecycle not configured'
-    : 'runtime not configured';
+        ? t('studio.route.ideas.status.ready')
+        : t('studio.route.ideas.status.evidencePending')
+      : t('studio.route.ideas.status.lifecycleNotConfigured')
+    : t('studio.route.ideas.status.runtimeNotConfigured');
   const requiredNextActionLabel = handoffReady
     ? capabilityState.dataCloudEvidenceReady
-      ? 'Preview or apply ProductUnitIntent and validate Kernel handoff output.'
-      : 'Complete lifecycle/runtime evidence prerequisites before promotion.'
-    : 'Configure lifecycle client preview/apply handlers for ProductUnitIntent handoff.';
+      ? t('studio.route.ideas.action.previewOrApply')
+      : t('studio.route.ideas.action.completeEvidence')
+    : t('studio.route.ideas.action.configureHandoff');
 
   async function previewIntent(): Promise<void> {
     if (lifecycleData.previewProductUnitIntent === undefined) {
@@ -80,11 +80,11 @@ export default function IdeasPage(): ReactElement {
 
         <div className="mb-4">
           <IdeationRouteStatusPanel
-            ownershipLabel="YAPPC"
+            ownershipLabel={t('studio.route.ideas.ownershipLabel.yappc')}
             currentStatusLabel={currentStatusLabel}
             requiredNextActionLabel={requiredNextActionLabel}
             handoffReady={handoffReady}
-            handoffReadinessLabel={handoffReady ? 'handoff ready' : 'handoff unavailable'}
+            handoffReadinessLabel={handoffReady ? t('studio.route.ideas.handoffStatus.ready') : t('studio.route.ideas.handoffStatus.unavailable')}
             evidenceRefs={[
               yappcProductUnitIntentCandidate.intentId,
               ...(yappcProductUnitIntentCandidate.provenance?.evidenceRefs ?? []),
@@ -149,7 +149,29 @@ export default function IdeasPage(): ReactElement {
           <p className="mt-3 text-sm text-red-700">{t('studio.route.ideas.handoffUnavailable')}</p>
         ) : null}
 
-        {handoffError !== undefined ? (
+        {lifecycleData.intentOperation.status === 'error' && lifecycleData.intentOperation.errorReasonCode !== undefined ? (
+          <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3" aria-label="error-diagnostics">
+            <div className="text-xs font-semibold text-red-900">{t('studio.route.intentError.diagnosticsTitle')}</div>
+            <div className="mt-2 space-y-1 text-xs text-red-900">
+              <div className="flex justify-between">
+                <span className="font-medium">{t('studio.route.intentError.reasonCodeLabel')}:</span>
+                <span className="font-mono">{t(`studio.route.intentError.reasonCode.${lifecycleData.intentOperation.errorReasonCode.replace(/-/g, '')}` as StudioTranslationKey)}</span>
+              </div>
+              {lifecycleData.intentOperation.errorDetails && Object.keys(lifecycleData.intentOperation.errorDetails).length > 0 && (
+                <div className="mt-2">
+                  <span className="font-medium">{t('studio.route.intentError.detailsLabel')}:</span>
+                  <ul className="mt-1 space-y-1 font-mono text-red-800">
+                    {Object.entries(lifecycleData.intentOperation.errorDetails).map(([key, value]) => (
+                      <li key={key}>{key}: {String(value)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {handoffError !== undefined && lifecycleData.intentOperation.errorReasonCode === undefined ? (
           <p className="mt-3 text-sm text-red-700">{handoffError}</p>
         ) : null}
 

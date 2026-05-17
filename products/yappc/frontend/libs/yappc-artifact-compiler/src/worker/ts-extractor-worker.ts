@@ -77,10 +77,7 @@ const VersionMetadataSchema = z.object({
 
 const WorkerNodeSchema = z.object({
   id: z.string().min(1),
-  // P0: Require canonical 'type', reject legacy 'kind'
   type: z.string().min(1),
-  kind: z.string().min(1).optional(), // Legacy field kept for compatibility during transition
-  label: z.string().min(1).optional(),
   name: z.string().min(1),
   filePath: z.string().min(1).optional(),
   content: z.string().nullable().optional(),
@@ -102,21 +99,14 @@ const WorkerNodeSchema = z.object({
 });
 
 const WorkerEdgeSchema = z.object({
-  id: z.string().min(1),
   edgeId: z.string().min(1),
-  sourceId: z.string().min(1),
-  targetId: z.string().min(1),
   sourceNodeId: z.string().min(1),
   targetNodeId: z.string().min(1),
-  kind: z.string().min(1),
-  type: z.string().min(1),
   relationshipType: z.string().min(1),
   confidence: z.number().min(0).max(1),
   bidirectional: z.boolean(),
   metadata: z.record(z.string(), z.unknown()),
   properties: z.record(z.string(), z.unknown()),
-  source: z.string().min(1),
-  target: z.string().min(1),
   snapshotId: z.string().optional(),
   versionId: z.string().optional(),
 });
@@ -181,6 +171,21 @@ const WorkerDiagnosticSchema = z.object({
   column: z.number().int().nonnegative().optional(),
 });
 
+const WorkerSemanticModelSchema = z.object({
+  id: z.string().min(1),
+  elementId: z.string().min(1),
+  elementType: z.string().min(1),
+  name: z.string().min(1),
+  qualifiedName: z.string().optional(),
+  filePath: z.string().optional(),
+  provenance: z.string().min(1),
+  snapshotId: z.string().optional(),
+  tenantId: z.string().optional(),
+  projectId: z.string().optional(),
+  workspaceId: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 export const ExtractorWorkerRequestSchema = z.union([
   CanonicalExtractorWorkerRequestSchema,
   NestedJavaExtractorWorkerRequestSchema,
@@ -193,6 +198,7 @@ export const ExtractorWorkerResponseSchema = z.object({
   unresolvedEdges: z.array(WorkerUnresolvedEdgeSchema),
   edgeResolutionRecords: z.array(WorkerEdgeResolutionRecordSchema),
   residualIslands: z.array(WorkerResidualIslandSchema),
+  semanticModels: z.array(WorkerSemanticModelSchema).default([]),
   diagnostics: z.array(WorkerDiagnosticSchema).default([]),
   versionMetadata: VersionMetadataSchema,
 });
@@ -278,8 +284,8 @@ function toUnresolvedEdgeId(edge: UnresolvedGraphEdge): string {
 function toWorkerNode(node: GraphNode): ExtractorWorkerResponse['nodes'][number] {
   const filePath = node.sourceLocation?.filePath;
   return {
-    ...node,
     type: node.kind,
+    id: node.id,
     name: node.label,
     ...(filePath ? { filePath } : {}),
     content: null,
@@ -290,15 +296,16 @@ function toWorkerNode(node: GraphNode): ExtractorWorkerResponse['nodes'][number]
 
 function toWorkerEdge(edge: GraphEdge): ExtractorWorkerResponse['edges'][number] {
   return {
-    ...edge,
     edgeId: edge.id,
     sourceNodeId: edge.sourceId,
     targetNodeId: edge.targetId,
     relationshipType: edge.kind,
+    confidence: edge.confidence,
+    bidirectional: edge.bidirectional,
+    metadata: edge.metadata,
     properties: edge.metadata,
-    source: edge.sourceId,
-    target: edge.targetId,
-    type: edge.kind,
+    ...(edge.snapshotId ? { snapshotId: edge.snapshotId } : {}),
+    ...(edge.versionId ? { versionId: edge.versionId } : {}),
   };
 }
 
@@ -390,6 +397,16 @@ export function serializeExtractionWorkerResponse(
     unresolvedEdges: result.graph.unresolvedEdges.map((edge) => toWorkerUnresolvedEdge(edge)),
     edgeResolutionRecords: result.graph.edgeResolutionRecords.map((record) => toWorkerEdgeResolutionRecord(record)),
     residualIslands: result.residualIslands.map((island) => toWorkerResidualIsland(island)),
+    semanticModels: result.graph.nodes.map((node) => ({
+      id: buildHash(node.id, node.kind, node.label),
+      elementId: node.id,
+      elementType: node.kind,
+      name: node.label,
+      qualifiedName: node.symbolRef,
+      filePath: node.sourceLocation?.filePath,
+      provenance: node.provenance,
+      metadata: node.metadata,
+    })),
     diagnostics: [
       ...result.warnings.map((warning) => ({
         level: 'WARNING' as const,

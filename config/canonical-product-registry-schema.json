@@ -559,6 +559,86 @@
         "missingManifests": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "blockerGateAdapterMatrix": {
+          "type": "object",
+          "description": "Explicit blocker, gate, and adapter matrix for future product shape readiness",
+          "properties": {
+            "blockers": {
+              "type": "array",
+              "description": "List of blocker reason codes preventing lifecycle execution",
+              "items": { "type": "string" }
+            },
+            "gates": {
+              "type": "array",
+              "description": "List of gates with adapter associations",
+              "items": {
+                "type": "object",
+                "required": ["gateId"],
+                "properties": {
+                  "gateId": {
+                    "type": "string",
+                    "description": "Unique gate identifier"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Human-readable gate description"
+                  },
+                  "evidenceRequired": {
+                    "type": "boolean",
+                    "description": "Whether evidence is required for this gate"
+                  },
+                  "adapterId": {
+                    "type": "string",
+                    "description": "Associated adapter identifier"
+                  },
+                  "requiredFor": {
+                    "type": "array",
+                    "description": "Lifecycle phases or surfaces this gate is required for",
+                    "items": { "type": "string" }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "adapters": {
+              "type": "array",
+              "description": "List of required adapters with their readiness status",
+              "items": {
+                "type": "object",
+                "required": ["adapterId"],
+                "properties": {
+                  "adapterId": {
+                    "type": "string",
+                    "description": "Unique adapter identifier"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Adapter type (e.g., gradle-java-service, pnpm-vite-react)"
+                  },
+                  "required": {
+                    "type": "boolean",
+                    "description": "Whether this adapter is required"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Adapter implementation status"
+                  },
+                  "readiness": {
+                    "type": "string",
+                    "enum": ["ready", "partial", "planned", "blocked"],
+                    "description": "Adapter readiness status"
+                  },
+                  "reasonCode": {
+                    "type": "string",
+                    "description": "Reason code if not ready"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
         }
       }
     },

@@ -3,9 +3,11 @@ package com.ghatana.orchestrator.deployment.service;
 import com.ghatana.orchestrator.deployment.contract.DeploymentEventType;
 import com.ghatana.orchestrator.deployment.contract.DeploymentRequest;
 import com.ghatana.orchestrator.deployment.contract.DeploymentResponse;
+import com.ghatana.orchestrator.deployment.http.KernelLifecycleClient;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,14 +17,15 @@ import org.slf4j.MDC;
  * Service for orchestrating pipeline deployments.
  *
  * <p><b>Purpose</b><br>
- * Validates deployment requests, generates unique deployment IDs, publishes deployment events
- * to EventCloud, and tracks deployment metrics. Acts as orchestrator entry point for all
- * deployment operations (deploy, update, undeploy).
+ * Validates deployment requests, generates unique deployment IDs, submits governed Kernel lifecycle
+ * action requests, and publishes deployment events to EventCloud. Acts as orchestrator entry point
+ * for all deployment operations (deploy, update, undeploy). All lifecycle actions go through the
+ * governed Kernel system with proper adapter contract compliance.
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
  * DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
- *     deploymentEventPublisher, metricsCollector);
+ *     deploymentEventPublisher, metricsCollector, kernelLifecycleClient);
  *
  * DeploymentRequest request = DeploymentRequest.builder()
  *     .pipelineId("fraud-detection")
@@ -34,7 +37,7 @@ import org.slf4j.MDC;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Deployment orchestration service
+ * @doc.purpose Deployment orchestration service with governed Kernel lifecycle integration
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -43,13 +46,14 @@ import org.slf4j.MDC;
 public class DeploymentOrchestrator {
     private final DeploymentEventPublisher eventPublisher;
     private final MetricsCollector metricsCollector;
+    private final KernelLifecycleClient kernelLifecycleClient;
 
     /**
      * Request pipeline deployment.
      *
-     * <p>Validates request, generates deployment ID, publishes PIPELINE_DEPLOY_REQUESTED event
-     * for event-processing instances to consume. Returns immediately with deployment ID
-     * (async processing via event).
+     * <p>Validates request, generates deployment ID, submits governed Kernel lifecycle action request,
+     * and publishes PIPELINE_DEPLOY_REQUESTED event for event-processing instances to consume.
+     * Returns immediately with deployment ID (async processing via event).
      *
      * @param request deployment request with pipelineId, tenantId, environment
      * @return Promise<DeploymentResponse> with deploymentId and status
@@ -85,29 +89,56 @@ public class DeploymentOrchestrator {
 
             log.info("Deployment request accepted: {} for pipeline {}", deploymentId, request.getPipelineId());
 
-            // Publish deployment event
-            eventPublisher.publishDeploymentEvent(DeploymentEventType.PIPELINE_DEPLOY_REQUESTED, deploymentId, request);
+            // Submit governed Kernel lifecycle action request
+            Map<String, String> headers = Map.of(
+                    "X-Ghatana-Tenant-Id", request.getTenantId(),
+                    "X-Ghatana-Workspace-Id", request.getPipelineId()
+            );
 
-            // Emit metrics
-            metricsCollector.incrementCounter(
-                    "aep.deployment.request.count",
-                    "pipeline_id",
-                    request.getPipelineId(),
-                    "tenant_id",
-                    request.getTenantId(),
-                    "environment",
-                    request.getEnvironment());
+            Promise<KernelLifecycleClient.LifecycleRunResult> lifecyclePromise =
+                    kernelLifecycleClient.executeLifecyclePhase(
+                            request.getPipelineId(),
+                            "deploy",
+                            request.getEnvironment(),
+                            headers
+                    );
 
-            // Return response with deployment ID
-            DeploymentResponse response = DeploymentResponse.builder()
-                    .deploymentId(deploymentId)
+            // Publish deployment event after lifecycle request is submitted
+            return lifecyclePromise.then(lifecycleResult -> {
+                eventPublisher.publishDeploymentEvent(DeploymentEventType.PIPELINE_DEPLOY_REQUESTED, deploymentId, request);
+
+                // Emit metrics
+                metricsCollector.incrementCounter(
+                        "aep.deployment.request.count",
+                        "pipeline_id",
+                        request.getPipelineId(),
+                        "tenant_id",
+                        request.getTenantId(),
+                        "environment",
+                        request.getEnvironment());
+
+                // Return response with deployment ID and Kernel run ID
+                DeploymentResponse response = DeploymentResponse.builder()
+                        .deploymentId(deploymentId)
+                        .pipelineId(request.getPipelineId())
+                        .tenantId(request.getTenantId())
+                        .status(lifecycleResult.status())
+                        .runId(lifecycleResult.runId())
+                        .timestamp(Instant.now().toString())
+                        .build();
+
+                return Promise.of(response);
+            });
+        } catch (Exception e) {
+            log.error("Deployment request processing failed", e);
+            return Promise.of(DeploymentResponse.builder()
+                    .deploymentId("error")
                     .pipelineId(request.getPipelineId())
                     .tenantId(request.getTenantId())
-                    .status("DEPLOYED")
+                    .status("FAILED")
+                    .error("Deployment request processing failed: " + e.getMessage())
                     .timestamp(Instant.now().toString())
-                    .build();
-
-            return Promise.of(response);
+                    .build());
         } finally {
             MDC.remove("pipelineId");
             MDC.remove("tenantId");

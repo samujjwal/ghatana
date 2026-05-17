@@ -91,7 +91,7 @@ class ArtifactGraphIngestRequestJsonTest {
             "commit-abc123"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             "product-456",
             "tenant-123",
             List.of(node),

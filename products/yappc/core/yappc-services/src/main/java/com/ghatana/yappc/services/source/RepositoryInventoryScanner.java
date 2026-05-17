@@ -263,8 +263,7 @@ public final class RepositoryInventoryScanner {
 
     /**
      * Parse .gitignore file into a set of patterns.
-     * 
-     * P1: Simplified parser - production should use authoritative library (jgitignore).
+        * Uses ordered rules (LinkedHashSet) so last-rule-wins semantics are preserved.
      * 
      * @param rootPath Root directory of the repository
      * @return Set of .gitignore patterns
@@ -279,7 +278,7 @@ public final class RepositoryInventoryScanner {
         return Files.lines(gitignorePath)
             .map(String::trim)
             .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
     /**
@@ -345,15 +344,29 @@ public final class RepositoryInventoryScanner {
         if (patterns.isEmpty()) {
             return false;
         }
-        
+
         String normalizedPath = relativePath.replace('\\', '/');
-        
+        boolean ignored = false;
+
         for (String pattern : patterns) {
-            if (matchesPattern(normalizedPath, pattern)) {
-                return true;
+            String candidate = pattern.trim();
+            if (candidate.isEmpty() || "!".equals(candidate)) {
+                continue;
+            }
+
+            boolean negated = candidate.startsWith("!");
+            if (negated) {
+                candidate = candidate.substring(1).trim();
+                if (candidate.isEmpty()) {
+                    continue;
+                }
+            }
+
+            if (matchesPattern(normalizedPath, candidate)) {
+                ignored = !negated;
             }
         }
-        return false;
+        return ignored;
     }
 
     /**
@@ -373,50 +386,90 @@ public final class RepositoryInventoryScanner {
     }
 
     /**
-     * Check if a path matches a specific gitignore pattern (simplified implementation).
-     * 
-     * P1: This is a simplified implementation for P1 completion.
-     * Production should use an authoritative .gitignore library (e.g., jgitignore) for full spec compliance.
-     * 
-     * Current limitations:
-     * - Does not handle negation patterns (!pattern)
-     * - Does not handle globstar patterns (**)
-     * - Does not handle character classes [abc]
-     * - Does not handle escaped special characters
-     * - Does not handle trailing-slash-only directory patterns correctly
-     * 
-     * @param path Path to check
-     * @param pattern Gitignore pattern
-     * @return true if path matches pattern
+     * Check if a path matches a specific gitignore pattern.
+     * Supports globstar, wildcard, character classes, escaped tokens, anchored rules, and directory rules.
      */
     private static boolean matchesPattern(String path, String pattern) {
-        // P1: Simplified gitignore matching
-        // For production, use a proper gitignore library (jgitignore)
-        
-        // Exact match
-        if (path.equals(pattern)) {
-            return true;
+        String normalizedPath = path.replace('\\', '/');
+        String candidate = pattern.trim();
+        if (candidate.isEmpty()) {
+            return false;
         }
-        
-        // Directory match (pattern ends with /)
-        if (pattern.endsWith("/") && path.startsWith(pattern)) {
-            return true;
+
+        boolean directoryOnly = candidate.endsWith("/");
+        if (directoryOnly) {
+            candidate = candidate.substring(0, candidate.length() - 1);
         }
-        
-        // Prefix match
-        if (path.startsWith(pattern)) {
-            return true;
+
+        boolean anchored = candidate.startsWith("/");
+        if (anchored) {
+            candidate = candidate.substring(1);
         }
-        
-        // Wildcard match (simplified - only handles * and ?)
-        if (pattern.contains("*") || pattern.contains("?")) {
-            String regex = pattern.replace(".", "\\.")
-                .replace("*", ".*")
-                .replace("?", ".");
-            return path.matches(regex);
+
+        String regexBody = globToRegex(candidate);
+        String regex;
+        if (anchored) {
+            regex = "^" + regexBody + (directoryOnly ? "(?:/.*)?$" : "$");
+        } else {
+            regex = "^(?:.*/)?" + regexBody + (directoryOnly ? "(?:/.*)?$" : "$");
         }
-        
-        return false;
+
+        return normalizedPath.matches(regex);
+    }
+
+    private static String globToRegex(String pattern) {
+        StringBuilder regex = new StringBuilder();
+        boolean escaping = false;
+
+        for (int i = 0; i < pattern.length(); i++) {
+            char ch = pattern.charAt(i);
+
+            if (escaping) {
+                regex.append(java.util.regex.Pattern.quote(String.valueOf(ch)));
+                escaping = false;
+                continue;
+            }
+
+            if (ch == '\\') {
+                escaping = true;
+                continue;
+            }
+
+            if (ch == '*') {
+                if (i + 1 < pattern.length() && pattern.charAt(i + 1) == '*') {
+                    regex.append(".*");
+                    i++;
+                } else {
+                    regex.append("[^/]*");
+                }
+                continue;
+            }
+
+            if (ch == '?') {
+                regex.append("[^/]");
+                continue;
+            }
+
+            if (ch == '[') {
+                int closing = pattern.indexOf(']', i + 1);
+                if (closing > i + 1) {
+                    String cls = pattern.substring(i, closing + 1);
+                    regex.append(cls);
+                    i = closing;
+                    continue;
+                }
+            }
+
+            if (".(){}+^$|".indexOf(ch) >= 0) {
+                regex.append('\\');
+            }
+            regex.append(ch);
+        }
+
+        if (escaping) {
+            regex.append("\\\\");
+        }
+        return regex.toString();
     }
 
     /**

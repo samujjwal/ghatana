@@ -221,6 +221,7 @@ export interface LifecycleManifestWrittenPayload {
     | "gate-result-manifest"
     | "artifact-manifest"
     | "deployment-manifest"
+    | "rollback-manifest"
     | "verify-health-report"
     | "lifecycle-health-snapshot"
     | "lifecycle-events";
@@ -438,6 +439,7 @@ const LifecycleManifestWrittenPayloadSchema = z
       "gate-result-manifest",
       "artifact-manifest",
       "deployment-manifest",
+      "rollback-manifest",
       "verify-health-report",
       "lifecycle-health-snapshot",
       "lifecycle-events",

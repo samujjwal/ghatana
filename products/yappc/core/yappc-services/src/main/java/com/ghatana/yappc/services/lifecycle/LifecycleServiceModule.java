@@ -570,9 +570,11 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /** Provides source provider registry for governed repository import. */
     @Provides
-    com.ghatana.yappc.services.source.SourceProviderRegistry sourceProviderRegistry() {
+    com.ghatana.yappc.services.source.SourceProviderRegistry sourceProviderRegistry(ObjectMapper objectMapper) {
         logger.info("Creating SourceProviderRegistry (YAPPC-ArtifactCompiler)");
-        return com.ghatana.yappc.services.source.SourceProviderRegistry.defaultRegistry();
+        com.ghatana.yappc.services.source.SourceCredentialRepository repository =
+            com.ghatana.yappc.services.source.EnvBackedSourceCredentialRepository.fromEnvironment(objectMapper);
+        return com.ghatana.yappc.services.source.SourceProviderRegistry.defaultRegistry(repository);
     }
 
     /** Provides TS extractor worker adapter executed as a process. */

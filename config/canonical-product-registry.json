@@ -105,7 +105,48 @@
         "evidenceRefs": [
           "products/phr/kernel-product.yaml",
           "products/phr/schema-packs/schema-registry.yaml"
-        ]
+        ],
+        "blockerGateAdapterMatrix": {
+          "blockers": [
+            "missing-fhir-contract-validation",
+            "missing-consent-gate",
+            "missing-pii-classification",
+            "missing-audit-evidence",
+            "missing-data-sovereignty-gate"
+          ],
+          "gates": [
+            {
+              "gateId": "consent",
+              "description": "Patient consent management and tracking"
+            },
+            {
+              "gateId": "pii-classification",
+              "description": "PII data classification and handling"
+            },
+            {
+              "gateId": "audit-evidence",
+              "description": "Audit trail and evidence logging"
+            },
+            {
+              "gateId": "fhir-contract-validation",
+              "description": "FHIR R4 contract validation"
+            },
+            {
+              "gateId": "tenant-data-sovereignty",
+              "description": "Tenant data sovereignty compliance"
+            }
+          ],
+          "adapters": [
+            {
+              "adapterId": "backend-api",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "web",
+              "readiness": "ready"
+            }
+          ]
+        }
       },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {
@@ -297,7 +338,55 @@
         "evidenceRefs": [
           "products/finance/kernel-product.yaml",
           "products/finance/schema-packs/schema-registry.yaml"
-        ]
+        ],
+        "blockerGateAdapterMatrix": {
+          "blockers": [
+            "missing-regulatory-compliance",
+            "missing-risk-controls",
+            "missing-promotion-approval",
+            "missing-multi-module-build-validation",
+            "missing-portal-operator-sdk-adapters"
+          ],
+          "gates": [
+            {
+              "gateId": "regulatory-compliance",
+              "description": "Financial regulatory compliance validation"
+            },
+            {
+              "gateId": "risk-controls",
+              "description": "Risk management controls validation"
+            },
+            {
+              "gateId": "promotion-approval",
+              "description": "Promotion approval workflow"
+            },
+            {
+              "gateId": "multi-module-build",
+              "description": "Multi-module Gradle build validation"
+            }
+          ],
+          "adapters": [
+            {
+              "adapterId": "backend-api",
+              "readiness": "partial",
+              "reasonCode": "backend-only"
+            },
+            {
+              "adapterId": "portal",
+              "readiness": "partial",
+              "reasonCode": "backend-only"
+            },
+            {
+              "adapterId": "operator",
+              "readiness": "partial",
+              "reasonCode": "backend-only"
+            },
+            {
+              "adapterId": "sdk",
+              "readiness": "ready"
+            }
+          ]
+        }
       },
       "lifecycleConfigPath": "products/finance/kernel-product.yaml",
       "lifecycle": {
@@ -612,7 +701,53 @@
         ],
         "evidenceRefs": [
           "products/flashit/kernel-product.yaml"
-        ]
+        ],
+        "blockerGateAdapterMatrix": {
+          "blockers": [
+            "missing-mobile-adapters",
+            "missing-preview-security-gate",
+            "missing-personal-data-classification",
+            "missing-mobile-bundle-artifacts",
+            "missing-ipa-artifact-manifest",
+            "missing-aab-artifact-manifest"
+          ],
+          "gates": [
+            {
+              "gateId": "privacy",
+              "description": "Privacy and data protection validation"
+            },
+            {
+              "gateId": "preview-security",
+              "description": "Preview environment security validation"
+            },
+            {
+              "gateId": "personal-data-classification",
+              "description": "Personal data classification and handling"
+            },
+            {
+              "gateId": "mobile-bundle-contract",
+              "description": "Mobile bundle artifact contract validation"
+            }
+          ],
+          "adapters": [
+            {
+              "adapterId": "backend-api",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "web",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "mobile-ios",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "mobile-android",
+              "readiness": "ready"
+            }
+          ]
+        }
       },
       "lifecycleConfigPath": "products/flashit/kernel-product.yaml",
       "lifecycle": {
@@ -807,7 +942,47 @@
         "evidenceRefs": [
           "products/data-cloud/extensions/kernel-bridge",
           "products/data-cloud/planes/action/kernel-bridge"
-        ]
+        ],
+        "blockerGateAdapterMatrix": {
+          "blockers": [
+            "missing-bootstrap-platform-separation",
+            "missing-platform-provider-health",
+            "missing-runtime-truth-provider",
+            "platform-providers-required-in-bootstrap"
+          ],
+          "gates": [
+            {
+              "gateId": "bootstrap-build-without-platform-providers",
+              "description": "Bootstrap build must work without Data Cloud providers"
+            },
+            {
+              "gateId": "platform-provider-health",
+              "description": "Platform provider health validation"
+            },
+            {
+              "gateId": "runtime-truth-provider",
+              "description": "Runtime truth provider availability"
+            }
+          ],
+          "adapters": [
+            {
+              "adapterId": "backend-api",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "web",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "sdk",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "kernel-bridge",
+              "readiness": "ready"
+            }
+          ]
+        }
       },
       "lifecycleExecutionAllowed": false
     },
@@ -922,7 +1097,43 @@
         "evidenceRefs": [
           "products/yappc/kernel-bridge",
           "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
-        ]
+        ],
+        "blockerGateAdapterMatrix": {
+          "blockers": [
+            "missing-product-unit-intent-export",
+            "missing-artifact-intelligence-boundary",
+            "creator-kernel-lifecycle-not-separated",
+            "artifact-intelligence-contracts-not-ready"
+          ],
+          "gates": [
+            {
+              "gateId": "product-unit-intent-export",
+              "description": "ProductUnitIntent export contract validation"
+            },
+            {
+              "gateId": "artifact-intelligence-boundary",
+              "description": "Artifact intelligence boundary validation"
+            },
+            {
+              "gateId": "creator-kernel-lifecycle-separation",
+              "description": "Creator lifecycle separation from Kernel lifecycle"
+            }
+          ],
+          "adapters": [
+            {
+              "adapterId": "backend-api",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "web",
+              "readiness": "ready"
+            },
+            {
+              "adapterId": "kernel-bridge",
+              "readiness": "ready"
+            }
+          ]
+        }
       },
       "lifecycleExecutionAllowed": false
     },

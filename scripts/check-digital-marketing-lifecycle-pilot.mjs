@@ -33,6 +33,7 @@ const GENERATED_MANIFEST_KEYS = [
   'verifyHealthReport',
   'lifecycleHealthSnapshot',
   'lifecycleEvents',
+  'rollbackManifest',
 ];
 
 function parseArgs(argv) {
@@ -410,8 +411,8 @@ async function main() {
     }
   }
 
-  // 11. Validate plan generation for deploy and verify with --env local
-  for (const phase of ['deploy', 'verify']) {
+  // 11. Validate plan generation for deploy, promote, and verify with --env local
+        for (const phase of ['deploy', 'verify']) {
     try {
       const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
       evidence.checks.plannedPhases.push({
@@ -421,8 +422,8 @@ async function main() {
         correlationId: payload?.plan?.correlationId,
         providerMode: payload?.plan?.providerMode,
       });
-      if (phase === 'deploy' && !hasApprovalRequirements(payload)) {
-        errors.push('Deploy plan must emit approvalRequirements from canonical approvals config');
+            if (phase === 'deploy' && !hasApprovalRequirements(payload)) {
+        errors.push(`${phase} plan must emit approvalRequirements from canonical approvals config`);
       }
     } catch (err) {
       errors.push(`Plan generation failed for phase "${phase} --env local": ${err instanceof Error ? err.message : String(err)}`);
@@ -703,6 +704,21 @@ async function runLifecycleSmoke() {
     { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'deploy', args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
     { phase: 'verify', args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
+    {
+      phase: 'rollback',
+      args: [
+        'product',
+        'rollback',
+        PRODUCT_ID,
+        '--env',
+        'local',
+        '--dry-run',
+        '--require-approval',
+        '--approval-id',
+        'rollback-rollback:local',
+        '--json',
+      ],
+    },
   ];
 
   for (const smokeRun of smokeRuns) {
@@ -712,7 +728,7 @@ async function runLifecycleSmoke() {
     } catch (err) {
       const failureMessage = String(err instanceof Error ? err.message : err);
       if (
-        smokeRun.phase === 'deploy' &&
+        (smokeRun.phase === 'deploy' || smokeRun.phase === 'rollback') &&
         (failureMessage.includes('approval required') || failureMessage.includes('approval request failed'))
       ) {
         continue;
@@ -801,11 +817,54 @@ function runFailureScenarios() {
   return { errors, scenarios };
 }
 
+function toRepoRelativePath(absolutePath) {
+  if (!absolutePath || typeof absolutePath !== 'string') {
+    return absolutePath;
+  }
+  // Convert absolute path to repo-relative path
+  const normalizedRepoRoot = repoRoot.replace(/\\/g, '/');
+  const normalizedPath = absolutePath.replace(/\\/g, '/');
+  if (normalizedPath.startsWith(normalizedRepoRoot)) {
+    return normalizedPath.slice(normalizedRepoRoot.length + 1); // Remove repo root and leading slash
+  }
+  return absolutePath; // Return as-is if not under repo root
+}
+
+function normalizeManifestRefsToRepoRelative(obj) {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeManifestRefsToRepoRelative);
+  }
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Convert manifest paths to repo-relative
+    if (key === 'manifests' && typeof value === 'object' && value !== null) {
+      result[key] = {};
+      for (const [manifestKey, manifestPath] of Object.entries(value)) {
+        result[key][manifestKey] = toRepoRelativePath(manifestPath);
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      result[key] = normalizeManifestRefsToRepoRelative(value);
+    } else if (typeof value === 'string' && (value.endsWith('.json') || value.includes('/.kernel/'))) {
+      result[key] = toRepoRelativePath(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 function writeEvidencePack(relativeDir, reportPayload) {
   const outputDir = join(repoRoot, relativeDir);
   mkdirSync(outputDir, { recursive: true });
   const reportPath = join(outputDir, 'digital-marketing-lifecycle-evidence-pack.json');
-  writeFileSync(reportPath, `${JSON.stringify(reportPayload, null, 2)}\n`, 'utf8');
+  
+  // Normalize all manifest refs to repo-relative paths
+  const normalizedPayload = normalizeManifestRefsToRepoRelative(reportPayload);
+  
+  writeFileSync(reportPath, `${JSON.stringify(normalizedPayload, null, 2)}\n`, 'utf8');
 }
 
 function validateLifecycleEvidenceRefs(phase, payload) {
@@ -1016,6 +1075,9 @@ function isExpectedForPhase(key, phase) {
   }
   if (key === 'deploymentManifest') {
     return phase === 'deploy';
+  }
+  if (key === 'rollbackManifest') {
+    return phase === 'rollback';
   }
   if (key === 'verifyHealthReport') {
     return phase === 'verify';

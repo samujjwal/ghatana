@@ -25,6 +25,19 @@ public record SemanticModelDto(
     Map<String, Object> properties,
     List<String> dependencies,
     List<String> dependents,
+    Double confidence,
+    Boolean reviewRequired,
+    String reviewReason,
+    List<String> securityFlags,
+    List<String> privacyFlags,
+    List<String> graphNodeIds,
+    List<String> residualIslandIds,
+    String sourceRef,
+    String symbolRef,
+    String extractorId,
+    String extractorVersion,
+    String modelVersionId,
+    String syntheticReason,
     String provenance,
     Instant extractedAt,
     String snapshotId,
@@ -79,6 +92,19 @@ public record SemanticModelDto(
         private Map<String, Object> properties;
         private List<String> dependencies;
         private List<String> dependents;
+        private Double confidence;
+        private Boolean reviewRequired;
+        private String reviewReason;
+        private List<String> securityFlags;
+        private List<String> privacyFlags;
+        private List<String> graphNodeIds;
+        private List<String> residualIslandIds;
+        private String sourceRef;
+        private String symbolRef;
+        private String extractorId;
+        private String extractorVersion;
+        private String modelVersionId;
+        private String syntheticReason;
         private String provenance;
         private Instant extractedAt;
         private String snapshotId;
@@ -136,6 +162,71 @@ public record SemanticModelDto(
             return this;
         }
 
+        public Builder confidence(Double confidence) {
+            this.confidence = confidence;
+            return this;
+        }
+
+        public Builder reviewRequired(Boolean reviewRequired) {
+            this.reviewRequired = reviewRequired;
+            return this;
+        }
+
+        public Builder reviewReason(String reviewReason) {
+            this.reviewReason = reviewReason;
+            return this;
+        }
+
+        public Builder securityFlags(List<String> securityFlags) {
+            this.securityFlags = securityFlags;
+            return this;
+        }
+
+        public Builder privacyFlags(List<String> privacyFlags) {
+            this.privacyFlags = privacyFlags;
+            return this;
+        }
+
+        public Builder graphNodeIds(List<String> graphNodeIds) {
+            this.graphNodeIds = graphNodeIds;
+            return this;
+        }
+
+        public Builder residualIslandIds(List<String> residualIslandIds) {
+            this.residualIslandIds = residualIslandIds;
+            return this;
+        }
+
+        public Builder sourceRef(String sourceRef) {
+            this.sourceRef = sourceRef;
+            return this;
+        }
+
+        public Builder symbolRef(String symbolRef) {
+            this.symbolRef = symbolRef;
+            return this;
+        }
+
+        public Builder extractorId(String extractorId) {
+            this.extractorId = extractorId;
+            return this;
+        }
+
+        public Builder extractorVersion(String extractorVersion) {
+            this.extractorVersion = extractorVersion;
+            return this;
+        }
+
+        public Builder modelVersionId(String modelVersionId) {
+            this.modelVersionId = modelVersionId;
+            return this;
+        }
+
+        public Builder syntheticReason(String syntheticReason) {
+            this.syntheticReason = syntheticReason;
+            return this;
+        }
+
         public Builder provenance(String provenance) {
             this.provenance = provenance;
             return this;
@@ -178,6 +269,19 @@ public record SemanticModelDto(
                 properties != null ? properties : Map.of(),
                 dependencies != null ? dependencies : List.of(),
                 dependents != null ? dependents : List.of(),
+                confidence,
+                reviewRequired != null ? reviewRequired : false,
+                reviewReason,
+                securityFlags != null ? securityFlags : List.of(),
+                privacyFlags != null ? privacyFlags : List.of(),
+                graphNodeIds != null ? graphNodeIds : List.of(),
+                residualIslandIds != null ? residualIslandIds : List.of(),
+                sourceRef,
+                symbolRef,
+                extractorId,
+                extractorVersion,
+                modelVersionId,
+                syntheticReason,
                 provenance,
                 extractedAt != null ? extractedAt : Instant.now(),
                 snapshotId,

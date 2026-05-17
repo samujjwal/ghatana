@@ -284,7 +284,9 @@ export const auth = {
   },
   // For cookie-session mode, validate is handled via generated client
   validate: (): Promise<{ valid: boolean }> => {
-    return GeneratedAuthService.validateToken().then(response => ({ valid: response.valid || false }));
+    return GeneratedAuthService.validateSession().then((response) => ({
+      valid: Boolean(response.user?.id),
+    }));
   },
   // For cookie-session mode, me is handled via generated client
   me: (): Promise<UserProfile> => {

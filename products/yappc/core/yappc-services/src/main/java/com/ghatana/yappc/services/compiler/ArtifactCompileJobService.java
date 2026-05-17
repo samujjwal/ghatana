@@ -4,8 +4,10 @@ import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
@@ -20,7 +22,6 @@ import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -110,22 +111,19 @@ public final class ArtifactCompileJobService {
                         
                         // P1: Route TS files to TS worker
                         Promise<ExtractionResult> tsExtraction = tsFiles.isEmpty()
-                            ? Promise.of(new ExtractionResult(List.of(), List.of(), List.of(), List.of(), List.of()))
+                            ? Promise.of(new ExtractionResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of()))
                             : tsExtractorWorker.extract(persistedSnapshot, tsFiles);
                         
                         // P1: Route Java files to Java extractor
                         Promise<ExtractionResult> javaExtraction = javaFiles.isEmpty()
-                            ? Promise.of(new ExtractionResult(List.of(), List.of(), List.of(), List.of(), List.of()))
+                            ? Promise.of(new ExtractionResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of()))
                             : javaArtifactExtractor.extract(persistedSnapshot, javaFiles, scopeContext);
                         
                         // P1: Merge extraction results and persist semantic models
                         return tsExtraction.then(tsResult ->
                             javaExtraction.then(javaResult -> {
                                 ExtractionResult merged = mergeExtractionResults(tsResult, javaResult);
-                                // P3: Persist semantic models from Java extraction
-                                // Note: TS extraction would need to be updated to return semantic models as well
-                                // For now, we'll persist empty list to complete the integration point
-                                return semanticModelRepository.saveModels(List.of())
+                                return semanticModelRepository.saveModels(merged.semanticModels())
                                     .then(count -> ingestGraph(request, persistedSnapshot, versionId, merged, inventoryResult));
                             })
                         );
@@ -143,21 +141,25 @@ public final class ArtifactCompileJobService {
         List<ArtifactEdgeDto> mergedEdges = new ArrayList<>(tsResult.edges());
         mergedEdges.addAll(javaResult.edges());
         
-        List<Map<String, Object>> mergedUnresolved = new ArrayList<>(tsResult.unresolvedEdges());
+        List<UnresolvedGraphEdgeDto> mergedUnresolved = new ArrayList<>(tsResult.unresolvedEdges());
         mergedUnresolved.addAll(javaResult.unresolvedEdges());
         
-        List<Map<String, Object>> mergedResolutionRecords = new ArrayList<>(tsResult.edgeResolutionRecords());
+        List<EdgeResolutionRecordDto> mergedResolutionRecords = new ArrayList<>(tsResult.edgeResolutionRecords());
         mergedResolutionRecords.addAll(javaResult.edgeResolutionRecords());
         
         List<ResidualIslandDto> mergedResiduals = new ArrayList<>(tsResult.residualIslands());
         mergedResiduals.addAll(javaResult.residualIslands());
+
+        List<SemanticModelDto> mergedSemanticModels = new ArrayList<>(tsResult.semanticModels());
+        mergedSemanticModels.addAll(javaResult.semanticModels());
         
         return new ExtractionResult(
             mergedNodes,
             mergedEdges,
             mergedUnresolved,
             mergedResolutionRecords,
-            mergedResiduals
+            mergedResiduals,
+            mergedSemanticModels
         );
     }
 
@@ -223,9 +225,10 @@ public final class ArtifactCompileJobService {
     public record ExtractionResult(
         List<ArtifactNodeDto> nodes,
         List<ArtifactEdgeDto> edges,
-        List<Map<String, Object>> unresolvedEdges,
-        List<Map<String, Object>> edgeResolutionRecords,
-        List<ResidualIslandDto> residualIslands
+        List<UnresolvedGraphEdgeDto> unresolvedEdges,
+        List<EdgeResolutionRecordDto> edgeResolutionRecords,
+        List<ResidualIslandDto> residualIslands,
+        List<SemanticModelDto> semanticModels
     ) {
         public ExtractionResult {
             nodes = nodes == null ? List.of() : List.copyOf(nodes);
@@ -233,6 +236,7 @@ public final class ArtifactCompileJobService {
             unresolvedEdges = unresolvedEdges == null ? List.of() : List.copyOf(unresolvedEdges);
             edgeResolutionRecords = edgeResolutionRecords == null ? List.of() : List.copyOf(edgeResolutionRecords);
             residualIslands = residualIslands == null ? List.of() : List.copyOf(residualIslands);
+            semanticModels = semanticModels == null ? List.of() : List.copyOf(semanticModels);
         }
     }
 

@@ -13,7 +13,6 @@ import {
     type AuthUser as ApiAuthUser,
     type LoginResponse as ApiAuthResponse,
     type LoginRequest as ApiLoginRequest,
-    type RefreshTokenRequest as ApiRefreshTokenRequest,
 } from '@/clients/generated/api';
 import { logger } from '../../utils/Logger';
 
@@ -331,8 +330,7 @@ export class AuthService {
                 logger.info('Logout attempt', 'auth', { userId: this.currentSession.user.id });
 
                 // Call logout API.
-                const logoutRequest: ApiRefreshTokenRequest = { refreshToken: this.currentSession.refreshToken || '' };
-                await GeneratedAuthService.logout(logoutRequest);
+                await GeneratedAuthService.logout();
             }
         } catch (error) {
             logger.warn('Logout API call failed', 'auth', {

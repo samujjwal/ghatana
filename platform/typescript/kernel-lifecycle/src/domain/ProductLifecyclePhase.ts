@@ -287,6 +287,7 @@ export type ProductLifecycleManifestType =
   | 'gate-result-manifest'
   | 'artifact-manifest'
   | 'deployment-manifest'
+  | 'rollback-manifest'
   | 'verify-health-report'
   | 'lifecycle-health-snapshot'
   | 'lifecycle-events';
@@ -322,6 +323,7 @@ export interface ProductLifecycleManifestRefs {
   gateResultManifest?: string;
   artifactManifest?: string;
   deploymentManifest?: string;
+  rollbackManifest?: string;
   verifyHealthReport?: string;
   lifecycleHealthSnapshot?: string;
 }

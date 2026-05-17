@@ -3,7 +3,9 @@ package com.ghatana.yappc.services.artifact;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,7 @@ public final class ArtifactGraphValidator {
     private static final double MAX_CONFIDENCE = 1.0;
     private static final int MAX_ID_LENGTH = 256;
     private static final int MAX_TYPE_LENGTH = 128;
+    private static final Set<String> VALID_PROVENANCE = Set.of("exact", "inferred", "synthesized", "manual", "assumed");
 
     private ArtifactGraphValidator() {
         // Utility class - prevent instantiation
@@ -138,7 +141,7 @@ public final class ArtifactGraphValidator {
         // Validate residual islands
         if (request.residualIslands() != null) {
             for (ResidualIslandDto residual : request.residualIslands()) {
-                validateResidualIsland(residual, errors, warnings);
+                validateResidualIsland(residual, scope, errors, warnings);
             }
         }
 
@@ -296,6 +299,96 @@ public final class ArtifactGraphValidator {
                 "provenance",
                 node.id()
             ));
+        } else {
+            String normalizedProvenance = node.provenance().toLowerCase();
+            if (!VALID_PROVENANCE.contains(normalizedProvenance)) {
+                warnings.add(new ValidationWarning(
+                    "UNKNOWN_PROVENANCE",
+                    "Node provenance '" + node.provenance() + "' is not in canonical set",
+                    "provenance",
+                    node.id()
+                ));
+            }
+
+            if (isSyntheticProvenance(normalizedProvenance)
+                && (node.properties() == null || !node.properties().containsKey("syntheticReason"))) {
+                errors.add(new ValidationError(
+                    "MISSING_SYNTHETIC_REASON",
+                    "Synthetic/inferred node must include properties.syntheticReason",
+                    "properties.syntheticReason",
+                    node.id()
+                ));
+            }
+        }
+
+        if (node.extractorId() == null || node.extractorId().isBlank()) {
+            errors.add(new ValidationError(
+                "MISSING_EXTRACTOR_ID",
+                "Node is missing required extractorId metadata",
+                "extractorId",
+                node.id()
+            ));
+        }
+
+        if (node.extractorVersion() == null || node.extractorVersion().isBlank()) {
+            errors.add(new ValidationError(
+                "MISSING_EXTRACTOR_VERSION",
+                "Node is missing required extractorVersion metadata",
+                "extractorVersion",
+                node.id()
+            ));
+        }
+
+        if (node.sourceRef() == null || node.sourceRef().isBlank()) {
+            errors.add(new ValidationError(
+                "MISSING_SOURCE_REF",
+                "Node is missing required sourceRef",
+                "sourceRef",
+                node.id()
+            ));
+        } else if (!node.sourceRef().contains(":")) {
+            warnings.add(new ValidationWarning(
+                "NON_DETERMINISTIC_SOURCE_REF",
+                "sourceRef should be deterministic and URI-like",
+                "sourceRef",
+                node.id()
+            ));
+        }
+
+        if (node.symbolRef() == null || node.symbolRef().isBlank()) {
+            warnings.add(new ValidationWarning(
+                "MISSING_SYMBOL_REF",
+                "Node is missing symbolRef; symbol resolution quality may degrade",
+                "symbolRef",
+                node.id()
+            ));
+        } else if (!node.symbolRef().contains("#") || !node.symbolRef().contains(":")) {
+            warnings.add(new ValidationWarning(
+                "INVALID_SYMBOL_REF_FORMAT",
+                "symbolRef should follow 'path#kind:name' format",
+                "symbolRef",
+                node.id()
+            ));
+        }
+
+        if (node.privacySecurityFlags() != null) {
+            for (String flag : node.privacySecurityFlags()) {
+                if (flag == null || flag.isBlank()) {
+                    errors.add(new ValidationError(
+                        "INVALID_PRIVACY_FLAG",
+                        "privacySecurityFlags must not contain null/blank entries",
+                        "privacySecurityFlags",
+                        node.id()
+                    ));
+                } else if (!flag.matches("[A-Z0-9_\\-]+")) {
+                    warnings.add(new ValidationWarning(
+                        "NON_CANONICAL_PRIVACY_FLAG",
+                        "privacy/security flag should be uppercase canonical token",
+                        "privacySecurityFlags",
+                        node.id()
+                    ));
+                }
+            }
         }
     }
 
@@ -323,6 +416,13 @@ public final class ArtifactGraphValidator {
             errors.add(new ValidationError(
                 "MISSING_RELATIONSHIP_TYPE",
                 "Edge is missing required 'relationshipType' field",
+                "relationshipType",
+                edge.edgeId()
+            ));
+        } else if (!edge.relationshipType().matches("[A-Z][A-Z0-9_\\-]*")) {
+            warnings.add(new ValidationWarning(
+                "NON_CANONICAL_RELATIONSHIP_TYPE",
+                "relationshipType should be uppercase canonical token",
                 "relationshipType",
                 edge.edgeId()
             ));
@@ -380,25 +480,23 @@ public final class ArtifactGraphValidator {
     /**
      * Validates unresolved edge records.
      */
-    private static void validateUnresolvedEdges(
-            List<Map<String, Object>> unresolvedEdges,
+        private static void validateUnresolvedEdges(
+            List<UnresolvedGraphEdgeDto> unresolvedEdges,
             Set<String> nodeIds,
             List<ValidationError> errors,
             List<ValidationWarning> warnings) {
 
         Set<String> unresolvedEdgeIds = new HashSet<>();
 
-        for (Map<String, Object> edge : unresolvedEdges) {
-            if (edge == null || edge.isEmpty()) {
+        for (UnresolvedGraphEdgeDto edge : unresolvedEdges) {
+            if (edge == null) {
                 continue;
             }
 
-            String id = (String) edge.get("id");
-            String sourceNodeId = (String) edge.get("sourceNodeId");
-            String targetRef = (String) edge.get("targetRef");
-            // P0: Use canonical field name relationshipType
-            String relationshipType = (String) edge.get("relationshipType");
-            String legacyRelationship = (String) edge.get("relationship"); // Legacy field for compatibility
+            String id = edge.id();
+            String sourceNodeId = edge.sourceNodeId();
+            String targetRef = edge.targetRef();
+            String relationshipType = edge.relationshipType();
 
             if (id == null || id.isBlank()) {
                 warnings.add(new ValidationWarning(
@@ -441,22 +539,11 @@ public final class ArtifactGraphValidator {
                 ));
             }
 
-            // P0: Require canonical relationshipType field
-            String effectiveRelationship = relationshipType != null ? relationshipType : legacyRelationship;
-            if (effectiveRelationship == null || effectiveRelationship.isBlank()) {
+            if (relationshipType == null || relationshipType.isBlank()) {
                 errors.add(new ValidationError(
                     "MISSING_UNRESOLVED_RELATIONSHIP_TYPE",
-                    "Unresolved edge is missing required 'relationshipType' field. Legacy 'relationship' alias is deprecated.",
+                    "Unresolved edge is missing required 'relationshipType' field.",
                     "relationshipType",
-                    id
-                ));
-            }
-            // P0: Warn if legacy field is used instead of canonical
-            if (relationshipType == null && legacyRelationship != null) {
-                warnings.add(new ValidationWarning(
-                    "LEGACY_RELATIONSHIP_FIELD",
-                    "Unresolved edge uses legacy 'relationship' field instead of canonical 'relationshipType'. This will be deprecated.",
-                    "relationship",
                     id
                 ));
             }
@@ -467,18 +554,18 @@ public final class ArtifactGraphValidator {
      * Validates edge resolution records.
      */
     private static void validateEdgeResolutionRecords(
-            List<Map<String, Object>> resolutionRecords,
+            List<EdgeResolutionRecordDto> resolutionRecords,
             List<ValidationError> errors,
             List<ValidationWarning> warnings) {
 
-        for (Map<String, Object> record : resolutionRecords) {
-            if (record == null || record.isEmpty()) {
+        for (EdgeResolutionRecordDto record : resolutionRecords) {
+            if (record == null) {
                 continue;
             }
 
-            String id = (String) record.get("id");
-            String unresolvedEdgeId = (String) record.get("unresolvedEdgeId");
-            String status = (String) record.get("status");
+            String id = record.id();
+            String unresolvedEdgeId = record.unresolvedEdgeId();
+            String status = record.status();
 
             if (unresolvedEdgeId == null || unresolvedEdgeId.isBlank()) {
                 errors.add(new ValidationError(
@@ -515,6 +602,7 @@ public final class ArtifactGraphValidator {
      */
     private static void validateResidualIsland(
             ResidualIslandDto residual,
+            ArtifactRequestScope scope,
             List<ValidationError> errors,
             List<ValidationWarning> warnings) {
 
@@ -566,6 +654,37 @@ public final class ArtifactGraphValidator {
                 "sourceSpan",
                 residual.id()
             ));
+        }
+
+        // P0: Validate structured sourceLocation as canonical location payload
+        if (residual.sourceLocation() == null || residual.sourceLocation().filePath() == null || residual.sourceLocation().filePath().isBlank()) {
+            errors.add(new ValidationError(
+                "MISSING_SOURCE_LOCATION",
+                "Residual island is missing required structured 'sourceLocation' with filePath",
+                "sourceLocation",
+                residual.id()
+            ));
+        } else {
+            int startLine = residual.sourceLocation().startLine();
+            int startColumn = residual.sourceLocation().startColumn();
+            int endLine = residual.sourceLocation().endLine();
+            int endColumn = residual.sourceLocation().endColumn();
+            if (startLine < 0 || startColumn < 0 || endLine < 0 || endColumn < 0) {
+                errors.add(new ValidationError(
+                    "INVALID_SOURCE_LOCATION_NEGATIVE",
+                    "Residual sourceLocation line/column values must be non-negative",
+                    "sourceLocation",
+                    residual.id()
+                ));
+            }
+            if (endLine < startLine || (endLine == startLine && endColumn < startColumn)) {
+                errors.add(new ValidationError(
+                    "INVALID_SOURCE_LOCATION_RANGE",
+                    "Residual sourceLocation end position must be >= start position",
+                    "sourceLocation",
+                    residual.id()
+                ));
+            }
         }
 
         // P0: Require checksum (affects integrity verification)
@@ -623,6 +742,36 @@ public final class ArtifactGraphValidator {
                 ));
             }
         }
+
+        if (residual.tenantId() != null && !residual.tenantId().isBlank() && !residual.tenantId().equals(scope.tenantId())) {
+            errors.add(new ValidationError(
+                "RESIDUAL_SCOPE_MISMATCH_TENANT",
+                "Residual tenantId does not match ingest scope tenantId",
+                "tenantId",
+                residual.id()
+            ));
+        }
+        if (residual.projectId() != null && !residual.projectId().isBlank() && !residual.projectId().equals(scope.projectId())) {
+            errors.add(new ValidationError(
+                "RESIDUAL_SCOPE_MISMATCH_PROJECT",
+                "Residual projectId does not match ingest scope projectId",
+                "projectId",
+                residual.id()
+            ));
+        }
+        if (scope.workspaceId() != null && residual.workspaceId() != null
+            && !residual.workspaceId().isBlank() && !residual.workspaceId().equals(scope.workspaceId())) {
+            errors.add(new ValidationError(
+                "RESIDUAL_SCOPE_MISMATCH_WORKSPACE",
+                "Residual workspaceId does not match ingest scope workspaceId",
+                "workspaceId",
+                residual.id()
+            ));
+        }
+    }
+
+    private static boolean isSyntheticProvenance(String normalizedProvenance) {
+        return "synthesized".equals(normalizedProvenance) || "inferred".equals(normalizedProvenance) || "assumed".equals(normalizedProvenance);
     }
 
     /**

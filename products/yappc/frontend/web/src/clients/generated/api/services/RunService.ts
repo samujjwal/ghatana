@@ -130,4 +130,21 @@ export class RunService {
             },
         });
     }
+    /**
+     * List recent runs for a project
+     * @param projectId
+     * @returns any Run list
+     * @throws ApiError
+     */
+    public static listProjectRuns(
+        projectId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/projects/{projectId}/runs',
+            path: {
+                'projectId': projectId,
+            },
+        });
+    }
 }

@@ -2,12 +2,15 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ArtifactGraphAnalysisRequest } from '../models/ArtifactGraphAnalysisRequest';
+import type { ArtifactGraphIngestRequest } from '../models/ArtifactGraphIngestRequest';
+import type { ArtifactGraphMergeRequest } from '../models/ArtifactGraphMergeRequest';
 import type { ArtifactGraphQueryRequest } from '../models/ArtifactGraphQueryRequest';
-import type { ArtifactGraphRequest } from '../models/ArtifactGraphRequest';
 import type { ImportReviewDecisionRequest } from '../models/ImportReviewDecisionRequest';
 import type { ImportReviewDecisionResponse } from '../models/ImportReviewDecisionResponse';
 import type { RegistryCandidatePromotionRequest } from '../models/RegistryCandidatePromotionRequest';
 import type { RegistryCandidatePromotionResponse } from '../models/RegistryCandidatePromotionResponse';
+import type { ResidualAnalysisRequest } from '../models/ResidualAnalysisRequest';
 import type { ResidualIslandReviewRequest } from '../models/ResidualIslandReviewRequest';
 import type { ResidualIslandReviewResponse } from '../models/ResidualIslandReviewResponse';
 import type { SourceImportJob } from '../models/SourceImportJob';
@@ -209,7 +212,7 @@ export class ArtifactGraphService {
         xTenantId: string,
         xWorkspaceId: string,
         xProjectId: string,
-        requestBody: ArtifactGraphRequest,
+        requestBody: ArtifactGraphIngestRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -236,7 +239,7 @@ export class ArtifactGraphService {
         xTenantId: string,
         xWorkspaceId: string,
         xProjectId: string,
-        requestBody: ArtifactGraphRequest,
+        requestBody: ArtifactGraphAnalysisRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -263,7 +266,7 @@ export class ArtifactGraphService {
         xTenantId: string,
         xWorkspaceId: string,
         xProjectId: string,
-        requestBody: ArtifactGraphRequest,
+        requestBody: ArtifactGraphMergeRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -317,7 +320,7 @@ export class ArtifactGraphService {
         xTenantId: string,
         xWorkspaceId: string,
         xProjectId: string,
-        requestBody: ArtifactGraphRequest,
+        requestBody: ResidualAnalysisRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -329,6 +332,50 @@ export class ArtifactGraphService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Load page artifact document
+     * @param artifactId
+     * @returns any Artifact document payload
+     * @throws ApiError
+     */
+    public static getPageArtifactDocument(
+        artifactId: string,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/page-artifacts/{artifactId}/document',
+            path: {
+                'artifactId': artifactId,
+            },
+            errors: {
+                404: `Resource not found`,
+            },
+        });
+    }
+    /**
+     * Save page artifact document
+     * @param artifactId
+     * @param requestBody
+     * @returns any Document saved
+     * @throws ApiError
+     */
+    public static savePageArtifactDocument(
+        artifactId: string,
+        requestBody: Record<string, any>,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/page-artifacts/{artifactId}/document',
+            path: {
+                'artifactId': artifactId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                409: `Document version conflict`,
+            },
         });
     }
 }

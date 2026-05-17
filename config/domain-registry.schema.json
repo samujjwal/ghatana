@@ -36,7 +36,13 @@
         "boundaryPolicy",
         "sourceOfTruth",
         "independentExecutionChecks",
-        "fullRegressionChecks"
+        "fullRegressionChecks",
+        "journey",
+        "phase",
+        "exitCriteria",
+        "blockingGaps",
+        "evidenceRequired",
+        "phaseOwner"
       ],
       "properties": {
         "id": {
@@ -135,8 +141,14 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         },
+        "journey": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
         "phase": {
           "type": "array",
+          "minItems": 1,
           "items": { "type": "integer" }
         },
         "exitCriteria": {

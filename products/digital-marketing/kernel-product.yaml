@@ -18,6 +18,9 @@ requiredManifests:
   verify:
     - verify-health-report
     - lifecycle-health-snapshot
+  rollback:
+    - rollback-manifest
+    - lifecycle-health-snapshot
 
 manifestSchemaVersions:
   lifecycle-result: 1.0.0
@@ -26,6 +29,7 @@ manifestSchemaVersions:
   deployment-manifest: 1.0.0
   verify-health-report: 1.0.0
   lifecycle-events: 1.0.0
+  rollback-manifest: 1.0.0
 
 plugins:
   audit:

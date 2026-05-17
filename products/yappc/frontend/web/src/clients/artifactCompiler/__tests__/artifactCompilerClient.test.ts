@@ -1,195 +1,106 @@
-/**
- * @fileoverview Test for P2-1: Typed client artifactCompilerClient.ts
- *
- * Verifies that the typed client correctly handles import job, graph summary,
- * residual review, and patch review API calls.
- */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ArtifactCompilerClient } from '../ArtifactCompilerClient';
+import {
+  ArtifactCompilerClient,
+  type ArtifactGraphIngestRequest,
+  type GraphQueryRequest,
+  type ResidualAnalyzeRequest,
+} from '../ArtifactCompilerClient';
+import { ArtifactGraphService } from '@/clients/generated/api';
 
-describe('P2-1: ArtifactCompilerClient Typed Client', () => {
+describe('ArtifactCompilerClient', () => {
   let client: ArtifactCompilerClient;
 
   beforeEach(() => {
-    client = new ArtifactCompilerClient('http://localhost:3000/api/v1/yappc/artifact');
+    vi.restoreAllMocks();
+    client = new ArtifactCompilerClient({
+      baseUrl: 'http://localhost:3000',
+      authToken: 'token',
+      tenantId: 'tenant-123',
+    });
+    client.setScope({ workspaceId: 'workspace-123', projectId: 'project-123' });
   });
 
-  it('should initialize with base URL', () => {
-    expect(client).toBeDefined();
-  });
-
-  it('should have import job method', () => {
-    expect(typeof client.importSource).toBe('function');
-  });
-
-  it('should have graph summary method', () => {
-    expect(typeof client.queryGraph).toBe('function');
-  });
-
-  it('should have residual review method', () => {
-    expect(typeof client.getResidualIslands).toBe('function');
-  });
-
-  it('should have patch review method', () => {
-    expect(typeof client.getPatchReview).toBe('function');
-  });
-
-  it('should construct correct import source endpoint', () => {
-    const endpoint = client['buildEndpoint']('import-source');
-    expect(endpoint).toContain('import-source');
-  });
-
-  it('should construct correct graph query endpoint', () => {
-    const endpoint = client['buildEndpoint']('graph/query');
-    expect(endpoint).toContain('graph/query');
-  });
-
-  it('should construct correct residual review endpoint', () => {
-    const endpoint = client['buildEndpoint']('residual/review');
-    expect(endpoint).toContain('residual/review');
-  });
-
-  it('should construct correct patch review endpoint', () => {
-    const endpoint = client['buildEndpoint']('patch/review');
-    expect(endpoint).toContain('patch/review');
-  });
-
-  it('should handle import source request', async () => {
-    const mockResponse = {
+  it('calls generated ingest endpoint', async () => {
+    const spy = vi.spyOn(ArtifactGraphService, 'ingestArtifactGraph').mockResolvedValue({
       success: true,
-      componentId: 'project/TestComponent',
-      files: [],
-      warnings: [],
-      errors: [],
-      metadata: {
-        sourceType: 'github',
-        source: 'org/repo',
-        importedAt: new Date().toISOString(),
-        componentName: 'TestComponent',
-        dependencies: [],
-        fileCount: 0,
-        totalSize: 0,
-      },
-      job: {
-        id: 'job-123',
-        status: 'REVIEW_REQUIRED',
-        percentComplete: 100,
-      },
-    };
-
-    // Mock fetch implementation
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
-    );
-
-    const result = await client.importSource({
-      sourceType: 'github',
-      source: 'org/repo',
-      projectId: 'project-123',
+      message: 'ok',
     });
 
+    const request: ArtifactGraphIngestRequest = {
+      nodes: [],
+      edges: [],
+      unresolvedEdges: [],
+      edgeResolutionRecords: [],
+      residualIslands: [],
+    };
+
+    const result = await client.ingestGraph(request);
+
+    expect(spy).toHaveBeenCalledWith('tenant-123', 'workspace-123', 'project-123', request);
     expect(result.success).toBe(true);
+    expect(result.data?.message).toBe('ok');
   });
 
-  it('should handle graph query request', async () => {
-    const mockResponse: GraphQueryResponse = {
-      items: {
-        nodeCount: 10,
-        edgeCount: 5,
-      },
+  it('calls generated query endpoint', async () => {
+    const spy = vi.spyOn(ArtifactGraphService, 'queryArtifactGraph').mockResolvedValue({
+      items: {},
       nextCursor: null,
-      totalEstimate: 10,
+      totalEstimate: 0,
       scope: {
         tenantId: 'tenant-123',
-        projectId: 'product-456',
+        workspaceId: 'workspace-123',
+        projectId: 'project-123',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,
       },
+    });
+
+    const request: GraphQueryRequest = {
+      queryType: 'stats',
     };
 
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
-    );
+    const result = await client.queryGraph(request);
 
-    const result = await client.queryGraph('product-456', 'tenant-123', 'stats', null, null, 100);
-
-    expect(result.items.nodeCount).toBe(10);
-    expect(result.scope.hasMore).toBe(false);
+    expect(spy).toHaveBeenCalledWith('tenant-123', 'workspace-123', 'project-123', request);
+    expect(result.success).toBe(true);
+    expect(result.data?.nextCursor).toBeNull();
   });
 
-  it('should handle residual review request', async () => {
-    const mockResponse = {
-      residualIslands: [
-        {
-          id: 'residual-1',
-          kind: 'code',
-          originalSource: 'unparseable code',
-          normalizedSummary: 'summary',
-          reasonUnmodeled: 'unsupported syntax',
-          reviewRequired: true,
-        },
-      ],
-      total: 1,
+  it('calls generated residual analysis endpoint', async () => {
+    const spy = vi.spyOn(ArtifactGraphService, 'analyzeResidual').mockResolvedValue({
+      success: true,
+      message: 'analyzed',
+    });
+
+    const request: ResidualAnalyzeRequest = {
+      projectId: 'project-123',
+      tenantId: 'tenant-123',
+      workspaceId: 'workspace-123',
+      residualIslands: [],
     };
 
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
-    );
+    const result = await client.analyzeResidual(request);
 
-    const result = await client.getResidualIslands('product-456', 'tenant-123');
-
-    expect(result.residualIslands).toHaveLength(1);
-    expect(result.residualIslands[0].reviewRequired).toBe(true);
+    expect(spy).toHaveBeenCalledWith('tenant-123', 'workspace-123', 'project-123', request);
+    expect(result.success).toBe(true);
+    expect(result.data?.message).toBe('analyzed');
   });
 
-  it('should handle patch review request', async () => {
-    const mockResponse = {
-      patchSet: {
-        id: 'patch-123',
-        patches: [],
-        metadata: {},
-      },
-      validationResults: {
-        valid: true,
-        errors: [],
-        warnings: [],
-      },
-    };
+  it('uses patch compatibility endpoint for approve bundle', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, bundleId: 'bundle-1', status: 'APPROVED', reviewedBy: 'u1' }),
+    });
 
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
-    );
+    vi.stubGlobal('fetch', fetchMock);
 
-    const result = await client.getPatchReview('patch-123');
+    const result = await client.approveBundle('bundle-1', { reviewer: 'u1' });
 
-    expect(result.patchSet.id).toBe('patch-123');
-    expect(result.validationResults.valid).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/api/v1/yappc/artifact/patch/bundles/bundle-1/approve');
+    expect(result.success).toBe(true);
+    expect(result.data?.status).toBe('APPROVED');
   });
 });
-
-interface GraphQueryResponse {
-  items: Record<string, unknown>;
-  nextCursor: string | null;
-  totalEstimate: number;
-  scope: {
-    tenantId: string;
-    projectId: string;
-    queryType: string;
-    pageSize: number;
-    hasMore: boolean;
-  };
-}

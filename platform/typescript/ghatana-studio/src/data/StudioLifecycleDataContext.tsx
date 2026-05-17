@@ -72,6 +72,8 @@ export interface StudioIntentOperationState {
   readonly correlationId?: string;
   readonly result?: ProductUnitIntentApplicationResult;
   readonly errorMessage?: string;
+  readonly errorReasonCode?: string;
+  readonly errorDetails?: Record<string, unknown>;
 }
 
 export interface StudioLifecycleDataContextValue {
@@ -342,6 +344,7 @@ export function StudioLifecycleDataProvider(
         status: 'error',
         mode: 'preview',
         errorMessage: message,
+        errorReasonCode: 'preview-not-supported',
       });
       throw new Error(message);
     }
@@ -364,6 +367,8 @@ export function StudioLifecycleDataProvider(
         status: 'error',
         mode: 'preview',
         errorMessage,
+        errorReasonCode: extractErrorReasonCode(error),
+        errorDetails: extractErrorDetails(error),
       });
       throw error;
     }
@@ -379,6 +384,7 @@ export function StudioLifecycleDataProvider(
         status: 'error',
         mode: 'apply',
         errorMessage: message,
+        errorReasonCode: 'apply-not-supported',
       });
       throw new Error(message);
     }
@@ -402,6 +408,8 @@ export function StudioLifecycleDataProvider(
         status: 'error',
         mode: 'apply',
         errorMessage,
+        errorReasonCode: extractErrorReasonCode(error),
+        errorDetails: extractErrorDetails(error),
       });
       throw error;
     }
@@ -562,4 +570,74 @@ function extractStatusCode(error: unknown): number | undefined {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Manifest unavailable';
+}
+
+function extractErrorReasonCode(error: unknown): string {
+  if (typeof error !== 'object' || error === null) {
+    return 'unknown-error';
+  }
+
+  const err = error as { readonly code?: unknown; readonly reasonCode?: unknown; readonly reason?: unknown };
+  
+  if (typeof err.code === 'string') {
+    return err.code;
+  }
+  if (typeof err.reasonCode === 'string') {
+    return err.reasonCode;
+  }
+  if (typeof err.reason === 'string') {
+    return err.reason;
+  }
+  
+  const message = errorMessage(error).toLowerCase();
+  if (message.includes('authorization') || message.includes('unauthorized') || message.includes('forbidden')) {
+    return 'authorization-failed';
+  }
+  if (message.includes('validation') || message.includes('invalid')) {
+    return 'validation-failed';
+  }
+  if (message.includes('schema')) {
+    return 'schema-violation';
+  }
+  if (message.includes('timeout')) {
+    return 'timeout';
+  }
+  if (message.includes('network') || message.includes('fetch')) {
+    return 'network-error';
+  }
+  if (message.includes('provider')) {
+    return 'provider-unavailable';
+  }
+  
+  return 'unknown-error';
+}
+
+function extractErrorDetails(error: unknown): Record<string, unknown> {
+  if (typeof error !== 'object' || error === null) {
+    return {};
+  }
+
+  const err = error as Record<string, unknown>;
+  const details: Record<string, unknown> = {};
+  
+  if (typeof err.statusCode === 'number') {
+    details.statusCode = err.statusCode;
+  }
+  if (typeof err.status === 'number') {
+    details.status = err.status;
+  }
+  if (typeof err.correlationId === 'string') {
+    details.correlationId = err.correlationId;
+  }
+  if (typeof err.intentId === 'string') {
+    details.intentId = err.intentId;
+  }
+  if (typeof err.productUnitId === 'string') {
+    details.productUnitId = err.productUnitId;
+  }
+  if (Array.isArray(err.blockedReasons)) {
+    details.blockedReasons = err.blockedReasons;
+  }
+  
+  return details;
 }

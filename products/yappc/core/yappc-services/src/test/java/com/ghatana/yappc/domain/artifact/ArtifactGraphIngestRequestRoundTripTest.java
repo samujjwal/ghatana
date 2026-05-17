@@ -30,7 +30,7 @@ class ArtifactGraphIngestRequestRoundTripTest {
             "t1", "p1", "w1", "snap-1"
         );
 
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             "p1", "t1", List.of(), List.of(),
             "refs/heads/main", "snap-1", "ver-1", "csum-abc",
             List.of(), List.of(), List.of(island)
@@ -51,7 +51,7 @@ class ArtifactGraphIngestRequestRoundTripTest {
     @Test
     @DisplayName("empty residualIslands list survives round-trip as empty list")
     void emptyResidualIslandsRoundTrip() throws Exception {
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
             "p1", "t1", List.of(), List.of(),
             null, null, "ver-2", null,
             List.of(), List.of(), List.of()

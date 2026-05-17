@@ -22,4 +22,25 @@ test.describe('Ghatana Studio navigation', () => {
     await expect(page.getByText('Route access is disabled in this runtime mode.')).toBeVisible();
     await expect(page.getByText(/Required capability:/)).toBeVisible();
   });
+
+  test('Studio-visible lifecycle pilot E2E flow', async ({ page }) => {
+    await page.goto('/lifecycle');
+
+    // Verify lifecycle page loads
+    await expect(page.getByRole('heading', { name: 'Lifecycle' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Product lifecycle execution' })).toBeVisible();
+
+    // Verify pilot readiness panel is visible
+    await expect(page.getByText('Lifecycle pilot readiness')).toBeVisible();
+    await expect(page.getByText('Current product unit:')).toBeVisible();
+
+    // Verify approval queue is displayed
+    await expect(page.getByText('Approval queue')).toBeVisible();
+
+    // Verify lifecycle run history is displayed
+    await expect(page.getByText('Lifecycle run history')).toBeVisible();
+
+    // Verify validation command is shown
+    await expect(page.getByText('Validation command')).toBeVisible();
+  });
 });

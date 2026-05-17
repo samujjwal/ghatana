@@ -105,27 +105,56 @@ export default function HealthPage(): ReactElement {
         </p>
       </div>
 
-      <article className="studio-card space-y-2" aria-label="composed-health-model">
-        <h3 className="text-base font-semibold text-gray-950">Composed health model</h3>
-        <dl className="grid gap-2 text-sm text-gray-700 md:grid-cols-2">
-          <div className="flex justify-between gap-3">
-            <dt className="font-medium text-gray-900">Bootstrap truth</dt>
-            <dd>{healthSignalStatusLabel(composedHealthModel.bootstrapTruth, t)}</dd>
+      {composedHealthModel.bootstrapTruth === 'unavailable' || composedHealthModel.platformTruth === 'unknown' || composedHealthModel.providerHealth === 'unknown' || composedHealthModel.productHealth === 'unknown' ? (
+        <article className="rounded-md border border-red-200 bg-red-50 p-4" aria-label="provider-readiness-blocked">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-red-900">{t('studio.route.providerReadiness.blockedTitle')}</h3>
+            <Badge tone="danger" variant="soft" className="text-xs">
+              Health evidence missing
+            </Badge>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="font-medium text-gray-900">Platform truth</dt>
-            <dd>{healthSignalStatusLabel(composedHealthModel.platformTruth, t)}</dd>
+          <p className="mt-2 text-sm text-red-800">{t('studio.route.providerReadiness.blockedMessage')}</p>
+          <div className="mt-3 space-y-1">
+            <h4 className="text-xs font-medium text-red-900">{t('studio.route.providerReadiness.missingEvidence')}</h4>
+            <ul className="space-y-1 text-xs text-red-700">
+              {composedHealthModel.bootstrapTruth === 'unavailable' ? (
+                <li className="font-mono">bootstrap-truth: unavailable</li>
+              ) : null}
+              {composedHealthModel.platformTruth === 'unknown' ? (
+                <li className="font-mono">platform-truth: unknown</li>
+              ) : null}
+              {composedHealthModel.providerHealth === 'unknown' ? (
+                <li className="font-mono">provider-health: unknown</li>
+              ) : null}
+              {composedHealthModel.productHealth === 'unknown' ? (
+                <li className="font-mono">product-health: unknown</li>
+              ) : null}
+            </ul>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="font-medium text-gray-900">Provider health</dt>
-            <dd>{healthSignalStatusLabel(composedHealthModel.providerHealth, t)}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="font-medium text-gray-900">Product health</dt>
-            <dd>{healthSignalStatusLabel(composedHealthModel.productHealth, t)}</dd>
-          </div>
-        </dl>
-      </article>
+        </article>
+      ) : (
+        <article className="studio-card space-y-2" aria-label="composed-health-model">
+          <h3 className="text-base font-semibold text-gray-950">Composed health model</h3>
+          <dl className="grid gap-2 text-sm text-gray-700 md:grid-cols-2">
+            <div className="flex justify-between gap-3">
+              <dt className="font-medium text-gray-900">Bootstrap truth</dt>
+              <dd>{healthSignalStatusLabel(composedHealthModel.bootstrapTruth, t)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="font-medium text-gray-900">Platform truth</dt>
+              <dd>{healthSignalStatusLabel(composedHealthModel.platformTruth, t)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="font-medium text-gray-900">Provider health</dt>
+              <dd>{healthSignalStatusLabel(composedHealthModel.providerHealth, t)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="font-medium text-gray-900">Product health</dt>
+              <dd>{healthSignalStatusLabel(composedHealthModel.productHealth, t)}</dd>
+            </div>
+          </dl>
+        </article>
+      )}
 
       <div className="grid gap-3">
         {healthSignals.map((signal) => (

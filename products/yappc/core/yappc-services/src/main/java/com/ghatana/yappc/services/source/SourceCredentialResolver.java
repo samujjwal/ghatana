@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @doc.type interface
@@ -62,6 +61,10 @@ public interface SourceCredentialResolver {
      */
     static SourceCredentialResolver envBacked() {
         return new EnvBackedSourceCredentialResolver();
+    }
+
+    static SourceCredentialResolver governed(SourceCredentialRepository repository) {
+        return new GovernedSourceCredentialResolver(repository);
     }
 }
 
@@ -160,5 +163,44 @@ final class EnvBackedSourceCredentialResolver implements SourceCredentialResolve
         if (a != null && !a.isBlank()) return a;
         if (b != null && !b.isBlank()) return b;
         return null;
+    }
+}
+
+final class GovernedSourceCredentialResolver implements SourceCredentialResolver {
+
+    private static final Logger log = LoggerFactory.getLogger(GovernedSourceCredentialResolver.class);
+    private final SourceCredentialRepository repository;
+
+    GovernedSourceCredentialResolver(SourceCredentialRepository repository) {
+        this.repository = Objects.requireNonNull(repository, "repository must not be null");
+    }
+
+    @Override
+    public String resolve(SourceLocator locator, String provider, String expectedTenantId, String expectedWorkspaceId, String expectedProjectId) {
+        validateScope(locator, expectedTenantId, expectedWorkspaceId, expectedProjectId);
+
+        String credentialRef = locator.credentialRef().map(String::trim).filter(s -> !s.isBlank()).orElse(null);
+        if (credentialRef == null) {
+            return null;
+        }
+
+        String effectiveProvider = provider == null || provider.isBlank() ? locator.provider() : provider;
+        return repository.findBinding(expectedTenantId, expectedWorkspaceId, expectedProjectId, effectiveProvider, credentialRef)
+            .map(SourceCredentialRepository.CredentialBinding::secretKey)
+            .map(System::getenv)
+            .filter(value -> value != null && !value.isBlank())
+            .orElseGet(() -> {
+                log.warn("Governed credential binding not found or secret key missing for provider='{}' credentialRef='{}'", effectiveProvider, credentialRef);
+                return null;
+            });
+    }
+
+    private static void validateScope(SourceLocator locator, String expectedTenantId,
+                                      String expectedWorkspaceId, String expectedProjectId) {
+        if (!Objects.equals(locator.tenantId(), expectedTenantId)
+            || !Objects.equals(locator.workspaceId(), expectedWorkspaceId)
+            || !Objects.equals(locator.projectId(), expectedProjectId)) {
+            throw new SecurityException("Credential scope mismatch for source locator");
+        }
     }
 }

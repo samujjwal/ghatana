@@ -252,9 +252,9 @@ export default function LifecyclePage(): ReactElement {
   const isDigitalMarketingPilot = currentProductUnitId === 'digital-marketing';
   const pilotReadinessLabel = isDigitalMarketingPilot
     ? readinessState.lifecycleExecutionAllowed
-      ? 'Digital Marketing pilot ready'
-      : 'Digital Marketing pilot blocked'
-    : 'Non-pilot product';
+      ? t('studio.route.lifecycle.pilotReadiness.ready')
+      : t('studio.route.lifecycle.pilotReadiness.blocked')
+    : t('studio.route.lifecycle.pilotReadiness.nonPilot');
   const activeEnvironment = environmentOptions.includes(environment)
     ? environment
     : environmentOptions[0] ?? DEFAULT_ENVIRONMENTS[0];
@@ -312,7 +312,7 @@ export default function LifecyclePage(): ReactElement {
         approvalId,
         approved,
         approvedBy,
-        reason: approved ? 'Approved from Studio lifecycle queue' : 'Rejected from Studio lifecycle queue',
+        reason: approved ? t('studio.route.lifecycle.approvalReason.approved') : t('studio.route.lifecycle.approvalReason.rejected'),
         decidedAt: new Date().toISOString(),
       });
       await lifecycleData.refresh();
@@ -337,15 +337,15 @@ export default function LifecyclePage(): ReactElement {
 
       <article className="rounded-md border border-blue-200 bg-blue-50 p-4" aria-label="lifecycle-pilot-readiness">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-blue-900">Lifecycle pilot readiness</h3>
+          <h3 className="text-sm font-semibold text-blue-900">{t('studio.route.lifecycle.pilotReadinessTitle')}</h3>
           <Badge tone={isDigitalMarketingPilot && readinessState.lifecycleExecutionAllowed ? 'success' : 'warning'} variant="soft" className="text-xs">
             {pilotReadinessLabel}
           </Badge>
         </div>
-        <p className="mt-2 text-xs text-blue-900">Current product unit: {currentProductUnitId}</p>
+        <p className="mt-2 text-xs text-blue-900">{t('studio.route.lifecycle.currentProductUnitPrefix')} {currentProductUnitId}</p>
         {!isDigitalMarketingPilot && (
           <p className="mt-1 text-xs text-blue-900">
-            Only Digital Marketing is lifecycle-enabled in this phase. Non-pilot products remain fail-closed until promotion gates pass.
+            {t('studio.route.lifecycle.nonPilotExplanation')}
           </p>
         )}
       </article>
@@ -714,7 +714,7 @@ export default function LifecyclePage(): ReactElement {
           {t('studio.route.lifecycle.validationCommandTitle')}
         </h3>
         <code className="block rounded-md bg-gray-100 p-3 text-sm text-gray-900">
-          pnpm check:digital-marketing-lifecycle-pilot --smoke
+          {t('studio.route.lifecycle.validationCommand')}
         </code>
       </article>
     </section>

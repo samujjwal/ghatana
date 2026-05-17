@@ -188,6 +188,8 @@ export class LifecycleManifestWriter {
           return await this.writeArtifactManifest(request.result);
         case 'deployment-manifest':
           return await this.writeDeploymentManifest(request.result, request.environment, manifestRefs);
+        case 'rollback-manifest':
+          return await this.writeRollbackManifest(request.result, request.environment);
         case 'verify-health-report':
           return await this.writeVerifyHealthReport(request.result);
         case 'lifecycle-health-snapshot':
@@ -301,6 +303,33 @@ export class LifecycleManifestWriter {
     };
     const manifestPath = this.manifestPath(result.productId, result.runId, result.phase, 'verify-health-report.json');
     await this.writeJson(manifestPath, report);
+    return { ref: manifestPath };
+  }
+
+  private async writeRollbackManifest(
+    result: ProductLifecycleResult,
+    environment: string | undefined,
+  ): Promise<{ readonly ref: string }> {
+    const manifest = {
+      schemaVersion: '1.0.0',
+      productId: result.productId,
+      productUnitId: result.productUnitRef ?? result.productId,
+      runId: result.runId,
+      ...(result.correlationId === undefined ? {} : { correlationId: result.correlationId }),
+      environment: environment ?? 'local',
+      phase: result.phase,
+      status: result.status,
+      createdAt: result.completedAt,
+      strategy: 'previous-artifact',
+      targetVersion: result.runId,
+      evidenceRefs: [
+        ...(result.manifestRefs?.lifecycleEvents === undefined ? [] : [result.manifestRefs.lifecycleEvents]),
+        ...(result.manifestRefs?.deploymentManifest === undefined ? [] : [result.manifestRefs.deploymentManifest]),
+      ],
+    };
+
+    const manifestPath = this.manifestPath(result.productId, result.runId, result.phase, 'rollback-manifest.json');
+    await this.writeJson(manifestPath, manifest);
     return { ref: manifestPath };
   }
 
@@ -600,6 +629,7 @@ export class LifecycleManifestWriter {
     if (manifestType === 'gate-result-manifest') refs.gateResultManifest = ref;
     if (manifestType === 'artifact-manifest') refs.artifactManifest = ref;
     if (manifestType === 'deployment-manifest') refs.deploymentManifest = ref;
+    if (manifestType === 'rollback-manifest') refs.rollbackManifest = ref;
     if (manifestType === 'verify-health-report') refs.verifyHealthReport = ref;
     if (manifestType === 'lifecycle-health-snapshot') refs.lifecycleHealthSnapshot = ref;
   }

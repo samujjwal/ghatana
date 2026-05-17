@@ -1,11 +1,9 @@
 /**
  * @fileoverview Artifact Compiler API Client
  *
- * P2-1: Typed client for artifact compiler operations:
- * - Import job (ingest)
- * - Graph summary (query/stats)
- * - Residual review (analyzeResidual)
- * - Patch review (placeholder for future implementation)
+ * Generated-client-backed wrapper for artifact graph/import APIs, with
+ * compatibility methods retained for patch bundle workflows that are not
+ * yet available in the generated OpenAPI surface.
  *
  * @doc.type class
  * @doc.purpose Typed HTTP client for artifact compiler API
@@ -13,11 +11,18 @@
  * @doc.pattern Service
  */
 
-import axios, { AxiosInstance } from 'axios';
-
-// ============================================================================
-// Types
-// ============================================================================
+import {
+  ArtifactGraphService,
+  OpenAPI,
+  type ArtifactGraphAnalysisRequest,
+  type ArtifactGraphIngestRequest,
+  type ArtifactGraphMergeRequest,
+  type ArtifactGraphQueryRequest,
+  type ResidualAnalysisRequest,
+  type SourceImportJob,
+  type SourceImportRequest,
+  type SourceImportResponse,
+} from '@/clients/generated/api';
 
 export interface ArtifactCompilerConfig {
   baseUrl: string;
@@ -45,106 +50,7 @@ export interface ApiError {
   };
 }
 
-// ============================================================================
-// Request/Response Types
-// ============================================================================
-
-export interface ArtifactNodeDto {
-  id: string;
-  type: string;
-  name: string;
-  filePath?: string;
-  content?: string;
-  properties?: Record<string, unknown>;
-  tags?: string[];
-  tenantId?: string;
-  projectId?: string;
-  sourceLocation?: {
-    filePath: string;
-    startLine: number;
-    startColumn: number;
-    endLine: number;
-    endColumn: number;
-  };
-  extractorId?: string;
-  extractorVersion?: string;
-  confidence?: number;
-  provenance?: string;
-  privacySecurityFlags?: string[];
-  residualFragmentIds?: string[];
-  sourceRef?: string;
-  symbolRef?: string;
-}
-
-export interface ArtifactEdgeDto {
-  edgeId?: string;
-  sourceNodeId: string;
-  targetNodeId: string;
-  relationshipType: string;
-  confidence?: number;
-  bidirectional?: boolean;
-  metadata?: Record<string, unknown>;
-  properties?: Record<string, unknown>;
-  snapshotId?: string;
-  versionId?: string;
-}
-
-export interface ResidualIslandPayload {
-  id: string;
-  islandType: string;
-  summary: string;
-  originalSource?: string; // P0: Added for round-trip fidelity
-  sourceLocation?: {
-    filePath: string;
-    startLine: number;
-    startColumn: number;
-    endLine: number;
-    endColumn: number;
-  };
-  sourceSpan?: string;
-  checksum?: string;
-  rawFragmentRef?: string;
-  reason?: string;
-  confidence: number;
-  reviewRequired: boolean;
-  riskScore?: number;
-  fileCount?: number;
-  metadata?: Record<string, string>;
-  tenantId?: string;
-  projectId?: string;
-  workspaceId?: string;
-  snapshotId?: string;
-}
-
-export interface ArtifactGraphIngestRequest {
-  projectId: string;
-  tenantId?: string;
-  workspaceId?: string;
-  nodes: ArtifactNodeDto[];
-  edges: ArtifactEdgeDto[];
-  snapshotRef?: string;
-  snapshotId?: string;
-  versionId?: string;
-  contentChecksum?: string;
-  unresolvedEdges?: Array<{
-    id?: string;
-    sourceNodeId: string;
-    targetRef: string;
-    relationshipType: string; // P0: Normalized from relationship to match proto
-    targetKindHint?: string;
-    confidence?: number;
-    metadata?: Record<string, unknown>;
-  }>;
-  edgeResolutionRecords?: Array<{
-    id?: string;
-    unresolvedEdgeId: string;
-    status: string;
-    resolvedTargetId?: string;
-    candidateIds?: string[];
-    reviewRequired?: boolean;
-  }>;
-  residualIslands?: ResidualIslandPayload[];
-}
+export type { ArtifactGraphIngestRequest };
 
 export interface ArtifactGraphIngestResponse {
   success: boolean;
@@ -155,17 +61,7 @@ export interface ArtifactGraphIngestResponse {
   edgeCount?: number;
 }
 
-export interface GraphQueryRequest {
-  projectId: string;
-  tenantId?: string;
-  workspaceId?: string;
-  queryType: 'orphaned' | 'dependencies' | 'dependents' | 'stats';
-  seedNodeIds?: string[];
-  cursor?: string;
-  limit?: number;
-  snapshotId?: string;
-  includeUnresolvedEdges?: boolean;
-}
+export type GraphQueryRequest = ArtifactGraphQueryRequest;
 
 export interface GraphQueryScopeMetadata {
   tenantId: string;
@@ -185,27 +81,11 @@ export interface GraphQueryResponse {
   scope: GraphQueryScopeMetadata;
 }
 
-export interface ResidualIsland {
-  id: string;
-  islandType: string;
-  summary: string;
-  sourceSpan?: string;
-  checksum?: string;
-  rawFragmentRef?: string;
-  reason?: string;
-  confidence: number;
-  reviewRequired: boolean;
-  riskScore?: number;
-  fileCount?: number;
-  metadata?: Record<string, string>;
-}
+export type ArtifactGraphAnalyzeRequest = ArtifactGraphAnalysisRequest;
 
-export interface ResidualAnalyzeRequest {
-  projectId: string;
-  tenantId?: string;
-  workspaceId?: string;
-  residualIslands: ResidualIsland[];
-}
+export type ArtifactGraphMergePayload = ArtifactGraphMergeRequest;
+
+export type ResidualAnalyzeRequest = ResidualAnalysisRequest;
 
 export interface ResidualAnalyzeResponse {
   success: boolean;
@@ -244,82 +124,13 @@ export interface PatchReviewResponse {
   };
 }
 
-export interface PlanPatchRequest {
-  baseModelId: string;
-  targetModelId: string;
-}
-
-export interface PlanPatchResponse {
-  success: boolean;
-  planId: string;
-  baseModelId: string;
-  targetModelId: string;
-  operationCount: number;
-  autoApplicableCount: number;
-  reviewRequiredCount: number;
-  createdAt: string;
-  scope: {
-    tenantId: string;
-    workspaceId: string;
-    projectId: string;
-  };
-}
-
-export interface GeneratePatchRequest {
-  planId: string;
-}
-
-export interface GeneratePatchResponse {
-  success: boolean;
-  patchSetId: string;
-  planId: string;
-  status: string;
-  fileCount: number;
-  createdAt: string;
-  scope: {
-    tenantId: string;
-    workspaceId: string;
-    projectId: string;
-  };
-}
-
-export interface ValidatePatchRequest {
-  patchSetId: string;
-}
-
-export interface ValidatePatchResponse {
-  success: boolean;
-  planId: string;
-  valid: boolean;
-  errorCount: number;
-  warningCount: number;
-  validatedAt: string;
-  validatorId: string;
-  errors: string[];
-  warnings: string[];
-}
-
-export interface CreateReviewBundleRequest {
-  patchSetId: string;
-  snapshotId?: string;
-  versionId?: string;
-}
-
-export interface CreateReviewBundleResponse {
-  success: boolean;
-  bundleId: string;
-  patchSetId: string;
-  status: string;
-  createdAt: string;
-  scope: {
-    tenantId: string;
-    workspaceId: string;
-    projectId: string;
-  };
-}
-
 export interface ApproveBundleRequest {
   reviewer: string;
+}
+
+export interface RejectBundleRequest {
+  reviewer: string;
+  reason: string;
 }
 
 export interface ApproveBundleResponse {
@@ -327,11 +138,6 @@ export interface ApproveBundleResponse {
   bundleId: string;
   status: string;
   reviewedBy: string;
-}
-
-export interface RejectBundleRequest {
-  reviewer: string;
-  reason?: string;
 }
 
 export interface RejectBundleResponse {
@@ -347,34 +153,13 @@ export interface ApplyBundleResponse {
   status: string;
 }
 
-export interface RollbackBundleResponse {
-  success: boolean;
-  bundleId: string;
-  status: string;
-}
-
-export interface ListBundlesResponse {
-  success: boolean;
-  bundles: unknown[];
-  scope: {
-    tenantId: string;
-    workspaceId: string;
-    projectId: string;
-  };
-}
-
-// ============================================================================
-// Artifact Compiler Client
-// ============================================================================
-
 export interface ArtifactCompilerScopeConfig {
   workspaceId: string;
   projectId: string;
 }
 
 export class ArtifactCompilerClient {
-  private httpClient: AxiosInstance;
-  private config: Required<ArtifactCompilerConfig>;
+  private readonly config: Required<ArtifactCompilerConfig>;
   private scopeConfig: ArtifactCompilerScopeConfig | null = null;
 
   constructor(config: ArtifactCompilerConfig) {
@@ -382,339 +167,240 @@ export class ArtifactCompilerClient {
       timeout: 10000,
       ...config,
     };
-
-    this.httpClient = axios.create({
-      baseURL: this.config.baseUrl,
-      timeout: this.config.timeout,
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'YAPPC-ArtifactCompiler/1.0',
-      },
-    });
-
-    // Add request interceptor for auth, tenant and workspace/project scope
-    this.httpClient.interceptors.request.use(
-      (config) => {
-        if (this.config.authToken) {
-          config.headers.Authorization = `Bearer ${this.config.authToken}`;
-        }
-        if (this.config.tenantId) {
-          config.headers['X-Tenant-Id'] = this.config.tenantId;
-        }
-        if (this.scopeConfig?.workspaceId) {
-          config.headers['X-Workspace-ID'] = this.scopeConfig.workspaceId;
-        }
-        if (this.scopeConfig?.projectId) {
-          config.headers['X-Project-ID'] = this.scopeConfig.projectId;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Add response interceptor for error handling
-    this.httpClient.interceptors.response.use(
-      (response) => response,
-      (error) => this.handleError(error)
-    );
   }
 
-  /**
-   * P2-1: Ingest artifact nodes and edges extracted by the TypeScript scanner.
-   * POST /api/v1/yappc/artifact/graph/ingest
-   */
-  async ingestGraph(request: ArtifactGraphIngestRequest): Promise<ApiResponse<ArtifactGraphIngestResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<ArtifactGraphIngestResponse>>(
-        '/api/v1/yappc/artifact/graph/ingest',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P2-1: Query the artifact graph for summary information.
-   * POST /api/v1/yappc/artifact/graph/query
-   */
-  async queryGraph(request: GraphQueryRequest): Promise<ApiResponse<GraphQueryResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<GraphQueryResponse>>(
-        '/api/v1/yappc/artifact/graph/query',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P2-1: Analyze residual islands flagged by the TypeScript scanner.
-   * POST /api/v1/yappc/artifact/residual/analyze
-   */
-  async analyzeResidual(request: ResidualAnalyzeRequest): Promise<ApiResponse<ResidualAnalyzeResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<ResidualAnalyzeResponse>>(
-        '/api/v1/yappc/artifact/residual/analyze',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P0: Review a patch set for approval or rejection.
-   * POST /api/v1/yappc/artifact/patch/review
-   * NOTE: This endpoint is not yet implemented in the backend.
-   * Will throw 404 until ArtifactPatchController is added (P1-8).
-   */
-  async reviewPatch(request: PatchReviewRequest): Promise<ApiResponse<PatchReviewResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<PatchReviewResponse>>(
-        '/api/v1/yappc/artifact/patch/review',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Plan a patch by comparing two model versions.
-   * POST /api/v1/yappc/artifact/patch/plan
-   */
-  async planPatch(request: PlanPatchRequest): Promise<ApiResponse<PlanPatchResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<PlanPatchResponse>>(
-        '/api/v1/yappc/artifact/patch/plan',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Generate a patch set from a plan.
-   * POST /api/v1/yappc/artifact/patch/generate
-   */
-  async generatePatch(request: GeneratePatchRequest): Promise<ApiResponse<GeneratePatchResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<GeneratePatchResponse>>(
-        '/api/v1/yappc/artifact/patch/generate',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Validate a patch set.
-   * POST /api/v1/yappc/artifact/patch/validate
-   */
-  async validatePatch(request: ValidatePatchRequest): Promise<ApiResponse<ValidatePatchResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<ValidatePatchResponse>>(
-        '/api/v1/yappc/artifact/patch/validate',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Create a review bundle for a patch set.
-   * POST /api/v1/yappc/artifact/patch/bundles
-   */
-  async createReviewBundle(request: CreateReviewBundleRequest): Promise<ApiResponse<CreateReviewBundleResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<CreateReviewBundleResponse>>(
-        '/api/v1/yappc/artifact/patch/bundles',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Approve a review bundle.
-   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/approve
-   */
-  async approveBundle(bundleId: string, request: ApproveBundleRequest): Promise<ApiResponse<ApproveBundleResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<ApproveBundleResponse>>(
-        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/approve`,
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Reject a review bundle.
-   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/reject
-   */
-  async rejectBundle(bundleId: string, request: RejectBundleRequest): Promise<ApiResponse<RejectBundleResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<RejectBundleResponse>>(
-        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/reject`,
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Apply a review bundle.
-   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/apply
-   */
-  async applyBundle(bundleId: string): Promise<ApiResponse<ApplyBundleResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<ApplyBundleResponse>>(
-        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/apply`,
-        {}
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: Rollback a review bundle.
-   * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/rollback
-   */
-  async rollbackBundle(bundleId: string): Promise<ApiResponse<RollbackBundleResponse>> {
-    try {
-      const response = await this.httpClient.post<ApiResponse<RollbackBundleResponse>>(
-        `/api/v1/yappc/artifact/patch/bundles/${bundleId}/rollback`,
-        {}
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * P1-21: List all review bundles for the scoped project.
-   * GET /api/v1/yappc/artifact/patch/bundles
-   */
-  async listBundles(): Promise<ApiResponse<ListBundlesResponse>> {
-    try {
-      const response = await this.httpClient.get<ApiResponse<ListBundlesResponse>>(
-        '/api/v1/yappc/artifact/patch/bundles'
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Update auth token
-   */
   setAuthToken(token: string): void {
     this.config.authToken = token;
   }
 
-  /**
-   * Update tenant ID
-   */
   setTenantId(tenantId: string): void {
     this.config.tenantId = tenantId;
   }
 
-  /**
-   * Set workspace and project scope headers for all subsequent requests.
-   * Required for ingest, query, analyze, and patch operations.
-   */
   setScope(scope: ArtifactCompilerScopeConfig): void {
     this.scopeConfig = scope;
   }
 
-  /**
-   * Handle axios errors
-   */
-  private handleError(error: unknown): ApiError {
-    const apiError: ApiError = {
+  async ingestGraph(request: ArtifactGraphIngestRequest): Promise<ApiResponse<ArtifactGraphIngestResponse>> {
+    try {
+      this.configureGeneratedClient();
+      const payload = await ArtifactGraphService.ingestArtifactGraph(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+      return this.ok(payload as ArtifactGraphIngestResponse);
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async queryGraph(request: GraphQueryRequest): Promise<ApiResponse<GraphQueryResponse>> {
+    try {
+      this.configureGeneratedClient();
+      const payload = await ArtifactGraphService.queryArtifactGraph(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+      return this.ok(payload as GraphQueryResponse);
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async analyzeResidual(request: ResidualAnalyzeRequest): Promise<ApiResponse<ResidualAnalyzeResponse>> {
+    try {
+      this.configureGeneratedClient();
+      const payload = await ArtifactGraphService.analyzeResidual(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+      return this.ok(payload as ResidualAnalyzeResponse);
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async importSource(request: SourceImportRequest): Promise<SourceImportResponse> {
+    try {
+      this.configureGeneratedClient();
+      return await ArtifactGraphService.importSource(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async getSourceImportJob(jobId: string): Promise<{ job: SourceImportJob }> {
+    try {
+      this.configureGeneratedClient();
+      return await ArtifactGraphService.getSourceImportJob(
+        jobId,
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+      );
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async approveBundle(bundleId: string, request: ApproveBundleRequest): Promise<ApiResponse<ApproveBundleResponse>> {
+    const payload = await this.postJson<ApproveBundleResponse>(
+      this.buildEndpoint(`patch/bundles/${bundleId}/approve`),
+      request,
+    );
+    return this.ok(payload);
+  }
+
+  async rejectBundle(bundleId: string, request: RejectBundleRequest): Promise<ApiResponse<RejectBundleResponse>> {
+    const payload = await this.postJson<RejectBundleResponse>(
+      this.buildEndpoint(`patch/bundles/${bundleId}/reject`),
+      request,
+    );
+    return this.ok(payload);
+  }
+
+  async applyBundle(bundleId: string): Promise<ApiResponse<ApplyBundleResponse>> {
+    const payload = await this.postJson<ApplyBundleResponse>(
+      this.buildEndpoint(`patch/bundles/${bundleId}/apply`),
+      {},
+    );
+    return this.ok(payload);
+  }
+
+  private configureGeneratedClient(): void {
+    OpenAPI.BASE = this.config.baseUrl;
+    OpenAPI.TOKEN = this.config.authToken || undefined;
+    OpenAPI.HEADERS = {
+      ...(this.config.tenantId ? { 'X-Tenant-ID': this.config.tenantId } : {}),
+      ...(this.scopeConfig?.workspaceId ? { 'X-Workspace-ID': this.scopeConfig.workspaceId } : {}),
+      ...(this.scopeConfig?.projectId ? { 'X-Project-ID': this.scopeConfig.projectId } : {}),
+    };
+  }
+
+  private requireTenantId(): string {
+    if (!this.config.tenantId) {
+      throw new Error('tenantId is required');
+    }
+    return this.config.tenantId;
+  }
+
+  private requireWorkspaceId(): string {
+    if (!this.scopeConfig?.workspaceId) {
+      throw new Error('workspaceId is required. Call setScope first.');
+    }
+    return this.scopeConfig.workspaceId;
+  }
+
+  private requireProjectId(): string {
+    if (!this.scopeConfig?.projectId) {
+      throw new Error('projectId is required. Call setScope first.');
+    }
+    return this.scopeConfig.projectId;
+  }
+
+  private async postJson<T>(url: string, body: unknown): Promise<T> {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.config.authToken ? { Authorization: `Bearer ${this.config.authToken}` } : {}),
+        ...(this.config.tenantId ? { 'X-Tenant-ID': this.config.tenantId } : {}),
+        ...(this.scopeConfig?.workspaceId ? { 'X-Workspace-ID': this.scopeConfig.workspaceId } : {}),
+        ...(this.scopeConfig?.projectId ? { 'X-Project-ID': this.scopeConfig.projectId } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorBody = await this.safeJson(response);
+      throw this.fromHttpError(response.status, errorBody);
+    }
+
+    return (await this.safeJson(response)) as T;
+  }
+
+  private async safeJson(response: Response): Promise<unknown> {
+    try {
+      return await response.json();
+    } catch {
+      return undefined;
+    }
+  }
+
+  private fromHttpError(status: number, data: unknown): ApiError {
+    if (status === 400) {
+      return { code: 'BAD_REQUEST', message: 'Invalid request parameters', details: { status, data } };
+    }
+    if (status === 401) {
+      return { code: 'UNAUTHORIZED', message: 'Authentication required', details: { status, data } };
+    }
+    if (status === 403) {
+      return { code: 'FORBIDDEN', message: 'Access denied', details: { status, data } };
+    }
+    if (status === 404) {
+      return { code: 'NOT_FOUND', message: 'Resource not found', details: { status, data } };
+    }
+    if (status >= 500) {
+      return { code: 'SERVER_ERROR', message: 'Server error occurred', details: { status, data } };
+    }
+    return { code: 'HTTP_ERROR', message: `Request failed with status ${status}`, details: { status, data } };
+  }
+
+  private toApiError(error: unknown): ApiError {
+    if (this.isApiError(error)) {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      return {
+        code: 'UNKNOWN_ERROR',
+        message: error.message,
+      };
+    }
+
+    return {
       code: 'UNKNOWN_ERROR',
       message: 'An unknown error occurred',
     };
+  }
 
-    if (axios.isAxiosError(error)) {
-      apiError.code = error.code || 'AXIOS_ERROR';
-      apiError.message = error.message;
-      apiError.details = {
-        status: error.response?.status,
-        data: error.response?.data,
-      };
+  private isApiError(error: unknown): error is ApiError {
+    return Boolean(
+      error
+      && typeof error === 'object'
+      && 'code' in error
+      && 'message' in error,
+    );
+  }
 
-      if (error.response) {
-        switch (error.response.status) {
-          case 400:
-            apiError.code = 'BAD_REQUEST';
-            apiError.message = 'Invalid request parameters';
-            break;
-          case 401:
-            apiError.code = 'UNAUTHORIZED';
-            apiError.message = 'Authentication required';
-            break;
-          case 403:
-            apiError.code = 'FORBIDDEN';
-            apiError.message = 'Access denied';
-            break;
-          case 404:
-            apiError.code = 'NOT_FOUND';
-            apiError.message = 'Resource not found';
-            break;
-          case 429:
-            apiError.code = 'RATE_LIMITED';
-            apiError.message = 'Too many requests';
-            break;
-          default:
-            if (error.response.status >= 500) {
-              apiError.code = 'SERVER_ERROR';
-              apiError.message = 'Server error occurred';
-            }
-        }
-      } else if (error.request) {
-        apiError.code = 'NETWORK_ERROR';
-        apiError.message = 'Network error - please check your connection';
-      }
-    }
+  private ok<T>(data: T): ApiResponse<T> {
+    return {
+      success: true,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
-    console.error('[Artifact Compiler Client] Error:', apiError);
-    return apiError;
+  private buildEndpoint(path: string): string {
+    const base = this.config.baseUrl.replace(/\/$/, '');
+    const normalized = path.replace(/^\//, '');
+    return `${base}/api/v1/yappc/artifact/${normalized}`;
   }
 }
 
-// ============================================================================
-// Default client instance
-// ============================================================================
-
 let defaultClient: ArtifactCompilerClient | null = null;
 
-/**
- * Get or create the default artifact compiler client instance.
- */
 export function getArtifactCompilerClient(config?: ArtifactCompilerConfig): ArtifactCompilerClient {
   if (!defaultClient && config) {
     defaultClient = new ArtifactCompilerClient(config);
@@ -725,9 +411,6 @@ export function getArtifactCompilerClient(config?: ArtifactCompilerConfig): Arti
   return defaultClient;
 }
 
-/**
- * Reset the default client instance (useful for testing).
- */
 export function resetArtifactCompilerClient(): void {
   defaultClient = null;
 }

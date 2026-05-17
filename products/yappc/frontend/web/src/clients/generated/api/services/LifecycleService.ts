@@ -443,4 +443,20 @@ export class LifecycleService {
             },
         });
     }
+    /**
+     * Evaluate AI phase gate readiness
+     * @param requestBody
+     * @returns any Readiness evaluation
+     * @throws ApiError
+     */
+    public static evaluatePhaseGateReadiness(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<Record<string, any>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/ai/phase-gate-readiness',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 }
