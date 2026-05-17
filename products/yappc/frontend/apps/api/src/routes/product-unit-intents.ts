@@ -81,10 +81,10 @@ interface ApplyProductUnitIntentOptions {
 }
 
 interface ProductUnitIntentRouteRuntimeConfig {
-  readonly dataCloudBaseUrl: string;
-  readonly dataCloudTenantId: string;
-  readonly dataCloudWorkspaceId: string;
-  readonly dataCloudProjectId: string;
+  readonly dataCloudBaseUrl?: string;
+  readonly dataCloudTenantId?: string;
+  readonly dataCloudWorkspaceId?: string;
+  readonly dataCloudProjectId?: string;
   readonly dataCloudAuthToken?: string;
   readonly kernelBaseUrl?: string;
   readonly kernelAuthToken?: string;
@@ -137,6 +137,19 @@ export default async function productUnitIntentRoutes(fastify: FastifyInstance):
       let evidenceRefsForKernel = evidence.evidenceRefs;
 
       if (providerMode === 'platform') {
+        if (
+          runtimeConfig.dataCloudBaseUrl === undefined || runtimeConfig.dataCloudBaseUrl.trim().length === 0 ||
+          runtimeConfig.dataCloudTenantId === undefined || runtimeConfig.dataCloudTenantId.trim().length === 0 ||
+          runtimeConfig.dataCloudWorkspaceId === undefined || runtimeConfig.dataCloudWorkspaceId.trim().length === 0 ||
+          runtimeConfig.dataCloudProjectId === undefined || runtimeConfig.dataCloudProjectId.trim().length === 0
+        ) {
+          return reply.status(503).send({
+            intentId: intent.intentId,
+            status: 'blocked',
+            blockedReasons: ['platform-mode-requires-explicit-data-cloud-scope-config'],
+          } satisfies ProductUnitIntentResponse);
+        }
+
         const hasDataCloudEvidenceRef = evidenceRefsForKernel.some(isDataCloudEvidenceRef);
 
         if (
@@ -305,10 +318,10 @@ async function applyProductUnitIntent(
 
 function readRouteRuntimeConfig(): ProductUnitIntentRouteRuntimeConfig {
   return {
-    dataCloudBaseUrl: process.env.DATACLOUD_PROVIDER_BASE_URL ?? 'http://localhost:8080',
-    dataCloudTenantId: process.env.DATACLOUD_TENANT_ID ?? 'default-tenant',
-    dataCloudWorkspaceId: process.env.DATACLOUD_WORKSPACE_ID ?? 'default-workspace',
-    dataCloudProjectId: process.env.DATACLOUD_PROJECT_ID ?? 'default-project',
+    dataCloudBaseUrl: process.env.DATACLOUD_PROVIDER_BASE_URL,
+    dataCloudTenantId: process.env.DATACLOUD_TENANT_ID,
+    dataCloudWorkspaceId: process.env.DATACLOUD_WORKSPACE_ID,
+    dataCloudProjectId: process.env.DATACLOUD_PROJECT_ID,
     dataCloudAuthToken: process.env.DATACLOUD_AUTH_TOKEN,
     kernelBaseUrl: process.env.KERNEL_LIFECYCLE_BASE_URL,
     kernelAuthToken: process.env.KERNEL_LIFECYCLE_AUTH_TOKEN,

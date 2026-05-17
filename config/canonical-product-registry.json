@@ -65,11 +65,12 @@
             "demo-scope-review"
           ],
           "nextRequiredWork": [
-            "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
+            "Keep PHR lifecycle disabled until healthcare-specific executable lifecycle surfaces are validated",
             "Add governance and integration evidence before lifecycle execution"
           ],
           "evidenceRefs": [
-            "products/virtual-org"
+            "products/phr/kernel-product.yaml",
+            "products/phr/schema-packs/schema-registry.yaml"
           ]
         },
         "created": "2026-03-19",

@@ -23,50 +23,8 @@ import { z } from 'zod';
 const EXTRACTOR_VERSION = '1.0.0';
 const DEFAULT_TIMEOUT_MS = 300000;
 
-const SnapshotProviderSchema = z.enum([
-  'local-folder',
-  'github',
-  'gitlab',
-  'zip',
-  'archive',
-  'artifact-registry',
-]);
-
-const WorkerFileSchema = z.object({
-  relativePath: z.string().min(1),
-  absolutePath: z.string().min(1).optional(),
-  sizeBytes: z.number().int().nonnegative(),
-  lastModifiedAt: z.string().datetime().optional(),
-  lastModified: z.string().datetime().optional(),
-});
-
 const CanonicalExtractorWorkerRequestSchema = z.object({
   snapshot: RepositorySnapshotSchema,
-});
-
-const NestedJavaExtractorWorkerRequestSchema = z.object({
-  snapshot: z.object({
-    snapshotRef: z.object({
-      provider: SnapshotProviderSchema,
-      repoId: z.string().min(1),
-      commitSha: z.string().optional().nullable(),
-      branch: z.string().optional().nullable(),
-      capturedAt: z.string().datetime().optional().nullable(),
-    }).passthrough(),
-    localRootPath: z.string().min(1),
-    files: z.array(WorkerFileSchema),
-    snapshotAt: z.string().datetime().optional(),
-    shallow: z.boolean().optional(),
-    diagnostics: z.array(z.unknown()).optional(),
-  }).passthrough(),
-});
-
-const FlatJavaExtractorWorkerRequestSchema = z.object({
-  snapshotId: z.string().min(1),
-  provider: SnapshotProviderSchema,
-  repoId: z.string().min(1),
-  materializedRoot: z.string().min(1),
-  files: z.array(WorkerFileSchema),
 });
 
 const VersionMetadataSchema = z.object({
@@ -178,7 +136,25 @@ const WorkerSemanticModelSchema = z.object({
   name: z.string().min(1),
   qualifiedName: z.string().optional(),
   filePath: z.string().optional(),
+  sourceLocation: z.record(z.string(), z.unknown()).optional(),
+  properties: z.record(z.string(), z.unknown()).optional(),
+  dependencies: z.array(z.string()).optional(),
+  dependents: z.array(z.string()).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  reviewRequired: z.boolean().optional(),
+  reviewReason: z.string().optional(),
+  securityFlags: z.array(z.string()).optional(),
+  privacyFlags: z.array(z.string()).optional(),
+  graphNodeIds: z.array(z.string()).optional(),
+  residualIslandIds: z.array(z.string()).optional(),
+  sourceRef: z.string().optional(),
+  symbolRef: z.string().optional(),
+  extractorId: z.string().optional(),
+  extractorVersion: z.string().optional(),
+  modelVersionId: z.string().optional(),
+  syntheticReason: z.string().optional(),
   provenance: z.string().min(1),
+  extractedAt: z.string().datetime().optional(),
   snapshotId: z.string().optional(),
   tenantId: z.string().optional(),
   projectId: z.string().optional(),
@@ -186,11 +162,7 @@ const WorkerSemanticModelSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-export const ExtractorWorkerRequestSchema = z.union([
-  CanonicalExtractorWorkerRequestSchema,
-  NestedJavaExtractorWorkerRequestSchema,
-  FlatJavaExtractorWorkerRequestSchema,
-]);
+export const ExtractorWorkerRequestSchema = CanonicalExtractorWorkerRequestSchema;
 
 export const ExtractorWorkerResponseSchema = z.object({
   nodes: z.array(WorkerNodeSchema),
@@ -216,55 +188,8 @@ function buildHash(...segments: readonly string[]): string {
   return hash.digest('hex');
 }
 
-function normalizeTimestamp(file: z.infer<typeof WorkerFileSchema>): string {
-  return file.lastModifiedAt ?? file.lastModified ?? new Date().toISOString();
-}
-
-function toCanonicalSnapshotFile(file: z.infer<typeof WorkerFileSchema>) {
-  return {
-    relativePath: file.relativePath,
-    ...(file.absolutePath ? { absolutePath: file.absolutePath, materialized: true } : { materialized: false }),
-    sizeBytes: file.sizeBytes,
-    lastModifiedAt: normalizeTimestamp(file),
-  };
-}
-
 export function normalizeExtractorWorkerRequest(input: unknown): RepositorySnapshot {
-  const parsed = ExtractorWorkerRequestSchema.parse(input);
-
-  if ('snapshotId' in parsed) {
-    return RepositorySnapshotSchema.parse({
-      snapshotRef: {
-        provider: parsed.provider,
-        repoId: parsed.repoId,
-      },
-      localRootPath: parsed.materializedRoot,
-      files: parsed.files.map((file) => toCanonicalSnapshotFile(file)),
-      snapshotAt: new Date().toISOString(),
-      shallow: false,
-      diagnostics: [],
-    });
-  }
-
-  const canonical = RepositorySnapshotSchema.safeParse(parsed.snapshot);
-  if (canonical.success) {
-    return canonical.data;
-  }
-
-  const nested = NestedJavaExtractorWorkerRequestSchema.parse(parsed).snapshot;
-  return RepositorySnapshotSchema.parse({
-    snapshotRef: {
-      provider: nested.snapshotRef.provider,
-      repoId: nested.snapshotRef.repoId,
-      ...(nested.snapshotRef.commitSha ? { commitSha: nested.snapshotRef.commitSha } : {}),
-      ...(nested.snapshotRef.branch ? { branch: nested.snapshotRef.branch } : {}),
-    },
-    localRootPath: nested.localRootPath,
-    files: nested.files.map((file) => toCanonicalSnapshotFile(file)),
-    snapshotAt: nested.snapshotAt ?? nested.snapshotRef.capturedAt ?? new Date().toISOString(),
-    shallow: nested.shallow ?? false,
-    diagnostics: [],
-  });
+  return ExtractorWorkerRequestSchema.parse(input).snapshot;
 }
 
 function toUnresolvedEdgeId(edge: UnresolvedGraphEdge): string {
@@ -284,6 +209,7 @@ function toUnresolvedEdgeId(edge: UnresolvedGraphEdge): string {
 function toWorkerNode(node: GraphNode): ExtractorWorkerResponse['nodes'][number] {
   const filePath = node.sourceLocation?.filePath;
   return {
+    ...node,
     type: node.kind,
     id: node.id,
     name: node.label,
@@ -387,6 +313,34 @@ function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands
   };
 }
 
+function toWorkerSemanticModel(node: GraphNode): ExtractorWorkerResponse['semanticModels'][number] {
+  return {
+    id: buildHash(node.id, node.kind, node.label),
+    elementId: node.id,
+    elementType: node.kind,
+    name: node.label,
+    qualifiedName: node.symbolRef,
+    filePath: node.sourceLocation?.filePath,
+    sourceLocation: node.sourceLocation,
+    properties: node.metadata,
+    dependencies: [],
+    dependents: [],
+    confidence: node.confidence,
+    reviewRequired: false,
+    securityFlags: node.privacySecurityFlags,
+    privacyFlags: node.privacySecurityFlags,
+    graphNodeIds: [node.id],
+    residualIslandIds: node.residualFragmentIds,
+    sourceRef: node.sourceRef,
+    symbolRef: node.symbolRef,
+    extractorId: node.extractorId,
+    extractorVersion: node.extractorVersion,
+    provenance: node.provenance,
+    extractedAt: new Date().toISOString(),
+    metadata: node.metadata,
+  };
+}
+
 export function serializeExtractionWorkerResponse(
   result: SynthesisPipelineResult,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
@@ -397,16 +351,7 @@ export function serializeExtractionWorkerResponse(
     unresolvedEdges: result.graph.unresolvedEdges.map((edge) => toWorkerUnresolvedEdge(edge)),
     edgeResolutionRecords: result.graph.edgeResolutionRecords.map((record) => toWorkerEdgeResolutionRecord(record)),
     residualIslands: result.residualIslands.map((island) => toWorkerResidualIsland(island)),
-    semanticModels: result.graph.nodes.map((node) => ({
-      id: buildHash(node.id, node.kind, node.label),
-      elementId: node.id,
-      elementType: node.kind,
-      name: node.label,
-      qualifiedName: node.symbolRef,
-      filePath: node.sourceLocation?.filePath,
-      provenance: node.provenance,
-      metadata: node.metadata,
-    })),
+    semanticModels: result.graph.nodes.map((node) => toWorkerSemanticModel(node)),
     diagnostics: [
       ...result.warnings.map((warning) => ({
         level: 'WARNING' as const,

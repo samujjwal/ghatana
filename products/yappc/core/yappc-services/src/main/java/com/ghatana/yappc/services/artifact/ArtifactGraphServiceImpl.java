@@ -88,7 +88,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     @Override
     public Promise<ArtifactGraphResponse> ingestGraph(ArtifactRequestScope scope, ArtifactGraphIngestRequest request) {
-        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
+        String cacheKey = cacheKey(scope.tenantId(), scope.workspaceId(), scope.projectId());
         log.info("Ingesting artifact graph for product {} ({} nodes, {} edges)",
             scope.projectId(), request.nodes().size(), request.edges().size());
 
@@ -302,7 +302,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     @Override
     public Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactRequestScope scope, ArtifactGraphAnalysisRequest request) {
-        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
+        String cacheKey = cacheKey(scope.tenantId(), scope.workspaceId(), scope.projectId());
         log.info("Analyzing artifact graph for product {} with algorithms {}",
             scope.projectId(), request.algorithmTypes());
 
@@ -531,7 +531,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
      */
     @Override
     public Promise<ArtifactGraphQueryResponse> queryGraph(ArtifactRequestScope scope, String queryType, List<String> seedNodeIds, String cursor, int pageSize, String snapshotId, Boolean includeUnresolvedEdges) {
-        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
+        String cacheKey = cacheKey(scope.tenantId(), scope.workspaceId(), scope.projectId());
         
         // P1-13: Use repository pagination instead of full fetch
         int effectivePageSize = pageSize > 0 ? pageSize : 100;
@@ -849,7 +849,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return null;
     }
 
-    private String cacheKey(String tenantId, String projectId) {
-        return tenantId + ":" + projectId;
+    private String cacheKey(String tenantId, String workspaceId, String projectId) {
+        return tenantId + ":" + workspaceId + ":" + projectId;
     }
 }

@@ -176,14 +176,33 @@ describe('AgentLifecycleActionService', () => {
 
   it('executes after approval and writes provenance through provider context', async () => {
     const recordProvenance = vi.fn(async () => ({ success: true, ref: 'provenance/agent.json' }));
+    const recordRuntimeTruth = vi.fn(async () => ({ success: true, ref: 'runtime-truth/agent.json' }));
+    const recordMemory = vi.fn(async () => ({ success: true, ref: 'memory/agent.json' }));
     const providerContext: KernelLifecycleProviderContext = {
       mode: 'platform',
       provenance: {
         providerId: 'datacloud-provenance',
         version: '1.0.0',
         capabilities: ['provenance'],
+        backingStore: 'data-cloud',
         recordProvenance,
         listProvenance: vi.fn(async () => []),
+      },
+      runtimeTruth: {
+        providerId: 'datacloud-runtime-truth',
+        version: '1.0.0',
+        capabilities: ['runtime-truth'],
+        backingStore: 'data-cloud',
+        recordRuntimeTruth,
+        getRuntimeTruth: vi.fn(async () => null),
+      },
+      memory: {
+        providerId: 'datacloud-memory',
+        version: '1.0.0',
+        capabilities: ['memory'],
+        backingStore: 'data-cloud',
+        recordMemory,
+        listMemory: vi.fn(async () => []),
       },
     };
     const { service, executor } = createService({
@@ -202,6 +221,20 @@ describe('AgentLifecycleActionService', () => {
     );
     expect(recordProvenance).toHaveBeenCalledWith(
       expect.objectContaining({ provenanceId: 'agent-lifecycle:agent-request-1' }),
+      { required: true, correlationId: 'corr-agent-1' }
+    );
+    expect(recordRuntimeTruth).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productUnitId: 'digital-marketing',
+        status: 'lifecycle-executed',
+      }),
+      { required: true, correlationId: 'corr-agent-1' }
+    );
+    expect(recordMemory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memoryId: 'agent-lifecycle:agent-request-1:run-1',
+        productUnitId: 'digital-marketing',
+      }),
       { required: true, correlationId: 'corr-agent-1' }
     );
   });
@@ -277,24 +310,20 @@ describe('AgentLifecycleActionService', () => {
     expect(planner.plan).not.toHaveBeenCalled();
   });
 
-  it('returns denied result when evidence refs are missing for required verification', async () => {
+  it('fails contract validation when evidence refs are missing for required verification', async () => {
     const { service, planner, executor } = createService({
       checks: {
         approval: () => 'not-required',
       },
     });
 
-    const result = await service.handle({
+    await expect(service.handle({
       ...request,
       evidenceRefs: [],
       requiredVerification: [{ verificationId: 'verify-health', kind: 'health', required: true }],
-    });
+    })).rejects.toThrow('Invalid AgentLifecycleActionRequest');
 
-    expect(result.policyDecision).toBe('allowed');
-    expect(result.approvalDecision).toBe('not-required');
-    expect(result.failure?.reasonCode).toBe('missing-evidence');
-    expect(result.failure?.details).toContain('evidence');
-    expect(planner.plan).toHaveBeenCalled();
+    expect(planner.plan).not.toHaveBeenCalled();
     expect(executor.executePlan).not.toHaveBeenCalled();
   });
 });

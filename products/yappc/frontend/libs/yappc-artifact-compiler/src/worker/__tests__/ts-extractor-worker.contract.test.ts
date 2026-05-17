@@ -205,52 +205,14 @@ describe('ts-extractor-worker contract', () => {
     expect(normalized).toEqual(snapshot);
   });
 
-  it('normalizes nested Java worker requests to canonical snapshots', () => {
-    const normalized = normalizeExtractorWorkerRequest({
-      snapshot: {
-        snapshotRef: {
-          provider: 'github',
-          repoId: 'ghatana/yappc',
-          commitSha: 'abc123',
-          capturedAt: '2026-05-16T00:00:00.000Z',
-        },
-        localRootPath: '/tmp/repo',
-        files: [
-          {
-            relativePath: 'src/App.tsx',
-            absolutePath: '/tmp/repo/src/App.tsx',
-            sizeBytes: 128,
-            lastModified: '2026-05-16T00:00:00.000Z',
-          },
-        ],
-      },
-    });
-
-    expect(normalized.snapshotRef.provider).toBe('github');
-    expect(normalized.snapshotRef.commitSha).toBe('abc123');
-    expect(normalized.localRootPath).toBe('/tmp/repo');
-    expect(normalized.files[0]?.lastModifiedAt).toBe('2026-05-16T00:00:00.000Z');
-  });
-
-  it('normalizes flat Java client requests to canonical snapshots', () => {
-    const normalized = normalizeExtractorWorkerRequest({
-      snapshotId: 'snapshot-1',
-      provider: 'local-folder',
-      repoId: '/tmp/repo',
-      materializedRoot: '/tmp/repo',
-      files: [
-        {
-          relativePath: 'src/App.tsx',
-          absolutePath: '/tmp/repo/src/App.tsx',
-          sizeBytes: 128,
-        },
-      ],
-    });
-
-    expect(normalized.snapshotRef.provider).toBe('local-folder');
-    expect(normalized.snapshotRef.repoId).toBe('/tmp/repo');
-    expect(normalized.localRootPath).toBe('/tmp/repo');
-    expect(normalized.files[0]?.materialized).toBe(true);
+  it('rejects non-canonical worker request shapes', () => {
+    expect(() =>
+      normalizeExtractorWorkerRequest({
+        snapshotId: 'snapshot-1',
+        provider: 'local-folder',
+        repoId: '/tmp/repo',
+      }),
+    ).toThrow();
   });
 
   it('serializes pipeline results into Java-consumable DTO fields', () => {
@@ -258,20 +220,19 @@ describe('ts-extractor-worker contract', () => {
 
     expect(response.nodes[0]).toMatchObject({
       id: 'node-1',
-      kind: 'component',
       type: 'component',
-      label: 'App',
       name: 'App',
       filePath: 'src/App.tsx',
+      extractorId: 'react-component',
+      extractorVersion: '1.0.0',
+      confidence: 0.95,
+      provenance: 'exact',
+      sourceRef: 'src/App.tsx#component:App',
     });
     expect(response.edges[0]).toMatchObject({
-      id: 'edge-1',
       edgeId: 'edge-1',
-      sourceId: 'node-1',
       sourceNodeId: 'node-1',
-      targetId: 'node-2',
       targetNodeId: 'node-2',
-      kind: 'imports',
       relationshipType: 'imports',
     });
     expect(response.unresolvedEdges[0]?.id).toBeTruthy();
@@ -283,6 +244,13 @@ describe('ts-extractor-worker contract', () => {
     expect(response.residualIslands[0]?.sourceSpan).toBeTruthy();
     expect(typeof response.residualIslands[0]?.confidence).toBe('number');
     expect(typeof response.residualIslands[0]?.reviewRequired).toBe('boolean');
+    expect(response.semanticModels[0]).toMatchObject({
+      elementId: 'node-1',
+      elementType: 'component',
+      sourceRef: 'src/App.tsx#component:App',
+      extractorId: 'react-component',
+      extractorVersion: '1.0.0',
+    });
     expect(response.diagnostics).toEqual([
       {
         level: 'WARNING',

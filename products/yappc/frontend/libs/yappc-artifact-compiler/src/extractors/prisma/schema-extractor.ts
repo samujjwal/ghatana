@@ -225,7 +225,7 @@ export async function extractPrismaSchemaArtifact(
 
       nodes.push({
         id: modelId,
-        kind: 'entity' as GraphNodeKind,
+        type: 'entity' as GraphNodeKind, // P0: Canonical field name 'type', not legacy 'kind'
         label: model.name,
         sourceLocation: {
           filePath: record.relativePath,
@@ -255,7 +255,7 @@ export async function extractPrismaSchemaArtifact(
             id: crypto.randomUUID(),
             sourceId: modelId,
             targetId,
-            kind: 'depends-on',
+            relationshipType: 'DEPENDS_ON', // P0: Canonical field name 'relationshipType', not legacy 'kind'
             confidence: 0.9,
             bidirectional: relation.kind === 'many-to-many',
             metadata: {

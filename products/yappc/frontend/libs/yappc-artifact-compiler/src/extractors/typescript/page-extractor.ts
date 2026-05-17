@@ -200,7 +200,7 @@ export async function extractPageArtifact(
 
     nodes.push({
       id: pageId,
-      kind: nodeKind,
+      type: nodeKind, // P0: Canonical field name 'type', not legacy 'kind'
       label: page.routePath,
       sourceLocation: page.sourceLocation,
       extractorId: EXTRACTOR_ID,
@@ -223,7 +223,7 @@ export async function extractPageArtifact(
         id: crypto.randomUUID(),
         sourceId: pageId,
         targetId: comp,
-        kind: 'renders',
+        relationshipType: 'RENDERS', // P0: Canonical field name 'relationshipType', not legacy 'kind'
         confidence: 0.8,
         bidirectional: false,
         metadata: { componentName: comp },

@@ -9,6 +9,10 @@ describe('product-unit-intent routes', () => {
   beforeEach(async () => {
     delete process.env.KERNEL_LIFECYCLE_BASE_URL;
     delete process.env.KERNEL_LIFECYCLE_AUTH_TOKEN;
+    process.env.DATACLOUD_PROVIDER_BASE_URL = 'https://datacloud.example';
+    process.env.DATACLOUD_TENANT_ID = 'tenant-1';
+    process.env.DATACLOUD_WORKSPACE_ID = 'workspace-1';
+    process.env.DATACLOUD_PROJECT_ID = 'project-1';
     process.env.DATACLOUD_AUTH_TOKEN = 'datacloud-token';
     app = Fastify();
     await app.register(productUnitIntentRoutes, { prefix: '/api/v1' });
@@ -220,6 +224,27 @@ describe('product-unit-intent routes', () => {
     expect(response.json()).toMatchObject({
       status: 'blocked',
       blockedReasons: ['platform-mode-requires-data-cloud-provider-client'],
+    });
+  });
+
+  it('rejects platform mode when Data Cloud scope config is missing', async () => {
+    delete process.env.DATACLOUD_PROVIDER_BASE_URL;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/yappc/product-unit-intents',
+      headers: authHeaders(),
+      payload: {
+        intent: buildIntent({ intentType: 'promote-candidate' }),
+        evidence: { evidenceRefs: ['datacloud://memory/ref-1'] },
+        providerMode: 'platform',
+      },
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({
+      status: 'blocked',
+      blockedReasons: ['platform-mode-requires-explicit-data-cloud-scope-config'],
     });
   });
 

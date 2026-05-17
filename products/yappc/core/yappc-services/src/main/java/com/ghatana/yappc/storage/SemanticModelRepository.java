@@ -56,8 +56,11 @@ public final class SemanticModelRepository {
                 INSERT INTO semantic_models (
                     id, element_id, element_type, name, qualified_name, file_path,
                     source_location_json, properties_json, dependencies_json, dependents_json,
+                    confidence, review_required, review_reason, security_flags, privacy_flags,
+                    graph_node_ids, residual_island_ids, source_ref, symbol_ref,
+                    extractor_id, extractor_version, model_version_id, synthetic_reason,
                     provenance, extracted_at, snapshot_id, tenant_id, workspace_id, project_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET
                     element_type = EXCLUDED.element_type,
                     name = EXCLUDED.name,
@@ -67,6 +70,19 @@ public final class SemanticModelRepository {
                     properties_json = EXCLUDED.properties_json,
                     dependencies_json = EXCLUDED.dependencies_json,
                     dependents_json = EXCLUDED.dependents_json,
+                    confidence = EXCLUDED.confidence,
+                    review_required = EXCLUDED.review_required,
+                    review_reason = EXCLUDED.review_reason,
+                    security_flags = EXCLUDED.security_flags,
+                    privacy_flags = EXCLUDED.privacy_flags,
+                    graph_node_ids = EXCLUDED.graph_node_ids,
+                    residual_island_ids = EXCLUDED.residual_island_ids,
+                    source_ref = EXCLUDED.source_ref,
+                    symbol_ref = EXCLUDED.symbol_ref,
+                    extractor_id = EXCLUDED.extractor_id,
+                    extractor_version = EXCLUDED.extractor_version,
+                    model_version_id = EXCLUDED.model_version_id,
+                    synthetic_reason = EXCLUDED.synthetic_reason,
                     extracted_at = EXCLUDED.extracted_at
                 """;
 
@@ -79,15 +95,28 @@ public final class SemanticModelRepository {
                 statement.setString(5, model.qualifiedName());
                 statement.setString(6, model.filePath());
                 statement.setString(7, writeSourceLocation(model.sourceLocation()));
-                statement.setString(8, writeStringList(withGovernanceProperties(model)));
+                statement.setString(8, writeStringList(model.properties()));
                 statement.setString(9, writeStringList(model.dependencies()));
                 statement.setString(10, writeStringList(model.dependents()));
-                statement.setString(11, model.provenance());
-                statement.setTimestamp(12, Timestamp.from(model.extractedAt()));
-                statement.setString(13, model.snapshotId());
-                statement.setString(14, model.tenantId());
-                statement.setString(15, model.workspaceId());
-                statement.setString(16, model.projectId());
+                statement.setDouble(11, model.confidence() != null ? model.confidence() : 0.0);
+                statement.setBoolean(12, model.reviewRequired() != null ? model.reviewRequired() : false);
+                statement.setString(13, model.reviewReason());
+                statement.setString(14, writeStringList(model.securityFlags()));
+                statement.setString(15, writeStringList(model.privacyFlags()));
+                statement.setString(16, writeStringList(model.graphNodeIds()));
+                statement.setString(17, writeStringList(model.residualIslandIds()));
+                statement.setString(18, model.sourceRef());
+                statement.setString(19, model.symbolRef());
+                statement.setString(20, model.extractorId());
+                statement.setString(21, model.extractorVersion());
+                statement.setString(22, model.modelVersionId());
+                statement.setString(23, model.syntheticReason());
+                statement.setString(24, model.provenance());
+                statement.setTimestamp(25, Timestamp.from(model.extractedAt()));
+                statement.setString(26, model.snapshotId());
+                statement.setString(27, model.tenantId());
+                statement.setString(28, model.workspaceId());
+                statement.setString(29, model.projectId());
                 statement.executeUpdate();
                 
                 log.debug("Saved semantic model {} for element {} in snapshot {}", 
@@ -113,8 +142,11 @@ public final class SemanticModelRepository {
                 INSERT INTO semantic_models (
                     id, element_id, element_type, name, qualified_name, file_path,
                     source_location_json, properties_json, dependencies_json, dependents_json,
+                    confidence, review_required, review_reason, security_flags, privacy_flags,
+                    graph_node_ids, residual_island_ids, source_ref, symbol_ref,
+                    extractor_id, extractor_version, model_version_id, synthetic_reason,
                     provenance, extracted_at, snapshot_id, tenant_id, workspace_id, project_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET
                     element_type = EXCLUDED.element_type,
                     name = EXCLUDED.name,
@@ -124,6 +156,19 @@ public final class SemanticModelRepository {
                     properties_json = EXCLUDED.properties_json,
                     dependencies_json = EXCLUDED.dependencies_json,
                     dependents_json = EXCLUDED.dependents_json,
+                    confidence = EXCLUDED.confidence,
+                    review_required = EXCLUDED.review_required,
+                    review_reason = EXCLUDED.review_reason,
+                    security_flags = EXCLUDED.security_flags,
+                    privacy_flags = EXCLUDED.privacy_flags,
+                    graph_node_ids = EXCLUDED.graph_node_ids,
+                    residual_island_ids = EXCLUDED.residual_island_ids,
+                    source_ref = EXCLUDED.source_ref,
+                    symbol_ref = EXCLUDED.symbol_ref,
+                    extractor_id = EXCLUDED.extractor_id,
+                    extractor_version = EXCLUDED.extractor_version,
+                    model_version_id = EXCLUDED.model_version_id,
+                    synthetic_reason = EXCLUDED.synthetic_reason,
                     extracted_at = EXCLUDED.extracted_at
                 """;
 
@@ -137,15 +182,28 @@ public final class SemanticModelRepository {
                     statement.setString(5, model.qualifiedName());
                     statement.setString(6, model.filePath());
                     statement.setString(7, writeSourceLocation(model.sourceLocation()));
-                    statement.setString(8, writeStringList(withGovernanceProperties(model)));
+                    statement.setString(8, writeStringList(model.properties()));
                     statement.setString(9, writeStringList(model.dependencies()));
                     statement.setString(10, writeStringList(model.dependents()));
-                    statement.setString(11, model.provenance());
-                    statement.setTimestamp(12, Timestamp.from(model.extractedAt()));
-                    statement.setString(13, model.snapshotId());
-                    statement.setString(14, model.tenantId());
-                    statement.setString(15, model.workspaceId());
-                    statement.setString(16, model.projectId());
+                    statement.setDouble(11, model.confidence() != null ? model.confidence() : 0.0);
+                    statement.setBoolean(12, model.reviewRequired() != null ? model.reviewRequired() : false);
+                    statement.setString(13, model.reviewReason());
+                    statement.setString(14, writeStringList(model.securityFlags()));
+                    statement.setString(15, writeStringList(model.privacyFlags()));
+                    statement.setString(16, writeStringList(model.graphNodeIds()));
+                    statement.setString(17, writeStringList(model.residualIslandIds()));
+                    statement.setString(18, model.sourceRef());
+                    statement.setString(19, model.symbolRef());
+                    statement.setString(20, model.extractorId());
+                    statement.setString(21, model.extractorVersion());
+                    statement.setString(22, model.modelVersionId());
+                    statement.setString(23, model.syntheticReason());
+                    statement.setString(24, model.provenance());
+                    statement.setTimestamp(25, Timestamp.from(model.extractedAt()));
+                    statement.setString(26, model.snapshotId());
+                    statement.setString(27, model.tenantId());
+                    statement.setString(28, model.workspaceId());
+                    statement.setString(29, model.projectId());
                     statement.addBatch();
                 }
                 int[] results = statement.executeBatch();
@@ -167,6 +225,9 @@ public final class SemanticModelRepository {
             String sql = """
                 SELECT id, element_id, element_type, name, qualified_name, file_path,
                        source_location_json, properties_json, dependencies_json, dependents_json,
+                       confidence, review_required, review_reason, security_flags, privacy_flags,
+                       graph_node_ids, residual_island_ids, source_ref, symbol_ref,
+                       extractor_id, extractor_version, model_version_id, synthetic_reason,
                        provenance, extracted_at, snapshot_id, tenant_id, workspace_id, project_id
                 FROM semantic_models
                 WHERE id = ?
@@ -196,6 +257,9 @@ public final class SemanticModelRepository {
             String sql = """
                 SELECT id, element_id, element_type, name, qualified_name, file_path,
                        source_location_json, properties_json, dependencies_json, dependents_json,
+                       confidence, review_required, review_reason, security_flags, privacy_flags,
+                       graph_node_ids, residual_island_ids, source_ref, symbol_ref,
+                       extractor_id, extractor_version, model_version_id, synthetic_reason,
                        provenance, extracted_at, snapshot_id, tenant_id, workspace_id, project_id
                 FROM semantic_models
                 WHERE snapshot_id = ?
@@ -234,6 +298,9 @@ public final class SemanticModelRepository {
             String sql = """
                 SELECT id, element_id, element_type, name, qualified_name, file_path,
                        source_location_json, properties_json, dependencies_json, dependents_json,
+                       confidence, review_required, review_reason, security_flags, privacy_flags,
+                       graph_node_ids, residual_island_ids, source_ref, symbol_ref,
+                       extractor_id, extractor_version, model_version_id, synthetic_reason,
                        provenance, extracted_at, snapshot_id, tenant_id, workspace_id, project_id
                 FROM semantic_models
                 WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
@@ -280,6 +347,15 @@ public final class SemanticModelRepository {
 
     private SemanticModelDto mapModel(ResultSet rs) throws SQLException {
         Map<String, Object> storedProperties = readStringMap(rs.getString("properties_json"));
+        
+        // Try to read from first-class columns first, fall back to legacy __ properties for migration compatibility
+        Double confidence = rs.getObject("confidence") != null ? rs.getDouble("confidence") : asDouble(storedProperties.get("__confidence"));
+        Boolean reviewRequired = rs.getObject("review_required") != null ? rs.getBoolean("review_required") : asBoolean(storedProperties.get("__reviewRequired"));
+        String reviewReason = rs.getString("review_reason");
+        if (reviewReason == null) {
+            reviewReason = asString(storedProperties.get("__reviewReason"));
+        }
+        
         return new SemanticModelDto(
             rs.getString("id"),
             rs.getString("element_id"),
@@ -291,19 +367,19 @@ public final class SemanticModelRepository {
             baseProperties(storedProperties),
             readStringList(rs.getString("dependencies_json")),
             readStringList(rs.getString("dependents_json")),
-            asDouble(storedProperties.get("__confidence")),
-            asBoolean(storedProperties.get("__reviewRequired")),
-            asString(storedProperties.get("__reviewReason")),
-            asStringList(storedProperties.get("__securityFlags")),
-            asStringList(storedProperties.get("__privacyFlags")),
-            asStringList(storedProperties.get("__graphNodeIds")),
-            asStringList(storedProperties.get("__residualIslandIds")),
-            asString(storedProperties.get("__sourceRef")),
-            asString(storedProperties.get("__symbolRef")),
-            asString(storedProperties.get("__extractorId")),
-            asString(storedProperties.get("__extractorVersion")),
-            asString(storedProperties.get("__modelVersionId")),
-            asString(storedProperties.get("__syntheticReason")),
+            confidence,
+            reviewRequired,
+            reviewReason,
+            readStringList(rs.getString("security_flags")),
+            readStringList(rs.getString("privacy_flags")),
+            readStringList(rs.getString("graph_node_ids")),
+            readStringList(rs.getString("residual_island_ids")),
+            rs.getString("source_ref"),
+            rs.getString("symbol_ref"),
+            rs.getString("extractor_id"),
+            rs.getString("extractor_version"),
+            rs.getString("model_version_id"),
+            rs.getString("synthetic_reason"),
             rs.getString("provenance"),
             rs.getTimestamp("extracted_at").toInstant(),
             rs.getString("snapshot_id"),
@@ -313,24 +389,8 @@ public final class SemanticModelRepository {
         );
     }
 
-    private Map<String, Object> withGovernanceProperties(SemanticModelDto model) {
-        Map<String, Object> properties = new java.util.LinkedHashMap<>();
-        properties.putAll(model.properties() == null ? Map.of() : model.properties());
-        properties.put("__confidence", model.confidence());
-        properties.put("__reviewRequired", model.reviewRequired());
-        properties.put("__reviewReason", model.reviewReason());
-        properties.put("__securityFlags", model.securityFlags());
-        properties.put("__privacyFlags", model.privacyFlags());
-        properties.put("__graphNodeIds", model.graphNodeIds());
-        properties.put("__residualIslandIds", model.residualIslandIds());
-        properties.put("__sourceRef", model.sourceRef());
-        properties.put("__symbolRef", model.symbolRef());
-        properties.put("__extractorId", model.extractorId());
-        properties.put("__extractorVersion", model.extractorVersion());
-        properties.put("__modelVersionId", model.modelVersionId());
-        properties.put("__syntheticReason", model.syntheticReason());
-        return properties;
-    }
+    // Removed withGovernanceProperties - governance fields are now first-class columns
+    // This method is no longer needed as of V24 migration
 
     private Map<String, Object> baseProperties(Map<String, Object> stored) {
         if (stored.isEmpty()) {

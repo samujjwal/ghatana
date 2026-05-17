@@ -61,18 +61,18 @@ const RuntimeTruthSnapshotSchema = z.object({
 });
 
 const MetricValueSchema = z.object({
-  metricName: z.string(),
+  name: z.string(),
   value: z.number(),
-  unit: z.string().optional(),
   timestamp: z.string(),
-  labels: z.record(z.string()).optional(),
+  labels: z.record(z.string(), z.string()),
 });
 
 const TelemetryEventSchema = z.object({
   eventId: z.string(),
   eventType: z.string(),
   timestamp: z.string(),
-  properties: z.record(z.unknown()).optional(),
+  productUnitId: z.string(),
+  payload: z.record(z.string(), z.unknown()),
 });
 
 const KernelLifecycleEventSchema = z.object({

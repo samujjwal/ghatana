@@ -808,7 +808,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
     const parsedIntent = ProductUnitIntentSchema.parse(intent);
     const correlationId = options.correlationId ?? this.correlationIdFactory();
     const response = await this.apiClient.post<ProductUnitIntentApplicationResult>(
-      '/api/kernel/lifecycle/product-unit-intents',
+      '/api/v1/kernel/lifecycle/product-unit-intents',
       {
         headers: this.buildHeaders(correlationId),
         body: {
@@ -831,7 +831,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
     const parsedIntent = ProductUnitIntentSchema.parse(intent);
     const correlationId = options.correlationId ?? this.correlationIdFactory();
     const response = await this.apiClient.post<ProductUnitIntentApplicationResult>(
-      '/api/kernel/lifecycle/product-unit-intents',
+      '/api/v1/kernel/lifecycle/product-unit-intents',
       {
         headers: this.buildHeaders(correlationId),
         body: {

@@ -19,9 +19,12 @@ import com.ghatana.yappc.storage.RepositorySnapshotRepository;
 import com.ghatana.yappc.storage.SemanticModelRepository;
 import io.activej.promise.Promise;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -91,15 +94,30 @@ public final class ArtifactCompileJobService {
                 return snapshotRepository.saveSnapshot(snapshot, request.sourceLocator())
                     .then(persistedSnapshot -> {
                         // P1: Run canonical inventory on snapshot
-                        var inventoryResult = inventoryScanner.scanRepository(
-                            java.nio.file.Paths.get(persistedSnapshot.materializedRoot())
-                        );
+                        final RepositoryInventoryScanner.InventoryResult inventoryResult;
+                        try {
+                            inventoryResult = inventoryScanner.scanRepository(
+                                java.nio.file.Paths.get(persistedSnapshot.materializedRoot())
+                            );
+                        } catch (IOException e) {
+                            return Promise.ofException(new IllegalStateException(
+                                "Failed to scan repository inventory for snapshot " + persistedSnapshot.snapshotId(), e));
+                        }
+
+                        Map<String, RepositorySnapshot.SnapshotFile> filesByRelativePath = new HashMap<>();
+                        for (RepositorySnapshot.SnapshotFile file : persistedSnapshot.files()) {
+                            filesByRelativePath.put(file.relativePath(), file);
+                        }
                         
                         // P1: Filter files by type and route to appropriate extractors
                         List<RepositorySnapshot.SnapshotFile> tsFiles = new ArrayList<>();
                         List<RepositorySnapshot.SnapshotFile> javaFiles = new ArrayList<>();
-                        
-                        for (var file : persistedSnapshot.files()) {
+
+                        for (var inventoryFile : inventoryResult.files()) {
+                            RepositorySnapshot.SnapshotFile file = filesByRelativePath.get(inventoryFile.relativePath());
+                            if (file == null) {
+                                continue;
+                            }
                             String relativePath = file.relativePath().toLowerCase();
                             if (relativePath.endsWith(".ts") || relativePath.endsWith(".tsx") ||
                                 relativePath.endsWith(".js") || relativePath.endsWith(".jsx")) {
@@ -119,12 +137,13 @@ public final class ArtifactCompileJobService {
                             ? Promise.of(new ExtractionResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of()))
                             : javaArtifactExtractor.extract(persistedSnapshot, javaFiles, scopeContext);
                         
-                        // P1: Merge extraction results and persist semantic models
+                        // P1: Merge extraction results and ingest graph first to avoid orphaned semantic rows on ingest failure
                         return tsExtraction.then(tsResult ->
                             javaExtraction.then(javaResult -> {
                                 ExtractionResult merged = mergeExtractionResults(tsResult, javaResult);
-                                return semanticModelRepository.saveModels(merged.semanticModels())
-                                    .then(count -> ingestGraph(request, persistedSnapshot, versionId, merged, inventoryResult));
+                                return ingestGraph(request, persistedSnapshot, versionId, merged, inventoryResult)
+                                    .then(result -> semanticModelRepository.saveModels(merged.semanticModels())
+                                        .map(count -> result));
                             })
                         );
                     });

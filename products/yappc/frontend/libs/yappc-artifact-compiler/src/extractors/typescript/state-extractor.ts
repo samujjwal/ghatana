@@ -279,7 +279,7 @@ export async function extractStateStoreArtifact(
 
       nodes.push({
         id: storeId,
-        kind: 'state-store' as GraphNodeKind,
+        type: 'state-store' as GraphNodeKind, // P0: Canonical field name 'type', not legacy 'kind'
         label: store.name,
         sourceLocation: store.sourceLocation,
         extractorId: EXTRACTOR_ID,

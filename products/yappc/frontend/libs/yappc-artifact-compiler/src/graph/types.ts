@@ -141,11 +141,11 @@ export type SourceLocation = z.infer<typeof SourceLocationSchema>;
 
 export const GraphNodeSchema = z.object({
   /**
-   * Node ID: deterministic URN (artifact://<provider>/…#kind:name) for source-derived nodes,
+   * Node ID: deterministic URN (artifact://<provider>/…#type:name) for source-derived nodes,
    * or a random UUID for user-created logical artifacts without a source anchor.
    */
   id: z.string().min(1),
-  kind: GraphNodeKindSchema,
+  type: GraphNodeKindSchema, // P0: Canonical field name 'type', not legacy 'kind'
   label: z.string().min(1),
   /**
    * Stable source identity — the deterministic URN before resolution.
@@ -153,7 +153,7 @@ export const GraphNodeSchema = z.object({
    */
   sourceRef: z.string().optional(),
   /**
-   * Qualified symbol reference: "<relativePath>#<symbolKind>:<symbolName>"
+   * Qualified symbol reference: "<relativePath>#<symbolType>:<symbolName>"
    * Enables cross-scan identity matching independent of snapshot ref.
    */
   symbolRef: z.string().optional(),
@@ -191,7 +191,7 @@ export const GraphEdgeSchema = z.object({
   sourceId: z.string().min(1),
   /** Resolved target node ID — must be a valid node ID in the same graph. Never a component name string. */
   targetId: z.string().min(1),
-  kind: GraphEdgeKindSchema,
+  relationshipType: GraphEdgeKindSchema, // P0: Canonical field name 'relationshipType', not legacy 'kind'
   confidence: z.number().min(0).max(1),
   bidirectional: z.boolean().default(false),
   metadata: z.record(z.string(), z.unknown()).default({}),
@@ -220,7 +220,7 @@ export const UnresolvedGraphEdgeSchema = z.object({
   targetRef: z.string().min(1),
   /** Hint about what kind of node targetRef likely resolves to. */
   targetKindHint: GraphNodeKindSchema.optional(),
-  relationship: GraphEdgeKindSchema,
+  relationshipType: GraphEdgeKindSchema, // P0: Canonical field name 'relationshipType', not legacy 'relationship'
   sourceLocation: SourceLocationSchema,
   /** Extractor-assigned confidence in the reference (0-1). */
   confidence: z.number().min(0).max(1),
@@ -277,8 +277,8 @@ export const ArtifactGraphSchema = z.object({
   unresolvedEdges: z.array(UnresolvedGraphEdgeSchema).default([]),
   /** Resolution records for all attempted resolutions in Phase 2. */
   edgeResolutionRecords: z.array(EdgeResolutionRecordSchema).default([]),
-  nodeIndex: z.record(z.string(), z.array(z.string())), // kind -> nodeIds
-  edgeIndex: z.record(z.string(), z.array(z.string())), // kind -> edgeIds
+  nodeIndex: z.record(z.string(), z.array(z.string())), // type -> nodeIds
+  edgeIndex: z.record(z.string(), z.array(z.string())), // relationshipType -> edgeIds
 });
 
 export type ArtifactGraph = z.infer<typeof ArtifactGraphSchema>;
@@ -313,8 +313,8 @@ const nodeIdOrUrnSchema = z.string().refine(
 );
 
 export const GraphQuerySchema = z.object({
-  nodeKinds: z.array(GraphNodeKindSchema).optional(),
-  edgeKinds: z.array(GraphEdgeKindSchema).optional(),
+  nodeTypes: z.array(GraphNodeKindSchema).optional(), // P0: Canonical field name 'nodeTypes', not legacy 'nodeKinds'
+  edgeTypes: z.array(GraphEdgeKindSchema).optional(), // P0: Canonical field name 'edgeTypes', not legacy 'edgeKinds'
   fromNodeId: nodeIdOrUrnSchema.optional(),
   toNodeId: nodeIdOrUrnSchema.optional(),
   minConfidence: z.number().min(0).max(1).optional(),

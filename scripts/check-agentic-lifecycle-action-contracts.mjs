@@ -34,6 +34,7 @@ function requireAll(relativePath, needles, label = relativePath) {
 requireFile('platform/typescript/kernel-product-contracts/src/agentic/AgentLifecycleActionRequest.ts');
 requireFile('platform/typescript/kernel-product-contracts/src/agentic/AgentLifecycleActionResult.ts');
 requireFile('platform/typescript/kernel-lifecycle/src/agentic/AgentLifecycleActionService.ts');
+requireFile('platform/typescript/kernel-lifecycle/src/agentic/__tests__/AgentLifecycleActionService.test.ts');
 requireFile('products/data-cloud/planes/action/gateway/src/__tests__/agentic-lifecycle-actions.test.ts');
 
 requireAll('platform/typescript/kernel-product-contracts/src/agentic/AgentLifecycleActionRequest.ts', [
@@ -79,6 +80,15 @@ requireAll('products/data-cloud/planes/action/gateway/src/__tests__/agentic-life
   'without proxying to raw backend tools',
   'fails closed when the governed Kernel service is not configured',
   'surfaces service validation failures for raw command attempts',
+]);
+
+requireAll('platform/typescript/kernel-lifecycle/src/agentic/__tests__/AgentLifecycleActionService.test.ts', [
+  'executes after approval and writes provenance through provider context',
+  'recordProvenance',
+  'recordRuntimeTruth',
+  'recordMemory',
+  'fails contract validation for raw command requests',
+  'fails contract validation when evidence refs are missing for required verification',
 ]);
 
 const gatewayTestSource = read('products/data-cloud/planes/action/gateway/src/__tests__/agentic-lifecycle-actions.test.ts');

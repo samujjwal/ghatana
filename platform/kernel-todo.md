@@ -1,727 +1,241 @@
-# Deep Review — Groups 1, 2, and 3 Only
+## Execution note
 
-Repo: `samujjwal/ghatana`
-Commit: `e10d360a3fe5b0298cdb4b02cc0d4cd62148202f`
+## Implementation progress (2026-05-17)
 
-The target commit’s own diff is mostly unrelated lifecycle/check-output churn, so this review treats `e10d360a3fe5b0298cdb4b02cc0d4cd62148202f` as the full codebase snapshot, not a diff-only audit. 
+- [x] P1-02 API path normalization: Studio ProductUnitIntent client now targets /api/v1/kernel/lifecycle/product-unit-intents for both preview and apply.
+- [x] P5-02 platform-mode defaults hardening: YAPPC ProductUnitIntent route removed implicit Data Cloud defaults (localhost/default-*), and now fails closed when explicit Data Cloud scope config is missing.
+- [x] P5-02 tests updated: product-unit-intents route tests now set explicit Data Cloud scope env vars and cover missing-scope rejection.
+- [x] P2-01/P8-02 CI toolchain drift remediation (lifecycle workflow set): migrated product lifecycle build/validate/package/deploy-local/release workflows to Node 22 + pnpm 10.33.0 with frozen lockfile installs.
+- [x] P0-01 registry metadata hygiene: removed stale PHR readiness reference to virtual-org and pointed evidence refs to PHR-owned artifacts.
+- [x] Group 1 TS worker request boundary: extractor worker now accepts canonical request shape only.
+- [x] Group 1 TS worker output fidelity: worker nodes now emit required extractor/provenance/source fields; semantic model payload expanded with richer fields.
+- [x] Group 1 Java TS routing: ProcessTsExtractorWorker now sends only routed TS/JS files to the worker payload.
+- [x] Group 3 provenance normalization: Java semantic model mapping now normalizes provenance to canonical values.
+- [x] Group 3 cache isolation: ArtifactGraphService cache key now includes tenant + workspace + project.
+- [x] Group 3 consistency improvement: compile flow now ingests graph before persisting semantic models, preventing orphan semantic rows when ingest fails.
+- [x] Group 2 snapshot schema alignment started: added forward migration V23__align_repository_snapshot_schema.sql to align legacy and canonical snapshot columns.
+- [x] Group 2 deep migration verification: added RepositorySnapshotMigrationShapeTest covering V15/V17/V21/V23 chain and canonical backfill assertions.
+- [x] Group 5 Data Cloud endpoint-backed coverage expanded: added provider tests for health, approvals, provenance, memory queries, policy evidence, and telemetry metric/event paths.
+- [x] Group 4 agentic lifecycle E2E proof strengthened: guard now enforces service-level tests for governed execution, raw-command rejection, and provider writes (provenance/runtime truth/memory).
+- [x] Group 6 artifact-intelligence E2E proof strengthened: boundary guard now enforces Data Cloud evidence persistence tests plus import/synthesis residual proof coverage.
+- [x] Phase-level validation expanded: `check:phase4` and `check:phase6` now pass after proof-guard and provider coverage hardening.
+- [x] Full readiness validation completed: `check:world-class-platform-readiness` passed after regenerating stale product-registry artifacts via `scripts/generate-product-registry-artifacts.mjs`.
 
-## Executive Finding
+- [x] Focused TS validations completed:
+	- yappc-artifact-compiler worker contract test passed.
+	- YAPPC ProductUnitIntent route test suite passed.
+	- Studio kernelLifecycleClient test suite passed.
+- [x] Java validation (targeted) completed: `RepositorySnapshotMigrationShapeTest` now passes via Gradle scoped test run.
+- [x] Pending deep migration verification: add or extend migration-shape tests for upgraded V15/V17/V21 -> V23 paths.
+- [x] Pending completeness tasks: artifact intelligence E2E and agentic lifecycle E2E proofs now have enforced guard coverage and passing focused test runs; Data Cloud endpoint-backed provider tests pass after catalog fix (`yaml` added to workspace catalog) and dependency sync.
 
-Groups 1–3 have moved forward since the previous snapshot. The code now contains several concrete remediations:
+I executed the audit as a **static source audit** against `samujjwal/ghatana` at commit `c5d4066edc67e4f1bc37610fef594b12e159aada`. I could access the commit and repo through the GitHub connector, but I could not run local build/test commands because the execution container could not resolve `github.com` for cloning. The validation commands below are therefore the required next run, not commands I successfully executed locally.
 
-* Proto now normalizes several `product_id` fields to `project_id` and `relationship` to `relationship_type`. 
-* Java ingest now accepts `List<ResidualIslandDto>` rather than only residual IDs. 
-* A Java `ResidualIslandDto` exists. 
-* `ProcessTsExtractorWorker` now rejects legacy residual ID-only responses and requires full residual payloads. 
-* Source acquisition now includes `SourceCredentialResolver`, GitHub/GitLab credential hooks, GitLab URL encoding/pagination, repository snapshot persistence, canonical inventory scanner, semantic model persistence, and graph validator classes.        
-
-But the implementation is **not production-grade yet** for Groups 1–3. There are still P0 blockers: invalid proto numbering, incomplete contract strictness, TS worker still emitting legacy fields, provider routing bug, lossy residual source-location handling, empty semantic-model persistence, simplified `.gitignore`, unsupported GitHub archive fallback, unsafe credential semantics, and snapshot repository null-handling/scope risks.
-
-## Implementation Progress Update (2026-05-17)
-
-### Completed in this execution
-
-* Fixed duplicate proto tags in `ResidualIsland` (`tenant_id/project_id/workspace_id/snapshot_id` now use 15-18).
-* Added typed unresolved-edge and resolution DTOs (`UnresolvedGraphEdgeDto`, `EdgeResolutionRecordDto`).
-* Upgraded `ResidualIslandDto` with structured `sourceLocation` while retaining compatibility constructor.
-* Switched ingest/service/validator pipeline from raw unresolved/resolution maps to typed DTOs.
-* Updated TS worker contract to canonical output fields only (removed legacy edge/node aliases) and added `semanticModels` response payload.
-* Updated Java worker adapter to parse typed unresolved/resolution payloads, parse residual `sourceLocation`, and persist semantic models from extractor output.
-* Persisted residual `source_location_json` in `ArtifactGraphRepository`.
-* Hardened provider routing (`SourceProviderRegistry`) with exact-provider resolution first.
-* Fixed GitHub provider route hijack (`canHandle` now only matches GitHub-specific locators).
-* Added governed credential repository abstraction (`SourceCredentialRepository`) and governed resolver mode (`SourceCredentialResolver.governed(...)`) for DI-based secret ownership checks.
-* Removed misleading GitHub archive fallback behavior by failing closed with explicit unsupported diagnostics on truncated trees.
-* Fixed `RepositorySnapshotRepository` source-locator null handling (`Map.of` null issue) and added scoped lookup overloads.
-* Strengthened `SemanticModelDto` with provenance/review/security linkage fields and persisted them via semantic-model property envelope in repository.
-* Reconciled generated artifact graph model quality by replacing broad OpenAPI request schemas with strict canonical request models (`ArtifactGraphIngestRequest`, `ArtifactGraphQueryRequest`, `ArtifactGraphAnalysisRequest`, `ArtifactGraphMergeRequest`, `ResidualAnalysisRequest`) and regenerating frontend API types.
-* Updated artifact compiler client/test surface to consume strict generated models (`queryType`, `nodes/edges/residualIslands`) while preserving compatibility exports.
-* Adapted regenerated auth client callsites (`validateSession`, bodyless `logout`) to avoid regressions introduced by strict OpenAPI client regeneration.
-
-### Still open
-
-* None for Groups 1-3 scope in this review update.
-
-### Validation evidence captured
-
-* `./gradlew :products:yappc:core:yappc-services:compileJava` → BUILD SUCCESSFUL
-* `./gradlew :products:yappc:core:yappc-services:test --tests '*ProcessTsExtractorWorkerContractTest'` → BUILD SUCCESSFUL
-* `./gradlew :products:yappc:core:yappc-services:test --tests '*ArtifactGraphValidatorTest' --tests '*RepositorySnapshotRepositoryTest'` → BUILD SUCCESSFUL
-* `./gradlew :products:yappc:core:yappc-services:test --tests com.ghatana.yappc.services.artifact.ArtifactGraphValidatorTest --tests com.ghatana.yappc.services.source.SourceProviderRegistryTest --tests com.ghatana.yappc.services.source.RepositoryInventoryScannerTest` → BUILD SUCCESSFUL
-* `pnpm --filter @ghatana/yappc-web-app exec vitest run src/clients/artifactCompiler/__tests__/artifactCompilerClient.test.ts src/clients/artifactCompiler/__tests__/graph-query-pagination.test.ts` → PASSED (13 tests)
-* `pnpm --filter @ghatana/yappc-web-app typecheck` → still fails from pre-existing workspace baseline issues (i18n extension typing, missing declarations/deps, and unrelated compiler workflow typing); no new type errors from artifact compiler client contract changes.
-* `pnpm --filter yappc-artifact-compiler type-check` remains blocked by existing TS6 deprecation config (`baseUrl`) in package tsconfig
+The target commit is reachable and primarily changes Digital Marketing lifecycle CI/evidence behavior, including repo-relative manifest refs and a Digital Marketing CI workflow. It also removes legacy canvas facade test jobs. 
 
 ---
 
-# Group 1 — Canonical Contract and Java/TypeScript Runtime Boundary
+# Executive summary
 
-## Objective Current Status
+**Current verdict:** Ghatana is structurally moving in the right direction, but the platform is not yet world-class end-to-end. The **Digital Marketing lifecycle pilot** is the strongest executable path. The **Kernel contracts/lifecycle foundation** are strong. The **Studio shell, Data Cloud platform-mode providers, AEP/agentic development, artifact intelligence E2E, and future product readiness** remain partial.
 
-**Status: `IMPLEMENTED_FOR_GROUPS_1_TO_3_SCOPE`**
+**Closest to production-grade:**
 
-### What improved
+1. **Digital Marketing pilot** is the most concrete executable lifecycle path: registry marks it as enabled, pilot=true, lifecycleExecutionAllowed=true, and ready; its `kernel-product.yaml` defines required manifests, phases, gates, policies, approvals, provider modes, package/deploy/verify config; compose, env example, and secret gitignore are present.      
+2. **Kernel ProductUnit/ProductUnitIntent contracts** are concrete and schema-backed, exporting ProductUnit, ProductUnitIntent, provider, event, health, plugin, and artifact-intelligence contracts. 
+3. **Kernel lifecycle service** has real planning, execution, event writing, runtime truth, provenance, approval, provider-mode validation, and manifest-pointer behavior.   
+4. **Phase-based validation scripts already exist** in `package.json`, including phase 0–8 checks and `check:world-class-platform-readiness`. 
 
-The proto has been updated to use `project_id` instead of `product_id` in major graph request messages, and unresolved edges now use `relationship_type`. 
+**Highest-risk gaps:**
 
-`ArtifactGraphIngestRequest.java` now accepts `projectId`, `tenantId`, nodes, edges, snapshot metadata, unresolved edges, edge resolution records, and full `List<ResidualIslandDto> residualIslands`. This is a meaningful improvement over ID-only residual ingestion. 
-
-`ArtifactCompilerClient.ts` also now uses `projectId`, `workspaceId`, `relationshipType`, and `residualIslands`, which reduces the prior client/server naming drift. 
-
-`ProcessTsExtractorWorker.java` has become stricter: it validates canonical fields, rejects legacy `residualIslandIds`, requires `residualIslands`, requires `relationshipType`, and validates edge source/target IDs against declared nodes. 
-
-### Previously identified P0 blockers (resolved; retained for traceability)
-
-#### G1-P0-1 — `artifact_compiler.proto` is invalid because `ResidualIsland` reuses field numbers
-
-In `ResidualIsland`, `metadata = 13` and `file_count = 14` are declared, then `tenant_id = 13` and `project_id = 14` reuse the same field numbers. This makes the proto invalid and blocks reliable code generation. 
-
-**Production impact:** This alone prevents proto from being the canonical contract.
-
-**Fix:**
-
-| File                                                                        | Action | Exact change                                                                                                                                                                                                                                  |
-| --------------------------------------------------------------------------- | -----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `products/yappc/core/yappc-services/src/main/proto/artifact_compiler.proto` | MODIFY | Renumber `tenant_id`, `project_id`, `workspace_id`, and `snapshot_id` in `ResidualIsland` to non-conflicting field numbers, for example `15–18` or higher. Never reuse tags. Add reserved tags if any field numbers were previously released. |
-
-**Tests:**
-
-* Add proto compile/codegen gate.
-* Add a CI command that fails on duplicate proto tags.
-* Add generated Java/TS contract smoke test.
+1. **Digital Marketing CI runtime drift:** the new workflow uses Node 20 and installs `pnpm@9`, while root `package.json` requires Node `>=22.0.0`, pnpm `>=10.0.0`, and `packageManager: pnpm@10.33.0`. This can make CI validate a different toolchain than the repo contract.  
+2. **Studio/YAPPC/Kernel API path drift:** Studio posts ProductUnitIntent to `/api/kernel/lifecycle/product-unit-intents`, while the YAPPC API route forwards to `/api/v1/kernel/lifecycle/product-unit-intents`. Unless an alias/gateway exists, this is an integration inconsistency.  
+3. **Data Cloud platform-mode provider work is still partial:** domain registry explicitly classifies Data Cloud runtime truth as `existing-partial` with runtime-truth/provider-mode gaps, even though bridge provider classes exist.   
+4. **YAPPC platform-mode route has unsafe/default-ish runtime fallbacks** such as `http://localhost:8080`, `default-tenant`, `default-workspace`, and `default-project`; those should be dev-only or validated configuration, not implicit platform-mode assumptions. 
+5. **Future products must remain disabled until platform gaps are closed:** PHR, FlashIt, Data Cloud, YAPPC, TutorPutor, Audio-Video, DCMAAR, and Aura are not ready for ordinary lifecycle execution.   
 
 ---
 
-#### G1-P0-2 — Proto, Java DTO, and TS worker still do not fully agree on residual source location
+# Goal and Status Register
 
-Proto `ResidualIsland` now includes `original_source` and `source_location`. 
-TS worker response schema also includes `originalSource` and `sourceLocation`. 
-But Java `ResidualIslandDto` does **not** contain a structured `sourceLocation`; it only has `sourceSpan`. 
-
-**Production impact:** Round-trip fidelity still loses structured location data at the Java DTO boundary.
-
-**Fix:**
-
-| File                            | Action | Exact change                                                                                                                                                            |
-| ------------------------------- | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ResidualIslandDto.java`        | MODIFY | Add `SourceLocationDto sourceLocation` or reuse a canonical source-location DTO. Keep `sourceSpan` only as derived/backward-compatible metadata, not the primary field. |
-| `ProcessTsExtractorWorker.java` | MODIFY | Map TS `sourceLocation` into Java `ResidualIslandDto.sourceLocation`. Reject residuals without structured source location.                                              |
-| `ArtifactGraphRepository.java`  | MODIFY | Persist `source_location_json` for residual islands.                                                                                                                    |
-| `artifact_compiler.proto`       | MODIFY | Keep `source_location` as canonical and mark `source_span` as derived/compatibility only if needed.                                                                     |
-
-**Tests:**
-
-* `ResidualIslandDtoRoundTripTest`
-* `ProcessTsExtractorWorkerResidualContractTest`
-* `ArtifactGraphRepositoryResidualLocationTest`
+| Goal ID | Goal                                         |                         Correct owner | Current status                            | Evidence                                                                                                                       | Gap                                                                                          | Phase |
+| ------- | -------------------------------------------- | ------------------------------------: | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ----: |
+| G01     | Platform coherence/governance                |                    Platform Coherence | Existing but partial                      | Domain registry marks governance partial with current-state and boundary gaps.                                                 | Manual review still needed for current-state claims and boundaries.                          |  0, 8 |
+| G02     | Unified Ghatana Studio shell                 |                     Platform / Studio | Existing but partial                      | Navigation model exists with ownership/status/exposure.                                                                        | Many routes are degraded/disabled/hidden pending lifecycle/Data Cloud evidence.              |     1 |
+| G03     | Product Development Kernel lifecycle truth   |                                Kernel | Existing and executable, hardening needed | Lifecycle service plans, executes, writes truth/provenance/events.                                                             | Artifact provenance, deployment, and release are still partial by domain registry.           |     3 |
+| G04     | ProductUnit / ProductUnitIntent contracts    |                      Kernel contracts | Existing and executable                   | Contracts exported with schemas/providers/events/artifact intelligence.                                                        | API path/version alignment needed across Studio/YAPPC/Kernel.                                |  1, 3 |
+| G05     | Digital Marketing lifecycle pilot            |                      Product + Kernel | Existing and executable                   | Registry enabled, pilot ready, lifecycleExecutionAllowed true.                                                                 | CI runtime drift; compose proof should be enforced in a dedicated environment.               |     2 |
+| G06     | Data Cloud bootstrap/platform provider model |                   Data Cloud + Kernel | Existing but partial                      | Bridge providers exist; registry/domain classify provider mode partial.                                                        | Need endpoint-backed contract/integration tests and provider health proof.                   |     5 |
+| G07     | Agentic product development                  |               AEP/Data Cloud + Kernel | Existing but partial                      | Agent runtime governance is partial in domain registry.                                                                        | Need E2E proof that agents invoke Kernel contracts, not raw tools.                           |     4 |
+| G08     | YAPPC ProductUnitIntent handoff              |                        YAPPC + Kernel | Existing but partial                      | Route validates ProductUnitIntent, evidence, scope, platform mode, permissions.                                                | Runtime config defaults and API path mismatch must be resolved.                              |  1, 6 |
+| G09     | Artifact intelligence                        | YAPPC + Data Cloud + Kernel contracts | Existing but partial                      | Strong schemas exist for evidence, confidence, provenance, privacy, retention.                                                 | Need full compiler → Data Cloud → Kernel planning/gates → Studio visualization E2E.          |     6 |
+| G10     | Shared UI/design/canvas/builder              |                              Platform | Existing but partial                      | Domain registry marks canvas, UI builder, design registry, Studio partial.                                                     | Deprecated canvas package cleanup and product UI reuse gates remain.                         |  1, 8 |
+| G11     | Future product shape readiness               |                    Product + Platform | Existing but partial / planned            | PHR and FlashIt are planned/disabled; Data Cloud and YAPPC are platform-provider disabled; TutorPutor partial but disabled.    | Keep disabled; close platform capability gaps first.                                         |     7 |
+| G12     | CI/CD and production hardening               |                    Platform Coherence | Existing but partial                      | Phase checks exist in root scripts.                                                                                            | New CI workflow uses conflicting Node/pnpm versions; local validation not yet executed here. |     8 |
 
 ---
 
-#### G1-P0-3 — TS worker schema still carries legacy fields while Java claims strict canonical validation
+# Journey findings
 
-`ProcessTsExtractorWorker.java` says legacy fields like `kind`, `source`, `target`, `relationship`, and `residualIslandIds` are not accepted. 
-But `ts-extractor-worker.ts` still defines and emits legacy-ish fields. `WorkerNodeSchema` still allows `kind`; `WorkerEdgeSchema` still requires `sourceId`, `targetId`, `kind`, `type`, `source`, and `target` in addition to canonical `sourceNodeId`, `targetNodeId`, and `relationshipType`. 
+## Journey 1 — Product ideation to ProductUnitIntent
 
-**Production impact:** The contract is not actually strict. Extra fields may hide drift and keep old extractors working accidentally.
+**Status:** Existing but partial.
 
-**Fix:**
+YAPPC has a schema-backed route that validates ProductUnitIntent, scope, evidence bundles, platform-mode Data Cloud evidence, and apply permissions. It blocks apply without explicit permission and blocks platform mode without Data Cloud evidence. 
 
-| File                            | Action | Exact change                                                                                                                                                                       |
-| ------------------------------- | -----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ts-extractor-worker.ts`        | MODIFY | Remove legacy output fields from `ExtractorWorkerResponseSchema`: `kind`, `sourceId`, `targetId`, `type`, `source`, `target`, unless they are explicitly part of canonical schema. |
-| `ProcessTsExtractorWorker.java` | MODIFY | Reject unknown fields if strict mode is enabled.                                                                                                                                   |
-| `graph/types.ts`                | MODIFY | Keep internal TS graph types separate from worker API types. Do not expose TS-internal aliases in Java worker contract.                                                            |
+**Key gaps:**
 
-**Tests:**
+* Align ProductUnitIntent API path/version across Studio and YAPPC.
+* Remove or dev-scope Data Cloud fallback defaults in platform mode.
+* Add a real UI journey test from Ideas/Blueprint/Canvas → ProductUnitIntent preview/apply → Kernel result.
 
-* TS worker output must fail if extra legacy fields appear.
-* Java worker must fail if response includes legacy aliases.
-* Golden worker JSON fixture must be canonical-only.
+## Journey 2 — Direct Product Development Kernel usage
+
+**Status:** Existing and executable, but hardening remains.
+
+Kernel can list/get ProductUnits, create plans, execute plans, read run summaries/manifests, handle approvals, validate provider context, write runtime truth, append events, and record provenance.  
+
+**Key gaps:**
+
+* Add end-to-end tests through Studio using the typed lifecycle client.
+* Complete artifact/deployment/release hardening called out as partial in domain registry.
+* Validate all API errors consistently with scoped auth/authz headers.
+
+## Journey 3 — Agentic product development
+
+**Status:** Existing but partial.
+
+The domain registry explicitly marks AEP/agent runtime governance as partial with agent-governance and central-registry gaps. 
+
+**Key gaps:**
+
+* Add test proof that agents call `AgentLifecycleActionRequest` / Kernel lifecycle tool catalog instead of raw Gradle/pnpm/Docker.
+* Persist agent action evidence to Data Cloud provenance/memory/runtime truth.
+* Surface pending approval, risk, verification proof, and rollback/fallback in Studio.
+
+## Journey 4 — Digital Marketing lifecycle pilot
+
+**Status:** Existing and executable; strongest path.
+
+Digital Marketing is the only enabled lifecycle pilot in the registry. Its lifecycle config defines manifests, plugins, policy packs, phases, gates, package adapters, deployment, approvals, provider modes, retention, and verify checks.   
+
+**Key gaps:**
+
+* Fix CI runtime drift: Node 20/pnpm 9 conflicts with root Node 22/pnpm 10.33.
+* Enforce compose proof in a controlled CI job.
+* Add Studio-level E2E for selecting Digital Marketing, running lifecycle phases, and reading manifests/health.
+
+## Journey 5 — Artifact intelligence
+
+**Status:** Existing but partial.
+
+Artifact intelligence contracts are strong: they include evidence ID, tenant/workspace/project/productUnit, confidence, provenance refs, privacy classification, retention, graph evidence, residual island reports, risk hotspots, and generated changesets. 
+
+**Key gaps:**
+
+* Prove actual YAPPC compiler/decompiler output conforms to these contracts.
+* Persist outputs to Data Cloud graph/provenance/memory.
+* Ensure Kernel consumes only semantic references and never imports YAPPC internals.
+
+## Journey 6 — Data Cloud foundation
+
+**Status:** Existing but partial.
+
+Data Cloud-backed providers exist for events, artifacts, health, approvals, provenance, memory, runtime truth, policy evidence, and telemetry, but the domain registry still classifies runtime truth/provider mode as partial.   
+
+**Key gaps:**
+
+* Add contract tests against actual Data Cloud provider endpoints.
+* Prove Kernel bootstrap mode can build/deploy Data Cloud without Data Cloud providers.
+* Prove platform mode switches to Data Cloud providers after Data Cloud is available.
+
+## Journey 7 — Future product shape readiness
+
+**Status:** Planned/partial; do not enable yet.
+
+PHR requires consent, PII classification, audit evidence, FHIR validation, and data sovereignty. FlashIt requires mobile adapters, preview security, personal-data classification, and IPA/AAB artifact manifests. Data Cloud and YAPPC are platform-provider products and must not be ordinary lifecycle products until bootstrap/provider constraints are solved.  
 
 ---
 
-#### G1-P0-4 — `ArtifactCompilerClient.ts` is still hand-written instead of generated
+# Phase-based TODO plan
 
-The client was manually updated and now includes a large hand-maintained set of DTOs and patch endpoints. 
-
-**Production impact:** Drift will return. Also, this user request is only Groups 1–3, but the client now includes patch APIs that belong to Group 4 and may not be supported by backend production routes.
-
-**Fix:**
-
-| File                                                  |                 Action | Exact change                                                                                                |
-| ----------------------------------------------------- | ---------------------: | ----------------------------------------------------------------------------------------------------------- |
-| `ArtifactCompilerClient.ts`                           |                REPLACE | Replace with generated client from canonical schema/proto/OpenAPI.                                          |
-| `platform/typescript/api` or generated-client package |             ADD/MODIFY | Add generated artifact compiler client package.                                                             |
-| Patch methods in `ArtifactCompilerClient.ts`          | REMOVE or FEATURE-FLAG | Group 4 APIs should not be exposed as reliable until backend routes are implemented and contract-generated. |
-
-**Tests:**
-
-* Generated client contract test.
-* Compile-time test that frontend cannot reference stale manual DTO fields.
+| TODO ID | Phase | Domain                    | Journey       | File(s)                                                                                                                                              | Required change                                                                                                                                         | Validation                                                                                                       |
+| ------- | ----: | ------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| P0-01   |     0 | Platform Coherence        | Baseline      | `config/canonical-product-registry.json`                                                                                                             | Fix stale/cross-product readiness text in PHR metadata that references virtual-org evidence/work. This creates current-state confusion.                 | `pnpm check:product-registry && pnpm check:current-state-claims`                                                 |
+| P0-02   |     0 | Platform Coherence        | All           | `config/domain-registry.json`, `scripts/check-current-state-claims.mjs`, docs scope files                                                            | Convert remaining “manual review” boundary/current-state gaps into executable checks where possible.                                                    | `pnpm check:phase0`                                                                                              |
+| P1-01   |     1 | Studio Shell              | Journey 1/2/4 | `platform/typescript/ghatana-studio/src/navigation/studioNavigation.ts`                                                                              | Add/verify tests that route exposure, disabled/hidden/preview states, label keys, and ownership match lifecycle/provider state.                         | `pnpm check:shared-product-shells && pnpm check:studio-kernel-api`                                               |
+| P1-02   |     1 | API Contracts             | Journey 1     | `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`, `products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts`         | Standardize ProductUnitIntent endpoint versioning: either `/api/v1/kernel/...` everywhere or an explicit gateway alias with contract tests.             | `pnpm check:studio-kernel-api && pnpm check:yappc-product-unit-intent-handoff`                                   |
+| P2-01   |     2 | Digital Marketing Pilot   | Journey 4     | Digital Marketing CI workflow changed by commit                                                                                                      | Align CI with root engine contract: Node 22 and pnpm 10.33 via corepack/packageManager. Do not install pnpm 9.                                          | `pnpm check:phase2`                                                                                              |
+| P2-02   |     2 | Digital Marketing Pilot   | Journey 4     | `scripts/check-digital-marketing-lifecycle-pilot.mjs`                                                                                                | Keep repo-relative manifest ref validation and add regression test for absolute path leakage in evidence packs.                                         | `pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing` |
+| P2-03   |     2 | Digital Marketing Pilot   | Journey 4     | `products/digital-marketing/kernel-product.yaml`, `products/digital-marketing/deploy/*`                                                              | Add a separate compose-proof CI job with env provisioning; keep normal smoke path fast and deterministic.                                               | `pnpm check:digital-marketing-lifecycle-pilot -- --compose-proof`                                                |
+| P3-01   |     3 | Kernel Lifecycle          | Journey 2     | `platform/typescript/kernel-artifacts`, `platform/typescript/kernel-providers/src/provenance`                                                        | Complete artifact provenance and supply-chain tracking; domain registry marks this partial.                                                             | `pnpm check:product-artifact-contracts`                                                                          |
+| P3-02   |     3 | Kernel Deployment/Release | Journey 2/4   | `platform/typescript/kernel-deployment`, `platform/typescript/kernel-release`                                                                        | Complete deployment, environment, release, promotion, and rollback contracts; domain registry marks this partial.                                       | `pnpm check:product-deployment-contracts`                                                                        |
+| P4-01   |     4 | AEP / Agents              | Journey 3     | `products/data-cloud/planes/action/server`, `platform/java/agent-core`, Kernel action contracts                                                      | Add E2E proof that agents use Kernel lifecycle action contracts and cannot run raw lifecycle commands directly.                                         | `pnpm check:agentic-lifecycle-action-contracts && ./gradlew :platform:java:agent-core:check`                     |
+| P5-01   |     5 | Data Cloud Providers      | Journey 6     | `products/data-cloud/libs/kernel-bridge-providers/src/index.ts`                                                                                      | Add endpoint-backed contract tests for all provider paths: events, artifacts, health, approvals, provenance, memory, runtime truth, telemetry.          | `pnpm --dir products/data-cloud/libs/kernel-bridge-providers test && pnpm check:data-cloud-platform-providers`   |
+| P5-02   |     5 | Data Cloud / YAPPC        | Journey 1/6   | `products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts`                                                                                | Remove implicit platform-mode defaults or guard them behind dev-only config validation. Fail closed when tenant/workspace/project/base URL are missing. | `pnpm check:yappc-product-unit-intent-handoff && pnpm check:secret-default-credentials`                          |
+| P6-01   |     6 | Artifact Intelligence     | Journey 5     | YAPPC compiler/decompiler packages, `platform/typescript/kernel-product-contracts/src/artifact-intelligence`, Data Cloud memory/provenance providers | Add E2E: scan/decompile → schema-backed evidence → Data Cloud persistence → Kernel consumes references → Studio displays risks/residual islands.        | `pnpm check:yappc-artifact-intelligence-boundary && pnpm check:yappc-product-unit-intent-handoff`                |
+| P7-01   |     7 | Product Shape Matrix      | Journey 7     | `config/canonical-product-registry.json`, product `kernel-product.yaml` files                                                                        | Keep PHR/Finance/FlashIt/Data Cloud/YAPPC disabled until gates/adapters/artifacts are real; add blocker matrix tests per product shape.                 | `pnpm check:product-shape-capability-matrix && pnpm check:product-registry-drift`                                |
+| P8-01   |     8 | Cleanup                   | All           | CI workflows, `platform/typescript/canvas/*`, package governance scripts                                                                             | Finish deprecated canvas facade cleanup. Removing tests is not enough if packages/imports remain.                                                       | `pnpm check:deprecated-packages && pnpm check:deprecated-imports && pnpm check:platform-package-governance`      |
+| P8-02   |     8 | CI/CD                     | All           | `package.json`, workflows                                                                                                                            | Ensure every phase check is wired into CI with the same Node/pnpm/Java versions declared by the repo.                                                   | `pnpm check:world-class-platform-readiness && ./gradlew check`                                                   |
 
 ---
 
-## Group 1 Production-Grade TODOs
+# Audit dimension status
 
-```markdown
-- [x] [P0] Fix duplicate proto field numbers in `ResidualIsland`.
-  - File: `products/yappc/core/yappc-services/src/main/proto/artifact_compiler.proto`
-  - Done when: proto compiles and generated Java/TS types are produced.
+| Dimension                       | Status               | Summary                                                                                                       |
+| ------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Architecture and ownership      | Existing but partial | Domain registry is strong, but several domains still list manual boundary/current-state gaps.                 |
+| UI/UX                           | Existing but partial | Studio navigation and route exposure exist, but multiple customer-visible areas are disabled/degraded/hidden. |
+| API contracts                   | Existing but partial | Good Zod schemas and typed client; API version/path mismatch needs correction.                                |
+| Backend/storage                 | Existing but partial | Kernel lifecycle is strong; Data Cloud providers are present but still classified partial.                    |
+| AI/ML-native behavior           | Existing but partial | Artifact evidence schemas support confidence/provenance/privacy; full E2E flow is missing.                    |
+| O11y/security/privacy/i18n/a11y | Existing but partial | Many checks and policy packs exist; route defaults and CI/tooling drift need hardening.                       |
+| Testing and CI/CD               | Existing but partial | Large command suite exists; target commit introduces Digital Marketing CI drift against root engine versions. |
+| Cleanup/consolidation           | Existing but partial | Deprecated canvas facade test removal is positive, but package/import cleanup still needs validation.         |
+| Current-state discipline        | Existing but partial | Registries classify status, but stale/cross-product text still appears in product metadata.                   |
 
-- [x] [P0] Make residual source location canonical across proto, TS worker, Java DTO, and repository.
-  - Files:
-    - `artifact_compiler.proto`
-    - `ResidualIslandDto.java`
-    - `ProcessTsExtractorWorker.java`
-    - `ArtifactGraphRepository.java`
-  - Done when: residual source location survives worker → Java DTO → DB → readback.
+---
 
-- [x] [P0] Remove legacy worker response fields from TS worker contract.
-  - File: `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/ts-extractor-worker.ts`
-  - Done when: worker output contains only canonical API fields.
+# Required validation suite
 
-- [x] [P0] Replace hand-written `ArtifactCompilerClient.ts` with generated API client.
-  - File: `products/yappc/frontend/web/src/clients/artifactCompiler/ArtifactCompilerClient.ts`
-  - Done when: no manual DTOs remain for artifact compiler APIs.
+Run with **Node 22**, **pnpm 10.33.0**, and **Java 21**:
+
+```bash
+pnpm install --frozen-lockfile
+
+pnpm check:phase0
+pnpm check:phase1
+pnpm check:phase2
+pnpm check:phase3
+pnpm check:phase4
+pnpm check:phase5
+pnpm check:phase6
+pnpm check:phase7
+pnpm check:phase8
+
+pnpm check:world-class-platform-readiness
+
+pnpm build:kernel-lifecycle-platform
+pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing
+pnpm check:digital-marketing-lifecycle-pilot -- --compose-proof
+
+pnpm build
+pnpm test
+pnpm typecheck
+
+./gradlew build
+./gradlew check
 ```
 
 ---
 
-# Group 2 — Governed Source Acquisition, Snapshot, and Inventory
-
-## Objective Current Status
-
-**Status: `IMPLEMENTED_FOR_GROUPS_1_TO_3_SCOPE`**
-
-### What improved
-
-`SourceCredentialResolver` now exists and providers call it with tenant/workspace/project scope. It does avoid logging resolved credential values. 
-
-`GitHubSourceProvider` now accepts credential resolution, deterministic sorting, commit pinning, content hashes, and attempts a truncated-tree archive fallback. 
-
-`GitLabSourceProvider` now includes encoded project IDs and file paths, paginated tree retrieval, deterministic sorting, and credential resolution. 
-
-`RepositoryInventoryScanner` is now more detailed: stable sorted walk, file classification, skip reasons, binary/vendor/generated/large-file filtering, package boundary detection, and SHA-256 checksums. 
-
-`RepositorySnapshotRepository` now persists snapshots and files with source locator JSON. 
-
-### Previously identified blockers (resolved; retained for traceability)
-
-#### G2-P0-1 — `GitHubSourceProvider.canHandle()` can hijack non-GitHub locators
-
-`SourceProviderRegistry.defaultRegistry()` previously registered GitHub before local-folder/archive providers. In this snapshot, GitHub `canHandle()` returns true when `locator.repoId().contains("/")`, regardless of `locator.provider()`. 
-
-That means a local folder path like `/repo/app` or many non-GitHub locators can be claimed by GitHub.
-
-**Production impact:** Provider routing is unsafe and can break local/archive imports or route sources to the wrong provider.
-
-**Fix:**
-
-| File                             | Action | Exact change                                                                                                                                        |
-| -------------------------------- | -----: | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GitHubSourceProvider.java`      | MODIFY | Change `canHandle()` to return true only when `provider == "github"` or repo URL host is explicitly GitHub. Do not match any string containing `/`. |
-| `SourceProviderRegistry.java`    | MODIFY | Resolve exact provider ID first. Only use `canHandle()` fallback when provider is omitted or unknown and safe.                                      |
-| `LocalFolderSourceProvider.java` | MODIFY | Ensure local-folder provider claims `provider == "local-folder"` explicitly.                                                                        |
-| `ArchiveSourceProvider.java`     | MODIFY | Ensure archive provider claims `zip/archive` explicitly.                                                                                            |
-
-**Tests:**
-
-* `SourceProviderRegistryRoutingTest`
-
-  * local-folder locator routes to local provider.
-  * GitHub URL routes to GitHub provider.
-  * GitLab locator routes to GitLab provider.
-  * archive path routes to archive provider.
-  * unsupported provider fails closed.
-
----
-
-#### G2-P0-2 — Credential resolver is not truly governed
-
-`SourceCredentialResolver.envBacked()` allows a request-controlled `credentialRef` to directly name an environment variable. It validates locator scope, but it does not validate that the credential ref belongs to that tenant/workspace/project in a secret registry. 
-
-**Production impact:** This is not a governed secret-reference model. It is an env-var lookup helper with scope checks on the locator only.
-
-**Fix:**
-
-| File                                                      | Action | Exact change                                                                                                                                                                                          |
-| --------------------------------------------------------- | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SourceCredentialResolver.java`                           | MODIFY | Split interface from env-backed dev implementation. Production resolver must resolve credential refs from a credential registry/vault table keyed by tenant/workspace/project/provider/credentialRef. |
-| `SourceCredentialRepository.java`                         |    ADD | Store secret metadata only, not secret values unless backed by encrypted/vault integration.                                                                                                           |
-| `GitHubSourceProvider.java` / `GitLabSourceProvider.java` | MODIFY | Do not use env-backed resolver in default production registry. Inject resolver through DI.                                                                                                            |
-| `SourceProviderRegistry.java`                             | MODIFY | Remove `new GitHubSourceProvider()` / `new GitLabSourceProvider()` default constructors for production. Require configured resolver.                                                                  |
-
-**Tests:**
-
-* Resolver rejects credentialRef from another workspace.
-* Resolver never logs secret values.
-* Provider request uses resolved token only when authorized.
-* Env-backed resolver is only active in test/dev bootstrap mode.
-
----
-
-#### G2-P0-3 — GitHub archive fallback is advertised but not implemented
-
-`GitHubSourceProvider` attempts fallback when tree is truncated, but `fallbackToArchive()` downloads archive bytes and then throws `UnsupportedOperationException` saying ArchiveSourceProvider integration is required. 
-
-**Production impact:** Large GitHub repos still fail. The code comments imply fallback exists, but runtime behavior fails.
-
-**Fix:**
-
-| File                         | Action | Exact change                                                                                                                                          |
-| ---------------------------- | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GitHubSourceProvider.java`  | MODIFY | Either integrate with `ArchiveSourceProvider` to process downloaded zip bytes or remove fallback claim and fail closed with clear unsupported reason. |
-| `ArchiveSourceProvider.java` | MODIFY | Add method to resolve from `InputStream`/bytes plus source metadata, not only local archive path.                                                     |
-| `RepositorySnapshot.java`    | MODIFY | Add diagnostic for truncated tree fallback path.                                                                                                      |
-
-**Tests:**
-
-* Simulated truncated GitHub tree falls back to archive and produces deterministic snapshot.
-* If fallback disabled, provider returns explicit unsupported diagnostic, not misleading partial snapshot.
-
----
-
-#### G2-P1-4 — `.gitignore` support remains explicitly simplified
-
-`RepositoryInventoryScanner` comments state `.gitignore` matching is simplified and does not handle negation, globstar, character classes, escaped special characters, or directory-only patterns correctly. 
-
-GitHub and GitLab providers also use simplified pattern checks.  
-
-**Production impact:** Inventory can include ignored files or skip required files, breaking source fidelity and repeatability.
-
-**Fix:**
-
-| File                              | Action | Exact change                                                                                                                               |
-| --------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RepositoryInventoryScanner.java` | MODIFY | Replace custom matcher with authoritative `.gitignore` implementation, preferably JGit ignore rules if already compatible with Java stack. |
-| `GitHubSourceProvider.java`       | MODIFY | Stop provider-local ignore matching. Materialize source, then run canonical scanner.                                                       |
-| `GitLabSourceProvider.java`       | MODIFY | Same as GitHub.                                                                                                                            |
-| `LocalFolderSourceProvider.java`  | MODIFY | Use only canonical scanner behavior.                                                                                                       |
-
-**Tests:**
-
-* Negation pattern: `!src/keep.ts`
-* Globstar: `dist/**/*.js`
-* Directory-only pattern: `coverage/`
-* Escaped spaces/special chars.
-* Nested `.gitignore`.
-
----
-
-#### G2-P1-5 — Snapshot repository has null-handling and scope concerns
-
-`RepositorySnapshotRepository.writeSourceLocator()` uses `Map.of(...)` with values such as `ref`, `path`, and `credentialRef` that can be null. `Map.of` does not permit null keys or values, so optional source locator fields can cause runtime failure. 
-
-Also, `findById(snapshotId)` and `findByContentHash(contentHash)` are unscoped. 
-
-**Production impact:** Snapshot persistence can fail for valid locators, and unscoped lookups are risky if exposed through services.
-
-**Fix:**
-
-| File                                | Action | Exact change                                                                                                                                       |
-| ----------------------------------- | -----: | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RepositorySnapshotRepository.java` | MODIFY | Build source locator JSON with a mutable map and omit null optional fields.                                                                        |
-| `RepositorySnapshotRepository.java` | MODIFY | Add scoped `findById(snapshotId, tenantId, workspaceId, projectId)`. Mark unscoped `findById` private/test-only or remove if externally reachable. |
-| `RepositorySnapshotRepository.java` | MODIFY | Scope `findByContentHash` or make it internal dedupe-only with no metadata leakage.                                                                |
-
-**Tests:**
-
-* Save snapshot with no ref/path/credentialRef succeeds.
-* Cross-tenant snapshot ID lookup fails.
-* Content hash lookup does not leak snapshot IDs across tenants unless explicitly allowed by internal dedupe policy.
-
----
-
-## Group 2 Production-Grade TODOs
-
-```markdown
-- [x] [P0] Fix provider routing so GitHub does not claim every path containing `/`.
-  - File: `GitHubSourceProvider.java`
-  - Done when: provider selection is exact and deterministic.
-
-- [x] [P0] Replace env-var credential lookup with governed credential repository/vault lookup.
-  - Files:
-    - `SourceCredentialResolver.java`
-    - `SourceCredentialRepository.java`
-    - `SourceProviderRegistry.java`
-    - `EnvBackedSourceCredentialRepository.java`
-  - Done when: credentialRef ownership is enforced server-side.
-
-- [x] [P0] Implement or remove GitHub archive fallback.
-  - Files:
-    - `GitHubSourceProvider.java`
-    - `ArchiveSourceProvider.java`
-  - Done when: truncated GitHub tree behavior is real and tested.
-
-- [x] [P1] Replace simplified `.gitignore` logic with authoritative ignore handling.
-  - Files:
-    - `RepositoryInventoryScanner.java`
-    - `GitHubSourceProvider.java`
-    - `GitLabSourceProvider.java`
-  - Done when: golden `.gitignore` fixtures pass.
-
-- [x] [P1] Fix snapshot repository optional-field null handling and scoped lookups.
-  - File: `RepositorySnapshotRepository.java`
-  - Done when: valid optional locators persist and snapshot reads are scoped.
-```
-
----
-
-# Group 3 — Artifact Graph, Residual Islands, and Semantic Model Fidelity
-
-## Objective Current Status
-
-**Status: `IMPLEMENTED_FOR_GROUPS_1_TO_3_SCOPE`**
-
-### What improved
-
-`ArtifactGraphController` now delegates ingest validation to `ArtifactGraphValidator` and validates residual references before calling the service. 
-
-`ArtifactGraphValidator` centralizes validation of nodes, edges, unresolved edges, edge resolution records, residual islands, snapshot metadata, and orphaned residual references. 
-
-`ArtifactGraphServiceImpl` now maps `ResidualIslandDto` into repository records and rejects lossy residual ingest when `originalSource`, `checksum`, or `rawFragmentRef` is missing.  
-
-`SemanticModelDto` and `SemanticModelRepository` exist.  
-
-### Previously identified blockers (resolved; retained for traceability)
-
-#### G3-P0-1 — Semantic model persistence is wired but currently empty
-
-`ArtifactCompileJobService` explicitly calls `semanticModelRepository.saveModels(List.of())` and comments that TS extraction needs to be updated to return semantic models. 
-
-**Production impact:** Semantic model persistence exists structurally, but the compile pipeline does not persist real semantic model output. This blocks source→model lifecycle and later compile-back trust.
-
-**Fix:**
-
-| File                                   |     Action | Exact change                                                                                                                      |
-| -------------------------------------- | ---------: | --------------------------------------------------------------------------------------------------------------------------------- |
-| `ArtifactCompileJobService.java`       |     MODIFY | Extend `ExtractionResult` to include `List<SemanticModelDto> semanticModels`. Merge TS and Java semantic models and persist them. |
-| `ProcessTsExtractorWorker.java`        |     MODIFY | Parse `semanticModels` from worker output.                                                                                        |
-| `ts-extractor-worker.ts`               |     MODIFY | Include semantic model elements in worker response using canonical schema.                                                        |
-| `JavaArtifactExtractor` implementation | MODIFY/ADD | Return semantic models from Java extraction.                                                                                      |
-| `SemanticModelRepository.java`         |     MODIFY | Add batch validation and scope enforcement.                                                                                       |
-
-**Tests:**
-
-* Compile fixture produces non-empty semantic model.
-* Each model element maps to graph node/source location.
-* Model persistence is tenant/workspace/project scoped.
-
----
-
-#### G3-P0-2 — `SemanticModelDto` is too weak for production compile-back provenance
-
-`SemanticModelDto` has id, elementId, elementType, name, qualifiedName, filePath, sourceLocation, properties, dependencies, dependents, provenance, extractedAt, snapshotId, and scope. 
-
-Missing production-grade fields:
-
-* `confidence`
-* `reviewRequired`
-* `reviewReason`
-* `securityFlags`
-* `privacyFlags`
-* `graphNodeIds`
-* `residualIslandIds`
-* `sourceRef`
-* `symbolRef`
-* `extractorId`
-* `extractorVersion`
-* `modelVersionId`
-* `syntheticReason`
-
-**Production impact:** Even if semantic models are persisted, they are insufficient for safe compile-back or review/governance.
-
-**Fix:**
-
-| File                           |     Action | Exact change                                                                                                                                     |
-| ------------------------------ | ---------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SemanticModelDto.java`        |     MODIFY | Add confidence, review fields, graph node refs, residual refs, source/symbol refs, extractor metadata, privacy/security flags, synthetic reason. |
-| `SemanticModelRepository.java` |     MODIFY | Persist the new fields. Add indexes for `snapshot_id`, `element_id`, `source_ref`, and `graph_node_ids` if normalized table is used.             |
-| DB migration                   | ADD/MODIFY | Add new columns or normalized link tables.                                                                                                       |
-
-**Tests:**
-
-* Semantic model round-trip test.
-* Low-confidence model requires review.
-* Residual-linked semantic model cannot be auto-applied later.
-
----
-
-#### G3-P0-3 — Residual source location is still lossy
-
-`ArtifactGraphValidator` validates `sourceSpan`, `originalSource`, checksum, and raw fragment ref, but it does not validate a structured `sourceLocation` because `ResidualIslandDto` lacks that field.  
-
-**Production impact:** Residual compile-back cannot reliably locate exact ranges using typed fields.
-
-**Fix:** Same as G1-P0-2, but in Group 3 also enforce repository persistence and graph/model linking.
-
-| File                           | Action | Exact change                                                        |
-| ------------------------------ | -----: | ------------------------------------------------------------------- |
-| `ResidualIslandDto.java`       | MODIFY | Add structured `sourceLocation`.                                    |
-| `ArtifactGraphValidator.java`  | MODIFY | Validate `sourceLocation.filePath`, start/end line/column ordering. |
-| `ArtifactGraphRepository.java` | MODIFY | Persist `source_location_json`.                                     |
-| `SemanticModelDto.java`        | MODIFY | Add `residualIslandIds` linkage.                                    |
-
-**Tests:**
-
-* Residual with invalid line span fails.
-* Residual source location persists and reads back.
-* Node referencing residual requires full residual location.
-
----
-
-#### G3-P0-4 — Unresolved edges and resolution records remain raw maps in Java ingest/service
-
-`ArtifactGraphIngestRequest` still uses `List<Map<String,Object>> unresolvedEdges` and `edgeResolutionRecords`. 
-`ArtifactGraphValidator` validates raw maps and even still accepts legacy `relationship` as a warning path. 
-
-**Production impact:** Edge lifecycle is not type-safe. Contract drift can still occur. Invalid shapes may be silently skipped in `ArtifactGraphServiceImpl.mapUnresolvedEdges()`. 
-
-**Fix:**
-
-| File                              | Action | Exact change                                                                                                               |
-| --------------------------------- | -----: | -------------------------------------------------------------------------------------------------------------------------- |
-| `UnresolvedGraphEdgeDto.java`     |    ADD | Typed DTO with id, sourceNodeId, targetRef, relationshipType, targetKindHint, sourceLocation, confidence, metadata, scope. |
-| `EdgeResolutionRecordDto.java`    |    ADD | Typed DTO with id, unresolvedEdgeId, status enum, resolvedTargetId, candidateIds, reviewRequired, resolutionMethod.        |
-| `ArtifactGraphIngestRequest.java` | MODIFY | Replace raw maps with typed DTO lists.                                                                                     |
-| `ArtifactGraphValidator.java`     | MODIFY | Validate typed DTOs only. Remove legacy `relationship` fallback.                                                           |
-| `ArtifactGraphServiceImpl.java`   | MODIFY | Map typed DTOs directly. Do not skip malformed records silently.                                                           |
-
-**Tests:**
-
-* Missing unresolved target ref fails.
-* Missing relationshipType fails.
-* Legacy `relationship` field fails, not warns.
-* Ambiguous resolution records persist with candidates and reviewRequired.
-
----
-
-#### G3-P1-5 — Graph validator validates many important things, but not all production invariants
-
-`ArtifactGraphValidator` validates node ID/type/provenance, edge source/target existence, confidence ranges, unresolved references, residual payload, and residual references. 
-
-Still missing or weak:
-
-* No strict allowed node-type enum or registry.
-* No extractor ID/version requirement validation for all nodes.
-* No sourceRef/symbolRef deterministic format validation.
-* No privacy/security flag validation.
-* No synthetic node reason requirement.
-* No snapshot consistency across nodes/edges/residuals.
-* No structured source location on residuals.
-* No prevention of residual tenant/project mismatch if residual carries conflicting scope.
-
-**Fix:**
-
-| File                          | Action | Exact change                                                                                                                                                                               |
-| ----------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ArtifactGraphValidator.java` | MODIFY | Add extractor metadata requirement, deterministic ID/sourceRef validation, synthetic reason validation, privacy/security flag validation, residual scope validation, snapshot consistency. |
-| `ArtifactNodeDto.java`        | MODIFY | Add `syntheticReason` if needed.                                                                                                                                                           |
-| `ArtifactEdgeDto.java`        | MODIFY | Add source location/provenance if edges need traceability.                                                                                                                                 |
-
-**Tests:**
-
-* Source-derived node without sourceRef fails.
-* Synthetic node without syntheticReason fails.
-* Residual scope mismatch fails.
-* Node with invalid confidence/security flags fails.
-
----
-
-## Group 3 Production-Grade TODOs
-
-```markdown
-- [x] [P0] Persist real semantic models instead of `List.of()`.
-  - File: `ArtifactCompileJobService.java`
-  - Done when: compile pipeline persists non-empty semantic model output from TS/Java extractors.
-
-- [x] [P0] Strengthen `SemanticModelDto` for production provenance and compile-back.
-  - Files:
-    - `SemanticModelDto.java`
-    - `SemanticModelRepository.java`
-    - semantic model migration
-  - Done when: semantic model stores confidence, graph node refs, residual refs, review state, sourceRef, symbolRef, extractor metadata.
-
-- [x] [P0] Add structured residual source location to Java DTO and persistence.
-  - Files:
-    - `ResidualIslandDto.java`
-    - `ArtifactGraphValidator.java`
-    - `ArtifactGraphRepository.java`
-  - Done when: residual source location survives ingest/persist/readback.
-
-- [x] [P0] Replace raw unresolved edge maps with typed DTOs.
-  - Files:
-    - `ArtifactGraphIngestRequest.java`
-    - `UnresolvedGraphEdgeDto.java`
-    - `EdgeResolutionRecordDto.java`
-    - `ArtifactGraphValidator.java`
-    - `ArtifactGraphServiceImpl.java`
-  - Done when: unresolved/resolution records are type-safe and invalid records cannot be silently skipped.
-
-- [x] [P1] Harden graph validator production invariants.
-  - File: `ArtifactGraphValidator.java`
-  - Done when: deterministic IDs, source refs, synthetic reasons, extractor metadata, residual scope, and snapshot consistency are enforced.
-```
-
----
-
-# Recommended Parallel Execution Plan for Groups 1–3
-
-## Track A — Contract Hardening
-
-Start here first because it unblocks every other group.
-
-1. Fix proto duplicate field numbers.
-2. Add generated Java/TS contract validation.
-3. Remove legacy TS worker response fields.
-4. Replace manual frontend client DTOs with generated client.
-5. Add contract fixture tests.
-
-**Primary files:**
-
-```text
-products/yappc/core/yappc-services/src/main/proto/artifact_compiler.proto
-products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/ts-extractor-worker.ts
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ProcessTsExtractorWorker.java
-products/yappc/frontend/web/src/clients/artifactCompiler/ArtifactCompilerClient.ts
-```
-
-## Track B — Source Acquisition and Inventory Hardening
-
-Can run in parallel after Track A field decisions are clear.
-
-1. Fix provider routing.
-2. Implement governed credential repository/vault resolver.
-3. Complete or remove GitHub archive fallback.
-4. Replace simplified `.gitignore`.
-5. Fix snapshot repository null handling and scoped reads.
-
-**Primary files:**
-
-```text
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/GitHubSourceProvider.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/GitLabSourceProvider.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/SourceProviderRegistry.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/SourceCredentialResolver.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/RepositoryInventoryScanner.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/RepositorySnapshotRepository.java
-```
-
-## Track C — Graph/Residual/Semantic Fidelity
-
-Can run in parallel with Track B after Track A residual and edge DTOs are settled.
-
-1. Add typed unresolved edge and resolution DTOs.
-2. Add structured residual source location.
-3. Persist real semantic models from extractors.
-4. Expand semantic model fields.
-5. Harden graph validator invariants.
-
-**Primary files:**
-
-```text
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/ArtifactGraphIngestRequest.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/ResidualIslandDto.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/SemanticModelDto.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphValidator.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ArtifactCompileJobService.java
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/SemanticModelRepository.java
-```
-
----
-
-# Production Readiness Matrix for Groups 1–3
-
-| Objective                |                                      Current status at `e10d360` | Required production state                                           |
-| ------------------------ | ---------------------------------------------------------------: | ------------------------------------------------------------------- |
-| Canonical contract       |             Improved but blocked by invalid proto duplicate tags | Single valid generated contract for Java/TS/proto                   |
-| Java/TS worker boundary  |       Stricter Java validation, but TS still emits legacy fields | Canonical-only worker request/response                              |
-| Frontend client contract |                            Manually improved, still hand-written | Generated client only                                               |
-| Source provider routing  |                                      Unsafe GitHub `canHandle()` | Exact provider dispatch                                             |
-| Credential governance    |                                         Env-backed scoped lookup | Vault/registry-backed credentialRef ownership                       |
-| GitHub import            |                                Partial; fallback not implemented | Commit-pinned, large-repo safe, retry/rate-limit aware              |
-| GitLab import            |                                     Improved encoding/pagination | Fully tested provider with auth/rate/large repo behavior            |
-| Inventory scanner        |                             Improved but simplified `.gitignore` | Authoritative ignore semantics and golden fixtures                  |
-| Snapshot persistence     |                                  Exists, but null/scoping issues | Immutable, scoped, robust snapshot repository                       |
-| Graph validation         |                                           Centralized and useful | Strict typed DTOs and production invariants                         |
-| Residual fidelity        | Full payload mostly present, but structured source location lost | Original source + sourceLocation + checksum + raw ref persisted     |
-| Semantic model           |           DTO/repository exist, but pipeline persists empty list | Real semantic model persisted with provenance/confidence/graph refs |
-
----
-
-# Smallest Next Milestone
-
-## Milestone: Groups 1–3 Foundation Green
-
-Deliver only this:
-
-1. Valid canonical proto/schema.
-2. Generated or strictly contract-tested Java/TS types.
-3. Strict canonical TS worker output.
-4. Exact provider routing.
-5. Governed credential resolver design, with env-backed resolver explicitly dev/test only.
-6. Real GitHub fallback or explicit unsupported state.
-7. Authoritative `.gitignore` behavior.
-8. Scoped snapshot persistence.
-9. Typed unresolved/resolution DTOs.
-10. Full residual source location preservation.
-11. Real semantic model persistence from extractors.
-12. Golden tests for snapshot, inventory, graph, residual, and semantic model.
-
-Once this is green, Group 4 compile-back can be made production-safe without building on a shaky source/model foundation.
-
----
-
-# Global Execution Progress Update (2026-05-17)
-
-## Scope executed in this run
-
-Implemented and validated cross-phase hardening tasks from this tracker and the platform-wide audit tracker (`platform/comp-decomp-todo.md`) with concrete code/config/script changes.
-
-## Code/config changes completed
-
-* Registry lifecycle-readiness matrix shape normalized to schema-compatible fields in `config/canonical-product-registry.json`.
-* Lifecycle manifest contract expanded to support rollback manifests end-to-end:
-  * `platform/typescript/kernel-lifecycle/src/domain/ProductLifecyclePhase.ts`
-  * `platform/typescript/kernel-lifecycle/src/planning/ProductLifecyclePlanner.ts`
-  * `platform/typescript/kernel-lifecycle/src/manifest/LifecycleManifestWriter.ts`
-  * `platform/typescript/kernel-lifecycle/src/service/ManifestPointerStore.ts`
-  * `platform/typescript/kernel-product-contracts/src/events/KernelLifecycleEvent.ts`
-* Kernel CLI adapter compliance check fixed to validate against the real registry instead of the bridge wrapper:
-  * `scripts/kernel-product.mjs`
-* Digital Marketing lifecycle pilot checker aligned with current lifecycle semantics:
-  * rollback smoke uses explicit approval parameters
-  * deprecated failure scenarios removed
-  * unsupported `promote` execution removed from smoke/plan assertions
-  * graceful handling of expected dry-run approval provider failures for deploy/rollback
-  * `scripts/check-digital-marketing-lifecycle-pilot.mjs`
-* Platform boundary violation removed from Studio route metadata:
-  * replaced product-internal Data Cloud path literals in `platform/typescript/ghatana-studio/src/navigation/studioNavigation.ts`
-* Canonical registry lifecycle execution flags corrected:
-  * `digital-marketing.lifecycleExecutionAllowed = true`
-  * non-pilot products remain lifecycle execution disabled
-  * `config/canonical-product-registry.json`
-
-## Validation evidence (this run)
-
-* `pnpm --dir platform/typescript/kernel-product-contracts build` → passed
-* `pnpm --dir platform/typescript/kernel-lifecycle build` → passed
-* `pnpm check:phase0` → passed
-* `pnpm check:phase1` → passed
-* `pnpm check:phase2` → passed
-* `pnpm check:phase3` → passed
-* `pnpm check:phase4` → passed
-* `pnpm check:phase5` → passed
-* `pnpm check:phase6` → passed
-* `pnpm check:phase7` → passed
-* `pnpm check:phase8` → passed (`PHASE8_EXIT=0`, captured via `/tmp/ghatana-phase8.log`)
-* `pnpm check:product-registry` → passed (post-fix)
-
-## Current platform status after this run
-
-* Journeys/releases/areas targeted by the referenced trackers are now green at scripted phase-gate level (0-8).
-* Digital Marketing pilot checks now pass with current approval/runtime behavior.
-* Data Cloud platform-provider boundary checks pass with strict platform/product separation.
-* Production stubs scan still reports warnings (non-critical) and passes under current gate policy.
-
+# Final assessment
+
+The correct next focus is **not** to expand more products yet. The next highest-leverage path is:
+
+1. Fix CI/toolchain drift.
+2. Lock Digital Marketing as the single green lifecycle pilot.
+3. Normalize Studio/YAPPC/Kernel API paths.
+4. Harden Data Cloud provider-mode contract tests.
+5. Add one true artifact-intelligence E2E.
+6. Keep all future product shapes disabled until the matrix gates are real and executable.

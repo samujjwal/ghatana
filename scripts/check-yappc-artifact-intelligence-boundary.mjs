@@ -33,6 +33,8 @@ requireFile('platform/typescript/kernel-product-contracts/src/artifact-intellige
 requireFile('platform/typescript/kernel-product-contracts/src/artifact-intelligence/__tests__/ArtifactIntelligence.test.ts');
 requireFile('products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcPluginBridgeExtension.java');
 requireFile('products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts');
+requireFile('products/yappc/frontend/web/src/services/canvas/commands/__tests__/ProductUnitIntentExportService.test.ts');
+requireFile('products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-import-job.test.ts');
 
 requireIncludes(
   'platform/typescript/kernel-product-contracts/src/artifact-intelligence/ArtifactIntelligence.ts',
@@ -49,6 +51,42 @@ requireIncludes(
 requireIncludes(
   'products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts',
   'ProductUnitIntentSchema',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts',
+  'buildYappcArtifactIntelligenceEvidence',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts',
+  'dataCloudEvidenceEndpoint',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts',
+  'parseDataCloudEvidencePersistenceResponse',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/__tests__/ProductUnitIntentExportService.test.ts',
+  'surfaces Data Cloud evidence persistence failures before intent handoff',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/__tests__/ProductUnitIntentExportService.test.ts',
+  'requires Data Cloud evidence persistence responses to include evidence refs',
+);
+requireIncludes(
+  'products/yappc/frontend/web/src/services/canvas/commands/__tests__/ProductUnitIntentExportService.test.ts',
+  'providerMode: \'platform\'',
+);
+requireIncludes(
+  'products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-import-job.test.ts',
+  'creates a content-pinned dirty snapshot and carries it through synthesis',
+);
+requireIncludes(
+  'products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-import-job.test.ts',
+  'residualIslandsGenerated',
+);
+requireIncludes(
+  'products/yappc/frontend/libs/yappc-artifact-compiler/src/__tests__/e2e-import-job.test.ts',
+  'reviewRequired',
 );
 
 try {

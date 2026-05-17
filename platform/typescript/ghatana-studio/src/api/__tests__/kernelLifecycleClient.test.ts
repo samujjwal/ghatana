@@ -459,8 +459,8 @@ describe('kernelLifecycleClient', () => {
     ).resolves.toMatchObject({ status: 'applied' });
 
     const calls = getFetchCalls(mockFetch);
-    expect(calls[0].url).toBe('https://studio.test/api/kernel/lifecycle/product-unit-intents');
-    expect(calls[1].url).toBe('https://studio.test/api/kernel/lifecycle/product-unit-intents');
+    expect(calls[0].url).toBe('https://studio.test/api/v1/kernel/lifecycle/product-unit-intents');
+    expect(calls[1].url).toBe('https://studio.test/api/v1/kernel/lifecycle/product-unit-intents');
     expect(JSON.parse(String(calls[0].init.body))).toMatchObject({
       requestedAction: 'preview',
       providerMode: 'bootstrap',

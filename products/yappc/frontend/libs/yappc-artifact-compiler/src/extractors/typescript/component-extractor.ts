@@ -721,7 +721,7 @@ export async function extractComponentArtifact(
       // Graph node with stable sourceRef and symbolRef
       nodes.push({
         id: componentId,
-        kind: 'component' as GraphNodeKind,
+        type: 'component' as GraphNodeKind, // P0: Canonical field name 'type', not legacy 'kind'
         label: comp.name,
         sourceRef: snapshotRef ? componentId : undefined,
         symbolRef,
@@ -749,7 +749,7 @@ export async function extractComponentArtifact(
           sourceId: componentId,
           targetRef: usage,          // component name string — resolved in Phase 2
           targetKindHint: 'component',
-          relationship: 'renders',
+          relationshipType: 'RENDERS', // P0: Canonical field name 'relationshipType', not legacy 'relationship'
           sourceLocation: comp.sourceLocation,
           confidence: 0.85,
           metadata: { targetComponentName: usage, extractedFrom: record.relativePath },

@@ -61,38 +61,45 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         RepositorySnapshot snapshot,
         List<RepositorySnapshot.SnapshotFile> tsFiles
     ) {
-        return Promise.ofBlocking(blockingExecutor, () -> runExtractor(snapshot));
+        return Promise.ofBlocking(blockingExecutor, () -> runExtractor(snapshot, tsFiles));
     }
 
-    private ArtifactCompileJobService.ExtractionResult runExtractor(RepositorySnapshot snapshot) {
+    private ArtifactCompileJobService.ExtractionResult runExtractor(
+        RepositorySnapshot snapshot,
+        List<RepositorySnapshot.SnapshotFile> tsFiles
+    ) {
         if (workerCommand.isBlank()) {
             throw new IllegalStateException("TypeScript extractor worker command is not configured. Set YAPPC_TS_EXTRACTOR_WORKER_CMD.");
         }
+
+        List<RepositorySnapshot.SnapshotFile> scopedTsFiles =
+            tsFiles == null ? List.of() : tsFiles.stream().filter(Objects::nonNull).toList();
 
         try {
             Process process = new ProcessBuilder("sh", "-lc", workerCommand)
                 .redirectErrorStream(true)
                 .start();
 
+            Map<String, Object> snapshotRef = new java.util.LinkedHashMap<>();
+            snapshotRef.put("provider", snapshot.provider());
+            snapshotRef.put("repoId", snapshot.repoId());
+            if (snapshot.commitSha().isPresent()) {
+                snapshotRef.put("commitSha", snapshot.commitSha().get());
+            }
+
             Map<String, Object> payload = Map.of(
                 "snapshot", Map.of(
-                    "snapshotRef", Map.of(
-                        "provider", snapshot.provider(),
-                        "repoId", snapshot.repoId(),
-                        "commitSha", snapshot.commitSha().orElse(null),
-                        "ref", null,
-                        "resolvedPath", snapshot.materializedRoot(),
-                        "snapshotId", snapshot.snapshotId(),
-                        "checksum", snapshot.checksum(),
-                        "capturedAt", snapshot.createdAt().toString()
-                    ),
+                    "snapshotRef", snapshotRef,
                     "localRootPath", snapshot.materializedRoot(),
-                    "files", snapshot.files().stream().map(file -> Map.of(
+                    "files", scopedTsFiles.stream().map(file -> Map.of(
                         "relativePath", file.relativePath(),
                         "absolutePath", file.absolutePath(),
+                        "materialized", true,
                         "sizeBytes", file.sizeBytes(),
-                        "lastModified", file.lastModified().toString()
+                        "lastModifiedAt", file.lastModified().toString()
                     )).toList(),
+                    "snapshotAt", snapshot.createdAt().toString(),
+                    "shallow", false,
                     "diagnostics", snapshot.diagnostics()
                 )
             );
@@ -132,6 +139,8 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 snapshot
             );
             List<SemanticModelDto> semanticModels = mapSemanticModels(asListOfMaps(response.get("semanticModels")), snapshot);
+
+            enforceNodeFileScope(nodes, scopedTsFiles);
 
             return new ArtifactCompileJobService.ExtractionResult(
                 nodes,
@@ -431,6 +440,16 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             if (elementId == null || name == null) {
                 continue;
             }
+            
+            // P0: Normalize provenance to canonical values
+            String provenance = normalizeProvenance(asString(model.get("provenance")));
+            
+            // P0: Extract source location for semantic models
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sourceLocation = model.get("sourceLocation") instanceof Map<?, ?> location
+                ? (Map<String, Object>) location
+                : Map.of();
+            
             mapped.add(SemanticModelDto.builder()
                 .id(firstNonBlank(asString(model.get("id")), java.util.UUID.randomUUID().toString()))
                 .elementId(elementId)
@@ -438,7 +457,27 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 .name(name)
                 .qualifiedName(asString(model.get("qualifiedName")))
                 .filePath(asString(model.get("filePath")))
-                .provenance(firstNonBlank(asString(model.get("provenance")), "ts-extractor"))
+                .sourceLocation(sourceLocation)
+                .properties(mapOrEmpty(model.get("properties")))
+                .dependencies(asListOfStrings(model.get("dependencies")))
+                .dependents(asListOfStrings(model.get("dependents")))
+                // P0: Governance fields as first-class columns
+                .confidence(asDouble(model.get("confidence")))
+                .reviewRequired(asBoolean(model.get("reviewRequired")))
+                .reviewReason(asString(model.get("reviewReason")))
+                .securityFlags(asListOfStrings(model.get("securityFlags")))
+                .privacyFlags(asListOfStrings(model.get("privacyFlags")))
+                .graphNodeIds(asListOfStrings(model.get("graphNodeIds")))
+                .residualIslandIds(asListOfStrings(model.get("residualIslandIds")))
+                .sourceRef(asString(model.get("sourceRef")))
+                .symbolRef(asString(model.get("symbolRef")))
+                .extractorId(asString(model.get("extractorId")))
+                .extractorVersion(asString(model.get("extractorVersion")))
+                .modelVersionId(asString(model.get("modelVersionId")))
+                .syntheticReason(asString(model.get("syntheticReason")))
+                // P0: Normalized provenance
+                .provenance(provenance)
+                .extractedAt(java.time.Instant.now())
                 .snapshotId(firstNonBlank(asString(model.get("snapshotId")), snapshot.snapshotId()))
                 .tenantId(asString(model.get("tenantId")))
                 .workspaceId(asString(model.get("workspaceId")))
@@ -446,6 +485,56 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 .build());
         }
         return mapped;
+    }
+
+    private static void enforceNodeFileScope(
+        List<ArtifactNodeDto> nodes,
+        List<RepositorySnapshot.SnapshotFile> scopedTsFiles
+    ) {
+        if (nodes.isEmpty() || scopedTsFiles.isEmpty()) {
+            return;
+        }
+
+        java.util.Set<String> allowedRelativePaths = new java.util.HashSet<>();
+        java.util.Set<String> allowedAbsolutePaths = new java.util.HashSet<>();
+        for (RepositorySnapshot.SnapshotFile file : scopedTsFiles) {
+            if (file.relativePath() != null && !file.relativePath().isBlank()) {
+                allowedRelativePaths.add(normalizePath(file.relativePath()));
+            }
+            if (file.absolutePath() != null && !file.absolutePath().isBlank()) {
+                allowedAbsolutePaths.add(normalizePath(file.absolutePath()));
+            }
+        }
+
+        for (ArtifactNodeDto node : nodes) {
+            String filePath = node.filePath();
+            if (filePath == null || filePath.isBlank()) {
+                continue;
+            }
+            boolean allowed = allowedRelativePaths.contains(normalizePath(filePath))
+                || allowedAbsolutePaths.contains(normalizePath(filePath));
+            if (!allowed) {
+                Object crossFileRef = node.properties() == null ? null : node.properties().get("crossFileReference");
+                if (!Boolean.TRUE.equals(crossFileRef)) {
+                    throw new IllegalArgumentException(
+                        "Worker returned node outside routed TypeScript file scope: " + filePath);
+                }
+            }
+        }
+    }
+
+    private static String normalizePath(String value) {
+        return value.replace('\\', '/');
+    }
+
+    private static String normalizeProvenance(String provenance) {
+        if (provenance == null || provenance.isBlank()) {
+            return "inferred";
+        }
+        return switch (provenance) {
+            case "exact", "inferred", "synthesized", "manual", "assumed" -> provenance;
+            default -> "inferred";
+        };
     }
 
     private static Integer asInteger(Object value) {

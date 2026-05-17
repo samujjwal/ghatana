@@ -9,6 +9,10 @@ on:
         description: 'Comma-separated list of products to validate'
         required: false
 
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+
 jobs:
   resolve-affected:
     name: Resolve Affected Products
@@ -38,7 +42,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: pnpm install
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - run: pnpm install --frozen-lockfile
       - name: Validate Product Lifecycle
         run: pnpm kernel product validate ${{ matrix.product }}
