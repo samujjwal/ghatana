@@ -26,17 +26,15 @@ export class FileBootstrapGateProvider implements GateProvider {
   readonly backingStore = "file" as const;
   readonly capabilities: readonly string[];
   private readonly supportedGates: Set<string>;
+  private readonly explicitSupportedGates: boolean;
 
   constructor(options: FileBootstrapGateProviderOptions = {}) {
     this.providerId = options.providerId ?? "file-bootstrap-gates";
     this.version = options.version ?? "1.0.0";
     this.capabilities = options.capabilities ?? ["gates", "bootstrap-mode", "file-backed"];
-    // Track whether supportedGates was explicitly provided
     this.supportedGates = new Set(options.supportedGates);
     this.explicitSupportedGates = options.supportedGates !== undefined;
   }
-
-  private readonly explicitSupportedGates: boolean;
 
   async evaluateGate(request: GateEvaluationRequest): Promise<GateEvaluationResult> {
     const startedAt = Date.now();
@@ -52,8 +50,8 @@ export class FileBootstrapGateProvider implements GateProvider {
       };
     }
 
-    // Return NOT_READY for unsupported gates when supportedGates is explicitly configured
-    if (this.explicitSupportedGates && !this.supportedGates.has(gateId)) {
+    // Fail closed unless a gate is explicitly listed as supported.
+    if (!this.supportedGates.has(gateId)) {
       return {
         gateId,
         passed: false,
@@ -64,7 +62,7 @@ export class FileBootstrapGateProvider implements GateProvider {
       };
     }
 
-    // For supported gates (or backward compatibility when supportedGates not provided), return synthetic success
+    // Synthetic success is allowed only for explicitly configured bootstrap pilot gates.
     return {
       gateId,
       passed: true,
@@ -85,7 +83,7 @@ export class FileBootstrapGateProvider implements GateProvider {
       gateId: normalizedGateId,
       mode: "bootstrap",
       providerId: this.providerId,
-      policy: "pass-with-evidence",
+      policy: this.explicitSupportedGates ? "explicit-bootstrap-allowlist" : "not-ready",
     };
   }
 

@@ -21,11 +21,25 @@ import java.util.stream.Stream;
 
 /**
  * @doc.type class
- * @doc.purpose Trusted runtime local-folder source provider with path safety checks
+ * @doc.purpose Trusted runtime local-folder source provider with path safety checks, content SHA-256, and deterministic snapshots
  * @doc.layer service
  * @doc.pattern Strategy
+ * 
+ * P0: Added content SHA-256 checksums for actual file content instead of path+size.
+ * P0: Added deterministic snapshotId based on content hash.
+ * P0: Integrated RepositoryInventoryScanner for .gitignore filtering and file classification.
  */
 public final class LocalFolderSourceProvider implements SourceProvider {
+
+    private final RepositoryInventoryScanner scanner;
+
+    public LocalFolderSourceProvider() {
+        this.scanner = new RepositoryInventoryScanner();
+    }
+
+    public LocalFolderSourceProvider(RepositoryInventoryScanner scanner) {
+        this.scanner = scanner;
+    }
 
     @Override
     public String providerId() {
@@ -55,18 +69,26 @@ public final class LocalFolderSourceProvider implements SourceProvider {
                 ));
             }
 
-            List<RepositorySnapshot.SnapshotFile> files;
-            try (Stream<Path> stream = Files.walk(candidate)) {
-                files = stream
-                    .filter(Files::isRegularFile)
-                    .sorted(Comparator.comparing(Path::toString))
-                    .map(path -> toSnapshotFile(candidate, path))
-                    .toList();
-            }
+            // P0: Use RepositoryInventoryScanner for .gitignore filtering and file classification
+            java.util.Set<String> gitignorePatterns = scanner.parseGitignore(candidate);
+            RepositoryInventoryScanner.InventoryResult inventory = scanner.scanRepository(candidate, gitignorePatterns);
+
+            List<RepositorySnapshot.SnapshotFile> files = inventory.files().stream()
+                .map(entry -> new RepositorySnapshot.SnapshotFile(
+                    entry.relativePath(),
+                    candidate.resolve(entry.relativePath()).toString(),
+                    entry.sizeBytes(),
+                    Instant.now(),
+                    entry.checksum()
+                ))
+                .toList();
 
             String checksum = computeDirectoryChecksum(candidate, files);
+            // P0: Compute deterministic snapshotId from content hash
+            String deterministicSnapshotId = computeDeterministicSnapshotId(candidate.toString(), checksum);
+            
             RepositorySnapshot snapshot = RepositorySnapshot.builder()
-                .snapshotId(UUID.randomUUID().toString())
+                .snapshotId(deterministicSnapshotId)
                 .provider(providerId())
                 .repoId(candidate.toString())
                 .contentHash(checksum)
@@ -76,7 +98,7 @@ public final class LocalFolderSourceProvider implements SourceProvider {
                 .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
                     RepositorySnapshot.DiagnosticLevel.INFO,
                     "LOCAL_FOLDER_RESOLVED",
-                    "Local folder snapshot resolved",
+                    "Local folder snapshot resolved with deterministic snapshotId: " + deterministicSnapshotId + ", files: " + files.size(),
                     candidate.toString(),
                     Instant.now()
                 )))
@@ -108,8 +130,8 @@ public final class LocalFolderSourceProvider implements SourceProvider {
         try {
             FileTime lastModified = Files.getLastModifiedTime(file);
             long size = Files.size(file);
-            // Compute simple checksum from path and size
-            String checksum = computeFileChecksum(file, size);
+            // P0: Compute SHA-256 from actual file content instead of path+size
+            String checksum = computeFileContentChecksum(file);
             return new RepositorySnapshot.SnapshotFile(
                 root.relativize(file).toString().replace('\\', '/'),
                 file.toString(),
@@ -122,14 +144,17 @@ public final class LocalFolderSourceProvider implements SourceProvider {
         }
     }
 
-    private static String computeFileChecksum(Path file, long size) {
+    /**
+     * P0: Compute SHA-256 checksum from actual file content.
+     */
+    private static String computeFileContentChecksum(Path file) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(file.toString().getBytes());
-            digest.update(Long.toString(size).getBytes());
+            byte[] content = Files.readAllBytes(file);
+            digest.update(content);
             return HexFormat.of().formatHex(digest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            return "sha256-unavailable";
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Failed to compute file content checksum", e);
         }
     }
 
@@ -137,9 +162,24 @@ public final class LocalFolderSourceProvider implements SourceProvider {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             for (RepositorySnapshot.SnapshotFile file : files) {
+                // P0: Use file content checksum instead of just path+size
                 digest.update(file.relativePath().getBytes());
-                digest.update(Long.toString(file.sizeBytes()).getBytes());
+                digest.update(file.contentChecksum().getBytes());
             }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    /**
+     * P0: Compute deterministic snapshotId from path and content hash.
+     */
+    private static String computeDeterministicSnapshotId(String path, String contentHash) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(path.getBytes());
+            digest.update(contentHash.getBytes());
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);

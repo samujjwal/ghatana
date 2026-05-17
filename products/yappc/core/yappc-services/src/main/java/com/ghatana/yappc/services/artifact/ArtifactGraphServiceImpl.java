@@ -107,7 +107,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         List<ArtifactGraphRepository.EdgeResolutionRecord> resolutionRecords =
             mapEdgeResolutionRecords(request.edgeResolutionRecords());
         List<ArtifactGraphRepository.ResidualIslandRecord> residualIslands =
-            mapResidualIslands(request.residualIslandIds());
+            mapResidualIslands(request.residualIslandIds(), scope.tenantId(), scope.projectId(), scope.workspaceId(), snapshotId);
 
         // P4-2: Use incremental upsert instead of delete-then-insert
         // Only insert/update nodes that have changed based on checksum
@@ -215,12 +215,39 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return mapped;
     }
 
-    private static List<ArtifactGraphRepository.ResidualIslandRecord> mapResidualIslands(List<String> residualIslandIds) {
+    private static List<ArtifactGraphRepository.ResidualIslandRecord> mapResidualIslands(
+            List<String> residualIslandIds,
+            String tenantId,
+            String projectId,
+            String workspaceId,
+            String snapshotId) {
         if (residualIslandIds == null || residualIslandIds.isEmpty()) {
             return List.of();
         }
+        // P0: Emit residual island for every unsupported/unknown file with full schema
         return residualIslandIds.stream()
-            .map(id -> new ArtifactGraphRepository.ResidualIslandRecord(id, "unknown", "residual:" + id, 0, null, Map.of()))
+            .map(id -> new ArtifactGraphRepository.ResidualIslandRecord(
+                id,
+                "unknown_file",
+                "Unsupported or unknown file: " + id,
+                null, // sourceSpan
+                null, // checksum
+                null, // rawFragmentRef
+                "unsupported_file_type",
+                0.5, // confidence
+                true, // reviewRequired
+                0.7, // riskScore
+                1, // fileCount
+                Map.of(
+                    "fileId", id,
+                    "reason", "unsupported_file_type",
+                    "detectedAt", java.time.Instant.now().toString()
+                ),
+                tenantId,
+                projectId,
+                workspaceId,
+                snapshotId
+            ))
             .toList();
     }
 
@@ -535,86 +562,148 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
      * P1-13: Query the artifact graph with cursor-based pagination.
      * Routes graph queries through repository pagination and returns cursor for next page.
      * P3-1: Returns typed ArtifactGraphQueryResponse with items, nextCursor, totalEstimate, and scope metadata.
+     * P0: Accepts ArtifactRequestScope for proper tenant/workspace/project isolation.
+     * P0: Uses query-specific repository methods for accurate results across all data, not just current page.
      */
     @Override
-    public Promise<ArtifactGraphQueryResponse> queryGraph(String projectId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize) {
-        String cacheKey = cacheKey(tenantId, projectId);
+    public Promise<ArtifactGraphQueryResponse> queryGraph(ArtifactRequestScope scope, String queryType, List<String> seedNodeIds, String cursor, int pageSize, String snapshotId, Boolean includeUnresolvedEdges) {
+        String cacheKey = cacheKey(scope.tenantId(), scope.projectId());
         
         // P1-13: Use repository pagination instead of full fetch
         int effectivePageSize = pageSize > 0 ? pageSize : 100;
         
-        Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = repository.findNodesPaginated(projectId, tenantId, cursor, effectivePageSize);
-        Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = repository.findEdgesPaginated(projectId, tenantId, cursor, effectivePageSize);
-        
-
-        return nodesPromise.combine(edgesPromise, (nodesPageResult, edgesPageResult) -> {
-            List<ArtifactNodeDto> nodes = nodesPageResult.items();
-            List<ArtifactEdgeDto> edges = edgesPageResult.items();
-            
-            // Update cache with current page
-            nodeCache.put(cacheKey, nodes);
-            edgeCache.put(cacheKey, edges);
-            
-            // Build query-specific items
-            Map<String, Object> items = new HashMap<>();
-
-            switch (queryType.toLowerCase()) {
-                case "orphaned" -> {
-                    Set<String> allNodeIds = nodes.stream().map(ArtifactNodeDto::id).collect(Collectors.toSet());
-                    Set<String> referencedIds = edges.stream()
-                            .map(ArtifactEdgeDto::targetNodeId)
-                            .collect(Collectors.toSet());
-                    List<String> orphaned = allNodeIds.stream()
-                            .filter(id -> !referencedIds.contains(id))
-                            .collect(Collectors.toList());
-                    items.put("orphanedNodes", orphaned);
-                }
-                case "dependencies" -> {
-                    Map<String, List<String>> deps = new HashMap<>();
-                    for (ArtifactEdgeDto edge : edges) {
-                        if (seedNodeIds == null || seedNodeIds.contains(edge.sourceNodeId())) {
-                            deps.computeIfAbsent(edge.sourceNodeId(), k -> new ArrayList<>()).add(edge.targetNodeId());
-                        }
-                    }
-                    items.put("dependencies", deps);
-                }
-                case "dependents" -> {
-                    Map<String, List<String>> dependents = new HashMap<>();
-                    for (ArtifactEdgeDto edge : edges) {
-                        if (seedNodeIds == null || seedNodeIds.contains(edge.targetNodeId())) {
-                            dependents.computeIfAbsent(edge.targetNodeId(), k -> new ArrayList<>()).add(edge.sourceNodeId());
-                        }
-                    }
-                    items.put("dependents", dependents);
-                }
-                case "stats" -> {
+        // P0: Use query-specific repository methods for accurate results
+        switch (queryType.toLowerCase()) {
+            case "orphaned" -> {
+                return repository.findOrphanedNodeIds(scope.projectId(), scope.tenantId(), scope.workspaceId())
+                    .map(orphanedIds -> {
+                        Map<String, Object> items = new HashMap<>();
+                        items.put("orphanedNodes", orphanedIds);
+                        items.put("orphanedCount", orphanedIds.size());
+                        
+                        ArtifactGraphQueryResponse.ScopeMetadata scopeMetadata = new ArtifactGraphQueryResponse.ScopeMetadata(
+                            scope.tenantId(),
+                            scope.workspaceId(),
+                            scope.projectId(),
+                            queryType,
+                            effectivePageSize,
+                            false,
+                            snapshotId,
+                            includeUnresolvedEdges != null ? includeUnresolvedEdges : false
+                        );
+                        
+                        return ArtifactGraphQueryResponse.lastPage(items, (long) orphanedIds.size(), scopeMetadata);
+                    });
+            }
+            case "dependencies" -> {
+                List<String> sourceIds = seedNodeIds != null && !seedNodeIds.isEmpty() ? seedNodeIds : List.of();
+                return repository.findDependencies(scope.projectId(), scope.tenantId(), scope.workspaceId(), sourceIds)
+                    .map(dependencies -> {
+                        Map<String, Object> items = new HashMap<>();
+                        items.put("dependencies", dependencies);
+                        int totalDeps = dependencies.values().stream().mapToInt(List::size).sum();
+                        items.put("totalDependencies", totalDeps);
+                        
+                        ArtifactGraphQueryResponse.ScopeMetadata scopeMetadata = new ArtifactGraphQueryResponse.ScopeMetadata(
+                            scope.tenantId(),
+                            scope.workspaceId(),
+                            scope.projectId(),
+                            queryType,
+                            effectivePageSize,
+                            false,
+                            snapshotId,
+                            includeUnresolvedEdges != null ? includeUnresolvedEdges : false
+                        );
+                        
+                        return ArtifactGraphQueryResponse.lastPage(items, (long) totalDeps, scopeMetadata);
+                    });
+            }
+            case "dependents" -> {
+                List<String> targetIds = seedNodeIds != null && !seedNodeIds.isEmpty() ? seedNodeIds : List.of();
+                return repository.findDependents(scope.projectId(), scope.tenantId(), scope.workspaceId(), targetIds)
+                    .map(dependents -> {
+                        Map<String, Object> items = new HashMap<>();
+                        items.put("dependents", dependents);
+                        int totalDeps = dependents.values().stream().mapToInt(List::size).sum();
+                        items.put("totalDependents", totalDeps);
+                        
+                        ArtifactGraphQueryResponse.ScopeMetadata scopeMetadata = new ArtifactGraphQueryResponse.ScopeMetadata(
+                            scope.tenantId(),
+                            scope.workspaceId(),
+                            scope.projectId(),
+                            queryType,
+                            effectivePageSize,
+                            false,
+                            snapshotId,
+                            includeUnresolvedEdges != null ? includeUnresolvedEdges : false
+                        );
+                        
+                        return ArtifactGraphQueryResponse.lastPage(items, (long) totalDeps, scopeMetadata);
+                    });
+            }
+            case "stats" -> {
+                return repository.getGraphStats(scope.projectId(), scope.tenantId(), scope.workspaceId())
+                    .map(stats -> {
+                        Map<String, Object> items = new HashMap<>();
+                        items.putAll(stats);
+                        
+                        ArtifactGraphQueryResponse.ScopeMetadata scopeMetadata = new ArtifactGraphQueryResponse.ScopeMetadata(
+                            scope.tenantId(),
+                            scope.workspaceId(),
+                            scope.projectId(),
+                            queryType,
+                            effectivePageSize,
+                            false,
+                            snapshotId,
+                            includeUnresolvedEdges != null ? includeUnresolvedEdges : false
+                        );
+                        
+                        Long totalCount = stats.getOrDefault("nodeCount", 0L) + stats.getOrDefault("edgeCount", 0L);
+                        return ArtifactGraphQueryResponse.lastPage(items, totalCount, scopeMetadata);
+                    });
+            }
+            default -> {
+                // For unknown query types or pagination-based queries, fall back to pagination
+                Promise<ArtifactGraphRepository.PageResult<ArtifactNodeDto>> nodesPromise = 
+                    repository.findNodesPaginated(scope.projectId(), scope.tenantId(), scope.workspaceId(), cursor, effectivePageSize);
+                Promise<ArtifactGraphRepository.PageResult<ArtifactEdgeDto>> edgesPromise = 
+                    repository.findEdgesPaginated(scope.projectId(), scope.tenantId(), scope.workspaceId(), cursor, effectivePageSize);
+                
+                return nodesPromise.combine(edgesPromise, (nodesPageResult, edgesPageResult) -> {
+                    List<ArtifactNodeDto> nodes = nodesPageResult.items();
+                    List<ArtifactEdgeDto> edges = edgesPageResult.items();
+                    
+                    nodeCache.put(cacheKey, nodes);
+                    edgeCache.put(cacheKey, edges);
+                    
+                    Map<String, Object> items = new HashMap<>();
+                    items.put("nodes", nodes);
+                    items.put("edges", edges);
                     items.put("nodeCount", nodes.size());
                     items.put("edgeCount", edges.size());
-                    Map<String, Long> typeCounts = nodes.stream()
-                            .collect(Collectors.groupingBy(ArtifactNodeDto::type, Collectors.counting()));
-                    items.put("nodeTypeDistribution", typeCounts);
-                }
+                    
+                    boolean hasMore = nodesPageResult.nextCursor() != null;
+                    ArtifactGraphQueryResponse.ScopeMetadata scopeMetadata = new ArtifactGraphQueryResponse.ScopeMetadata(
+                        scope.tenantId(),
+                        scope.workspaceId(),
+                        scope.projectId(),
+                        queryType,
+                        effectivePageSize,
+                        hasMore,
+                        snapshotId,
+                        includeUnresolvedEdges != null ? includeUnresolvedEdges : false
+                    );
+                    
+                    Long totalEstimate = hasMore ? (long) effectivePageSize * 2 : (long) (nodes.size() + edges.size());
+                    
+                    if (hasMore) {
+                        return ArtifactGraphQueryResponse.withNextPage(items, nodesPageResult.nextCursor(), totalEstimate, scopeMetadata);
+                    } else {
+                        return ArtifactGraphQueryResponse.lastPage(items, totalEstimate, scopeMetadata);
+                    }
+                });
             }
-            
-            // P3-1: Build typed response with scope metadata
-            boolean hasMore = nodesPageResult.nextCursor() != null;
-            ArtifactGraphQueryResponse.ScopeMetadata scope = new ArtifactGraphQueryResponse.ScopeMetadata(
-                tenantId,
-                projectId,
-                queryType,
-                effectivePageSize,
-                hasMore
-            );
-            
-            // Estimate total (this is approximate - for accurate counts, a separate count query would be needed)
-            Long totalEstimate = hasMore ? (long) effectivePageSize * 2 : (long) nodes.size();
-            
-            if (hasMore) {
-                return ArtifactGraphQueryResponse.withNextPage(items, nodesPageResult.nextCursor(), totalEstimate, scope);
-            } else {
-                return ArtifactGraphQueryResponse.lastPage(items, totalEstimate, scope);
-            }
-        });
+        }
     }
 
     @Override

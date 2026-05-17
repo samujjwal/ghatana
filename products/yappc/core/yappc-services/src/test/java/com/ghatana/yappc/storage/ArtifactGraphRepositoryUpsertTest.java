@@ -171,6 +171,7 @@ class ArtifactGraphRepositoryUpsertTest {
         when(repository.findNodesPaginated(
             eq("product-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(null),
             eq(100)
         )).thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(
@@ -181,6 +182,7 @@ class ArtifactGraphRepositoryUpsertTest {
         ArtifactGraphRepository.PageResult<ArtifactNodeDto> result = repository.findNodesPaginated(
             "product-456",
             "tenant-123",
+            "workspace-123",
             null,
             100
         ).getResult();
@@ -190,6 +192,7 @@ class ArtifactGraphRepositoryUpsertTest {
         verify(repository).findNodesPaginated(
             eq("product-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq(null),
             eq(100)
         );
@@ -201,6 +204,7 @@ class ArtifactGraphRepositoryUpsertTest {
         when(repository.findNodesPaginated(
             eq("product-456"),
             eq("tenant-123"),
+            eq("workspace-123"),
             eq("cursor-abc123"),
             eq(100)
         )).thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(
@@ -211,6 +215,7 @@ class ArtifactGraphRepositoryUpsertTest {
         ArtifactGraphRepository.PageResult<ArtifactNodeDto> result = repository.findNodesPaginated(
             "product-456",
             "tenant-123",
+            "workspace-123",
             "cursor-abc123",
             100
         ).getResult();

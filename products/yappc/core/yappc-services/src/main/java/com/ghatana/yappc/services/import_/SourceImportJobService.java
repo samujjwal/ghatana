@@ -46,6 +46,17 @@ public interface SourceImportJobService {
     Promise<SourceImportJob> getJobStatus(String jobId);
 
     /**
+     * Get the current status of a job with scope validation.
+     * P0: Added scoped job lookup to prevent cross-tenant/workspace/project data leakage.
+     * @param jobId Job identifier
+     * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
+     * @return Promise with the job state (null if scope doesn't match)
+     */
+    Promise<SourceImportJob> getJobStatus(String jobId, String tenantId, String workspaceId, String projectId);
+
+    /**
      * Cancel a running job.
      * @param jobId Job identifier
      * @param cancelledBy User requesting cancellation
@@ -150,6 +161,16 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     @Override
     public Promise<SourceImportJob> getJobStatus(String jobId) {
         return jobRepository.findJobById(jobId)
+            .whenComplete((job, e) -> {
+                if (job != null) {
+                    notifyProgressCallbacks(job);
+                }
+            });
+    }
+
+    @Override
+    public Promise<SourceImportJob> getJobStatus(String jobId, String tenantId, String workspaceId, String projectId) {
+        return jobRepository.findJobById(jobId, tenantId, workspaceId, projectId)
             .whenComplete((job, e) -> {
                 if (job != null) {
                     notifyProgressCallbacks(job);

@@ -35,10 +35,13 @@ public record ArtifactGraphQueryResponse(
 ) {
     public record ScopeMetadata(
         String tenantId,
+        String workspaceId,
         String productId,
         String queryType,
         int pageSize,
-        boolean hasMore
+        boolean hasMore,
+        String snapshotId,
+        boolean includeUnresolvedEdges
     ) {}
     
     /**

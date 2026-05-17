@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DEFAULT_STUDIO_PILOT_PRODUCT_UNIT_ID,
   DEFAULT_STUDIO_DOCS_URL,
   DEFAULT_STUDIO_VERSION,
   readStudioEnvironment,
@@ -13,16 +14,19 @@ describe('studioEnvironment', () => {
 
     expect(config.version).toBe(DEFAULT_STUDIO_VERSION);
     expect(config.docsUrl).toBe(DEFAULT_STUDIO_DOCS_URL);
+    expect(config.pilotDefaultProductUnitId).toBe(DEFAULT_STUDIO_PILOT_PRODUCT_UNIT_ID);
   });
 
   it('uses configured values when environment variables are present and non-empty', () => {
     const config = resolveStudioEnvironmentConfig({
       VITE_STUDIO_VERSION: '1.2.3',
       VITE_STUDIO_DOCS_URL: 'https://docs.example.com/studio',
+      VITE_STUDIO_PILOT_DEFAULT_PRODUCT_UNIT_ID: 'finance',
     });
 
     expect(config.version).toBe('1.2.3');
     expect(config.docsUrl).toBe('https://docs.example.com/studio');
+    expect(config.pilotDefaultProductUnitId).toBe('finance');
   });
 
   it('treats empty string values as missing and falls back safely', () => {

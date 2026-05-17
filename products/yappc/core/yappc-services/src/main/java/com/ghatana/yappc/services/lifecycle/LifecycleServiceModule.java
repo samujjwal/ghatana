@@ -595,9 +595,13 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /** Provides durable source import job repository backed by source_import_jobs table. */
     @Provides
-    com.ghatana.yappc.storage.SourceImportJobRepository sourceImportJobRepository(DataSource dataSource) {
+    com.ghatana.yappc.storage.SourceImportJobRepository sourceImportJobRepository(
+        DataSource dataSource,
+        ObjectMapper objectMapper,
+        Executor executor
+    ) {
         logger.info("Creating SourceImportJobRepository (YAPPC-ArtifactCompiler)");
-        return new com.ghatana.yappc.storage.SourceImportJobRepository(dataSource);
+        return new com.ghatana.yappc.storage.SourceImportJobRepository(dataSource, objectMapper, executor);
     }
 
     /** Provides source import job service with durable persistence and progress tracking. */

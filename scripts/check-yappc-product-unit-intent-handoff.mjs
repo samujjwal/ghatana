@@ -50,6 +50,10 @@ requireIncludes(routePath, "requestedAction === 'apply'", 'YAPPC ProductUnitInte
 // New assertion: ProductUnitIntent apply must produce application result schema
 requireIncludes(routePath, "ProductUnitIntentApplicationResultSchema", 'YAPPC ProductUnitIntent route');
 requireIncludes(routePath, "applicationResult", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "lifecycleEventRefs", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "provenanceRefs", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "runtimeTruthRefs", 'YAPPC ProductUnitIntent route');
+requireIncludes(routePath, "evidenceRef: kernelResult.provenanceRefs[0]", 'YAPPC ProductUnitIntent route');
 
 requireIncludes(frontendServicePath, "DEFAULT_INTENT_ENDPOINT = '/api/v1/yappc/product-unit-intents'");
 requireIncludes(frontendServicePath, 'dataCloudEvidenceEndpoint');
@@ -61,6 +65,8 @@ requireIncludes(routeTestPath, 'requires stored Data Cloud evidence refs in plat
 requireIncludes(routeTestPath, 'requires explicit permission for apply');
 requireIncludes(frontendTestPath, 'stores evidence through Data Cloud before platform-mode handoff');
 requireIncludes(frontendTestPath, 'requires Data Cloud evidence persistence responses to include evidence refs');
+requireIncludes(routeTestPath, 'marks result providerMode as platform in platform mode');
+requireIncludes(routeTestPath, 'queues apply when explicit permission is present');
 
 function runPnpm(args, cwd) {
   return spawnSync(pnpmCommand, args, {

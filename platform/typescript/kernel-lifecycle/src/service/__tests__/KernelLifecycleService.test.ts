@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createExecutableProductUnit,
   type KernelLifecycleProviderContext,
+  type ProductUnitIntent,
   type ProductUnit,
   type RegistryProvider,
 } from '@ghatana/kernel-product-contracts';
@@ -553,6 +554,73 @@ describe('KernelLifecycleService', () => {
       safeDetails: { missingProviders: ['memory'] },
     });
   });
+
+  it('applies ProductUnitIntent via intent-capable registry and records event/runtime/provenance refs', async () => {
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createIntentCapableRegistryProvider([productUnit]),
+      providerContext: createBootstrapProviderContext(),
+      clock: () => '2026-05-14T00:00:00.000Z',
+    });
+
+    const result = await service.applyProductUnitIntent(createIntent(), {
+      mode: 'bootstrap',
+      allowWrite: true,
+    });
+
+    expect(result.status).toBe('applied');
+    expect(result.blockedReasons).toEqual([]);
+    expect(result.errors).toEqual([]);
+    expect(result.lifecycleEventRefs).toEqual(['events.jsonl']);
+    expect(result.runtimeTruthRefs).toEqual(['runtime-truth.json']);
+    expect(result.provenanceRefs).toEqual(['provenance.json']);
+  });
+
+  it('returns explicit runtime truth failure reason when runtime truth write fails', async () => {
+    const providerContext = createBootstrapProviderContext();
+    providerContext.runtimeTruth = {
+      ...providerContext.runtimeTruth!,
+      recordRuntimeTruth: vi.fn().mockResolvedValue({ success: false, error: 'runtime write failed' }),
+    };
+
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createIntentCapableRegistryProvider([productUnit]),
+      providerContext,
+    });
+
+    const result = await service.applyProductUnitIntent(createIntent(), {
+      mode: 'bootstrap',
+      allowWrite: true,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.blockedReasons).toEqual(['runtime-truth-write-failed']);
+    expect(result.errors).toEqual(['runtime write failed']);
+  });
+
+  it('returns explicit provenance failure reason when provenance write fails', async () => {
+    const providerContext = createBootstrapProviderContext();
+    providerContext.provenance = {
+      ...providerContext.provenance!,
+      recordProvenance: vi.fn().mockResolvedValue({ success: false, error: 'provenance write failed' }),
+    };
+
+    const service = new KernelLifecycleService({
+      repoRoot,
+      registryProvider: createIntentCapableRegistryProvider([productUnit]),
+      providerContext,
+    });
+
+    const result = await service.applyProductUnitIntent(createIntent(), {
+      mode: 'bootstrap',
+      allowWrite: true,
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.blockedReasons).toEqual(['provenance-write-failed']);
+    expect(result.errors).toEqual(['provenance write failed']);
+  });
 });
 
 function createRegistryProvider(productUnits: readonly ProductUnit[]): RegistryProvider {
@@ -565,6 +633,71 @@ function createRegistryProvider(productUnits: readonly ProductUnit[]): RegistryP
     listProductUnits: async () => productUnits,
     listProductUnitsByKind: async (kind) => productUnits.filter((unit) => unit.kind === kind),
     validateProductUnit: async () => ({ valid: true, errors: [] }),
+  };
+}
+
+function createIntentCapableRegistryProvider(productUnits: readonly ProductUnit[]): RegistryProvider {
+  const base = createRegistryProvider(productUnits);
+  return {
+    ...base,
+    previewApplyProductUnitIntent: async (intent: ProductUnitIntent) => ({
+      valid: true,
+      productUnitId: intent.productUnit.id,
+      operation: intent.intentType,
+      before: null,
+      after: intent.productUnit,
+      diff: ['~ registry.preview'],
+      registryPath: 'config/canonical-product-registry.json',
+      errors: [],
+      warnings: [],
+    }),
+    applyProductUnitIntent: async (intent: ProductUnitIntent, options: { allowWrite: boolean }) => ({
+      valid: options.allowWrite,
+      applied: options.allowWrite,
+      productUnitId: intent.productUnit.id,
+      operation: intent.intentType,
+      before: null,
+      after: intent.productUnit,
+      diff: ['~ registry.apply'],
+      registryPath: 'config/canonical-product-registry.json',
+      errors: options.allowWrite ? [] : ['allowWrite required'],
+      warnings: [],
+    }),
+  } as unknown as RegistryProvider;
+}
+
+function createIntent(): ProductUnitIntent {
+  return {
+    schemaVersion: '1.0.0',
+    intentId: 'intent:yappc:digital-marketing:corr-1',
+    intentType: 'create',
+    scope: {
+      tenantId: 'tenant-1',
+      workspaceId: 'workspace-1',
+      projectId: 'project-1',
+    },
+    producer: {
+      id: 'yappc',
+      type: 'yappc',
+      correlationId: 'corr-1',
+    },
+    target: {
+      registryProvider: 'ghatana-file-registry',
+      sourceProvider: 'ghatana-file-registry',
+    },
+    productUnit: {
+      schemaVersion: '1.0.0',
+      id: 'digital-marketing',
+      name: 'Digital Marketing',
+      kind: 'business-product',
+      surfaces: [
+        {
+          id: 'web',
+          type: 'web',
+          implementationStatus: 'implemented',
+        },
+      ],
+    },
   };
 }
 

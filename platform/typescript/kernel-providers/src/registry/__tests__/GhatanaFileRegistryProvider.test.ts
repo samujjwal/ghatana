@@ -2,7 +2,7 @@
  * Tests for GhatanaFileRegistryProvider.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { GhatanaFileRegistryProvider } from "../GhatanaFileRegistryProvider";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
@@ -28,6 +28,36 @@ describe("GhatanaFileRegistryProvider", () => {
   });
 
   describe("getProductUnit", () => {
+    it("defaults to strict validation in CI unless explicitly overridden", async () => {
+      vi.stubEnv("CI", "true");
+      vi.stubEnv("NODE_ENV", "production");
+      try {
+        const strictByDefault = new GhatanaFileRegistryProvider({ registryPath: mockRegistryPath });
+        provider = new GhatanaFileRegistryProvider({ registryPath: mockRegistryPath, strict: false });
+
+        await fs.writeFile(
+          mockRegistryPath,
+          JSON.stringify({
+            version: "1.0.0",
+            registry: {
+              broken: {
+                id: "broken",
+                name: "Broken",
+                kind: "business-product",
+                surfaces: [{ type: "desktop", implementationStatus: "half-built" }],
+                lifecycleStatus: "planned",
+              },
+            },
+          })
+        );
+
+        await expect(strictByDefault.getProductUnit("broken")).rejects.toThrow(/invalid registry entry/i);
+        await expect(provider.getProductUnit("broken")).resolves.toBeTruthy();
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+
     it("uses the default registry path and reload alias", async () => {
       const defaultRegistryPath = path.join(
         process.cwd(),

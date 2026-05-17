@@ -5,6 +5,7 @@ import com.ghatana.yappc.domain.source.SourceLocator;
 import io.activej.promise.Promise;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -12,13 +13,18 @@ import java.util.Optional;
 
 /**
  * @doc.type class
- * @doc.purpose Registry of Java source providers used by import orchestration
+ * @doc.purpose Registry for source provider implementations with capability introspection
  * @doc.layer service
  * @doc.pattern Registry
+ * 
+ * P1-14: Updated to include GitLab provider capability.
  */
 public final class SourceProviderRegistry {
 
-    private final Map<String, SourceProvider> providers = new LinkedHashMap<>();
+    private final Map<String, SourceProvider> providers = new HashMap<>();
+
+    public SourceProviderRegistry() {
+    }
 
     public SourceProviderRegistry register(SourceProvider provider) {
         SourceProvider validated = Objects.requireNonNull(provider, "provider must not be null");
@@ -30,7 +36,9 @@ public final class SourceProviderRegistry {
         return new SourceProviderRegistry()
             .register(new GitHubSourceProvider())
             .register(new LocalFolderSourceProvider())
-            .register(new ArchiveSourceProvider());
+            .register(new ArchiveSourceProvider())
+            // P1-14: Register GitLab source provider
+            .register(new GitLabSourceProvider());
     }
 
     public Collection<SourceProvider> providers() {

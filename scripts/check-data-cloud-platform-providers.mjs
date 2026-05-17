@@ -29,6 +29,13 @@ function requireIncludes(relativePath, needle, label = relativePath) {
   }
 }
 
+function requireNotIncludes(relativePath, needle, label = relativePath) {
+  const source = read(relativePath);
+  if (source.includes(needle)) {
+    errors.push(`${label} must not include ${needle}`);
+  }
+}
+
 function isDirectory(pathValue) {
   try {
     return statSync(pathValue).isDirectory();
@@ -74,10 +81,22 @@ const providerContractPath =
 const providerContextPath = 'platform/typescript/kernel-lifecycle/src/providers/LifecycleProviderContext.ts';
 const dataCloudExtensionPath =
   'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelExtension.java';
+const dataCloudProviderPaths = [
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudEventProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudArtifactProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudHealthProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudProvenanceProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudMemoryProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudRuntimeTruthProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudPolicyEvidenceProvider.java',
+];
 
 requireFile(providerContractPath);
 requireFile(providerContextPath);
 requireFile(dataCloudExtensionPath);
+for (const providerPath of dataCloudProviderPaths) {
+  requireFile(providerPath);
+}
 
 requireIncludes(providerContractPath, 'LifecycleEventProvider');
 requireIncludes(providerContractPath, 'LifecycleArtifactProvider');
@@ -104,6 +123,8 @@ requireIncludes(dataCloudExtensionPath, 'DataCloudProvenanceProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudMemoryProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudRuntimeTruthProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudPolicyEvidenceProvider');
+requireNotIncludes(dataCloudExtensionPath, 'TODO', 'Data Cloud kernel extension');
+requireNotIncludes(dataCloudExtensionPath, 'FIXME', 'Data Cloud kernel extension');
 
 // Check for canonical envelope schema in kernel-bridge-providers
 // Client and gateway are aligned to use raw schemas as the canonical envelope

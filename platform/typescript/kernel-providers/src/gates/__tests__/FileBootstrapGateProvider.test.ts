@@ -57,8 +57,8 @@ describe("FileBootstrapGateProvider", () => {
     });
   });
 
-  describe("with supportedGates not configured (backward compatibility)", () => {
-    it("returns synthetic success for any gate when supportedGates is not provided", async () => {
+  describe("with supportedGates not configured", () => {
+    it("fails closed and returns NOT_READY when supportedGates is not provided", async () => {
       const provider = new FileBootstrapGateProvider();
 
       const result = await provider.evaluateGate({
@@ -68,9 +68,10 @@ describe("FileBootstrapGateProvider", () => {
         context: {},
       });
 
-      expect(result.passed).toBe(true);
+      expect(result.passed).toBe(false);
       expect(result.gateId).toBe("registry-validation");
-      expect(result.evidence).toEqual(["bootstrap-gate:registry-validation"]);
+      expect(result.evidence).toEqual([]);
+      expect(result.reason).toContain("NOT_READY");
     });
   });
 

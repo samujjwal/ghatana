@@ -6,6 +6,7 @@ import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
+import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryRequest;
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import io.activej.http.HttpRequest;
@@ -314,6 +315,7 @@ public class ArtifactGraphController {
      *
      * <p>P1-8: Resolves tenant from authenticated principal, not request body.
      * This prevents cross-tenant access through payload manipulation.
+     * P0: Uses typed ArtifactGraphQueryRequest instead of raw map parsing.
      */
     public Promise<HttpResponse> query(HttpRequest request) {
         log.info("Artifact graph query request");
@@ -334,16 +336,8 @@ public class ArtifactGraphController {
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
-                        String projectId = (String) payload.get("projectId");
-                        String queryType = (String) payload.get("queryType");
-                        @SuppressWarnings("unchecked")
-                        List<String> seedIds = (List<String>) payload.getOrDefault("seedIds", List.of());
-
-                        if (queryType == null) {
-                            return Promise.of(badRequest400("Missing required fields: projectId, queryType"));
-                        }
+                        // P0: Use typed request DTO instead of raw map parsing
+                        ArtifactGraphQueryRequest queryRequest = JsonMapper.fromJson(json, ArtifactGraphQueryRequest.class);
 
                         String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
                         String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
@@ -352,37 +346,17 @@ public class ArtifactGraphController {
                             .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
                                 .build());
                         }
-                        if (projectId != null && !projectId.isBlank() && !scopedProjectId.equals(projectId)) {
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
-                                .build());
-                        }
 
                         // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
-                        String requestTenantId = (String) payload.get("tenantId");
-                        if (requestTenantId != null && !requestTenantId.equals(tenantId)) {
-                            log.warn("Tenant scope mismatch in query: principalTenant={}, requestTenant={}",
-                                tenantId, requestTenantId);
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                                .build());
-                        }
+                        // (This is handled by not allowing tenantId in the typed request DTO)
 
-                        // P1-8: Parse and validate pagination parameters from payload
-                        String cursor = (String) payload.get("cursor");
-                        Integer limit = parseInteger(payload.get("limit"), 100);
-                        Boolean includeUnresolvedEdges = parseBoolean(payload.get("includeUnresolvedEdges"), false);
-                        String snapshotId = (String) payload.get("snapshotId");
+                        log.info("Querying artifact graph: projectId={}, workspaceId={}, queryType={}, cursor={}, limit={}, includeUnresolved={}",
+                            scopedProjectId, scopedWorkspaceId, queryRequest.queryType(), 
+                            queryRequest.cursor() != null ? "present" : "null", queryRequest.limit(), queryRequest.includeUnresolvedEdges());
 
-                        // Validate limit is within reasonable bounds
-                        if (limit < 1 || limit > 1000) {
-                            return Promise.of(badRequest400("Invalid limit: must be between 1 and 1000"));
-                        }
-
-                        log.info("Querying artifact graph: projectId={}, queryType={}, cursor={}, limit={}, includeUnresolved={}",
-                            scopedProjectId, queryType, cursor != null ? "present" : "null", limit, includeUnresolvedEdges);
-
-                        return artifactGraphService.queryGraph(scopedProjectId, tenantId, queryType, seedIds, cursor, limit)
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedProjectId, tenantId, scopedWorkspaceId);
+                        return artifactGraphService.queryGraph(scope, queryRequest.queryType(), queryRequest.seedNodeIds(), 
+                                queryRequest.cursor(), queryRequest.limit(), queryRequest.snapshotId(), queryRequest.includeUnresolvedEdges())
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -394,6 +368,9 @@ public class ArtifactGraphController {
                     } catch (JsonProcessingException e) {
                         log.error("Error parsing query request", e);
                         return Promise.of(badRequest400("Invalid JSON format"));
+                    } catch (IllegalArgumentException e) {
+                        log.error("Invalid query request parameters", e);
+                        return Promise.of(badRequest400("Invalid request parameters: " + e.getMessage()));
                     }
                 })
                 .whenException(e -> log.error("Error querying artifact graph", e));

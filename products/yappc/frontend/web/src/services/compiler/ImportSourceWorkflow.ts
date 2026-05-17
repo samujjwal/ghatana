@@ -13,6 +13,9 @@
  * @doc.type service
  * @doc.purpose Import from source workflow
  * @doc.layer product
+ * 
+ * P1-24: Updated to consume Java API (/api/v1/yappc/artifact/import-source) instead of TS API
+ * for governed source import orchestration with proper tenant/workspace/project scope enforcement.
  */
 
 import * as ts from 'typescript';
@@ -1162,7 +1165,7 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
   const endpoint = options.options?.importApiEndpoint;
   if (endpoint && endpoint !== '/api/v1/yappc/artifact/import-source') {
     if (requireServerImport) {
-      throw new Error('Governed source imports must use the canonical backend import endpoint.');
+      throw new Error('Governed source imports must use the canonical Java backend import endpoint.');
     }
     return null;
   }
@@ -1170,7 +1173,7 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
   if (options.source.length > maxSourceLength) {
     throw new Error(`Source locator exceeds the ${maxSourceLength} character import limit.`);
   }
-  if (requireServerImport && (!options.options?.tenantId || !options.options.workspaceId || !options.projectId)) {
+  if (requireServerImport && (!options.options?.tenantId || !options.options?.workspaceId || !options.projectId)) {
     throw new Error('Governed source imports require tenant, workspace, and project scope.');
   }
 
@@ -1186,10 +1189,16 @@ async function tryImportFromServer(options: ImportSourceOptions): Promise<Import
       includeDocumentation: options.options?.includeDocumentation,
       preserveStructure: options.options?.preserveStructure,
       allowUnsafeComponents: options.options?.allowUnsafeComponents,
+      repoToken: options.options?.repoToken,
+      repoMaxFiles: options.options?.repoMaxFiles,
+      repoMaxFileSizeBytes: options.options?.repoMaxFileSizeBytes,
+      residualConfidenceThreshold: options.options?.residualConfidenceThreshold,
     },
   };
 
   try {
+    // P1-24: Consumes Java API endpoint (/api/v1/yappc/artifact/import-source) via yappcApi.sourceImports
+    // The API client is configured to call the Java backend for governed source import orchestration
     const result = await yappcApi.sourceImports.start(
       payload,
       {

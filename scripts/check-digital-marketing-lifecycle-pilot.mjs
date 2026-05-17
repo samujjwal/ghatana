@@ -22,6 +22,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const PRODUCT_ID = 'digital-marketing';
+const KERNEL_LIFECYCLE_SERVICE_PATH = 'platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts';
+const STUDIO_KERNEL_CLIENT_PATH = 'platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts';
 const GENERATED_MANIFEST_KEYS = [
   'lifecyclePlan',
   'lifecycleResult',
@@ -69,6 +71,18 @@ async function loadManifestValidators() {
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
+}
+
+function readRelative(relativePath) {
+  const absolutePath = join(repoRoot, relativePath);
+  if (!existsSync(absolutePath)) {
+    return null;
+  }
+  return readFileSync(absolutePath, 'utf8');
+}
+
+function asNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function runKernelProduct(args) {
@@ -403,12 +417,64 @@ async function main() {
     }
   }
 
+  errors.push(...validateProvenanceAndStudioContracts());
+
   if (options.smoke) {
     const smokeErrors = await runLifecycleSmoke();
     errors.push(...smokeErrors);
   }
 
   reportAndExit(errors, warnings);
+}
+
+function validateProvenanceAndStudioContracts() {
+  const errors = [];
+
+  const kernelLifecycleServiceSource = readRelative(KERNEL_LIFECYCLE_SERVICE_PATH);
+  if (kernelLifecycleServiceSource === null) {
+    errors.push(`Missing required Kernel lifecycle service source: ${KERNEL_LIFECYCLE_SERVICE_PATH}`);
+    return errors;
+  }
+
+  const studioKernelClientSource = readRelative(STUDIO_KERNEL_CLIENT_PATH);
+  if (studioKernelClientSource === null) {
+    errors.push(`Missing required Studio kernel client source: ${STUDIO_KERNEL_CLIENT_PATH}`);
+    return errors;
+  }
+
+  const requiredKernelLifecycleMarkers = [
+    'private async recordProvenance(',
+    'this.providerContext.provenance.recordProvenance(',
+    'private async recordRuntimeTruth(',
+    'this.providerContext.runtimeTruth.recordRuntimeTruth(',
+    'private async loadRunSummary(',
+    'eventsRef',
+    'healthSnapshotRef',
+    'productUnitId: result.productId',
+  ];
+
+  for (const marker of requiredKernelLifecycleMarkers) {
+    if (!kernelLifecycleServiceSource.includes(marker)) {
+      errors.push(`Kernel lifecycle service must include marker for provenance/studio summary contract: ${marker}`);
+    }
+  }
+
+  const requiredStudioClientMarkers = [
+    'export const LifecycleRunSchema = z',
+    'productUnitId: z.string().trim().min(1)',
+    'eventsRef: z.string().trim().min(1).optional()',
+    'healthSnapshotRef: z.string().trim().min(1).optional()',
+    'getLifecycleRun(productUnitId: string, runId: string)',
+    'listLifecycleRuns(productUnitId: string)',
+  ];
+
+  for (const marker of requiredStudioClientMarkers) {
+    if (!studioKernelClientSource.includes(marker)) {
+      errors.push(`Studio kernel client must include lifecycle run visibility marker: ${marker}`);
+    }
+  }
+
+  return errors;
 }
 
 async function runLifecycleSmoke() {
@@ -442,11 +508,115 @@ async function runLifecycleSmoke() {
     if (payload?.result?.status !== 'skipped') {
       errors.push(`Lifecycle smoke phase "${smokeRun.phase}" must dry-run to skipped status, got "${payload?.result?.status}"`);
     }
+    errors.push(...validateLifecycleEvidenceRefs(smokeRun.phase, payload));
+    errors.push(...validateLatestPointerConsistency(smokeRun.phase, payload));
     errors.push(...validateGeneratedManifests(smokeRun.phase, payload, {
       ArtifactManifestSchema,
       DeploymentManifestSchema,
     }));
     errors.push(...validateGateEvidence(smokeRun.phase, payload));
+  }
+
+  return errors;
+}
+
+function validateLifecycleEvidenceRefs(phase, payload) {
+  const errors = [];
+  const result = payload?.result;
+  const manifests = payload?.manifests ?? {};
+
+  if (!result || typeof result !== 'object') {
+    errors.push(`Lifecycle smoke phase "${phase}" missing execution result payload`);
+    return errors;
+  }
+
+  if (!asNonEmptyString(result.eventsRef)) {
+    errors.push(`Lifecycle smoke phase "${phase}" must provide result.eventsRef for lifecycle event traceability`);
+  }
+  if (!asNonEmptyString(result.healthSnapshotRef)) {
+    errors.push(`Lifecycle smoke phase "${phase}" must provide result.healthSnapshotRef for runtime truth linkage`);
+  }
+  if (!asNonEmptyString(result.runId) || !asNonEmptyString(result.correlationId) || !asNonEmptyString(result.productId)) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" must include runId/correlationId/productId to keep Studio run summaries resolvable`,
+    );
+  }
+
+  const lifecycleEventsManifest = manifests.lifecycleEvents;
+  if (!asNonEmptyString(lifecycleEventsManifest)) {
+    errors.push(`Lifecycle smoke phase "${phase}" missing lifecycleEvents manifest pointer`);
+  } else if (result.eventsRef !== lifecycleEventsManifest) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" has mismatched event refs: result.eventsRef (${result.eventsRef}) != manifests.lifecycleEvents (${lifecycleEventsManifest})`,
+    );
+  }
+
+  const lifecycleHealthSnapshotManifest = manifests.lifecycleHealthSnapshot;
+  if (!asNonEmptyString(lifecycleHealthSnapshotManifest)) {
+    errors.push(`Lifecycle smoke phase "${phase}" missing lifecycleHealthSnapshot manifest pointer`);
+  } else if (result.healthSnapshotRef !== lifecycleHealthSnapshotManifest) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" has mismatched health refs: result.healthSnapshotRef (${result.healthSnapshotRef}) != manifests.lifecycleHealthSnapshot (${lifecycleHealthSnapshotManifest})`,
+    );
+  }
+
+  return errors;
+}
+
+function validateLatestPointerConsistency(phase, payload) {
+  const errors = [];
+  const plan = payload?.plan;
+  const manifests = payload?.manifests ?? {};
+
+  if (!plan || !asNonEmptyString(plan.runId) || !asNonEmptyString(plan.correlationId)) {
+    errors.push(`Lifecycle smoke phase "${phase}" missing plan/run metadata needed for latest pointer validation`);
+    return errors;
+  }
+
+  const latestPointerPath = join(
+    repoRoot,
+    '.kernel',
+    'out',
+    'products',
+    PRODUCT_ID,
+    phase,
+    'latest',
+    'manifest-pointers.json',
+  );
+
+  if (!existsSync(latestPointerPath)) {
+    errors.push(`Lifecycle smoke phase "${phase}" missing latest manifest pointer file: ${latestPointerPath}`);
+    return errors;
+  }
+
+  let latestPointers;
+  try {
+    latestPointers = readJson(latestPointerPath);
+  } catch (error) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" failed to parse latest manifest pointers: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return errors;
+  }
+
+  if (latestPointers.runId !== plan.runId) {
+    errors.push(`Lifecycle smoke phase "${phase}" latest pointer runId drift: ${latestPointers.runId} != ${plan.runId}`);
+  }
+  if (latestPointers.correlationId !== plan.correlationId) {
+    errors.push(
+      `Lifecycle smoke phase "${phase}" latest pointer correlationId drift: ${latestPointers.correlationId} != ${plan.correlationId}`,
+    );
+  }
+  if (latestPointers.providerMode !== plan.providerMode) {
+    errors.push(`Lifecycle smoke phase "${phase}" latest pointer providerMode drift: ${latestPointers.providerMode} != ${plan.providerMode}`);
+  }
+
+  for (const key of ['lifecycleResult', 'lifecycleEvents', 'lifecycleHealthSnapshot']) {
+    if (asNonEmptyString(manifests[key]) && latestPointers[key] !== manifests[key]) {
+      errors.push(
+        `Lifecycle smoke phase "${phase}" latest pointer ${key} drift: ${latestPointers[key]} != ${manifests[key]}`,
+      );
+    }
   }
 
   return errors;
@@ -471,7 +641,11 @@ function validateGateEvidence(phase, payload) {
 
   try {
     const gateResults = readJson(gateResultManifestPath);
-    const gateResultsArray = Array.isArray(gateResults) ? gateResults : gateResults?.results;
+    const gateResultsArray = Array.isArray(gateResults)
+      ? gateResults
+      : Array.isArray(gateResults?.results)
+        ? gateResults.results
+        : gateResults?.gates;
 
     if (!Array.isArray(gateResultsArray)) {
       errors.push(`Lifecycle smoke phase "${phase}" gateResultManifest has invalid format: expected array of results`);
@@ -480,9 +654,9 @@ function validateGateEvidence(phase, payload) {
 
     for (const gateResult of gateResultsArray) {
       const gateId = gateResult?.gateId;
-      const passed = gateResult?.passed;
-      const reason = gateResult?.reason;
-      const evidence = gateResult?.evidence;
+      const passed = gateResult?.passed === true || gateResult?.status === 'passed';
+      const reason = gateResult?.reason ?? gateResult?.details;
+      const evidence = gateResult?.evidence ?? gateResult?.evidenceRefs;
 
       if (passed === true) {
         // Check for synthetic bootstrap gate success without real evidence

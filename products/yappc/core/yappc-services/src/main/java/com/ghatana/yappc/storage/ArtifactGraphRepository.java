@@ -494,13 +494,15 @@ public final class ArtifactGraphRepository {
     /**
      * P4-4: Cursor-based pagination for nodes.
      * Returns a page of nodes along with a cursor for the next page.
+     * P0: Added workspaceId parameter and workspace_id filter to prevent cross-workspace data leakage.
      */
     public Promise<PageResult<ArtifactNodeDto>> findNodesPaginated(
-            String productId, String tenantId, String cursor, int pageSize) {
+            String productId, String tenantId, String workspaceId, String cursor, int pageSize) {
         return Promise.ofBlocking(executor, () -> {
             String cursorFilter = "";
             List<Object> params = new ArrayList<>();
             params.add(tenantId);
+            params.add(workspaceId);
             params.add(productId);
             
             if (cursor != null && !cursor.isBlank()) {
@@ -510,11 +512,11 @@ public final class ArtifactGraphRepository {
             
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                        properties_json, tags_json, tenant_id, project_id, updated_at,
+                        properties_json, tags_json, tenant_id, workspace_id, project_id, updated_at,
                         source_location_json, extractor_id, extractor_version, confidence, provenance,
                         privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
-                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """
                 ORDER BY updated_at DESC
                 LIMIT ?
@@ -541,13 +543,15 @@ public final class ArtifactGraphRepository {
 
     /**
      * P4-4: Cursor-based pagination for edges.
+     * P0: Added workspaceId parameter and workspace_id filter to prevent cross-workspace data leakage.
      */
     public Promise<PageResult<ArtifactEdgeDto>> findEdgesPaginated(
-            String productId, String tenantId, String cursor, int pageSize) {
+            String productId, String tenantId, String workspaceId, String cursor, int pageSize) {
         return Promise.ofBlocking(executor, () -> {
             String cursorFilter = "";
             List<Object> params = new ArrayList<>();
             params.add(tenantId);
+            params.add(workspaceId);
             params.add(productId);
             
             if (cursor != null && !cursor.isBlank()) {
@@ -559,7 +563,7 @@ public final class ArtifactGraphRepository {
                   SELECT source_node_id, target_node_id, relationship_type, properties_json, updated_at,
                       edge_id, confidence, bidirectional, edge_metadata_json, snapshot_id, version_id
                 FROM artifact_edges
-                WHERE tenant_id = ? AND project_id = ? AND is_tombstone = false
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
                 """ + cursorFilter + """
                 ORDER BY updated_at DESC
                 LIMIT ?
@@ -587,26 +591,28 @@ public final class ArtifactGraphRepository {
     /**
      * P4-4: Compute snapshot diff between two snapshots.
      * Returns added, removed, and modified nodes/edges.
+     * P0: Added workspaceId parameter and workspace_id filter to prevent cross-workspace data leakage.
      */
     public Promise<SnapshotDiffResult> computeSnapshotDiff(
-            String productId, String tenantId, String fromSnapshotId, String toSnapshotId) {
+            String productId, String tenantId, String workspaceId, String fromSnapshotId, String toSnapshotId) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
-                      properties_json, tags_json, tenant_id, project_id, snapshot_id,
+                      properties_json, tags_json, tenant_id, workspace_id, project_id, snapshot_id,
                       source_location_json, extractor_id, extractor_version, confidence, provenance,
                       privacy_security_flags_json, residual_fragment_ids_json, source_ref, symbol_ref
                 FROM artifact_nodes
-                WHERE tenant_id = ? AND project_id = ? AND snapshot_id IN (?, ?)
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND snapshot_id IN (?, ?)
                 ORDER BY snapshot_id
                 """;
             
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, productId);
-                statement.setString(3, fromSnapshotId);
-                statement.setString(4, toSnapshotId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                statement.setString(4, fromSnapshotId);
+                statement.setString(5, toSnapshotId);
                 
                 try (ResultSet resultSet = statement.executeQuery()) {
                     Map<String, ArtifactNodeDto> fromNodes = new HashMap<>();
@@ -667,6 +673,182 @@ public final class ArtifactGraphRepository {
         List<ArtifactEdgeDto> removedEdges,
         List<ArtifactEdgeDto> modifiedEdges
     ) {}
+
+    // ============================================================================
+    // P0: Query-Specific Methods for Accurate Graph Analysis
+    // ============================================================================
+
+    /**
+     * P0: Find orphaned nodes across all data (not just current page).
+     * Returns node IDs that are not referenced as targets by any edge.
+     */
+    public Promise<List<String>> findOrphanedNodeIds(String productId, String tenantId, String workspaceId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT DISTINCT n.node_id
+                FROM artifact_nodes n
+                WHERE n.tenant_id = ? AND n.workspace_id = ? AND n.project_id = ? AND n.is_tombstone = false
+                AND n.node_id NOT IN (
+                    SELECT DISTINCT e.target_node_id
+                    FROM artifact_edges e
+                    WHERE e.tenant_id = ? AND e.workspace_id = ? AND e.project_id = ? AND e.is_tombstone = false
+                )
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                statement.setString(4, tenantId);
+                statement.setString(5, workspaceId);
+                statement.setString(6, productId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<String> orphanedIds = new ArrayList<>();
+                    while (resultSet.next()) {
+                        orphanedIds.add(resultSet.getString("node_id"));
+                    }
+                    return orphanedIds;
+                }
+            }
+        });
+    }
+
+    /**
+     * P0: Find dependencies for given node IDs across all data.
+     * Returns a map of source node ID to list of target node IDs.
+     */
+    public Promise<Map<String, List<String>>> findDependencies(String productId, String tenantId, String workspaceId, List<String> sourceNodeIds) {
+        if (sourceNodeIds == null || sourceNodeIds.isEmpty()) {
+            return Promise.of(Map.of());
+        }
+        return Promise.ofBlocking(executor, () -> {
+            String placeholders = sourceNodeIds.stream().map(id -> "?").collect(Collectors.joining(", "));
+            String sql = """
+                SELECT source_node_id, target_node_id
+                FROM artifact_edges
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
+                AND source_node_id IN (%s)
+                """.formatted(placeholders);
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                for (int index = 0; index < sourceNodeIds.size(); index++) {
+                    statement.setString(index + 4, sourceNodeIds.get(index));
+                }
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    Map<String, List<String>> dependencies = new HashMap<>();
+                    while (resultSet.next()) {
+                        String sourceId = resultSet.getString("source_node_id");
+                        String targetId = resultSet.getString("target_node_id");
+                        dependencies.computeIfAbsent(sourceId, k -> new ArrayList<>()).add(targetId);
+                    }
+                    return dependencies;
+                }
+            }
+        });
+    }
+
+    /**
+     * P0: Find dependents for given node IDs across all data.
+     * Returns a map of target node ID to list of source node IDs.
+     */
+    public Promise<Map<String, List<String>>> findDependents(String productId, String tenantId, String workspaceId, List<String> targetNodeIds) {
+        if (targetNodeIds == null || targetNodeIds.isEmpty()) {
+            return Promise.of(Map.of());
+        }
+        return Promise.ofBlocking(executor, () -> {
+            String placeholders = targetNodeIds.stream().map(id -> "?").collect(Collectors.joining(", "));
+            String sql = """
+                SELECT source_node_id, target_node_id
+                FROM artifact_edges
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
+                AND target_node_id IN (%s)
+                """.formatted(placeholders);
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                for (int index = 0; index < targetNodeIds.size(); index++) {
+                    statement.setString(index + 4, targetNodeIds.get(index));
+                }
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    Map<String, List<String>> dependents = new HashMap<>();
+                    while (resultSet.next()) {
+                        String sourceId = resultSet.getString("source_node_id");
+                        String targetId = resultSet.getString("target_node_id");
+                        dependents.computeIfAbsent(targetId, k -> new ArrayList<>()).add(sourceId);
+                    }
+                    return dependents;
+                }
+            }
+        });
+    }
+
+    /**
+     * P0: Get accurate node and edge counts across all data.
+     */
+    public Promise<Map<String, Long>> getGraphStats(String productId, String tenantId, String workspaceId) {
+        return Promise.ofBlocking(executor, () -> {
+            Map<String, Long> stats = new HashMap<>();
+            
+            String nodeCountSql = """
+                SELECT COUNT(*) as count
+                FROM artifact_nodes
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(nodeCountSql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        stats.put("nodeCount", resultSet.getLong("count"));
+                    }
+                }
+            }
+            
+            String edgeCountSql = """
+                SELECT COUNT(*) as count
+                FROM artifact_edges
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(edgeCountSql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        stats.put("edgeCount", resultSet.getLong("count"));
+                    }
+                }
+            }
+            
+            String typeCountSql = """
+                SELECT node_type, COUNT(*) as count
+                FROM artifact_nodes
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND is_tombstone = false
+                GROUP BY node_type
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(typeCountSql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, workspaceId);
+                statement.setString(3, productId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        stats.put("nodeType_" + resultSet.getString("node_type"), resultSet.getLong("count"));
+                    }
+                }
+            }
+            
+            return stats;
+        });
+    }
 
     // ============================================================================
     // P1-12: Unresolved Edges and Residual Islands Persistence
@@ -778,7 +960,7 @@ public final class ArtifactGraphRepository {
                     statement.setString(5, island.islandType());
                     statement.setString(6, island.summary());
                     statement.setInt(7, island.fileCount());
-                    if (island.confidence() != null) {
+                    if (!Double.isNaN(island.confidence())) {
                         statement.setBigDecimal(8, java.math.BigDecimal.valueOf(island.confidence()));
                     } else {
                         statement.setNull(8, java.sql.Types.NUMERIC);
@@ -817,13 +999,27 @@ public final class ArtifactGraphRepository {
         boolean reviewRequired
     ) {}
 
+    /**
+     * P1-20: Updated ResidualIslandRecord with full schema for source fidelity
+     * Matches the proto definition with source span, checksum, raw fragment ref, reason, risk, review requirement
+     */
     public record ResidualIslandRecord(
         String id,
         String islandType,
         String summary,
+        String sourceSpan,
+        String checksum,
+        String rawFragmentRef,
+        String reason,
+        double confidence,
+        boolean reviewRequired,
+        double riskScore,
         int fileCount,
-        Double confidence,
-        Map<String, Object> metadata
+        Map<String, Object> metadata,
+        String tenantId,
+        String projectId,
+        String workspaceId,
+        String snapshotId
     ) {}
 
     /**

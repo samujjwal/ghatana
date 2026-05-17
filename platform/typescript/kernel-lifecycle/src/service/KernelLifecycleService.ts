@@ -532,6 +532,26 @@ export class KernelLifecycleService {
     intent: ProductUnitIntent,
     options: { readonly mode?: 'bootstrap' | 'platform'; readonly allowWrite: boolean }
   ): Promise<ProductUnitIntentApplicationResult> {
+    const createFailureResult = (
+      blockedReason: string,
+      errors: readonly string[],
+      providerModeOverride?: 'bootstrap' | 'platform',
+    ): ProductUnitIntentApplicationResult => ({
+      schemaVersion: '1.0.0',
+      intentId: intent.intentId,
+      status: 'failed',
+      productUnitId: intent.productUnit.id,
+      correlationId: intent.producer.correlationId,
+      providerMode: providerModeOverride ?? options.mode ?? this.providerContext.mode,
+      registryProviderId: this.registryProvider.providerId,
+      sourceProviderId: intent.target.sourceProvider,
+      lifecycleEventRefs: [],
+      provenanceRefs: [],
+      runtimeTruthRefs: [],
+      blockedReasons: [blockedReason],
+      errors,
+    });
+
     // Validate ProductUnitIntent at method boundary
     const intentValidation = validateProductUnitIntent(intent);
     if (!intentValidation.valid) {
@@ -547,7 +567,7 @@ export class KernelLifecycleService {
         lifecycleEventRefs: [],
         provenanceRefs: [],
         runtimeTruthRefs: [],
-        blockedReasons: [],
+        blockedReasons: ['schema-invalid'],
         errors: intentValidation.errors,
       };
     }
@@ -626,13 +646,38 @@ export class KernelLifecycleService {
     const provenanceRefs: string[] = [];
 
     // Build result
-    if (this.providerContext.events !== undefined) {
+    if (this.providerContext.events === undefined) {
+      return createFailureResult('lifecycle-event-write-failed', [
+        'Lifecycle event provider is not configured for ProductUnitIntent application',
+      ], providerMode);
+    }
+
+    if (this.providerContext.runtimeTruth === undefined) {
+      return createFailureResult('runtime-truth-write-failed', [
+        'Runtime truth provider is not configured for ProductUnitIntent application',
+      ], providerMode);
+    }
+
+    if (this.providerContext.provenance === undefined) {
+      return createFailureResult('provenance-write-failed', [
+        'Provenance provider is not configured for ProductUnitIntent application',
+      ], providerMode);
+    }
+
+    {
       const eventResult = await this.providerContext.events.appendEvent(
         applied
           ? this.createIntentAppliedEvent(intent, applyProviderResult)
           : this.createIntentValidatedEvent(intent, providerResult),
         { required: false, correlationId: intent.producer.correlationId },
       );
+      if (!eventResult.success) {
+        return createFailureResult(
+          'lifecycle-event-write-failed',
+          [eventResult.error ?? 'Failed to append lifecycle event for ProductUnitIntent application'],
+          providerMode,
+        );
+      }
       if (eventResult.success && eventResult.ref !== undefined) {
         lifecycleEventRefs.push(eventResult.ref);
       }
@@ -640,38 +685,48 @@ export class KernelLifecycleService {
 
     // Record runtime truth and provenance
     const evidenceRefs = [...lifecycleEventRefs];
-    if (this.providerContext.runtimeTruth !== undefined) {
-      const truthResult = await this.providerContext.runtimeTruth.recordRuntimeTruth(
-        {
-          productUnitId: intent.productUnit.id,
-          runId: intent.intentId,
-          phase: 'create' as ProductLifecyclePhase,
-          status,
-          observedAt: this.clock(),
-          evidenceRefs,
-        },
-        { required: true, correlationId: intent.producer.correlationId },
+    const truthResult = await this.providerContext.runtimeTruth.recordRuntimeTruth(
+      {
+        productUnitId: intent.productUnit.id,
+        runId: intent.intentId,
+        phase: 'create' as ProductLifecyclePhase,
+        status,
+        observedAt: this.clock(),
+        evidenceRefs,
+      },
+      { required: true, correlationId: intent.producer.correlationId },
+    );
+    if (!truthResult.success) {
+      return createFailureResult(
+        'runtime-truth-write-failed',
+        [truthResult.error ?? 'Failed to record runtime truth for ProductUnitIntent application'],
+        providerMode,
       );
-      if (truthResult.success) {
-        runtimeTruthRefs.push(truthResult.ref ?? 'runtime-truth://kernel-lifecycle');
-      }
+    }
+    if (truthResult.success) {
+      runtimeTruthRefs.push(truthResult.ref ?? 'runtime-truth://kernel-lifecycle');
     }
 
-    if (this.providerContext.provenance !== undefined) {
-      const provenanceResult = await this.providerContext.provenance.recordProvenance(
-        {
-          provenanceId: `kernel-intent:${intent.intentId}`,
-          productUnitId: intent.productUnit.id,
-          runId: intent.intentId,
-          source: 'kernel-lifecycle-service',
-          evidenceRefs,
-          recordedAt: this.clock(),
-        },
-        { required: true, correlationId: intent.producer.correlationId },
+    const provenanceResult = await this.providerContext.provenance.recordProvenance(
+      {
+        provenanceId: `kernel-intent:${intent.intentId}`,
+        productUnitId: intent.productUnit.id,
+        runId: intent.intentId,
+        source: 'kernel-lifecycle-service',
+        evidenceRefs,
+        recordedAt: this.clock(),
+      },
+      { required: true, correlationId: intent.producer.correlationId },
+    );
+    if (!provenanceResult.success) {
+      return createFailureResult(
+        'provenance-write-failed',
+        [provenanceResult.error ?? 'Failed to record provenance for ProductUnitIntent application'],
+        providerMode,
       );
-      if (provenanceResult.success) {
-        provenanceRefs.push(provenanceResult.ref ?? 'provenance://kernel-lifecycle');
-      }
+    }
+    if (provenanceResult.success) {
+      provenanceRefs.push(provenanceResult.ref ?? 'provenance://kernel-lifecycle');
     }
 
     const result: ProductUnitIntentApplicationResult = {

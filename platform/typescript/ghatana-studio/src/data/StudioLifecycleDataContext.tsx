@@ -24,7 +24,10 @@ import type {
   VerifyHealthReport,
 } from '../api/kernelLifecycleClient';
 import type { StudioRuntimeContextState } from '../config/studioRuntimeContext';
+import { STUDIO_ENVIRONMENT_CONFIG } from '../config/studioEnvironment';
 import { studioLogger } from '../logging/studioLogger';
+
+const DEFAULT_PILOT_PRODUCT_UNIT_ID = STUDIO_ENVIRONMENT_CONFIG.pilotDefaultProductUnitId;
 
 export type StudioLifecycleDataStatus = 'unconfigured' | 'loading' | 'ready' | 'degraded';
 
@@ -113,7 +116,7 @@ const EMPTY_SNAPSHOT: StudioLifecycleSnapshot = {
 
 const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue>({
   snapshot: EMPTY_SNAPSHOT,
-  selectedProductUnitId: 'digital-marketing',
+  selectedProductUnitId: DEFAULT_PILOT_PRODUCT_UNIT_ID,
   selectedRunId: null,
   selectedEnvironment: 'local',
   selectedProviderMode: 'bootstrap',
@@ -132,7 +135,7 @@ const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue
 export function StudioLifecycleDataProvider(
   props: StudioLifecycleDataProviderProps,
 ): ReactElement {
-  const { client, runtimeContext, productUnitId: initialProductUnitId = 'digital-marketing', children } = props;
+  const { client, runtimeContext, productUnitId: initialProductUnitId = DEFAULT_PILOT_PRODUCT_UNIT_ID, children } = props;
   const authenticatedUserId =
     runtimeContext?.status === 'configured' ? runtimeContext.identity.userId : undefined;
   

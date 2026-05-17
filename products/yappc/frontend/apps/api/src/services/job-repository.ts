@@ -8,6 +8,11 @@
  * @doc.purpose Durable job persistence for source imports
  * @doc.layer product
  * @doc.pattern Repository
+ * 
+ * P1-16: DEPRECATED - This job repository is deprecated and will be removed in a future version.
+ * Java now owns production job orchestration via SourceImportJobRepository.
+ * Use the Java API (/api/v1/yappc/artifact/import-source) for durable job management.
+ * This service is retained only for development/testing purposes and should not be used in production.
  */
 
 import { randomUUID } from 'crypto';

@@ -1,11 +1,14 @@
 package com.ghatana.yappc.services.compiler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,25 +18,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @doc.type class
- * @doc.purpose Executes the TypeScript extractor worker process for snapshot extraction
+ * @doc.purpose Executes the TypeScript extractor worker process for snapshot extraction with timeout and schema validation
  * @doc.layer service
  * @doc.pattern Adapter
+ * 
+ * P1-17: Added process timeout to prevent hanging worker processes.
+ * P1-17: Added schema validation for input/output to ensure data integrity.
  */
 public final class ProcessTsExtractorWorker implements ArtifactCompileJobService.TsExtractorWorker {
 
+    private static final Logger log = LoggerFactory.getLogger(ProcessTsExtractorWorker.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
+    private static final long DEFAULT_TIMEOUT_SECONDS = 300; // 5 minutes
 
     private final ObjectMapper objectMapper;
     private final Executor blockingExecutor;
     private final String workerCommand;
+    private final long timeoutSeconds;
 
     public ProcessTsExtractorWorker(ObjectMapper objectMapper, Executor blockingExecutor, String workerCommand) {
+        this(objectMapper, blockingExecutor, workerCommand, DEFAULT_TIMEOUT_SECONDS);
+    }
+
+    public ProcessTsExtractorWorker(ObjectMapper objectMapper, Executor blockingExecutor, String workerCommand, long timeoutSeconds) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
         this.workerCommand = workerCommand == null ? "" : workerCommand.trim();
+        this.timeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
     }
 
     @Override
@@ -79,13 +95,26 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             process.getOutputStream().flush();
             process.getOutputStream().close();
 
-            String output = readAll(process.getInputStream());
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new IllegalStateException("TypeScript extractor worker failed: " + output);
+            // P1-17: Add timeout to prevent hanging worker processes
+            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+            if (!finished) {
+                log.warn("TypeScript extractor worker timed out after {} seconds, destroying process", timeoutSeconds);
+                process.destroyForcibly();
+                throw new TimeoutException("TypeScript extractor worker timed out after " + timeoutSeconds + " seconds");
             }
 
-            Map<String, Object> response = objectMapper.readValue(output, MAP_TYPE);
+            String output = readAll(process.getInputStream());
+            int exitCode = process.exitValue();
+            if (exitCode != 0) {
+                log.error("TypeScript extractor worker failed with exit code {}: {}", exitCode, output);
+                throw new IllegalStateException("TypeScript extractor worker failed with exit code " + exitCode + ": " + output);
+            }
+
+            // P1-17: Validate output schema before parsing
+            JsonNode responseNode = objectMapper.readTree(output);
+            validateExtractionResponseSchema(responseNode);
+
+            Map<String, Object> response = objectMapper.convertValue(responseNode, MAP_TYPE);
             List<ArtifactNodeDto> nodes = mapNodes(asListOfMaps(response.get("nodes")));
             List<ArtifactEdgeDto> edges = mapEdges(asListOfMaps(response.get("edges")));
 
@@ -96,9 +125,58 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 asListOfMaps(response.get("edgeResolutionRecords")),
                 asListOfStrings(response.get("residualIslandIds"))
             );
-        } catch (IOException | InterruptedException e) {
+        } catch (IllegalArgumentException e) {
+            log.error("TypeScript extractor worker output schema validation failed", e);
+            throw new IllegalStateException("TypeScript extractor worker output schema validation failed: " + e.getMessage(), e);
+        } catch (TimeoutException e) {
+            throw new IllegalStateException("TypeScript extractor worker timed out", e);
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Failed to execute TypeScript extractor worker", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to execute TypeScript extractor worker", e);
+        }
+    }
+
+    /**
+     * P1-17: Validate the extraction response schema to ensure data integrity.
+     */
+    private void validateExtractionResponseSchema(JsonNode response) {
+        if (!response.has("nodes")) {
+            throw new IllegalArgumentException("Missing required field 'nodes' in extraction response");
+        }
+        if (!response.has("edges")) {
+            throw new IllegalArgumentException("Missing required field 'edges' in extraction response");
+        }
+        
+        JsonNode nodes = response.get("nodes");
+        if (!nodes.isArray()) {
+            throw new IllegalArgumentException("'nodes' must be an array in extraction response");
+        }
+        
+        JsonNode edges = response.get("edges");
+        if (!edges.isArray()) {
+            throw new IllegalArgumentException("'edges' must be an array in extraction response");
+        }
+        
+        // Validate node structure
+        for (JsonNode node : nodes) {
+            if (!node.has("id")) {
+                throw new IllegalArgumentException("Node missing required field 'id'");
+            }
+            if (!node.has("type") && !node.has("kind")) {
+                throw new IllegalArgumentException("Node missing required field 'type' or 'kind'");
+            }
+        }
+        
+        // Validate edge structure
+        for (JsonNode edge : edges) {
+            if (!edge.has("sourceNodeId") && !edge.has("source")) {
+                throw new IllegalArgumentException("Edge missing required field 'sourceNodeId' or 'source'");
+            }
+            if (!edge.has("targetNodeId") && !edge.has("target")) {
+                throw new IllegalArgumentException("Edge missing required field 'targetNodeId' or 'target'");
+            }
         }
     }
 

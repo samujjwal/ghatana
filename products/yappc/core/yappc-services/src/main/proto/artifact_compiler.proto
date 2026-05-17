@@ -5,6 +5,8 @@ package com.ghatana.yappc.artifact;
 option java_package = "com.ghatana.yappc.artifact.grpc";
 option java_multiple_files = true;
 
+// P1-19: Updated with canonical contract for workspace scope, residual islands, and source file refs
+
 // SnapshotRef provides stable cross-scan identity anchor
 message SnapshotRef {
   string provider = 1;
@@ -27,6 +29,7 @@ message SnapshotFile {
   int64 size_bytes = 3;
   string last_modified_at = 4;
   bool materialized = 5;
+  string checksum = 6; // P1-19: Added SHA-256 checksum for content fidelity
 }
 
 message RepositorySnapshot {
@@ -34,9 +37,34 @@ message RepositorySnapshot {
   SnapshotRef snapshot_ref = 2;
   string local_root_path = 3;
   string content_checksum = 4;
-  string snapshot_at = 5;
-  repeated SnapshotFile files = 6;
-  map<string, string> diagnostics = 7;
+  string content_hash = 5; // P1-19: Added deterministic content hash
+  string snapshot_at = 6;
+  repeated SnapshotFile files = 7;
+  map<string, string> diagnostics = 8;
+  
+  // P1-19: Added workspace and tenant scope
+  string tenant_id = 9;
+  string workspace_id = 10;
+  string project_id = 11;
+}
+
+// P1-19: Added SourceFileRef for canonical durable file identity
+message SourceFileRef {
+  string file_ref_id = 1;
+  string repository_id = 2;
+  string relative_path = 3;
+  string content_hash = 4;
+  int64 size_bytes = 5;
+  string file_type = 6;
+  string language = 7;
+  string last_modified_at = 8;
+  string first_seen_snapshot_id = 9;
+  string last_seen_snapshot_id = 10;
+  map<string, string> metadata = 11;
+  
+  string tenant_id = 12;
+  string workspace_id = 13;
+  string project_id = 14;
 }
 
 // SourceLocation tracks precise source file positions
@@ -59,89 +87,127 @@ message ArtifactNode {
   repeated string tags = 7;
   string tenant_id = 8;
   string project_id = 9;
+  string workspace_id = 10; // P1-19: Added workspace scope
   
   // V12: Snapshot reference for stable identity
-  SnapshotRef snapshot_ref = 10;
+  SnapshotRef snapshot_ref = 11;
   
   // V12: Precise source location with range information
-  SourceLocation source_location = 11;
+  SourceLocation source_location = 12;
   
   // V12: Confidence score (0.0 to 1.0)
-  double confidence = 12;
+  double confidence = 13;
   
   // V12: Provenance metadata
-  string provenance = 13;
-  string extractor_id = 14;
-  string extractor_version = 15;
+  string provenance = 14;
+  string extractor_id = 15;
+  string extractor_version = 16;
   
   // V12: Residual fragment IDs for unmodelable code
-  repeated string residual_fragment_ids = 16;
+  repeated string residual_fragment_ids = 17;
   
   // V12: Security and privacy flags
-  repeated string security_flags = 17;
-  repeated string privacy_flags = 18;
+  repeated string security_flags = 18;
+  repeated string privacy_flags = 19;
 }
 
 // ArtifactEdge represents a directed relationship between two artifact nodes.
 message ArtifactEdge {
-  string source_node_id = 1;
-  string target_node_id = 2;
-  string relationship_type = 3;
-  map<string, string> properties = 4;
+  string edge_id = 1; // P1-19: Added edge ID for stable identity
+  string source_node_id = 2;
+  string target_node_id = 3;
+  string relationship_type = 4;
+  map<string, string> properties = 5;
   
   // V12: Confidence score (0.0 to 1.0)
-  double confidence = 5;
+  double confidence = 6;
   
   // V12: Bidirectional flag
-  bool bidirectional = 6;
+  bool bidirectional = 7;
+  
+  string tenant_id = 8; // P1-19: Added tenant scope
+  string project_id = 9; // P1-19: Added project scope
+  string workspace_id = 10; // P1-19: Added workspace scope
 }
 
 // UnresolvedGraphEdge - Phase 1 extractor output (pre-resolution)
 message UnresolvedGraphEdge {
-  string source_id = 1;
-  string target_ref = 2;
-  string relationship = 3;
-  SourceLocation source_location = 4;
-  double confidence = 5;
-  map<string, string> metadata = 6;
-  string target_kind_hint = 7;
+  string edge_id = 1; // P1-19: Added edge ID
+  string source_node_id = 2;
+  string target_ref = 3;
+  string relationship = 4;
+  string target_kind_hint = 5;
+  double confidence = 6;
+  map<string, string> metadata = 7;
+  
+  string tenant_id = 8; // P1-19: Added tenant scope
+  string project_id = 9; // P1-19: Added project scope
+  string workspace_id = 10; // P1-19: Added workspace scope
 }
 
 // EdgeResolutionRecord tracks resolution outcomes
 message EdgeResolutionRecord {
-  string edge_id = 1;
-  string status = 2;
-  string resolved_to_id = 3;
-  repeated string candidate_ids = 4;
-  bool review_required = 5;
-  string resolution_method = 6;
+  string record_id = 1; // P1-19: Added record ID
+  string unresolved_edge_id = 2;
+  string status = 3;
+  string resolved_target_id = 4;
+  repeated string candidate_ids = 5;
+  bool review_required = 6;
+  string resolution_method = 7;
+  
+  string tenant_id = 8; // P1-19: Added tenant scope
+  string project_id = 9; // P1-19: Added project scope
+  string workspace_id = 10; // P1-19: Added workspace scope
 }
 
+// P1-19: Updated ResidualIsland with full schema for source fidelity
 message ResidualIsland {
   string id = 1;
-  string kind = 2;
+  string island_type = 2;
   string summary = 3;
-  double confidence = 4;
+  string source_span = 4; // P1-19: Added source span
+  string checksum = 5; // P1-19: Added checksum
+  string raw_fragment_ref = 6; // P1-19: Added raw fragment reference
+  string reason = 7; // P1-19: Added reason
+  double confidence = 8;
+  bool review_required = 9; // P1-19: Added review requirement
+  double risk_score = 10; // P1-19: Added risk score
+  map<string, string> metadata = 11;
+  int32 file_count = 12; // P1-19: Added file count
+  
+  string tenant_id = 13; // P1-19: Added tenant scope
+  string project_id = 14; // P1-19: Added project scope
+  string workspace_id = 15; // P1-19: Added workspace scope
+  string snapshot_id = 16; // P1-19: Added snapshot ID
 }
 
 // IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.
 message IngestArtifactGraphRequest {
   string product_id = 1;
   string tenant_id = 2;
-  repeated ArtifactNode nodes = 3;
-  repeated ArtifactEdge edges = 4;
+  string workspace_id = 3; // P1-19: Added workspace scope
+  repeated ArtifactNode nodes = 4;
+  repeated ArtifactEdge edges = 5;
   
   // V12: Unresolved edges for two-phase resolution
-  repeated UnresolvedGraphEdge unresolved_edges = 5;
+  repeated UnresolvedGraphEdge unresolved_edges = 6;
   
   // V12: Edge resolution records
-  repeated EdgeResolutionRecord edge_resolution_records = 6;
+  repeated EdgeResolutionRecord edge_resolution_records = 7;
   
   // V12: Snapshot reference for the ingest
-  SnapshotRef snapshot_ref = 7;
+  SnapshotRef snapshot_ref = 8;
   
   // V12: Residual islands (unmodelable code preserved verbatim)
-  repeated string residual_island_ids = 8;
+  repeated string residual_island_ids = 9;
+  
+  // P1-19: Added full residual islands
+  repeated ResidualIsland residual_islands = 10;
+  
+  // P1-19: Added snapshot metadata
+  string snapshot_id = 11;
+  string version_id = 12;
+  string content_checksum = 13;
 }
 
 message IngestArtifactGraphResponse {
@@ -165,8 +231,9 @@ message IngestArtifactGraphResponse {
 message ArtifactGraphAnalysisRequest {
   string product_id = 1;
   string tenant_id = 2;
-  repeated string algorithm_types = 3;
-  repeated string node_ids = 4;
+  string workspace_id = 3; // P1-19: Added workspace scope
+  repeated string algorithm_types = 4;
+  repeated string node_ids = 5;
 }
 
 message ArtifactGraphAnalysisResponse {
@@ -194,13 +261,34 @@ message CommunityList {
 message ArtifactGraphQueryRequest {
   string product_id = 1;
   string tenant_id = 2;
-  string query_type = 3;
-  repeated string seed_ids = 4;
+  string workspace_id = 3; // P1-19: Added workspace scope
+  string query_type = 4;
+  repeated string seed_ids = 5;
+  string cursor = 6; // P1-19: Added cursor for pagination
+  int32 limit = 7; // P1-19: Added limit for pagination
+  string snapshot_id = 8; // P1-19: Added snapshot ID
+  bool include_unresolved_edges = 9; // P1-19: Added unresolved edges flag
 }
 
 message ArtifactGraphQueryResponse {
   map<string, string> string_results = 1;
   map<string, NodeList> list_results = 2;
+  
+  // P1-19: Added pagination metadata
+  string next_cursor = 3;
+  bool has_more = 4;
+  int32 total_estimate = 5;
+  
+  // P1-19: Added scope metadata
+  ScopeMetadata scope_metadata = 6;
+}
+
+message ScopeMetadata {
+  string tenant_id = 1;
+  string workspace_id = 2;
+  string project_id = 3;
+  string snapshot_id = 4;
+  bool include_unresolved_edges = 5;
 }
 
 message NodeList {
@@ -211,10 +299,11 @@ message NodeList {
 message ArtifactGraphMergeRequest {
   string product_id = 1;
   string tenant_id = 2;
-  string base_model_json = 3;
-  string left_model_json = 4;
-  string right_model_json = 5;
-  string resolution_strategy = 6;
+  string workspace_id = 3; // P1-19: Added workspace scope
+  string base_model_json = 4;
+  string left_model_json = 5;
+  string right_model_json = 6;
+  string resolution_strategy = 7;
 }
 
 message ArtifactGraphMergeResponse {

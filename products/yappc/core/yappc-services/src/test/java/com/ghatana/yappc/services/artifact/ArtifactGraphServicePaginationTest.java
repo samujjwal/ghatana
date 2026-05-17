@@ -31,6 +31,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ArtifactGraphServicePaginationTest {
 
+    private static final ArtifactRequestScope SCOPE = new ArtifactRequestScope(
+        "product-456",
+        "tenant-123",
+        "workspace-789"
+    );
+
     @Mock
     private ArtifactGraphRepository repository;
 
@@ -59,18 +65,19 @@ class ArtifactGraphServicePaginationTest {
                 null
             );
 
-        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(nodesPage));
-        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(edgesPage));
 
         Promise<ArtifactGraphQueryResponse> response = service.queryGraph(
-            "product-456",
-            "tenant-123",
-            "stats",
+            SCOPE,
+            "unknown-query",
             null,
             null,
-            100
+            100,
+            null,
+            null
         );
 
         response.then(result -> {
@@ -80,11 +87,12 @@ class ArtifactGraphServicePaginationTest {
             assertNotNull(result.scope());
             assertEquals("tenant-123", result.scope().tenantId());
             assertEquals("product-456", result.scope().productId());
+            assertEquals("workspace-789", result.scope().workspaceId());
             return Promise.of(null);
         });
 
-        verify(repository).findNodesPaginated(eq("product-456"), eq("tenant-123"), eq(null), eq(100));
-        verify(repository).findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq(null), eq(100));
+        verify(repository).findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq(null), eq(100));
+        verify(repository).findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq(null), eq(100));
     }
 
     @Test
@@ -98,18 +106,19 @@ class ArtifactGraphServicePaginationTest {
                 "cursor-next-page"
             );
 
-        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(nodesPage));
-        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(List.of(), null)));
 
         Promise<ArtifactGraphQueryResponse> response = service.queryGraph(
-            "product-456",
-            "tenant-123",
-            "stats",
+            SCOPE,
+            "unknown-query",
             null,
             null,
-            100
+            100,
+            null,
+            null
         );
 
         response.then(result -> {
@@ -130,18 +139,19 @@ class ArtifactGraphServicePaginationTest {
                 null // No next cursor
             );
 
-        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(nodesPage));
-        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
+        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), isNull(), eq(100)))
             .thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(List.of(), null)));
 
         Promise<ArtifactGraphQueryResponse> response = service.queryGraph(
-            "product-456",
-            "tenant-123",
-            "stats",
+            SCOPE,
+            "unknown-query",
             null,
             null,
-            100
+            100,
+            null,
+            null
         );
 
         response.then(result -> {
@@ -160,22 +170,23 @@ class ArtifactGraphServicePaginationTest {
                 "cursor-next"
             );
 
-        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("cursor-prev"), eq(50)))
+        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq("cursor-prev"), eq(50)))
             .thenReturn(Promise.of(nodesPage));
-        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("cursor-prev"), eq(50)))
+        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq("cursor-prev"), eq(50)))
             .thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(List.of(), null)));
 
         service.queryGraph(
-            "product-456",
-            "tenant-123",
-            "stats",
+            SCOPE,
+            "unknown-query",
             null,
             "cursor-prev",
-            50
+            50,
+            null,
+            null
         );
 
-        verify(repository).findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("cursor-prev"), eq(50));
-        verify(repository).findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("cursor-prev"), eq(50));
+        verify(repository).findNodesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq("cursor-prev"), eq(50));
+        verify(repository).findEdgesPaginated(eq("product-456"), eq("tenant-123"), eq("workspace-789"), eq("cursor-prev"), eq(50));
     }
 
     @Test
@@ -189,23 +200,23 @@ class ArtifactGraphServicePaginationTest {
                 "cursor-next"
             );
 
-        when(repository.findNodesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
-            .thenReturn(Promise.of(nodesPage));
-        when(repository.findEdgesPaginated(eq("product-456"), eq("tenant-123"), isNull(), eq(100)))
-            .thenReturn(Promise.of(new ArtifactGraphRepository.PageResult<>(List.of(), null)));
+        when(repository.getGraphStats(eq("product-456"), eq("tenant-123"), eq("workspace-789")))
+            .thenReturn(Promise.of(Map.of("nodeCount", 42L, "edgeCount", 21L)));
 
         Promise<ArtifactGraphQueryResponse> response = service.queryGraph(
-            "product-456",
-            "tenant-123",
+            SCOPE,
             "stats",
             null,
             null,
-            100
+            100,
+            null,
+            null
         );
 
         response.then(result -> {
             assertNotNull(result);
             assertNotNull(result.scope());
+            assertEquals(63L, result.totalEstimate());
             return Promise.of(null);
         });
     }

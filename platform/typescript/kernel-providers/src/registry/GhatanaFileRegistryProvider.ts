@@ -180,6 +180,14 @@ const LIFECYCLE_STATUSES: readonly LifecycleStatus[] = [
   "enabled",
 ];
 
+function inferDefaultStrictMode(): boolean {
+  const nodeEnv = process.env.NODE_ENV?.toLowerCase();
+  if (nodeEnv === "test") {
+    return false;
+  }
+  return process.env.CI === "true" || nodeEnv === "production";
+}
+
 export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegistryProvider {
   readonly providerId = "ghatana-file-registry";
   readonly version = "1.0.0";
@@ -194,14 +202,14 @@ export class GhatanaFileRegistryProvider implements ProductUnitIntentCapableRegi
   constructor(options?: string | GhatanaFileRegistryProviderOptions) {
     if (typeof options === "string" || options === undefined) {
       this.registryPath = options ?? resolveDefaultRegistryPath();
-      this.strict = false;
+      this.strict = inferDefaultStrictMode();
       return;
     }
 
     this.registryPath =
       options.registryPath ??
       resolveDefaultRegistryPath();
-    this.strict = options.strict ?? false;
+    this.strict = options.strict ?? inferDefaultStrictMode();
   }
 
   clearCache(): void {

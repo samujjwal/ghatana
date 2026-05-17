@@ -38,8 +38,9 @@ public interface ArtifactGraphService {
      * Query the artifact graph with pattern-based traversal.
      * P1-13: Added cursor-based pagination support for large graph queries.
      * P3-1: Returns typed response with items, nextCursor, totalEstimate, and scope metadata.
+     * P0: Accepts ArtifactRequestScope for proper tenant/workspace/project isolation.
      */
-    Promise<ArtifactGraphQueryResponse> queryGraph(String projectId, String tenantId, String queryType, List<String> seedNodeIds, String cursor, int pageSize);
+    Promise<ArtifactGraphQueryResponse> queryGraph(ArtifactRequestScope scope, String queryType, List<String> seedNodeIds, String cursor, int pageSize, String snapshotId, Boolean includeUnresolvedEdges);
 
     /**
      * Analyze residual islands (unextractable blocks flagged by the TS scanner).

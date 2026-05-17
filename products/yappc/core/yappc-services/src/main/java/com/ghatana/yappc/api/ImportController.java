@@ -148,9 +148,27 @@ public final class ImportController {
             return Promise.of(badRequest400("jobId is required"));
         }
 
-        log.debug("Getting import job status: jobId={}", jobId);
+        // P0: Require scope headers for job status lookup to prevent cross-scope access
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal == null) {
+            return Promise.of(HttpResponse.ofCode(401)
+                .withJson("{\"error\":\"Unauthenticated\"}")
+                .build());
+        }
 
-        return sourceImportJobService.getJobStatus(jobId)
+        String tenantId = principal.getTenantId();
+        String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
+        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+        if (workspaceId == null || workspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
+            return Promise.of(HttpResponse.ofCode(400)
+                .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
+                .build());
+        }
+
+        log.debug("Getting import job status with scope: jobId={}, tenantId={}, workspaceId={}, projectId={}", 
+            jobId, tenantId, workspaceId, scopedProjectId);
+
+        return sourceImportJobService.getJobStatus(jobId, tenantId, workspaceId, scopedProjectId)
             .map(job -> {
                 if (job == null) {
                     return HttpResponse.ofCode(404)

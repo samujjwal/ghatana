@@ -42,10 +42,11 @@ public final class SourceImportJobRepository {
     private final ObjectMapper objectMapper;
     private final Executor executor;
 
-    public SourceImportJobRepository(DataSource dataSource) {
-        this(dataSource, new ObjectMapper(), Runnable::run);
-    }
-
+    /**
+     * P0: Removed default blocking constructor.
+     * Requires explicit executor injection to avoid blocking the event loop.
+     * P0: Removed default constructor using Runnable::run to prevent event loop blocking.
+     */
     public SourceImportJobRepository(DataSource dataSource, ObjectMapper objectMapper, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
@@ -168,12 +169,13 @@ public final class SourceImportJobRepository {
     /**
      * Mark job as cancelled.
      * P2.6: Support for job cancellation.
+     * P0: Sets status to CANCELLED instead of FAILED for proper cancellation semantics.
      */
     public Promise<Boolean> cancelJob(String jobId, String cancelledBy) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 UPDATE source_import_jobs
-                SET is_cancelled = true, cancellation_requested_at = ?, status = 'FAILED', error_message = 'Job cancelled by ' || ?
+                SET is_cancelled = true, cancellation_requested_at = ?, status = 'CANCELLED', error_message = 'Job cancelled by ' || ?
                 WHERE job_id = ? AND status IN ('SUBMITTED', 'VALIDATING', 'DECOMPILING', 'MAPPING')
                 """;
             try (Connection connection = dataSource.getConnection();
@@ -190,7 +192,9 @@ public final class SourceImportJobRepository {
 
     /**
      * Find job by ID.
+     * P0: Deprecated - use scoped findJobById instead to prevent cross-scope job lookup.
      */
+    @Deprecated(since = "P0 audit remediation", forRemoval = true)
     public Promise<SourceImportJob> findJobById(String jobId) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
@@ -205,6 +209,38 @@ public final class SourceImportJobRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, jobId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return mapJob(resultSet);
+                    }
+                    return null;
+                }
+            }
+        });
+    }
+
+    /**
+     * Find job by ID with scope validation.
+     * P0: Added scoped job lookup to prevent cross-tenant/workspace/project data leakage.
+     * Returns null if job exists but scope doesn't match.
+     */
+    public Promise<SourceImportJob> findJobById(String jobId, String tenantId, String workspaceId, String projectId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT job_id, project_id, workspace_id, tenant_id, source_url, source_type,
+                       status, current_step, total_steps, percentage, current_phase,
+                       validation_results_json, decompilation_results_json, mapping_results_json,
+                       residual_review_status, submitted_at, started_at, completed_at,
+                       submitted_by, error_message, metadata_json, is_cancelled, cancellation_requested_at
+                FROM source_import_jobs
+                WHERE job_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
+                """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, jobId);
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         return mapJob(resultSet);

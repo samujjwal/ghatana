@@ -408,6 +408,18 @@
 - P0-8: Removed/flagged production parser stubs with feature gate
 - P0-9: Restricted React patch emitter canEmit to implemented ops
 - P0-10: Added UnsupportedPatchOperation result to patch-coordinator
+- P0-1 (Phase 1): Added workspace scope to ArtifactGraphRepository pagination/diff queries
+- P0-2 (Phase 1): Fixed ArtifactGraphServiceImpl queryGraph to use proper scope and repository methods
+- P0-3 (Phase 1): Fixed ArtifactGraphController to pass typed request and full scope
+- P0-4 (Phase 1): Fixed SourceImportJobRepository scope issues and cancel semantics
+- P0-5 (Phase 1): Fixed ImportController scope enforcement and job execution
+- P0-6 (Phase 1): Fixed GitHubSourceProvider deterministic snapshotId, credentials, .gitignore
+- P0-7 (Phase 1): Fixed LocalFolderSourceProvider content SHA-256 and deterministic snapshotId
+- P0-8 (Phase 1): Fixed ArchiveSourceProvider streaming, content checksum, deterministic snapshotId
+- P0-9 (Phase 1): Fixed ArtifactGraphServiceImpl to emit residual islands for unknown files
+- P0-10 (Phase 1): ADD RepositoryInventoryScanner with .gitignore and classification
+- P0-11 (Phase 1): ADD SourceFileRef for canonical durable file identity
+- P0-12 (Phase 1): ADD migration V17 for repository snapshots and inventory
 
 ### Completed (P1 - Medium Priority)
 - P1-1: Added CredentialResolver to source-providers/types.ts
@@ -425,19 +437,33 @@
 - P1-13: Fixed ArtifactGraphServiceImpl with repository pagination routing and query cursor response
 - P1-14: Extended compile-back types with ModelChange coverage for page route, layout, token, API, data entity, workflow, manual-review operation type
 - P1-15: Added apply-patch.ts module with dry-run/apply interface, checksum guard, residual guard, rollback metadata, validation hook
+- P1-13 (Phase 2): ADD GitLabSourceProvider.java with commit pinning, bounded concurrency, file-size limits
+- P1-14 (Phase 2): Update SourceProviderRegistry.java to register GitLab provider
+- P1-15 (Phase 2): Consolidate source-imports.ts to remove legacy TS route, keep only Java proxy
+- P1-16 (Phase 2): Remove/deprecate job-repository.ts (no production use found)
+- P1-17 (Phase 3): ADD SubprocessTsExtractorWorker.java with process timeout and schema validation
+- P1-18 (Phase 3): ts-extractor-worker.ts already has zod contract validation
+- P1-19 (Phase 3): artifact_compiler.proto already has SourceLocator, RepositorySnapshot, SourceFileRef messages
+- P1-20 (Phase 4): ADD ResidualIslandService.java with database-backed full schema persistence
+- P1-21 (Phase 5): ADD plan/generate/validate endpoints to ArtifactPatchController.java
+- P1-22 (Phase 5): ArtifactPatchJobService.java already exists with job orchestration
+- P1-23 (Phase 5): ADD migration V18 for patch_jobs, validation_results, review_decisions tables
+- P1-24 (Phase 6): ImportSourceWorkflow.ts already consumes Java API with proper scope headers
+- P1-25 (Phase 6): ImportSummaryPanel.tsx already exists with understood/skipped/residual metrics
+- P1-26 (Phase 6): PatchReviewPanel.tsx already exists with diff, validation, approve/reject
 
 ### Completed (P2 - Medium Priority)
 - P2-1: Added typed client artifactCompilerClient.ts for import job, graph summary, residual review, patch review
 - P2-2: Added SourceImportPanel.tsx with provider selector, repo/ref/archive input, progress, job polling, unsupported-state display
 - P2-3: Added ImportSummaryPanel.tsx showing understood vs skipped vs residual, confidence, review requirements
 - P2-4: Added PatchReviewPanel.tsx with unified diff, validation results, residual overlaps, approve/reject
+- P2-7: Update ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md (completed)
 
 ### Remaining (P2 - Medium Priority)
 - P2-5: Write P2 tests (artifactCompilerClient.test.ts, Playwright import flow, component + E2E for ImportSummaryPanel, Playwright patch review)
 
 ### Remaining (P2 - Low Priority)
 - P2-6: Document/consolidate V11/V14 duplicate snapshot columns (not applicable - V11/V14 migrations don't exist)
-- P2-7: Update ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md (in progress)
 - P2-8: Archive/consolidate platform/comp-decomp-todo.md
 
 ### Remaining (P3 - Low Priority)
