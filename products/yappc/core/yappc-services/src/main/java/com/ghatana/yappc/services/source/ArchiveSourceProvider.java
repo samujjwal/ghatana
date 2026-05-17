@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -78,24 +77,20 @@ public final class ArchiveSourceProvider implements SourceProvider {
                     }
 
                     Files.createDirectories(target.getParent());
-                    byte[] content = zip.readAllBytes();
-                    totalBytes += content.length;
                     
-                    // P0: Check per-entry size limit after reading
-                    if (content.length > MAX_ENTRY_BYTES) {
-                        continue; // Skip entries exceeding per-entry limit
-                    }
+                    // P0: Stream entry content directly to file while computing checksum to avoid loading entire content into memory
+                    String fileChecksum = streamEntryWithChecksum(zip, target, MAX_ENTRY_BYTES);
+                    
+                    long entrySize = Files.size(target);
+                    totalBytes += entrySize;
                     
                     if (totalBytes > MAX_TOTAL_BYTES) {
                         return Promise.ofException(new IllegalArgumentException("Archive exceeds max allowed extracted size"));
                     }
-
-                    Files.write(target, content);
-                    String fileChecksum = computeContentChecksum(content);
                     files.add(new RepositorySnapshot.SnapshotFile(
                         extractionRoot.relativize(target).toString().replace('\\', '/'),
                         target.toString(),
-                        content.length,
+                        entrySize,
                         Instant.now(),
                         fileChecksum
                     ));
@@ -145,14 +140,41 @@ public final class ArchiveSourceProvider implements SourceProvider {
         return Paths.get(normalized).toAbsolutePath().normalize();
     }
 
-    private static String computeContentChecksum(byte[] content) {
+    /**
+     * P0: Stream entry content from ZipInputStream to file while computing SHA-256 checksum.
+     * Avoids loading entire entry into memory by using a fixed-size buffer.
+     * 
+     * @param zip ZipInputStream to read from
+     * @param target Target file path to write to
+     * @param maxSize Maximum allowed size in bytes
+     * @return SHA-256 checksum of the streamed content
+     * @throws IOException if streaming fails or size limit exceeded
+     */
+    private static String streamEntryWithChecksum(ZipInputStream zip, Path target, long maxSize) throws IOException {
+        MessageDigest digest;
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(content);
-            return HexFormat.of().formatHex(digest.digest());
+            digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            return "sha256-unavailable";
+            throw new IllegalStateException("SHA-256 not available", e);
         }
+
+        byte[] buffer = new byte[8192]; // 8KB buffer
+        long totalBytes = 0;
+
+        try (var output = Files.newOutputStream(target)) {
+            int bytesRead;
+            while ((bytesRead = zip.read(buffer)) != -1) {
+                totalBytes += bytesRead;
+                if (totalBytes > maxSize) {
+                    Files.deleteIfExists(target);
+                    throw new IOException("Entry size exceeds maximum allowed limit: " + totalBytes + " > " + maxSize);
+                }
+                digest.update(buffer, 0, bytesRead);
+                output.write(buffer, 0, bytesRead);
+            }
+        }
+
+        return HexFormat.of().formatHex(digest.digest());
     }
 
     private static String computeArchiveChecksum(List<RepositorySnapshot.SnapshotFile> files) {

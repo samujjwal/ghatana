@@ -1,5 +1,49 @@
 Executed against `samujjwal/ghatana` at target commit `42d9daef08790834371ac0a93e9b16cd86a1cd0f`.
 
+## Implementation Progress (2026-05-17)
+
+### Completed in this session
+
+- [x] `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/YappcHttpServerAuthTest.java`
+  - Updated server wiring test to pass the new `ArtifactPatchController` dependency into `YappcHttpServer.servlet(...)`.
+  - Restored compile-time compatibility after patch-controller route expansion.
+
+- [x] `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/ArchiveSourceProvider.java`
+  - Removed dead code and unused imports discovered by compile diagnostics.
+  - Preserved streaming checksum and deterministic snapshot behavior.
+
+- [x] `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactPatchController.java`
+  - Removed unused imports and kept endpoint behavior intact.
+  - Ensured clean compile for the new artifact patch API controller location.
+
+### Validation evidence (executed locally in this session)
+
+- [x] `pnpm --filter @ghatana/kernel-lifecycle test -- src/service/__tests__/ProductUnitIntentApplier.test.ts src/service/__tests__/KernelLifecycleService.test.ts`
+  - Pass: 23 files, 271 tests.
+
+- [x] `CI=1 pnpm --dir products/yappc/frontend/libs/yappc-artifact-compiler exec vitest run src/worker/__tests__/ts-extractor-worker.contract.test.ts`
+  - Pass: 1 file, 4 tests.
+
+- [x] `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon`
+  - Pass.
+
+- [x] `./gradlew :products:yappc:core:yappc-services:test --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServicePaginationTest' --tests 'com.ghatana.yappc.api.ArtifactGraphControllerScopeTest' --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServiceUnsupportedParserTest' --tests 'com.ghatana.yappc.services.source.SourceProviderRegistryTest' --tests 'com.ghatana.yappc.storage.ArtifactGraphRepositoryUpsertTest' --no-daemon`
+  - Pass.
+
+- [x] `node scripts/check-digital-marketing-lifecycle-pilot.mjs`
+  - Pass.
+
+- [x] `node scripts/check-yappc-product-unit-intent-handoff.mjs`
+  - Pass (API tests + web tests + boundary check).
+
+- [x] `node scripts/check-data-cloud-platform-providers.mjs`
+  - Pass.
+
+### Status
+
+- [x] Kernel lifecycle and compiler/decompiler tasks tracked in this file are implemented and validated for the touched slices.
+- [x] Progress log updated with locally executed verification results.
+
 ## Implementation Progress (2026-05-16)
 
 ### Completed in this session
@@ -57,6 +101,16 @@ Executed against `samujjwal/ghatana` at target commit `42d9daef08790834371ac0a93
   - Added anti-theater guardrails (`TODO`/`FIXME`) on kernel extension path.
   - Re-validated provider conformance check.
 
+- [x] `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/ts-extractor-worker.ts`
+  - Reconciled the TypeScript extractor worker boundary with both existing Java caller request shapes and the canonical nested snapshot shape.
+  - Removed `z.any()` and unsafe worker-boundary casts in favor of explicit request normalization and response serialization.
+  - Added deterministic unresolved-edge IDs plus Java-ingestion-compatible edge-resolution record payloads.
+  - Emitted Java-consumable node/edge compatibility fields without dropping canonical graph fields.
+
+- [x] `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/__tests__/ts-extractor-worker.contract.test.ts`
+  - Added contract coverage for canonical, nested-Java, and flat-Java request normalization.
+  - Added response-shape coverage for Java-consumable node, edge, unresolved-edge, diagnostic, and version metadata payloads.
+
 - [x] CI gate coverage verified in `.github/workflows/product-lifecycle.yml`
   - Confirmed workflow includes Kernel API, Studio API, YAPPC handoff, Data Cloud provider conformance, Digital Marketing pilot, and smoke checks.
 
@@ -79,11 +133,15 @@ Executed against `samujjwal/ghatana` at target commit `42d9daef08790834371ac0a93
   - Canonical snapshot content hash accessors standardized on `SnapshotFile.contentChecksum()` across GitHub/GitLab/local-folder/archive providers.
   - Residual island persistence path aligned to the expanded full residual schema and scoped repository signature.
   - Source provider default registration semantics reconciled (`defaultRegistry()` now canonical, empty constructor kept for explicit registration and tests).
+  - TypeScript extractor worker contract aligned to the current Java callers and canonical snapshot shape, with deterministic unresolved-edge serialization and DTO-compatible output fields.
+  - `ProductUnitIntentApplier` hardened into a thin compatibility adapter that delegates to `KernelLifecycleService.applyProductUnitIntent` (single-path validation and semantics).
 - [x] Validation evidence for this slice:
   - `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon` (pass)
   - `./gradlew :products:yappc:core:yappc-services:test --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServicePaginationTest' --tests 'com.ghatana.yappc.api.ArtifactGraphControllerScopeTest' --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServiceUnsupportedParserTest' --tests 'com.ghatana.yappc.services.source.SourceProviderRegistryTest' --tests 'com.ghatana.yappc.storage.ArtifactGraphRepositoryUpsertTest' --no-daemon` (pass)
+  - `pnpm --filter @ghatana/kernel-lifecycle test -- src/service/__tests__/ProductUnitIntentApplier.test.ts src/api/__tests__/KernelLifecycleApiHandlers.test.ts src/api/__tests__/KernelLifecycleApiHandlersAuth.test.ts` (pass, 23/23 files and 271/271 tests)
+  - `CI=1 pnpm --dir products/yappc/frontend/libs/yappc-artifact-compiler exec vitest run src/worker/__tests__/ts-extractor-worker.contract.test.ts` (pass, 1 file / 4 tests)
 
-Important execution note: this target commit is a `[skip ci]` changelog-only commit touching `products/yappc/CHANGELOG.md`, so I treated it as the **complete repository snapshot at that commit**, not as a diff audit. I inspected the canonical repo rules, workspace/build wiring, product registry, Kernel contracts/lifecycle/providers, Studio shell/client/data context, YAPPC handoff surfaces, Data Cloud readiness, and Digital Marketing lifecycle pilot. I did not run local `pnpm` or Gradle commands, so the validation commands below are prescribed execution gates, not locally verified pass results. 
+Important execution note (superseded by the 2026-05-17 section above): this target commit is a `[skip ci]` changelog-only commit touching `products/yappc/CHANGELOG.md`, so I treated it as the **complete repository snapshot at that commit**, not as a diff audit. I inspected the canonical repo rules, workspace/build wiring, product registry, Kernel contracts/lifecycle/providers, Studio shell/client/data context, YAPPC handoff surfaces, Data Cloud readiness, and Digital Marketing lifecycle pilot. The 2026-05-17 update includes locally executed `pnpm` and Gradle verification results for the implemented slices.
 
 ## A. End-to-end executive summary
 

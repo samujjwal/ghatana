@@ -39,6 +39,7 @@ public class YappcHttpServer extends HttpServerLauncher {
             LifecycleApiController lifecycleController,
             ImportController importController,
             ArtifactGraphController artifactGraphController,
+            ArtifactPatchController artifactPatchController,
             PageArtifactController pageArtifactController,
             PreviewSessionApiController previewSessionApiController,
             PhasePacketController phasePacketController) {
@@ -101,6 +102,12 @@ public class YappcHttpServer extends HttpServerLauncher {
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/merge", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::merge, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/query", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::query, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/artifact/residual/analyze", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactGraphController::analyzeResidual, versionPolicy))
+
+                // P1-21: Artifact Patch endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/patch/plan", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactPatchController::planPatch, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/patch/generate", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactPatchController::generatePatch, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/patch/validate", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactPatchController::validatePatch, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/patch/review-bundle", secureVersioned(authenticationFilter, routeAuthorizationFilter, artifactPatchController::createReviewBundle, versionPolicy))
 
                 // Preview session endpoints (canonical paths per route-manifest.yaml)
                 .with(HttpMethod.POST, "/api/v1/preview/session/create", secureVersioned(authenticationFilter, routeAuthorizationFilter, previewSessionApiController::createSession, versionPolicy))

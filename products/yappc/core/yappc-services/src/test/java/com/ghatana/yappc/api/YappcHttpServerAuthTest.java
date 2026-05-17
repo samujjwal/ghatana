@@ -7,7 +7,6 @@ import com.ghatana.platform.security.rbac.Permission;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.services.phase.PhasePacketService;
 import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactResourceScopeAuthorizer;
 import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
@@ -117,6 +116,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             lifecycleController,
             mock(ImportController.class),
             new InMemoryArtifactGraphController(),
+            mock(ArtifactPatchController.class),
             new PageArtifactController(
                 new InMemoryPageArtifactRepository(),
                 (action, tenantId, workspaceId, projectId, artifactId, actor, summary) -> Promise.complete(),
