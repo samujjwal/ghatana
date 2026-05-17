@@ -383,11 +383,58 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
         if (context == null || context.isEmpty()) {
             return List.of();
         }
-        return List.of();
+
+        List<PatternSuggestion> suggestions = new ArrayList<>();
+
+        if (context.containsKey("environment")) {
+            suggestions.add(new PatternSuggestion(
+                    "Environment Drift",
+                    "Detect shifts in behavior between environments",
+                    PatternType.CORRELATION,
+                    0.72,
+                    Map.of("dimension", "environment", "mode", "cross-segment"),
+                    "Environment-specific divergences can indicate config drift",
+                    List.of("environment")
+            ));
+        }
+
+        if (context.containsKey("region") || context.containsKey("zone")) {
+            suggestions.add(new PatternSuggestion(
+                    "Regional Hotspots",
+                    "Identify region or zone concentration anomalies",
+                    PatternType.FREQUENCY,
+                    0.7,
+                    Map.of("dimension", context.containsKey("region") ? "region" : "zone", "threshold", 1.5),
+                    "Regional concentration can reveal outages or noisy neighbors",
+                    List.of("region")
+            ));
+        }
+
+        if (suggestions.isEmpty()) {
+            suggestions.add(new PatternSuggestion(
+                    "Context Drift",
+                    "Track contextual attribute changes over time",
+                    PatternType.TEMPORAL,
+                    0.65,
+                    Map.of("dimensions", new ArrayList<>(context.keySet())),
+                    "Context shifts often precede downstream incidents",
+                    List.of("context")
+            ));
+        }
+
+        return List.copyOf(suggestions);
     }
 
     private List<PatternSuggestion> generateHistoricalPatterns(String eventType) {
-        return List.of();
+        return List.of(new PatternSuggestion(
+                "Historical Baseline Drift",
+                "Compare current event behavior against historical baseline",
+                PatternType.TEMPORAL,
+                0.69,
+                Map.of("eventType", eventType, "lookbackDays", 30, "window", "daily"),
+                "Historical drift helps detect regressions that are not obvious in short windows",
+                List.of(eventType)
+        ));
     }
 
     private PatternValidationResult calculateValidationResult(EventPattern pattern, ValidationMetrics metricsSnapshot) {

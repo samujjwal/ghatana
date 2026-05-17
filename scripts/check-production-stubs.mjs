@@ -321,6 +321,32 @@ function isOperationalRemoteFallbackEmptyCollection(lines, index) {
   return sawHttpSend && sawStatusHandling && sawExceptionHandling;
 }
 
+/**
+ * Detect TypeScript/JavaScript array parsing fallback helpers that return []
+ * only when a payload field is missing or malformed.
+ *
+ * @param {string[]} lines
+ * @param {number} index 0-based line index
+ * @returns {boolean}
+ */
+function isTsArrayParsingFallback(lines, index) {
+  const start = Math.max(0, index - 28);
+  let sawArrayGuard = false;
+  let sawProjection = false;
+
+  for (let i = start; i < index; i++) {
+    const candidate = lines[i].trim();
+    if (/Array\.isArray\(/.test(candidate)) {
+      sawArrayGuard = true;
+    }
+    if (/\.filter\(/.test(candidate) || /\.map\(/.test(candidate) || /\.flatMap\(/.test(candidate)) {
+      sawProjection = true;
+    }
+  }
+
+  return sawArrayGuard && sawProjection;
+}
+
 // ---------------------------------------------------------------------------
 // File walking
 // ---------------------------------------------------------------------------
@@ -408,6 +434,9 @@ for (const root of scanRoots) {
           continue;
         }
         if (id === 'RETURN_EMPTY_LIST' && isOperationalRemoteFallbackEmptyCollection(lines, i)) {
+          continue;
+        }
+        if (id === 'RETURN_EMPTY_LIST' && isTsArrayParsingFallback(lines, i)) {
           continue;
         }
         if (includePaths && includePaths.length > 0 && !includePaths.some((pathPattern) => pathPattern.test(rel))) {
