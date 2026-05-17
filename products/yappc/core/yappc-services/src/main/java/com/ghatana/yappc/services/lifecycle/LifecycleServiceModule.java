@@ -46,13 +46,17 @@ import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
+import com.ghatana.yappc.storage.RepositorySnapshotRepository;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
+import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
 import com.ghatana.yappc.services.compiler.ArtifactCompileJobService;
+import com.ghatana.yappc.services.compiler.JavaArtifactExtractorImpl;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
+import com.ghatana.yappc.services.source.RepositoryInventoryScanner;
 import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
 import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade;
 import com.ghatana.yappc.facades.datacloud.DataCloudArtifactFacade.ArtifactStorageRequest;
@@ -587,10 +591,51 @@ public class LifecycleServiceModule extends AbstractModule {
     ArtifactCompileJobService artifactCompileJobService(
         com.ghatana.yappc.services.source.SourceProviderRegistry sourceProviderRegistry,
         ArtifactCompileJobService.TsExtractorWorker tsExtractorWorker,
-        ArtifactGraphService artifactGraphService
+        ArtifactGraphService artifactGraphService,
+        RepositorySnapshotRepository repositorySnapshotRepository,
+        RepositoryInventoryScanner repositoryInventoryScanner,
+        ArtifactCompileJobService.JavaArtifactExtractor javaArtifactExtractor
     ) {
         logger.info("Creating ArtifactCompileJobService (YAPPC-ArtifactCompiler)");
-        return new ArtifactCompileJobService(sourceProviderRegistry, tsExtractorWorker, artifactGraphService);
+        return new ArtifactCompileJobService(
+            sourceProviderRegistry,
+            tsExtractorWorker,
+            artifactGraphService,
+            repositorySnapshotRepository,
+            repositoryInventoryScanner,
+            javaArtifactExtractor
+        );
+    }
+
+    @Provides
+    RepositorySnapshotRepository repositorySnapshotRepository(
+        DataSource dataSource,
+        ObjectMapper objectMapper,
+        Executor executor
+    ) {
+        logger.info("Creating RepositorySnapshotRepository (YAPPC-ArtifactCompiler)");
+        return new RepositorySnapshotRepository(dataSource, objectMapper, executor);
+    }
+
+    @Provides
+    RepositoryInventoryScanner repositoryInventoryScanner() {
+        logger.info("Creating RepositoryInventoryScanner (YAPPC-ArtifactCompiler)");
+        return new RepositoryInventoryScanner();
+    }
+
+    @Provides
+    JavaSourceParser javaSourceParser() {
+        logger.info("Creating JavaSourceParser (YAPPC-ArtifactCompiler)");
+        return new JavaSourceParser();
+    }
+
+    @Provides
+    ArtifactCompileJobService.JavaArtifactExtractor javaArtifactExtractor(
+        JavaSourceParser javaSourceParser,
+        Executor executor
+    ) {
+        logger.info("Creating JavaArtifactExtractorImpl (YAPPC-ArtifactCompiler)");
+        return new JavaArtifactExtractorImpl(javaSourceParser, executor);
     }
 
     /** Provides durable source import job repository backed by source_import_jobs table. */

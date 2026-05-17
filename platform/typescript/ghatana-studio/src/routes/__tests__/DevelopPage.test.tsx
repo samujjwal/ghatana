@@ -30,7 +30,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
         metadata: { environments: ['local'], lifecycleExecutionAllowed: true },
         surfaces: [
           { id: 'web', type: 'web', implementationStatus: 'implemented' },
-          { id: 'api', type: 'api', implementationStatus: 'experimental' },
+          { id: 'api', type: 'backend-api', implementationStatus: 'experimental' },
         ],
       },
       availableProductUnits: [],
@@ -47,6 +47,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),

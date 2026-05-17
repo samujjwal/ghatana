@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -128,14 +129,14 @@ public final class TypeScriptExtractorWorkerClient {
         Duration duration = Duration.between(start, Instant.now());
         log.info("TypeScript extraction completed for snapshot {} in {}ms: {} nodes, {} edges, {} residuals",
             snapshot.snapshotId(), duration.toMillis(),
-            response.nodes().size(), response.edges().size(), response.residualIslandIds().size());
+            response.nodes().size(), response.edges().size(), response.residualIslands().size());
 
         return new ExtractorWorkerResult(
             response.nodes(),
             response.edges(),
             response.unresolvedEdges(),
             response.edgeResolutionRecords(),
-            response.residualIslandIds(),
+            response.residualIslands(),
             response.diagnostics()
         );
     }
@@ -209,7 +210,7 @@ public final class TypeScriptExtractorWorkerClient {
         List<ArtifactEdgeDto> edges,
         List<Map<String, Object>> unresolvedEdges,
         List<Map<String, Object>> edgeResolutionRecords,
-        List<String> residualIslandIds,
+        List<ResidualIslandDto> residualIslands,
         List<WorkerDiagnostic> diagnostics
     ) {}
 
@@ -231,7 +232,7 @@ public final class TypeScriptExtractorWorkerClient {
         List<ArtifactEdgeDto> edges,
         List<Map<String, Object>> unresolvedEdges,
         List<Map<String, Object>> edgeResolutionRecords,
-        List<String> residualIslandIds,
+        List<ResidualIslandDto> residualIslands,
         List<WorkerDiagnostic> diagnostics
     ) {
         public ExtractorWorkerResult {
@@ -239,7 +240,7 @@ public final class TypeScriptExtractorWorkerClient {
             edges = edges != null ? List.copyOf(edges) : List.of();
             unresolvedEdges = unresolvedEdges != null ? List.copyOf(unresolvedEdges) : List.of();
             edgeResolutionRecords = edgeResolutionRecords != null ? List.copyOf(edgeResolutionRecords) : List.of();
-            residualIslandIds = residualIslandIds != null ? List.copyOf(residualIslandIds) : List.of();
+            residualIslands = residualIslands != null ? List.copyOf(residualIslands) : List.of();
             diagnostics = diagnostics != null ? List.copyOf(diagnostics) : List.of();
         }
 

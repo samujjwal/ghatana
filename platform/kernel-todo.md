@@ -1,712 +1,1150 @@
-Executed against `samujjwal/ghatana` at target commit `42d9daef08790834371ac0a93e9b16cd86a1cd0f`.
+# Full End-to-End Ghatana World-Class Product Audit
 
-## Implementation Progress (2026-05-17)
+## Execution Progress (Live)
 
-### Completed in this session
+Last updated: 2026-05-17 (window 11)
 
-- [x] `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/YappcHttpServerAuthTest.java`
-  - Updated server wiring test to pass the new `ArtifactPatchController` dependency into `YappcHttpServer.servlet(...)`.
-  - Restored compile-time compatibility after patch-controller route expansion.
+### Overall status
 
-- [x] `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/ArchiveSourceProvider.java`
-  - Removed dead code and unused imports discovered by compile diagnostics.
-  - Preserved streaming checksum and deterministic snapshot behavior.
+- [x] Baseline gap scan completed against current repository state.
+- [~] Journey and release implementation in progress with fix-forward approach.
+- [~] Progress tracking now active in this file and will be updated incrementally.
 
-- [x] `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactPatchController.java`
-  - Removed unused imports and kept endpoint behavior intact.
-  - Ensured clean compile for the new artifact patch API controller location.
+### Completed in this execution window
 
-### Validation evidence (executed locally in this session)
+1. Artifact source-provider credential flow hardened.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/GitHubSourceProvider.java` to actually use `credentialRef`/token resolution in commit/tree/blob/gitignore fetches.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/GitLabSourceProvider.java` to actually use `credentialRef`/token resolution in commit/tree/file/gitignore fetches.
+2. GitLab API file-path fetch correctness hardened.
+   - Added URL encoding for GitLab repository and file path segments before API calls.
+3. Verification pass completed for modified source-provider files.
+   - Workspace diagnostics are clean for touched provider files.
+4. Artifact compile worker residual contract mismatch fixed.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ProcessTsExtractorWorker.java` to map residual payloads to typed `ResidualIslandDto` (with compatibility fallback for legacy `residualIslandIds`).
+5. Zero-warning cleanup in artifact graph controller.
+   - Removed dead helper methods in `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ArtifactGraphController.java`.
+6. Targeted build validation completed.
+   - `./gradlew :products:yappc:core:yappc-services:compileJava` now succeeds for the touched slice.
+7. Residual-island extraction compatibility bridge finalized.
+   - Worker now accepts canonical `residualIslands` payload and gracefully falls back to legacy `residualIslandIds` when needed.
+8. Studio ProductUnitIntent handoff state centralized.
+   - Added context-level `intentOperation` state in `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx` with loading/success/error tracking, mode (`preview`/`apply`), result payload, and correlation ID.
+   - Updated `platform/typescript/ghatana-studio/src/routes/IdeasPage.tsx` and `platform/typescript/ghatana-studio/src/routes/BlueprintsPage.tsx` to consume centralized state and render correlation ID in handoff results.
+   - Added i18n keys for correlation labels in `platform/typescript/ghatana-studio/src/i18n/studioTranslations.ts`.
+9. Studio route tests updated and passing for the refactor.
+   - Verified with: `pnpm --filter @ghatana/ghatana-studio test --run src/routes/__tests__/IdeasPage.test.tsx src/routes/__tests__/BlueprintsPage.test.tsx`.
+10. Studio translation typing drift normalized across route helpers.
+   - Updated route helper signatures in `AgentsPage`, `ArtifactsPage`, `CanvasPage`, `DeploymentsPage`, `DevelopPage`, `HealthPage`, `HomePage`, `LearnPage`, and `LifecyclePage` to align with typed translation keys.
+   - Added safe status/risk mapping fallbacks where dynamic labels were previously stringly-typed.
+11. Studio package validations completed for this slice.
+   - Typecheck passed: `pnpm --filter @ghatana/ghatana-studio exec tsc --noEmit -p tsconfig.json`.
+   - Additional route tests passed: `pnpm --filter @ghatana/ghatana-studio test --run src/routes/__tests__/CanvasPage.test.tsx src/routes/__tests__/LearnPage.test.tsx`.
+12. Journey 1 route-state coverage expanded for centralized ProductUnitIntent operation state.
+   - Enhanced `platform/typescript/ghatana-studio/src/routes/__tests__/IdeasPage.test.tsx` and `platform/typescript/ghatana-studio/src/routes/__tests__/BlueprintsPage.test.tsx` with assertions for success payload rendering (status, correlation ID, blocked reasons) and explicit unavailable-state fallback.
+13. Lifecycle context operation-state transitions now have direct provider-level tests.
+   - Added preview/apply loading/success/error transition coverage in `platform/typescript/ghatana-studio/src/data/__tests__/StudioLifecycleDataContext.test.tsx` to verify centralized intent-operation behavior.
+   - Verified with: `pnpm --filter @ghatana/ghatana-studio test --run src/data/__tests__/StudioLifecycleDataContext.test.tsx src/routes/__tests__/IdeasPage.test.tsx src/routes/__tests__/BlueprintsPage.test.tsx` and `pnpm --filter @ghatana/ghatana-studio exec tsc --noEmit -p tsconfig.json`.
+14. Journey 2 lifecycle error-state parity improved in Studio route execution flow.
+   - Added explicit execution error capture and UI alert rendering in `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx` so failed phase execution is surfaced instead of silently disappearing.
+   - Added regression coverage in `platform/typescript/ghatana-studio/src/routes/__tests__/LifecyclePage.test.tsx` for failed execute-phase behavior and no-refresh-on-failure guarantee.
+   - Added translation key `studio.route.lifecycle.actionErrorFallback` in `platform/typescript/ghatana-studio/src/i18n/studioTranslations.ts`.
+   - Verified with: `pnpm --filter @ghatana/ghatana-studio test --run src/routes/__tests__/LifecyclePage.test.tsx` and `pnpm --filter @ghatana/ghatana-studio exec tsc --noEmit -p tsconfig.json`.
+15. Journey 2 API error-model parity expanded at Studio-Kernel client boundary.
+   - Hardened `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts` mapping so structured API errors are classified by status or reason-code fallback (`AUTHENTICATION_REQUIRED`, `SCOPE_MISMATCH`, `PROVIDER_MODE_UNAVAILABLE`) and preserve payload message/details for non-specialized mapped errors.
+   - Added focused coverage in `platform/typescript/ghatana-studio/src/api/__tests__/kernelLifecycleClient.test.ts` for auth/scope/provider classification, reason-code-only fallback, and normalized generic error code behavior.
+   - Verified with: `pnpm --filter @ghatana/ghatana-studio test --run src/api/__tests__/kernelLifecycleClient.test.ts` and `pnpm --filter @ghatana/ghatana-studio exec tsc --noEmit -p tsconfig.json`.
+16. Journey 5 unresolved-edge canonical contract mapping corrected in Java ingest path.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceImpl.java` to map unresolved edges from canonical `relationshipType` instead of legacy `relationship`.
+   - This closes an ingest drift where worker payloads using canonical contract could be ignored by repository mapping.
+17. Journey 5 extractor residual serialization hardened for strict contract required fields.
+   - Updated `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/ts-extractor-worker.ts` to guarantee non-empty `originalSource` and non-empty fallback `sourceLocation.filePath` so strict worker response schema always receives valid values.
+   - Removed legacy unresolved-edge alias field from worker response schema (`relationship`) to keep canonical output shape explicit.
+18. Targeted validation executed for touched slices with blockers recorded.
+   - `pnpm --filter yappc-artifact-compiler exec tsc --noEmit -p tsconfig.json` is currently blocked by existing TypeScript 6 deprecation config (`baseUrl` without `ignoreDeprecations: "6.0"`) in package tsconfig.
+   - `./gradlew :products:yappc:core:yappc-services:compileJava` now advances past the earlier repository syntax break and reports a broader pre-existing compile backlog in YAPPC services (scope-signature drifts and repository API call-site mismatches outside the touched files).
+19. Java service interface/implementation residual-analysis type drift fixed.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/artifact/ArtifactGraphService.java` to import canonical `com.ghatana.yappc.domain.artifact.ResidualAnalysisRequest` so the `analyzeResidual` signature matches `ArtifactGraphServiceImpl`.
+   - Follow-up diagnostics are clean for touched files (`ArtifactGraphService.java`, `ArtifactGraphServiceImpl.java`, and worker TS file).
+20. YAPPC artifact repository syntax corruption repaired to unblock deeper compile diagnostics.
+   - Fixed malformed method/comment boundaries in `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/ArtifactGraphRepository.java` (`saveEdgeResolutionRecords` / `saveResidualIslands` section and misplaced top-of-class fragment).
+   - File-level diagnostics for `ArtifactGraphRepository.java` are now clean.
+21. YAPPC source-import scope contract drift reconciled across controller/service/repository boundaries.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/ImportController.java` async compile status/progress updates to pass full scope (`tenantId`, `workspaceId`, `projectId`) into `SourceImportJobService`.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/import_/SourceImportJobService.java` to remove invalid `Promise` returns from `whenException` callbacks.
+   - Added backward-compatible scoped lookup overloads in `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/source/SourceImportJobRepository.java` for tenant-only callers while retaining strict full-scope methods.
+22. YAPPC compile orchestration wiring and worker interface parity corrected.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ProcessTsExtractorWorker.java` to implement the current extractor interface signature (`extract(snapshot, tsFiles)`).
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/LifecycleServiceModule.java` to provide and inject the required compile dependencies: `RepositorySnapshotRepository`, `RepositoryInventoryScanner`, `JavaSourceParser`, and `JavaArtifactExtractorImpl`.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ArtifactCompileJobService.java` inventory count mapping to use `inventoryResult.totalFiles()`.
+23. Repository DTO nullability and residual helper compatibility normalized.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/RepositorySnapshotRepository.java` for correct Optional handling (`contentHash().orElse(null)`) and direct scope field persistence for `SourceLocator` string fields.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/import_/ResidualIslandService.java` factory to match current `ResidualIslandRecord` signature including `originalSource`.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/ArchiveSourceProvider.java` to use supported diagnostic level and env-gated tar support flag to avoid dead-code compiler findings.
+24. Java extractor and patch pipeline contracts fix-forwarded to current DTO/API shapes.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/JavaArtifactExtractorImpl.java` node/edge/residual construction to the current typed DTO signatures and canonical unresolved-edge payload shape.
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/compiler/ArtifactPatchService.java` to remove invalid nested Promise composition, and to use current field names (`relativePath`, `islandType`).
+   - Updated `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/PatchSetRepository.java` change-plan persistence/mapping for current `ChangePlan` and `ImpactAssessment` record shapes.
+   - Removed duplicate `skipReasonSummary(InventoryResult)` method in `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/source/RepositoryInventoryScanner.java`.
+25. Targeted Java build validation now green for the touched slice.
+   - Verified with: `./gradlew :products:yappc:core:yappc-services:compileJava` (BUILD SUCCESSFUL).
+26. YAPPC test compilation drift remediated for post-refactor contracts.
+   - Updated tests to current source-import and residual payload contracts:
+     - `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/storage/SourceImportJobRepositoryScopeTest.java`
+     - `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/domain/artifact/ArtifactGraphIngestRequestRoundTripTest.java`
+     - `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/domain/artifact/ArtifactGraphIngestRequestJsonTest.java`
+     - `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/domain/artifact/ResidualIslandDtoRoundTripTest.java`
+   - Updated test constructors/call sites for scoped source resolution and new residual DTO shape (`originalSource`, `sourceSpan`, checksums, scoped locator fields).
+27. Source provider and extractor contract tests fix-forwarded and stabilized.
+   - Updated `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/source/GitHubSourceProviderCommitPinnedTest.java` for new `SourceCredentialResolver.resolve(locator, provider, tenantId, workspaceId, projectId)` signature and `SourceLocator` builder fields.
+   - Updated `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/source/ArchiveSourceProviderDeterministicTest.java` from legacy `fetchSource`/constructor usage to canonical `resolve(locator, scope)` flow.
+   - Updated `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/compiler/ProcessTsExtractorWorkerContractTest.java` for current constructor signature, strict residual schema requirements, and invocation exception unwrapping.
+28. Artifact graph residual preservation tests aligned with current ingest implementation.
+   - Updated `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/services/artifact/ArtifactGraphServiceResidualPreservationTest.java` to:
+     - inject required blocking executor in `ArtifactGraphServiceImpl` test construction,
+     - stub `ArtifactModelVersionRepository.saveVersion(...)` promise behavior,
+     - provide non-null `contentChecksum` in test ingest requests to satisfy downstream immutable response map requirements.
+29. Focused regression validation is now green for the updated YAPPC slice.
+   - Verified compile: `./gradlew :products:yappc:core:yappc-services:compileTestJava` (BUILD SUCCESSFUL).
+   - Verified focused runtime tests: `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.compiler.ProcessTsExtractorWorkerContractTest" --tests "com.ghatana.yappc.services.source.ArchiveSourceProviderDeterministicTest" --tests "com.ghatana.yappc.services.source.GitHubSourceProviderCommitPinnedTest" --tests "com.ghatana.yappc.services.artifact.ArtifactGraphServiceResidualPreservationTest"` (BUILD SUCCESSFUL).
+30. Mockito session leaks in yappc-services tests were closed and the full suite returned to green.
+   - Fixed leaked `MockitoAnnotations.openMocks(this)` sessions in `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/platform/collab/MergeSuggestionServiceTest.java` and `products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ArtifactGraphControllerScopeTest.java` by storing the returned `AutoCloseable` and closing it in `@AfterEach`.
+   - Verified with focused validation on the touched tests and then the full suite: `./gradlew :products:yappc:core:yappc-services:test --stacktrace` (BUILD SUCCESSFUL).
 
-- [x] `pnpm --filter @ghatana/kernel-lifecycle test -- src/service/__tests__/ProductUnitIntentApplier.test.ts src/service/__tests__/KernelLifecycleService.test.ts`
-  - Pass: 23 files, 271 tests.
+### Observed already-implemented items (verified)
 
-- [x] `CI=1 pnpm --dir products/yappc/frontend/libs/yappc-artifact-compiler exec vitest run src/worker/__tests__/ts-extractor-worker.contract.test.ts`
-  - Pass: 1 file, 4 tests.
+- Workspace isolation and paginated query scope support are already present in artifact graph repository/service/controller paths.
+- Source import job scoped lookup and cancellation semantics are already present in Java job repository/controller paths.
+- Repository inventory scanner and canonical `SourceFileRef` already exist.
+- TS Fastify source import route is already consolidated to Java proxy mode.
 
-- [x] `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon`
-  - Pass.
+### Next execution slices
 
-- [x] `./gradlew :products:yappc:core:yappc-services:test --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServicePaginationTest' --tests 'com.ghatana.yappc.api.ArtifactGraphControllerScopeTest' --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServiceUnsupportedParserTest' --tests 'com.ghatana.yappc.services.source.SourceProviderRegistryTest' --tests 'com.ghatana.yappc.storage.ArtifactGraphRepositoryUpsertTest' --no-daemon`
-  - Pass.
+1. Continue journey-by-journey closure from this baseline:
+   - Studio workflow completeness and route-state UX correctness.
+   - Kernel lifecycle manifest/error-model parity and E2E signal quality.
+   - Data Cloud provider-mode integration hardening and evidence checks.
+   - Digital Marketing pilot golden/failure evidence automation.
+2. Mark each journey/release/workstream in this file as `done`, `partial`, or `blocked` with concrete file-level evidence.
 
-- [x] `node scripts/check-digital-marketing-lifecycle-pilot.mjs`
-  - Pass.
+### Journey status (current)
 
-- [x] `node scripts/check-yappc-product-unit-intent-handoff.mjs`
-  - Pass (API tests + web tests + boundary check).
+| Journey | Status | Notes |
+|---|---|---|
+| Journey 1 — Product ideation to ProductUnitIntent | partial | Studio intent preview/apply and kernel hooks exist; full E2E evidence still pending. |
+| Journey 2 — Direct Kernel usage | partial | Lifecycle UI and API surfaces exist; full plan/execute/error-state parity evidence pending. |
+| Journey 3 — Agentic product development | partial | Contract/service surface exists; policy/mastery/approval E2E evidence still pending. |
+| Journey 4 — Digital Marketing pilot | partial | Pilot config/workflow checks exist; golden and failure evidence packs need expansion. |
+| Journey 5 — Artifact intelligence | partial | Compiler/decompiler foundations strong; residual/contract hardening now improved in this window. |
+| Journey 6 — Data Cloud foundation | partial | Provider-mode architecture exists; full integration proof matrix remains pending. |
+| Journey 7 — Future product shape readiness | partial | Registry and matrix checks exist; UI/readiness execution gating needs further evidence. |
 
-- [x] `node scripts/check-data-cloud-platform-providers.mjs`
-  - Pass.
+### Release status (current)
 
-### Status
+| Release | Status | Notes |
+|---|---|---|
+| Release 0 — Shell/governance honesty | partial | Routing/status infrastructure present; consistency pass still required. |
+| Release 1 — Digital Marketing E2E pilot | partial | Lifecycle checks present; golden/failure pack automation not complete. |
+| Release 2 — Agentic support | partial | Core scaffolding present; end-to-end enforcement evidence pending. |
+| Release 3 — Data Cloud providers | partial | Provider-mode fail-closed path exists; exhaustive provider proof pending. |
+| Release 4 — Artifact intelligence integration | partial | Shared contracts in progress; residual payload bridge improved in this window. |
+| Release 5 — Product shape expansion | partial | Shape registry exists; readiness and execution-safe gating still being hardened. |
 
-- [x] Kernel lifecycle and compiler/decompiler tasks tracked in this file are implemented and validated for the touched slices.
-- [x] Progress log updated with locally executed verification results.
+### Workstream status (current)
 
-## Implementation Progress (2026-05-16)
+| Workstream | Status | Notes |
+|---|---|---|
+| 1 — Studio UI/API contracts | partial | Substantial route support exists; final journey E2E closure pending. |
+| 2 — Kernel lifecycle/platform | partial | Core services active; API/error-model and E2E parity not fully closed. |
+| 3 — Data Cloud providers | partial | Bridge/provider scaffolding present; platform-mode proof suite pending. |
+| 4 — YAPPC artifact intelligence | partial | Credential flow + residual payload corrections delivered in this window. |
+| 5 — Digital Marketing pilot | partial | Pilot operational; evidence-pack hardening pending. |
+| 6 — Shared UI/platform libs | partial | Foundations present; conformance sweep pending. |
+| 7 — Product shape matrix | partial | Registry/matrix checks exist; enforcement coverage needs extension. |
+| 8 — CI/CD and docs authority | partial | Strong check surface exists; required-check hardening pending. |
 
-### Completed in this session
+Target repo: `samujjwal/ghatana`
 
-- [x] `platform/typescript/kernel-lifecycle/src/service/ProductUnitIntentApplier.ts`
-  - Rewritten as a thin delegator to `KernelLifecycleService.applyProductUnitIntent`.
-  - Removed mock registry refs and no-op provenance/lifecycle-event/runtime-truth behavior.
+Target commit snapshot: `9498ac6df6790297579c4bce7f141a4cfb14fe45`
 
-- [x] `platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts`
-  - Hardened canonical ProductUnitIntent path with explicit failure reason codes:
-    - `lifecycle-event-write-failed`
-    - `runtime-truth-write-failed`
-    - `provenance-write-failed`
-  - Added fail-closed behavior when required evidence providers are unavailable for intent application.
+Audit mode: full codebase snapshot review anchored to the target commit, not commit-diff review.
 
-- [x] `platform/typescript/kernel-providers/src/gates/FileBootstrapGateProvider.ts`
-  - Removed backward-compatible implicit synthetic pass behavior.
-  - Gate evaluation now fails closed unless the gate is explicitly allowlisted via `supportedGates`.
+## 0. Audit basis and limitation
 
-- [x] `platform/typescript/kernel-providers/src/registry/GhatanaFileRegistryProvider.ts`
-  - Enabled strict-validation defaults for CI/production via environment-sensitive inference.
-  - Preserved explicit override support (`strict: false`) for local/test scenarios.
+I inspected the target commit metadata and key code/config/doc surfaces through the GitHub connector. The target commit itself is a merge commit whose visible diff only updates the YAPPC changelog, so the useful audit basis is the complete repository state at that commit, not the diff. I did not clone the repository locally and did not execute `pnpm`, `gradle`, or Playwright commands in a local checkout. No GitHub workflow runs were returned for this commit through the connector.
 
-- [x] Tests updated and passing (targeted)
-  - `platform/typescript/kernel-lifecycle/src/service/__tests__/KernelLifecycleService.test.ts`
-  - `platform/typescript/kernel-providers/src/gates/__tests__/FileBootstrapGateProvider.test.ts`
-  - `platform/typescript/kernel-providers/src/registry/__tests__/GhatanaFileRegistryProvider.test.ts`
+Primary inspected areas:
 
-- [x] `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx`
-  and `platform/typescript/ghatana-studio/src/config/studioEnvironment.ts`
-  - Replaced hidden hardcoded default with explicit pilot configuration:
-    - `VITE_STUDIO_PILOT_DEFAULT_PRODUCT_UNIT_ID`
-  - Added/updated tests in `platform/typescript/ghatana-studio/src/config/__tests__/studioEnvironment.test.ts`.
+- root `package.json`
+- root `pnpm-workspace.yaml`
+- root `settings.gradle.kts`
+- `config/canonical-product-registry.json`
+- `platform/typescript/LIBRARY_GOVERNANCE.md`
+- `platform/typescript/kernel-*` package metadata and Kernel lifecycle service
+- `platform/typescript/ghatana-studio` package, app shell, navigation, lifecycle route, data context, API client, and tests
+- `products/digital-marketing/kernel-product.yaml`
+- `products/yappc/docs/architecture/ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md`
+- `products/yappc/frontend/libs/yappc-artifact-compiler/package.json`
+- `products/data-cloud/extensions/kernel-bridge` build and Java bridge implementation
+- `.github/workflows/product-lifecycle.yml`
 
-- [x] `scripts/check-digital-marketing-lifecycle-pilot.mjs`
-  - Expanded smoke validation to assert lifecycle evidence linkage:
-    - `result.eventsRef` ↔ `manifests.lifecycleEvents`
-    - `result.healthSnapshotRef` ↔ `manifests.lifecycleHealthSnapshot`
-    - `result.runId`/`result.correlationId`/`result.productId` presence for Studio run-summary compatibility
-  - Added latest manifest pointer drift checks (`runId`, `correlationId`, `providerMode`, and core manifest refs).
-  - Updated gate-result parser to accept canonical gate manifest shape (`gates` with `status/details/evidenceRefs`) and legacy shapes.
-  - Added provenance + Studio visibility contract checks against canonical sources:
-    - `KernelLifecycleService.recordProvenance` + runtime-truth recording contract markers
-    - Studio `LifecycleRunSchema` visibility markers (`productUnitId`, `eventsRef`, `healthSnapshotRef`, run APIs)
-  - Verified both modes locally:
-    - `node scripts/check-digital-marketing-lifecycle-pilot.mjs`
-    - `node scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke`
+## 1. Executive summary
 
-- [x] `scripts/check-yappc-product-unit-intent-handoff.mjs`
-  - Added explicit ProductUnitIntent evidence-continuity assertions (`lifecycleEventRefs`, `provenanceRefs`, `runtimeTruthRefs`) and evidenceRef mapping guard.
-  - Re-validated focused API/web handoff tests and boundary gate.
+Ghatana is structurally far closer to a world-class unified product development platform than a greenfield codebase. It already has the right vocabulary, package layout, generated workspace registration, product registry, lifecycle packages, Studio shell, Digital Marketing pilot, YAPPC artifact-intelligence architecture, Data Cloud bridge modules, and a broad set of guardrail scripts.
 
-- [x] `scripts/check-data-cloud-platform-providers.mjs`
-  - Added explicit provider class existence checks for Data Cloud Kernel extension registrations.
-  - Added anti-theater guardrails (`TODO`/`FIXME`) on kernel extension path.
-  - Re-validated provider conformance check.
-
-- [x] `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/ts-extractor-worker.ts`
-  - Reconciled the TypeScript extractor worker boundary with both existing Java caller request shapes and the canonical nested snapshot shape.
-  - Removed `z.any()` and unsafe worker-boundary casts in favor of explicit request normalization and response serialization.
-  - Added deterministic unresolved-edge IDs plus Java-ingestion-compatible edge-resolution record payloads.
-  - Emitted Java-consumable node/edge compatibility fields without dropping canonical graph fields.
-
-- [x] `products/yappc/frontend/libs/yappc-artifact-compiler/src/worker/__tests__/ts-extractor-worker.contract.test.ts`
-  - Added contract coverage for canonical, nested-Java, and flat-Java request normalization.
-  - Added response-shape coverage for Java-consumable node, edge, unresolved-edge, diagnostic, and version metadata payloads.
-
-- [x] CI gate coverage verified in `.github/workflows/product-lifecycle.yml`
-  - Confirmed workflow includes Kernel API, Studio API, YAPPC handoff, Data Cloud provider conformance, Digital Marketing pilot, and smoke checks.
-
-### In progress (next implementation slices)
-
-- [x] Digital Marketing golden lifecycle pilot E2E assertions (manifest/evidence/runtime truth/provenance/Studio visibility)
-  - Runtime-truth/event evidence, manifest-pointer consistency, provenance contract markers, and Studio run-summary visibility markers are now enforced by checker gates.
-- [x] Studio product default hardening (pilot default is now explicit configuration, not a hidden universal fallback)
-- [x] Data Cloud platform-mode provider conformance evidence checks (static + extension/provider registration guardrails)
-- [x] YAPPC ProductUnitIntent handoff E2E coverage checks (API + web + boundary)
-- [x] CI workflow enforcement of kernel/product-shape/observability/anti-stub gates
-
-### Artifact compiler/decompiler alignment status (follow-through from `platform/comp-decomp-todo.md`)
-
-- [x] Kind-safe compile-back change planning already present and covered by dedicated tests.
-- [x] Residual regeneration strategy excludes placeholder-stub generation.
-- [x] High-impact compiler/decompiler slices completed in this session:
-  - Java import/runtime path compile hardening across source providers and worker orchestration (`ProcessTsExtractorWorker`, `SourceProviderRegistry`, source providers, `LifecycleServiceModule`, `ResidualIslandService`).
-  - Workspace-scoped graph query/pagination wiring aligned and test-updated (`ArtifactGraphServicePaginationTest`, `ArtifactGraphRepositoryUpsertTest`).
-  - Canonical snapshot content hash accessors standardized on `SnapshotFile.contentChecksum()` across GitHub/GitLab/local-folder/archive providers.
-  - Residual island persistence path aligned to the expanded full residual schema and scoped repository signature.
-  - Source provider default registration semantics reconciled (`defaultRegistry()` now canonical, empty constructor kept for explicit registration and tests).
-  - TypeScript extractor worker contract aligned to the current Java callers and canonical snapshot shape, with deterministic unresolved-edge serialization and DTO-compatible output fields.
-  - `ProductUnitIntentApplier` hardened into a thin compatibility adapter that delegates to `KernelLifecycleService.applyProductUnitIntent` (single-path validation and semantics).
-- [x] Validation evidence for this slice:
-  - `./gradlew :products:yappc:core:yappc-services:compileJava --no-daemon` (pass)
-  - `./gradlew :products:yappc:core:yappc-services:test --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServicePaginationTest' --tests 'com.ghatana.yappc.api.ArtifactGraphControllerScopeTest' --tests 'com.ghatana.yappc.services.artifact.ArtifactGraphServiceUnsupportedParserTest' --tests 'com.ghatana.yappc.services.source.SourceProviderRegistryTest' --tests 'com.ghatana.yappc.storage.ArtifactGraphRepositoryUpsertTest' --no-daemon` (pass)
-  - `pnpm --filter @ghatana/kernel-lifecycle test -- src/service/__tests__/ProductUnitIntentApplier.test.ts src/api/__tests__/KernelLifecycleApiHandlers.test.ts src/api/__tests__/KernelLifecycleApiHandlersAuth.test.ts` (pass, 23/23 files and 271/271 tests)
-  - `CI=1 pnpm --dir products/yappc/frontend/libs/yappc-artifact-compiler exec vitest run src/worker/__tests__/ts-extractor-worker.contract.test.ts` (pass, 1 file / 4 tests)
-
-Important execution note (superseded by the 2026-05-17 section above): this target commit is a `[skip ci]` changelog-only commit touching `products/yappc/CHANGELOG.md`, so I treated it as the **complete repository snapshot at that commit**, not as a diff audit. I inspected the canonical repo rules, workspace/build wiring, product registry, Kernel contracts/lifecycle/providers, Studio shell/client/data context, YAPPC handoff surfaces, Data Cloud readiness, and Digital Marketing lifecycle pilot. The 2026-05-17 update includes locally executed `pnpm` and Gradle verification results for the implemented slices.
-
-## A. End-to-end executive summary
+The biggest gap is not naming or package existence. The biggest gap is production-proof integration depth: executable end-to-end evidence that Studio, Kernel, YAPPC, Data Cloud, and Digital Marketing work as one coherent product experience across real API boundaries, real provider modes, real lifecycle runs, real manifests, real approvals, real runtime truth, real artifact evidence, and real user journeys.
 
 ### What is close to world-class
 
-Ghatana already has strong structural foundations:
+1. Repo guardrails are strong and explicit.
+2. Root scripts already encode many architectural checks.
+3. Platform/package governance exists and names canonical libraries clearly.
+4. Root Gradle and pnpm workspaces are generated or aligned with the canonical product registry.
+5. Product Development Kernel has concrete TypeScript packages for contracts, lifecycle, providers, toolchains, artifacts, deployment, and release.
+6. Ghatana Studio exists as a unified customer-facing shell with routes for Home, Ideas, Blueprints, Canvas, Develop, Lifecycle, Agents, Artifacts, Deployments, Health, Learn, and Settings.
+7. Digital Marketing is correctly identified as the validated lifecycle pilot and has detailed `kernel-product.yaml` lifecycle configuration.
+8. YAPPC artifact compiler/decompiler is explicitly positioned as a YAPPC-owned capability with TypeScript and Java responsibilities split by workload type.
+9. Data Cloud Kernel bridge exists as a product-side bridge rather than Kernel importing Data Cloud internals.
+10. CI workflow coverage for product lifecycle is directionally strong.
 
-1. **Repo-level guardrails are mature.** The repo instructions require reuse before creating, explicit boundaries, no silent failures, strict TypeScript, tests as part of every change, Java documentation tags, and observability for important flows. 
+### What blocks production customer use today
 
-2. **The monorepo is organized around the intended platform/product split.** Gradle includes platform Java modules, platform contracts, platform-kernel modules, platform plugins, generated product includes, bridge modules, shared services, and integration tests. 
+1. Studio routes are present, but many are capability-gated, disabled, hidden, preview-only, or backed by placeholder-like route content rather than full workflow experiences.
+2. Studio tests mostly validate navigation and route rendering; they do not yet prove the full customer journeys from idea to ProductUnitIntent, lifecycle execution, manifest inspection, approval, deployment, verification, and learning.
+3. Kernel lifecycle service is substantial, but execution depends on externally supplied executors/provider context; this must be validated end-to-end with real adapters and manifests, not only script-level checks.
+4. Platform mode is intentionally fail-closed, but Data Cloud-backed provider readiness must be proven through end-to-end provider tests and Studio UI behavior.
+5. Digital Marketing has detailed lifecycle config, but the pilot needs a golden-path and failure-path evidence pack that is produced automatically and compared in CI.
+6. YAPPC artifact compiler/decompiler has a strong architecture doc and package, but the bridge from semantic evidence to Data Cloud provenance and Kernel planning/gates needs executable contracts and tests.
+7. Product registry accurately marks many products as planned/disabled, but future shape readiness must be enforced through capability-matrix tests rather than treated as implemented functionality.
+8. Current docs and generated trackers risk becoming duplicated sources of truth unless Platform Coherence becomes a formal domain with authority and automated doc-claim checks.
 
-3. **The TypeScript workspace is generated from the canonical product registry.** It includes platform libraries, Ghatana Studio, Data Cloud, YAPPC, Digital Marketing UI, FlashIt, PHR, DCMAAR, TutorPutor, Audio-Video, and shared-service UI packages. 
+## 2. Current-state classification
 
-4. **The Product Development Kernel has real contract and runtime surfaces.** `ProductUnitIntent` is strongly typed and Zod-validated, includes correlation IDs, provider mode, provenance/runtime/event refs, and guards against secret-like fields.  
+| Area | Current state | Audit classification |
+|---|---:|---|
+| Repo instructions and engineering rules | Present and strong | Existing and executable |
+| Root package scripts and checks | Large check surface exists | Existing but partial, because not all checks prove E2E behavior |
+| pnpm workspace | Generated from canonical registry | Existing and executable |
+| Gradle root settings | Java/platform/product graph wired | Existing and executable |
+| Product registry | Rich metadata and lifecycle states | Existing and executable, with some products correctly disabled |
+| TypeScript library governance | Canonical registry exists | Existing but partial, because deprecated package cleanup must remain enforced continuously |
+| Product Development Kernel TS packages | Contracts/lifecycle/providers/toolchains/artifacts/deployment/release exist | Existing but partial |
+| Kernel lifecycle service | Plan, execute, events, runtime truth, provenance, approvals, ProductUnitIntent apply supported | Existing but partial; needs E2E proof with real providers/adapters |
+| Ghatana Studio | Unified shell exists | Existing but partial |
+| Studio navigation | Canonical route list exists | Existing but partial; capability gating hides/blocks critical customer routes |
+| Studio lifecycle UI | Rich controls and manifest panels exist | Existing but partial; needs live API/E2E coverage |
+| Digital Marketing pilot | Registry-enabled and detailed lifecycle manifest exists | Existing but partial; needs golden evidence and failure-path tests |
+| Data Cloud bridge | Java module and provider bridge exist | Existing but partial; default client methods and provider health need production-hardening |
+| YAPPC artifact compiler/decompiler | Architecture and package exist | Existing but partial; semantic evidence handoff to Data Cloud/Kernel requires hardening |
+| Future product shape readiness | Registry captures readiness and blockers | Existing but partial / target architecture depending product |
+| CI lifecycle workflow | Targeted workflow exists | Existing but partial; needs broader E2E/browser/deploy smoke and required status enforcement |
 
-5. **Ghatana Studio exists as a unified shell.** It wires Home, Ideas, Blueprints, Canvas, Develop, Lifecycle, Agents, Artifacts, Deployments, Health, Learn, and Settings routes, using capability-aware route guards and i18n-backed labels.  
+## 3. Top 10 fixes
 
-6. **Digital Marketing is correctly positioned as the executable lifecycle pilot.** The product registry marks Digital Marketing as lifecycle-enabled, with backend and web surfaces implemented, bridge conformance enabled, lifecycle execution allowed, and validate/test/build/package/deploy/verify scripts present at the root package level.  
+1. Make Platform Coherence a formal, enforced domain.
+2. Add a single canonical domain registry and generated ownership matrix.
+3. Promote Ghatana Studio from route shell to real workflow shell for the seven required journeys.
+4. Add E2E tests for Studio → Kernel → Digital Marketing lifecycle pilot.
+5. Add ProductUnitIntent handoff E2E from YAPPC API/UI to Kernel registry apply/preview.
+6. Add Data Cloud platform-mode provider integration tests that prove events, artifacts, health, approvals, provenance, memory, and runtimeTruth are all backed by Data Cloud.
+7. Add artifact-intelligence evidence contracts shared across YAPPC, Data Cloud, and Kernel.
+8. Add Digital Marketing lifecycle golden-master evidence pack and failure-path pack.
+9. Harden CI so the world-class gates are required checks, not only available scripts.
+10. Reconcile docs so only one document is authoritative for each rule, and every target-state claim is labeled.
 
-### What is missing or incoherent
+## 4. System architecture map
 
-The repo is not yet world-class end to end because several flows are structurally present but not fully production-executable:
+### Ghatana Studio
 
-1. **There are two ProductUnitIntent application paths.** `KernelLifecycleService.applyProductUnitIntent` is the better path: it validates provider mode, uses the registry provider, records lifecycle events, records runtime truth, and records provenance.   But `ProductUnitIntentApplier.ts` still contains mock registration and no-op provenance, lifecycle-event, and runtime-truth methods. That is a duplicate/legacy anti-pattern and must not remain a production path. 
+Correct role: unified customer experience for idea, blueprint, canvas, development, lifecycle, agents, artifacts, deployments, health, learning, and settings.
 
-2. **Bootstrap gates are not uniformly production-grade.** The bootstrap factory wires a few concrete gates, but many gates are mapped to `FileBootstrapGateProvider({ supportedGates: [] })`, which correctly returns NOT_READY for unsupported gates. However, the provider class still has a backward-compatible synthetic-pass path when `supportedGates` is not explicitly provided. That creates a future fake-success risk.  
+Current code anchor:
 
-3. **Data Cloud and YAPPC are platform-provider products but not yet lifecycle-provider-ready.** The registry marks both with missing manifest/conformance fields and `lifecycleExecutionAllowed: false`; they require bootstrap/platform separation, runtime-truth provider evidence, and creator-lifecycle separation before lifecycle execution. 
+- `platform/typescript/ghatana-studio/package.json`
+- `platform/typescript/ghatana-studio/src/App.tsx`
+- `platform/typescript/ghatana-studio/src/navigation/studioNavigation.ts`
+- `platform/typescript/ghatana-studio/src/routes/*`
+- `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx`
+- `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`
 
-4. **Future products are shape validators, not executable lifecycle products.** PHR, Finance, and FlashIt have lifecycle registry entries but remain planned/disabled because they still require domain gates, multi-module validation, consent/privacy/FHIR/regulatory/mobile artifacts, and adapter readiness.   
+Required change: make Studio routes prove the actual workflows rather than merely show navigable or disabled surfaces.
 
-5. **Studio has the right UX shell but still depends on runtime configuration and API readiness.** Its lifecycle data context defaults to `digital-marketing` and `bootstrap`, handles unconfigured/degraded states, and exposes preview/apply ProductUnitIntent functions only when the client supports them. This is good for the pilot but must become a product-neutral runtime selection model before general availability. 
+### Product Development Kernel
 
-### Top 10 fixes
+Correct role: lifecycle truth, lifecycle plans, execution, manifests, gates, artifacts, deployment, approvals, rollback, provider mode, and ProductUnitIntent application.
 
-1. Delete or rewrite `platform/typescript/kernel-lifecycle/src/service/ProductUnitIntentApplier.ts` so it delegates to `KernelLifecycleService.applyProductUnitIntent`.
-2. Make `KernelLifecycleService.applyProductUnitIntent` the only Kernel ProductUnitIntent application path.
-3. Remove synthetic success behavior from `FileBootstrapGateProvider`; unsupported gates must return NOT_READY or fail closed.
-4. Convert Digital Marketing lifecycle into a golden E2E pilot with manifest, event, runtime truth, gate, artifact, deployment, health, and Studio visualization assertions.
-5. Make Studio’s `digital-marketing` default an explicit pilot configuration, not a hidden universal default.
-6. Harden `GhatanaFileRegistryProvider` with strict validation enabled in CI and production.
-7. Implement Data Cloud-backed Kernel providers for events, artifacts, health, provenance, memory, and runtime truth.
-8. Add executable ProductUnitIntent handoff tests from YAPPC export → Kernel preview/apply → registry/runtime truth → Studio refresh.
-9. Keep PHR, Finance, FlashIt, Data Cloud, YAPPC, Audio-Video, DCMAAR, TutorPutor disabled until readiness gates are satisfied.
-10. Add CI workflows that run the architecture, lifecycle, product-shape, production-readiness, observability, security, privacy, i18n, a11y, and anti-theater checks as mandatory gates.
+Current code anchor:
 
----
+- `platform/typescript/kernel-product-contracts`
+- `platform/typescript/kernel-lifecycle`
+- `platform/typescript/kernel-providers`
+- `platform/typescript/kernel-toolchains`
+- `platform/typescript/kernel-artifacts`
+- `platform/typescript/kernel-deployment`
+- `platform/typescript/kernel-release`
+- `scripts/kernel-product.mjs`
 
-## B. System architecture map
+Required change: prove each lifecycle phase with real adapters and complete manifests, then expose stable API summaries to Studio.
 
-```text
-Ghatana Studio
-  platform/typescript/ghatana-studio
-  ├─ Unified shell/routes
-  ├─ Kernel lifecycle client
-  ├─ Lifecycle data context
-  ├─ ProductUnit / run / approval / manifest views
-  └─ ProductUnitIntent preview/apply hooks
+### YAPPC
 
-Product Development Kernel
-  platform/typescript/kernel-product-contracts
-  platform/typescript/kernel-lifecycle
-  platform/typescript/kernel-providers
-  platform/typescript/kernel-toolchains
-  platform/typescript/kernel-artifacts
-  platform/typescript/kernel-deployment
-  platform/typescript/kernel-release
-  platform-kernel/*
+Correct role: idea, intent, blueprint, canvas, artifact compiler/decompiler, ProductUnitIntent generation, recommendations, learning, and evolution.
 
-YAPPC
-  products/yappc/*
-  ├─ Ideation / canvas / creator lifecycle
-  ├─ ProductUnitIntent export
-  ├─ Artifact intelligence
-  └─ Kernel bridge
+Current code anchor:
 
-Data Cloud
-  products/data-cloud/*
-  ├─ Runtime truth
-  ├─ Events
-  ├─ Provenance
-  ├─ Memory
-  ├─ AEP / Action Plane
-  └─ Kernel provider bridge
+- `products/yappc/frontend`
+- `products/yappc/frontend/libs/yappc-artifact-compiler`
+- `products/yappc/core/yappc-services`
+- `products/yappc/kernel-bridge`
+- `products/yappc/docs/architecture/ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md`
 
-Digital Marketing
-  products/digital-marketing/*
-  ├─ Executable lifecycle pilot
-  ├─ Backend API
-  ├─ Web UI
-  └─ Kernel bridge
+Required change: make ProductUnitIntent and artifact evidence handoff executable and testable end-to-end.
 
-Future product shape validators
-  PHR, Finance, FlashIt, Data Cloud, YAPPC, Aura, DCMAAR, TutorPutor, Audio-Video
-```
+### Data Cloud / AEP
 
-This matches the hardened blueprint’s ownership direction: Studio is the unified experience, Kernel owns lifecycle truth, YAPPC owns creation/artifact intelligence, Data Cloud owns runtime truth/events/provenance/memory, shared libraries provide reusable primitives, and products own domain behavior.  
+Correct role: Data Cloud stores governed runtime truth, events, provenance, memory, evidence, and provider-backed platform mode. AEP is inside Data Cloud Action Plane.
 
----
+Current code anchor:
 
-## C. Journey-by-journey findings
+- `products/data-cloud/extensions/kernel-bridge`
+- `products/data-cloud/planes/action/kernel-bridge`
+- `products/data-cloud/planes/action/*`
+- `products/data-cloud/delivery/*`
+
+Required change: prove platform-mode provider contract with actual Data Cloud-backed event/artifact/health/approval/provenance/memory/runtimeTruth providers.
+
+### Digital Marketing
+
+Correct role: validated lifecycle pilot product.
+
+Current code anchor:
+
+- `products/digital-marketing/kernel-product.yaml`
+- `products/digital-marketing/dm-api`
+- `products/digital-marketing/ui`
+- `products/digital-marketing/deploy/local.compose.yaml`
+- `products/digital-marketing/dm-kernel-bridge`
+
+Required change: make it the canonical golden-path product for lifecycle evidence generation.
+
+## 5. Journey-by-journey findings
 
 ### Journey 1 — Product ideation to ProductUnitIntent
 
-**Classification:** Existing but partial.
+Current flow:
 
-**Current flow:**
-YAPPC has ProductUnitIntent-related surfaces, the Kernel contract is strong, and Studio exposes ProductUnitIntent preview/apply hooks through the lifecycle data context. The canonical contract validates schema version, producer, target providers, lifecycle request, provenance, secret-like fields, and promote-candidate evidence requirements.    
+- Studio has Ideas, Blueprints, Canvas, and Learn routes.
+- Navigation marks Ideas as degraded/disabled in unconfigured mode, while Blueprints, Canvas, and Learn are visible.
+- Studio lifecycle data context already exposes optional `previewProductUnitIntent` and `applyProductUnitIntent` hooks when the client supports them.
+- KernelLifecycleService supports `applyProductUnitIntent`, validates the intent, enforces provider mode, requires intent-capable registry provider, and records events/runtime truth/provenance when providers exist.
 
-**Primary gap:**
-The repo contains a duplicate/legacy `ProductUnitIntentApplier.ts` that returns mock registry refs and no-op provenance/event/runtime truth writes. That must be removed or made a thin delegator to `KernelLifecycleService.applyProductUnitIntent`. 
+Expected flow:
 
-**Required fix:**
-Use only:
+- User creates idea in Studio/YAPPC.
+- YAPPC turns idea into ProductUnitIntent.
+- Studio previews intent.
+- Kernel validates intent.
+- Kernel applies intent only through ProductUnitIntent-capable registry provider.
+- Kernel writes lifecycle event, provenance, and runtime truth.
+- Studio shows the new ProductUnit.
 
-```text
-YAPPC ProductUnitIntent export
-→ Studio / API preview or apply
-→ KernelLifecycleService.applyProductUnitIntent
-→ ProductUnitIntent-capable RegistryProvider
-→ lifecycle event provider
-→ runtime truth provider
-→ provenance provider
-→ Studio refresh
+Gaps:
+
+- Ideas route is disabled by default rather than being a minimal executable capture flow.
+- ProductUnitIntent UI handoff is not clearly the canonical path from Blueprints/Canvas to Kernel.
+- Need proof that YAPPC API emits exactly the same schema Kernel validates.
+- Need idempotency tests for repeated preview/apply.
+- Need failure-state UI for schema-invalid, registry-apply-failed, provider-mode-not-available, lifecycle-event-write-failed, runtime-truth-write-failed, and provenance-write-failed.
+
+File-by-file plan:
+
+1. `platform/typescript/ghatana-studio/src/routes/IdeasPage.tsx`
+   - Replace disabled placeholder with minimal idea capture and ProductUnitIntent draft creation.
+   - Add i18n keys and a11y labels.
+   - Add tests for empty, draft, schema-invalid, and ready-to-preview states.
+
+2. `platform/typescript/ghatana-studio/src/routes/BlueprintsPage.tsx`
+   - Add explicit ProductUnitIntent preview/apply call-to-action.
+   - Show validation status, evidence refs, and blocked reasons.
+
+3. `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
+   - Connect residual islands and semantic evidence to ProductUnitIntent evidence refs.
+
+4. `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx`
+   - Add loading/error/success state for preview/apply intent operations.
+   - Preserve correlation IDs and show them in UI.
+
+5. `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`
+   - Add strict request/response validation for ProductUnitIntent preview/apply endpoints.
+   - Map all Kernel reason codes to typed client errors.
+
+6. `products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts`
+   - Ensure route emits canonical `ProductUnitIntentSchema` only.
+   - Reject non-canonical fields.
+   - Add tenant/workspace/project scope enforcement.
+
+7. `platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts`
+   - Add audit-grade result summary for preview/apply.
+   - Ensure preview mode produces provenance-safe evidence without writing registry state.
+
+Tests:
+
+- Studio component tests for preview/apply.
+- YAPPC API contract tests against `ProductUnitIntentSchema`.
+- Kernel unit tests for all blocked reasons.
+- E2E: create idea → preview intent → apply intent → ProductUnit appears.
+
+Validation commands:
+
+```bash
+pnpm --filter @ghatana/ghatana-studio test --run
+pnpm --filter @ghatana/yappc-api test --run
+pnpm --filter @ghatana/kernel-lifecycle test --run
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:studio-kernel-api
 ```
-
----
 
 ### Journey 2 — Direct Product Development Kernel usage
 
-**Classification:** Existing but partial.
+Current flow:
 
-**Current flow:**
-Kernel lifecycle service can list product units, create lifecycle plans, write `lifecycle-plan.json`, update pointer state, record runtime truth/provenance, append lifecycle events, execute lifecycle plans, list runs, load manifests, and manage approvals.  
+- Studio has Develop, Lifecycle, Artifacts, Deployments, and Health routes.
+- Lifecycle route includes phase selector, dry-run toggle, environment selector, provider-mode selector, run list, manifest panels, and approval queue.
+- KernelLifecycleService supports plan creation, execution, run listing, manifest retrieval, pending approvals, approval request, approval decisions, and ProductUnitIntent application.
+- Digital Marketing is registry-enabled with lifecycle execution allowed.
 
-Studio has the correct route shell and API client for product units, plans, execution, runs, manifests, approvals, and ProductUnitIntent operations.  
+Expected flow:
 
-**Primary gaps:**
+- User selects ProductUnit.
+- User views product shape and readiness.
+- User creates plan.
+- User executes validate/test/build/package/deploy/verify.
+- User inspects gates, artifacts, deployments, health, approvals, failures, and recommendations.
 
-1. API endpoint implementation must be validated against the Studio client contract.
-2. Gate coverage is not complete.
-3. The approval, artifact, deployment, verify-health, and runtime-truth views need golden E2E assertions.
+Gaps:
 
-**Required fix:**
-Make `/api/kernel/**` contract tests mandatory and run Studio against real Kernel API responses, not fixture-only or optional-client flows.
+- Develop route must show ProductUnit shape and not just product summary.
+- Lifecycle route has controls but needs full API error rendering and retry behavior.
+- Artifacts and Health are disabled until Data Cloud evidence is ready; bootstrap mode should still show local manifest truth.
+- Deployments are hidden unless lifecycle execution is allowed; for Digital Marketing they should become visible with preview state.
+- Manifest panels need schema-specific rendering, not only raw/partial summaries.
 
----
+File-by-file plan:
 
-### Journey 3 — Agentic product development
+1. `platform/typescript/ghatana-studio/src/routes/DevelopPage.tsx`
+   - Add ProductUnit shape summary, surfaces, lifecycle readiness, adapters, gates, and unsupported surfaces.
 
-**Classification:** Target architecture / existing but partial.
+2. `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx`
+   - Add explicit plan preview panel before execution.
+   - Add structured error state for all KernelLifecycleClientError subclasses.
+   - Add disabled-state explanations tied to product readiness metadata.
 
-**Current flow:**
-The root scripts include checks for agentic lifecycle action contracts, and the registry includes Data Cloud Action Plane / agent runtime modules.  
+3. `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`
+   - Show bootstrap-mode local artifacts from latest manifest pointers.
+   - Do not require Data Cloud for bootstrap artifact visibility.
 
-**Primary gaps:**
+4. `platform/typescript/ghatana-studio/src/routes/DeploymentsPage.tsx`
+   - Show deployment preview/blocked state when no deployment exists.
+   - For Digital Marketing, show local compose target, env file policy, expected services, health checks.
 
-1. Agent → Kernel lifecycle action contract must be proven with an executable flow.
-2. Agent approvals, risk, mastery, evidence, and rollback must be persisted through Data Cloud.
-3. Studio must show agent proposals, evidence, approval state, execution result, and recommendations.
+5. `platform/typescript/ghatana-studio/src/routes/HealthPage.tsx`
+   - Combine Kernel manifest health and Data Cloud runtime truth.
+   - Clearly distinguish bootstrap truth from platform truth.
 
-**Required fix:**
-Implement a thin, governed AgentLifecycleActionRequest path:
+6. `platform/typescript/kernel-lifecycle/src/service/ManifestPointerStore.ts`
+   - Ensure latest pointer lookup is deterministic and safe for missing/corrupt manifests.
 
-```text
-AEP / agent
-→ Kernel lifecycle action contract
-→ policy / approval / risk / mastery checks
-→ Kernel lifecycle execution
-→ Data Cloud evidence and memory
-→ Studio agentic-development panel
-```
+7. `platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts`
+   - Ensure every route returns typed status codes, reason codes, and correlation IDs.
 
-Agents must not run raw Gradle, pnpm, Docker, or deployment commands directly.
+Tests:
 
----
+- Component tests for every lifecycle disabled/blocked/ready state.
+- API handler tests for list/create/execute/manifest/approval routes.
+- Contract tests for manifest schema mismatch.
+- E2E: Digital Marketing validate/test/build/package/deploy/verify dry run and non-dry run where safe.
 
-### Journey 4 — Digital Marketing lifecycle pilot
-
-**Classification:** Existing and closest to executable, but still partial until golden E2E proves it.
-
-**Current flow:**
-Digital Marketing is marked lifecycle-enabled, has backend and web surfaces, has bridge conformance enabled, has lifecycle execution allowed, and root scripts include Digital Marketing validate/test/build/package/deploy/verify commands.  
-
-**Primary gaps:**
-
-1. Digital Marketing must become the canonical golden lifecycle pilot.
-2. Every phase must assert manifests and runtime truth, not just command success.
-3. Studio must visualize the actual run, gates, artifacts, deployment, health, and recommendations.
-
-**Required fix:**
-Add a single golden E2E test that runs:
+Validation commands:
 
 ```bash
-pnpm validate:digital-marketing
-pnpm test:digital-marketing
-pnpm build:digital-marketing
-pnpm package:digital-marketing
-pnpm deploy:local:digital-marketing
-pnpm verify:local:digital-marketing
-```
-
-Then assert generated:
-
-```text
-lifecycle-plan.json
-lifecycle-result.json
-gate-result-manifest.json
-artifact-manifest.json
-deployment-manifest.json
-verify-health-report.json
-lifecycle-events.json
-runtime-truth refs
-provenance refs
-Studio-visible run summary
-```
-
----
-
-### Journey 5 — Artifact intelligence
-
-**Classification:** Declared / existing but partial.
-
-**Current flow:**
-The blueprint and domain map place artifact compiler/decompiler implementation in YAPPC, semantic graph/provenance storage in Data Cloud, and Kernel consumption through semantic references only. 
-
-**Primary gaps:**
-
-1. Kernel must consume `SemanticArtifactReference` and evidence contracts only, not YAPPC internals.
-2. YAPPC must emit durable evidence refs for residual islands, risk hotspots, dependency graph, and generated change summaries.
-3. Data Cloud must persist provenance and graph evidence.
-
-**Required fix:**
-Define and enforce artifact-intelligence contracts under shared Kernel/ProductUnit contracts, then make YAPPC publish evidence and Data Cloud store it.
-
----
-
-### Journey 6 — Data Cloud foundation
-
-**Classification:** Target architecture / existing but partial.
-
-**Current flow:**
-Data Cloud has many planes and Kernel bridge modules registered, but the registry marks manifest, observability, security, dataAccess, bridge, and runtime module conformance as false, with lifecycle execution disabled. 
-
-**Primary gaps:**
-
-1. Bootstrap mode is present and useful.
-2. Platform mode correctly fails unless Data Cloud-backed providers exist.
-3. Data Cloud-backed providers are not yet proven as production runtime truth.
-
-**Required fix:**
-Implement and test Data Cloud provider bridge interfaces for:
-
-```text
-EventProvider
-ArtifactProvider
-HealthProvider
-ProvenanceProvider
-MemoryProvider
-RuntimeTruthProvider
-PolicyEvidenceProvider
-```
-
-Keep Data Cloud lifecycle disabled until Kernel can bootstrap/build/deploy Data Cloud without depending on Data Cloud itself.
-
----
-
-### Journey 7 — Future product shape readiness
-
-**Classification:** Shape-validation target, not executable lifecycle.
-
-**Current flow:**
-PHR, Finance, and FlashIt have explicit lifecycle-readiness blockers and `lifecycleExecutionAllowed: false`. PHR needs healthcare/consent/FHIR/data sovereignty gates; Finance needs regulatory, risk, promotion approval, and multi-module validation; FlashIt needs mobile adapters, preview security, personal-data classification, and mobile artifact contracts.   
-
-**Required fix:**
-Do not enable these products yet. Use them to validate that Kernel remains general without becoming a god product.
-
----
-
-## D. Capability ownership matrix
-
-| Capability                    | Correct owner                                  | Current location                                                                         | Classification                      | Required move/fix                                       | Required tests                                |
-| ----------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
-| ProductUnitIntent contract    | Kernel contracts                               | `platform/typescript/kernel-product-contracts/src/product-unit/ProductUnitIntent.ts`     | Existing and executable             | Keep as canonical; add compatibility tests              | Contract tests, schema invalid/valid cases    |
-| ProductUnitIntent application | Kernel lifecycle                               | `KernelLifecycleService.applyProductUnitIntent`; duplicate `ProductUnitIntentApplier.ts` | Existing but partial / anti-pattern | Delete or delegate duplicate applier                    | End-to-end preview/apply tests                |
-| Registry provider             | Kernel providers                               | `GhatanaFileRegistryProvider.ts`                                                         | Existing but partial                | Enable strict write validation in CI/prod               | Registry write, conflict, rollback tests      |
-| Lifecycle execution truth     | Kernel lifecycle                               | `KernelLifecycleService.ts`                                                              | Existing but partial                | Make events/runtime/provenance mandatory where required | Plan/execute/run-history tests                |
-| Gates                         | Kernel providers / platform plugins            | `createBootstrapKernelProviders.ts`, `FileBootstrapGateProvider.ts`                      | Existing but partial                | Remove synthetic-pass risk; add concrete gates          | Gate contract tests                           |
-| Studio shell                  | Ghatana Studio                                 | `platform/typescript/ghatana-studio/src/App.tsx`                                         | Existing but partial                | Harden navigation, entitlement, unconfigured states     | Route/a11y/i18n tests                         |
-| Studio API client             | Ghatana Studio                                 | `kernelLifecycleClient.ts`                                                               | Existing but partial                | Align with real backend OpenAPI and errors              | Contract tests against mocked API + real API  |
-| Runtime truth                 | Data Cloud + Kernel provider bridge            | `products/data-cloud/extensions/kernel-bridge`                                           | Target / partial                    | Implement Data Cloud-backed providers                   | Provider integration tests                    |
-| YAPPC creator lifecycle       | YAPPC                                          | `products/yappc/*`                                                                       | Existing but partial                | Keep separate from Kernel lifecycle                     | ProductUnitIntent handoff tests               |
-| Artifact intelligence         | YAPPC + shared evidence contracts + Data Cloud | YAPPC + Kernel contracts + Data Cloud                                                    | Declared / partial                  | Add semantic evidence contracts and persistence         | Compiler/decompiler evidence tests            |
-| Digital Marketing pilot       | Digital Marketing + Kernel                     | `products/digital-marketing/*`                                                           | Existing and closest to executable  | Add golden E2E lifecycle pilot                          | Validate/test/build/package/deploy/verify E2E |
-| Future product readiness      | Platform Coherence + product owners            | Registry + product manifests                                                             | Target / partial                    | Keep disabled until gates pass                          | Product-shape matrix tests                    |
-
----
-
-## E. File-by-file implementation plan
-
-### Workstream 1 — Ghatana Studio UI/UX and API contracts
-
-| File                                                                         | Current issue                                                                                                                      | Target change                                                                                                               | Validation                                                |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `platform/typescript/ghatana-studio/src/App.tsx`                             | Route shell exists, but navigation readiness depends on runtime capability state and must stay consistent as features become real. | Keep one canonical navigation model; add entitlement-aware disabled/blocked/preview state tests for every route.            | `pnpm --dir platform/typescript/ghatana-studio test:a11y` |
-| `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`        | Strong typed client exists, but must be proven against real backend API contracts.                                                 | Add contract tests for 401/403/404/503, ProductUnitIntent preview/apply, manifest not found/corrupt, provider-mode errors.  | `pnpm check:studio-kernel-api`                            |
-| `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx` | Defaults to `digital-marketing` and `bootstrap`, which is correct for pilot but risky as a hidden general default.                 | Make pilot default explicit via runtime config; add product-neutral selection and persisted selected product/run state.     | `pnpm --dir platform/typescript/ghatana-studio test`      |
-| `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx`            | Needs complete lifecycle action UX coverage.                                                                                       | Ensure validate/test/build/package/deploy/verify/promote/rollback are visible only when capability and provider mode allow. | `pnpm check:audited-ui-workflows`                         |
-| `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`            | Must not show target-state artifact intelligence as current truth.                                                                 | Classify loaded/missing/corrupt/unavailable states and link artifacts to lifecycle run IDs.                                 | `pnpm check:current-state-claims`                         |
-| `platform/typescript/ghatana-studio/src/routes/HealthPage.tsx`               | Must compose Kernel + Data Cloud + product health without parsing logs.                                                            | Add runtime truth, provider health, gate health, deployment health, and Data Cloud provider-mode indicators.                | `pnpm check:observability-conformance`                    |
-
----
-
-### Workstream 2 — Product Development Kernel backend/lifecycle/providers/plugins
-
-| File                                                                                 | Current issue                                                                             | Target change                                                                                                                    | Validation                                          |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `platform/typescript/kernel-lifecycle/src/service/ProductUnitIntentApplier.ts`       | Duplicate legacy path with mock registry ref and no-op provenance/event/runtime truth.    | Delete file if unused, or convert to a thin wrapper around `KernelLifecycleService.applyProductUnitIntent`.                      | `pnpm check:production-stubs`                       |
-| `platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts`         | Stronger canonical path exists but must be the only apply path.                           | Make provider/evidence failures block when required; add explicit reason codes for runtime truth/provenance/event write failure. | `pnpm check:kernel-lifecycle-truth`                 |
-| `platform/typescript/kernel-providers/src/registry/GhatanaFileRegistryProvider.ts`   | File-backed registry supports intent apply but strict mode defaults false.                | Enforce strict mode in CI/prod; validate post-write registry and generated workspace drift.                                      | `pnpm check:kernel-product-unit-provider-contracts` |
-| `platform/typescript/kernel-providers/src/factory/createBootstrapKernelProviders.ts` | Many gates are NOT_READY fallback providers.                                              | Keep fail-closed behavior; replace pilot-critical gates with concrete providers before claiming lifecycle readiness.             | `pnpm check:digital-marketing-lifecycle-pilot`      |
-| `platform/typescript/kernel-providers/src/gates/FileBootstrapGateProvider.ts`        | Synthetic pass exists for backward compatibility.                                         | Remove synthetic pass or restrict it to test-only explicit mode. Unsupported gates must return NOT_READY.                        | `pnpm check:production-readiness`                   |
-| `platform/typescript/kernel-toolchains/src/**`                                       | Toolchain abstraction must prove command safety, result validation, and artifact linkage. | Add adapter contract tests for Gradle, pnpm/Vite, Docker/Compose; fail fake success.                                             | `pnpm check:toolchain-adapter-contracts`            |
-| `platform/typescript/kernel-artifacts/src/**`                                        | Artifact manifest contracts must link package/build outputs to deployment.                | Enforce fingerprint, run ID, correlation ID, productUnitId, environment refs.                                                    | `pnpm check:product-artifact-contracts`             |
-| `platform/typescript/kernel-deployment/src/**`                                       | Deployment manifest must be rollback-aware.                                               | Enforce deployment-to-artifact linkage and verify-health references.                                                             | `pnpm check:product-deployment-contracts`           |
-
----
-
-### Workstream 3 — Data Cloud foundation providers/runtime truth/memory
-
-| File/Area                                            | Current issue                                                                         | Target change                                                                                                  | Validation                                      |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `products/data-cloud/extensions/kernel-bridge/**`    | Bridge exists in registry, but Data Cloud conformance is false.                       | Implement Data Cloud-backed Kernel providers for runtime truth, events, provenance, memory, health, artifacts. | `pnpm check:data-cloud-platform-providers`      |
-| `products/data-cloud/planes/action/kernel-bridge/**` | Action Plane bridge exists but is not proven as agentic lifecycle truth.              | Add AgentLifecycleAction evidence writer and approval/risk/trace integration.                                  | `pnpm check:agentic-lifecycle-action-contracts` |
-| `products/data-cloud/planes/event/**`                | Event store exists structurally but must become canonical runtime truth event source. | Add lifecycle event envelope, replay tests, correlation IDs, schema versioning.                                | `pnpm check:data-access-contract`               |
-| `products/data-cloud/planes/action/observability/**` | Observability exists but product registry conformance is false.                       | Add provider-level metrics and trace propagation for Kernel-backed actions.                                    | `pnpm check:observability-conformance`          |
-
----
-
-### Workstream 4 — YAPPC creator/artifact intelligence/visibility
-
-| File/Area                                                                                    | Current issue                                                                              | Target change                                                                                              | Validation                                        |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts` | ProductUnitIntent export exists, but full apply/preview handoff must be proven.            | Emit complete ProductUnitIntent with scope, producer, target, governance hints, provenance, evidence refs. | `pnpm check:yappc-product-unit-intent-handoff`    |
-| `products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts`                        | API route exists but must be validated against Kernel contract.                            | Validate request/response with shared schema; surface Kernel reason codes unchanged.                       | `pnpm check:studio-kernel-api`                    |
-| `products/yappc/kernel-bridge/**`                                                            | Bridge exists but YAPPC must not own Kernel lifecycle execution.                           | Restrict bridge to ProductUnitIntent and semantic artifact evidence handoff.                               | `pnpm check:yappc-kernel-boundary`                |
-| `products/yappc/core/**artifact**` / compiler-decompiler areas                               | Artifact intelligence is not yet fully evidenced through Data Cloud and Kernel references. | Emit `SemanticArtifactReference`, `ArtifactGraphSummary`, `ResidualIslandReport`, `RiskHotspotReport`.     | `pnpm check:yappc-artifact-intelligence-boundary` |
-| `platform/typescript/kernel-product-contracts/src/artifact-intelligence/**`                  | Shared semantic evidence contracts need to be canonical.                                   | Add schema versioning, confidence, provenance refs, privacy classification.                                | `pnpm build:kernel-lifecycle-platform`            |
-
----
-
-### Workstream 5 — Digital Marketing lifecycle pilot
-
-| File/Area                                             | Current issue                                                                                | Target change                                                                                                | Validation                                     |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| `products/digital-marketing/kernel-product.yaml`      | Pilot is enabled; must remain the only executable lifecycle product until golden E2E passes. | Ensure every lifecycle phase, surface, gate, artifact, deployment, and health check is declared.             | `pnpm check:lifecycle-registry-config-drift`   |
-| `products/digital-marketing/dm-kernel-bridge/**`      | Bridge is declared conformant.                                                               | Add lifecycle bridge tests that assert no product logic leaks into Kernel.                                   | `pnpm check:bridge-compliance`                 |
-| `products/digital-marketing/ui/**`                    | UI must use shared shell/design patterns.                                                    | Replace product-local duplicated status/empty/error/gate views with shared components after reuse is proven. | `pnpm check:design-system-conformance`         |
-| `scripts/check-digital-marketing-lifecycle-pilot.mjs` | Exists as a gate.                                                                            | Expand into golden lifecycle evidence verification.                                                          | `pnpm check:digital-marketing-lifecycle-pilot` |
-
----
-
-### Workstream 6 — Shared libraries/design system/builder/canvas/code editor
-
-| File/Area                              | Current issue                                 | Target change                                                                                                                 | Validation                                |
-| -------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `platform/typescript/design-system/**` | Must be the canonical UI primitive layer.     | Add status, empty, loading, blocked, degraded, error, approval, gate, artifact display components only after reuse is proven. | `pnpm check:design-system-conformance`    |
-| `platform/typescript/canvas/**`        | Canvas is a shared primitive, not YAPPC-only. | Stabilize public API for Studio/YAPPC/Kernel visualizers.                                                                     | `pnpm check:shared-layout-primitives`     |
-| `platform/typescript/ui-builder/**`    | Builder primitives must stay product-neutral. | Enforce BuilderDocument and preview protocol boundaries.                                                                      | `pnpm check:ui-builder-platform-boundary` |
-| `platform/typescript/code-editor/**`   | Code editor must remain generic.              | Keep AST/LSP/refactor primitives product-neutral; no YAPPC internals.                                                         | `pnpm check:platform-product-boundaries`  |
-
----
-
-### Workstream 7 — Product shape matrix/future product readiness
-
-| File/Area                                | Current issue                                                                          | Target change                                                                             | Validation                                      |
-| ---------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `config/canonical-product-registry.json` | Correctly marks many products disabled/planned, but this must be protected from drift. | Add fail-fast checks for accidental lifecycle enablement without gates/adapters/evidence. | `pnpm check:product-shape-capability-matrix`    |
-| `products/phr/kernel-product.yaml`       | PHR needs privacy/consent/FHIR/data sovereignty gates.                                 | Keep disabled until healthcare gates and evidence exist.                                  | `pnpm check:product-manifest-contracts`         |
-| `products/finance/kernel-product.yaml`   | Finance needs multi-module/regulatory/operator/portal/SDK readiness.                   | Keep disabled until multi-module and compliance gates pass.                               | `pnpm check:finance-transaction-workflow-proof` |
-| `products/flashit/kernel-product.yaml`   | FlashIt needs mobile adapters and mobile artifact contracts.                           | Keep mobile lifecycle disabled until IPA/AAB contracts exist.                             | `pnpm check:flashit-client-conformance`         |
-
----
-
-### Workstream 8 — CI/CD/checks/docs cleanup
-
-| File/Area                            | Current issue                                                                 | Target change                                                                                                              | Validation                           |
-| ------------------------------------ | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `package.json`                       | Many high-value checks exist, but must be grouped into required CI workflows. | Add CI matrix for architecture, Kernel lifecycle, Digital Marketing pilot, Studio UI, Data Cloud providers, product shape. | `pnpm check:architecture-boundaries` |
-| `.github/workflows/**`               | Must prove all core checks run on PRs.                                        | Add required jobs for `check:kernel-product-boundary-audit`, root build/test/typecheck, Gradle build/check.                | GitHub required checks               |
-| `docs/architecture/**`               | Must not duplicate authoritative rules.                                       | Make one authoritative domain map and link dependent docs to it.                                                           | `pnpm check:doc-truth`               |
-| `scripts/check-production-stubs.mjs` | Must catch no-op/stub/mock production paths.                                  | Ensure `ProductUnitIntentApplier.ts` and synthetic gate success are caught unless fixed.                                   | `pnpm check:production-stubs`        |
-
----
-
-## F. Release plan
-
-### Release 0 — Unified shell, terminology, navigation, core checks
-
-**Goal:** Make the product shape coherent and prevent drift.
-
-**Scope:**
-
-```text
-Ghatana Studio shell
-canonical route vocabulary
-domain registry
-product registry drift checks
-package/workspace checks
-current-state/target-state checks
-deprecated package checks
-```
-
-**Exit criteria:**
-
-```bash
-pnpm check:architecture-boundaries
-pnpm check:domain-registry
-pnpm check:product-registry
-pnpm check:current-state-claims
-pnpm check:deprecated-packages
-pnpm check:orphan-modules
-pnpm --dir platform/typescript/ghatana-studio test:a11y
-```
-
----
-
-### Release 1 — Digital Marketing lifecycle pilot E2E
-
-**Goal:** Prove one complete executable product lifecycle.
-
-**Scope:**
-
-```text
-Digital Marketing validate/test/build/package/deploy/verify
-Kernel lifecycle plan/result
-gate result manifest
-artifact manifest
-deployment manifest
-verify health report
-runtime truth
-provenance
-Studio visualization
-```
-
-**Exit criteria:**
-
-```bash
-pnpm validate:digital-marketing
-pnpm test:digital-marketing
-pnpm build:digital-marketing
-pnpm package:digital-marketing
-pnpm deploy:local:digital-marketing
-pnpm verify:local:digital-marketing
+pnpm --filter @ghatana/ghatana-studio test --run
+pnpm --filter @ghatana/kernel-lifecycle test --run
+pnpm check:kernel-lifecycle-truth
+pnpm check:kernel-api-contracts
+pnpm check:studio-kernel-api
 pnpm check:digital-marketing-lifecycle-pilot
 ```
 
----
+### Journey 3 — Agentic product development
 
-### Release 2 — Agentic development support
+Current flow:
 
-**Goal:** Allow agents to propose and execute governed lifecycle actions through Kernel contracts only.
+- Studio has Agents route, but navigation disables it until Data Cloud evidence is ready.
+- KernelLifecycleService exports `AgentLifecycleActionService`.
+- Product registry includes agentDefinitions/masteryBindings/evaluationPacks for some products, notably Digital Marketing and Finance.
+- Data Cloud/AEP action plane modules exist in the registry.
 
-**Scope:**
+Expected flow:
 
-```text
-AgentLifecycleActionRequest
-risk/mastery/policy/approval checks
-Kernel lifecycle execution
-Data Cloud evidence refs
-Studio agentic-development panel
-```
+- User asks agent to improve/build product.
+- Agent proposes lifecycle/action plan.
+- Kernel checks policy, mastery, risk, approvals, and verification.
+- Agent invokes Kernel action contracts.
+- Kernel executes lifecycle adapters.
+- Data Cloud stores evidence/provenance/memory.
+- Studio displays result and recommendations.
 
-**Exit criteria:**
+Gaps:
+
+- Agents route must show real plan/proposal/review state, not route-disabled content.
+- Need a canonical `AgentLifecycleActionRequest` UI/API contract and visual approval flow.
+- Need proof that agents cannot run raw Gradle/pnpm/Docker commands outside Kernel contracts.
+- Need mastery state and evaluation-pack enforcement in the action path.
+
+File-by-file plan:
+
+1. `platform/typescript/kernel-product-contracts/src/agentic/*`
+   - Canonicalize `AgentLifecycleActionRequest`, `AgentLifecycleActionPlan`, `AgentLifecycleRiskAssessment`, `AgentLifecycleEvidenceRef`.
+
+2. `platform/typescript/kernel-lifecycle/src/agentic/AgentLifecycleActionService.ts`
+   - Enforce policy, risk, approval, mastery, and verification checks before execution.
+
+3. `platform/typescript/ghatana-studio/src/routes/AgentsPage.tsx`
+   - Add agent proposal viewer, risk panel, evidence panel, approval requirements, and execution status.
+
+4. `products/data-cloud/planes/action/*`
+   - Add adapter that writes agent plan/proposal/evaluation results to Data Cloud evidence and memory providers.
+
+5. `scripts/check-agentic-lifecycle-action-contracts.mjs`
+   - Extend to detect raw tool execution from agents and require Kernel action catalog usage.
+
+Tests:
+
+- Agent action contract tests.
+- Policy-blocked and approval-required tests.
+- Studio agent proposal UI tests.
+- Data Cloud evidence write tests.
+
+Validation commands:
 
 ```bash
 pnpm check:agentic-lifecycle-action-contracts
-pnpm check:kernel-lifecycle-truth
-pnpm check:observability-conformance
-pnpm check:production-readiness
+pnpm --filter @ghatana/kernel-lifecycle test --run
+pnpm --filter @ghatana/ghatana-studio test --run
+./gradlew :products:data-cloud:planes:action:check
 ```
 
----
+### Journey 4 — Digital Marketing lifecycle pilot
 
-### Release 3 — Data Cloud platform-mode providers
+Current flow:
 
-**Goal:** Make platform mode real without breaking bootstrap mode.
+- Registry marks Digital Marketing as lifecycle enabled and execution allowed.
+- `kernel-product.yaml` defines required manifests, plugins, policy packs, environments, surfaces, phases, gates, deployment, provider modes, approvals, package config, and verify config.
+- Product lifecycle workflow validates Digital Marketing plans and smoke manifests.
 
-**Scope:**
+Expected flow:
 
-```text
-Data Cloud-backed events
-artifacts
-health
-provenance
-memory
-runtime truth
-policy evidence
+- Select Digital Marketing.
+- Inspect product shape.
+- Run validate/test/build/package/deploy/verify.
+- Inspect manifests.
+- Verify local deployment health.
+- View recommendations in Studio.
+
+Gaps:
+
+- The pilot has rich configuration, but the audit needs generated evidence files that prove each phase end-to-end.
+- The workflow validates plans but should also preserve golden evidence snapshots and compare schema-critical fields.
+- Need failure packs: missing env, failing health, missing artifact, approval rejected, provider unavailable.
+
+File-by-file plan:
+
+1. `products/digital-marketing/kernel-product.yaml`
+   - Add explicit evidence pack refs per phase.
+   - Add required failure scenarios with reason codes.
+
+2. `scripts/check-digital-marketing-lifecycle-pilot.mjs`
+   - Add golden evidence verification.
+   - Verify manifest refs, gate refs, runtime truth refs, provenance refs, correlation IDs.
+
+3. `scripts/kernel-product.mjs`
+   - Ensure phase execution writes deterministic outputs under `.kernel/out/digital-marketing/<phase>/<runId>`.
+
+4. `.github/workflows/product-lifecycle.yml`
+   - Upload golden evidence and failure pack artifacts.
+   - Add job that validates failure scenarios in dry-run mode.
+
+5. `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx`
+   - Add Digital Marketing pilot badge and direct link to generated evidence.
+
+Tests:
+
+- Golden manifest tests.
+- Failure reason code tests.
+- Studio pilot selection tests.
+- Deploy/verify smoke tests for local compose where safe.
+
+Validation commands:
+
+```bash
+pnpm check:digital-marketing-lifecycle-pilot
+node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+node ./scripts/kernel-product.mjs product plan digital-marketing build --json
+node ./scripts/kernel-product.mjs product plan digital-marketing deploy --env local --json
+node ./scripts/kernel-product.mjs product plan digital-marketing verify --env local --json
 ```
 
-**Exit criteria:**
+### Journey 5 — Artifact intelligence
+
+Current flow:
+
+- YAPPC artifact compiler/decompiler has an architecture doc splitting TypeScript extraction/orchestration and Java compute-heavy graph/merge/indexing.
+- Package `products/yappc/frontend/libs/yappc-artifact-compiler` exists and exports inventory, graph, model, extractors, provenance, residual, merge, synthesis, source-providers, compile-back, and builder subpaths.
+- Registry says YAPPC should keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts.
+
+Expected flow:
+
+- YAPPC imports/decompiles source artifacts.
+- Compiler/decompiler produces semantic evidence.
+- Data Cloud stores graph/provenance.
+- Kernel consumes references for planning/gates.
+- Studio displays residual islands, risks, recommendations.
+
+Gaps:
+
+- Need shared evidence contract package or subpath in `kernel-product-contracts` that Kernel can consume without importing YAPPC internals.
+- Need Data Cloud schema/provider for artifact graph summary, residual island report, risk hotspot report, generated change-set summary.
+- Need Studio artifact panels to render semantic evidence refs and residual island states.
+
+File-by-file plan:
+
+1. `platform/typescript/kernel-product-contracts/src/artifact-intelligence/*`
+   - Add `SemanticArtifactReference`, `ArtifactGraphSummary`, `ProductShapeEvidence`, `DependencyGraphEvidence`, `ResidualIslandReport`, `RiskHotspotReport`, `GeneratedChangeSetSummary`.
+
+2. `products/yappc/frontend/libs/yappc-artifact-compiler/src/synthesis/pipeline.ts`
+   - Emit the shared evidence contract rather than product-local-only objects.
+
+3. `products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/domain/artifact/*`
+   - Align Java DTOs with shared evidence contract fields.
+
+4. `products/data-cloud/extensions/kernel-bridge/*`
+   - Add provider method that stores/retrieves artifact-intelligence evidence refs.
+
+5. `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
+   - Render residual islands and evidence refs from Data Cloud/Kernel references.
+
+6. `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`
+   - Add semantic evidence view.
+
+Tests:
+
+- Contract tests for evidence schemas.
+- Artifact compiler snapshot tests for deterministic output.
+- Data Cloud persistence/retrieval tests.
+- Kernel planning test that consumes only references, not YAPPC internals.
+
+Validation commands:
+
+```bash
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm --filter yappc-artifact-compiler test --run
+pnpm --filter @ghatana/kernel-product-contracts test --run
+./gradlew :products:yappc:core:yappc-services:check
+```
+
+### Journey 6 — Data Cloud foundation
+
+Current flow:
+
+- Registry correctly marks Data Cloud as platform-provider and lifecycle execution disabled until bootstrap/platform constraints are resolved.
+- Data Cloud Kernel bridge Java module exists and registers Data Cloud-backed providers into Kernel context.
+- KernelLifecycleService supports bootstrap and platform provider modes and fails closed if platform providers are missing.
+
+Expected flow:
+
+- Kernel bootstrap mode works without Data Cloud.
+- Data Cloud is built/deployed.
+- Platform mode uses Data Cloud-backed providers.
+- Runtime truth/events/provenance/memory flow through Data Cloud.
+
+Gaps:
+
+- Data Cloud bridge client has default `healthCheck()` returning true and `isRunning()` returning true in the interface default methods; production provider wiring must override these or the bridge can appear healthy without real backing service proof.
+- Need platform-mode integration tests that verify each required provider writes to/read from Data Cloud.
+- Need clear Studio mode indicator: bootstrap truth vs platform truth.
+
+File-by-file plan:
+
+1. `products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelAdapterImpl.java`
+   - Remove unsafe default “healthy/running” behavior from production-bound clients or require explicit implementation in production profiles.
+   - Add timeout/retry/circuit-breaker settings as config, not hidden defaults.
+
+2. `products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelExtension.java`
+   - Verify provider registration with health checks before reporting healthy.
+
+3. `products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/*`
+   - Add provider write/read tests for events, artifacts, health, approvals, provenance, memory, knowledge, runtime truth, policy evidence.
+
+4. `platform/typescript/kernel-lifecycle/src/providers/LifecycleProviderContext.ts`
+   - Ensure provider context validation distinguishes optional bootstrap providers from required platform providers.
+
+5. `platform/typescript/ghatana-studio/src/routes/HealthPage.tsx`
+   - Show provider-mode health and Data Cloud backing-store details.
+
+Tests:
+
+- Java bridge integration tests.
+- TS provider context tests.
+- Studio platform mode disabled/enabled UI tests.
+
+Validation commands:
 
 ```bash
 pnpm check:data-cloud-platform-providers
 pnpm check:kernel-provider-mode
-pnpm check:data-access-contract
-pnpm check:observability-conformance
+./gradlew :products:data-cloud:extensions:kernel-bridge:check
+./gradlew :products:data-cloud:planes:action:kernel-bridge:check
 ```
 
----
+### Journey 7 — Future product shape readiness
 
-### Release 4 — Artifact intelligence integration
+Current flow:
 
-**Goal:** Make YAPPC artifact compiler/decompiler evidence consumable by Kernel and visible in Studio.
+- Registry includes PHR, Finance, FlashIt, Data Cloud, YAPPC, Audio-Video, DCMAAR, and others.
+- Many products are intentionally lifecycle disabled with reason codes, required gates, next required work, and evidence refs.
 
-**Scope:**
+Expected flow:
 
-```text
-SemanticArtifactReference
-ArtifactGraphSummary
-ResidualIslandReport
-RiskHotspotReport
-Data Cloud provenance/graph persistence
-Kernel evidence consumption
-Studio recommendations
-```
+- Future products are not migrated prematurely.
+- Product shape capability matrix captures readiness gaps.
+- Kernel remains generic and does not become product-specific.
 
-**Exit criteria:**
+Gaps:
 
-```bash
-pnpm check:yappc-product-unit-intent-handoff
-pnpm check:yappc-artifact-intelligence-boundary
-pnpm build:kernel-lifecycle-platform
-```
+- Need executable product-shape conformance tests per shape: regulated healthcare, backend-heavy compliance, mobile, platform-provider, AI/security, media, external ProductUnit.
+- Need route-level and manifest-level separation between “declared shape” and “executable lifecycle product.”
 
----
+File-by-file plan:
 
-### Release 5 — Product shape expansion readiness
+1. `config/generated/product-shape-capability-matrix.json`
+   - Ensure matrix has one row per future product shape and explicit blocked reasons.
 
-**Goal:** Prove Kernel remains general without becoming a god product.
+2. `scripts/check-product-shape-capability-matrix.mjs`
+   - Validate readiness fields, gates, evidence refs, and no target-as-current claims.
 
-**Scope:**
+3. `config/canonical-product-registry.json`
+   - Keep disabled products disabled until adapter/manifests/tests are executable.
 
-```text
-PHR privacy/consent/FHIR gates
-Finance regulatory/multi-module/operator/portal/SDK gates
-FlashIt mobile/preview/privacy gates
-Data Cloud and YAPPC provider-mode validation
-Audio-Video/DCMAAR/TutorPutor shape validation
-```
+4. `platform/typescript/ghatana-studio/src/routes/DevelopPage.tsx`
+   - Show shape readiness clearly without offering unsafe lifecycle execution.
 
-**Exit criteria:**
+Tests:
+
+- Registry fixture tests for disabled products.
+- UI tests that disabled products show readiness but not execute buttons.
+
+Validation commands:
 
 ```bash
 pnpm check:product-shape-capability-matrix
 pnpm check:lifecycle-registry-config-drift
-pnpm check:product-manifest-contracts
-pnpm check:product-ci-matrices
+pnpm check:current-state-claims
 ```
 
----
+## 6. Capability ownership matrix
 
-## G. Validation command suite
+| Capability | Correct owner | Current location | Problem | Required fix | Tests |
+|---|---|---|---|---|---|
+| Studio shell | Platform / Studio | `platform/typescript/ghatana-studio` | Exists but several routes disabled or partial | Turn route shells into workflow surfaces | Studio route + E2E tests |
+| ProductUnit contract | Kernel contracts | `platform/typescript/kernel-product-contracts` | Exists | Harden artifact-intelligence and agentic contracts | Contract tests |
+| Lifecycle planning | Kernel lifecycle | `platform/typescript/kernel-lifecycle` | Exists | Add stronger E2E manifest proof | Lifecycle service tests |
+| Lifecycle execution | Kernel lifecycle/toolchains | `kernel-lifecycle`, `kernel-toolchains` | Executor/provider integration not fully proven | Golden pilot evidence | Digital Marketing smoke/golden tests |
+| Runtime truth | Kernel + Data Cloud provider | Kernel service + Data Cloud bridge | Bootstrap/platform distinction exists, but platform proof incomplete | Full provider integration tests | Data Cloud provider tests |
+| Artifact compiler/decompiler | YAPPC | `products/yappc/frontend/libs/yappc-artifact-compiler`, Java YAPPC services | Package/docs exist; handoff needs shared contracts | Add semantic evidence contract | Compiler + contract + Data Cloud tests |
+| Data Cloud bridge | Data Cloud | `products/data-cloud/extensions/kernel-bridge` | Bridge exists; health/defaults need hardening | Require explicit production client health | Java tests |
+| Digital Marketing pilot | Product + Kernel config | `products/digital-marketing/kernel-product.yaml` | Strong config; needs golden evidence | Evidence pack and failure pack | Smoke/golden tests |
+| Future product shapes | Platform Coherence + product registry | `config/canonical-product-registry.json` | Registry is good; matrix must enforce readiness | Product shape check hardening | Matrix tests |
+| Governance | Platform Coherence | scripts/docs/config | Many scripts exist; authority scattered | Domain registry + doc authority gates | Governance checks |
 
-Run the full suite below after implementing the plan:
+## 7. Independently executable workstreams
+
+### Workstream 1 — Ghatana Studio UI/UX and API contracts
+
+Files:
+
+- `platform/typescript/ghatana-studio/src/App.tsx`
+- `platform/typescript/ghatana-studio/src/navigation/studioNavigation.ts`
+- `platform/typescript/ghatana-studio/src/data/StudioLifecycleDataContext.tsx`
+- `platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts`
+- `platform/typescript/ghatana-studio/src/routes/IdeasPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/BlueprintsPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/DevelopPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/LifecyclePage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/DeploymentsPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/HealthPage.tsx`
+- `platform/typescript/ghatana-studio/src/routes/AgentsPage.tsx`
+- `platform/typescript/ghatana-studio/src/i18n/studioTranslations.ts`
+- `platform/typescript/ghatana-studio/src/__tests__/*`
+
+Tasks:
+
+1. Convert disabled critical routes into safe executable preview/readiness experiences.
+2. Add clear bootstrap vs platform mode indicator.
+3. Add ProductUnit shape panel.
+4. Add ProductUnitIntent preview/apply UI.
+5. Add API error panels with reason code, correlation ID, blocked reasons, safe details.
+6. Add a11y coverage for route guards, buttons, selectors, approval decisions, and manifest panels.
+7. Add i18n keys for every route-specific hardcoded string.
+
+Validation:
+
+```bash
+pnpm --filter @ghatana/ghatana-studio type-check
+pnpm --filter @ghatana/ghatana-studio test --run
+pnpm check:studio-kernel-api
+pnpm check:design-system-conformance
+pnpm check:shared-product-shells
+pnpm check:shared-layout-primitives
+pnpm check:shared-ui-state-coverage
+```
+
+### Workstream 2 — Product Development Kernel backend/lifecycle/providers/plugins
+
+Files:
+
+- `platform/typescript/kernel-product-contracts/src/**`
+- `platform/typescript/kernel-lifecycle/src/**`
+- `platform/typescript/kernel-providers/src/**`
+- `platform/typescript/kernel-toolchains/src/**`
+- `platform/typescript/kernel-artifacts/src/**`
+- `platform/typescript/kernel-deployment/src/**`
+- `platform/typescript/kernel-release/src/**`
+- `scripts/kernel-product.mjs`
+- `scripts/check-kernel-*.mjs`
+- `config/product-lifecycle-profiles.json`
+- `config/toolchain-adapter-registry.json`
+
+Tasks:
+
+1. Add full reason-code inventory and public error model.
+2. Add complete manifest schema validation per phase.
+3. Add adapter capability negotiation output to lifecycle plans.
+4. Add deterministic run directory and manifest pointer semantics.
+5. Add lifecycle event schema versioning.
+6. Add platform-provider mode validation with explicit provider names and backing stores.
+7. Add agentic lifecycle action contract enforcement.
+
+Validation:
+
+```bash
+pnpm build:kernel-lifecycle-platform
+pnpm --filter @ghatana/kernel-product-contracts test --run
+pnpm --filter @ghatana/kernel-lifecycle test --run
+pnpm --filter @ghatana/kernel-toolchains test --run
+pnpm check:kernel-platform-lifecycle
+pnpm check:kernel-product-unit-provider-contracts
+pnpm check:kernel-lifecycle-truth
+pnpm check:agentic-lifecycle-action-contracts
+```
+
+### Workstream 3 — Data Cloud foundation providers/runtime truth/memory
+
+Files:
+
+- `products/data-cloud/extensions/kernel-bridge/**`
+- `products/data-cloud/planes/action/kernel-bridge/**`
+- `products/data-cloud/libs/kernel-bridge-providers/**`
+- `products/data-cloud/planes/action/gateway/**`
+- `scripts/check-data-cloud-platform-providers.mjs`
+- `scripts/check-kernel-provider-mode.mjs`
+
+Tasks:
+
+1. Require explicit production Data Cloud client health.
+2. Add write/read proof for events, artifacts, health, approvals, provenance, memory, knowledge, policy evidence, runtimeTruth.
+3. Add tenant/workspace/project scope tests.
+4. Add provider-mode failure-path tests.
+5. Add Studio provider mode health payload.
+
+Validation:
+
+```bash
+pnpm check:data-cloud-platform-providers
+pnpm check:kernel-provider-mode
+./gradlew :products:data-cloud:extensions:kernel-bridge:check
+./gradlew :products:data-cloud:planes:action:kernel-bridge:check
+./gradlew :products:data-cloud:integration-tests:check
+```
+
+### Workstream 4 — YAPPC creator/artifact intelligence/visibility
+
+Files:
+
+- `products/yappc/frontend/libs/yappc-artifact-compiler/**`
+- `products/yappc/frontend/apps/api/src/routes/product-unit-intents.ts`
+- `products/yappc/frontend/apps/api/src/__tests__/product-unit-intents.test.ts`
+- `products/yappc/core/yappc-services/**`
+- `products/yappc/kernel-bridge/**`
+- `platform/typescript/kernel-product-contracts/src/artifact-intelligence/**`
+
+Tasks:
+
+1. Add shared semantic evidence contracts.
+2. Make artifact compiler emit shared evidence refs.
+3. Store graph/provenance in Data Cloud.
+4. Expose residual islands and risks to Studio.
+5. Enforce Kernel only consumes references, not YAPPC internals.
+
+Validation:
+
+```bash
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm --filter yappc-artifact-compiler test --run
+pnpm --filter @ghatana/yappc-api test --run
+./gradlew :products:yappc:core:yappc-services:check
+```
+
+### Workstream 5 — Digital Marketing pilot
+
+Files:
+
+- `products/digital-marketing/kernel-product.yaml`
+- `products/digital-marketing/dm-api/**`
+- `products/digital-marketing/ui/**`
+- `products/digital-marketing/deploy/**`
+- `products/digital-marketing/dm-kernel-bridge/**`
+- `scripts/check-digital-marketing-lifecycle-pilot.mjs`
+
+Tasks:
+
+1. Add golden evidence pack.
+2. Add failure scenario pack.
+3. Verify all manifests contain schema version, productUnitId, runId, correlationId, providerMode, evidence refs, timestamps.
+4. Verify approvals block deploy/promote/rollback.
+5. Verify local compose health checks.
+
+Validation:
+
+```bash
+pnpm check:digital-marketing-lifecycle-pilot
+node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+pnpm build:digital-marketing
+pnpm test:digital-marketing
+pnpm validate:digital-marketing
+pnpm package:digital-marketing
+pnpm deploy:local:digital-marketing
+pnpm verify:local:digital-marketing
+```
+
+### Workstream 6 — Shared libraries/design system/builder/canvas/code editor
+
+Files:
+
+- `platform/typescript/design-system/**`
+- `platform/typescript/product-shell/**`
+- `platform/typescript/ui-builder/**`
+- `platform/typescript/canvas/**`
+- `platform/typescript/code-editor/**`
+- `platform/typescript/i18n/**`
+- `platform/typescript/accessibility/**`
+- `platform/typescript/api/**`
+- `platform/typescript/state/**`
+
+Tasks:
+
+1. Ensure Studio and product UIs consume canonical layout and state primitives.
+2. Remove duplicate local status panels where shared primitives exist.
+3. Add shared gate/artifact/health/approval display primitives only after two consumers prove reuse.
+4. Add design-system conformance checks to Studio route components.
+
+Validation:
+
+```bash
+pnpm check:design-system-conformance
+pnpm check:shared-product-shells
+pnpm check:shared-layout-primitives
+pnpm check:shared-ui-state-coverage
+pnpm build:platform
+pnpm test:ui
+```
+
+### Workstream 7 — Product shape matrix/future readiness
+
+Files:
+
+- `config/canonical-product-registry.json`
+- `config/generated/product-shape-capability-matrix.json`
+- `docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md`
+- `scripts/check-product-shape-capability-matrix.mjs`
+- `scripts/check-lifecycle-registry-config-drift.mjs`
+
+Tasks:
+
+1. Ensure every future product has explicit lifecycleExecutionAllowed value.
+2. Ensure disabled products have reasonCodes, requiredGates, nextRequiredWork, evidenceRefs.
+3. Ensure Studio never exposes unsafe execute controls for disabled products.
+4. Keep Data Cloud/YAPPC as platform-provider products, not ordinary lifecycle products.
+
+Validation:
+
+```bash
+pnpm check:product-shape-capability-matrix
+pnpm check:lifecycle-registry-config-drift
+pnpm check:current-state-claims
+pnpm check:product-kind-classification
+```
+
+### Workstream 8 — CI/CD/checks/docs cleanup
+
+Files:
+
+- `.github/workflows/product-lifecycle.yml`
+- root `package.json`
+- `scripts/check-*.mjs`
+- `docs/architecture/**`
+- `docs/kernel/**`
+- `docs/implementation/**`
+- `docs/archive/**`
+
+Tasks:
+
+1. Make lifecycle, Studio, Data Cloud provider, YAPPC handoff, and Digital Marketing pilot checks required branch protections.
+2. Add workflow jobs for Studio browser E2E, not only component/unit tests.
+3. Add doc-authority map and fail duplicate authoritative rules.
+4. Mark all target-state docs with current-state classification.
+5. Remove stale implementation trackers or convert them to generated status reports.
+6. Ensure archived docs are never treated as source of truth.
+
+Validation:
+
+```bash
+pnpm check:architecture-boundaries
+pnpm check:doc-truth
+pnpm check:doc-claims-evidence
+pnpm check:current-state-claims
+pnpm check:orphan-modules
+pnpm check:deprecated-packages
+pnpm check:cleanup-gate
+pnpm check:production-readiness
+```
+
+## 8. Release plan
+
+### Release 0 — Unified shell, terminology, navigation, core checks
+
+Goal: make Ghatana Studio coherent and honest.
+
+Exit criteria:
+
+- All routes show explicit status: ready, degraded, blocked, hidden, preview.
+- Disabled/blocked routes explain exact capability gaps.
+- Current-state/target-state claims are enforced.
+- Product shape matrix is visible in Studio Develop/Health.
+
+Validation:
+
+```bash
+pnpm check:architecture-boundaries
+pnpm check:current-state-claims
+pnpm --filter @ghatana/ghatana-studio test --run
+```
+
+### Release 1 — Digital Marketing lifecycle pilot E2E
+
+Goal: prove one complete lifecycle product.
+
+Exit criteria:
+
+- Digital Marketing validate/test/build/package/deploy/verify plans are generated.
+- Golden manifests are emitted and validated.
+- Studio shows lifecycle runs, manifests, approvals, and health.
+- Failure packs are tested.
+
+Validation:
+
+```bash
+pnpm check:digital-marketing-lifecycle-pilot
+node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+pnpm check:kernel-platform-lifecycle
+```
+
+### Release 2 — Agentic development support
+
+Goal: agents can propose and execute only through Kernel action contracts.
+
+Exit criteria:
+
+- AgentLifecycleActionRequest is canonical.
+- Risk, policy, mastery, approval, and verification checks are enforced.
+- Studio Agents route shows proposal, approval, execution, evidence.
+
+Validation:
+
+```bash
+pnpm check:agentic-lifecycle-action-contracts
+pnpm --filter @ghatana/kernel-lifecycle test --run
+pnpm --filter @ghatana/ghatana-studio test --run
+```
+
+### Release 3 — Data Cloud platform-mode providers
+
+Goal: platform mode is real, not declared.
+
+Exit criteria:
+
+- Events/artifacts/health/approvals/provenance/memory/runtimeTruth providers are Data Cloud-backed.
+- Kernel fails closed when any required platform provider is absent.
+- Studio clearly shows provider backing and health.
+
+Validation:
+
+```bash
+pnpm check:data-cloud-platform-providers
+pnpm check:kernel-provider-mode
+./gradlew :products:data-cloud:extensions:kernel-bridge:check
+```
+
+### Release 4 — Artifact intelligence integration
+
+Goal: YAPPC semantic evidence feeds Data Cloud and Kernel planning/gates.
+
+Exit criteria:
+
+- Shared semantic evidence contracts exist.
+- YAPPC emits evidence refs.
+- Data Cloud stores evidence/provenance.
+- Kernel consumes refs only.
+- Studio shows residual islands and risks.
+
+Validation:
+
+```bash
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm check:yappc-product-unit-intent-handoff
+pnpm --filter yappc-artifact-compiler test --run
+```
+
+### Release 5 — Product shape expansion readiness
+
+Goal: support future products without making Kernel a god product.
+
+Exit criteria:
+
+- PHR, Finance, FlashIt, Data Cloud, YAPPC, Aura, DCMAAR, TutorPutor, Audio-Video, and external ProductUnit shapes are classified.
+- Disabled products remain safe.
+- Required gates and adapters are explicit.
+
+Validation:
+
+```bash
+pnpm check:product-shape-capability-matrix
+pnpm check:lifecycle-registry-config-drift
+pnpm check:product-kind-classification
+```
+
+## 9. Full validation command suite
 
 ```bash
 pnpm build
@@ -714,66 +1152,37 @@ pnpm test
 pnpm typecheck
 pnpm build:platform
 pnpm build:kernel-lifecycle-platform
-
-pnpm check:architecture-boundaries
-pnpm check:kernel-product-boundary-audit
 pnpm check:kernel-platform-lifecycle
-pnpm check:kernel-lifecycle-truth
-pnpm check:kernel-provider-mode
-pnpm check:kernel-product-unit-provider-contracts
-pnpm check:agentic-lifecycle-action-contracts
-pnpm check:studio-kernel-api
-
 pnpm check:digital-marketing-lifecycle-pilot
-pnpm validate:digital-marketing
-pnpm test:digital-marketing
-pnpm build:digital-marketing
-pnpm package:digital-marketing
-pnpm deploy:local:digital-marketing
-pnpm verify:local:digital-marketing
-
 pnpm check:product-shape-capability-matrix
 pnpm check:lifecycle-registry-config-drift
-pnpm check:product-artifact-contracts
-pnpm check:product-deployment-contracts
-pnpm check:product-environment-contracts
-
-pnpm check:yappc-product-unit-intent-handoff
-pnpm check:yappc-artifact-intelligence-boundary
-pnpm check:data-cloud-platform-providers
-
 pnpm check:design-system-conformance
 pnpm check:shared-product-shells
 pnpm check:shared-layout-primitives
 pnpm check:shared-ui-state-coverage
-pnpm --dir platform/typescript/ghatana-studio test:a11y
-
 pnpm check:production-readiness
-pnpm check:production-stubs
 pnpm check:secret-default-credentials
 pnpm check:observability-conformance
 pnpm check:data-access-contract
-pnpm check:security-workflow-coverage
-pnpm check:doc-truth
-pnpm check:current-state-claims
-pnpm check:cleanup-gate
-
+pnpm check:architecture-boundaries
+pnpm check:kernel-product-boundary-audit
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm check:data-cloud-platform-providers
+pnpm check:kernel-provider-mode
 ./gradlew build
 ./gradlew check
 ```
 
-## Final recommendation
+## 10. Final recommendation
 
-Do **not** broaden execution to every product yet. Make **Digital Marketing** the hard, complete, golden lifecycle pilot first. Keep **PHR, Finance, FlashIt, Data Cloud, YAPPC, Audio-Video, DCMAAR, and TutorPutor** as shape validators until their adapters, gates, manifests, provider modes, and evidence paths are proven.
+Proceed in this order:
 
-The most urgent implementation slice is:
+1. Release 0 governance and Studio honesty.
+2. Release 1 Digital Marketing golden lifecycle pilot.
+3. Release 3 Data Cloud platform providers.
+4. Release 4 artifact intelligence handoff.
+5. Release 2 agentic development after evidence, provider, and approval foundations are proven.
+6. Release 5 future product shape expansion.
 
-```text
-1. Remove/delegate ProductUnitIntentApplier.ts
-2. Harden KernelLifecycleService.applyProductUnitIntent as the only path
-3. Remove synthetic gate success risk
-4. Add Digital Marketing golden lifecycle E2E
-5. Wire Studio to display real lifecycle truth from that run
-```
-
-That slice will convert the current architecture from “strongly declared and partially executable” into one real end-to-end product-development loop.
+Do not enable lifecycle execution for PHR, Finance, FlashIt, Data Cloud, YAPPC, Audio-Video, DCMAAR, TutorPutor, Aura, or external ProductUnits until their required adapters, manifests, gates, privacy/security/o11y/i18n/a11y evidence, and failure paths are executable and validated.

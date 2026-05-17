@@ -38,12 +38,6 @@ public interface SourceImportJobService {
      */
     Promise<String> submitJob(SourceImportJobRequest request);
 
-    /**
-     * Get the current status of a job.
-     * @param jobId Job identifier
-     * @return Promise with the job state
-     */
-    Promise<SourceImportJob> getJobStatus(String jobId);
 
     /**
      * Get the current status of a job with scope validation.
@@ -65,41 +59,78 @@ public interface SourceImportJobService {
     Promise<Boolean> cancelJob(String jobId, String cancelledBy);
 
     /**
-     * List jobs for a tenant and product.
+     * List jobs for a tenant/workspace/project.
+     * P0: Added workspaceId to prevent cross-workspace data leakage.
      * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
      * @param projectId Product identifier
      * @param limit Maximum number of jobs to return
      * @return Promise with list of jobs
      */
-    Promise<java.util.List<SourceImportJob>> listJobs(String tenantId, String projectId, int limit);
+    Promise<java.util.List<SourceImportJob>> listJobs(String tenantId, String workspaceId, String projectId, int limit);
 
     /**
-     * List active jobs by status for a tenant.
+     * List active jobs by status for a tenant/workspace/project.
+     * P0: Added workspaceId and projectId to prevent cross-scope data leakage.
      * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
      * @param status Job status to filter by
      * @param limit Maximum number of jobs to return
      * @return Promise with list of jobs
      */
-    Promise<java.util.List<SourceImportJob>> listJobsByStatus(String tenantId, SourceImportJob.JobStatus status, int limit);
+    Promise<java.util.List<SourceImportJob>> listJobsByStatus(String tenantId, String workspaceId, String projectId, SourceImportJob.JobStatus status, int limit);
 
     /**
      * Update job progress incrementally.
+     * P0: Added scope parameters to prevent cross-scope updates.
      * @param jobId Job identifier
+     * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
      * @param currentStep Current step number
      * @param totalSteps Total number of steps
      * @param percentage Completion percentage (0-100)
      * @param currentPhase Current phase description
      * @return Promise indicating success
      */
-    Promise<Void> updateProgress(String jobId, int currentStep, int totalSteps, double percentage, String currentPhase);
+    Promise<Void> updateProgress(String jobId, String tenantId, String workspaceId, String projectId, int currentStep, int totalSteps, double percentage, String currentPhase);
 
     /**
      * Update job status.
+     * P0: Added scope parameters to prevent cross-scope updates.
      * @param jobId Job identifier
+     * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
      * @param status New status
      * @return Promise indicating success
      */
-    Promise<Void> updateStatus(String jobId, SourceImportJob.JobStatus status);
+    Promise<Void> updateStatus(String jobId, String tenantId, String workspaceId, String projectId, SourceImportJob.JobStatus status);
+
+    /**
+     * Resume a cancelled or failed job from the last known phase.
+     * P0: New method for job resume capability with persisted phase results.
+     * @param jobId Job identifier
+     * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
+     * @param resumedBy User requesting resume
+     * @return Promise indicating if resume was successful
+     */
+    Promise<Boolean> resumeJob(String jobId, String tenantId, String workspaceId, String projectId, String resumedBy);
+
+    /**
+     * Retry a failed job from the beginning.
+     * P0: New method for job retry capability with persisted cancellation token.
+     * @param jobId Job identifier
+     * @param tenantId Tenant identifier
+     * @param workspaceId Workspace identifier
+     * @param projectId Project identifier
+     * @param retriedBy User requesting retry
+     * @return Promise with the new job ID for the retry attempt
+     */
+    Promise<String> retryJob(String jobId, String tenantId, String workspaceId, String projectId, String retriedBy);
 
     /**
      * Register a progress callback for a job.
@@ -158,15 +189,6 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
             .whenException(e -> log.error("Failed to submit job {}", jobId, e));
     }
 
-    @Override
-    public Promise<SourceImportJob> getJobStatus(String jobId) {
-        return jobRepository.findJobById(jobId)
-            .whenComplete((job, e) -> {
-                if (job != null) {
-                    notifyProgressCallbacks(job);
-                }
-            });
-    }
 
     @Override
     public Promise<SourceImportJob> getJobStatus(String jobId, String tenantId, String workspaceId, String projectId) {
@@ -193,19 +215,19 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     }
 
     @Override
-    public Promise<java.util.List<SourceImportJob>> listJobs(String tenantId, String projectId, int limit) {
-        return jobRepository.findJobsByTenantAndProduct(tenantId, projectId, limit);
+    public Promise<java.util.List<SourceImportJob>> listJobs(String tenantId, String workspaceId, String projectId, int limit) {
+        return jobRepository.findJobsByScope(tenantId, workspaceId, projectId, limit);
     }
 
     @Override
-    public Promise<java.util.List<SourceImportJob>> listJobsByStatus(String tenantId, SourceImportJob.JobStatus status, int limit) {
-        return jobRepository.findJobsByStatus(tenantId, status, limit);
+    public Promise<java.util.List<SourceImportJob>> listJobsByStatus(String tenantId, String workspaceId, String projectId, SourceImportJob.JobStatus status, int limit) {
+        return jobRepository.findJobsByStatus(tenantId, workspaceId, projectId, status, limit);
     }
 
     @Override
-    public Promise<Void> updateProgress(String jobId, int currentStep, int totalSteps, double percentage, String currentPhase) {
+    public Promise<Void> updateProgress(String jobId, String tenantId, String workspaceId, String projectId, int currentStep, int totalSteps, double percentage, String currentPhase) {
         return jobRepository.updateProgress(jobId, currentStep, totalSteps, percentage, currentPhase)
-            .then(v -> jobRepository.findJobById(jobId))
+            .then(v -> jobRepository.findJobById(jobId, tenantId, workspaceId, projectId))
             .whenComplete((job, e) -> {
                 if (job != null) {
                     notifyProgressCallbacks(job);
@@ -215,15 +237,116 @@ final class SourceImportJobServiceImpl implements SourceImportJobService {
     }
 
     @Override
-    public Promise<Void> updateStatus(String jobId, SourceImportJob.JobStatus status) {
+    public Promise<Void> updateStatus(String jobId, String tenantId, String workspaceId, String projectId, SourceImportJob.JobStatus status) {
         return jobRepository.updateStatus(jobId, status)
-            .then(v -> jobRepository.findJobById(jobId))
+            .then(v -> jobRepository.findJobById(jobId, tenantId, workspaceId, projectId))
             .whenComplete((job, e) -> {
                 if (job != null) {
                     notifyProgressCallbacks(job);
                 }
             })
             .map(v -> null);
+    }
+
+    @Override
+    public Promise<Boolean> resumeJob(String jobId, String tenantId, String workspaceId, String projectId, String resumedBy) {
+        log.info("Resume requested for job {} by {}", jobId, resumedBy);
+        return jobRepository.findJobById(jobId, tenantId, workspaceId, projectId)
+            .then(job -> {
+                if (job == null) {
+                    log.warn("Job {} not found or scope mismatch for resume", jobId);
+                    return Promise.of(false);
+                }
+                if (!job.status().equals(SourceImportJob.JobStatus.CANCELLED) && 
+                    !job.status().equals(SourceImportJob.JobStatus.FAILED)) {
+                    log.warn("Job {} is in status {} and cannot be resumed", jobId, job.status());
+                    return Promise.of(false);
+                }
+                // Reset job to SUBMITTED status with preserved phase results
+                SourceImportJob.JobProgress progress = job.progress();
+                SourceImportJob resumedJob = SourceImportJob.builder()
+                    .jobId(job.jobId())
+                    .projectId(job.projectId())
+                    .workspaceId(job.workspaceId())
+                    .tenantId(job.tenantId())
+                    .sourceUrl(job.sourceUrl())
+                    .sourceType(job.sourceType())
+                    .status(SourceImportJob.JobStatus.SUBMITTED)
+                    .progress(new SourceImportJob.JobProgress(progress.currentStep(), progress.totalSteps(), 0, "RESUMED"))
+                    .submittedAt(Instant.now())
+                    .submittedBy(resumedBy)
+                    .validationResults(job.validationResults())
+                    .decompilationResults(job.decompilationResults())
+                    .mappingResults(job.mappingResults())
+                    .metadata(job.metadata())
+                    .build();
+                
+                return jobRepository.saveJob(resumedJob)
+                    .map(saved -> {
+                        log.info("Job {} successfully resumed from {} phase", jobId, progress.currentPhase());
+                        return true;
+                    });
+            })
+            .whenException(e -> {
+                log.error("Failed to resume job {}", jobId, e);
+            });
+    }
+
+    @Override
+    public Promise<String> retryJob(String jobId, String tenantId, String workspaceId, String projectId, String retriedBy) {
+        log.info("Retry requested for job {} by {}", jobId, retriedBy);
+        return jobRepository.findJobById(jobId, tenantId, workspaceId, projectId)
+            .then(job -> {
+                if (job == null) {
+                    log.warn("Job {} not found or scope mismatch for retry", jobId);
+                    return Promise.of("");
+                }
+                if (!job.status().equals(SourceImportJob.JobStatus.FAILED)) {
+                    log.warn("Job {} is in status {} and cannot be retried", jobId, job.status());
+                    return Promise.of("");
+                }
+                
+                // Create a new job as a retry attempt
+                String newJobId = UUID.randomUUID().toString();
+                SourceImportJob retryJob = SourceImportJob.builder()
+                    .jobId(newJobId)
+                    .projectId(job.projectId())
+                    .workspaceId(job.workspaceId())
+                    .tenantId(job.tenantId())
+                    .sourceUrl(job.sourceUrl())
+                    .sourceType(job.sourceType())
+                    .status(SourceImportJob.JobStatus.SUBMITTED)
+                    .progress(new SourceImportJob.JobProgress(0, job.progress().totalSteps(), 0, "RETRY"))
+                    .submittedAt(Instant.now())
+                    .submittedBy(retriedBy)
+                    .metadata(job.metadata() != null ? new java.util.HashMap<>(job.metadata()) : Map.of())
+                    .build();
+                
+                // Add retry reference to metadata
+                retryJob = SourceImportJob.builder()
+                    .jobId(retryJob.jobId())
+                    .projectId(retryJob.projectId())
+                    .workspaceId(retryJob.workspaceId())
+                    .tenantId(retryJob.tenantId())
+                    .sourceUrl(retryJob.sourceUrl())
+                    .sourceType(retryJob.sourceType())
+                    .status(retryJob.status())
+                    .progress(retryJob.progress())
+                    .submittedAt(retryJob.submittedAt())
+                    .submittedBy(retryJob.submittedBy())
+                    .metadata(new java.util.HashMap<>(retryJob.metadata()))
+                    .build();
+                retryJob.metadata().put("retry_of_job_id", jobId);
+                
+                return jobRepository.saveJob(retryJob)
+                    .map(saved -> {
+                        log.info("Job {} created as retry of {}", newJobId, jobId);
+                        return newJobId;
+                    });
+            })
+            .whenException(e -> {
+                log.error("Failed to retry job {}", jobId, e);
+            });
     }
 
     @Override

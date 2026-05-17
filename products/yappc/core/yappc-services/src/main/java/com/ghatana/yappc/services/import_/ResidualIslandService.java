@@ -127,6 +127,7 @@ public final class ResidualIslandService {
             islandType,
             summary,
             sourceSpan,
+            sourceSpan,
             checksum,
             rawFragmentRef,
             reason,

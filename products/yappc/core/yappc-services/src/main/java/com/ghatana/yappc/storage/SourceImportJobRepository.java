@@ -190,34 +190,6 @@ public final class SourceImportJobRepository {
         });
     }
 
-    /**
-     * Find job by ID.
-     * P0: Deprecated - use scoped findJobById instead to prevent cross-scope job lookup.
-     */
-    @Deprecated(since = "P0 audit remediation", forRemoval = true)
-    public Promise<SourceImportJob> findJobById(String jobId) {
-        return Promise.ofBlocking(executor, () -> {
-            String sql = """
-                SELECT job_id, project_id, workspace_id, tenant_id, source_url, source_type,
-                       status, current_step, total_steps, percentage, current_phase,
-                       validation_results_json, decompilation_results_json, mapping_results_json,
-                       residual_review_status, submitted_at, started_at, completed_at,
-                       submitted_by, error_message, metadata_json, is_cancelled, cancellation_requested_at
-                FROM source_import_jobs
-                WHERE job_id = ?
-                """;
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, jobId);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return mapJob(resultSet);
-                    }
-                    return null;
-                }
-            }
-        });
-    }
 
     /**
      * Find job by ID with scope validation.
@@ -251,10 +223,15 @@ public final class SourceImportJobRepository {
         });
     }
 
+
     /**
-     * Find jobs by tenant and project.
+     * Find jobs scoped to tenant, workspace, and project.
+     * P0: Replaces unscoped listing to prevent cross-workspace data leakage.
      */
-    public Promise<List<SourceImportJob>> findJobsByTenantAndProduct(String tenantId, String projectId, int limit) {
+    public Promise<List<SourceImportJob>> findJobsByScope(String tenantId, String workspaceId, String projectId, int limit) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT job_id, project_id, workspace_id, tenant_id, source_url, source_type,
@@ -263,15 +240,16 @@ public final class SourceImportJobRepository {
                        residual_review_status, submitted_at, started_at, completed_at,
                        submitted_by, error_message, metadata_json, is_cancelled, cancellation_requested_at
                 FROM source_import_jobs
-                WHERE tenant_id = ? AND project_id = ?
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
                 ORDER BY submitted_at DESC
                 LIMIT ?
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, projectId);
-                statement.setInt(3, limit);
+                statement.setString(2, workspaceId);
+                statement.setString(3, projectId);
+                statement.setInt(4, limit);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<SourceImportJob> jobs = new ArrayList<>();
                     while (resultSet.next()) {
@@ -284,10 +262,14 @@ public final class SourceImportJobRepository {
     }
 
     /**
-     * Find jobs by status for a tenant.
+     * Find jobs by status for a tenant/workspace/project.
      * P2.6: Support for querying active jobs for monitoring.
+     * P0: Includes workspaceId and projectId to prevent cross-scope data leakage.
      */
-    public Promise<List<SourceImportJob>> findJobsByStatus(String tenantId, SourceImportJob.JobStatus status, int limit) {
+    public Promise<List<SourceImportJob>> findJobsByStatus(String tenantId, String workspaceId, String projectId, SourceImportJob.JobStatus status, int limit) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT job_id, project_id, workspace_id, tenant_id, source_url, source_type,
@@ -296,15 +278,17 @@ public final class SourceImportJobRepository {
                        residual_review_status, submitted_at, started_at, completed_at,
                        submitted_by, error_message, metadata_json, is_cancelled, cancellation_requested_at
                 FROM source_import_jobs
-                WHERE tenant_id = ? AND status = ? AND is_cancelled = false
+                WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND status = ? AND is_cancelled = false
                 ORDER BY submitted_at DESC
                 LIMIT ?
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, tenantId);
-                statement.setString(2, status.name());
-                statement.setInt(3, limit);
+                statement.setString(2, workspaceId);
+                statement.setString(3, projectId);
+                statement.setString(4, status.name());
+                statement.setInt(5, limit);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<SourceImportJob> jobs = new ArrayList<>();
                     while (resultSet.next()) {
@@ -319,18 +303,24 @@ public final class SourceImportJobRepository {
     /**
      * Delete old completed jobs for cleanup.
      * P2.6: Support for job retention policy.
+     * P0: Added tenant/workspace/project scope to prevent cross-scope deletion.
      */
-    public Promise<Integer> deleteOldJobs(Instant olderThan) {
+    public Promise<Integer> deleteOldJobs(String tenantId, String workspaceId, String projectId, Instant olderThan) {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 DELETE FROM source_import_jobs
                 WHERE completed_at < ? AND status IN ('COMPLETED', 'FAILED')
+                AND tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setTimestamp(1, Timestamp.from(olderThan));
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
                 int deleted = statement.executeUpdate();
-                log.info("Deleted {} old source import jobs older than {}", deleted, olderThan);
+                log.info("Deleted {} old source import jobs older than {} for tenant={}, workspace={}, project={}", 
+                    deleted, olderThan, tenantId, workspaceId, projectId);
                 return deleted;
             }
         });

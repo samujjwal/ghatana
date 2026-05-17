@@ -943,12 +943,44 @@ public final class ArtifactGraphRepository {
         if (islands == null || islands.isEmpty()) {
             return Promise.of(null);
         }
+        // P0: Validate that all islands have required fields for full fidelity
+        for (ResidualIslandRecord island : islands) {
+            if (island.originalSource() == null || island.originalSource().isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.id() + "' missing required field 'originalSource'. " +
+                    "Lossy ingest rejected - full residual payload required.");
+            }
+            if (island.checksum() == null || island.checksum().isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.id() + "' missing required field 'checksum'. " +
+                    "Lossy ingest rejected - full residual payload required.");
+            }
+            if (island.rawFragmentRef() == null || island.rawFragmentRef().isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.id() + "' missing required field 'rawFragmentRef'. " +
+                    "Lossy ingest rejected - full residual payload required.");
+            }
+        }
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO residual_islands (
-                    id, tenant_id, project_id, snapshot_id, island_type, summary, file_count,
-                    confidence, metadata_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id, tenant_id, project_id, snapshot_id, workspace_id, island_type, summary, 
+                    original_source, source_span, checksum, raw_fragment_ref, reason,
+                    confidence, review_required, risk_score, file_count, metadata_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (tenant_id, workspace_id, project_id, id) DO UPDATE SET
+                    island_type = EXCLUDED.island_type,
+                    summary = EXCLUDED.summary,
+                    original_source = EXCLUDED.original_source,
+                    source_span = EXCLUDED.source_span,
+                    checksum = EXCLUDED.checksum,
+                    raw_fragment_ref = EXCLUDED.raw_fragment_ref,
+                    reason = EXCLUDED.reason,
+                    confidence = EXCLUDED.confidence,
+                    review_required = EXCLUDED.review_required,
+                    risk_score = EXCLUDED.risk_score,
+                    file_count = EXCLUDED.file_count,
+                    metadata_json = EXCLUDED.metadata_json
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -957,21 +989,33 @@ public final class ArtifactGraphRepository {
                     statement.setString(2, tenantId);
                     statement.setString(3, productId);
                     statement.setString(4, snapshotId);
-                    statement.setString(5, island.islandType());
-                    statement.setString(6, island.summary());
-                    statement.setInt(7, island.fileCount());
+                    statement.setString(5, island.workspaceId());
+                    statement.setString(6, island.islandType());
+                    statement.setString(7, island.summary());
+                    statement.setString(8, island.originalSource());
+                    statement.setString(9, island.sourceSpan());
+                    statement.setString(10, island.checksum());
+                    statement.setString(11, island.rawFragmentRef());
+                    statement.setString(12, island.reason());
                     if (!Double.isNaN(island.confidence())) {
-                        statement.setBigDecimal(8, java.math.BigDecimal.valueOf(island.confidence()));
+                        statement.setBigDecimal(13, java.math.BigDecimal.valueOf(island.confidence()));
                     } else {
-                        statement.setNull(8, java.sql.Types.NUMERIC);
+                        statement.setNull(13, java.sql.Types.NUMERIC);
                     }
-                    statement.setString(9, writeJson(island.metadata()));
-                    statement.setTimestamp(10, Timestamp.from(Instant.now()));
+                    statement.setBoolean(14, island.reviewRequired());
+                    if (!Double.isNaN(island.riskScore())) {
+                        statement.setBigDecimal(15, java.math.BigDecimal.valueOf(island.riskScore()));
+                    } else {
+                        statement.setNull(15, java.sql.Types.NUMERIC);
+                    }
+                    statement.setInt(16, island.fileCount());
+                    statement.setString(17, writeJson(island.metadata()));
+                    statement.setTimestamp(18, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
-                log.info("Saved {} residual islands for product {} (snapshotId={})", 
-                    islands.size(), productId, snapshotId);
+                log.info("Saved {} residual islands for product {} (snapshotId={}, workspaceId={})", 
+                    islands.size(), productId, snapshotId, islands.get(0).workspaceId());
             }
             return null;
         }).map(v -> null);
@@ -1000,13 +1044,14 @@ public final class ArtifactGraphRepository {
     ) {}
 
     /**
-     * P1-20: Updated ResidualIslandRecord with full schema for source fidelity
-     * Matches the proto definition with source span, checksum, raw fragment ref, reason, risk, review requirement
+     * P0: Updated ResidualIslandRecord with full schema for source fidelity including originalSource
+     * Matches the proto definition with original source, source span, checksum, raw fragment ref, reason, risk, review requirement
      */
     public record ResidualIslandRecord(
         String id,
         String islandType,
         String summary,
+        String originalSource, // P0: Added for round-trip fidelity
         String sourceSpan,
         String checksum,
         String rawFragmentRef,

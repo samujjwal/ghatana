@@ -1,5 +1,4 @@
-import { useState, type ReactElement } from 'react';
-import type { ProductUnitIntentApplicationResult } from '@ghatana/kernel-product-contracts';
+import { type ReactElement } from 'react';
 import { isProductUnitIntent } from '@ghatana/kernel-product-contracts';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
@@ -9,45 +8,33 @@ export default function IdeasPage(): ReactElement {
   const candidateIsValid = isProductUnitIntent(yappcProductUnitIntentCandidate);
   const t = useStudioTranslation();
   const lifecycleData = useStudioLifecycleData();
-  const [handoffResult, setHandoffResult] = useState<ProductUnitIntentApplicationResult | null>(null);
-  const [handoffError, setHandoffError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handoffResult = lifecycleData.intentOperation.status === 'success' ? lifecycleData.intentOperation.result : undefined;
+  const handoffError = lifecycleData.intentOperation.status === 'error' ? lifecycleData.intentOperation.errorMessage : undefined;
+  const isSubmitting = lifecycleData.intentOperation.status === 'loading';
 
   async function previewIntent(): Promise<void> {
     if (lifecycleData.previewProductUnitIntent === undefined) {
-      setHandoffError(t('studio.route.ideas.handoffUnavailable'));
       return;
     }
-    setHandoffError(null);
-    setIsSubmitting(true);
     try {
-      const result = await lifecycleData.previewProductUnitIntent(yappcProductUnitIntentCandidate, {
+      await lifecycleData.previewProductUnitIntent(yappcProductUnitIntentCandidate, {
         providerMode: lifecycleData.selectedProviderMode,
       });
-      setHandoffResult(result);
-    } catch (error: unknown) {
-      setHandoffError(error instanceof Error ? error.message : t('studio.route.ideas.handoffFailed'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error state is captured in the lifecycle context.
     }
   }
 
   async function applyIntent(): Promise<void> {
     if (lifecycleData.applyProductUnitIntent === undefined) {
-      setHandoffError(t('studio.route.ideas.handoffUnavailable'));
       return;
     }
-    setHandoffError(null);
-    setIsSubmitting(true);
     try {
-      const result = await lifecycleData.applyProductUnitIntent(yappcProductUnitIntentCandidate, {
+      await lifecycleData.applyProductUnitIntent(yappcProductUnitIntentCandidate, {
         providerMode: lifecycleData.selectedProviderMode,
       });
-      setHandoffResult(result);
-    } catch (error: unknown) {
-      setHandoffError(error instanceof Error ? error.message : t('studio.route.ideas.handoffFailed'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error state is captured in the lifecycle context.
     }
   }
 
@@ -121,15 +108,22 @@ export default function IdeasPage(): ReactElement {
           </button>
         </div>
 
-        {handoffError !== null ? (
+        {lifecycleData.previewProductUnitIntent === undefined || lifecycleData.applyProductUnitIntent === undefined ? (
+          <p className="mt-3 text-sm text-red-700">{t('studio.route.ideas.handoffUnavailable')}</p>
+        ) : null}
+
+        {handoffError !== undefined ? (
           <p className="mt-3 text-sm text-red-700">{handoffError}</p>
         ) : null}
 
-        {handoffResult !== null ? (
+        {handoffResult !== undefined ? (
           <div className="mt-4 rounded border border-gray-200 bg-white p-3">
             <h3 className="text-sm font-semibold text-gray-900">{t('studio.route.ideas.handoffResultTitle')}</h3>
             <p className="mt-1 text-sm text-gray-700">
               {t('studio.route.ideas.handoffStatusLabel')} {handoffResult.status}
+            </p>
+            <p className="mt-1 text-xs text-gray-600">
+              {t('studio.route.ideas.handoffCorrelationIdLabel')} {handoffResult.correlationId}
             </p>
             {handoffResult.blockedReasons.length > 0 ? (
               <p className="mt-1 text-xs text-amber-700">

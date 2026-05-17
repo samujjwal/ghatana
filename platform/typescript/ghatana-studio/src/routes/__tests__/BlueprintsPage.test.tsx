@@ -52,6 +52,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: null,
     selectedEnvironment: 'local',
     selectedProviderMode: 'platform',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-1',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),
@@ -88,5 +89,36 @@ describe('BlueprintsPage', () => {
     await waitFor(() => {
       expect(context.applyProductUnitIntent).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('renders centralized handoff result details including correlation id', () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        intentOperation: {
+          status: 'success',
+          mode: 'preview',
+          correlationId: 'corr-1',
+          result: createIntentResult('previewed'),
+        },
+      }),
+    );
+
+    render(<BlueprintsPage />);
+
+    expect(screen.getByText('studio.route.blueprints.handoffResultLabel previewed')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.blueprints.handoffCorrelationIdLabel corr-1')).toBeInTheDocument();
+  });
+
+  it('renders handoff unavailable when intent mutation operations are missing', () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        previewProductUnitIntent: undefined,
+        applyProductUnitIntent: undefined,
+      }),
+    );
+
+    render(<BlueprintsPage />);
+
+    expect(screen.getByText('studio.route.blueprints.handoffUnavailable')).toBeInTheDocument();
   });
 });

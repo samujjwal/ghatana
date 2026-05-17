@@ -66,12 +66,21 @@ export interface StudioLifecycleSnapshot {
   readonly errorMessage?: string;
 }
 
+export interface StudioIntentOperationState {
+  readonly status: 'idle' | 'loading' | 'success' | 'error';
+  readonly mode?: 'preview' | 'apply';
+  readonly correlationId?: string;
+  readonly result?: ProductUnitIntentApplicationResult;
+  readonly errorMessage?: string;
+}
+
 export interface StudioLifecycleDataContextValue {
   readonly snapshot: StudioLifecycleSnapshot;
   readonly selectedProductUnitId: string;
   readonly selectedRunId: string | null;
   readonly selectedEnvironment: string;
   readonly selectedProviderMode: 'bootstrap' | 'platform';
+  readonly intentOperation: StudioIntentOperationState;
   /** Authenticated user ID resolved from the Studio runtime context. Undefined when Studio is unconfigured. */
   readonly authenticatedUserId: string | undefined;
   selectProductUnit(productUnitId: string): void;
@@ -120,6 +129,7 @@ const StudioLifecycleDataContext = createContext<StudioLifecycleDataContextValue
   selectedRunId: null,
   selectedEnvironment: 'local',
   selectedProviderMode: 'bootstrap',
+  intentOperation: { status: 'idle' },
   authenticatedUserId: undefined,
   selectProductUnit: () => {},
   selectRun: () => {},
@@ -144,6 +154,7 @@ export function StudioLifecycleDataProvider(
   const [selectedEnvironment, setSelectedEnvironment] = useState<string>('local');
   const [selectedProviderMode, setSelectedProviderMode] = useState<'bootstrap' | 'platform'>('bootstrap');
   const [snapshot, setSnapshot] = useState<StudioLifecycleSnapshot>(EMPTY_SNAPSHOT);
+  const [intentOperation, setIntentOperation] = useState<StudioIntentOperationState>({ status: 'idle' });
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
@@ -326,9 +337,36 @@ export function StudioLifecycleDataProvider(
     options: ProductUnitIntentMutationOptions = {},
   ): Promise<ProductUnitIntentApplicationResult> => {
     if (client?.previewProductUnitIntent === undefined) {
-      throw new Error('Kernel lifecycle client does not support ProductUnitIntent preview');
+      const message = 'Kernel lifecycle client does not support ProductUnitIntent preview';
+      setIntentOperation({
+        status: 'error',
+        mode: 'preview',
+        errorMessage: message,
+      });
+      throw new Error(message);
     }
-    return client.previewProductUnitIntent(intent, options);
+    setIntentOperation({
+      status: 'loading',
+      mode: 'preview',
+    });
+    try {
+      const result = await client.previewProductUnitIntent(intent, options);
+      setIntentOperation({
+        status: 'success',
+        mode: 'preview',
+        correlationId: result.correlationId,
+        result,
+      });
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'ProductUnitIntent preview failed';
+      setIntentOperation({
+        status: 'error',
+        mode: 'preview',
+        errorMessage,
+      });
+      throw error;
+    }
   }, [client]);
 
   const applyProductUnitIntent = useCallback(async (
@@ -336,11 +374,37 @@ export function StudioLifecycleDataProvider(
     options: ProductUnitIntentMutationOptions = {},
   ): Promise<ProductUnitIntentApplicationResult> => {
     if (client?.applyProductUnitIntent === undefined) {
-      throw new Error('Kernel lifecycle client does not support ProductUnitIntent apply');
+      const message = 'Kernel lifecycle client does not support ProductUnitIntent apply';
+      setIntentOperation({
+        status: 'error',
+        mode: 'apply',
+        errorMessage: message,
+      });
+      throw new Error(message);
     }
-    const result = await client.applyProductUnitIntent(intent, options);
-    await loadSnapshot();
-    return result;
+    setIntentOperation({
+      status: 'loading',
+      mode: 'apply',
+    });
+    try {
+      const result = await client.applyProductUnitIntent(intent, options);
+      setIntentOperation({
+        status: 'success',
+        mode: 'apply',
+        correlationId: result.correlationId,
+        result,
+      });
+      await loadSnapshot();
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'ProductUnitIntent apply failed';
+      setIntentOperation({
+        status: 'error',
+        mode: 'apply',
+        errorMessage,
+      });
+      throw error;
+    }
   }, [client, loadSnapshot]);
 
   const refresh = useCallback(async () => {
@@ -354,6 +418,7 @@ export function StudioLifecycleDataProvider(
       selectedRunId,
       selectedEnvironment,
       selectedProviderMode,
+      intentOperation,
       authenticatedUserId,
       selectProductUnit,
       selectRun,
@@ -373,6 +438,7 @@ export function StudioLifecycleDataProvider(
       selectedRunId,
       selectedEnvironment,
       selectedProviderMode,
+      intentOperation,
       authenticatedUserId,
       selectProductUnit,
       selectRun,

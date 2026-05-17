@@ -104,15 +104,77 @@ public class SourceImportJobRepository {
     }
 
     /**
-     * Find a job by ID with tenant scope validation.
+     * Find a job by ID with full scope validation.
+     * P0: Added workspaceId and projectId to prevent cross-scope data leakage.
      */
     public Promise<Optional<SourceImportJob>> findById(String jobId, String tenantId) {
-        return Promise.ofBlocking(executor, () -> findByIdBlocking(jobId, tenantId));
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT job_id, tenant_id, workspace_id, project_id,
+                       provider, repo_id, ref, path, credential_ref,
+                       status, progress_percent, current_step, error_message, snapshot_id,
+                       created_at, updated_at, completed_at, locator_json
+                FROM source_import_jobs
+                WHERE job_id = ? AND tenant_id = ?
+                """;
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, jobId);
+                stmt.setString(2, tenantId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapRow(rs));
+                    }
+                    return Optional.<SourceImportJob>empty();
+                }
+            } catch (SQLException e) {
+                log.error("Failed to find source import job {} for tenant {}", jobId, tenantId, e);
+                throw new RuntimeException("Failed to find source import job", e);
+            }
+        });
+    }
+
+    public Promise<Optional<SourceImportJob>> findById(String jobId, String tenantId, String workspaceId, String projectId) {
+        return Promise.ofBlocking(executor, () -> findByIdBlocking(jobId, tenantId, workspaceId, projectId));
     }
 
     /**
-     * Synchronous find by ID for blocking contexts.
+     * Synchronous find by ID with full scope for blocking contexts.
+     * P0: Added workspaceId and projectId to prevent cross-scope data leakage.
      */
+    public Optional<SourceImportJob> findByIdBlocking(String jobId, String tenantId, String workspaceId, String projectId) {
+        String sql = """
+            SELECT job_id, tenant_id, workspace_id, project_id,
+                   provider, repo_id, ref, path, credential_ref,
+                   status, progress_percent, current_step, error_message, snapshot_id,
+                   created_at, updated_at, completed_at, locator_json
+            FROM source_import_jobs
+            WHERE job_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
+            """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setString(1, jobId);
+            stmt.setString(2, tenantId);
+            stmt.setString(3, workspaceId);
+            stmt.setString(4, projectId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+                return Optional.empty();
+            }
+
+        } catch (SQLException e) {
+            log.error("Failed to find source import job {} for tenant={}, workspace={}, project={}", 
+                jobId, tenantId, workspaceId, projectId, e);
+            throw new RuntimeException("Failed to find source import job", e);
+        }
+    }
+
     public Optional<SourceImportJob> findByIdBlocking(String jobId, String tenantId) {
         String sql = """
             SELECT job_id, tenant_id, workspace_id, project_id,
@@ -125,17 +187,14 @@ public class SourceImportJobRepository {
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-
             stmt.setString(1, jobId);
             stmt.setString(2, tenantId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapRow(rs));
                 }
                 return Optional.empty();
             }
-
         } catch (SQLException e) {
             log.error("Failed to find source import job {} for tenant {}", jobId, tenantId, e);
             throw new RuntimeException("Failed to find source import job", e);

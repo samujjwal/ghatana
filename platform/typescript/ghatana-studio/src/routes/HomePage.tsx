@@ -1,14 +1,44 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
-function homeRunStatusLabel(status: string, t: (key: string) => string): string {
-  return t(`studio.route.lifecycle.runStatus.${status}`);
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function homeRunStatusLabel(status: string, t: TranslateFn): string {
+  if (status === 'healthy' || status === 'ready') {
+    return t('studio.route.lifecycle.runStatus.healthy');
+  }
+  if (status === 'running' || status === 'loading') {
+    return t('studio.route.lifecycle.runStatus.running');
+  }
+  if (status === 'degraded') {
+    return t('studio.route.lifecycle.runStatus.degraded');
+  }
+  if (status === 'pending approval') {
+    return t('studio.route.lifecycle.runStatus.pendingApproval');
+  }
+  if (status === 'requires verification') {
+    return t('studio.route.lifecycle.runStatus.requiresVerification');
+  }
+  if (status === 'failed' || status === 'blocked' || status === 'quarantined') {
+    return t('studio.route.lifecycle.runStatus.failed');
+  }
+  if (status === 'skipped') {
+    return t('studio.route.lifecycle.runStatus.skipped');
+  }
+  if (status === 'planned') {
+    return t('studio.route.lifecycle.runStatus.planned');
+  }
+  if (status === 'obsolete') {
+    return t('studio.route.lifecycle.runStatus.obsolete');
+  }
+  return t('studio.route.lifecycle.runStatus.unknown');
 }
 
 interface JourneyStep {

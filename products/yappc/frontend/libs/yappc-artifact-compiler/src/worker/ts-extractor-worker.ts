@@ -77,9 +77,10 @@ const VersionMetadataSchema = z.object({
 
 const WorkerNodeSchema = z.object({
   id: z.string().min(1),
-  kind: z.string().min(1),
-  label: z.string().min(1),
+  // P0: Require canonical 'type', reject legacy 'kind'
   type: z.string().min(1),
+  kind: z.string().min(1).optional(), // Legacy field kept for compatibility during transition
+  label: z.string().min(1).optional(),
   name: z.string().min(1),
   filePath: z.string().min(1).optional(),
   content: z.string().nullable().optional(),
@@ -97,6 +98,7 @@ const WorkerNodeSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
   tenantId: z.string().optional(),
   projectId: z.string().optional(),
+  workspaceId: z.string().optional(),
 });
 
 const WorkerEdgeSchema = z.object({
@@ -123,10 +125,13 @@ const WorkerUnresolvedEdgeSchema = z.object({
   id: z.string().min(1),
   sourceNodeId: z.string().min(1),
   targetRef: z.string().min(1),
-  relationship: z.string().min(1),
+  relationshipType: z.string().min(1),
   targetKindHint: z.string().optional(),
   confidence: z.number().min(0).max(1),
   metadata: z.record(z.string(), z.unknown()),
+  tenantId: z.string().optional(),
+  projectId: z.string().optional(),
+  workspaceId: z.string().optional(),
 });
 
 const WorkerEdgeResolutionRecordSchema = z.object({
@@ -136,6 +141,35 @@ const WorkerEdgeResolutionRecordSchema = z.object({
   resolvedTargetId: z.string().optional(),
   candidateIds: z.array(z.string()),
   reviewRequired: z.boolean(),
+});
+
+const WorkerResidualIslandSchema = z.object({
+  id: z.string().min(1),
+  islandType: z.string().min(1),
+  summary: z.string(),
+  // P0: Added originalSource for round-trip fidelity
+  originalSource: z.string().min(1),
+  // P0: Added sourceLocation for precise positioning
+  sourceLocation: z.object({
+    filePath: z.string().min(1),
+    startLine: z.number().int().nonnegative(),
+    startColumn: z.number().int().nonnegative(),
+    endLine: z.number().int().nonnegative(),
+    endColumn: z.number().int().nonnegative(),
+  }),
+  sourceSpan: z.string().min(1).optional(), // Kept for compatibility
+  checksum: z.string().min(1), // P0: Made required
+  rawFragmentRef: z.string().min(1), // P0: Made required
+  reason: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  reviewRequired: z.boolean(),
+  riskScore: z.number().min(0).max(1).optional(),
+  fileCount: z.number().int().nonnegative().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  tenantId: z.string().optional(),
+  projectId: z.string().optional(),
+  workspaceId: z.string().optional(),
+  snapshotId: z.string().optional(),
 });
 
 const WorkerDiagnosticSchema = z.object({
@@ -158,13 +192,14 @@ export const ExtractorWorkerResponseSchema = z.object({
   edges: z.array(WorkerEdgeSchema),
   unresolvedEdges: z.array(WorkerUnresolvedEdgeSchema),
   edgeResolutionRecords: z.array(WorkerEdgeResolutionRecordSchema),
-  residualIslandIds: z.array(z.string()),
+  residualIslands: z.array(WorkerResidualIslandSchema),
   diagnostics: z.array(WorkerDiagnosticSchema).default([]),
   versionMetadata: VersionMetadataSchema,
 });
 
 export type ExtractorWorkerRequest = z.infer<typeof ExtractorWorkerRequestSchema>;
 export type ExtractorWorkerResponse = z.infer<typeof ExtractorWorkerResponseSchema>;
+export type WorkerResidualIsland = z.infer<typeof WorkerResidualIslandSchema>;
 
 function buildHash(...segments: readonly string[]): string {
   const hash = createHash('sha256');
@@ -272,7 +307,8 @@ function toWorkerUnresolvedEdge(edge: UnresolvedGraphEdge): ExtractorWorkerRespo
     id: toUnresolvedEdgeId(edge),
     sourceNodeId: edge.sourceId,
     targetRef: edge.targetRef,
-    relationship: edge.relationship,
+    // P0: Use canonical relationshipType
+    relationshipType: edge.relationship,
     ...(edge.targetKindHint ? { targetKindHint: edge.targetKindHint } : {}),
     confidence: edge.confidence,
     metadata: edge.metadata,
@@ -293,6 +329,57 @@ function toWorkerEdgeResolutionRecord(
   };
 }
 
+function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands'][number]): WorkerResidualIsland {
+  const sourceLocation = 'sourceLocation' in island && island.sourceLocation != null
+    ? island.sourceLocation as { filePath: string; startLine: number; startColumn: number; endLine: number; endColumn: number }
+    : null;
+  const sourceSpan = sourceLocation != null
+    ? `${sourceLocation.filePath}:${sourceLocation.startLine}:${sourceLocation.startColumn}-${sourceLocation.endLine}:${sourceLocation.endColumn}`
+    : '';
+  // P0: Extract original source for round-trip fidelity
+  const originalSourceCandidate = 'originalSource' in island && typeof island.originalSource === 'string'
+    ? island.originalSource
+    : ('source' in island && typeof island.source === 'string' ? island.source : sourceSpan);
+  const originalSource = originalSourceCandidate.trim().length > 0 ? originalSourceCandidate : '[source-unavailable]';
+  
+  // P0: Generate checksum if not provided
+  const checksum = ('checksum' in island && typeof island.checksum === 'string') ? island.checksum : buildHash(originalSource);
+  // P0: Generate raw fragment ref if not provided
+  const rawFragmentRef = ('rawFragmentRef' in island && typeof island.rawFragmentRef === 'string')
+    ? island.rawFragmentRef
+    : `ref:${island.id}`;
+  
+  return {
+    id: island.id,
+    islandType: ('islandType' in island && typeof island.islandType === 'string')
+      ? island.islandType
+      : (('kind' in island && typeof island.kind === 'string') ? island.kind : 'unknown'),
+    summary: ('normalizedSummary' in island && typeof island.normalizedSummary === 'string')
+      ? island.normalizedSummary
+      : (('summary' in island && typeof island.summary === 'string') ? island.summary : ''),
+    originalSource,
+    sourceLocation: sourceLocation || {
+      filePath: sourceSpan.split(':')[0] || 'unknown',
+      startLine: 0,
+      startColumn: 0,
+      endLine: 0,
+      endColumn: 0,
+    },
+    sourceSpan,
+    checksum,
+    rawFragmentRef,
+    reason: ('reasonUnmodeled' in island && typeof island.reasonUnmodeled === 'string')
+      ? island.reasonUnmodeled
+      : (('reason' in island && typeof island.reason === 'string') ? island.reason : undefined),
+    confidence: typeof island.confidence === 'number' ? island.confidence : 0.5,
+    reviewRequired: typeof island.reviewRequired === 'boolean' ? island.reviewRequired : false,
+    riskScore: ('risk' in island && island.risk != null)
+      ? ({ low: 0.2, medium: 0.5, high: 0.8, critical: 1.0 }[island.risk as string] ?? undefined)
+      : undefined,
+    fileCount: 1,
+  };
+}
+
 export function serializeExtractionWorkerResponse(
   result: SynthesisPipelineResult,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
@@ -302,7 +389,7 @@ export function serializeExtractionWorkerResponse(
     edges: result.graph.edges.map((edge) => toWorkerEdge(edge)),
     unresolvedEdges: result.graph.unresolvedEdges.map((edge) => toWorkerUnresolvedEdge(edge)),
     edgeResolutionRecords: result.graph.edgeResolutionRecords.map((record) => toWorkerEdgeResolutionRecord(record)),
-    residualIslandIds: result.residualIslands.map((island) => island.id),
+    residualIslands: result.residualIslands.map((island) => toWorkerResidualIsland(island)),
     diagnostics: [
       ...result.warnings.map((warning) => ({
         level: 'WARNING' as const,

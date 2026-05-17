@@ -308,18 +308,36 @@ export function mapKernelLifecycleClientError(
   if (apiErrorPayload !== undefined) {
     const apiError = KernelLifecycleApiErrorSchema.safeParse(apiErrorPayload);
     if (apiError.success) {
-      const { statusCode, correlationId: responseCorrelationId, message, safeDetails, details } = apiError.data;
+      const {
+        statusCode,
+        reasonCode,
+        correlationId: responseCorrelationId,
+        message,
+        safeDetails,
+        details,
+      } = apiError.data;
       const errorDetails = safeDetails ?? details;
       const effectiveCorrelationId = correlationId ?? responseCorrelationId;
-      if (statusCode === 401) {
+      const normalizedReasonCode = normalizeKernelLifecycleReasonCode(reasonCode);
+      const effectiveStatusCode = statusCode ?? 500;
+
+      if (statusCode === 401 || normalizedReasonCode === 'AUTHENTICATION_REQUIRED' || normalizedReasonCode === 'UNAUTHENTICATED') {
         return new KernelLifecycleAuthError(message, effectiveCorrelationId, errorDetails);
       }
-      if (statusCode === 403) {
+      if (statusCode === 403 || normalizedReasonCode === 'SCOPE_MISMATCH' || normalizedReasonCode === 'FORBIDDEN') {
         return new KernelLifecycleScopeError(message, effectiveCorrelationId, errorDetails);
       }
-      if (statusCode === 503) {
+      if (statusCode === 503 || normalizedReasonCode === 'PROVIDER_MODE_UNAVAILABLE' || normalizedReasonCode === 'PROVIDER_UNAVAILABLE') {
         return new KernelLifecycleProviderModeError(message, effectiveCorrelationId, errorDetails);
       }
+
+      return new KernelLifecycleClientError(
+        message,
+        normalizedReasonCode,
+        effectiveStatusCode,
+        effectiveCorrelationId,
+        errorDetails,
+      );
     }
   }
 
@@ -329,6 +347,14 @@ export function mapKernelLifecycleClientError(
     500,
     correlationId,
   );
+}
+
+function normalizeKernelLifecycleReasonCode(reasonCode: string): string {
+  return reasonCode
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
 }
 
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;

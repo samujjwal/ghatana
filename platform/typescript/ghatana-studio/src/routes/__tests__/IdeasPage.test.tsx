@@ -52,6 +52,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: null,
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-1',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),
@@ -83,13 +84,42 @@ describe('IdeasPage', () => {
     await waitFor(() => {
       expect(context.previewProductUnitIntent).toHaveBeenCalledTimes(1);
     });
-    await waitFor(() => {
-      expect(screen.getByText(/studio.route.ideas.handoffStatusLabel/)).toBeInTheDocument();
-    });
 
     fireEvent.click(screen.getByText('studio.route.ideas.applyIntent'));
     await waitFor(() => {
       expect(context.applyProductUnitIntent).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('renders centralized success result details including correlation and blocked reasons', () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        intentOperation: {
+          status: 'success',
+          mode: 'apply',
+          correlationId: 'corr-1',
+          result: createIntentResult('blocked'),
+        },
+      }),
+    );
+
+    render(<IdeasPage />);
+
+    expect(screen.getByText('studio.route.ideas.handoffStatusLabel blocked')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.ideas.handoffCorrelationIdLabel corr-1')).toBeInTheDocument();
+    expect(screen.getByText('studio.route.ideas.blockedReasonsLabel provider-mode-not-available')).toBeInTheDocument();
+  });
+
+  it('renders handoff unavailable when intent mutation operations are missing', () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        previewProductUnitIntent: undefined,
+        applyProductUnitIntent: undefined,
+      }),
+    );
+
+    render(<IdeasPage />);
+
+    expect(screen.getByText('studio.route.ideas.handoffUnavailable')).toBeInTheDocument();
   });
 });

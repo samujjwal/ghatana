@@ -45,7 +45,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
             fingerprint: { algorithm: 'sha256', hash: 'def456' },
           },
         ],
-      } as StudioLifecycleDataContextValue['snapshot']['artifactManifest'],
+      } as unknown as StudioLifecycleDataContextValue['snapshot']['artifactManifest'],
       manifestLoadState: {
         gateResultManifest: { status: 'missing' },
         artifactManifest: { status: 'missing' },
@@ -57,6 +57,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),

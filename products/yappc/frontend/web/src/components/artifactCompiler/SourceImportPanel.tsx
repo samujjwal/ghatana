@@ -17,14 +17,17 @@
 import { useState, useEffect } from 'react';
 import { 
   X, 
-  Github, 
-  Gitlab, 
+  GitBranch, 
   Archive, 
   Upload, 
   Loader2, 
   CheckCircle2, 
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Folder,
+  TrendingUp,
+  Layers,
+  SkipForward
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -36,7 +39,7 @@ import type { ArtifactGraphIngestRequest, ArtifactGraphIngestResponse } from '@/
 // Types
 // ============================================================================
 
-export type ImportProvider = 'github' | 'gitlab' | 'archive';
+export type ImportProvider = 'github' | 'gitlab' | 'archive' | 'local';
 
 export interface ImportJob {
   id: string;
@@ -50,6 +53,11 @@ export interface ImportJob {
   versionId?: string;
   nodeCount?: number;
   edgeCount?: number;
+  // P1: Import summary fields
+  confidence?: number;
+  residualCount?: number;
+  skippedCount?: number;
+  skippedReasons?: Map<string, number>;
 }
 
 export interface SourceImportPanelProps {
@@ -75,6 +83,7 @@ export function SourceImportPanel({
   const [repoUrl, setRepoUrl] = useState('');
   const [ref, setRef] = useState('main');
   const [archiveFile, setArchiveFile] = useState<File | null>(null);
+  const [localPath, setLocalPath] = useState('');
   const [job, setJob] = useState<ImportJob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -166,7 +175,6 @@ export function SourceImportPanel({
           ...prev!,
           status: 'completed',
           progress: 100,
-          message: 'Import completed successfully',
           ...mockResponse,
         }));
 
@@ -245,7 +253,7 @@ export function SourceImportPanel({
                       : 'border-divider bg-bg-default hover:border-primary-300'
                   )}
                 >
-                  <Github className="h-5 w-5" />
+                  <GitBranch className="h-5 w-5" />
                   <span className="text-xs font-medium">GitHub</span>
                 </button>
                 <button
@@ -258,7 +266,7 @@ export function SourceImportPanel({
                       : 'border-divider bg-bg-default hover:border-primary-300'
                   )}
                 >
-                  <Gitlab className="h-5 w-5" />
+                  <GitBranch className="h-5 w-5" />
                   <span className="text-xs font-medium">GitLab</span>
                 </button>
                 <button
@@ -273,6 +281,19 @@ export function SourceImportPanel({
                 >
                   <Archive className="h-5 w-5" />
                   <span className="text-xs font-medium">Archive</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProvider('local')}
+                  className={cn(
+                    'flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors',
+                    provider === 'local'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-divider bg-bg-default hover:border-primary-300'
+                  )}
+                >
+                  <Folder className="h-5 w-5" />
+                  <span className="text-xs font-medium">Local</span>
                 </button>
               </div>
             </div>
@@ -332,6 +353,27 @@ export function SourceImportPanel({
               </div>
             )}
 
+            {/* P1: Local Input */}
+            {provider === 'local' && (
+              <div>
+                <label htmlFor="localPath" className="mb-2 block text-sm font-medium text-text-primary">
+                  Local Path
+                </label>
+                <input
+                  id="localPath"
+                  type="text"
+                  value={localPath}
+                  onChange={(e) => setLocalPath(e.target.value)}
+                  placeholder="/path/to/source/code"
+                  className="w-full rounded-md border border-divider px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  required
+                />
+                <p className="mt-2 text-xs text-text-secondary">
+                  Enter absolute path to local source directory
+                </p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
@@ -379,7 +421,7 @@ export function SourceImportPanel({
                     <p className="text-xs text-text-secondary">{job.message}</p>
                   </div>
                 </div>
-                <div className="rounded-lg border border-divider bg-bg-default p-4 space-y-2">
+                <div className="rounded-lg border border-divider bg-bg-default p-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Nodes extracted:</span>
                     <span className="font-medium text-text-primary">{job.nodeCount}</span>
@@ -392,6 +434,57 @@ export function SourceImportPanel({
                     <span className="text-text-secondary">Snapshot ID:</span>
                     <span className="font-mono text-xs text-text-primary">{job.snapshotId}</span>
                   </div>
+                  {/* P1: Import Summary Sections */}
+                  {job.confidence !== undefined && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-divider">
+                      <TrendingUp className="h-4 w-4 text-primary-600" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-text-secondary">Extraction Confidence</span>
+                          <span className="font-medium text-text-primary">{(job.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-divider">
+                          <div
+                            className="h-full bg-primary-600 transition-all"
+                            style={{ width: `${job.confidence * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {job.residualCount !== undefined && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-divider">
+                      <Layers className="h-4 w-4 text-warning-color" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-text-secondary">Residual Islands</span>
+                          <span className="font-medium text-text-primary">{job.residualCount}</span>
+                        </div>
+                        <p className="text-xs text-text-secondary">Code fragments that could not be fully parsed</p>
+                      </div>
+                    </div>
+                  )}
+                  {job.skippedCount !== undefined && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-divider">
+                      <SkipForward className="h-4 w-4 text-text-secondary" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-text-secondary">Skipped Files</span>
+                          <span className="font-medium text-text-primary">{job.skippedCount}</span>
+                        </div>
+                        {job.skippedReasons && job.skippedReasons.size > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {Array.from(job.skippedReasons.entries()).map(([reason, count]) => (
+                              <div key={reason} className="flex justify-between text-xs text-text-secondary">
+                                <span>{reason}</span>
+                                <span>{count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <Button
                   type="button"

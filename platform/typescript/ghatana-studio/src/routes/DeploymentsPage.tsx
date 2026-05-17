@@ -1,13 +1,16 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
-function deploymentVerifierStatusLabel(valid: boolean | undefined, t: (key: string) => string): string {
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function deploymentVerifierStatusLabel(valid: boolean | undefined, t: TranslateFn): string {
   if (valid === true) {
     return t('studio.route.deployments.verifierStatus.valid');
   }

@@ -10,9 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -22,21 +24,22 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * @doc.type class
- * @doc.purpose GitLab source provider with commit pinning, deterministic snapshots, credentials, and .gitignore filtering
+ * @doc.purpose GitLab source provider with commit pinning, deterministic snapshots, credentials, pagination, and .gitignore filtering
  * @doc.layer service
  * @doc.pattern Strategy
  * 
- * P1-13: Added GitLab source provider to match GitHub provider capabilities.
- * Provides deterministic snapshotId based on commit SHA and repo ID, credentials support,
- * and .gitignore filtering for consistent source acquisition across platforms.
- * P1-13: Added bounded concurrency with semaphore for concurrent HTTP requests.
- * P1-13: Added file-size limits to prevent OOM on large files.
+ * P0: GitLab source provider with URL-encoded project IDs and file paths.
+ * P0: Paginated tree results with fail-closed on incomplete/inconsistent pagination.
+ * P0: Credentials support via SourceCredentialResolver with scope validation.
+ * P0: Deterministic sorting of files for reproducible snapshots.
+ * P0: Bounded concurrency with semaphore for concurrent HTTP requests.
+ * P0: File-size limits to prevent OOM on large files.
+ * P0: .gitignore filtering (simplified - should use authoritative library in production).
  */
 public final class GitLabSourceProvider implements SourceProvider {
 
@@ -45,17 +48,21 @@ public final class GitLabSourceProvider implements SourceProvider {
     private static final long MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB per file
     private static final long MAX_TOTAL_SIZE_BYTES = 100 * 1024 * 1024; // 100MB total
 
+    private static final int PAGE_SIZE = 100;
+
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final java.util.concurrent.Semaphore requestSemaphore;
+    private final SourceCredentialResolver credentialResolver;
 
     public GitLabSourceProvider() {
-        this(HttpClient.newHttpClient(), new ObjectMapper());
+        this(HttpClient.newHttpClient(), new ObjectMapper(), SourceCredentialResolver.envBacked());
     }
 
-    public GitLabSourceProvider(HttpClient httpClient, ObjectMapper objectMapper) {
+    public GitLabSourceProvider(HttpClient httpClient, ObjectMapper objectMapper, SourceCredentialResolver credentialResolver) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
+        this.credentialResolver = credentialResolver;
         this.requestSemaphore = new java.util.concurrent.Semaphore(MAX_CONCURRENT_REQUESTS);
     }
 
@@ -74,17 +81,24 @@ public final class GitLabSourceProvider implements SourceProvider {
         try {
             String repo = normalizeRepo(locator.repoId());
             String ref = locator.ref().filter(r -> !r.isBlank()).orElse("HEAD");
-            String commitSha = resolveCommitSha(repo, ref);
-            JsonNode tree = fetchJson("https://gitlab.com/api/v4/projects/" + repo + "/repository/tree?ref=" + commitSha + "&recursive=true&per_page=100");
+            // P0: Pass scope parameters to credentialResolver for ownership validation
+            String credentials = credentialResolver.resolve(locator, providerId(), 
+                scope.tenantId(), scope.workspaceId(), scope.projectId());
+            String commitSha = resolveCommitSha(repo, ref, credentials);
+            String encodedRepo = encodeProjectId(repo);
+
+            List<JsonNode> allEntries = fetchAllTreePages(encodedRepo, commitSha, credentials);
 
             Path root = Files.createTempDirectory("yappc-gitlab-");
             List<RepositorySnapshot.SnapshotFile> files = new ArrayList<>();
             long totalSize = 0;
-            
-            // P1-13: Fetch .gitignore file first for filtering
-            Set<String> gitignorePatterns = fetchGitignore(repo, commitSha, root);
-            
-            for (JsonNode entry : tree) {
+
+            Set<String> gitignorePatterns = fetchGitignore(encodedRepo, commitSha, credentials);
+
+            // P0: Sort entries deterministically for reproducible snapshot processing
+            allEntries.sort(java.util.Comparator.comparing(e -> e.path("path").asText()));
+
+            for (JsonNode entry : allEntries) {
                 if (!"blob".equals(entry.path("type").asText())) {
                     continue;
                 }
@@ -95,8 +109,6 @@ public final class GitLabSourceProvider implements SourceProvider {
                     continue;
                 }
                 
-                String fileId = entry.path("id").asText();
-                
                 // P1-13: Acquire semaphore for bounded concurrency
                 try {
                     requestSemaphore.acquire();
@@ -106,7 +118,9 @@ public final class GitLabSourceProvider implements SourceProvider {
                 }
                 
                 try {
-                    JsonNode file = fetchJson("https://gitlab.com/api/v4/projects/" + repo + "/repository/files/" + path + "?ref=" + commitSha);
+                    String encodedPath = encodeFilePath(path);
+                    String encodedRef = URLEncoder.encode(commitSha, StandardCharsets.UTF_8);
+                    JsonNode file = fetchJson("https://gitlab.com/api/v4/projects/" + encodedRepo + "/repository/files/" + encodedPath + "?ref=" + encodedRef, credentials);
                     byte[] content = Base64.getMimeDecoder().decode(file.path("content").asText(""));
                     
                     // P1-13: Check file size limit
@@ -143,10 +157,10 @@ public final class GitLabSourceProvider implements SourceProvider {
                 }
             }
 
-            // P1-13: Compute deterministic snapshotId from commit SHA and repo ID
+            // P0: Compute deterministic snapshotId from commit SHA and repo ID
             String deterministicSnapshotId = computeDeterministicSnapshotId(repo, commitSha);
             
-            // P1-13: Compute checksum from all file checksums for content hash
+            // P0: Compute checksum from all file checksums for content hash
             String contentHash = computeContentHash(files);
 
             RepositorySnapshot snapshot = RepositorySnapshot.builder()
@@ -161,7 +175,7 @@ public final class GitLabSourceProvider implements SourceProvider {
                 .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
                     RepositorySnapshot.DiagnosticLevel.INFO,
                     "GITLAB_SNAPSHOT_MATERIALIZED",
-                    "GitLab snapshot materialized: " + commitSha + " with deterministic snapshotId: " + deterministicSnapshotId + ", totalSize: " + totalSize + " bytes",
+                    "GitLab snapshot materialized: " + commitSha + " with deterministic snapshotId: " + deterministicSnapshotId + ", totalSize: " + totalSize + " bytes, files: " + files.size(),
                     null,
                     Instant.now()
                 )))
@@ -175,8 +189,63 @@ public final class GitLabSourceProvider implements SourceProvider {
         }
     }
 
-    private String resolveCommitSha(String repo, String ref) throws IOException, InterruptedException {
-        JsonNode commit = fetchJson("https://gitlab.com/api/v4/projects/" + repo + "/repository/commits/" + ref);
+    /**
+     * P0: Fetches all pages of the repository tree using GitLab's page-based pagination.
+     * Fails closed if pagination is incomplete or inconsistent.
+     */
+    private List<JsonNode> fetchAllTreePages(String encodedRepo, String commitSha, String credentials)
+            throws IOException, InterruptedException {
+        List<JsonNode> all = new ArrayList<>();
+        int page = 1;
+        boolean firstPage = true;
+        
+        while (true) {
+            String url = "https://gitlab.com/api/v4/projects/" + encodedRepo
+                + "/repository/tree?ref=" + URLEncoder.encode(commitSha, StandardCharsets.UTF_8)
+                + "&recursive=true&per_page=" + PAGE_SIZE + "&page=" + page;
+            JsonNode pageResult = fetchJson(url, credentials);
+            
+            if (!pageResult.isArray()) {
+                throw new IllegalStateException("GitLab tree endpoint returned non-array for page " + page);
+            }
+            
+            int count = 0;
+            for (JsonNode entry : pageResult) {
+                all.add(entry);
+                count++;
+            }
+            
+            // P0: Fail closed if first page is empty for a non-empty ref
+            if (firstPage && count == 0) {
+                throw new IllegalStateException("GitLab tree first page returned empty array for ref: " + commitSha);
+            }
+            firstPage = false;
+            
+            // P0: Stop if we received fewer items than page size (last page)
+            if (count < PAGE_SIZE) {
+                break;
+            }
+            
+            // P0: Safety limit to prevent infinite loops
+            if (page > 1000) {
+                throw new IllegalStateException("GitLab tree pagination exceeded safety limit of 1000 pages");
+            }
+            
+            page++;
+        }
+        
+        // P0: Fail closed if no entries were fetched
+        if (all.isEmpty()) {
+            throw new IllegalStateException("GitLab tree pagination returned zero entries for ref: " + commitSha);
+        }
+        
+        return all;
+    }
+
+    private String resolveCommitSha(String repo, String ref, String credentials) throws IOException, InterruptedException {
+        String encodedRepo = encodeProjectId(repo);
+        String encodedRef = URLEncoder.encode(ref, StandardCharsets.UTF_8);
+        JsonNode commit = fetchJson("https://gitlab.com/api/v4/projects/" + encodedRepo + "/repository/commits/" + encodedRef, credentials);
         String sha = commit.path("id").asText();
         if (sha == null || sha.isBlank()) {
             throw new IllegalStateException("Unable to resolve commit SHA for GitLab repo");
@@ -184,12 +253,8 @@ public final class GitLabSourceProvider implements SourceProvider {
         return sha;
     }
 
-    private JsonNode fetchJson(String url) throws IOException, InterruptedException {
-        return fetchJson(url, null);
-    }
-
     /**
-     * P1-13: Added credentials support for private GitLab repositories.
+     * P0: Fetch JSON from GitLab API with credentials support.
      */
     private JsonNode fetchJson(String url, String credentials) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(url))
@@ -208,44 +273,35 @@ public final class GitLabSourceProvider implements SourceProvider {
         return objectMapper.readTree(response.body());
     }
 
-    /**
-     * P1-13: Fetch and parse .gitignore file from GitLab repository.
-     */
-    private Set<String> fetchGitignore(String repo, String commitSha, Path root) throws IOException, InterruptedException {
+    private Set<String> fetchGitignore(String encodedRepo, String commitSha, String credentials) {
         try {
-            // Try to fetch .gitignore from the tree
-            JsonNode tree = fetchJson("https://gitlab.com/api/v4/projects/" + repo + "/repository/tree?ref=" + commitSha + "&recursive=true");
-            String gitignoreFileId = null;
-            
-            for (JsonNode entry : tree) {
-                if (".gitignore".equals(entry.path("path").asText())) {
-                    gitignoreFileId = entry.path("id").asText();
-                    break;
-                }
-            }
-            
-            if (gitignoreFileId == null) {
+            String encodedPath = URLEncoder.encode(".gitignore", StandardCharsets.UTF_8);
+            String encodedRef = URLEncoder.encode(commitSha, StandardCharsets.UTF_8);
+            JsonNode gitignoreFile = fetchJson(
+                "https://gitlab.com/api/v4/projects/" + encodedRepo
+                + "/repository/files/" + encodedPath + "?ref=" + encodedRef,
+                credentials
+            );
+            String content = gitignoreFile.path("content").asText("");
+            if (content.isBlank()) {
                 return Set.of();
             }
-            
-            JsonNode gitignoreFile = fetchJson("https://gitlab.com/api/v4/projects/" + repo + "/repository/files/.gitignore?ref=" + commitSha);
-            String content = gitignoreFile.path("content").asText("");
             byte[] decoded = Base64.getMimeDecoder().decode(content);
-            String gitignoreContent = new String(decoded);
-            
-            // Parse .gitignore patterns (simplified implementation)
+            String gitignoreContent = new String(decoded, StandardCharsets.UTF_8);
             return gitignoreContent.lines()
                 .map(String::trim)
                 .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                 .collect(Collectors.toSet());
         } catch (Exception e) {
-            // If .gitignore doesn't exist or can't be parsed, return empty set
+            log.debug(".gitignore not found or not parseable for repo; proceeding without filtering", e);
             return Set.of();
         }
     }
 
     /**
-     * P1-13: Check if a path matches any gitignore pattern (simplified implementation).
+     * P0: Check if a path matches any gitignore pattern.
+     * NOTE: This is a simplified implementation for P0 completion.
+     * Production should use an authoritative .gitignore library (e.g., jgitignore) for full spec compliance.
      */
     private boolean matchesGitignore(String path, Set<String> patterns) {
         if (patterns.isEmpty()) {
@@ -261,7 +317,7 @@ public final class GitLabSourceProvider implements SourceProvider {
     }
 
     /**
-     * P1-13: Compute SHA-256 checksum of file content.
+     * P0: Compute SHA-256 checksum of file content.
      */
     private String computeContentChecksum(byte[] content) {
         try {
@@ -274,7 +330,7 @@ public final class GitLabSourceProvider implements SourceProvider {
     }
 
     /**
-     * P1-13: Compute deterministic snapshotId from repo ID and commit SHA.
+     * P0: Compute deterministic snapshotId from repo ID and commit SHA.
      */
     private String computeDeterministicSnapshotId(String repo, String commitSha) {
         try {
@@ -288,7 +344,7 @@ public final class GitLabSourceProvider implements SourceProvider {
     }
 
     /**
-     * P1-13: Compute content hash from all file checksums.
+     * P0: Compute content hash from all file checksums.
      */
     private String computeContentHash(List<RepositorySnapshot.SnapshotFile> files) {
         try {
@@ -301,6 +357,30 @@ public final class GitLabSourceProvider implements SourceProvider {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
         }
+    }
+
+    /**
+     * P0: Encodes the GitLab project ID (namespace/project) for use in API URLs.
+     * GitLab expects slashes to be percent-encoded as %2F in the project path segment.
+     */
+    private static String encodeProjectId(String repoPath) {
+        return URLEncoder.encode(repoPath, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * P0: Encodes a single file path component for use in GitLab Files API URLs.
+     * Each path segment is individually encoded; the resulting segments are joined with %2F.
+     */
+    private static String encodeFilePath(String filePath) {
+        String[] segments = filePath.split("/");
+        StringBuilder encoded = new StringBuilder();
+        for (int i = 0; i < segments.length; i++) {
+            if (i > 0) {
+                encoded.append("%2F");
+            }
+            encoded.append(URLEncoder.encode(segments[i], StandardCharsets.UTF_8));
+        }
+        return encoded.toString();
     }
 
     private static String normalizeRepo(String repoId) {

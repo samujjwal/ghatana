@@ -1,13 +1,16 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
-function healthSignalStatusLabel(status: string, t: (key: string) => string): string {
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function healthSignalStatusLabel(status: string, t: TranslateFn): string {
   if (status === 'healthy') {
     return t('studio.route.health.signalStatus.healthy');
   }

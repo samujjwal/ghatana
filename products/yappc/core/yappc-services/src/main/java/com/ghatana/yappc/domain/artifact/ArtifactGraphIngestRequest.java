@@ -8,9 +8,10 @@ import java.util.Map;
  * @doc.purpose Request payload for ingesting an artifact graph with full fidelity
  * @doc.layer domain
  * @doc.pattern DataTransferObject
- * 
- * P0-4: Extended with snapshot metadata, unresolved edges, resolution records, and residual islands
- * to preserve complete graph lifecycle information across the backend API boundary.
+ *
+ * P0: Extended with snapshot metadata, unresolved edges, resolution records, and full residual island payloads.
+ * Residual islands carry their complete payload (sourceSpan, checksum, rawFragmentRef, risk, reviewRequired)
+ * rather than IDs only, so persistence never synthesises placeholder values.
  */
 public record ArtifactGraphIngestRequest(
     String projectId,
@@ -18,32 +19,34 @@ public record ArtifactGraphIngestRequest(
     List<ArtifactNodeDto> nodes,
     List<ArtifactEdgeDto> edges,
     /**
-     * P0-4: Stable snapshot reference identifying the source repository commit
+     * Stable snapshot reference identifying the source repository commit.
      */
     String snapshotRef,
     /**
-     * P0-4: Unique snapshot identifier (e.g., commit SHA or archive checksum)
+     * Unique snapshot identifier (e.g., commit SHA or archive checksum).
      */
     String snapshotId,
     /**
-     * P0-4: Version identifier for this graph snapshot
+     * Version identifier for this graph snapshot.
      */
     String versionId,
     /**
-     * P0-4: Content checksum for change detection and deduplication
+     * Content checksum for change detection and deduplication.
      */
     String contentChecksum,
     /**
-     * P0-4: Unresolved edges that could not be resolved during extraction
+     * Unresolved edges that could not be resolved during extraction.
      */
     List<Map<String, Object>> unresolvedEdges,
     /**
-     * P0-4: Records of edge resolution attempts and outcomes
+     * Records of edge resolution attempts and outcomes.
      */
     List<Map<String, Object>> edgeResolutionRecords,
     /**
-     * P0-4: IDs of residual islands that could not be modeled
+     * Full residual island payloads from the TS extractor worker.
+     * Each entry carries sourceSpan, checksum, rawFragmentRef, riskScore, and reviewRequired.
+     * Never null — use an empty list when no residuals are present.
      */
-    List<String> residualIslandIds
+    List<ResidualIslandDto> residualIslands
 ) {
 }

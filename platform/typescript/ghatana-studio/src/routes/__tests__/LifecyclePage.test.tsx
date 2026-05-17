@@ -70,6 +70,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),
@@ -337,5 +338,34 @@ describe('LifecyclePage approval queue', () => {
 
     expect(screen.getAllByLabelText('manifest-status-reason').length).toBeGreaterThan(0);
     expect(screen.getAllByText('studio.route.lifecycle.manifest.remediation.missing').length).toBeGreaterThan(0);
+  });
+
+  it('surfaces execute-phase errors and skips refresh when execution fails', async () => {
+    const executePhase = vi.fn().mockRejectedValue(new Error('kernel execution failed'));
+    const refresh = vi.fn().mockResolvedValue(undefined);
+
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        executePhase,
+        refresh,
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'studio.route.lifecycle.executePhaseButton' }));
+
+    await waitFor(() => {
+      expect(executePhase).toHaveBeenCalledWith('build', {
+        dryRun: false,
+        environment: 'local',
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('kernel execution failed');
+    });
+
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

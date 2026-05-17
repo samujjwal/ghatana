@@ -28,7 +28,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
         services: { api: {}, web: {} },
         verifierResult: { valid: false },
         rollbackPlan: { steps: ['stop web', 'stop api'] },
-      } as StudioLifecycleDataContextValue['snapshot']['deploymentManifest'],
+      } as unknown as StudioLifecycleDataContextValue['snapshot']['deploymentManifest'],
       manifestLoadState: {
         gateResultManifest: { status: 'missing' },
         artifactManifest: { status: 'missing' },
@@ -40,6 +40,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),

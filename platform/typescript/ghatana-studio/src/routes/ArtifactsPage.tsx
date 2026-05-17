@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
   describeLifecycleDataStatus,
@@ -8,7 +9,9 @@ import {
   lifecycleDataBadgeTone,
 } from './studioLifecycleRouteSupport';
 
-function artifactStatusLabel(found: boolean, t: (key: string) => string): string {
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function artifactStatusLabel(found: boolean, t: TranslateFn): string {
   return found ? t('studio.route.artifacts.status.found') : t('studio.route.artifacts.status.missing');
 }
 

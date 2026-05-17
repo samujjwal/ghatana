@@ -38,18 +38,13 @@ export interface PatchCoordinatorLogger {
 }
 
 /**
- * P0-10: Default structured logger implementation using stderr.
- * In production, inject a proper observability logger (e.g., Winston, Pino).
+ * P1: No-op logger implementation for zero-diff mode.
+ * Used when zeroDiff mode is enabled to suppress all logging.
  */
-const defaultLogger: PatchCoordinatorLogger = {
-  error(message: string, meta?: Record<string, unknown>): void {
-    const payload = meta ? `${message} ${JSON.stringify(meta)}` : message;
-    process.stderr.write(`[PatchCoordinator:error] ${payload}\n`);
-  },
-  warn(message: string, meta?: Record<string, unknown>): void {
-    const payload = meta ? `${message} ${JSON.stringify(meta)}` : message;
-    process.stderr.write(`[PatchCoordinator:warn] ${payload}\n`);
-  },
+const noopLogger: PatchCoordinatorLogger = {
+  error(): void {},
+  warn(): void {},
+  info(): void {},
 };
 
 export interface PatchCoordinatorOptions {
@@ -60,10 +55,15 @@ export interface PatchCoordinatorOptions {
    * rather than auto-application. Defaults to 0.8.
    */
   readonly autoApplyThreshold?: number;
-  /** Optional logger for emitter and validation diagnostics. */
-  readonly logger?: PatchCoordinatorLogger;
+  /** Required logger for emitter and validation diagnostics. */
+  readonly logger: PatchCoordinatorLogger;
   /** Optional extra validators for patch plans and review bundles. */
   readonly validators?: readonly PatchCoordinatorValidator[];
+  /**
+   * P1: Zero-diff mode - when enabled, returns empty patches without applying changes.
+   * Useful for dry-run scenarios or testing without side effects.
+   */
+  readonly zeroDiff?: boolean;
 }
 
 export class PatchCoordinator {
@@ -71,12 +71,14 @@ export class PatchCoordinator {
   private readonly autoApplyThreshold: number;
   private readonly logger: PatchCoordinatorLogger;
   private readonly validators: readonly PatchCoordinatorValidator[];
+  private readonly zeroDiff: boolean;
 
-  constructor(options: PatchCoordinatorOptions = {}) {
+  constructor(options: PatchCoordinatorOptions) {
     this.emitters = options.emitters ?? [new ReactPatchEmitter()];
     this.autoApplyThreshold = options.autoApplyThreshold ?? 0.8;
-    this.logger = options.logger ?? defaultLogger;
+    this.logger = options.logger; // P1: Required - no default
     this.validators = options.validators ?? [];
+    this.zeroDiff = options.zeroDiff ?? false; // P1: Zero-diff mode
   }
 
   /**
@@ -177,6 +179,8 @@ export class PatchCoordinator {
   /**
    * Compile ChangeOps into a PatchSet with validation.
    * Residual islands are preserved and not patched.
+   * 
+   * P1: In zero-diff mode, returns empty patches without applying changes.
    */
   async buildPatchSet(
     changeOps: readonly ChangeOp[],
@@ -184,6 +188,26 @@ export class PatchCoordinator {
     residuals: ReadonlyMap<string, ResidualIsland>,
     context: PatchContext,
   ): Promise<PatchSet> {
+    // P1: Zero-diff mode - return empty patch set
+    if (this.zeroDiff) {
+      this.logger.info?.('[PatchCoordinator] Zero-diff mode enabled, returning empty patches');
+      return {
+        id: randomUUID(),
+        createdAt: new Date().toISOString(),
+        changeOps: [...changeOps],
+        patches: [],
+        preservedResiduals: [],
+        reviewRequiredPatches: [],
+        stats: {
+          totalChangeOps: changeOps.length,
+          totalPatches: 0,
+          autoApplicable: 0,
+          requiresReview: 0,
+          preservedResiduals: 0,
+        },
+      };
+    }
+
     const allPatches: TextPatch[] = [];
     const preservedResidualIds: string[] = [];
     const reviewRequiredPatchIds: string[] = [];

@@ -4,6 +4,8 @@ import type { ProductUnitIntent } from '@ghatana/kernel-product-contracts';
 import {
   createKernelLifecycleClient,
   mapKernelLifecycleClientError,
+  KernelLifecycleAuthError,
+  KernelLifecycleScopeError,
   KernelLifecycleProviderModeError,
   type LifecyclePlan,
   type LifecycleRun,
@@ -580,6 +582,107 @@ describe('kernelLifecycleClient', () => {
       statusCode: 503,
       correlationId: 'corr-503',
       details: { providerId: 'platform-mode' },
+    });
+  });
+
+  it('maps authentication and scope failures to typed client errors', () => {
+    const authError = mapKernelLifecycleClientError({
+      name: 'Error',
+      message: 'Unauthenticated',
+      request: { url: '/api/kernel/product-units', method: 'GET' },
+      response: {
+        data: {
+          reasonCode: 'authentication-required',
+          message: 'Unauthenticated',
+          correlationId: 'corr-auth',
+          statusCode: 401,
+          safeDetails: { tenantId: 'tenant-1' },
+        },
+      },
+      isRetryable: false,
+    });
+
+    const scopeError = mapKernelLifecycleClientError({
+      name: 'Error',
+      message: 'Forbidden',
+      request: { url: '/api/kernel/product-units', method: 'GET' },
+      response: {
+        data: {
+          reasonCode: 'scope-mismatch',
+          message: 'Forbidden',
+          correlationId: 'corr-scope',
+          statusCode: 403,
+          safeDetails: { projectId: 'project-2' },
+        },
+      },
+      isRetryable: false,
+    });
+
+    expect(authError).toBeInstanceOf(KernelLifecycleAuthError);
+    expect(authError).toMatchObject({
+      code: 'AUTHENTICATION_REQUIRED',
+      statusCode: 401,
+      correlationId: 'corr-auth',
+      details: { tenantId: 'tenant-1' },
+    });
+
+    expect(scopeError).toBeInstanceOf(KernelLifecycleScopeError);
+    expect(scopeError).toMatchObject({
+      code: 'SCOPE_MISMATCH',
+      statusCode: 403,
+      correlationId: 'corr-scope',
+      details: { projectId: 'project-2' },
+    });
+  });
+
+  it('maps known payloads without statusCode using reasonCode fallback', () => {
+    const mappedError = mapKernelLifecycleClientError({
+      name: 'Error',
+      message: 'Provider unavailable',
+      request: { url: '/api/kernel/product-units', method: 'GET' },
+      response: {
+        data: {
+          reasonCode: 'provider-unavailable',
+          message: 'Provider unavailable',
+          correlationId: 'corr-provider-fallback',
+          safeDetails: { providerMode: 'platform' },
+        },
+      },
+      isRetryable: true,
+    });
+
+    expect(mappedError).toBeInstanceOf(KernelLifecycleProviderModeError);
+    expect(mappedError).toMatchObject({
+      code: 'PROVIDER_MODE_UNAVAILABLE',
+      statusCode: 503,
+      correlationId: 'corr-provider-fallback',
+      details: { providerMode: 'platform' },
+    });
+  });
+
+  it('preserves normalized reasonCode and payload message for non-specialized mapped API errors', () => {
+    const mappedError = mapKernelLifecycleClientError({
+      name: 'Error',
+      message: 'Conflict detected',
+      request: { url: '/api/kernel/product-units', method: 'GET' },
+      response: {
+        data: {
+          reasonCode: 'conflict-detected',
+          message: 'Conflict detected',
+          correlationId: 'corr-conflict',
+          statusCode: 409,
+          safeDetails: { conflictingRunId: 'run-2' },
+        },
+      },
+      isRetryable: false,
+    });
+
+    expect(mappedError).toMatchObject({
+      code: 'CONFLICT_DETECTED',
+      statusCode: 409,
+      correlationId: 'corr-conflict',
+      message: 'Conflict detected',
+      details: { conflictingRunId: 'run-2' },
     });
   });
 });

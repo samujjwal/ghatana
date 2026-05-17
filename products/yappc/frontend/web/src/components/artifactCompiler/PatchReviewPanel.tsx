@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react';
-import { X, Check, X as XIcon, AlertTriangle, Layers, FileDiff, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Check, X as XIcon, AlertTriangle, Layers, FileDiff, ChevronDown, ChevronUp, Play } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
@@ -69,6 +69,7 @@ export function PatchReviewPanel({
   onClose,
   onApprove,
   onReject,
+  onApply,
 }: PatchReviewPanelProps) {
   const [expandedPatchId, setExpandedPatchId] = useState<string | null>(null);
 
@@ -200,6 +201,16 @@ export function PatchReviewPanel({
           >
             <XIcon className="mr-2 h-4 w-4" />
             Reject
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onApply}
+            disabled={hasErrors || !onApply}
+            className="flex-1"
+          >
+            <Play className="mr-2 h-4 w-4" />
+            Apply
           </Button>
           <Button
             type="button"

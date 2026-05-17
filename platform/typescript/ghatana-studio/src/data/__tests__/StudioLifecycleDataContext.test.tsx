@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import type { KernelLifecycleClient, LifecycleRun } from '../../api/kernelLifecycleClient';
+import { yappcProductUnitIntentCandidate } from '../../routes/yappcWorkflowData';
 import {
   StudioLifecycleDataProvider,
   useStudioLifecycleData,
@@ -81,6 +82,39 @@ function ActionProbe(): ReactElement {
         }}
       >
         run-create-plan
+      </button>
+    </div>
+  );
+}
+
+function IntentOperationProbe(): ReactElement {
+  const lifecycle = useStudioLifecycleData();
+
+  return (
+    <div>
+      <p data-testid="intent-status">{lifecycle.intentOperation.status}</p>
+      <p data-testid="intent-mode">{lifecycle.intentOperation.mode ?? 'none'}</p>
+      <p data-testid="intent-correlation">{lifecycle.intentOperation.correlationId ?? 'none'}</p>
+      <p data-testid="intent-error">{lifecycle.intentOperation.errorMessage ?? 'none'}</p>
+      <button
+        type="button"
+        onClick={() => {
+          void lifecycle.previewProductUnitIntent?.(yappcProductUnitIntentCandidate, {
+            providerMode: 'bootstrap',
+          }).catch(() => undefined);
+        }}
+      >
+        preview-intent
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void lifecycle.applyProductUnitIntent?.(yappcProductUnitIntentCandidate, {
+            providerMode: 'platform',
+          }).catch(() => undefined);
+        }}
+      >
+        apply-intent
       </button>
     </div>
   );
@@ -415,5 +449,92 @@ describe('StudioLifecycleDataProvider', () => {
 
     await waitFor(() => expect(screen.getByText('degraded')).toBeInTheDocument());
     expect(screen.getByText('Kernel lifecycle data failed to load.')).toBeInTheDocument();
+  });
+
+  it('tracks preview intent operation state from loading to success', async () => {
+    const previewDeferred = createDeferred<{
+      readonly schemaVersion: '1.0.0';
+      readonly intentId: string;
+      readonly status: 'previewed';
+      readonly productUnitId: string;
+      readonly correlationId: string;
+      readonly providerMode: 'bootstrap';
+      readonly registryProviderId: string;
+      readonly sourceProviderId: string;
+      readonly lifecycleEventRefs: readonly string[];
+      readonly provenanceRefs: readonly string[];
+      readonly runtimeTruthRefs: readonly string[];
+      readonly blockedReasons: readonly string[];
+      readonly errors: readonly string[];
+    }>();
+
+    render(
+      <StudioLifecycleDataProvider
+        client={createClient({
+          previewProductUnitIntent: vi.fn().mockReturnValue(previewDeferred.promise),
+        })}
+      >
+        <IntentOperationProbe />
+      </StudioLifecycleDataProvider>,
+    );
+
+    fireEvent.click(screen.getByText('preview-intent'));
+
+    await waitFor(() => expect(screen.getByTestId('intent-status').textContent).toBe('loading'));
+    expect(screen.getByTestId('intent-mode').textContent).toBe('preview');
+
+    previewDeferred.resolve({
+      schemaVersion: '1.0.0',
+      intentId: yappcProductUnitIntentCandidate.intentId,
+      status: 'previewed',
+      productUnitId: yappcProductUnitIntentCandidate.productUnit.id,
+      correlationId: 'corr-preview-1',
+      providerMode: 'bootstrap',
+      registryProviderId: 'kernel-product-registry',
+      sourceProviderId: 'yappc-creator',
+      lifecycleEventRefs: [],
+      provenanceRefs: [],
+      runtimeTruthRefs: [],
+      blockedReasons: [],
+      errors: [],
+    });
+
+    await waitFor(() => expect(screen.getByTestId('intent-status').textContent).toBe('success'));
+    expect(screen.getByTestId('intent-mode').textContent).toBe('preview');
+    expect(screen.getByTestId('intent-correlation').textContent).toBe('corr-preview-1');
+  });
+
+  it('captures explicit error state when preview ProductUnitIntent is unsupported', async () => {
+    render(
+      <StudioLifecycleDataProvider client={createClient()}>
+        <IntentOperationProbe />
+      </StudioLifecycleDataProvider>,
+    );
+
+    fireEvent.click(screen.getByText('preview-intent'));
+
+    await waitFor(() => expect(screen.getByTestId('intent-status').textContent).toBe('error'));
+    expect(screen.getByTestId('intent-mode').textContent).toBe('preview');
+    expect(screen.getByTestId('intent-error').textContent).toBe(
+      'Kernel lifecycle client does not support ProductUnitIntent preview',
+    );
+  });
+
+  it('captures apply ProductUnitIntent failures with surfaced error messages', async () => {
+    render(
+      <StudioLifecycleDataProvider
+        client={createClient({
+          applyProductUnitIntent: vi.fn().mockRejectedValue(new Error('apply denied by policy')),
+        })}
+      >
+        <IntentOperationProbe />
+      </StudioLifecycleDataProvider>,
+    );
+
+    fireEvent.click(screen.getByText('apply-intent'));
+
+    await waitFor(() => expect(screen.getByTestId('intent-status').textContent).toBe('error'));
+    expect(screen.getByTestId('intent-mode').textContent).toBe('apply');
+    expect(screen.getByTestId('intent-error').textContent).toBe('apply denied by policy');
   });
 });

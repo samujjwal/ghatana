@@ -97,6 +97,7 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.develop.lifecycleStatus.unknown': 'Unknown',
   'studio.route.develop.runningActionLabel': 'Running...',
   'studio.route.develop.actionErrorFallback': 'Failed to run lifecycle action.',
+  'studio.route.lifecycle.actionErrorFallback': 'Failed to run lifecycle action.',
   'studio.route.develop.action.create-plan': 'create plan',
   'studio.route.develop.action.validate': 'validate',
   'studio.route.develop.action.test': 'test',
@@ -295,6 +296,7 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.ideas.handoffFailed': 'Kernel intent handoff failed.',
   'studio.route.ideas.handoffResultTitle': 'Kernel handoff result',
   'studio.route.ideas.handoffStatusLabel': 'Status:',
+  'studio.route.ideas.handoffCorrelationIdLabel': 'Correlation ID:',
   'studio.route.ideas.blockedReasonsLabel': 'Blocked reasons:',
   'studio.route.blueprints.title': 'Blueprints',
   'studio.route.blueprints.description':
@@ -302,6 +304,7 @@ export const STUDIO_TRANSLATIONS = {
   'studio.route.blueprints.productShapeTitle': 'Product shape',
   'studio.route.blueprints.readinessPrefix': 'Readiness:',
   'studio.route.blueprints.dependenciesTitle': 'Dependencies',
+  'studio.route.blueprints.handoffCorrelationIdLabel': 'Correlation ID:',
   'studio.route.blueprints.dependenciesSuffix': 'dependencies',
   'studio.route.blueprints.cyclesSuffix': 'cycles',
   'studio.route.blueprints.generatedChangesTitle': 'Generated changes',

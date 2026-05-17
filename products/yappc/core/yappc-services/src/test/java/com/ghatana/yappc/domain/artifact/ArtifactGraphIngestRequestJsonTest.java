@@ -71,11 +71,24 @@ class ArtifactGraphIngestRequestJsonTest {
             "reviewRequired", false
         );
 
-        Map<String, Object> residualIsland = Map.of(
-            "id", "residual-1",
-            "type", "unsupported_language",
-            "filePath", "src/test.unknown",
-            "confidence", 0.0
+        ResidualIslandDto residualIsland = new ResidualIslandDto(
+            "residual-1",
+            "unsupported_language",
+            "Unknown artifact type",
+            "raw source",
+            "src/test.unknown:1:0-1:10",
+            null,
+            null,
+            "unsupported",
+            0.0,
+            true,
+            0.0,
+            Map.of(),
+            1,
+            "tenant-123",
+            "product-456",
+            "workspace-1",
+            "commit-abc123"
         );
 
         ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
@@ -89,7 +102,7 @@ class ArtifactGraphIngestRequestJsonTest {
             "sha256:abc123", // contentChecksum
             List.of(unresolvedEdge),
             List.of(resolutionRecord),
-            List.of("residual-1")
+            List.of(residualIsland)
         );
 
         // Serialize
@@ -107,6 +120,6 @@ class ArtifactGraphIngestRequestJsonTest {
         assertEquals(request.contentChecksum(), deserialized.contentChecksum());
         assertEquals(request.unresolvedEdges(), deserialized.unresolvedEdges());
         assertEquals(request.edgeResolutionRecords(), deserialized.edgeResolutionRecords());
-        assertEquals(request.residualIslandIds(), deserialized.residualIslandIds());
+        assertEquals(request.residualIslands(), deserialized.residualIslands());
     }
 }

@@ -1,6 +1,5 @@
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
-import type { ProductUnitIntentApplicationResult } from '@ghatana/kernel-product-contracts';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import { dependencyGraphEvidence, generatedChangeSetSummary, productShapeEvidence, yappcProductUnitIntentCandidate } from './yappcWorkflowData';
@@ -10,45 +9,33 @@ export default function BlueprintsPage(): ReactElement {
   const lifecycleData = useStudioLifecycleData();
   const requestedLifecycle = yappcProductUnitIntentCandidate.requestedLifecycle;
   const provenance = yappcProductUnitIntentCandidate.provenance;
-  const [handoffResult, setHandoffResult] = useState<ProductUnitIntentApplicationResult | null>(null);
-  const [handoffError, setHandoffError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handoffResult = lifecycleData.intentOperation.status === 'success' ? lifecycleData.intentOperation.result : undefined;
+  const handoffError = lifecycleData.intentOperation.status === 'error' ? lifecycleData.intentOperation.errorMessage : undefined;
+  const isSubmitting = lifecycleData.intentOperation.status === 'loading';
 
   async function previewIntent(): Promise<void> {
     if (lifecycleData.previewProductUnitIntent === undefined) {
-      setHandoffError(t('studio.route.blueprints.handoffUnavailable'));
       return;
     }
-    setHandoffError(null);
-    setIsSubmitting(true);
     try {
-      const result = await lifecycleData.previewProductUnitIntent(yappcProductUnitIntentCandidate, {
+      await lifecycleData.previewProductUnitIntent(yappcProductUnitIntentCandidate, {
         providerMode: lifecycleData.selectedProviderMode,
       });
-      setHandoffResult(result);
-    } catch (error: unknown) {
-      setHandoffError(error instanceof Error ? error.message : t('studio.route.blueprints.handoffFailed'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error state is captured in the lifecycle context.
     }
   }
 
   async function applyIntent(): Promise<void> {
     if (lifecycleData.applyProductUnitIntent === undefined) {
-      setHandoffError(t('studio.route.blueprints.handoffUnavailable'));
       return;
     }
-    setHandoffError(null);
-    setIsSubmitting(true);
     try {
-      const result = await lifecycleData.applyProductUnitIntent(yappcProductUnitIntentCandidate, {
+      await lifecycleData.applyProductUnitIntent(yappcProductUnitIntentCandidate, {
         providerMode: lifecycleData.selectedProviderMode,
       });
-      setHandoffResult(result);
-    } catch (error: unknown) {
-      setHandoffError(error instanceof Error ? error.message : t('studio.route.blueprints.handoffFailed'));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error state is captured in the lifecycle context.
     }
   }
 
@@ -154,12 +141,16 @@ export default function BlueprintsPage(): ReactElement {
             {t('studio.route.blueprints.exportApply')}
           </button>
         </div>
-        {handoffError !== null ? (
+        {lifecycleData.previewProductUnitIntent === undefined || lifecycleData.applyProductUnitIntent === undefined ? (
+          <p className="text-xs text-red-700">{t('studio.route.blueprints.handoffUnavailable')}</p>
+        ) : null}
+        {handoffError !== undefined ? (
           <p className="text-xs text-red-700">{handoffError}</p>
         ) : null}
-        {handoffResult !== null ? (
+        {handoffResult !== undefined ? (
           <div className="rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-700">
             <p>{t('studio.route.blueprints.handoffResultLabel')} {handoffResult.status}</p>
+            <p>{t('studio.route.blueprints.handoffCorrelationIdLabel')} {handoffResult.correlationId}</p>
             {handoffResult.blockedReasons.length > 0 ? (
               <p>{t('studio.route.blueprints.blockedReasonsLabel')} {handoffResult.blockedReasons.join(', ')}</p>
             ) : null}

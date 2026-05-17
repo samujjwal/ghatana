@@ -12,7 +12,9 @@ import com.ghatana.yappc.ai.service.YAPPCAIService;
 import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -21,9 +23,18 @@ import org.mockito.MockitoAnnotations;
 class MergeSuggestionServiceTest extends EventloopTestBase {
 
   @Mock private YAPPCAIInterface aiService;
+  private AutoCloseable mocks;
 
-  MergeSuggestionServiceTest() { 
-    MockitoAnnotations.openMocks(this); 
+  @BeforeEach
+  void setUp() {
+    mocks = MockitoAnnotations.openMocks(this);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test

@@ -40,6 +40,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),

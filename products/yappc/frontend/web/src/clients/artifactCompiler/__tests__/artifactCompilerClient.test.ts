@@ -105,7 +105,7 @@ describe('P2-1: ArtifactCompilerClient Typed Client', () => {
       totalEstimate: 10,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,

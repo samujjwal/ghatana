@@ -7,8 +7,10 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphAnalysisRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryRequest;
+import com.ghatana.yappc.domain.artifact.ResidualAnalysisRequest;
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
+import com.ghatana.yappc.services.artifact.ArtifactGraphValidator;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpHeaders;
@@ -118,36 +120,41 @@ public class ArtifactGraphController {
                             ingestRequest.contentChecksum(),
                             ingestRequest.unresolvedEdges(),
                             ingestRequest.edgeResolutionRecords(),
-                            ingestRequest.residualIslandIds()
+                            ingestRequest.residualIslands()
                         );
                         ArtifactRequestScope scope = new ArtifactRequestScope(projectId, tenantId, scopedWorkspaceId);
 
-                        // P0-7: Validate graph structure before service call
-                        // Basic validation: ensure node IDs are unique and edge targets exist
-                        java.util.Set<String> nodeIds = new java.util.HashSet<>();
-                        for (com.ghatana.yappc.domain.artifact.ArtifactNodeDto node : ingestRequest.nodes()) {
-                            if (nodeIds.contains(node.id())) {
-                                log.warn("Duplicate node ID in ingest request: {}", node.id());
-                                return Promise.of(HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"Bad Request: duplicate node ID " + node.id() + "\"}")
-                                    .build());
+                        // P0: Use centralized ArtifactGraphValidator for comprehensive validation
+                        ArtifactGraphValidator.ValidationResult validationResult =
+                            ArtifactGraphValidator.validateIngestRequest(scopedRequest, scope);
+
+                        if (!validationResult.valid()) {
+                            log.warn("Graph validation failed with {} errors", validationResult.errors().size());
+                            StringBuilder errorMsg = new StringBuilder("Validation failed:");
+                            for (ArtifactGraphValidator.ValidationError error : validationResult.errors()) {
+                                errorMsg.append(" ").append(error.code()).append("-").append(error.message()).append(";");
                             }
-                            nodeIds.add(node.id());
+                            return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"" + errorMsg.toString().replace("\"", "'") + "\"}")
+                                .build());
                         }
 
-                        for (com.ghatana.yappc.domain.artifact.ArtifactEdgeDto edge : ingestRequest.edges()) {
-                            if (edge.sourceNodeId() != null && !nodeIds.contains(edge.sourceNodeId())) {
-                                log.warn("Edge source node not found in ingest request: {}", edge.sourceNodeId());
-                                return Promise.of(HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"Bad Request: edge source node not found " + edge.sourceNodeId() + "\"}")
-                                    .build());
+                        // P0: Validate residual references have full residual records
+                        ArtifactGraphValidator.ValidationResult residualValidation =
+                            ArtifactGraphValidator.validateResidualReferences(
+                                scopedRequest.nodes(),
+                                scopedRequest.residualIslands()
+                            );
+
+                        if (!residualValidation.valid()) {
+                            log.warn("Residual reference validation failed with {} errors", residualValidation.errors().size());
+                            StringBuilder errorMsg = new StringBuilder("Residual validation failed:");
+                            for (ArtifactGraphValidator.ValidationError error : residualValidation.errors()) {
+                                errorMsg.append(" ").append(error.code()).append("-").append(error.message()).append(";");
                             }
-                            if (edge.targetNodeId() != null && !nodeIds.contains(edge.targetNodeId())) {
-                                log.warn("Edge target node not found in ingest request: {}", edge.targetNodeId());
-                                return Promise.of(HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"Bad Request: edge target node not found " + edge.targetNodeId() + "\"}")
-                                    .build());
-                            }
+                            return Promise.of(HttpResponse.ofCode(400)
+                                .withJson("{\"error\":\"" + errorMsg.toString().replace("\"", "'") + "\"}")
+                                .build());
                         }
 
                         return artifactGraphService.ingestGraph(scope, scopedRequest)
@@ -382,6 +389,7 @@ public class ArtifactGraphController {
      *
      * <p>P1-8: Resolves tenant from authenticated principal, not request body.
      * This prevents cross-tenant access through payload manipulation.
+     * P0: Uses typed ResidualAnalysisRequest instead of raw map parsing.
      */
     public Promise<HttpResponse> analyzeResidual(HttpRequest request) {
         log.info("Artifact residual analyze request");
@@ -402,11 +410,8 @@ public class ArtifactGraphController {
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> payload = JsonMapper.fromJson(json, Map.class);
-                        String projectId = (String) payload.get("projectId");
-                        @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> islands = (List<Map<String, Object>>) payload.getOrDefault("residualIslands", List.of());
+                        // P0: Use typed request DTO instead of raw map parsing
+                        ResidualAnalysisRequest analysisRequest = JsonMapper.fromJson(json, ResidualAnalysisRequest.class);
 
                         String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
                         String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
@@ -415,23 +420,32 @@ public class ArtifactGraphController {
                             .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
                                 .build());
                         }
-                        if (projectId != null && !projectId.isBlank() && !scopedProjectId.equals(projectId)) {
+                        if (analysisRequest.projectId() != null && !analysisRequest.projectId().isBlank()
+                                && !scopedProjectId.equals(analysisRequest.projectId())) {
                             return Promise.of(HttpResponse.ofCode(403)
                                 .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
                                 .build());
                         }
 
                         // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
-                        String requestTenantId = (String) payload.get("tenantId");
-                        if (requestTenantId != null && !requestTenantId.equals(tenantId)) {
+                        if (analysisRequest.tenantId() != null && !analysisRequest.tenantId().equals(tenantId)) {
                             log.warn("Tenant scope mismatch in analyzeResidual: principalTenant={}, requestTenant={}",
-                                tenantId, requestTenantId);
+                                tenantId, analysisRequest.tenantId());
                             return Promise.of(HttpResponse.ofCode(403)
                                 .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
                                 .build());
                         }
 
-                        return artifactGraphService.analyzeResidual(scopedProjectId, tenantId, islands)
+                        // Create scoped request
+                        ResidualAnalysisRequest scopedRequest = new ResidualAnalysisRequest(
+                            scopedProjectId,
+                            tenantId,
+                            scopedWorkspaceId,
+                            analysisRequest.residualIslands()
+                        );
+                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedProjectId, tenantId, scopedWorkspaceId);
+
+                        return artifactGraphService.analyzeResidual(scope, scopedRequest)
                                 .map(result -> {
                                     try {
                                         return ok200Json(JsonMapper.toJson(result));
@@ -448,37 +462,4 @@ public class ArtifactGraphController {
                 .whenException(e -> log.error("Error analyzing residual islands", e));
     }
 
-    // ============================================================================
-    // Helper Methods
-    // ============================================================================
-
-    /**
-     * Parse an integer value from the payload with a default fallback.
-     */
-    private Integer parseInteger(Object value, int defaultValue) {
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number n) {
-            return n.intValue();
-        }
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
-
-    /**
-     * Parse a boolean value from the payload with a default fallback.
-     */
-    private Boolean parseBoolean(Object value, boolean defaultValue) {
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Boolean b) {
-            return b;
-        }
-        return Boolean.parseBoolean(value.toString());
-    }
 }

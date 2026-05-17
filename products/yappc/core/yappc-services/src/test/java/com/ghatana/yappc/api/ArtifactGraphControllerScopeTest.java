@@ -48,11 +48,19 @@ class ArtifactGraphControllerScopeTest {
     private HttpRequest request;
 
     private ArtifactGraphController controller;
+    private AutoCloseable mocks;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         controller = new ArtifactGraphController(artifactGraphService);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() throws Exception {
+        if (mocks != null) {
+            mocks.close();
+        }
     }
 
     @Test

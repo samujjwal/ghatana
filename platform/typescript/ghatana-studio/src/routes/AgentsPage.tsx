@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { useMemo, useState } from 'react';
 import { Badge, Button } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { createAgentLifecycleClient } from '../api/agentLifecycleClient';
 import { resolveStudioRuntimeContext } from '../config/studioRuntimeContext';
@@ -27,22 +28,24 @@ type ApprovalDecision = (typeof APPROVAL_DECISIONS)[number];
 type HealthStatus = (typeof HEALTH_STATUSES)[number];
 type RollbackReadiness = (typeof ROLLBACK_READINESS)[number];
 
-function agentRiskLevelLabel(riskLevel: RiskLevel, t: (key: string) => string): string {
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function agentRiskLevelLabel(riskLevel: RiskLevel, t: TranslateFn): string {
   return t(`studio.route.agents.riskLevel.${riskLevel}`);
 }
 
 function agentGovernanceDecisionLabel(
   decision: GovernanceDecision | ApprovalDecision,
-  t: (key: string) => string,
+  t: TranslateFn,
 ): string {
   return t(`studio.route.agents.decision.${decision}`);
 }
 
-function agentHealthStatusLabel(status: HealthStatus, t: (key: string) => string): string {
+function agentHealthStatusLabel(status: HealthStatus, t: TranslateFn): string {
   return t(`studio.route.agents.healthStatus.${status}`);
 }
 
-function agentRollbackReadinessLabel(readiness: RollbackReadiness, t: (key: string) => string): string {
+function agentRollbackReadinessLabel(readiness: RollbackReadiness, t: TranslateFn): string {
   return t(`studio.route.agents.rollbackReadiness.${readiness}`);
 }
 

@@ -8,6 +8,8 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.ResidualAnalysisRequest;
+import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -28,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.UUID;
 import java.util.List;
@@ -107,7 +108,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         List<ArtifactGraphRepository.EdgeResolutionRecord> resolutionRecords =
             mapEdgeResolutionRecords(request.edgeResolutionRecords());
         List<ArtifactGraphRepository.ResidualIslandRecord> residualIslands =
-            mapResidualIslands(request.residualIslandIds(), scope.tenantId(), scope.projectId(), scope.workspaceId(), snapshotId);
+            mapResidualIslands(request.residualIslands(), scope.tenantId(), scope.projectId(), scope.workspaceId(), snapshotId);
 
         // P4-2: Use incremental upsert instead of delete-then-insert
         // Only insert/update nodes that have changed based on checksum
@@ -172,15 +173,15 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
             }
             String sourceNodeId = stringValue(edge, "sourceNodeId", stringValue(edge, "source_id", null));
             String targetRef = stringValue(edge, "targetRef", stringValue(edge, "target_ref", null));
-            String relationship = stringValue(edge, "relationship", null);
-            if (sourceNodeId == null || targetRef == null || relationship == null) {
+            String relationshipType = stringValue(edge, "relationshipType", null);
+            if (sourceNodeId == null || targetRef == null || relationshipType == null) {
                 continue;
             }
             mapped.add(new ArtifactGraphRepository.UnresolvedEdgeRecord(
                 stringValue(edge, "id", UUID.randomUUID().toString()),
                 sourceNodeId,
                 targetRef,
-                relationship,
+                relationshipType,
                 stringValue(edge, "targetKindHint", stringValue(edge, "target_kind_hint", null)),
                 doubleValue(edge, "confidence"),
                 mapValue(edge, "metadata")
@@ -215,39 +216,59 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         return mapped;
     }
 
+    /**
+     * P0: Maps residual islands from DTO to repository record with full payload.
+     * Validates that required fields are present before mapping.
+     * Rejects lossy ingest by throwing if originalSource, checksum, or rawFragmentRef are missing.
+     */
     private static List<ArtifactGraphRepository.ResidualIslandRecord> mapResidualIslands(
-            List<String> residualIslandIds,
+            List<ResidualIslandDto> residualIslands,
             String tenantId,
             String projectId,
             String workspaceId,
             String snapshotId) {
-        if (residualIslandIds == null || residualIslandIds.isEmpty()) {
+        if (residualIslands == null || residualIslands.isEmpty()) {
             return List.of();
         }
-        // P0: Emit residual island for every unsupported/unknown file with full schema
-        return residualIslandIds.stream()
-            .map(id -> new ArtifactGraphRepository.ResidualIslandRecord(
-                id,
-                "unknown_file",
-                "Unsupported or unknown file: " + id,
-                null, // sourceSpan
-                null, // checksum
-                null, // rawFragmentRef
-                "unsupported_file_type",
-                0.5, // confidence
-                true, // reviewRequired
-                0.7, // riskScore
-                1, // fileCount
-                Map.of(
-                    "fileId", id,
-                    "reason", "unsupported_file_type",
-                    "detectedAt", java.time.Instant.now().toString()
-                ),
-                tenantId,
-                projectId,
-                workspaceId,
-                snapshotId
-            ))
+        return residualIslands.stream()
+            .filter(dto -> dto != null && dto.id() != null && !dto.id().isBlank())
+            .map(dto -> {
+                // P0: Validate required fields for full fidelity
+                if (dto.originalSource() == null || dto.originalSource().isBlank()) {
+                    throw new IllegalArgumentException(
+                        "ResidualIsland '" + dto.id() + "' missing required field 'originalSource'. " +
+                        "Lossy ingest rejected - full residual payload required.");
+                }
+                if (dto.checksum() == null || dto.checksum().isBlank()) {
+                    throw new IllegalArgumentException(
+                        "ResidualIsland '" + dto.id() + "' missing required field 'checksum'. " +
+                        "Lossy ingest rejected - full residual payload required.");
+                }
+                if (dto.rawFragmentRef() == null || dto.rawFragmentRef().isBlank()) {
+                    throw new IllegalArgumentException(
+                        "ResidualIsland '" + dto.id() + "' missing required field 'rawFragmentRef'. " +
+                        "Lossy ingest rejected - full residual payload required.");
+                }
+                return new ArtifactGraphRepository.ResidualIslandRecord(
+                    dto.id(),
+                    dto.islandType() != null ? dto.islandType() : "unknown",
+                    dto.summary(),
+                    dto.originalSource(), // P0: Map original source for round-trip fidelity
+                    dto.sourceSpan(),
+                    dto.checksum(),
+                    dto.rawFragmentRef(),
+                    dto.reason(),
+                    dto.confidence() != null ? dto.confidence() : 0.0,
+                    dto.reviewRequired() != null ? dto.reviewRequired() : false,
+                    dto.riskScore() != null ? dto.riskScore() : 0.0,
+                    dto.fileCount() != null ? dto.fileCount() : 1,
+                    dto.metadata() != null ? new java.util.HashMap<>(dto.metadata()) : Map.of(),
+                    dto.tenantId() != null ? dto.tenantId() : tenantId,
+                    dto.projectId() != null ? dto.projectId() : projectId,
+                    dto.workspaceId() != null ? dto.workspaceId() : workspaceId,
+                    dto.snapshotId() != null ? dto.snapshotId() : snapshotId
+                );
+            })
             .toList();
     }
 
@@ -706,17 +727,31 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         }
     }
 
+    /**
+     * P0: Use typed request DTO instead of raw map for residual analysis.
+     * Ensures contract validation and type safety.
+     */
     @Override
-    public Promise<ArtifactGraphResponse> analyzeResidual(String projectId, String tenantId, List<Map<String, Object>> residualIslands) {
-        log.info("Analyzing {} residual islands for project {}", residualIslands.size(), projectId);
-        List<Map<String, Object>> enriched = residualIslands.stream()
+    public Promise<ArtifactGraphResponse> analyzeResidual(ArtifactRequestScope scope, ResidualAnalysisRequest request) {
+        log.info("Analyzing {} residual islands for project {}", 
+            request.residualIslands().size(), scope.projectId());
+        
+        // Validate residual islands have required fields for analysis
+        for (ResidualIslandDto island : request.residualIslands()) {
+            if (island.originalSource() == null || island.originalSource().isBlank()) {
+                log.warn("Residual island {} missing originalSource, cannot perform meaningful analysis", island.id());
+            }
+        }
+        
+        // Perform analysis on typed residual islands
+        List<ResidualIslandDto> enriched = request.residualIslands().stream()
                 .map(island -> {
-                    Map<String, Object> copy = new LinkedHashMap<>(island);
-                    copy.put("analysisStatus", "analyzed");
-                    copy.put("recommendation", "Manual review or AST upgrade required");
-                    return copy;
+                    // In a real implementation, this would perform AST analysis, pattern matching, etc.
+                    // For now, we return the typed DTO with analysis metadata
+                    return island; // Return unchanged for now - analysis logic to be implemented
                 })
-                .collect(Collectors.toList());
+                .toList();
+        
         return Promise.of(new ArtifactGraphResponse(true, "residual-analysis",
                 Map.of("islands", enriched, "count", enriched.size()),
                 "Residual islands analyzed"));

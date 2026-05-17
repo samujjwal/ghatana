@@ -14,9 +14,36 @@ import {
 } from './types';
 import { buildDeterministicNodeId, type SnapshotRef } from '../graph/types';
 
-// ============================================================================
-// Scanner Configuration
-// ============================================================================
+/**
+ * ============================================================================
+ * WORKER-LOCAL REPOSITORY INVENTORY SCANNER
+ * ============================================================================
+ * 
+ * P1: This is a worker-local TypeScript implementation of repository inventory scanning.
+ * It aligns with the Java canonical RepositoryInventoryScanner contract but is intended
+ * for use within TypeScript workers only (e.g., ts-extractor-worker).
+ * 
+ * Alignment with Java RepositoryInventoryScanner:
+ * - Stable sorted walk for deterministic ordering ✓
+ * - .gitignore pattern matching (simplified, same limitations as Java)
+ * - Include/exclude rule support ✓
+ * - Skip reasons: GITIGNORE, BINARY_FILE, VENDOR_DIRECTORY, GENERATED_FILE, FILE_TOO_LARGE, PACKAGE_BOUNDARY ✓
+ * - File type classification: SOURCE, CONFIG, DOCS, TEST, ASSETS, BUILD, UNKNOWN (mapped to ArtifactKind)
+ * - SHA-256 checksum computation ✓
+ * - Package boundary detection ✓
+ * 
+ * Differences from Java canonical scanner:
+ * - Uses TypeScript/Node.js filesystem APIs instead of Java NIO
+ * - Additional framework detection (React, Next.js, etc.) for TS-specific use cases
+ * - Import/export summary extraction (TS-specific, not in Java scanner)
+ * - Extractor eligibility determination (TS-specific, not in Java scanner)
+ * 
+ * Production note: Like the Java scanner, .gitignore matching is simplified.
+ * Full spec compliance would require integrating a library like ignore-git.
+ * 
+ * This scanner should NOT be used as a general-purpose inventory scanner outside of
+ * TypeScript worker contexts. For Java-side inventory, use RepositoryInventoryScanner.
+ */
 
 export interface ScannerConfig {
   readonly rootPath: string;
@@ -90,14 +117,18 @@ const BINARY_EXTENSIONS = new Set([
 ]);
 
 /**
- * Returns true if the file should be treated as binary (not parsed for AST/imports).
+ * P1: Returns true if the file should be treated as binary (not parsed for AST/imports).
+ * 
+ * This aligns with Java RepositoryInventoryScanner's BINARY_EXTENSIONS set.
  */
 function isBinaryFile(filePath: string): boolean {
   return BINARY_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
 
 /**
- * Returns true if the file is auto-generated and should not be reverse-engineered.
+ * P1: Returns true if the file is auto-generated and should not be reverse-engineered.
+ * 
+ * This aligns with Java RepositoryInventoryScanner's GENERATED_FILE skip reason.
  * Heuristics: .d.ts files, generated comment markers, lockfile extensions, build outputs.
  */
 function isGeneratedFile(filePath: string, firstBytes: string): boolean {
@@ -155,8 +186,10 @@ const MANIFEST_SYSTEM_MAP: ReadonlyMap<string, PackageBoundary['system']> = new 
 const WORKSPACE_MANIFESTS = new Set(['pnpm-workspace.yaml', 'nx.json', 'turbo.json', 'lerna.json']);
 
 /**
- * Scans the repository root once to collect all package and workspace boundary manifests.
+ * P1: Scans the repository root once to collect all package and workspace boundary manifests.
  * Returns two lists: package boundaries and workspace boundaries.
+ * 
+ * This aligns with Java RepositoryInventoryScanner's package boundary detection.
  */
 async function detectPackageBoundaries(
   rootPath: string,
@@ -260,8 +293,18 @@ async function detectNpmSystem(dir: string): Promise<PackageBoundary['system']> 
 // ============================================================================
 
 /**
- * Parses a .gitignore file into a list of RegExp matchers.
- * Supports the most common patterns: negation (!), directory anchors, wildcards.
+ * P1: Parses a .gitignore file into a list of RegExp matchers.
+ * 
+ * This is a simplified implementation for P1 completion, matching the limitations
+ * of the Java RepositoryInventoryScanner. Full spec compliance would require
+ * integrating a library like ignore-git.
+ * 
+ * Supports: negation (!), directory anchors, wildcards (*, ?), globstar (**).
+ * 
+ * Current limitations (same as Java scanner):
+ * - Does not handle character classes [abc]
+ * - Does not handle escaped special characters correctly in all cases
+ * - Does not handle trailing-slash-only directory patterns correctly
  */
 function parseGitignorePatterns(content: string, baseRelPath: string): Array<{ pattern: RegExp; negated: boolean }> {
   const results: Array<{ pattern: RegExp; negated: boolean }> = [];
@@ -304,8 +347,10 @@ function parseGitignorePatterns(content: string, baseRelPath: string): Array<{ p
 }
 
 /**
- * Collects all .gitignore files in the repository and returns a combined matcher function.
+ * P1: Collects all .gitignore files in the repository and returns a combined matcher function.
  * The matcher returns true if a relative path should be ignored.
+ * 
+ * This aligns with Java RepositoryInventoryScanner's gitignore matching logic.
  */
 async function buildGitignoreMatcher(
   rootPath: string,
@@ -385,8 +430,20 @@ function resolvePackageBoundary(
 }
 
 // ============================================================================
-// Language Detection
+// Language Detection (Worker-Local Extension)
 // ============================================================================
+/**
+ * P1: Language detection is a worker-local extension for TS-specific use cases.
+ * The Java canonical scanner uses FileType classification instead.
+ * 
+ * Mapping to Java RepositoryInventoryScanner.FileType:
+ * - typescript, javascript, java, python, go, rust → SOURCE
+ * - yaml, json, xml, properties → CONFIG
+ * - markdown, txt, rst → DOCS
+ * - (no direct mapping for test files - uses filename patterns)
+ * - css, scss, less → ASSETS
+ * - (no direct mapping for BUILD - uses filename patterns)
+ */
 
 function detectLanguage(filePath: string): ArtifactLanguage {
   const ext = extname(filePath).toLowerCase();
@@ -438,8 +495,14 @@ function detectLanguage(filePath: string): ArtifactLanguage {
 }
 
 // ============================================================================
-// Framework Detection
+// Framework Detection (Worker-Local Extension)
 // ============================================================================
+/**
+ * P1: Framework detection is a worker-local extension for TS-specific use cases.
+ * The Java canonical scanner does not include framework detection.
+ * 
+ * This is used to determine ArtifactKind more precisely in TS contexts.
+ */
 
 function detectFramework(
   filePath: string,
@@ -504,8 +567,17 @@ function detectFramework(
 }
 
 // ============================================================================
-// Artifact Kind Classification
+// Artifact Kind Classification (Worker-Local Extension)
 // ============================================================================
+/**
+ * P1: ArtifactKind classification is a worker-local extension for TS-specific use cases.
+ * 
+ * This provides more granular classification than Java RepositoryInventoryScanner.FileType.
+ * The Java scanner uses broader categories (SOURCE, CONFIG, DOCS, TEST, ASSETS, BUILD, UNKNOWN).
+ * 
+ * This classification is used by TypeScript extractors to determine which extractor
+ * should process a given artifact.
+ */
 
 function classifyArtifact(
   filePath: string,
@@ -607,8 +679,14 @@ function classifyArtifact(
 }
 
 // ============================================================================
-// Import/Export Summary Extraction
+// Import/Export Summary Extraction (Worker-Local Extension)
 // ============================================================================
+/**
+ * P1: Import/export summary extraction is a worker-local extension for TS-specific use cases.
+ * The Java canonical scanner does not include import/export analysis.
+ * 
+ * This is used by TypeScript extractors to build dependency graphs.
+ */
 
 function extractImportExportSummary(content: string, language: ArtifactLanguage): ImportExportSummary {
   const imports: ImportExportSummary['imports'] = [];
@@ -655,8 +733,14 @@ function extractImportExportSummary(content: string, language: ArtifactLanguage)
 }
 
 // ============================================================================
-// Extractor Eligibility
+// Extractor Eligibility (Worker-Local Extension)
 // ============================================================================
+/**
+ * P1: Extractor eligibility determination is a worker-local extension for TS-specific use cases.
+ * The Java canonical scanner does not include extractor eligibility logic.
+ * 
+ * This is used to determine which TypeScript extractors can process a given artifact.
+ */
 
 function determineExtractorEligibility(
   kind: ArtifactKind,
@@ -708,6 +792,10 @@ function determineExtractorEligibility(
 // ============================================================================
 // Checksum
 // ============================================================================
+/**
+ * P1: SHA-256 checksum computation aligns with Java RepositoryInventoryScanner.
+ * Both use SHA-256 for content integrity verification.
+ */
 
 function computeChecksum(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex');
@@ -761,6 +849,12 @@ function createSkippedArtifact(
 // ============================================================================
 // File Walker
 // ============================================================================
+/**
+ * P1: File walker with deterministic sorting aligns with Java RepositoryInventoryScanner.
+ * 
+ * Both scanners use sorted walks for deterministic ordering across OS/filesystem.
+ * The Java scanner uses Files.walk().sorted(), this uses readdir with sort().
+ */
 
 async function* walkDirectory(
   dir: string,

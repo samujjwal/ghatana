@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -53,7 +54,10 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
     }
 
     @Override
-    public Promise<ArtifactCompileJobService.ExtractionResult> extract(RepositorySnapshot snapshot) {
+    public Promise<ArtifactCompileJobService.ExtractionResult> extract(
+        RepositorySnapshot snapshot,
+        List<RepositorySnapshot.SnapshotFile> tsFiles
+    ) {
         return Promise.ofBlocking(blockingExecutor, () -> runExtractor(snapshot));
     }
 
@@ -117,13 +121,18 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             Map<String, Object> response = objectMapper.convertValue(responseNode, MAP_TYPE);
             List<ArtifactNodeDto> nodes = mapNodes(asListOfMaps(response.get("nodes")));
             List<ArtifactEdgeDto> edges = mapEdges(asListOfMaps(response.get("edges")));
+            List<ResidualIslandDto> residualIslands = mapResidualIslands(
+                response.get("residualIslands"),
+                response.get("residualIslandIds"),
+                snapshot
+            );
 
             return new ArtifactCompileJobService.ExtractionResult(
                 nodes,
                 edges,
                 asListOfMaps(response.get("unresolvedEdges")),
                 asListOfMaps(response.get("edgeResolutionRecords")),
-                asListOfStrings(response.get("residualIslandIds"))
+                residualIslands
             );
         } catch (IllegalArgumentException e) {
             log.error("TypeScript extractor worker output schema validation failed", e);
@@ -139,43 +148,122 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
     }
 
     /**
-     * P1-17: Validate the extraction response schema to ensure data integrity.
+     * Validates the extraction response schema strictly against the canonical contract.
+     * P0: Rejects any response that uses legacy/aliased field names, is missing mandatory fields,
+     * carries edge targets that do not exist in the declared node set, or uses legacy residualIslandIds.
      */
     private void validateExtractionResponseSchema(JsonNode response) {
-        if (!response.has("nodes")) {
-            throw new IllegalArgumentException("Missing required field 'nodes' in extraction response");
+        if (!response.has("nodes") || !response.get("nodes").isArray()) {
+            throw new IllegalArgumentException("Missing required array field 'nodes' in extraction response");
         }
-        if (!response.has("edges")) {
-            throw new IllegalArgumentException("Missing required field 'edges' in extraction response");
+        if (!response.has("edges") || !response.get("edges").isArray()) {
+            throw new IllegalArgumentException("Missing required array field 'edges' in extraction response");
         }
-        
+
         JsonNode nodes = response.get("nodes");
-        if (!nodes.isArray()) {
-            throw new IllegalArgumentException("'nodes' must be an array in extraction response");
-        }
-        
         JsonNode edges = response.get("edges");
-        if (!edges.isArray()) {
-            throw new IllegalArgumentException("'edges' must be an array in extraction response");
+
+        // P0: Reject legacy residualIslandIds - only residualIslands with full payload is accepted
+        if (response.has("residualIslandIds") && response.get("residualIslandIds").size() > 0) {
+            throw new IllegalArgumentException(
+                "Legacy field 'residualIslandIds' is deprecated and not accepted. " +
+                "Use 'residualIslands' with full payload (originalSource, sourceLocation, checksum, rawFragmentRef).");
         }
-        
-        // Validate node structure
+
+        // Build declared node-ID set for edge target validation
+        java.util.Set<String> nodeIds = new java.util.HashSet<>();
         for (JsonNode node : nodes) {
-            if (!node.has("id")) {
+            if (!node.has("id") || node.get("id").asText("").isBlank()) {
                 throw new IllegalArgumentException("Node missing required field 'id'");
             }
-            if (!node.has("type") && !node.has("kind")) {
-                throw new IllegalArgumentException("Node missing required field 'type' or 'kind'");
+            // P0: Require canonical field name 'type', reject legacy 'kind'
+            if (!node.has("type") || node.get("type").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "Node missing required field 'type'. Legacy 'kind' alias is not accepted.");
+            }
+            nodeIds.add(node.get("id").asText());
+        }
+
+        for (JsonNode edge : edges) {
+            // Strict: require canonical field names, not legacy aliases
+            if (!edge.has("sourceNodeId") || edge.get("sourceNodeId").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "Edge missing required field 'sourceNodeId'. Legacy 'source' alias is not accepted.");
+            }
+            if (!edge.has("targetNodeId") || edge.get("targetNodeId").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "Edge missing required field 'targetNodeId'. Legacy 'target' alias is not accepted.");
+            }
+            // P0: Require relationshipType, reject legacy relationship/type/kind
+            if (!edge.has("relationshipType") || edge.get("relationshipType").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "Edge missing required field 'relationshipType'. Legacy 'relationship'/'type'/'kind' aliases are not accepted.");
+            }
+            // Reject fake/external edge targets not declared in the node set
+            String sourceNodeId = edge.get("sourceNodeId").asText();
+            String targetNodeId = edge.get("targetNodeId").asText();
+            if (!nodeIds.contains(sourceNodeId)) {
+                throw new IllegalArgumentException(
+                    "Edge sourceNodeId '" + sourceNodeId + "' not found in declared nodes. " +
+                    "Unresolved references belong in 'unresolvedEdges', not 'edges'.");
+            }
+            if (!nodeIds.contains(targetNodeId)) {
+                throw new IllegalArgumentException(
+                    "Edge targetNodeId '" + targetNodeId + "' not found in declared nodes. " +
+                    "Unresolved references belong in 'unresolvedEdges', not 'edges'.");
             }
         }
-        
-        // Validate edge structure
-        for (JsonNode edge : edges) {
-            if (!edge.has("sourceNodeId") && !edge.has("source")) {
-                throw new IllegalArgumentException("Edge missing required field 'sourceNodeId' or 'source'");
+
+        // P0: Validate unresolved edges use relationshipType
+        if (response.has("unresolvedEdges")) {
+            JsonNode unresolvedEdges = response.get("unresolvedEdges");
+            if (!unresolvedEdges.isArray()) {
+                throw new IllegalArgumentException("'unresolvedEdges' must be an array");
             }
-            if (!edge.has("targetNodeId") && !edge.has("target")) {
-                throw new IllegalArgumentException("Edge missing required field 'targetNodeId' or 'target'");
+            for (JsonNode edge : unresolvedEdges) {
+                // P0: Require relationshipType in unresolved edges too
+                if (!edge.has("relationshipType") || edge.get("relationshipType").asText("").isBlank()) {
+                    throw new IllegalArgumentException(
+                        "UnresolvedEdge missing required field 'relationshipType'. Legacy 'relationship' alias is not accepted.");
+                }
+            }
+        }
+
+        // P0: Require residualIslands with full payload
+        if (!response.has("residualIslands") || !response.get("residualIslands").isArray()) {
+            throw new IllegalArgumentException("Missing required array field 'residualIslands' in extraction response");
+        }
+
+        JsonNode residuals = response.get("residualIslands");
+        for (JsonNode island : residuals) {
+            if (!island.has("id") || island.get("id").asText("").isBlank()) {
+                throw new IllegalArgumentException("ResidualIsland missing required field 'id'");
+            }
+            if (!island.has("islandType") || island.get("islandType").asText("").isBlank()) {
+                throw new IllegalArgumentException("ResidualIsland missing required field 'islandType'");
+            }
+            // P0: Require originalSource for round-trip fidelity
+            if (!island.has("originalSource") || island.get("originalSource").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.get("id").asText() + "' missing required field 'originalSource'");
+            }
+            // P0: Require sourceLocation for precise positioning
+            if (!island.has("sourceLocation")) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.get("id").asText() + "' missing required field 'sourceLocation'");
+            }
+            JsonNode sourceLocation = island.get("sourceLocation");
+            if (!sourceLocation.has("filePath") || sourceLocation.get("filePath").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.get("id").asText() + "' sourceLocation missing required field 'filePath'");
+            }
+            if (!island.has("checksum") || island.get("checksum").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.get("id").asText() + "' missing required field 'checksum'");
+            }
+            if (!island.has("rawFragmentRef") || island.get("rawFragmentRef").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                    "ResidualIsland '" + island.get("id").asText() + "' missing required field 'rawFragmentRef'");
             }
         }
     }
@@ -208,6 +296,81 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return result;
     }
 
+    /**
+     * P0: Maps residual islands from the TS worker response.
+     * Strictly requires full payload - no fallback from legacy residualIslandIds.
+     * Extracts originalSource and sourceLocation for round-trip fidelity.
+     */
+    private static List<ResidualIslandDto> mapResidualIslands(Object residualIslands, Object residualIslandIds, RepositorySnapshot snapshot) {
+        // P0: Reject legacy residualIslandIds - validation should have already rejected this
+        if (residualIslandIds != null && residualIslandIds instanceof List<?> list && !list.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Legacy field 'residualIslandIds' is not accepted. Use 'residualIslands' with full payload.");
+        }
+
+        List<Map<String, Object>> payloads = asListOfMaps(residualIslands);
+        if (payloads.isEmpty()) {
+            return List.of();
+        }
+
+        List<ResidualIslandDto> result = new ArrayList<>(payloads.size());
+        for (Map<String, Object> island : payloads) {
+            String islandId = asString(island.get("id"));
+            if (islandId == null || islandId.isBlank()) {
+                continue;
+            }
+
+            result.add(new ResidualIslandDto(
+                islandId,
+                firstNonBlank(asString(island.get("islandType")), "unknown_file"),
+                firstNonBlank(asString(island.get("summary")), "Residual island from extractor"),
+                asString(island.get("originalSource")), // P0: Original source for round-trip
+                asString(island.get("sourceSpan")),
+                asString(island.get("checksum")),
+                asString(island.get("rawFragmentRef")),
+                firstNonBlank(asString(island.get("reason")), "unsupported_file_type"),
+                asDouble(island.get("confidence")),
+                asBoolean(island.get("reviewRequired")),
+                asDouble(island.get("riskScore")),
+                mapOfStringToString(island.get("metadata")),
+                asInteger(island.get("fileCount")),
+                asString(island.get("tenantId")),
+                asString(island.get("projectId")),
+                asString(island.get("workspaceId")),
+                firstNonBlank(asString(island.get("snapshotId")), snapshot.snapshotId())
+            ));
+        }
+        return result;
+    }
+
+    private static Integer asInteger(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            return Integer.parseInt(text);
+        }
+        return null;
+    }
+
+    private static Map<String, String> mapOfStringToString(Object value) {
+        if (!(value instanceof Map<?, ?> raw)) {
+            return Map.of();
+        }
+        Map<String, String> mapped = new java.util.LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : raw.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) {
+                continue;
+            }
+            mapped.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+        }
+        return mapped;
+    }
+
+    /**
+     * P0: Maps artifact nodes from the TS worker response.
+     * Strictly requires canonical field name 'type' - rejects legacy 'kind'.
+     */
     private static List<ArtifactNodeDto> mapNodes(List<Map<String, Object>> rawNodes) {
         List<ArtifactNodeDto> nodes = new ArrayList<>();
         for (Map<String, Object> node : rawNodes) {
@@ -216,9 +379,16 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 ? (Map<String, Object>) location
                 : Map.of();
 
+            // P0: Require canonical 'type', reject legacy 'kind'
+            String nodeType = asString(node.get("type"));
+            if (nodeType == null || nodeType.isBlank()) {
+                throw new IllegalArgumentException(
+                    "Node missing required field 'type'. Legacy 'kind' alias is not accepted.");
+            }
+
             nodes.add(new ArtifactNodeDto(
                 asString(node.get("id")),
-                firstNonBlank(asString(node.get("type")), asString(node.get("kind"))),
+                nodeType,
                 asString(node.get("name")),
                 firstNonBlank(asString(node.get("filePath")), asString(sourceLocation.get("filePath"))),
                 asString(node.get("content")),
@@ -240,14 +410,25 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return nodes;
     }
 
+    /**
+     * P0: Maps artifact edges from the TS worker response.
+     * Strictly requires canonical field names - rejects legacy aliases.
+     */
     private static List<ArtifactEdgeDto> mapEdges(List<Map<String, Object>> rawEdges) {
         List<ArtifactEdgeDto> edges = new ArrayList<>();
         for (Map<String, Object> edge : rawEdges) {
+            // P0: Strict mapping - require canonical field names validated by validateExtractionResponseSchema
+            String relationshipType = asString(edge.get("relationshipType"));
+            if (relationshipType == null || relationshipType.isBlank()) {
+                throw new IllegalArgumentException(
+                    "Edge missing required field 'relationshipType'. Legacy 'relationship'/'type'/'kind' aliases are not accepted.");
+            }
+
             edges.add(new ArtifactEdgeDto(
                 firstNonBlank(asString(edge.get("edgeId")), asString(edge.get("id"))),
-                firstNonBlank(asString(edge.get("sourceNodeId")), asString(edge.get("source"))),
-                firstNonBlank(asString(edge.get("targetNodeId")), asString(edge.get("target"))),
-                firstNonBlank(asString(edge.get("relationshipType")), asString(edge.get("type"))),
+                asString(edge.get("sourceNodeId")),
+                asString(edge.get("targetNodeId")),
+                relationshipType,
                 mapOrEmpty(edge.get("properties")),
                 asDouble(edge.get("confidence")),
                 asBoolean(edge.get("bidirectional")),

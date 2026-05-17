@@ -80,17 +80,46 @@ export interface ArtifactEdgeDto {
   edgeId?: string;
   sourceNodeId: string;
   targetNodeId: string;
-  relationship: string;
+  relationshipType: string;
   confidence?: number;
   bidirectional?: boolean;
   metadata?: Record<string, unknown>;
+  properties?: Record<string, unknown>;
   snapshotId?: string;
   versionId?: string;
 }
 
-export interface ArtifactGraphIngestRequest {
-  productId: string;
+export interface ResidualIslandPayload {
+  id: string;
+  islandType: string;
+  summary: string;
+  originalSource?: string; // P0: Added for round-trip fidelity
+  sourceLocation?: {
+    filePath: string;
+    startLine: number;
+    startColumn: number;
+    endLine: number;
+    endColumn: number;
+  };
+  sourceSpan?: string;
+  checksum?: string;
+  rawFragmentRef?: string;
+  reason?: string;
+  confidence: number;
+  reviewRequired: boolean;
+  riskScore?: number;
+  fileCount?: number;
+  metadata?: Record<string, string>;
   tenantId?: string;
+  projectId?: string;
+  workspaceId?: string;
+  snapshotId?: string;
+}
+
+export interface ArtifactGraphIngestRequest {
+  projectId: string;
+  tenantId?: string;
+  workspaceId?: string;
   nodes: ArtifactNodeDto[];
   edges: ArtifactEdgeDto[];
   snapshotRef?: string;
@@ -98,21 +127,23 @@ export interface ArtifactGraphIngestRequest {
   versionId?: string;
   contentChecksum?: string;
   unresolvedEdges?: Array<{
+    id?: string;
     sourceNodeId: string;
     targetRef: string;
-    relationship: string;
+    relationshipType: string; // P0: Normalized from relationship to match proto
     targetKindHint?: string;
     confidence?: number;
     metadata?: Record<string, unknown>;
   }>;
   edgeResolutionRecords?: Array<{
+    id?: string;
     unresolvedEdgeId: string;
     status: string;
     resolvedTargetId?: string;
     candidateIds?: string[];
     reviewRequired?: boolean;
   }>;
-  residualIslandIds?: string[];
+  residualIslands?: ResidualIslandPayload[];
 }
 
 export interface ArtifactGraphIngestResponse {
@@ -125,20 +156,26 @@ export interface ArtifactGraphIngestResponse {
 }
 
 export interface GraphQueryRequest {
-  productId: string;
+  projectId: string;
   tenantId?: string;
+  workspaceId?: string;
   queryType: 'orphaned' | 'dependencies' | 'dependents' | 'stats';
-  seedIds?: string[];
+  seedNodeIds?: string[];
   cursor?: string;
-  pageSize?: number;
+  limit?: number;
+  snapshotId?: string;
+  includeUnresolvedEdges?: boolean;
 }
 
 export interface GraphQueryScopeMetadata {
   tenantId: string;
-  productId: string;
+  workspaceId: string;
+  projectId: string;
   queryType: string;
   pageSize: number;
   hasMore: boolean;
+  snapshotId?: string;
+  includeUnresolvedEdges?: boolean;
 }
 
 export interface GraphQueryResponse {
@@ -150,35 +187,23 @@ export interface GraphQueryResponse {
 
 export interface ResidualIsland {
   id: string;
-  kind: 'code' | 'style' | 'query' | 'logic';
-  originalSource: string;
-  normalizedSummary: string;
-  reasonUnmodeled: string;
-  reviewRequired: boolean;
-  reviewReason?: string;
-  regenerationStrategy: 'verbatim-preserve' | 'best-effort-approximate' | 'emit-warning' | 'require-manual-impl' | 'placeholder-stub';
-  sourceLocation: {
-    filePath: string;
-    startLine: number;
-    startColumn: number;
-    endLine: number;
-    endColumn: number;
-  };
-  extractorId: string;
-  extractorVersion: string;
-  extractedAt: string;
-  confidence: number;
-  linkedModelElementIds: string[];
-  tags: string[];
-  rawFragmentRef?: string;
+  islandType: string;
+  summary: string;
+  sourceSpan?: string;
   checksum?: string;
-  risk?: 'low' | 'medium' | 'high' | 'critical';
-  relatedGraphNodeIds: string[];
+  rawFragmentRef?: string;
+  reason?: string;
+  confidence: number;
+  reviewRequired: boolean;
+  riskScore?: number;
+  fileCount?: number;
+  metadata?: Record<string, string>;
 }
 
 export interface ResidualAnalyzeRequest {
-  productId: string;
+  projectId: string;
   tenantId?: string;
+  workspaceId?: string;
   residualIslands: ResidualIsland[];
 }
 
@@ -194,8 +219,9 @@ export interface ResidualAnalyzeResponse {
 }
 
 export interface PatchReviewRequest {
-  productId: string;
+  projectId: string;
   tenantId?: string;
+  workspaceId?: string;
   patchSetId: string;
 }
 
@@ -222,9 +248,15 @@ export interface PatchReviewResponse {
 // Artifact Compiler Client
 // ============================================================================
 
+export interface ArtifactCompilerScopeConfig {
+  workspaceId: string;
+  projectId: string;
+}
+
 export class ArtifactCompilerClient {
   private httpClient: AxiosInstance;
   private config: Required<ArtifactCompilerConfig>;
+  private scopeConfig: ArtifactCompilerScopeConfig | null = null;
 
   constructor(config: ArtifactCompilerConfig) {
     this.config = {
@@ -241,7 +273,7 @@ export class ArtifactCompilerClient {
       },
     });
 
-    // Add request interceptor for auth and tenant
+    // Add request interceptor for auth, tenant and workspace/project scope
     this.httpClient.interceptors.request.use(
       (config) => {
         if (this.config.authToken) {
@@ -249,6 +281,12 @@ export class ArtifactCompilerClient {
         }
         if (this.config.tenantId) {
           config.headers['X-Tenant-Id'] = this.config.tenantId;
+        }
+        if (this.scopeConfig?.workspaceId) {
+          config.headers['X-Workspace-ID'] = this.scopeConfig.workspaceId;
+        }
+        if (this.scopeConfig?.projectId) {
+          config.headers['X-Project-ID'] = this.scopeConfig.projectId;
         }
         return config;
       },
@@ -311,8 +349,10 @@ export class ArtifactCompilerClient {
   }
 
   /**
-   * P2-1: Review a patch set for approval or rejection.
-   * POST /api/v1/yappc/artifact/patch/review (placeholder endpoint)
+   * P0: Review a patch set for approval or rejection.
+   * POST /api/v1/yappc/artifact/patch/review
+   * NOTE: This endpoint is not yet implemented in the backend.
+   * Will throw 404 until ArtifactPatchController is added (P1-8).
    */
   async reviewPatch(request: PatchReviewRequest): Promise<ApiResponse<PatchReviewResponse>> {
     try {
@@ -338,6 +378,14 @@ export class ArtifactCompilerClient {
    */
   setTenantId(tenantId: string): void {
     this.config.tenantId = tenantId;
+  }
+
+  /**
+   * Set workspace and project scope headers for all subsequent requests.
+   * Required for ingest, query, analyze, and patch operations.
+   */
+  setScope(scope: ArtifactCompilerScopeConfig): void {
+    this.scopeConfig = scope;
   }
 
   /**

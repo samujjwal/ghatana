@@ -135,7 +135,7 @@ message UnresolvedGraphEdge {
   string edge_id = 1; // P1-19: Added edge ID
   string source_node_id = 2;
   string target_ref = 3;
-  string relationship = 4;
+  string relationship_type = 4; // P0: Normalized from relationship to match resolved edges
   string target_kind_hint = 5;
   double confidence = 6;
   map<string, string> metadata = 7;
@@ -161,19 +161,22 @@ message EdgeResolutionRecord {
 }
 
 // P1-19: Updated ResidualIsland with full schema for source fidelity
+// P0: Added original_source and source_location for complete round-trip fidelity
 message ResidualIsland {
   string id = 1;
   string island_type = 2;
   string summary = 3;
-  string source_span = 4; // P1-19: Added source span
-  string checksum = 5; // P1-19: Added checksum
-  string raw_fragment_ref = 6; // P1-19: Added raw fragment reference
-  string reason = 7; // P1-19: Added reason
-  double confidence = 8;
-  bool review_required = 9; // P1-19: Added review requirement
-  double risk_score = 10; // P1-19: Added risk score
-  map<string, string> metadata = 11;
-  int32 file_count = 12; // P1-19: Added file count
+  string original_source = 4; // P0: Original source code fragment for round-trip fidelity
+  SourceLocation source_location = 5; // P0: Precise source location
+  string source_span = 6; // P1-19: Added source span (kept for compatibility)
+  string checksum = 7; // P1-19: Added checksum
+  string raw_fragment_ref = 8; // P1-19: Added raw fragment reference
+  string reason = 9; // P1-19: Added reason
+  double confidence = 10;
+  bool review_required = 11; // P1-19: Added review requirement
+  double risk_score = 12; // P1-19: Added risk score
+  map<string, string> metadata = 13;
+  int32 file_count = 14; // P1-19: Added file count
   
   string tenant_id = 13; // P1-19: Added tenant scope
   string project_id = 14; // P1-19: Added project scope
@@ -183,7 +186,7 @@ message ResidualIsland {
 
 // IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.
 message IngestArtifactGraphRequest {
-  string product_id = 1;
+  string project_id = 1; // P0: Normalized from product_id to match Java DTOs
   string tenant_id = 2;
   string workspace_id = 3; // P1-19: Added workspace scope
   repeated ArtifactNode nodes = 4;
@@ -199,7 +202,8 @@ message IngestArtifactGraphRequest {
   SnapshotRef snapshot_ref = 8;
   
   // V12: Residual islands (unmodelable code preserved verbatim)
-  repeated string residual_island_ids = 9;
+  // P0: Deprecated - use residual_islands only for full fidelity
+  repeated string residual_island_ids = 9 [deprecated = true];
   
   // P1-19: Added full residual islands
   repeated ResidualIsland residual_islands = 10;
@@ -229,7 +233,7 @@ message IngestArtifactGraphResponse {
 
 // ArtifactGraphAnalysisRequest requests one or more algorithms over a product graph.
 message ArtifactGraphAnalysisRequest {
-  string product_id = 1;
+  string project_id = 1; // P0: Normalized from product_id to match Java DTOs
   string tenant_id = 2;
   string workspace_id = 3; // P1-19: Added workspace scope
   repeated string algorithm_types = 4;
@@ -259,7 +263,7 @@ message CommunityList {
 
 // ArtifactGraphQueryRequest queries the graph by type (orphaned, dependencies, dependents, stats).
 message ArtifactGraphQueryRequest {
-  string product_id = 1;
+  string project_id = 1; // P0: Normalized from product_id to match Java DTOs
   string tenant_id = 2;
   string workspace_id = 3; // P1-19: Added workspace scope
   string query_type = 4;
@@ -297,7 +301,7 @@ message NodeList {
 
 // ArtifactGraphMergeRequest performs a three-way semantic merge.
 message ArtifactGraphMergeRequest {
-  string product_id = 1;
+  string project_id = 1; // P0: Normalized from product_id to match Java DTOs
   string tenant_id = 2;
   string workspace_id = 3; // P1-19: Added workspace scope
   string base_model_json = 4;

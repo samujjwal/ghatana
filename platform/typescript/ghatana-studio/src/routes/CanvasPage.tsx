@@ -1,10 +1,16 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { artifactGraphSummary, residualIslandReport, riskHotspotReport, semanticArtifactReferences } from './yappcWorkflowData';
 
-function canvasRiskLevelLabel(riskLevel: string, t: (key: string) => string): string {
-  return t(`studio.route.canvas.riskLevel.${riskLevel}`);
+type TranslateFn = (key: StudioTranslationKey) => string;
+
+function canvasRiskLevelLabel(riskLevel: string, t: TranslateFn): string {
+  if (riskLevel === 'critical' || riskLevel === 'high' || riskLevel === 'medium' || riskLevel === 'low') {
+    return t(`studio.route.canvas.riskLevel.${riskLevel}`);
+  }
+  return t('studio.route.canvas.riskLevel.unknown');
 }
 
 export default function CanvasPage(): ReactElement {
@@ -173,7 +179,7 @@ export default function CanvasPage(): ReactElement {
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('studio.route.canvas.riskLevelLabel')}:</span>
                   <Badge tone={artifact.riskLevel === 'critical' ? 'danger' : artifact.riskLevel === 'high' ? 'warning' : 'success'} variant="soft" className="text-xs">
-                    {canvasRiskLevelLabel(artifact.riskLevel, t)}
+                    {canvasRiskLevelLabel(artifact.riskLevel ?? 'unknown', t)}
                   </Badge>
                 </div>
               </div>

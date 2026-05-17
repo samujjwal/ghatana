@@ -1,10 +1,16 @@
 import type { ReactElement } from 'react';
 import { Badge } from '@ghatana/design-system';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { generatedChangeSetSummary, residualIslandReport, riskHotspotReport } from './yappcWorkflowData';
 
-function learnRiskLevelLabel(riskLevel: string, t: (key: string) => string): string {
-  return t(`studio.route.learn.riskLevel.${riskLevel}`);
+type TranslateFn = (key: StudioTranslationKey, params?: { readonly [key: string]: string | number }) => string;
+
+function learnRiskLevelLabel(riskLevel: string, t: TranslateFn): string {
+  if (riskLevel === 'critical' || riskLevel === 'high' || riskLevel === 'medium' || riskLevel === 'low') {
+    return t(`studio.route.learn.riskLevel.${riskLevel}`);
+  }
+  return t('studio.route.learn.riskLevel.unknown');
 }
 
 export default function LearnPage(): ReactElement {

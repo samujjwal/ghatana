@@ -38,7 +38,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
       } as StudioLifecycleDataContextValue['snapshot']['artifactManifest'],
       verifyHealthReport: {
         status: 'unhealthy',
-      } as StudioLifecycleDataContextValue['snapshot']['verifyHealthReport'],
+      } as unknown as StudioLifecycleDataContextValue['snapshot']['verifyHealthReport'],
       manifestLoadState: {
         gateResultManifest: { status: 'missing' },
         artifactManifest: { status: 'missing' },
@@ -50,6 +50,7 @@ function createContextValue(overrides: Partial<StudioLifecycleDataContextValue> 
     selectedRunId: 'run-1',
     selectedEnvironment: 'local',
     selectedProviderMode: 'bootstrap',
+    intentOperation: { status: 'idle' },
     authenticatedUserId: 'user-123',
     selectProductUnit: vi.fn(),
     selectRun: vi.fn(),

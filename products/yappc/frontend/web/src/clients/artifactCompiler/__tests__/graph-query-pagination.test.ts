@@ -20,7 +20,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 10,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,
@@ -39,7 +40,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 10,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'orphaned',
         pageSize: 5,
         hasMore: true,
@@ -57,7 +59,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 10,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,
@@ -75,7 +78,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 100,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 10,
         hasMore: true,
@@ -93,7 +97,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 5,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,
@@ -102,7 +107,7 @@ describe('P3-2: Graph Query Pagination', () => {
 
     expect(response.scope).toBeDefined();
     expect(response.scope.tenantId).toBe('tenant-123');
-    expect(response.scope.productId).toBe('product-456');
+    expect(response.scope.projectId).toBe('product-456');
     expect(response.scope.queryType).toBe('stats');
     expect(response.scope.pageSize).toBe(100);
     expect(response.scope.hasMore).toBe(false);
@@ -111,14 +116,14 @@ describe('P3-2: Graph Query Pagination', () => {
   it('should include all required scope metadata fields', () => {
     const scope: GraphQueryScopeMetadata = {
       tenantId: 'tenant-123',
-      productId: 'product-456',
+      projectId: 'product-456',
       queryType: 'dependencies',
       pageSize: 50,
       hasMore: true,
     };
 
     expect(scope.tenantId).toBeDefined();
-    expect(scope.productId).toBeDefined();
+    expect(scope.projectId).toBeDefined();
     expect(scope.queryType).toBeDefined();
     expect(scope.pageSize).toBeDefined();
     expect(scope.hasMore).toBeDefined();
@@ -134,7 +139,8 @@ describe('P3-2: Graph Query Pagination', () => {
         totalEstimate: 0,
         scope: {
           tenantId: 'tenant-123',
-          productId: 'product-456',
+          workspaceId: 'workspace-789',
+          projectId: 'product-456',
           queryType,
           pageSize: 100,
           hasMore: false,
@@ -157,7 +163,7 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 5,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        projectId: 'product-456',
         queryType: 'dependencies',
         pageSize: 10,
         hasMore: true,
@@ -175,7 +181,8 @@ describe('P3-2: Graph Query Pagination', () => {
       totalEstimate: 0,
       scope: {
         tenantId: 'tenant-123',
-        productId: 'product-456',
+        workspaceId: 'workspace-789',
+        projectId: 'product-456',
         queryType: 'stats',
         pageSize: 100,
         hasMore: false,

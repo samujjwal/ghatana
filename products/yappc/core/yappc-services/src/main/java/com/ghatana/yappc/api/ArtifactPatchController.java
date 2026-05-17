@@ -256,9 +256,176 @@ public final class ArtifactPatchController {
         }
     }
     
-    // TODO: Implement approve/reject/apply/rollback/list endpoints with proper ActiveJ parameter extraction
-    // These require path parameter extraction which needs ActiveJ routing pattern investigation
-    
+    /**
+     * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/approve
+     * Body: {"reviewer": "<principal>"}
+     */
+    public Promise<HttpResponse> approveBundle(HttpRequest request, String bundleId) {
+        try {
+            ArtifactRequestScope scope = extractScope(request);
+            if (bundleId == null || bundleId.isBlank()) {
+                return Promise.of(badRequest400("bundleId path parameter is required"));
+            }
+            return request.loadBody()
+                .then(body -> {
+                    String json = body.asString(java.nio.charset.StandardCharsets.UTF_8);
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payload = com.ghatana.yappc.common.JsonMapper.fromJson(json, Map.class);
+                        String reviewer = (String) payload.getOrDefault("reviewer", "unknown");
+                        return patchReviewService.approve(bundleId, reviewer)
+                            .then(bundle -> validateBundleScope(bundle, scope))
+                            .map(bundle -> {
+                                try {
+                                    return ok200Json(JsonMapper.toJson(Map.of(
+                                        "success", true, "bundleId", bundle.id(),
+                                        "status", bundle.status(), "reviewedBy", reviewer
+                                    )));
+                                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                    return error500("Internal server error");
+                                }
+                            });
+                    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                        return Promise.of(badRequest400("Invalid JSON format"));
+                    }
+                })
+                .whenException(e -> log.error("Failed to approve bundle {}", bundleId, e));
+        } catch (Exception e) {
+            return Promise.of(error500(e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/reject
+     * Body: {"reviewer": "<principal>", "reason": "<reason>"}
+     */
+    public Promise<HttpResponse> rejectBundle(HttpRequest request, String bundleId) {
+        try {
+            ArtifactRequestScope scope = extractScope(request);
+            if (bundleId == null || bundleId.isBlank()) {
+                return Promise.of(badRequest400("bundleId path parameter is required"));
+            }
+            return request.loadBody()
+                .then(body -> {
+                    String json = body.asString(java.nio.charset.StandardCharsets.UTF_8);
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payload = com.ghatana.yappc.common.JsonMapper.fromJson(json, Map.class);
+                        String reviewer = (String) payload.getOrDefault("reviewer", "unknown");
+                        return patchReviewService.reject(bundleId, reviewer)
+                            .then(bundle -> validateBundleScope(bundle, scope))
+                            .map(bundle -> {
+                                try {
+                                    return ok200Json(JsonMapper.toJson(Map.of(
+                                        "success", true, "bundleId", bundle.id(),
+                                        "status", bundle.status(), "reviewedBy", reviewer
+                                    )));
+                                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                    return error500("Internal server error");
+                                }
+                            });
+                    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                        return Promise.of(badRequest400("Invalid JSON format"));
+                    }
+                })
+                .whenException(e -> log.error("Failed to reject bundle {}", bundleId, e));
+        } catch (Exception e) {
+            return Promise.of(error500(e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/apply
+     * Only bundles in APPROVED state may be applied.
+     */
+    public Promise<HttpResponse> applyBundle(HttpRequest request, String bundleId) {
+        try {
+            ArtifactRequestScope scope = extractScope(request);
+            if (bundleId == null || bundleId.isBlank()) {
+                return Promise.of(badRequest400("bundleId path parameter is required"));
+            }
+            return patchReviewService.apply(bundleId)
+                .then(bundle -> validateBundleScope(bundle, scope))
+                .map(bundle -> {
+                    try {
+                        return ok200Json(JsonMapper.toJson(Map.of(
+                            "success", true, "bundleId", bundle.id(), "status", bundle.status()
+                        )));
+                    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                        return error500("Internal server error");
+                    }
+                })
+                .whenException(e -> log.error("Failed to apply bundle {}", bundleId, e));
+        } catch (Exception e) {
+            return Promise.of(error500(e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/v1/yappc/artifact/patch/bundles/{bundleId}/rollback
+     */
+    public Promise<HttpResponse> rollbackBundle(HttpRequest request, String bundleId) {
+        try {
+            ArtifactRequestScope scope = extractScope(request);
+            if (bundleId == null || bundleId.isBlank()) {
+                return Promise.of(badRequest400("bundleId path parameter is required"));
+            }
+            return patchReviewService.rollback(bundleId)
+                .then(bundle -> validateBundleScope(bundle, scope))
+                .map(bundle -> {
+                    try {
+                        return ok200Json(JsonMapper.toJson(Map.of(
+                            "success", true, "bundleId", bundle.id(), "status", bundle.status()
+                        )));
+                    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                        return error500("Internal server error");
+                    }
+                })
+                .whenException(e -> log.error("Failed to rollback bundle {}", bundleId, e));
+        } catch (Exception e) {
+            return Promise.of(error500(e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/v1/yappc/artifact/patch/bundles
+     * Returns all review bundles for the scoped project.
+     */
+    public Promise<HttpResponse> listBundles(HttpRequest request) {
+        try {
+            ArtifactRequestScope scope = extractScope(request);
+            return patchReviewService.listByProject(scope.tenantId(), scope.projectId())
+                .map(bundles -> {
+                    try {
+                        return ok200Json(JsonMapper.toJson(Map.of(
+                            "success", true,
+                            "bundles", bundles,
+                            "scope", Map.of(
+                                "tenantId", scope.tenantId(),
+                                "workspaceId", scope.workspaceId(),
+                                "projectId", scope.projectId()
+                            )
+                        )));
+                    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                        return error500("Internal server error");
+                    }
+                })
+                .whenException(e -> log.error("Failed to list bundles", e));
+        } catch (Exception e) {
+            return Promise.of(error500(e.getMessage()));
+        }
+    }
+
+    private Promise<PatchReviewService.ReviewBundle> validateBundleScope(
+            PatchReviewService.ReviewBundle bundle, ArtifactRequestScope scope) {
+        if (!bundle.tenantId().equals(scope.tenantId()) || !bundle.projectId().equals(scope.projectId())) {
+            log.warn("Bundle scope mismatch: bundle belongs to tenant={} project={} but caller has tenant={} project={}",
+                bundle.tenantId(), bundle.projectId(), scope.tenantId(), scope.projectId());
+            return Promise.ofException(new SecurityException("Access denied: bundle does not belong to this scope"));
+        }
+        return Promise.of(bundle);
+    }
+
     public ArtifactRequestScope extractScope(HttpRequest request) {
         String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
         String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-Id"));

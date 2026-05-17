@@ -6,10 +6,10 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphMergeRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphResponse;
+import com.ghatana.yappc.domain.artifact.ResidualAnalysisRequest;
 import io.activej.promise.Promise;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @doc.type interface
@@ -45,5 +45,9 @@ public interface ArtifactGraphService {
     /**
      * Analyze residual islands (unextractable blocks flagged by the TS scanner).
      */
-    Promise<ArtifactGraphResponse> analyzeResidual(String projectId, String tenantId, List<Map<String, Object>> residualIslands);
+    /**
+     * P0: Use typed request DTO instead of raw map for residual analysis.
+     * Ensures contract validation and type safety.
+     */
+    Promise<ArtifactGraphResponse> analyzeResidual(ArtifactRequestScope scope, ResidualAnalysisRequest request);
 }

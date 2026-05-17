@@ -200,8 +200,8 @@ public final class ImportController {
         String projectId,
         ImportRequest req
     ) {
-        sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.VALIDATING)
-            .then(ignored -> sourceImportJobService.updateProgress(jobId, 1, 5, 20, "VALIDATING"))
+        sourceImportJobService.updateStatus(jobId, tenantId, workspaceId, projectId, SourceImportJob.JobStatus.VALIDATING)
+            .then(ignored -> sourceImportJobService.updateProgress(jobId, tenantId, workspaceId, projectId, 1, 5, 20, "VALIDATING"))
             .then(ignored -> artifactCompileJobService.compile(new ArtifactCompileJobService.CompileJobRequest(
                 jobId,
                 tenantId,
@@ -218,14 +218,14 @@ public final class ImportController {
             )))
             .then(result -> {
                 if (result.success()) {
-                    return sourceImportJobService.updateProgress(jobId, 5, 5, 100, "COMPLETED")
-                        .then(ignored -> sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.COMPLETED));
+                    return sourceImportJobService.updateProgress(jobId, tenantId, workspaceId, projectId, 5, 5, 100, "COMPLETED")
+                        .then(ignored -> sourceImportJobService.updateStatus(jobId, tenantId, workspaceId, projectId, SourceImportJob.JobStatus.COMPLETED));
                 }
-                return sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.FAILED);
+                return sourceImportJobService.updateStatus(jobId, tenantId, workspaceId, projectId, SourceImportJob.JobStatus.FAILED);
             })
             .whenException(error -> {
                 log.error("Source import compile failed: jobId={}", jobId, error);
-                sourceImportJobService.updateStatus(jobId, SourceImportJob.JobStatus.FAILED)
+                sourceImportJobService.updateStatus(jobId, tenantId, workspaceId, projectId, SourceImportJob.JobStatus.FAILED)
                     .whenException(statusError -> log.error("Failed to mark job as failed: jobId={}", jobId, statusError));
             });
     }

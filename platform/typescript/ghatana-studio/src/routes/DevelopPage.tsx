@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import {
   describeLifecycleDataStatus,
@@ -10,6 +11,7 @@ import {
 
 const SAFE_ACTIONS = ['create-plan', 'validate', 'test', 'build', 'package'] as const;
 type SafeAction = (typeof SAFE_ACTIONS)[number];
+type TranslateFn = (key: StudioTranslationKey) => string;
 
 function toPhase(action: SafeAction): 'validate' | 'test' | 'build' | 'package' {
   if (action === 'create-plan') {
@@ -18,12 +20,18 @@ function toPhase(action: SafeAction): 'validate' | 'test' | 'build' | 'package' 
   return action;
 }
 
-function developLifecycleStatusLabel(status: string, t: (key: string) => string): string {
-  return t(`studio.route.develop.lifecycleStatus.${status}`);
+function developLifecycleStatusLabel(status: string, t: TranslateFn): string {
+  if (status === 'enabled' || status === 'planned' || status === 'partial' || status === 'disabled' || status === 'ready' || status === 'degraded') {
+    return t(`studio.route.develop.lifecycleStatus.${status}`);
+  }
+  return t('studio.route.develop.lifecycleStatus.unknown');
 }
 
-function developImplementationStatusLabel(status: string, t: (key: string) => string): string {
-  return t(`studio.route.develop.surfaceStatus.${status}`);
+function developImplementationStatusLabel(status: string, t: TranslateFn): string {
+  if (status === 'implemented' || status === 'planned' || status === 'experimental' || status === 'partial' || status === 'missing') {
+    return t(`studio.route.develop.surfaceStatus.${status}`);
+  }
+  return t('studio.route.develop.surfaceStatus.unknown');
 }
 
 export default function DevelopPage(): ReactElement {

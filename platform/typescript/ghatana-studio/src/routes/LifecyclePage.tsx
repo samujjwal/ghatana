@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { Badge, Button, Select, Switch } from '@ghatana/design-system';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
+import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import type {
   GateResultManifest,
@@ -22,6 +23,7 @@ const PROVIDER_MODES = ['bootstrap', 'platform'] as const;
 
 type LifecyclePhase = (typeof LIFECYCLE_PHASES)[number];
 type ProviderMode = (typeof PROVIDER_MODES)[number];
+type TranslateFn = (key: StudioTranslationKey) => string;
 type LifecycleBlockedReasonCode =
   | 'product-unit-unavailable'
   | 'phase-not-supported'
@@ -161,7 +163,7 @@ function lifecycleRunTone(status: string): 'success' | 'warning' | 'danger' | 'n
   return 'neutral';
 }
 
-function lifecycleRunStatusLabel(status: string, t: (key: string) => string): string {
+function lifecycleRunStatusLabel(status: string, t: TranslateFn): string {
   if (status === 'healthy' || status === 'ready') {
     return t('studio.route.lifecycle.runStatus.healthy');
   }
@@ -192,7 +194,7 @@ function lifecycleRunStatusLabel(status: string, t: (key: string) => string): st
   return t('studio.route.lifecycle.runStatus.unknown');
 }
 
-function lifecycleReadinessStatusLabel(status: string, t: (key: string) => string): string {
+function lifecycleReadinessStatusLabel(status: string, t: TranslateFn): string {
   if (status === 'enabled') {
     return t('studio.route.lifecycle.readinessStatus.enabled');
   }
@@ -214,8 +216,8 @@ function lifecycleReadinessStatusLabel(status: string, t: (key: string) => strin
   return t('studio.route.lifecycle.readinessStatus.unknown');
 }
 
-function lifecycleReasonCodeLabel(reasonCode: string, t: (key: string) => string): string {
-  return t(`studio.route.lifecycle.reasonCode.${reasonCode}` as never);
+function lifecycleReasonCodeLabel(reasonCode: string, t: TranslateFn): string {
+  return t(`studio.route.lifecycle.reasonCode.${reasonCode}` as StudioTranslationKey);
 }
 
 export default function LifecyclePage(): ReactElement {
@@ -232,6 +234,7 @@ export default function LifecyclePage(): ReactElement {
   const [dryRun, setDryRun] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(lifecycleData.selectedRunId);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [executionError, setExecutionError] = useState<string | undefined>(undefined);
   const [approvalActionState, setApprovalActionState] = useState<Record<string, 'approve' | 'reject' | null>>({});
 
   const selectedRun = selectedRunId
@@ -269,6 +272,7 @@ export default function LifecyclePage(): ReactElement {
 
   const runSelectedPhase = async (): Promise<void> => {
     setIsExecuting(true);
+    setExecutionError(undefined);
     lifecycleData.setEnvironment(activeEnvironment);
     lifecycleData.setProviderMode(providerMode);
     try {
@@ -278,6 +282,10 @@ export default function LifecyclePage(): ReactElement {
         await lifecycleData.executePhase(selectedPhase, { dryRun: false, environment: activeEnvironment });
       }
       await lifecycleData.refresh();
+    } catch (error: unknown) {
+      setExecutionError(
+        error instanceof Error ? error.message : t('studio.route.lifecycle.actionErrorFallback'),
+      );
     } finally {
       setIsExecuting(false);
     }
@@ -437,6 +445,10 @@ export default function LifecyclePage(): ReactElement {
           >
             {t('studio.route.lifecycle.executePhaseButton')}
           </Button>
+
+          {executionError !== undefined && (
+            <p className="text-sm text-red-700" role="alert">{executionError}</p>
+          )}
 
           {blockedReasonCodes.length > 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 p-3" aria-label="lifecycle-blocked-reasons">

@@ -276,7 +276,13 @@ describe('ts-extractor-worker contract', () => {
     });
     expect(response.unresolvedEdges[0]?.id).toBeTruthy();
     expect(response.edgeResolutionRecords[0]?.unresolvedEdgeId).toBe(response.unresolvedEdges[0]?.id);
-    expect(response.residualIslandIds).toEqual(['residual-1']);
+    // P0: residualIslands is now a full payload array, not IDs only
+    expect(response.residualIslands).toHaveLength(1);
+    expect(response.residualIslands[0]?.id).toBe('residual-1');
+    expect(response.residualIslands[0]?.islandType).toBeTruthy();
+    expect(response.residualIslands[0]?.sourceSpan).toBeTruthy();
+    expect(typeof response.residualIslands[0]?.confidence).toBe('number');
+    expect(typeof response.residualIslands[0]?.reviewRequired).toBe('boolean');
     expect(response.diagnostics).toEqual([
       {
         level: 'WARNING',

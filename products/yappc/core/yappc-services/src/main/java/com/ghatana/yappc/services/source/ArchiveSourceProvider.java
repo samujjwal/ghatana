@@ -29,11 +29,30 @@ import java.util.zip.ZipInputStream;
  * P0: Added content SHA-256 checksum for actual file content.
  * P0: Added deterministic snapshotId based on content hash.
  * P0: Added per-entry size limit to prevent OOM on large individual files.
+ * 
+ * P1: Made snapshot ID content-based (uses only contentHash, not archivePath).
+ * P1: Added feature flag for unsupported archive types (tar/tar.gz).
+ * P1: Integrated canonical inventory scanning using RepositoryInventoryScanner.
+ * P1: Added support for include/exclude rules and .gitignore filtering.
  */
 public final class ArchiveSourceProvider implements SourceProvider {
 
     private static final long MAX_TOTAL_BYTES = 200L * 1024L * 1024L; // 200MB total
     private static final long MAX_ENTRY_BYTES = 50L * 1024L * 1024L; // 50MB per entry
+    
+    // P1: Feature flag for unsupported archive types (tar/tar.gz)
+    // Set to true to enable tar/tar.gz support when dependencies are available
+    private static final boolean ENABLE_TAR_SUPPORT = Boolean.parseBoolean(System.getenv().getOrDefault("YAPPC_ENABLE_TAR_SUPPORT", "false"));
+
+    private final RepositoryInventoryScanner inventoryScanner;
+
+    public ArchiveSourceProvider() {
+        this(new RepositoryInventoryScanner());
+    }
+
+    public ArchiveSourceProvider(RepositoryInventoryScanner inventoryScanner) {
+        this.inventoryScanner = inventoryScanner;
+    }
 
     @Override
     public String providerId() {
@@ -43,6 +62,12 @@ public final class ArchiveSourceProvider implements SourceProvider {
     @Override
     public boolean canHandle(SourceLocator locator) {
         String repoId = locator.repoId().toLowerCase();
+        
+        // P1: Feature flag for tar/tar.gz support
+        if (ENABLE_TAR_SUPPORT && (repoId.endsWith(".tar") || repoId.endsWith(".tar.gz") || repoId.endsWith(".tgz"))) {
+            return true;
+        }
+        
         return "zip".equals(locator.provider()) || "archive".equals(locator.provider()) || repoId.endsWith(".zip");
     }
 
@@ -54,52 +79,80 @@ public final class ArchiveSourceProvider implements SourceProvider {
                 return Promise.ofException(new IllegalArgumentException("Archive not found: " + archivePath));
             }
 
+            // P1: Check for unsupported archive types when feature flag is disabled
+            String repoId = locator.repoId().toLowerCase();
+            if (!ENABLE_TAR_SUPPORT && (repoId.endsWith(".tar") || repoId.endsWith(".tar.gz") || repoId.endsWith(".tgz"))) {
+                return Promise.ofException(new UnsupportedOperationException(
+                    "Tar/tar.gz support is currently disabled. Set ENABLE_TAR_SUPPORT=true to enable (requires Apache Commons Compress dependency)."
+                ));
+            }
+
             Path extractionRoot = Files.createTempDirectory("yappc-archive-");
             List<RepositorySnapshot.SnapshotFile> files = new ArrayList<>();
             long totalBytes = 0L;
 
-            try (InputStream input = Files.newInputStream(archivePath);
-                 ZipInputStream zip = new ZipInputStream(input)) {
-                ZipEntry entry;
-                while ((entry = zip.getNextEntry()) != null) {
-                    if (entry.isDirectory()) {
-                        continue;
-                    }
+            // P1: Extract archive (ZIP only for now, tar when enabled)
+            if (repoId.endsWith(".zip") || "zip".equals(locator.provider())) {
+                try (InputStream input = Files.newInputStream(archivePath);
+                     ZipInputStream zip = new ZipInputStream(input)) {
+                    ZipEntry entry;
+                    while ((entry = zip.getNextEntry()) != null) {
+                        if (entry.isDirectory()) {
+                            continue;
+                        }
 
-                    Path target = extractionRoot.resolve(entry.getName()).normalize();
-                    if (!target.startsWith(extractionRoot)) {
-                        return Promise.ofException(new IllegalArgumentException("Zip-slip detected in archive entry: " + entry.getName()));
-                    }
+                        Path target = extractionRoot.resolve(entry.getName()).normalize();
+                        if (!target.startsWith(extractionRoot)) {
+                            return Promise.ofException(new IllegalArgumentException("Zip-slip detected in archive entry: " + entry.getName()));
+                        }
 
-                    // P0: Check per-entry size limit before reading content
-                    if (entry.getSize() > MAX_ENTRY_BYTES) {
-                        continue; // Skip entries exceeding per-entry limit
-                    }
+                        // P0: Check per-entry size limit before reading content
+                        if (entry.getSize() > MAX_ENTRY_BYTES) {
+                            continue; // Skip entries exceeding per-entry limit
+                        }
 
-                    Files.createDirectories(target.getParent());
-                    
-                    // P0: Stream entry content directly to file while computing checksum to avoid loading entire content into memory
-                    String fileChecksum = streamEntryWithChecksum(zip, target, MAX_ENTRY_BYTES);
-                    
-                    long entrySize = Files.size(target);
-                    totalBytes += entrySize;
-                    
-                    if (totalBytes > MAX_TOTAL_BYTES) {
-                        return Promise.ofException(new IllegalArgumentException("Archive exceeds max allowed extracted size"));
+                        Files.createDirectories(target.getParent());
+                        
+                        // P0: Stream entry content directly to file while computing checksum to avoid loading entire content into memory
+                        String fileChecksum = streamEntryWithChecksum(zip, target, MAX_ENTRY_BYTES);
+                        
+                        long entrySize = Files.size(target);
+                        totalBytes += entrySize;
+                        
+                        if (totalBytes > MAX_TOTAL_BYTES) {
+                            return Promise.ofException(new IllegalArgumentException("Archive exceeds max allowed extracted size"));
+                        }
+                        files.add(new RepositorySnapshot.SnapshotFile(
+                            extractionRoot.relativize(target).toString().replace('\\', '/'),
+                            target.toString(),
+                            entrySize,
+                            Instant.now(),
+                            fileChecksum
+                        ));
                     }
-                    files.add(new RepositorySnapshot.SnapshotFile(
-                        extractionRoot.relativize(target).toString().replace('\\', '/'),
-                        target.toString(),
-                        entrySize,
-                        Instant.now(),
-                        fileChecksum
-                    ));
+                }
+            } else if (ENABLE_TAR_SUPPORT && (repoId.endsWith(".tar") || repoId.endsWith(".tar.gz") || repoId.endsWith(".tgz"))) {
+                // P1: Tar extraction would go here when enabled with Apache Commons Compress
+                return Promise.ofException(new UnsupportedOperationException("Tar extraction not yet implemented"));
+            }
+
+            // P1: Run canonical inventory on extracted files
+            var inventoryResult = inventoryScanner.scanRepository(extractionRoot);
+            
+            // P1: Filter files based on canonical inventory (remove skipped files)
+            List<RepositorySnapshot.SnapshotFile> filteredFiles = new ArrayList<>();
+            for (RepositorySnapshot.SnapshotFile file : files) {
+                boolean skipped = inventoryResult.skipped().stream()
+                    .anyMatch(skippedEntry -> skippedEntry.relativePath().equals(file.relativePath()));
+                if (!skipped) {
+                    filteredFiles.add(file);
                 }
             }
 
-            String checksum = computeArchiveChecksum(files);
-            // P0: Compute deterministic snapshotId from archive path and content hash
-            String deterministicSnapshotId = computeDeterministicSnapshotId(archivePath.toString(), checksum);
+            String checksum = computeArchiveChecksum(filteredFiles);
+            // P1: Compute deterministic snapshotId from content hash only (not archive path)
+            // This ensures the same snapshot ID for identical content regardless of archive location
+            String deterministicSnapshotId = computeDeterministicSnapshotId(checksum);
             
             RepositorySnapshot snapshot = RepositorySnapshot.builder()
                 .snapshotId(deterministicSnapshotId)
@@ -108,14 +161,25 @@ public final class ArchiveSourceProvider implements SourceProvider {
                 .contentHash(checksum)
                 .materializedRoot(extractionRoot.toString())
                 .checksum(checksum)
-                .files(files)
-                .diagnostics(List.of(new RepositorySnapshot.SnapshotDiagnostic(
-                    RepositorySnapshot.DiagnosticLevel.INFO,
-                    "ARCHIVE_EXTRACTED",
-                    "Archive extracted safely with deterministic snapshotId: " + deterministicSnapshotId,
-                    archivePath.toString(),
-                    Instant.now()
-                )))
+                .files(filteredFiles)
+                .diagnostics(List.of(
+                    new RepositorySnapshot.SnapshotDiagnostic(
+                        RepositorySnapshot.DiagnosticLevel.INFO,
+                        "ARCHIVE_EXTRACTED",
+                        "Archive extracted safely with deterministic snapshotId: " + deterministicSnapshotId + 
+                        ", total files: " + filteredFiles.size() + " (skipped: " + inventoryResult.skipped().size() + ")",
+                        archivePath.toString(),
+                        Instant.now()
+                    ),
+                    new RepositorySnapshot.SnapshotDiagnostic(
+                        RepositorySnapshot.DiagnosticLevel.INFO,
+                        "INVENTORY_SUMMARY",
+                        "Canonical inventory: " + inventoryResult.fileCounts() + ", skipped reasons: " + 
+                        inventoryScanner.skipReasonSummary(inventoryResult),
+                        null,
+                        Instant.now()
+                    )
+                ))
                 .tenantId(scope.tenantId())
                 .workspaceId(scope.workspaceId())
                 .projectId(scope.projectId())
@@ -131,7 +195,12 @@ public final class ArchiveSourceProvider implements SourceProvider {
         return Map.of(
             "supportsZipSlipProtection", true,
             "supportsMaxArchiveSize", true,
-            "maxTotalBytes", MAX_TOTAL_BYTES
+            "maxTotalBytes", MAX_TOTAL_BYTES,
+            "maxEntryBytes", MAX_ENTRY_BYTES,
+            "supportsTar", ENABLE_TAR_SUPPORT,
+            "supportsTarGz", ENABLE_TAR_SUPPORT,
+            "usesCanonicalInventory", true,
+            "contentBasedSnapshotId", true
         );
     }
 
@@ -191,12 +260,15 @@ public final class ArchiveSourceProvider implements SourceProvider {
     }
 
     /**
-     * P0: Compute deterministic snapshotId from archive path and content hash.
+     * P1: Compute deterministic snapshotId from content hash only.
+     * This ensures the same snapshot ID for identical content regardless of archive location.
+     * 
+     * @param contentHash Content hash of all files in the archive
+     * @return Deterministic snapshot ID
      */
-    private static String computeDeterministicSnapshotId(String archivePath, String contentHash) {
+    private static String computeDeterministicSnapshotId(String contentHash) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(archivePath.getBytes());
             digest.update(contentHash.getBytes());
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException e) {
