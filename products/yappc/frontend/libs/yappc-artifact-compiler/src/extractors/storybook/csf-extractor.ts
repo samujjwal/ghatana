@@ -290,6 +290,7 @@ export async function extractStorybookCsf(
         artifact: record,
         nodes: [],
         edges: [],
+        unresolvedEdges: [], // P0: Required field in ExtractionResult
         modelElements: [],
         residualIslands: [],
         errors: [{ message: 'File does not appear to be a valid CSF story file', recoverable: true }],
@@ -314,7 +315,7 @@ export async function extractStorybookCsf(
 
       nodes.push({
         id: storyId,
-        kind: 'story' as GraphNodeKind,
+        type: 'story' as GraphNodeKind, // P0: Canonical field name 'type', not legacy 'kind'
         label: story.name,
         sourceLocation: story.sourceLocation,
         extractorId: EXTRACTOR_ID,
@@ -347,7 +348,7 @@ export async function extractStorybookCsf(
 
       nodes.push({
         id: componentId,
-        kind: 'component' as GraphNodeKind,
+        type: 'component' as GraphNodeKind, // P0: Canonical field name 'type', not legacy 'kind'
         label: componentName,
         sourceLocation: extracted.meta.sourceLocation,
         extractorId: EXTRACTOR_ID,
@@ -369,7 +370,7 @@ export async function extractStorybookCsf(
           id: crypto.randomUUID(),
           sourceId: storyId,
           targetId: componentId,
-          kind: 'story-for',
+          relationshipType: 'story-for', // P0: Canonical lowercase value, not 'STORY_FOR'
           confidence: 0.95,
           bidirectional: false,
           metadata: {},
@@ -397,6 +398,10 @@ export async function extractStorybookCsf(
           kind: 'inferred',
           extractedAt: now,
         },
+        // P0: Governance fields
+        graphNodeIds: [componentId],
+        sourceRefs: [],
+        residualIslandIds: [],
         securityFlags: [],
         privacyFlags: [],
         tags: [],
@@ -432,6 +437,7 @@ export async function extractStorybookCsf(
       artifact: record,
       nodes,
       edges,
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements,
       residualIslands: [],
       errors,
@@ -446,6 +452,7 @@ export async function extractStorybookCsf(
       artifact: record,
       nodes: [],
       edges: [],
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements: [],
       residualIslands: [],
       errors: [{ message, recoverable: false }],

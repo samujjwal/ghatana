@@ -308,6 +308,10 @@ export async function extractStateStoreArtifact(
           kind: 'inferred',
           extractedAt: now,
         },
+        // P0: Governance fields
+        graphNodeIds: [storeId],
+        sourceRefs: [],
+        residualIslandIds: [],
         securityFlags: [],
         privacyFlags: [],
         tags: [],
@@ -344,6 +348,7 @@ export async function extractStateStoreArtifact(
       artifact: record,
       nodes,
       edges: [],
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements,
       residualIslands: [],
       errors,
@@ -358,6 +363,7 @@ export async function extractStateStoreArtifact(
       artifact: record,
       nodes: [],
       edges: [],
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements: [],
       residualIslands: [],
       errors: [{ message, recoverable: false }],

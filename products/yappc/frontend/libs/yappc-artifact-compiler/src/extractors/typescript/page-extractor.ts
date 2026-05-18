@@ -223,7 +223,7 @@ export async function extractPageArtifact(
         id: crypto.randomUUID(),
         sourceId: pageId,
         targetId: comp,
-        relationshipType: 'RENDERS', // P0: Canonical field name 'relationshipType', not legacy 'kind'
+        relationshipType: 'renders', // P0: Canonical lowercase value, not 'RENDERS'
         confidence: 0.8,
         bidirectional: false,
         metadata: { componentName: comp },
@@ -245,6 +245,10 @@ export async function extractPageArtifact(
           kind: 'exact',
           extractedAt: now,
         },
+        // P0: Governance fields
+        graphNodeIds: [pageId],
+        sourceRefs: [],
+        residualIslandIds: [],
         securityFlags: [],
         privacyFlags: [],
         tags: [],
@@ -266,6 +270,10 @@ export async function extractPageArtifact(
           kind: 'exact',
           extractedAt: now,
         },
+        // P0: Governance fields
+        graphNodeIds: [pageId],
+        sourceRefs: [],
+        residualIslandIds: [],
         securityFlags: [],
         privacyFlags: [],
         tags: [],
@@ -287,6 +295,7 @@ export async function extractPageArtifact(
       artifact: record,
       nodes,
       edges,
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements,
       residualIslands: [],
       errors,
@@ -301,6 +310,7 @@ export async function extractPageArtifact(
       artifact: record,
       nodes: [],
       edges: [],
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements: [],
       residualIslands: [],
       errors: [{ message, recoverable: false }],

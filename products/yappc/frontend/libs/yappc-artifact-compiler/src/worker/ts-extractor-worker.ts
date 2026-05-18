@@ -196,7 +196,7 @@ function toUnresolvedEdgeId(edge: UnresolvedGraphEdge): string {
   return buildHash(
     edge.sourceId,
     edge.targetRef,
-    edge.relationship,
+    edge.relationshipType, // P0: Canonical field name 'relationshipType'
     edge.targetKindHint ?? '',
     edge.sourceLocation.filePath,
     String(edge.sourceLocation.startLine),
@@ -210,7 +210,7 @@ function toWorkerNode(node: GraphNode): ExtractorWorkerResponse['nodes'][number]
   const filePath = node.sourceLocation?.filePath;
   return {
     ...node,
-    type: node.kind,
+    type: node.type, // P0: Canonical field name 'type'
     id: node.id,
     name: node.label,
     ...(filePath ? { filePath } : {}),
@@ -225,7 +225,7 @@ function toWorkerEdge(edge: GraphEdge): ExtractorWorkerResponse['edges'][number]
     edgeId: edge.id,
     sourceNodeId: edge.sourceId,
     targetNodeId: edge.targetId,
-    relationshipType: edge.kind,
+    relationshipType: edge.relationshipType, // P0: Canonical field name 'relationshipType'
     confidence: edge.confidence,
     bidirectional: edge.bidirectional,
     metadata: edge.metadata,
@@ -241,7 +241,7 @@ function toWorkerUnresolvedEdge(edge: UnresolvedGraphEdge): ExtractorWorkerRespo
     sourceNodeId: edge.sourceId,
     targetRef: edge.targetRef,
     // P0: Use canonical relationshipType
-    relationshipType: edge.relationship,
+    relationshipType: edge.relationshipType,
     ...(edge.targetKindHint ? { targetKindHint: edge.targetKindHint } : {}),
     confidence: edge.confidence,
     metadata: edge.metadata,
@@ -315,9 +315,9 @@ function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands
 
 function toWorkerSemanticModel(node: GraphNode): ExtractorWorkerResponse['semanticModels'][number] {
   return {
-    id: buildHash(node.id, node.kind, node.label),
+    id: buildHash(node.id, node.type, node.label), // P0: Canonical field name 'type'
     elementId: node.id,
-    elementType: node.kind,
+    elementType: node.type, // P0: Canonical field name 'type'
     name: node.label,
     qualifiedName: node.symbolRef,
     filePath: node.sourceLocation?.filePath,

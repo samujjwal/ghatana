@@ -255,7 +255,7 @@ export async function extractPrismaSchemaArtifact(
             id: crypto.randomUUID(),
             sourceId: modelId,
             targetId,
-            relationshipType: 'DEPENDS_ON', // P0: Canonical field name 'relationshipType', not legacy 'kind'
+            relationshipType: 'depends-on', // P0: Canonical lowercase value, not 'DEPENDS_ON'
             confidence: 0.9,
             bidirectional: relation.kind === 'many-to-many',
             metadata: {
@@ -285,6 +285,10 @@ export async function extractPrismaSchemaArtifact(
           kind: 'exact',
           extractedAt: now,
         },
+        // P0: Governance fields
+        graphNodeIds: [modelId],
+        sourceRefs: [],
+        residualIslandIds: [],
         securityFlags: [],
         privacyFlags: [],
         tags: [],
@@ -315,6 +319,7 @@ export async function extractPrismaSchemaArtifact(
       artifact: record,
       nodes,
       edges,
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements,
       residualIslands: [],
       errors,
@@ -329,6 +334,7 @@ export async function extractPrismaSchemaArtifact(
       artifact: record,
       nodes: [],
       edges: [],
+      unresolvedEdges: [], // P0: Required field in ExtractionResult
       modelElements: [],
       residualIslands: [],
       errors: [{ message, recoverable: false }],

@@ -6,6 +6,7 @@
 - [x] P5-02 platform-mode defaults hardening: YAPPC ProductUnitIntent route removed implicit Data Cloud defaults (localhost/default-*), and now fails closed when explicit Data Cloud scope config is missing.
 - [x] P5-02 tests updated: product-unit-intents route tests now set explicit Data Cloud scope env vars and cover missing-scope rejection.
 - [x] P2-01/P8-02 CI toolchain drift remediation (lifecycle workflow set): migrated product lifecycle build/validate/package/deploy-local/release workflows to Node 22 + pnpm 10.33.0 with frozen lockfile installs.
+- [x] P8-02 CI toolchain drift remediation (promotion workflow): migrated product promotion workflow to Node 22 + pnpm 10.33.0 and frozen lockfile install.
 - [x] P0-01 registry metadata hygiene: removed stale PHR readiness reference to virtual-org and pointed evidence refs to PHR-owned artifacts.
 - [x] Group 1 TS worker request boundary: extractor worker now accepts canonical request shape only.
 - [x] Group 1 TS worker output fidelity: worker nodes now emit required extractor/provenance/source fields; semantic model payload expanded with richer fields.
