@@ -45,8 +45,34 @@ abstract class DataCloudKernelProviderSupport {
             String providerName) {
         this.adapter = Objects.requireNonNull(adapter, "adapter cannot be null");
         this.context = Objects.requireNonNull(context, "context cannot be null");
+        if (context.getTenantId().trim().isEmpty()) {
+            throw new DataCloudProviderException(
+                providerName,
+                "initialize",
+                "Tenant context is required for Data Cloud platform providers",
+                DataCloudProviderException.ReasonCode.TENANT_ISOLATION);
+        }
         this.datasetId = Objects.requireNonNull(datasetId, "datasetId cannot be null");
         this.providerName = Objects.requireNonNull(providerName, "providerName cannot be null");
+    }
+
+    public final KernelBridgeProviderHealthResult providerHealth(
+            KernelBridgeProviderMode mode,
+            KernelBridgeProviderStatus status,
+            String reason,
+            long latencyMillis,
+            String lastSuccessAt,
+            String lastFailureAt,
+            List<String> evidenceRefs) {
+        return new KernelBridgeProviderHealthResult(
+            providerName,
+            Objects.requireNonNull(mode, "mode cannot be null"),
+            Objects.requireNonNull(status, "status cannot be null"),
+            reason,
+            latencyMillis,
+            lastSuccessAt,
+            lastFailureAt,
+            evidenceRefs == null ? List.of() : List.copyOf(evidenceRefs));
     }
 
     protected final Promise<Void> persistRecord(String recordId, Map<String, Object> record) {

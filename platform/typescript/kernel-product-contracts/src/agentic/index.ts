@@ -1,7 +1,10 @@
 export {
   AgentLifecycleActionRequestSchema,
   AgentLifecycleActionRequestValidationError,
+  AgentLifecycleMasteryEvidenceSchema,
+  AgentLifecyclePolicyDecisionEvidenceSchema,
   AgentLifecycleApprovalRequirementSchema,
+  AgentLifecycleToolPermissionSchema,
   AgentLifecycleVerificationRequirementSchema,
   isAgentLifecycleActionRequest,
   parseAgentLifecycleActionRequest,
@@ -9,10 +12,24 @@ export {
   type AgentLifecycleActionRequestReasonCode,
   type AgentLifecycleActionRequestValidationIssue,
   type AgentLifecycleApprovalRequirement,
+  type AgentLifecycleFallbackMode,
+  type AgentLifecycleMasteryEvidence,
+  type AgentLifecycleMasteryState,
+  type AgentLifecyclePolicyDecision,
+  type AgentLifecyclePolicyDecisionEvidence,
   type AgentLifecycleRequestedAction,
   type AgentLifecycleRiskLevel,
+  type AgentLifecycleToolPermission,
   type AgentLifecycleVerificationRequirement,
 } from "./AgentLifecycleActionRequest.js";
+
+export {
+  AGENT_EVIDENCE_KINDS,
+  AgentLifecycleActionEvidenceSchema,
+  parseAgentLifecycleActionEvidence,
+  type AgentEvidenceKind,
+  type AgentLifecycleActionEvidence,
+} from "./AgentLifecycleActionEvidence.js";
 
 export {
   AgentLifecycleActionFailureSchema,

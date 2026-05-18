@@ -30,7 +30,7 @@ export interface MockSchema {
 export interface MockField {
   id: string;
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'date' | 'email' | 'url' | 'text';
+  type: "string" | "number" | "boolean" | "date" | "email" | "url" | "text";
   required: boolean;
   maxLength?: number;
   minLength?: number;
@@ -42,7 +42,7 @@ export interface MockField {
 export interface MockConstraint {
   id: string;
   name: string;
-  type: 'unique' | 'foreign_key' | 'check' | 'not_null';
+  type: "unique" | "foreign_key" | "check" | "not_null";
   fields: string[];
   description?: string;
 }
@@ -62,7 +62,7 @@ export interface MockWorkflow {
   nodes: MockWorkflowNode[];
   edges: MockWorkflowEdge[];
   triggers: MockTrigger[];
-  status: 'draft' | 'active' | 'paused' | 'archived';
+  status: "draft" | "active" | "paused" | "archived";
   createdAt: string;
   updatedAt: string;
   executionCount: number;
@@ -72,18 +72,18 @@ export interface MockWorkflow {
 export interface MockWorkflowNode {
   id: string;
   type:
-    | 'start'
-    | 'end'
-    | 'query'
-    | 'transform'
-    | 'decision'
-    | 'approval'
-    | 'api_call'
-    | 'notification';
+    | "start"
+    | "end"
+    | "query"
+    | "transform"
+    | "decision"
+    | "approval"
+    | "api_call"
+    | "notification";
   label: string;
   data: Record<string, unknown>;
   position: { x: number; y: number };
-  status?: 'idle' | 'running' | 'completed' | 'failed';
+  status?: "idle" | "running" | "completed" | "failed";
 }
 
 export interface MockWorkflowEdge {
@@ -96,7 +96,7 @@ export interface MockWorkflowEdge {
 
 export interface MockTrigger {
   id: string;
-  type: 'event' | 'schedule' | 'webhook' | 'manual' | 'form';
+  type: "event" | "schedule" | "webhook" | "manual" | "form";
   name: string;
   config: Record<string, unknown>;
   isActive: boolean;
@@ -105,8 +105,8 @@ export interface MockTrigger {
 export interface MockExecution {
   id: string;
   workflowId: string;
-  status: 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED';
-  nodeStatuses: Record<string, 'CREATED' | 'INITIALIZED' | 'RUNNING' | 'STOPPED' | 'FAILED'>;
+  status: "completed" | "failed" | "cancelled" | "running" | "pending";
+  nodeStatuses: Record<string, "idle" | "running" | "completed" | "failed">;
   startedAt: string;
   completedAt?: string;
   duration?: number;
@@ -118,6 +118,6 @@ export interface MockExecutionLog {
   timestamp: string;
   nodeId: string;
   message: string;
-  level: 'info' | 'warn' | 'error';
+  level: "info" | "warn" | "error";
   data?: Record<string, unknown>;
 }

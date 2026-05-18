@@ -11,7 +11,7 @@ export type {
   PresetTypography,
   DesignSystemPreset,
   MaterializedTokens,
-} from './presets/index.js';
+} from "./presets/index.js";
 
 export {
   PresetColorPaletteSchema,
@@ -24,13 +24,27 @@ export {
   findPreset,
   materializePreset,
   renderPresetToCss,
-} from './presets/index.js';
+} from "./presets/index.js";
 
-export type { BrandConfig, BrandedTokens } from './brand/index.js';
+export type { BrandConfig, BrandedTokens } from "./brand/index.js";
 
 export {
   BrandConfigSchema,
   applyBrand,
   renderBrandToCss,
   parseBrandConfig,
-} from './brand/index.js';
+} from "./brand/index.js";
+
+export type {
+  GeneratorExtensionPoint,
+  GeneratorOutputArtifact,
+  DesignSystemGeneratorManifest,
+  CreateGeneratorManifestOptions,
+} from "./extensions/index.js";
+
+export {
+  GeneratorExtensionPointSchema,
+  GeneratorOutputArtifactSchema,
+  DesignSystemGeneratorManifestSchema,
+  createGeneratorManifest,
+} from "./extensions/index.js";

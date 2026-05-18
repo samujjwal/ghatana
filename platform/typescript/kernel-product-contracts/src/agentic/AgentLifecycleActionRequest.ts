@@ -9,7 +9,10 @@
 
 import { z } from "zod";
 import type { ProductLifecyclePhase } from "../lifecycle/ProductLifecyclePhase";
-import { ProductUnitScopeSchema, type ProductUnitScope } from "../product-unit/ProductUnit.js";
+import {
+  ProductUnitScopeSchema,
+  type ProductUnitScope,
+} from "../product-unit/ProductUnit.js";
 
 export type AgentLifecycleRequestedAction =
   | "create-lifecycle-plan"
@@ -19,6 +22,21 @@ export type AgentLifecycleRequestedAction =
   | "prepare-rollback";
 
 export type AgentLifecycleRiskLevel = "low" | "medium" | "high" | "critical";
+export type AgentLifecycleMasteryState =
+  | "novice"
+  | "learning"
+  | "competent"
+  | "mastered"
+  | "maintenance-only";
+export type AgentLifecyclePolicyDecision =
+  | "allowed"
+  | "denied"
+  | "requires-approval";
+export type AgentLifecycleFallbackMode =
+  | "rollback"
+  | "dry-run"
+  | "manual-handoff"
+  | "degraded-safe-mode";
 
 export interface AgentLifecycleApprovalRequirement {
   readonly approvalId: string;
@@ -32,6 +50,27 @@ export interface AgentLifecycleVerificationRequirement {
   readonly required: boolean;
 }
 
+export interface AgentLifecycleMasteryEvidence {
+  readonly state: AgentLifecycleMasteryState;
+  readonly stateRef: string;
+  readonly evaluatedAt: string;
+}
+
+export interface AgentLifecyclePolicyDecisionEvidence {
+  readonly decisionId: string;
+  readonly decision: AgentLifecyclePolicyDecision;
+  readonly evaluatedAt: string;
+  readonly reasonCodes: readonly string[];
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface AgentLifecycleToolPermission {
+  readonly toolId: string;
+  readonly permissionRef: string;
+  readonly granted: boolean;
+  readonly allowedActions: readonly AgentLifecycleRequestedAction[];
+}
+
 export interface AgentLifecycleActionRequest {
   readonly schemaVersion: "1.0.0";
   readonly requestId: string;
@@ -39,14 +78,23 @@ export interface AgentLifecycleActionRequest {
   readonly productUnitId: string;
   readonly scope: ProductUnitScope;
   readonly requestedByAgent: string;
+  readonly requestedByAgentVersion: string;
+  readonly masteryState: AgentLifecycleMasteryEvidence;
+  readonly policyDecision: AgentLifecyclePolicyDecisionEvidence;
+  readonly toolPermissions: readonly AgentLifecycleToolPermission[];
   readonly requestedAction: AgentLifecycleRequestedAction;
   readonly lifecyclePhase: ProductLifecyclePhase;
   readonly proposedPlanRef: string;
   readonly riskLevel: AgentLifecycleRiskLevel;
+  readonly approvalRequired: boolean;
   readonly requiredApprovals: readonly AgentLifecycleApprovalRequirement[];
   readonly requiredVerification: readonly AgentLifecycleVerificationRequirement[];
+  readonly inputRefs: readonly string[];
+  readonly outputRefs: readonly string[];
+  readonly verificationProofRefs: readonly string[];
   readonly evidenceRefs: readonly string[];
   readonly rollbackPlanRef: string;
+  readonly fallbackMode: AgentLifecycleFallbackMode;
   readonly policyEvidenceRefs?: readonly string[] | undefined;
   readonly masteryStateRef?: string | undefined;
   readonly toolPermissionRefs?: readonly string[] | undefined;
@@ -58,9 +106,11 @@ export interface AgentLifecycleActionRequest {
     | "confidential"
     | "restricted"
     | undefined;
-  readonly retention?: {
-    readonly expiresAt: string;
-  } | undefined;
+  readonly retention?:
+    | {
+        readonly expiresAt: string;
+      }
+    | undefined;
   readonly modelDecisionContextRef?: string | undefined;
   readonly redactionRequired?: boolean | undefined;
 }
@@ -68,6 +118,10 @@ export interface AgentLifecycleActionRequest {
 export type AgentLifecycleActionRequestReasonCode =
   | "raw-command-not-allowed"
   | "missing-evidence"
+  | "missing-tool-permission"
+  | "tool-permission-denied"
+  | "policy-denied"
+  | "approval-required"
   | "missing-rollback-plan"
   | "invalid-scope"
   | "unsupported-action"
@@ -86,7 +140,7 @@ export class AgentLifecycleActionRequestValidationError extends Error {
     super(
       issues.length > 0
         ? `Invalid AgentLifecycleActionRequest: ${issues.map((issue) => issue.message).join("; ")}`
-        : "Invalid AgentLifecycleActionRequest"
+        : "Invalid AgentLifecycleActionRequest",
     );
     this.name = "AgentLifecycleActionRequestValidationError";
     this.issues = issues;
@@ -119,9 +173,35 @@ const LIFECYCLE_PHASES = [
 ] as const satisfies readonly ProductLifecyclePhase[];
 
 const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
-const VERIFICATION_KINDS = ["test", "policy", "health", "artifact", "deployment"] as const;
-const PRIVACY_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
-const RAW_COMMAND_VALUE_PATTERN = /\b(gradle|gradlew|pnpm|npm|yarn|docker|docker\s+buildx|kubectl)\b/i;
+const MASTERY_STATES = [
+  "novice",
+  "learning",
+  "competent",
+  "mastered",
+  "maintenance-only",
+] as const;
+const POLICY_DECISIONS = ["allowed", "denied", "requires-approval"] as const;
+const FALLBACK_MODES = [
+  "rollback",
+  "dry-run",
+  "manual-handoff",
+  "degraded-safe-mode",
+] as const;
+const VERIFICATION_KINDS = [
+  "test",
+  "policy",
+  "health",
+  "artifact",
+  "deployment",
+] as const;
+const PRIVACY_CLASSIFICATIONS = [
+  "public",
+  "internal",
+  "confidential",
+  "restricted",
+] as const;
+const RAW_COMMAND_VALUE_PATTERN =
+  /\b(gradle|gradlew|pnpm|npm|yarn|docker|docker\s+buildx|kubectl)\b/i;
 
 function containsRawCommand(value: unknown): boolean {
   if (typeof value === "string") {
@@ -134,7 +214,7 @@ function containsRawCommand(value: unknown): boolean {
     return false;
   }
   return Object.values(value as Record<string, unknown>).some((nested) =>
-    containsRawCommand(nested)
+    containsRawCommand(nested),
   );
 }
 
@@ -154,6 +234,33 @@ export const AgentLifecycleVerificationRequirementSchema = z
   })
   .strict();
 
+export const AgentLifecycleMasteryEvidenceSchema = z
+  .object({
+    state: z.enum(MASTERY_STATES),
+    stateRef: z.string().trim().min(1),
+    evaluatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const AgentLifecyclePolicyDecisionEvidenceSchema = z
+  .object({
+    decisionId: z.string().trim().min(1),
+    decision: z.enum(POLICY_DECISIONS),
+    evaluatedAt: z.string().datetime({ offset: true }),
+    reasonCodes: z.array(z.string().trim().min(1)).min(1),
+    evidenceRefs: z.array(z.string().trim().min(1)).min(1),
+  })
+  .strict();
+
+export const AgentLifecycleToolPermissionSchema = z
+  .object({
+    toolId: z.string().trim().min(1),
+    permissionRef: z.string().trim().min(1),
+    granted: z.boolean(),
+    allowedActions: z.array(z.enum(REQUESTED_ACTIONS)).min(1),
+  })
+  .strict();
+
 export const AgentLifecycleActionRequestSchema = z
   .object({
     schemaVersion: z.literal("1.0.0"),
@@ -162,66 +269,149 @@ export const AgentLifecycleActionRequestSchema = z
     productUnitId: z.string().trim().min(1),
     scope: ProductUnitScopeSchema,
     requestedByAgent: z.string().trim().min(1),
+    requestedByAgentVersion: z.string().trim().min(1),
+    masteryState: AgentLifecycleMasteryEvidenceSchema,
+    policyDecision: AgentLifecyclePolicyDecisionEvidenceSchema,
+    toolPermissions: z.array(AgentLifecycleToolPermissionSchema).min(1),
     requestedAction: z.enum(REQUESTED_ACTIONS),
     lifecyclePhase: z.enum(LIFECYCLE_PHASES),
     proposedPlanRef: z.string().trim().min(1),
     riskLevel: z.enum(RISK_LEVELS),
+    approvalRequired: z.boolean(),
     requiredApprovals: z.array(AgentLifecycleApprovalRequirementSchema),
     requiredVerification: z.array(AgentLifecycleVerificationRequirementSchema),
+    inputRefs: z.array(z.string().trim().min(1)).min(1),
+    outputRefs: z.array(z.string().trim().min(1)),
+    verificationProofRefs: z.array(z.string().trim().min(1)),
     evidenceRefs: z.array(z.string().trim().min(1)).min(1),
     rollbackPlanRef: z.string().trim().min(1),
+    fallbackMode: z.enum(FALLBACK_MODES),
     policyEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
     masteryStateRef: z.string().trim().min(1).optional(),
     toolPermissionRefs: z.array(z.string().trim().min(1)).optional(),
     approvalTicketRefs: z.array(z.string().trim().min(1)).optional(),
     verificationEvidenceRefs: z.array(z.string().trim().min(1)).optional(),
     privacyClassification: z.enum(PRIVACY_CLASSIFICATIONS).optional(),
-    retention: z.object({
-      expiresAt: z.string().trim().min(1),
-    }).optional(),
+    retention: z
+      .object({
+        expiresAt: z.string().trim().min(1),
+      })
+      .optional(),
     modelDecisionContextRef: z.string().trim().min(1).optional(),
     redactionRequired: z.boolean().optional(),
   })
   .strict()
-  .superRefine((value: AgentLifecycleActionRequest, context: z.RefinementCtx) => {
-    if (containsRawCommand(value)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["proposedPlanRef"],
-        message: "AgentLifecycleActionRequest must not contain raw shell/tool commands",
-      });
-    }
-    // Validation: high/critical risk requires approval
-    if ((value.riskLevel === "high" || value.riskLevel === "critical") &&
-        value.requiredApprovals.every((approval: { required: boolean }) => !approval.required)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["requiredApprovals"],
-        message: "High or critical risk actions require at least one required approval",
-      });
-    }
-    // Validation: execute-lifecycle-phase and prepare-rollback require rollbackPlanRef
-    if ((value.requestedAction === "execute-lifecycle-phase" ||
-         value.requestedAction === "prepare-rollback") &&
-        value.rollbackPlanRef === "") {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["rollbackPlanRef"],
-        message: "Execute-lifecycle-phase and prepare-rollback actions require a rollback plan reference",
-      });
-    }
-    // Validation: restricted classification requires redaction flag
-    if (value.privacyClassification === "restricted" && !value.redactionRequired) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["redactionRequired"],
-        message: "Restricted classification requires redactionRequired flag to be true",
-      });
-    }
-  });
+  .superRefine(
+    (value: AgentLifecycleActionRequest, context: z.RefinementCtx) => {
+      if (containsRawCommand(value)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["proposedPlanRef"],
+          message:
+            "AgentLifecycleActionRequest must not contain raw shell/tool commands",
+        });
+      }
+      // Validation: high/critical risk requires approval
+      if (
+        (value.riskLevel === "high" || value.riskLevel === "critical") &&
+        value.requiredApprovals.every(
+          (approval: { required: boolean }) => !approval.required,
+        )
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["requiredApprovals"],
+          message:
+            "High or critical risk actions require at least one required approval",
+        });
+      }
+      if (
+        value.approvalRequired &&
+        value.requiredApprovals.every((approval) => !approval.required)
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["approvalRequired"],
+          message:
+            "approvalRequired=true requires at least one required approval",
+        });
+      }
+      if (value.policyDecision.decision === "denied") {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["policyDecision"],
+          message:
+            "Denied policy decisions cannot be submitted for lifecycle execution",
+        });
+      }
+      if (
+        value.policyDecision.decision === "requires-approval" &&
+        !value.approvalRequired
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["approvalRequired"],
+          message:
+            "Policy decisions requiring approval must set approvalRequired=true",
+        });
+      }
+      if (
+        !value.toolPermissions.some(
+          (permission) =>
+            permission.granted &&
+            permission.allowedActions.includes(value.requestedAction),
+        )
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["toolPermissions"],
+          message:
+            "Requested action requires a granted matching tool permission",
+        });
+      }
+      if (
+        value.requiredVerification.some(
+          (verification) => verification.required,
+        ) &&
+        value.verificationProofRefs.length === 0
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["verificationProofRefs"],
+          message:
+            "Required verification must include at least one verification proof reference",
+        });
+      }
+      // Validation: execute-lifecycle-phase and prepare-rollback require rollbackPlanRef
+      if (
+        (value.requestedAction === "execute-lifecycle-phase" ||
+          value.requestedAction === "prepare-rollback") &&
+        value.rollbackPlanRef === ""
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["rollbackPlanRef"],
+          message:
+            "Execute-lifecycle-phase and prepare-rollback actions require a rollback plan reference",
+        });
+      }
+      // Validation: restricted classification requires redaction flag
+      if (
+        value.privacyClassification === "restricted" &&
+        !value.redactionRequired
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["redactionRequired"],
+          message:
+            "Restricted classification requires redactionRequired flag to be true",
+        });
+      }
+    },
+  );
 
 function reasonCodeForAgentLifecycleActionRequestIssue(
-  issue: z.ZodIssue
+  issue: z.ZodIssue,
 ): AgentLifecycleActionRequestReasonCode {
   const path = issue.path.join(".");
   if (issue.message.includes("raw shell/tool commands")) {
@@ -229,6 +419,15 @@ function reasonCodeForAgentLifecycleActionRequestIssue(
   }
   if (path === "evidenceRefs") {
     return "missing-evidence";
+  }
+  if (path === "toolPermissions") {
+    return "missing-tool-permission";
+  }
+  if (path === "policyDecision") {
+    return "policy-denied";
+  }
+  if (path === "approvalRequired" || path === "requiredApprovals") {
+    return "approval-required";
   }
   if (path === "rollbackPlanRef") {
     return "missing-rollback-plan";
@@ -243,7 +442,7 @@ function reasonCodeForAgentLifecycleActionRequestIssue(
 }
 
 export function parseAgentLifecycleActionRequest(
-  value: unknown
+  value: unknown,
 ): AgentLifecycleActionRequest {
   const parsed = AgentLifecycleActionRequestSchema.safeParse(value);
   if (parsed.success) {
@@ -255,12 +454,12 @@ export function parseAgentLifecycleActionRequest(
       path: issue.path.join("."),
       reasonCode: reasonCodeForAgentLifecycleActionRequestIssue(issue),
       message: issue.message,
-    }))
+    })),
   );
 }
 
 export function isAgentLifecycleActionRequest(
-  value: unknown
+  value: unknown,
 ): value is AgentLifecycleActionRequest {
   return AgentLifecycleActionRequestSchema.safeParse(value).success;
 }

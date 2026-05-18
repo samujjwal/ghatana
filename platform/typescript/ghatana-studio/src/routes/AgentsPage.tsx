@@ -1,26 +1,40 @@
-import type { ReactElement } from 'react';
-import { useMemo, useState } from 'react';
-import { Badge, Button } from '@ghatana/design-system';
-import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
-import type { StudioTranslationKey } from '../i18n/studioTranslations';
-import { useStudioTranslation } from '../i18n/studioTranslations';
-import { createAgentLifecycleClient } from '../api/agentLifecycleClient';
-import { resolveStudioRuntimeContext } from '../config/studioRuntimeContext';
+import type { ReactElement } from "react";
+import { useMemo, useState } from "react";
+import { Badge, Button } from "@ghatana/design-system";
+import { useStudioLifecycleData } from "../data/StudioLifecycleDataContext";
+import type { StudioTranslationKey } from "../i18n/studioTranslations";
+import { useStudioTranslation } from "../i18n/studioTranslations";
+import { createAgentLifecycleClient } from "../api/agentLifecycleClient";
+import { resolveStudioRuntimeContext } from "../config/studioRuntimeContext";
 import type {
   AgentLifecycleActionRequest,
   AgentLifecycleActionResult,
   ProductLifecyclePhase,
-} from '@ghatana/kernel-product-contracts';
+} from "@ghatana/kernel-product-contracts";
 import {
   describeLifecycleDataStatus,
   lifecycleDataBadgeTone,
-} from './studioLifecycleRouteSupport';
+} from "./studioLifecycleRouteSupport";
 
-const RISK_LEVELS = ['low', 'medium', 'high', 'critical'] as const;
-const GOVERNANCE_DECISIONS = ['allowed', 'denied', 'requires-approval'] as const;
-const APPROVAL_DECISIONS = ['not-required', 'pending', 'approved', 'rejected'] as const;
-const HEALTH_STATUSES = ['healthy', 'degraded', 'unhealthy', 'unknown'] as const;
-const ROLLBACK_READINESS = ['ready', 'not-ready', 'not-required'] as const;
+const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
+const GOVERNANCE_DECISIONS = [
+  "allowed",
+  "denied",
+  "requires-approval",
+] as const;
+const APPROVAL_DECISIONS = [
+  "not-required",
+  "pending",
+  "approved",
+  "rejected",
+] as const;
+const HEALTH_STATUSES = [
+  "healthy",
+  "degraded",
+  "unhealthy",
+  "unknown",
+] as const;
+const ROLLBACK_READINESS = ["ready", "not-ready", "not-required"] as const;
 
 type RiskLevel = (typeof RISK_LEVELS)[number];
 type GovernanceDecision = (typeof GOVERNANCE_DECISIONS)[number];
@@ -45,7 +59,10 @@ function agentHealthStatusLabel(status: HealthStatus, t: TranslateFn): string {
   return t(`studio.route.agents.healthStatus.${status}`);
 }
 
-function agentRollbackReadinessLabel(readiness: RollbackReadiness, t: TranslateFn): string {
+function agentRollbackReadinessLabel(
+  readiness: RollbackReadiness,
+  t: TranslateFn,
+): string {
   return t(`studio.route.agents.rollbackReadiness.${readiness}`);
 }
 
@@ -97,7 +114,7 @@ interface VerificationTraceEntry {
   readonly timestamp: string;
   readonly verificationId: string;
   readonly kind: string;
-  readonly status: 'passed' | 'failed' | 'pending';
+  readonly status: "passed" | "failed" | "pending";
   readonly details: string;
 }
 
@@ -106,7 +123,7 @@ export default function AgentsPage(): ReactElement {
   const t = useStudioTranslation();
   const runtimeContext = useMemo(() => resolveStudioRuntimeContext(), []);
   const agentLifecycleClient = useMemo(() => {
-    if (runtimeContext.status !== 'configured') {
+    if (runtimeContext.status !== "configured") {
       return undefined;
     }
     return createAgentLifecycleClient({
@@ -119,10 +136,12 @@ export default function AgentsPage(): ReactElement {
   }, [runtimeContext]);
   const [executionResultByCorrelationId, setExecutionResultByCorrelationId] =
     useState<Record<string, AgentLifecycleActionResult>>({});
-  const [activeExecutionCorrelationId, setActiveExecutionCorrelationId] = useState<string | null>(null);
+  const [activeExecutionCorrelationId, setActiveExecutionCorrelationId] =
+    useState<string | null>(null);
 
   const isGovernanceAvailable =
-    runtimeContext.status === 'configured' && lifecycleData.snapshot.status !== 'unconfigured';
+    runtimeContext.status === "configured" &&
+    lifecycleData.snapshot.status !== "unconfigured";
 
   const proposals: readonly ProposalCard[] = useMemo(() => {
     const selectedRun = lifecycleData.snapshot.selectedRun;
@@ -136,40 +155,47 @@ export default function AgentsPage(): ReactElement {
 
     return [
       {
-        requestedAction: 'execute-lifecycle-phase',
+        requestedAction: "execute-lifecycle-phase",
         productUnitId: selectedProductUnit.id,
-        phase: selectedRun.phase ?? 'build',
-        riskLevel: 'medium',
-        policyDecision: existingResult?.policyDecision ?? 'allowed',
-        masteryDecision: existingResult?.masteryDecision ?? 'requires-approval',
-        approvalDecision: existingResult?.approvalDecision ?? 'pending',
-        requiredNextAction: existingResult?.requiredNextAction ?? 'request-approval',
-        evidenceRefs:
-          existingResult?.evidenceRefs ??
-          [
-            selectedRun.eventsRef ?? 'evidence:lifecycle-events-unavailable',
-            selectedRun.healthSnapshotRef ?? 'evidence:health-snapshot-unavailable',
-          ],
-        rollbackReadiness: existingResult?.rollbackReadiness ?? 'ready',
-        healthStatus: existingResult?.healthStatus ?? 'unknown',
+        phase: selectedRun.phase ?? "build",
+        riskLevel: "medium",
+        policyDecision: existingResult?.policyDecision ?? "allowed",
+        masteryDecision: existingResult?.masteryDecision ?? "requires-approval",
+        approvalDecision: existingResult?.approvalDecision ?? "pending",
+        requiredNextAction:
+          existingResult?.requiredNextAction ?? "request-approval",
+        evidenceRefs: existingResult?.evidenceRefs ?? [
+          selectedRun.eventsRef ?? "evidence:lifecycle-events-unavailable",
+          selectedRun.healthSnapshotRef ??
+            "evidence:health-snapshot-unavailable",
+        ],
+        rollbackReadiness: existingResult?.rollbackReadiness ?? "ready",
+        healthStatus: existingResult?.healthStatus ?? "unknown",
         correlationId,
       },
     ];
-  }, [lifecycleData.snapshot.productUnit, lifecycleData.snapshot.selectedRun, executionResultByCorrelationId]);
+  }, [
+    lifecycleData.snapshot.productUnit,
+    lifecycleData.snapshot.selectedRun,
+    executionResultByCorrelationId,
+  ]);
 
   const missingEvidenceRefs = useMemo(
-    () => proposals.flatMap((proposal) => proposal.evidenceRefs.filter((ref) => ref.endsWith('-unavailable'))),
+    () =>
+      proposals.flatMap((proposal) =>
+        proposal.evidenceRefs.filter((ref) => ref.endsWith("-unavailable")),
+      ),
     [proposals],
   );
 
   const executeProposal = async (proposal: ProposalCard): Promise<void> => {
-    if (!agentLifecycleClient || runtimeContext.status !== 'configured') {
+    if (!agentLifecycleClient || runtimeContext.status !== "configured") {
       return;
     }
 
-    const lifecyclePhase = (proposal.phase || 'build') as ProductLifecyclePhase;
+    const lifecyclePhase = (proposal.phase || "build") as ProductLifecyclePhase;
     const request: AgentLifecycleActionRequest = {
-      schemaVersion: '1.0.0',
+      schemaVersion: "1.0.0",
       requestId: `studio-agent-${Date.now()}`,
       correlationId: proposal.correlationId,
       productUnitId: proposal.productUnitId,
@@ -178,27 +204,60 @@ export default function AgentsPage(): ReactElement {
         workspaceId: runtimeContext.identity.workspaceId,
         projectId: runtimeContext.identity.projectId,
       },
-      requestedByAgent: 'studio-governed-agent',
-      requestedAction: 'execute-lifecycle-phase',
+      requestedByAgent: "studio-governed-agent",
+      requestedByAgentVersion: "2026.05.0",
+      masteryState: {
+        state: "competent",
+        stateRef: `mastery:studio-governed-agent:${proposal.productUnitId}`,
+        evaluatedAt: new Date().toISOString(),
+      },
+      policyDecision: {
+        decisionId: `policy:${proposal.correlationId}`,
+        decision: proposal.policyDecision,
+        evaluatedAt: new Date().toISOString(),
+        reasonCodes: [
+          proposal.policyDecision === "allowed"
+            ? "policy-allowed"
+            : "policy-review-required",
+        ],
+        evidenceRefs: proposal.evidenceRefs,
+      },
+      toolPermissions: [
+        {
+          toolId: "kernel.lifecycle.execute-phase",
+          permissionRef: `permission:${proposal.productUnitId}:${lifecyclePhase}:execute`,
+          granted: true,
+          allowedActions: ["execute-lifecycle-phase"],
+        },
+      ],
+      requestedAction: "execute-lifecycle-phase",
       lifecyclePhase,
       proposedPlanRef: `lifecycle-plan:${proposal.productUnitId}:${lifecyclePhase}`,
       riskLevel: proposal.riskLevel,
+      approvalRequired: proposal.approvalDecision === "pending",
       requiredApprovals: [
         {
           approvalId: `${proposal.productUnitId}-${lifecyclePhase}-approval`,
-          approverRole: 'release-manager',
-          required: proposal.approvalDecision === 'pending',
+          approverRole: "release-manager",
+          required: proposal.approvalDecision === "pending",
         },
       ],
       requiredVerification: [
         {
           verificationId: `${proposal.productUnitId}-${lifecyclePhase}-verification`,
-          kind: 'health',
+          kind: "health",
           required: true,
         },
       ],
+      inputRefs: proposal.evidenceRefs,
+      outputRefs: [`lifecycle-run:${proposal.productUnitId}:${lifecyclePhase}`],
+      verificationProofRefs: [
+        proposal.evidenceRefs[1] ??
+          `verification:${proposal.productUnitId}:${lifecyclePhase}`,
+      ],
       evidenceRefs: proposal.evidenceRefs,
       rollbackPlanRef: `rollback-plan:${proposal.productUnitId}:${lifecyclePhase}`,
+      fallbackMode: "rollback",
     };
 
     setActiveExecutionCorrelationId(proposal.correlationId);
@@ -215,71 +274,112 @@ export default function AgentsPage(): ReactElement {
 
   const canExecute = (proposal: ProposalCard): boolean => {
     return (
-      proposal.policyDecision === 'allowed' &&
-      proposal.masteryDecision === 'allowed' &&
-      (proposal.approvalDecision === 'not-required' || proposal.approvalDecision === 'approved')
+      proposal.policyDecision === "allowed" &&
+      proposal.masteryDecision === "allowed" &&
+      (proposal.approvalDecision === "not-required" ||
+        proposal.approvalDecision === "approved")
     );
   };
 
-  const getDecisionTone = (decision: GovernanceDecision | ApprovalDecision): 'success' | 'warning' | 'danger' | 'neutral' => {
-    if (decision === 'allowed' || decision === 'approved' || decision === 'not-required') return 'success';
-    if (decision === 'denied' || decision === 'rejected') return 'danger';
-    if (decision === 'requires-approval' || decision === 'pending') return 'warning';
-    return 'neutral';
+  const getDecisionTone = (
+    decision: GovernanceDecision | ApprovalDecision,
+  ): "success" | "warning" | "danger" | "neutral" => {
+    if (
+      decision === "allowed" ||
+      decision === "approved" ||
+      decision === "not-required"
+    )
+      return "success";
+    if (decision === "denied" || decision === "rejected") return "danger";
+    if (decision === "requires-approval" || decision === "pending")
+      return "warning";
+    return "neutral";
   };
 
-  const getHealthTone = (status: HealthStatus): 'success' | 'warning' | 'danger' | 'neutral' => {
-    if (status === 'healthy') return 'success';
-    if (status === 'degraded') return 'warning';
-    if (status === 'unhealthy') return 'danger';
-    return 'neutral';
+  const getHealthTone = (
+    status: HealthStatus,
+  ): "success" | "warning" | "danger" | "neutral" => {
+    if (status === "healthy") return "success";
+    if (status === "degraded") return "warning";
+    if (status === "unhealthy") return "danger";
+    return "neutral";
   };
 
-  const getRollbackTone = (readiness: RollbackReadiness): 'success' | 'warning' | 'danger' | 'neutral' => {
-    if (readiness === 'ready') return 'success';
-    if (readiness === 'not-ready') return 'danger';
-    return 'neutral';
+  const getRollbackTone = (
+    readiness: RollbackReadiness,
+  ): "success" | "warning" | "danger" | "neutral" => {
+    if (readiness === "ready") return "success";
+    if (readiness === "not-ready") return "danger";
+    return "neutral";
   };
 
   return (
     <section className="space-y-6" aria-labelledby="agents-title">
       <div className="space-y-2">
-        <Badge tone={lifecycleDataBadgeTone(lifecycleData.snapshot.status)} variant="soft">
+        <Badge
+          tone={lifecycleDataBadgeTone(lifecycleData.snapshot.status)}
+          variant="soft"
+        >
           {describeLifecycleDataStatus(lifecycleData.snapshot.status)}
         </Badge>
         <h2 id="agents-title" className="text-2xl font-semibold text-gray-950">
-          {t('studio.route.agents.title')}
+          {t("studio.route.agents.title")}
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-gray-600">
-          {t('studio.route.agents.description')}
+          {t("studio.route.agents.description")}
         </p>
       </div>
 
       {!isGovernanceAvailable && (
-        <article className="studio-card border-yellow-200 bg-yellow-50" aria-labelledby="governance-warning-title">
-          <h3 id="governance-warning-title" className="text-base font-semibold text-yellow-900">
+        <article
+          className="studio-card border-yellow-200 bg-yellow-50"
+          aria-labelledby="governance-warning-title"
+        >
+          <h3
+            id="governance-warning-title"
+            className="text-base font-semibold text-yellow-900"
+          >
             Governance Providers Unavailable
           </h3>
           <p className="text-sm text-yellow-800">
-            Policy, mastery, and approval providers are currently unavailable. Agentic actions are blocked until governance is restored.
+            Policy, mastery, and approval providers are currently unavailable.
+            Agentic actions are blocked until governance is restored.
           </p>
         </article>
       )}
 
-      <article className="studio-card space-y-3" aria-label="agent-readiness-dependencies">
-        <h3 className="text-base font-semibold text-gray-950">Agent readiness dependencies</h3>
+      <article
+        className="studio-card space-y-3"
+        aria-label="agent-readiness-dependencies"
+      >
+        <h3 className="text-base font-semibold text-gray-950">
+          Agent readiness dependencies
+        </h3>
         <ul className="space-y-1 text-sm text-gray-700">
-          <li>AEP action runtime: {runtimeContext.status === 'configured' ? 'configured' : 'missing'}</li>
-          <li>Policy provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
-          <li>Mastery provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
-          <li>Approval provider: {isGovernanceAvailable ? 'available' : 'missing'}</li>
+          <li>
+            AEP action runtime:{" "}
+            {runtimeContext.status === "configured" ? "configured" : "missing"}
+          </li>
+          <li>
+            Policy provider: {isGovernanceAvailable ? "available" : "missing"}
+          </li>
+          <li>
+            Mastery provider: {isGovernanceAvailable ? "available" : "missing"}
+          </li>
+          <li>
+            Approval provider: {isGovernanceAvailable ? "available" : "missing"}
+          </li>
         </ul>
         {missingEvidenceRefs.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-amber-900">Missing evidence state</h4>
+            <h4 className="text-sm font-medium text-amber-900">
+              Missing evidence state
+            </h4>
             <ul className="mt-1 space-y-1 text-xs text-amber-800">
               {missingEvidenceRefs.map((evidenceRef) => (
-                <li key={evidenceRef} className="font-mono">{evidenceRef}</li>
+                <li key={evidenceRef} className="font-mono">
+                  {evidenceRef}
+                </li>
               ))}
             </ul>
           </div>
@@ -294,49 +394,83 @@ export default function AgentsPage(): ReactElement {
             aria-labelledby={`proposal-${proposal.correlationId}-title`}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 id={`proposal-${proposal.correlationId}-title`} className="text-base font-semibold text-gray-950">
+              <h3
+                id={`proposal-${proposal.correlationId}-title`}
+                className="text-base font-semibold text-gray-950"
+              >
                 {proposal.requestedAction}
               </h3>
-              <Badge tone={canExecute(proposal) ? 'success' : 'warning'} variant="soft">
-                {canExecute(proposal) ? 'Ready to execute' : 'Requires action'}
+              <Badge
+                tone={canExecute(proposal) ? "success" : "warning"}
+                variant="soft"
+              >
+                {canExecute(proposal) ? "Ready to execute" : "Requires action"}
               </Badge>
             </div>
 
             <div className="grid gap-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">ProductUnit:</span>
-                <span className="font-medium text-gray-900">{proposal.productUnitId}</span>
+                <span className="font-medium text-gray-900">
+                  {proposal.productUnitId}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Phase:</span>
-                <span className="font-medium text-gray-900">{proposal.phase}</span>
+                <span className="font-medium text-gray-900">
+                  {proposal.phase}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Risk Level:</span>
-                <Badge tone={proposal.riskLevel === 'critical' ? 'danger' : proposal.riskLevel === 'high' ? 'warning' : 'success'} variant="soft" className="text-xs">
+                <Badge
+                  tone={
+                    proposal.riskLevel === "critical"
+                      ? "danger"
+                      : proposal.riskLevel === "high"
+                        ? "warning"
+                        : "success"
+                  }
+                  variant="soft"
+                  className="text-xs"
+                >
                   {agentRiskLevelLabel(proposal.riskLevel, t)}
                 </Badge>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-900">Governance Decisions</h4>
+              <h4 className="text-sm font-medium text-gray-900">
+                Governance Decisions
+              </h4>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Policy:</span>
-                  <Badge tone={getDecisionTone(proposal.policyDecision)} variant="soft" className="text-xs">
+                  <Badge
+                    tone={getDecisionTone(proposal.policyDecision)}
+                    variant="soft"
+                    className="text-xs"
+                  >
                     {agentGovernanceDecisionLabel(proposal.policyDecision, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Mastery:</span>
-                  <Badge tone={getDecisionTone(proposal.masteryDecision)} variant="soft" className="text-xs">
+                  <Badge
+                    tone={getDecisionTone(proposal.masteryDecision)}
+                    variant="soft"
+                    className="text-xs"
+                  >
                     {agentGovernanceDecisionLabel(proposal.masteryDecision, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Approval:</span>
-                  <Badge tone={getDecisionTone(proposal.approvalDecision)} variant="soft" className="text-xs">
+                  <Badge
+                    tone={getDecisionTone(proposal.approvalDecision)}
+                    variant="soft"
+                    className="text-xs"
+                  >
                     {agentGovernanceDecisionLabel(proposal.approvalDecision, t)}
                   </Badge>
                 </div>
@@ -348,46 +482,70 @@ export default function AgentsPage(): ReactElement {
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Health Status:</span>
-                  <Badge tone={getHealthTone(proposal.healthStatus)} variant="soft" className="text-xs">
+                  <Badge
+                    tone={getHealthTone(proposal.healthStatus)}
+                    variant="soft"
+                    className="text-xs"
+                  >
                     {agentHealthStatusLabel(proposal.healthStatus, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Rollback Readiness:</span>
-                  <Badge tone={getRollbackTone(proposal.rollbackReadiness)} variant="soft" className="text-xs">
+                  <Badge
+                    tone={getRollbackTone(proposal.rollbackReadiness)}
+                    variant="soft"
+                    className="text-xs"
+                  >
                     {agentRollbackReadinessLabel(proposal.rollbackReadiness, t)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Required Next Action:</span>
-                  <span className="font-medium text-gray-900">{proposal.requiredNextAction}</span>
+                  <span className="font-medium text-gray-900">
+                    {proposal.requiredNextAction}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-900">Evidence Refs</h4>
+              <h4 className="text-sm font-medium text-gray-900">
+                Evidence Refs
+              </h4>
               <ul className="space-y-1 text-xs text-gray-600">
                 {proposal.evidenceRefs.map((ref) => (
-                  <li key={ref} className="font-mono">{ref}</li>
+                  <li key={ref} className="font-mono">
+                    {ref}
+                  </li>
                 ))}
               </ul>
             </div>
 
             {proposal.policyTrace && proposal.policyTrace.length > 0 && (
               <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-sm font-medium text-gray-900">Policy Trace</h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  Policy Trace
+                </h4>
                 <ul className="space-y-2 text-xs">
                   {proposal.policyTrace.map((entry, idx) => (
                     <li key={idx} className="border-l-2 border-gray-300 pl-2">
                       <div className="flex justify-between">
-                        <span className="font-medium text-gray-900">{entry.policyId}</span>
-                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                        <span className="font-medium text-gray-900">
+                          {entry.policyId}
+                        </span>
+                        <Badge
+                          tone={getDecisionTone(entry.decision)}
+                          variant="soft"
+                          className="text-xs"
+                        >
                           {entry.decision}
                         </Badge>
                       </div>
                       <div className="mt-1 text-gray-600">{entry.reason}</div>
-                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">
+                        {entry.timestamp}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -396,13 +554,21 @@ export default function AgentsPage(): ReactElement {
 
             {proposal.masteryTrace && proposal.masteryTrace.length > 0 && (
               <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-sm font-medium text-gray-900">Mastery Trace</h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  Mastery Trace
+                </h4>
                 <ul className="space-y-2 text-xs">
                   {proposal.masteryTrace.map((entry, idx) => (
                     <li key={idx} className="border-l-2 border-gray-300 pl-2">
                       <div className="flex justify-between">
-                        <span className="font-medium text-gray-900">{entry.skillId}</span>
-                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                        <span className="font-medium text-gray-900">
+                          {entry.skillId}
+                        </span>
+                        <Badge
+                          tone={getDecisionTone(entry.decision)}
+                          variant="soft"
+                          className="text-xs"
+                        >
                           {entry.decision}
                         </Badge>
                       </div>
@@ -410,7 +576,9 @@ export default function AgentsPage(): ReactElement {
                         {entry.fromState} → {entry.toState}
                       </div>
                       <div className="mt-1 text-gray-500">{entry.reason}</div>
-                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">
+                        {entry.timestamp}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -419,74 +587,127 @@ export default function AgentsPage(): ReactElement {
 
             {proposal.approvalTrace && proposal.approvalTrace.length > 0 && (
               <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-sm font-medium text-gray-900">Approval Trace</h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  Approval Trace
+                </h4>
                 <ul className="space-y-2 text-xs">
                   {proposal.approvalTrace.map((entry, idx) => (
                     <li key={idx} className="border-l-2 border-gray-300 pl-2">
                       <div className="flex justify-between">
-                        <span className="font-medium text-gray-900">{entry.approver}</span>
-                        <Badge tone={getDecisionTone(entry.decision)} variant="soft" className="text-xs">
+                        <span className="font-medium text-gray-900">
+                          {entry.approver}
+                        </span>
+                        <Badge
+                          tone={getDecisionTone(entry.decision)}
+                          variant="soft"
+                          className="text-xs"
+                        >
                           {entry.decision}
                         </Badge>
                       </div>
                       <div className="mt-1 text-gray-600">{entry.reason}</div>
-                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
+                      <div className="mt-1 text-gray-500 font-mono text-[10px]">
+                        {entry.timestamp}
+                      </div>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {proposal.verificationTrace && proposal.verificationTrace.length > 0 && (
-              <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-sm font-medium text-gray-900">Verification Trace</h4>
-                <ul className="space-y-2 text-xs">
-                  {proposal.verificationTrace.map((entry, idx) => (
-                    <li key={idx} className="border-l-2 border-gray-300 pl-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-900">{entry.verificationId}</span>
-                        <Badge tone={entry.status === 'passed' ? 'success' : entry.status === 'failed' ? 'danger' : 'warning'} variant="soft" className="text-xs">
-                          {entry.status}
-                        </Badge>
-                      </div>
-                      <div className="mt-1 text-gray-600">{entry.kind}: {entry.details}</div>
-                      <div className="mt-1 text-gray-500 font-mono text-[10px]">{entry.timestamp}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {proposal.verificationTrace &&
+              proposal.verificationTrace.length > 0 && (
+                <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                  <h4 className="text-sm font-medium text-gray-900">
+                    Verification Trace
+                  </h4>
+                  <ul className="space-y-2 text-xs">
+                    {proposal.verificationTrace.map((entry, idx) => (
+                      <li key={idx} className="border-l-2 border-gray-300 pl-2">
+                        <div className="flex justify-between">
+                          <span className="font-medium text-gray-900">
+                            {entry.verificationId}
+                          </span>
+                          <Badge
+                            tone={
+                              entry.status === "passed"
+                                ? "success"
+                                : entry.status === "failed"
+                                  ? "danger"
+                                  : "warning"
+                            }
+                            variant="soft"
+                            className="text-xs"
+                          >
+                            {entry.status}
+                          </Badge>
+                        </div>
+                        <div className="mt-1 text-gray-600">
+                          {entry.kind}: {entry.details}
+                        </div>
+                        <div className="mt-1 text-gray-500 font-mono text-[10px]">
+                          {entry.timestamp}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
             <div className="flex flex-wrap gap-2">
-              {proposal.approvalDecision === 'pending' && (
+              {proposal.approvalDecision === "pending" && (
                 <>
                   <Button variant="primary" size="sm">
-                    {t('studio.route.agents.approve')}
+                    {t("studio.route.agents.approve")}
                   </Button>
                   <Button variant="outline" size="sm">
-                    {t('studio.route.agents.reject')}
+                    {t("studio.route.agents.reject")}
                   </Button>
                 </>
               )}
               <Button
-                variant={canExecute(proposal) ? 'primary' : 'outline'}
+                variant={canExecute(proposal) ? "primary" : "outline"}
                 size="sm"
-                disabled={!canExecute(proposal) || activeExecutionCorrelationId === proposal.correlationId || agentLifecycleClient === undefined}
+                disabled={
+                  !canExecute(proposal) ||
+                  activeExecutionCorrelationId === proposal.correlationId ||
+                  agentLifecycleClient === undefined
+                }
                 onClick={() => {
                   void executeProposal(proposal);
                 }}
               >
-                {activeExecutionCorrelationId === proposal.correlationId ? t('studio.route.agents.executing') : t('studio.route.agents.execute')}
+                {activeExecutionCorrelationId === proposal.correlationId
+                  ? t("studio.route.agents.executing")
+                  : t("studio.route.agents.execute")}
               </Button>
             </div>
 
             {executionResultByCorrelationId[proposal.correlationId] && (
               <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-sm font-medium text-gray-900">{t('studio.route.agents.executionResultTitle')}</h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  {t("studio.route.agents.executionResultTitle")}
+                </h4>
                 <div className="grid gap-1 text-xs text-gray-700">
-                  <div>{t('studio.route.agents.executionStatusLabel')}: {executionResultByCorrelationId[proposal.correlationId].approvalDecision}</div>
-                  <div>{t('studio.route.agents.executionRunRefLabel')}: {executionResultByCorrelationId[proposal.correlationId].lifecycleRunRef}</div>
-                  <div>{t('studio.route.agents.executionNextActionLabel')}: {executionResultByCorrelationId[proposal.correlationId].requiredNextAction ?? 'none'}</div>
+                  <div>
+                    {t("studio.route.agents.executionStatusLabel")}:{" "}
+                    {
+                      executionResultByCorrelationId[proposal.correlationId]
+                        .approvalDecision
+                    }
+                  </div>
+                  <div>
+                    {t("studio.route.agents.executionRunRefLabel")}:{" "}
+                    {
+                      executionResultByCorrelationId[proposal.correlationId]
+                        .lifecycleRunRef
+                    }
+                  </div>
+                  <div>
+                    {t("studio.route.agents.executionNextActionLabel")}:{" "}
+                    {executionResultByCorrelationId[proposal.correlationId]
+                      .requiredNextAction ?? "none"}
+                  </div>
                 </div>
               </div>
             )}
@@ -495,7 +716,7 @@ export default function AgentsPage(): ReactElement {
       </div>
 
       <p className="text-sm leading-6 text-gray-600">
-        {t('studio.route.agents.noRawExecution')}
+        {t("studio.route.agents.noRawExecution")}
       </p>
     </section>
   );

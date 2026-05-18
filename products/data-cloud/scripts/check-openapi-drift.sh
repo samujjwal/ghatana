@@ -63,6 +63,7 @@ CODE_ROUTES_RAW=$(grep -E '\.with\(HttpMethod\.[A-Z]+, *"' "${SERVER_FILE}" \
 
 # Normalise ActiveJ path params :param → {param}
 CODE_ROUTES=$(echo "${CODE_ROUTES_RAW}" \
+  | sed -E 's|^/api/v1/action/|/api/v1/|' \
   | sed -E 's|:([a-zA-Z_][a-zA-Z0-9_]*)|\{\1\}|g' \
   | sort -u)
 

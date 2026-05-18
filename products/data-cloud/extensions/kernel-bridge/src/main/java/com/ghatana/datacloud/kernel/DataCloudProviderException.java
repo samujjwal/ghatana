@@ -49,7 +49,21 @@ public final class DataCloudProviderException extends RuntimeException {
         /** Serialization/deserialization error */
         SERIALIZATION_ERROR,
         /** Unknown or unexpected error */
-        UNKNOWN_ERROR
+        UNKNOWN_ERROR,
+        /** Transport failure between bridge and Data Cloud */
+        TRANSPORT,
+        /** Payload schema validation failure */
+        SCHEMA,
+        /** Tenant isolation or tenant scope failure */
+        TENANT_ISOLATION,
+        /** Provider unavailable in the selected mode */
+        UNAVAILABLE_PROVIDER,
+        /** Retry policy exhausted */
+        RETRY_EXHAUSTED,
+        /** Duplicate lifecycle event */
+        DUPLICATE_EVENT,
+        /** Stale lifecycle event or sequence */
+        STALE_EVENT
     }
 
     private final String providerName;

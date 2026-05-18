@@ -33,6 +33,39 @@ export interface LifecycleProviderResult {
   readonly error?: string;
 }
 
+export type KernelBridgeProviderMode = KernelProviderMode;
+
+export type KernelBridgeProviderStatus = "healthy" | "degraded" | "unavailable";
+
+export type KernelBridgeProviderErrorCode =
+  | "transport"
+  | "schema"
+  | "tenant-isolation"
+  | "unavailable-provider"
+  | "retry-exhausted"
+  | "duplicate-event"
+  | "stale-event";
+
+export interface KernelBridgeProviderHealthResult {
+  readonly providerId: string;
+  readonly mode: KernelBridgeProviderMode;
+  readonly status: KernelBridgeProviderStatus;
+  readonly reason?: string;
+  readonly latencyMs?: number;
+  readonly lastSuccessAt?: string;
+  readonly lastFailureAt?: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface KernelBridgeProviderError {
+  readonly code: KernelBridgeProviderErrorCode;
+  readonly providerId: string;
+  readonly message: string;
+  readonly retryable: boolean;
+  readonly correlationId?: string;
+  readonly evidenceRefs?: readonly string[];
+}
+
 export interface LifecycleProviderQuery {
   readonly productUnitId: string;
   readonly runId?: string;
@@ -235,78 +268,148 @@ export const LifecycleRuntimeTruthSnapshotSchema = z
   })
   .strict();
 
+export const KernelBridgeProviderHealthResultSchema = z
+  .object({
+    providerId: z.string().trim().min(1),
+    mode: z.enum(["bootstrap", "platform"]),
+    status: z.enum(["healthy", "degraded", "unavailable"]),
+    reason: z.string().trim().min(1).optional(),
+    latencyMs: z.number().nonnegative().optional(),
+    lastSuccessAt: z.string().datetime({ offset: true }).optional(),
+    lastFailureAt: z.string().datetime({ offset: true }).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)).default([]),
+  })
+  .strict();
+
+export const KernelBridgeProviderErrorSchema = z
+  .object({
+    code: z.enum([
+      "transport",
+      "schema",
+      "tenant-isolation",
+      "unavailable-provider",
+      "retry-exhausted",
+      "duplicate-event",
+      "stale-event",
+    ]),
+    providerId: z.string().trim().min(1),
+    message: z.string().trim().min(1),
+    retryable: z.boolean(),
+    correlationId: z.string().trim().min(1).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
 export interface LifecycleEventProvider extends KernelProvider {
   appendEvent(
     event: KernelLifecycleEvent,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
-  listEvents(query: LifecycleProviderQuery): Promise<readonly KernelLifecycleEvent[]>;
+  listEvents(
+    query: LifecycleProviderQuery,
+  ): Promise<readonly KernelLifecycleEvent[]>;
 }
 
 export interface LifecycleArtifactProvider extends KernelProvider {
   recordArtifactManifest(
     manifest: LifecycleArtifactManifestRef,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
   listArtifactManifests(
-    query: LifecycleProviderQuery
+    query: LifecycleProviderQuery,
   ): Promise<readonly LifecycleArtifactManifestRef[]>;
 }
 
 export interface LifecycleHealthProvider extends KernelProvider {
   recordHealthSnapshot(
     snapshot: LifecycleHealthSnapshotRef,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
   getLatestHealthSnapshot(
-    productUnitId: string
+    productUnitId: string,
   ): Promise<LifecycleHealthSnapshotRef | null>;
 }
 
 export interface LifecycleApprovalProvider extends KernelProvider {
   requestLifecycleApproval(
     request: ApprovalRequest,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
   decideLifecycleApproval(
     decision: ApprovalDecision,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 }
 
 export interface LifecycleProvenanceProvider extends KernelProvider {
   recordProvenance(
     record: LifecycleProvenanceRecord,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
   listProvenance(
-    query: LifecycleProviderQuery
+    query: LifecycleProviderQuery,
   ): Promise<readonly LifecycleProvenanceRecord[]>;
 }
 
 export interface LifecycleMemoryProvider extends KernelProvider {
   recordMemory(
     record: LifecycleMemoryRecord,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
-  listMemory(query: LifecycleProviderQuery): Promise<readonly LifecycleMemoryRecord[]>;
+  listMemory(
+    query: LifecycleProviderQuery,
+  ): Promise<readonly LifecycleMemoryRecord[]>;
 }
 
 export interface LifecycleRuntimeTruthProvider extends KernelProvider {
   recordRuntimeTruth(
     snapshot: LifecycleRuntimeTruthSnapshot,
-    options: LifecycleProviderWriteOptions
+    options: LifecycleProviderWriteOptions,
   ): Promise<LifecycleProviderResult>;
 
   getRuntimeTruth(
-    productUnitId: string
+    productUnitId: string,
   ): Promise<LifecycleRuntimeTruthSnapshot | null>;
+}
+
+export type KernelEventProvider = LifecycleEventProvider;
+export type KernelArtifactProvider = LifecycleArtifactProvider;
+export type KernelHealthProvider = LifecycleHealthProvider;
+export type KernelProvenanceProvider = LifecycleProvenanceProvider;
+export type KernelRuntimeTruthProvider = LifecycleRuntimeTruthProvider;
+
+export interface KernelTelemetryProvider extends KernelProvider {
+  recordTelemetry(
+    event: {
+      readonly eventId: string;
+      readonly eventType: string;
+      readonly occurredAt: string;
+      readonly correlationId?: string;
+      readonly attributes: Readonly<Record<string, unknown>>;
+    },
+    options: LifecycleProviderWriteOptions,
+  ): Promise<LifecycleProviderResult>;
+}
+
+export interface KernelPolicyEvidenceProvider extends KernelProvider {
+  recordPolicyEvidence(
+    evidence: {
+      readonly evidenceId: string;
+      readonly productUnitId: string;
+      readonly runId: string;
+      readonly decision: "allowed" | "denied" | "requires-approval";
+      readonly policyRefs: readonly string[];
+      readonly recordedAt: string;
+      readonly correlationId?: string;
+    },
+    options: LifecycleProviderWriteOptions,
+  ): Promise<LifecycleProviderResult>;
 }
 
 export interface KernelLifecycleProviderContext {
@@ -372,7 +475,9 @@ export interface InvalidBackingStoreError {
   readonly reason: string;
 }
 
-export function isKernelProviderMode(value: unknown): value is KernelProviderMode {
+export function isKernelProviderMode(
+  value: unknown,
+): value is KernelProviderMode {
   return (
     typeof value === "string" &&
     KERNEL_PROVIDER_MODES.includes(value as KernelProviderMode)
@@ -380,7 +485,7 @@ export function isKernelProviderMode(value: unknown): value is KernelProviderMod
 }
 
 export function validateKernelLifecycleProviderContext(
-  context: KernelLifecycleProviderContext
+  context: KernelLifecycleProviderContext,
 ): KernelLifecycleProviderContextValidationResult {
   if (!isKernelProviderMode(context.mode)) {
     return {
@@ -393,7 +498,7 @@ export function validateKernelLifecycleProviderContext(
 
   const requiredProviders = KernelProviderModeRequirements[context.mode];
   const missingProviders = requiredProviders.filter(
-    (providerName) => context[providerName] === undefined
+    (providerName) => context[providerName] === undefined,
   );
 
   const backingStoreValidation = validateProviderBackingForMode(context);
@@ -411,8 +516,11 @@ export function validateKernelLifecycleProviderContext(
 }
 
 export function validateProviderBackingForMode(
-  context: KernelLifecycleProviderContext
-): Pick<KernelLifecycleProviderContextValidationResult, "valid" | "invalidBackingStores" | "reasonCodes"> {
+  context: KernelLifecycleProviderContext,
+): Pick<
+  KernelLifecycleProviderContextValidationResult,
+  "valid" | "invalidBackingStores" | "reasonCodes"
+> {
   if (context.mode !== "platform") {
     // Bootstrap mode allows file providers
     return { valid: true, invalidBackingStores: [], reasonCodes: [] };
@@ -436,7 +544,8 @@ export function validateProviderBackingForMode(
       invalidBackingStores.push({
         providerName,
         backingStore: provider.backingStore,
-        reason: "Platform mode cannot use file-backed providers. Use data-cloud or external backing store.",
+        reason:
+          "Platform mode cannot use file-backed providers. Use data-cloud or external backing store.",
       });
     }
   }
@@ -444,18 +553,19 @@ export function validateProviderBackingForMode(
   return {
     valid: invalidBackingStores.length === 0,
     invalidBackingStores,
-    reasonCodes: invalidBackingStores.length > 0 ? ["invalid-backing-store"] : [],
+    reasonCodes:
+      invalidBackingStores.length > 0 ? ["invalid-backing-store"] : [],
   };
 }
 
 export function requireLifecycleProvider<TProvider extends KernelProvider>(
   context: KernelLifecycleProviderContext,
-  providerName: keyof Omit<KernelLifecycleProviderContext, "mode">
+  providerName: keyof Omit<KernelLifecycleProviderContext, "mode">,
 ): TProvider {
   const provider = context[providerName];
   if (provider === undefined) {
     throw new Error(
-      `Kernel ${context.mode} mode requires lifecycle provider: ${String(providerName)}`
+      `Kernel ${context.mode} mode requires lifecycle provider: ${String(providerName)}`,
     );
   }
   return provider as unknown as TProvider;
@@ -463,14 +573,14 @@ export function requireLifecycleProvider<TProvider extends KernelProvider>(
 
 export function requireLifecycleProviderSet(
   context: KernelLifecycleProviderContext,
-  providerNames: readonly KernelLifecycleProviderName[]
+  providerNames: readonly KernelLifecycleProviderName[],
 ): void {
   const missingProviders = providerNames.filter(
-    (providerName) => context[providerName] === undefined
+    (providerName) => context[providerName] === undefined,
   );
   if (missingProviders.length > 0) {
     throw new Error(
-      `Kernel ${context.mode} mode requires lifecycle providers: ${missingProviders.join(", ")}`
+      `Kernel ${context.mode} mode requires lifecycle providers: ${missingProviders.join(", ")}`,
     );
   }
 }

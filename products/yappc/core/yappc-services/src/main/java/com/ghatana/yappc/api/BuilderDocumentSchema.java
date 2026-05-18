@@ -13,9 +13,19 @@
 
 package com.ghatana.yappc.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Canonical builder document schema aligned with TypeScript BuilderDocument v1.0.0.
@@ -26,6 +36,70 @@ public final class BuilderDocumentSchema {
 
     /** Current schema version - must match TypeScript version */
     public static final String CURRENT_SCHEMA_VERSION = "1.0.0";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+
+    private BuilderDocumentSchema() {
+    }
+
+    /**
+     * Validate a builder document against the canonical TypeScript-owned JSON schema.
+     *
+     * <p>The schema stream must come from the generated/packaged
+     * {@code @ghatana/ui-builder} {@code builder-document-v1.schema.json} artifact.
+     * YAPPC intentionally consumes that schema instead of maintaining a parallel
+     * Java-only schema.</p>
+     */
+    public static ValidationResult validateAgainstCanonicalSchema(
+            InputStream canonicalSchema,
+            InputStream document
+    ) throws IOException {
+        JsonNode schemaNode = OBJECT_MAPPER.readTree(canonicalSchema);
+        JsonNode documentNode = OBJECT_MAPPER.readTree(document);
+        return validateAgainstCanonicalSchema(schemaNode, documentNode);
+    }
+
+    public static ValidationResult validateAgainstCanonicalSchema(
+            JsonNode canonicalSchema,
+            JsonNode document
+    ) {
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+        JsonSchema schema = factory.getSchema(canonicalSchema);
+        Set<ValidationMessage> schemaErrors = schema.validate(document);
+        List<String> errors = schemaErrors.stream()
+                .map(ValidationMessage::getMessage)
+                .sorted()
+                .collect(Collectors.toList());
+        errors.addAll(validateYappcCompatibilityPolicy(document));
+        return new ValidationResult(errors.isEmpty(), List.copyOf(errors));
+    }
+
+    /**
+     * YAPPC compatibility policy for fields the shared schema deliberately leaves
+     * extensible. Unsafe preview policies are never accepted silently.
+     */
+    private static List<String> validateYappcCompatibilityPolicy(JsonNode document) {
+        JsonNode previewPolicy = document.path("metadata").path("previewSecurityPolicy");
+        if (previewPolicy.isMissingNode() || previewPolicy.isNull()) {
+            return List.of();
+        }
+
+        String sandbox = previewPolicy.path("sandbox").asText("isolated");
+        boolean allowNetwork = previewPolicy.path("allowNetwork").asBoolean(false);
+        boolean allowInlineScript = previewPolicy.path("allowInlineScript").asBoolean(false);
+        boolean allowSensitiveData = previewPolicy.path("allowSensitiveData").asBoolean(false);
+        String trustState = previewPolicy.path("trustState").asText("untrusted");
+
+        if ("none".equalsIgnoreCase(sandbox)
+                || allowNetwork
+                || allowInlineScript
+                || allowSensitiveData
+                || "trusted".equalsIgnoreCase(trustState)) {
+            return List.of("metadata.previewSecurityPolicy is unsafe for YAPPC preview execution");
+        }
+        return List.of();
+    }
+
+    public record ValidationResult(boolean valid, List<String> errors) {}
 
     /**
      * Builder document metadata - aligns with TypeScript DocumentMetadata.

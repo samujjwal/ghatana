@@ -45,6 +45,14 @@ function loadMatrix() {
   return JSON.parse(readFileSync(matrixPath, 'utf8'));
 }
 
+function loadPublicMatrix() {
+  const matrixPath = join(repoRoot, 'config/product-shape-capability-matrix.json');
+  if (!existsSync(matrixPath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(matrixPath, 'utf8'));
+}
+
 function loadAdapters() {
   const adaptersPath = join(repoRoot, 'config/toolchain-adapter-registry.json');
   return JSON.parse(readFileSync(adaptersPath, 'utf8')).adapters;
@@ -61,6 +69,10 @@ async function main() {
     reportAndExit(errors, warnings);
     return;
   }
+  const publicMatrix = loadPublicMatrix();
+  if (!publicMatrix) {
+    errors.push('Public product shape capability matrix not found at config/product-shape-capability-matrix.json');
+  }
 
   // 2. Check matrix is recent (generated within last 7 days)
   const generatedDate = new Date(matrix.generated);
@@ -75,11 +87,16 @@ async function main() {
   const adapters = loadAdapters();
   const registryProductIds = Object.keys(registry);
   const matrixProductIds = matrix.matrix.map(m => m.productId);
+  const publicMatrixProductIds = publicMatrix?.matrix?.map(m => m.productId) ?? [];
 
   // 4. Check all registered products have shape rows
   const missingInMatrix = registryProductIds.filter(id => !matrixProductIds.includes(id));
   if (missingInMatrix.length > 0) {
     errors.push(`Products in registry but missing from matrix: ${missingInMatrix.join(', ')}`);
+  }
+  const missingInPublicMatrix = registryProductIds.filter(id => !publicMatrixProductIds.includes(id));
+  if (missingInPublicMatrix.length > 0) {
+    errors.push(`Products in registry but missing from public matrix: ${missingInPublicMatrix.join(', ')}`);
   }
 
   const extraInMatrix = matrixProductIds.filter(id => !registryProductIds.includes(id));
@@ -206,6 +223,10 @@ async function main() {
     }
   }
 
+  if (publicMatrix?.matrix) {
+    validatePublicMatrixRows(publicMatrix.matrix, registry, errors);
+  }
+
   // 5. Check Digital Marketing is the only enabled lifecycle proof target
   const enabledProducts = matrix.matrix.filter(m => m.lifecycleStatus === 'enabled');
   if (enabledProducts.length === 0) {
@@ -260,6 +281,96 @@ async function main() {
   }
 
   reportAndExit(errors, warnings);
+}
+
+function validatePublicMatrixRows(rows, registry, errors) {
+  const requiredColumns = [
+    'productId',
+    'kind',
+    'surfaces',
+    'lifecycleStatus',
+    'lifecycleExecutionAllowed',
+    'requiredKernelCapabilities',
+    'requiredToolchainAdapters',
+    'requiredArtifactManifests',
+    'requiredDeploymentTargets',
+    'requiredSecurityPrivacyGates',
+    'requiredDataCloudSupport',
+    'requiredYappcVisibility',
+    'requiredAgentRuntimeSupport',
+    'currentEvidenceRefs',
+    'missingEvidenceRefs',
+    'blockers',
+    'nextActions',
+    'validationCommands',
+  ];
+  const requiredProducts = [
+    'digital-marketing',
+    'finance',
+    'phr',
+    'flashit',
+    'yappc',
+    'data-cloud',
+    'audio-video',
+    'tutorputor',
+    'dcmaar',
+    'security-gateway',
+  ];
+
+  for (const productId of requiredProducts) {
+    if (!rows.some((row) => row.productId === productId)) {
+      errors.push(`Public matrix missing required Phase 5 product row "${productId}"`);
+    }
+  }
+
+  for (const row of rows) {
+    for (const column of requiredColumns) {
+      if (!(column in row)) {
+        errors.push(`Public matrix row "${row.productId ?? 'unknown'}" is missing required column "${column}"`);
+      }
+    }
+    for (const column of requiredColumns.filter((column) => Array.isArray(row[column]))) {
+      if (!Array.isArray(row[column])) {
+        errors.push(`Public matrix row "${row.productId}" column "${column}" must be an array`);
+      }
+    }
+    const registryProduct = registry[row.productId];
+    if (!registryProduct) {
+      errors.push(`Public matrix row "${row.productId}" does not exist in canonical registry`);
+      continue;
+    }
+    const registryLifecycleStatus = registryProduct.lifecycleStatus || (registryProduct.lifecycle?.enabled ? 'enabled' : 'disabled');
+    if (row.lifecycleStatus !== registryLifecycleStatus) {
+      errors.push(`Public matrix row "${row.productId}" lifecycleStatus="${row.lifecycleStatus}" does not match registry "${registryLifecycleStatus}"`);
+    }
+    if (row.lifecycleExecutionAllowed !== (registryProduct.lifecycleExecutionAllowed === true)) {
+      errors.push(`Public matrix row "${row.productId}" lifecycleExecutionAllowed does not match registry`);
+    }
+    if (row.lifecycleStatus === 'enabled' && registryLifecycleStatus !== 'enabled') {
+      errors.push(`Public matrix row "${row.productId}" claims lifecycle enabled while registry does not`);
+    }
+    for (const blocker of row.blockers ?? []) {
+      if (!isMappedBlocker(blocker)) {
+        errors.push(`Public matrix row "${row.productId}" blocker "${blocker}" is not mapped to a gate, adapter, manifest, provider, or product-owner action`);
+      }
+    }
+    if (!Array.isArray(row.validationCommands) || row.validationCommands.length === 0) {
+      errors.push(`Public matrix row "${row.productId}" must include at least one validation command`);
+    }
+  }
+}
+
+function isMappedBlocker(blocker) {
+  return [
+    'gate:',
+    'missing-adapter:',
+    'unknown-adapter:',
+    'adapter-not-',
+    'deploy-adapter-',
+    'missing-manifest:',
+    'missing-provider:',
+    'product-owner:',
+  ].some((prefix) => blocker.startsWith(prefix));
 }
 
 function reportAndExit(errors, warnings) {

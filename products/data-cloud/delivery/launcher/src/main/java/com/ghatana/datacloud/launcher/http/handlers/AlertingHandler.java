@@ -155,6 +155,14 @@ public final class AlertingHandler {
         return mutateAlertStatusWithReason(request, "resolved", "alert.resolved", "resolvedAt", "resolvedBy", "resolutionReason");
     }
 
+    private String resolveAlertPathParameter(HttpRequest request) {
+        String alertId = request.getPathParameter("alertId");
+        if (alertId == null || alertId.isBlank()) {
+            return request.getPathParameter("id");
+        }
+        return alertId;
+    }
+
     public Promise<HttpResponse> handleEscalateAlert(HttpRequest request) {
         return escalateAlert(request);
     }
@@ -170,7 +178,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("id");
+        String alertId = resolveAlertPathParameter(request);
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }
@@ -271,7 +279,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("id");
+        String alertId = resolveAlertPathParameter(request);
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }
@@ -335,7 +343,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("id");
+        String alertId = resolveAlertPathParameter(request);
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }
@@ -389,7 +397,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("id");
+        String alertId = resolveAlertPathParameter(request);
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }
@@ -711,7 +719,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("id");
+        String alertId = resolveAlertPathParameter(request);
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }

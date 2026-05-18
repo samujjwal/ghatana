@@ -7,13 +7,25 @@ import {
   LifecycleMemoryRecordSchema,
   LifecycleProvenanceRecordSchema,
   LifecycleRuntimeTruthSnapshotSchema,
+  KernelBridgeProviderErrorSchema,
+  KernelBridgeProviderHealthResultSchema,
   requireLifecycleProviderSet,
   validateKernelLifecycleProviderContext,
   validateProviderBackingForMode,
+  type KernelArtifactProvider,
+  type KernelEventProvider,
+  type KernelHealthProvider,
+  type KernelPolicyEvidenceProvider,
+  type KernelProvenanceProvider,
+  type KernelRuntimeTruthProvider,
+  type KernelTelemetryProvider,
 } from "../LifecycleProviders";
 import type { KernelProvider } from "../KernelProvider.js";
 
-function provider(providerId: string, backingStore: "file" | "data-cloud" | "external" = "file"): KernelProvider {
+function provider(
+  providerId: string,
+  backingStore: "file" | "data-cloud" | "external" = "file",
+): KernelProvider {
   return {
     providerId,
     version: "1.0.0",
@@ -26,12 +38,20 @@ function bootstrapContext(): KernelLifecycleProviderContext {
   return {
     mode: "bootstrap",
     events: provider("events") as KernelLifecycleProviderContext["events"],
-    artifacts: provider("artifacts") as KernelLifecycleProviderContext["artifacts"],
+    artifacts: provider(
+      "artifacts",
+    ) as KernelLifecycleProviderContext["artifacts"],
     health: provider("health") as KernelLifecycleProviderContext["health"],
-    approvals: provider("approvals") as KernelLifecycleProviderContext["approvals"],
-    provenance: provider("provenance") as KernelLifecycleProviderContext["provenance"],
+    approvals: provider(
+      "approvals",
+    ) as KernelLifecycleProviderContext["approvals"],
+    provenance: provider(
+      "provenance",
+    ) as KernelLifecycleProviderContext["provenance"],
     memory: provider("memory") as KernelLifecycleProviderContext["memory"],
-    runtimeTruth: provider("runtimeTruth") as KernelLifecycleProviderContext["runtimeTruth"],
+    runtimeTruth: provider(
+      "runtimeTruth",
+    ) as KernelLifecycleProviderContext["runtimeTruth"],
   };
 }
 
@@ -87,9 +107,14 @@ describe("LifecycleProviders", () => {
   it("requireLifecycleProviderSet reports exact missing providers", () => {
     expect(() =>
       requireLifecycleProviderSet(
-        { mode: "bootstrap", events: provider("events") as KernelLifecycleProviderContext["events"] },
-        ["events", "artifacts", "health"]
-      )
+        {
+          mode: "bootstrap",
+          events: provider(
+            "events",
+          ) as KernelLifecycleProviderContext["events"],
+        },
+        ["events", "artifacts", "health"],
+      ),
     ).toThrow(/artifacts, health/);
   });
 
@@ -166,6 +191,84 @@ describe("LifecycleProviders", () => {
     });
   });
 
+  it("defines bridge-facing provider aliases and extension providers", () => {
+    const events = provider("events", "data-cloud") as KernelEventProvider;
+    const artifacts = provider(
+      "artifacts",
+      "data-cloud",
+    ) as KernelArtifactProvider;
+    const health = provider("health", "data-cloud") as KernelHealthProvider;
+    const provenance = provider(
+      "provenance",
+      "data-cloud",
+    ) as KernelProvenanceProvider;
+    const runtimeTruth = provider(
+      "runtimeTruth",
+      "data-cloud",
+    ) as KernelRuntimeTruthProvider;
+    const telemetry = {
+      ...provider("telemetry", "data-cloud"),
+      recordTelemetry: async () => ({
+        success: true,
+        ref: "telemetry://event-1",
+      }),
+    } satisfies KernelTelemetryProvider;
+    const policyEvidence = {
+      ...provider("policyEvidence", "data-cloud"),
+      recordPolicyEvidence: async () => ({
+        success: true,
+        ref: "policy://evidence-1",
+      }),
+    } satisfies KernelPolicyEvidenceProvider;
+
+    expect(events.backingStore).toBe("data-cloud");
+    expect(artifacts.backingStore).toBe("data-cloud");
+    expect(health.backingStore).toBe("data-cloud");
+    expect(provenance.backingStore).toBe("data-cloud");
+    expect(runtimeTruth.backingStore).toBe("data-cloud");
+    expect(telemetry.providerId).toBe("telemetry");
+    expect(policyEvidence.providerId).toBe("policyEvidence");
+  });
+
+  it("validates provider health and typed bridge errors", () => {
+    expect(
+      KernelBridgeProviderHealthResultSchema.parse({
+        providerId: "data-cloud-events",
+        mode: "platform",
+        status: "degraded",
+        reason: "latency threshold exceeded",
+        latencyMs: 1200,
+        lastSuccessAt: "2026-01-01T00:00:00.000Z",
+        evidenceRefs: ["datacloud://health/events"],
+      }),
+    ).toMatchObject({
+      providerId: "data-cloud-events",
+      status: "degraded",
+    });
+
+    expect(
+      KernelBridgeProviderErrorSchema.parse({
+        code: "tenant-isolation",
+        providerId: "data-cloud-events",
+        message: "Tenant context is missing",
+        retryable: false,
+        correlationId: "corr-1",
+      }),
+    ).toMatchObject({
+      code: "tenant-isolation",
+      retryable: false,
+    });
+
+    expect(() =>
+      KernelBridgeProviderErrorSchema.parse({
+        code: "unknown",
+        providerId: "data-cloud-events",
+        message: "Bad code",
+        retryable: false,
+      }),
+    ).toThrow();
+  });
+
   describe("validateProviderBackingForMode", () => {
     it("bootstrap mode allows file-backed providers", () => {
       const context = bootstrapContext();
@@ -179,8 +282,14 @@ describe("LifecycleProviders", () => {
       const context: KernelLifecycleProviderContext = {
         ...bootstrapContext(),
         mode: "platform",
-        events: provider("events", "file") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "file") as KernelLifecycleProviderContext["artifacts"],
+        events: provider(
+          "events",
+          "file",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "file",
+        ) as KernelLifecycleProviderContext["artifacts"],
       };
 
       const result = validateProviderBackingForMode(context);
@@ -194,13 +303,34 @@ describe("LifecycleProviders", () => {
     it("platform mode allows data-cloud-backed providers", () => {
       const context: KernelLifecycleProviderContext = {
         mode: "platform",
-        events: provider("events", "data-cloud") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "data-cloud") as KernelLifecycleProviderContext["artifacts"],
-        health: provider("health", "data-cloud") as KernelLifecycleProviderContext["health"],
-        approvals: provider("approvals", "data-cloud") as KernelLifecycleProviderContext["approvals"],
-        provenance: provider("provenance", "data-cloud") as KernelLifecycleProviderContext["provenance"],
-        memory: provider("memory", "data-cloud") as KernelLifecycleProviderContext["memory"],
-        runtimeTruth: provider("runtimeTruth", "data-cloud") as KernelLifecycleProviderContext["runtimeTruth"],
+        events: provider(
+          "events",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["artifacts"],
+        health: provider(
+          "health",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["health"],
+        approvals: provider(
+          "approvals",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["approvals"],
+        provenance: provider(
+          "provenance",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["provenance"],
+        memory: provider(
+          "memory",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["memory"],
+        runtimeTruth: provider(
+          "runtimeTruth",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["runtimeTruth"],
       };
 
       const result = validateProviderBackingForMode(context);
@@ -212,13 +342,34 @@ describe("LifecycleProviders", () => {
     it("platform mode allows external-backed providers", () => {
       const context: KernelLifecycleProviderContext = {
         mode: "platform",
-        events: provider("events", "external") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "external") as KernelLifecycleProviderContext["artifacts"],
-        health: provider("health", "external") as KernelLifecycleProviderContext["health"],
-        approvals: provider("approvals", "external") as KernelLifecycleProviderContext["approvals"],
-        provenance: provider("provenance", "external") as KernelLifecycleProviderContext["provenance"],
-        memory: provider("memory", "external") as KernelLifecycleProviderContext["memory"],
-        runtimeTruth: provider("runtimeTruth", "external") as KernelLifecycleProviderContext["runtimeTruth"],
+        events: provider(
+          "events",
+          "external",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "external",
+        ) as KernelLifecycleProviderContext["artifacts"],
+        health: provider(
+          "health",
+          "external",
+        ) as KernelLifecycleProviderContext["health"],
+        approvals: provider(
+          "approvals",
+          "external",
+        ) as KernelLifecycleProviderContext["approvals"],
+        provenance: provider(
+          "provenance",
+          "external",
+        ) as KernelLifecycleProviderContext["provenance"],
+        memory: provider(
+          "memory",
+          "external",
+        ) as KernelLifecycleProviderContext["memory"],
+        runtimeTruth: provider(
+          "runtimeTruth",
+          "external",
+        ) as KernelLifecycleProviderContext["runtimeTruth"],
       };
 
       const result = validateProviderBackingForMode(context);
@@ -230,13 +381,34 @@ describe("LifecycleProviders", () => {
     it("platform mode reports all file-backed providers", () => {
       const context: KernelLifecycleProviderContext = {
         mode: "platform",
-        events: provider("events", "file") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "file") as KernelLifecycleProviderContext["artifacts"],
-        health: provider("health", "file") as KernelLifecycleProviderContext["health"],
-        approvals: provider("approvals", "file") as KernelLifecycleProviderContext["approvals"],
-        provenance: provider("provenance", "file") as KernelLifecycleProviderContext["provenance"],
-        memory: provider("memory", "file") as KernelLifecycleProviderContext["memory"],
-        runtimeTruth: provider("runtimeTruth", "file") as KernelLifecycleProviderContext["runtimeTruth"],
+        events: provider(
+          "events",
+          "file",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "file",
+        ) as KernelLifecycleProviderContext["artifacts"],
+        health: provider(
+          "health",
+          "file",
+        ) as KernelLifecycleProviderContext["health"],
+        approvals: provider(
+          "approvals",
+          "file",
+        ) as KernelLifecycleProviderContext["approvals"],
+        provenance: provider(
+          "provenance",
+          "file",
+        ) as KernelLifecycleProviderContext["provenance"],
+        memory: provider(
+          "memory",
+          "file",
+        ) as KernelLifecycleProviderContext["memory"],
+        runtimeTruth: provider(
+          "runtimeTruth",
+          "file",
+        ) as KernelLifecycleProviderContext["runtimeTruth"],
       };
 
       const result = validateProviderBackingForMode(context);
@@ -251,13 +423,34 @@ describe("LifecycleProviders", () => {
     it("platform context fails with file-backed providers", () => {
       const context: KernelLifecycleProviderContext = {
         mode: "platform",
-        events: provider("events", "file") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "file") as KernelLifecycleProviderContext["artifacts"],
-        health: provider("health", "file") as KernelLifecycleProviderContext["health"],
-        approvals: provider("approvals", "file") as KernelLifecycleProviderContext["approvals"],
-        provenance: provider("provenance", "file") as KernelLifecycleProviderContext["provenance"],
-        memory: provider("memory", "file") as KernelLifecycleProviderContext["memory"],
-        runtimeTruth: provider("runtimeTruth", "file") as KernelLifecycleProviderContext["runtimeTruth"],
+        events: provider(
+          "events",
+          "file",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "file",
+        ) as KernelLifecycleProviderContext["artifacts"],
+        health: provider(
+          "health",
+          "file",
+        ) as KernelLifecycleProviderContext["health"],
+        approvals: provider(
+          "approvals",
+          "file",
+        ) as KernelLifecycleProviderContext["approvals"],
+        provenance: provider(
+          "provenance",
+          "file",
+        ) as KernelLifecycleProviderContext["provenance"],
+        memory: provider(
+          "memory",
+          "file",
+        ) as KernelLifecycleProviderContext["memory"],
+        runtimeTruth: provider(
+          "runtimeTruth",
+          "file",
+        ) as KernelLifecycleProviderContext["runtimeTruth"],
       };
 
       const result = validateKernelLifecycleProviderContext(context);
@@ -270,13 +463,34 @@ describe("LifecycleProviders", () => {
     it("platform context passes with data-cloud-backed providers", () => {
       const context: KernelLifecycleProviderContext = {
         mode: "platform",
-        events: provider("events", "data-cloud") as KernelLifecycleProviderContext["events"],
-        artifacts: provider("artifacts", "data-cloud") as KernelLifecycleProviderContext["artifacts"],
-        health: provider("health", "data-cloud") as KernelLifecycleProviderContext["health"],
-        approvals: provider("approvals", "data-cloud") as KernelLifecycleProviderContext["approvals"],
-        provenance: provider("provenance", "data-cloud") as KernelLifecycleProviderContext["provenance"],
-        memory: provider("memory", "data-cloud") as KernelLifecycleProviderContext["memory"],
-        runtimeTruth: provider("runtimeTruth", "data-cloud") as KernelLifecycleProviderContext["runtimeTruth"],
+        events: provider(
+          "events",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["events"],
+        artifacts: provider(
+          "artifacts",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["artifacts"],
+        health: provider(
+          "health",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["health"],
+        approvals: provider(
+          "approvals",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["approvals"],
+        provenance: provider(
+          "provenance",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["provenance"],
+        memory: provider(
+          "memory",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["memory"],
+        runtimeTruth: provider(
+          "runtimeTruth",
+          "data-cloud",
+        ) as KernelLifecycleProviderContext["runtimeTruth"],
       };
 
       const result = validateKernelLifecycleProviderContext(context);

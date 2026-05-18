@@ -2,8 +2,9 @@
  * @fileoverview In-memory registry store for design system entities.
  */
 
-import type { ComponentContract } from '@ghatana/ds-schema';
-import type { DTCGTokenFile } from '@ghatana/ds-schema';
+import { validateComponentContract } from "@ghatana/ds-schema";
+import type { ComponentContract } from "@ghatana/ds-schema";
+import type { DTCGTokenFile } from "@ghatana/ds-schema";
 
 // ============================================================================
 // Registry Entry Types
@@ -47,34 +48,59 @@ export interface PatternEntry {
   readonly registeredAt: string;
 }
 
+function assertValidComponentContract(
+  contract: ComponentContract,
+  context: string,
+): void {
+  const result = validateComponentContract(contract);
+  if (!result.success) {
+    const message = result.errors.issues
+      .map((issue) => `${issue.path.join(".") || "<root>"}: ${issue.message}`)
+      .join("; ");
+    throw new Error(
+      `${context} rejected invalid component contract: ${message}`,
+    );
+  }
+}
+
 // ============================================================================
 // Registry Store Interface
 // ============================================================================
 
 export interface RegistryStore {
   // Components
-  registerComponent(entry: Omit<ComponentEntry, 'registeredAt' | 'updatedAt'>): ComponentEntry;
+  registerComponent(
+    entry: Omit<ComponentEntry, "registeredAt" | "updatedAt">,
+  ): ComponentEntry;
   getComponent(id: string): ComponentEntry | undefined;
   getComponentByName(name: string): ComponentEntry | undefined;
   getAllComponents(): readonly ComponentEntry[];
-  updateComponent(id: string, contract: ComponentContract, hash: string): ComponentEntry | undefined;
+  updateComponent(
+    id: string,
+    contract: ComponentContract,
+    hash: string,
+  ): ComponentEntry | undefined;
   unregisterComponent(id: string): boolean;
 
   // Token Sets
-  registerTokenSet(entry: Omit<TokenSetEntry, 'registeredAt' | 'updatedAt'>): TokenSetEntry;
+  registerTokenSet(
+    entry: Omit<TokenSetEntry, "registeredAt" | "updatedAt">,
+  ): TokenSetEntry;
   getTokenSet(id: string): TokenSetEntry | undefined;
   getAllTokenSets(): readonly TokenSetEntry[];
   updateTokenSet(id: string, tokens: DTCGTokenFile): TokenSetEntry | undefined;
   unregisterTokenSet(id: string): boolean;
 
   // Themes
-  registerTheme(entry: Omit<ThemeEntry, 'registeredAt' | 'updatedAt'>): ThemeEntry;
+  registerTheme(
+    entry: Omit<ThemeEntry, "registeredAt" | "updatedAt">,
+  ): ThemeEntry;
   getTheme(id: string): ThemeEntry | undefined;
   getAllThemes(): readonly ThemeEntry[];
   unregisterTheme(id: string): boolean;
 
   // Patterns
-  registerPattern(entry: Omit<PatternEntry, 'registeredAt'>): PatternEntry;
+  registerPattern(entry: Omit<PatternEntry, "registeredAt">): PatternEntry;
   getPattern(id: string): PatternEntry | undefined;
   getAllPatterns(): readonly PatternEntry[];
   unregisterPattern(id: string): boolean;
@@ -89,7 +115,10 @@ export interface RegistryStore {
    * Returns the entry matching the given contract name and exact semver version.
    * Returns `undefined` when no match is found.
    */
-  getComponentByNameAndVersion(name: string, version: string): ComponentEntry | undefined;
+  getComponentByNameAndVersion(
+    name: string,
+    version: string,
+  ): ComponentEntry | undefined;
   /**
    * Returns all registered entries for a given contract name, sorted
    * chronologically (oldest first, newest last).
@@ -122,7 +151,13 @@ class InMemoryRegistryStore implements RegistryStore {
   private patterns = new Map<string, PatternEntry>();
 
   // Components
-  registerComponent(entry: Omit<ComponentEntry, 'registeredAt' | 'updatedAt'>): ComponentEntry {
+  registerComponent(
+    entry: Omit<ComponentEntry, "registeredAt" | "updatedAt">,
+  ): ComponentEntry {
+    assertValidComponentContract(
+      entry.contract,
+      `registerComponent(${entry.id})`,
+    );
     const now = new Date().toISOString();
     const fullEntry: ComponentEntry = {
       ...entry,
@@ -156,9 +191,14 @@ class InMemoryRegistryStore implements RegistryStore {
     return Array.from(this.components.values());
   }
 
-  updateComponent(id: string, contract: ComponentContract, hash: string): ComponentEntry | undefined {
+  updateComponent(
+    id: string,
+    contract: ComponentContract,
+    hash: string,
+  ): ComponentEntry | undefined {
     const existing = this.components.get(id);
     if (!existing) return undefined;
+    assertValidComponentContract(contract, `updateComponent(${id})`);
 
     const updated: ComponentEntry = {
       ...existing,
@@ -187,7 +227,9 @@ class InMemoryRegistryStore implements RegistryStore {
   }
 
   // Token Sets
-  registerTokenSet(entry: Omit<TokenSetEntry, 'registeredAt' | 'updatedAt'>): TokenSetEntry {
+  registerTokenSet(
+    entry: Omit<TokenSetEntry, "registeredAt" | "updatedAt">,
+  ): TokenSetEntry {
     const now = new Date().toISOString();
     const fullEntry: TokenSetEntry = {
       ...entry,
@@ -224,7 +266,9 @@ class InMemoryRegistryStore implements RegistryStore {
   }
 
   // Themes
-  registerTheme(entry: Omit<ThemeEntry, 'registeredAt' | 'updatedAt'>): ThemeEntry {
+  registerTheme(
+    entry: Omit<ThemeEntry, "registeredAt" | "updatedAt">,
+  ): ThemeEntry {
     const now = new Date().toISOString();
     const fullEntry: ThemeEntry = {
       ...entry,
@@ -248,7 +292,7 @@ class InMemoryRegistryStore implements RegistryStore {
   }
 
   // Patterns
-  registerPattern(entry: Omit<PatternEntry, 'registeredAt'>): PatternEntry {
+  registerPattern(entry: Omit<PatternEntry, "registeredAt">): PatternEntry {
     const fullEntry: PatternEntry = {
       ...entry,
       registeredAt: new Date().toISOString(),
@@ -272,24 +316,27 @@ class InMemoryRegistryStore implements RegistryStore {
   // Queries
   findComponentsByCategory(category: string): readonly ComponentEntry[] {
     return this.getAllComponents().filter(
-      (entry) => entry.contract.metadata.category === category
+      (entry) => entry.contract.metadata.category === category,
     );
   }
 
   findComponentsByTag(tag: string): readonly ComponentEntry[] {
     return this.getAllComponents().filter(
-      (entry) => entry.contract.metadata.tags?.includes(tag) ?? false
+      (entry) => entry.contract.metadata.tags?.includes(tag) ?? false,
     );
   }
 
   findPatternsByComponent(componentId: string): readonly PatternEntry[] {
-    return this.getAllPatterns().filter(
-      (entry) => entry.componentIds.includes(componentId)
+    return this.getAllPatterns().filter((entry) =>
+      entry.componentIds.includes(componentId),
     );
   }
 
   // Versioning queries
-  getComponentByNameAndVersion(name: string, version: string): ComponentEntry | undefined {
+  getComponentByNameAndVersion(
+    name: string,
+    version: string,
+  ): ComponentEntry | undefined {
     const versions = this.componentsByName.get(name);
     if (!versions) return undefined;
     return versions.find((e) => e.version === version);

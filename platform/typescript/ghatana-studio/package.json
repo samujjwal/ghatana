@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "pnpm type-check && node ./scripts/lint-studio.mjs",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "vitest",
     "test:e2e": "playwright test",

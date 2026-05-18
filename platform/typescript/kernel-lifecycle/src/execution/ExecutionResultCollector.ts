@@ -6,14 +6,20 @@ import {
   ProductLifecyclePhase,
   ProductLifecycleManifestRefs,
   ProductLifecycleApprovalRef,
-} from '../domain/ProductLifecyclePhase.js';
-import { ExecutionLogger } from '../domain/ProductLifecyclePhase.js';
-import type { KernelProviderMode } from '@ghatana/kernel-product-contracts';
+} from "../domain/ProductLifecyclePhase.js";
+import { ExecutionLogger } from "../domain/ProductLifecyclePhase.js";
+import type { KernelProviderMode } from "@ghatana/kernel-product-contracts";
 
 export interface ExecutionResultCollectionMetadata {
   readonly correlationId?: string;
   readonly providerMode?: KernelProviderMode;
   readonly productUnitRef?: string;
+  readonly lifecycleProfile?: string;
+  readonly environment?: string;
+  readonly requestedPhases?: readonly ProductLifecyclePhase[];
+  readonly executedPhases?: readonly ProductLifecyclePhase[];
+  readonly skippedPhases?: readonly ProductLifecyclePhase[];
+  readonly blockedPhases?: readonly ProductLifecyclePhase[];
   readonly manifestRefs?: ProductLifecycleManifestRefs;
   readonly eventsRef?: string;
   readonly healthSnapshotRef?: string;
@@ -79,23 +85,55 @@ export class ExecutionResultCollector {
     const failure = this.getFailureDetails();
 
     const result: ProductLifecycleResult = {
-      schemaVersion: '1.0.0',
+      schemaVersion: "1.0.0",
       runId,
-      ...(metadata.correlationId !== undefined ? { correlationId: metadata.correlationId } : {}),
-      ...(metadata.providerMode !== undefined ? { providerMode: metadata.providerMode } : {}),
+      ...(metadata.correlationId !== undefined
+        ? { correlationId: metadata.correlationId }
+        : {}),
+      ...(metadata.providerMode !== undefined
+        ? { providerMode: metadata.providerMode }
+        : {}),
       productId,
-      ...(metadata.productUnitRef !== undefined ? { productUnitRef: metadata.productUnitRef } : {}),
+      ...(metadata.productUnitRef !== undefined
+        ? { productUnitRef: metadata.productUnitRef }
+        : {}),
       phase,
+      ...(metadata.lifecycleProfile !== undefined
+        ? { lifecycleProfile: metadata.lifecycleProfile }
+        : {}),
+      ...(metadata.environment !== undefined
+        ? { environment: metadata.environment }
+        : {}),
+      ...(metadata.requestedPhases !== undefined
+        ? { requestedPhases: metadata.requestedPhases }
+        : {}),
+      ...(metadata.executedPhases !== undefined
+        ? { executedPhases: metadata.executedPhases }
+        : {}),
+      ...(metadata.skippedPhases !== undefined
+        ? { skippedPhases: metadata.skippedPhases }
+        : {}),
+      ...(metadata.blockedPhases !== undefined
+        ? { blockedPhases: metadata.blockedPhases }
+        : {}),
       status,
       startedAt: this.getStartTime(),
       completedAt: new Date().toISOString(),
       steps: this.results,
       gates: this.gateResults,
       artifacts: this.artifacts,
-      ...(metadata.manifestRefs !== undefined ? { manifestRefs: metadata.manifestRefs } : {}),
-      ...(metadata.eventsRef !== undefined ? { eventsRef: metadata.eventsRef } : {}),
-      ...(metadata.healthSnapshotRef !== undefined ? { healthSnapshotRef: metadata.healthSnapshotRef } : {}),
-      ...(metadata.approvalRefs !== undefined ? { approvalRefs: metadata.approvalRefs } : {}),
+      ...(metadata.manifestRefs !== undefined
+        ? { manifestRefs: metadata.manifestRefs }
+        : {}),
+      ...(metadata.eventsRef !== undefined
+        ? { eventsRef: metadata.eventsRef }
+        : {}),
+      ...(metadata.healthSnapshotRef !== undefined
+        ? { healthSnapshotRef: metadata.healthSnapshotRef }
+        : {}),
+      ...(metadata.approvalRefs !== undefined
+        ? { approvalRefs: metadata.approvalRefs }
+        : {}),
       outputDirectory,
     };
 
@@ -109,39 +147,49 @@ export class ExecutionResultCollector {
   /**
    * Determine overall status
    */
-  private determineOverallStatus(): 'succeeded' | 'failed' | 'skipped' {
+  private determineOverallStatus(): "succeeded" | "failed" | "skipped" {
     if (this.results.length === 0) {
-      return 'skipped';
+      return "skipped";
     }
 
-    const hasFailure = this.results.some((r) => r.status === 'failed');
+    const hasFailure = this.results.some((r) => r.status === "failed");
     if (hasFailure) {
-      return 'failed';
+      return "failed";
     }
 
-    const hasSuccess = this.results.some((r) => r.status === 'succeeded');
+    const hasSuccess = this.results.some((r) => r.status === "succeeded");
     if (hasSuccess) {
-      return 'succeeded';
+      return "succeeded";
     }
 
-    return 'skipped';
+    return "skipped";
   }
 
   /**
    * Get failure details
    */
   private getFailureDetails():
-    | { reasonCode: 'adapter-failed'; stepId: string; message: string; cause?: string }
+    | {
+        reasonCode: "adapter-failed";
+        stepId: string;
+        message: string;
+        cause?: string;
+      }
     | undefined {
-    const failedStep = this.results.find((r) => r.status === 'failed');
+    const failedStep = this.results.find((r) => r.status === "failed");
     if (!failedStep) {
       return undefined;
     }
 
-    const failure: { reasonCode: 'adapter-failed'; stepId: string; message: string; cause?: string } = {
+    const failure: {
+      reasonCode: "adapter-failed";
+      stepId: string;
+      message: string;
+      cause?: string;
+    } = {
       stepId: failedStep.stepId,
       message: `Step ${failedStep.stepId} failed`,
-      reasonCode: 'adapter-failed',
+      reasonCode: "adapter-failed",
     };
 
     if (failedStep.stderr !== undefined) {
@@ -160,7 +208,10 @@ export class ExecutionResultCollector {
     }
 
     // Estimate start time by subtracting total duration from now
-    const totalDuration = this.results.reduce((sum, r) => sum + r.durationMs, 0);
+    const totalDuration = this.results.reduce(
+      (sum, r) => sum + r.durationMs,
+      0,
+    );
     return new Date(Date.now() - totalDuration).toISOString();
   }
 
@@ -171,7 +222,7 @@ export class ExecutionResultCollector {
     this.results = [];
     this.artifacts = [];
     this.gateResults = [];
-    this.logger.debug('Reset execution result collector');
+    this.logger.debug("Reset execution result collector");
   }
 
   /**

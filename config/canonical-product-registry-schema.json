@@ -54,7 +54,13 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["platform-provider", "business-product", "shared-service", "domain-pack", "demo/example"],
+          "enum": [
+            "platform-provider",
+            "business-product",
+            "shared-service",
+            "domain-pack",
+            "demo/example"
+          ],
           "description": "Canonical registry kind used by generators and conformance filters"
         },
         "manifestPath": {
@@ -220,7 +226,15 @@
             "required": ["lifecycleStatus"]
           },
           "then": {
-            "required": ["lifecycleProfile", "lifecycleConfigPath", "lifecycle", "toolchain", "artifacts", "deployment", "environments"],
+            "required": [
+              "lifecycleProfile",
+              "lifecycleConfigPath",
+              "lifecycle",
+              "toolchain",
+              "artifacts",
+              "deployment",
+              "environments"
+            ],
             "properties": {
               "lifecycleExecutionAllowed": { "const": true },
               "lifecycleProfile": { "type": "string", "minLength": 1 },
@@ -293,7 +307,16 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["backend-api", "worker", "portal", "sdk", "web", "mobile", "cli", "operator"],
+          "enum": [
+            "backend-api",
+            "worker",
+            "portal",
+            "sdk",
+            "web",
+            "mobile",
+            "cli",
+            "operator"
+          ],
           "description": "Surface type"
         },
         "implementationStatus": {
@@ -499,12 +522,35 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["jvm-service", "jvm-library", "node-service", "static-web-bundle", "container-image", "mobile-bundle", "sdk-package", "domain-pack", "test-report", "coverage-report"],
+          "enum": [
+            "jvm-service",
+            "jvm-library",
+            "node-service",
+            "static-web-bundle",
+            "container-image",
+            "mobile-bundle",
+            "sdk-package",
+            "domain-pack",
+            "test-report",
+            "coverage-report"
+          ],
           "description": "Artifact type"
         },
         "packaging": {
           "type": "string",
-          "enum": ["jar", "distribution", "static-files", "container", "npm", "maven", "apk", "aab", "ipa", "json", "xml"],
+          "enum": [
+            "jar",
+            "distribution",
+            "static-files",
+            "container",
+            "npm",
+            "maven",
+            "apk",
+            "aab",
+            "ipa",
+            "json",
+            "xml"
+          ],
           "description": "Packaging format"
         },
         "required": {
@@ -540,6 +586,11 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "status": {
+          "type": "string",
+          "description": "Explicit readiness status for this product in the lifecycle system",
+          "enum": ["blocked", "planning-only", "declared-only", "enabled"]
+        },
         "reasonCodes": {
           "type": "array",
           "items": { "type": "string" }

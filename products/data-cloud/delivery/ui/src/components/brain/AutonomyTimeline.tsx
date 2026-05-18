@@ -9,8 +9,8 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
   AlertCircle,
@@ -18,10 +18,10 @@ import {
   Clock,
   ChevronRight,
   Activity,
-} from 'lucide-react';
-import { brainService, type AutonomyAction } from '../../api/brain.service';
-import BaseCard from '../cards/BaseCard';
-import StatusBadge from '../common/StatusBadge';
+} from "lucide-react";
+import { brainService, type AutonomyAction } from "../../api/brain.service";
+import BaseCard from "../cards/BaseCard";
+import StatusBadge from "../common/StatusBadge";
 
 interface AutonomyTimelineProps {
   maxItems?: number;
@@ -33,47 +33,54 @@ export function AutonomyTimeline({
   showFilters = true,
 }: AutonomyTimelineProps) {
   const [selectedLog, setSelectedLog] = useState<AutonomyAction | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
 
-  const { data: logs, isLoading, error } = useQuery({
-    queryKey: ['autonomy-timeline', maxItems],
+  const {
+    data: logs,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["autonomy-timeline", maxItems],
     queryFn: () => brainService.getAutonomyTimeline(undefined, maxItems),
     refetchInterval: 30000,
   });
 
-  const getOutcomeIcon = (status: AutonomyAction['status']) => {
-    if (status === 'SUCCESS') {
+  const getOutcomeIcon = (status: AutonomyAction["status"]) => {
+    if (status === "SUCCESS") {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
-    if (status === 'FAILED') {
+    if (status === "FAILED") {
       return <XCircle className="h-5 w-5 text-red-500" />;
     }
-    if (status === 'PENDING' || status === 'ADVISORY') {
+    if (status === "ADVISORY") {
       return <AlertCircle className="h-5 w-5 text-yellow-500" />;
     }
     return <Clock className="h-5 w-5 text-gray-400" />;
   };
 
-  const getOutcomeColor = (status: AutonomyAction['status']) => {
-    if (status === 'SUCCESS') {
-      return 'bg-green-100 border-green-300';
+  const getOutcomeColor = (status: AutonomyAction["status"]) => {
+    if (status === "SUCCESS") {
+      return "bg-green-100 border-green-300";
     }
-    if (status === 'FAILED') {
-      return 'bg-red-100 border-red-300';
+    if (status === "FAILED") {
+      return "bg-red-100 border-red-300";
     }
-    if (status === 'PENDING' || status === 'ADVISORY') {
-      return 'bg-yellow-100 border-yellow-300';
+    if (status === "ADVISORY") {
+      return "bg-yellow-100 border-yellow-300";
     }
-    return 'bg-gray-100 border-gray-300';
+    return "bg-gray-100 border-gray-300";
   };
 
-  const filteredLogs = logs?.filter((log) => {
-    if (filter === 'all') return true;
-    if (filter === 'success') return log.status === 'SUCCESS';
-    if (filter === 'advisory') return log.status === 'ADVISORY' || log.status === 'PENDING';
-    if (filter === 'blocked') return log.status === 'FAILED';
-    return true;
-  }).slice(0, maxItems) || [];
+  const filteredLogs =
+    logs
+      ?.filter((log) => {
+        if (filter === "all") return true;
+        if (filter === "success") return log.status === "SUCCESS";
+        if (filter === "advisory") return log.status === "ADVISORY";
+        if (filter === "blocked") return log.status === "FAILED";
+        return true;
+      })
+      .slice(0, maxItems) || [];
 
   if (isLoading) {
     return (
@@ -109,44 +116,50 @@ export function AutonomyTimeline({
             <Activity className="h-6 w-6 text-blue-500" />
             <h2 className="text-xl font-bold text-gray-900">Autonomy Log</h2>
           </div>
-          {logs && <span className="text-sm text-gray-500">{logs.length} actions</span>}
+          {logs && (
+            <span className="text-sm text-gray-500">{logs.length} actions</span>
+          )}
         </div>
 
         {showFilters && (
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1 text-sm rounded-full ${filter === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              onClick={() => setFilter("all")}
+              className={`px-3 py-1 text-sm rounded-full ${
+                filter === "all"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
               All
             </button>
             <button
-              onClick={() => setFilter('success')}
-              className={`px-3 py-1 text-sm rounded-full ${filter === 'success'
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              onClick={() => setFilter("success")}
+              className={`px-3 py-1 text-sm rounded-full ${
+                filter === "success"
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
               Success
             </button>
             <button
-              onClick={() => setFilter('advisory')}
-              className={`px-3 py-1 text-sm rounded-full ${filter === 'advisory'
-                ? 'bg-yellow-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              onClick={() => setFilter("advisory")}
+              className={`px-3 py-1 text-sm rounded-full ${
+                filter === "advisory"
+                  ? "bg-yellow-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
               Advisory
             </button>
             <button
-              onClick={() => setFilter('blocked')}
-              className={`px-3 py-1 text-sm rounded-full ${filter === 'blocked'
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              onClick={() => setFilter("blocked")}
+              className={`px-3 py-1 text-sm rounded-full ${
+                filter === "blocked"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
               Blocked
             </button>
@@ -170,9 +183,7 @@ export function AutonomyTimeline({
                 `}
               >
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5">
-                    {getOutcomeIcon(log.status)}
-                  </div>
+                  <div className="mt-0.5">{getOutcomeIcon(log.status)}</div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -192,7 +203,9 @@ export function AutonomyTimeline({
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                       <span>{new Date(log.timestamp).toLocaleString()}</span>
                       <div className="h-3 w-px bg-gray-300"></div>
-                      <span>Confidence: {(log.confidence * 100).toFixed(0)}%</span>
+                      <span>
+                        Confidence: {(log.confidence * 100).toFixed(0)}%
+                      </span>
                     </div>
                   </div>
 
@@ -216,7 +229,9 @@ export function AutonomyTimeline({
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 {getOutcomeIcon(selectedLog.status)}
-                <h3 className="text-lg font-bold text-gray-900">Decision Context</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Decision Context
+                </h3>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
@@ -228,27 +243,41 @@ export function AutonomyTimeline({
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Action</label>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.action}</p>
+                <label className="text-sm font-medium text-gray-700">
+                  Action
+                </label>
+                <p className="text-sm text-gray-900 mt-1">
+                  {selectedLog.action}
+                </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Domain</label>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.domain}</p>
+                <label className="text-sm font-medium text-gray-700">
+                  Domain
+                </label>
+                <p className="text-sm text-gray-900 mt-1">
+                  {selectedLog.domain}
+                </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Status
+                </label>
                 <div className="flex items-center gap-2 mt-1">
                   <StatusBadge status={selectedLog.status} />
                   {selectedLog.outcome && (
-                    <span className="text-sm text-gray-600">Outcome: {selectedLog.outcome}</span>
+                    <span className="text-sm text-gray-600">
+                      Outcome: {selectedLog.outcome}
+                    </span>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Confidence</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Confidence
+                </label>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div
@@ -264,7 +293,9 @@ export function AutonomyTimeline({
 
               {Object.keys(selectedLog.metadata).length > 0 && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Metadata</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Metadata
+                  </label>
                   <div className="mt-1 bg-gray-50 rounded p-3 text-xs font-mono">
                     <pre>{JSON.stringify(selectedLog.metadata, null, 2)}</pre>
                   </div>
@@ -272,7 +303,9 @@ export function AutonomyTimeline({
               )}
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Timestamp</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Timestamp
+                </label>
                 <p className="text-sm text-gray-900 mt-1">
                   {new Date(selectedLog.timestamp).toLocaleString()}
                 </p>
@@ -295,4 +328,3 @@ export function AutonomyTimeline({
 }
 
 export default AutonomyTimeline;
-

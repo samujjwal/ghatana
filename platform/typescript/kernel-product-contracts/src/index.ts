@@ -1,12 +1,15 @@
-import { isProductUnit as isProductUnitContract } from './product-unit/ProductUnit.js';
+import { isProductUnit as isProductUnitContract } from "./product-unit/ProductUnit.js";
 
 // Existing lifecycle contracts
-export type { ProductLifecyclePhase } from './lifecycle/ProductLifecyclePhase.js';
-export type { ProductSurface, ProductSurfaceType } from './surface/ProductSurface.js';
-export type { ProductArtifact } from './artifact/ProductArtifact.js';
-export type { ProductEnvironment } from './environment/ProductEnvironment.js';
-export type { ProductGate } from './gate/ProductGate.js';
-export type { ProductDeployment } from './deployment/ProductDeployment.js';
+export type { ProductLifecyclePhase } from "./lifecycle/ProductLifecyclePhase.js";
+export type {
+  ProductSurface,
+  ProductSurfaceType,
+} from "./surface/ProductSurface.js";
+export type { ProductArtifact } from "./artifact/ProductArtifact.js";
+export type { ProductEnvironment } from "./environment/ProductEnvironment.js";
+export type { ProductGate } from "./gate/ProductGate.js";
+export type { ProductDeployment } from "./deployment/ProductDeployment.js";
 
 // New ProductUnit contracts (explicit re-exports to avoid naming conflicts)
 export {
@@ -34,7 +37,7 @@ export {
   isProductUnitIntent,
   validateProductUnitIntent,
   validateProductUnitIntentDetailed,
-} from './product-unit/index.js';
+} from "./product-unit/index.js";
 export const isProductUnit = isProductUnitContract;
 export type {
   ProductUnitKind,
@@ -69,7 +72,7 @@ export type {
   ProductUnitIntentDetailedValidationResult,
   ProductUnitIntentValidationIssue,
   ProductUnitIntentValidationReasonCode,
-} from './product-unit/index.js';
+} from "./product-unit/index.js";
 
 // New provider contracts
 export {
@@ -117,11 +120,18 @@ export {
   LifecycleProvenanceRecordSchema,
   LifecycleMemoryRecordSchema,
   LifecycleRuntimeTruthSnapshotSchema,
+  KernelBridgeProviderHealthResultSchema,
+  KernelBridgeProviderErrorSchema,
   LifecycleArtifactManifestRef,
   LifecycleHealthSnapshotRef,
   LifecycleProvenanceRecord,
   LifecycleMemoryRecord,
   LifecycleRuntimeTruthSnapshot,
+  KernelBridgeProviderMode,
+  KernelBridgeProviderStatus,
+  KernelBridgeProviderErrorCode,
+  KernelBridgeProviderHealthResult,
+  KernelBridgeProviderError,
   LifecycleEventProvider,
   LifecycleArtifactProvider,
   LifecycleHealthProvider,
@@ -129,12 +139,19 @@ export {
   LifecycleProvenanceProvider,
   LifecycleMemoryProvider,
   LifecycleRuntimeTruthProvider,
+  KernelEventProvider,
+  KernelArtifactProvider,
+  KernelHealthProvider,
+  KernelProvenanceProvider,
+  KernelTelemetryProvider,
+  KernelPolicyEvidenceProvider,
+  KernelRuntimeTruthProvider,
   KernelLifecycleProviderContext,
   isKernelProviderMode,
   requireLifecycleProvider,
   requireLifecycleProviderSet,
   validateKernelLifecycleProviderContext,
-} from './provider/index.js';
+} from "./provider/index.js";
 
 // New event contracts
 export {
@@ -161,7 +178,7 @@ export {
   AgentGovernanceEventPayload,
   KernelPreviewSecurityEvent,
   PreviewSecurityEventPayload,
-} from './events/index.js';
+} from "./events/index.js";
 
 // New health snapshot contracts
 export {
@@ -185,7 +202,37 @@ export {
   LearningDeltaStatus,
   PreviewSecurityHealthSnapshot,
   SecurityCheckStatus,
-} from './health/index.js';
+  KernelHealthStatusSchema,
+  KernelLifecycleHealthSnapshotSchema,
+  KernelProductHealthSnapshotSchema,
+  KernelProviderHealthSnapshotSchema,
+  KernelGateHealthSnapshotSchema,
+  KernelDeploymentHealthSnapshotSchema,
+  KernelHealthSnapshotSchema,
+  type KernelHealthStatus,
+  type KernelLifecycleHealthSnapshot,
+  type KernelProductHealthSnapshot,
+  type KernelProviderHealthSnapshot,
+  type KernelGateHealthSnapshot,
+  type KernelDeploymentHealthSnapshot,
+  type KernelHealthSnapshot,
+} from "./health/index.js";
+
+export {
+  ProvenanceReferenceSchema,
+  ProvenanceSubjectSchema,
+  redactEvidenceRef,
+  redactProvenanceReference,
+  type EvidenceRedactionOptions,
+  type ProvenanceReference,
+  type ProvenanceSubject,
+} from "./provenance/index.js";
+
+export {
+  ScopedRuntimeTruthIndex,
+  type RuntimeTruthScope,
+  type RuntimeTruthQueryIndex,
+} from "./runtime-truth/index.js";
 
 // New plugin contracts
 export {
@@ -207,7 +254,7 @@ export {
   isKernelPluginLifecycleHook,
   getLifecycleHookLabel,
   isKernelPluginGateResult,
-} from './plugin/index.js';
+} from "./plugin/index.js";
 
 // Artifact intelligence contracts
 export {
@@ -256,13 +303,16 @@ export {
   type GeneratedChangeSetSummary,
   type SemanticArtifactEvidenceBundle,
   type ArtifactIntelligenceEvidenceEnvelope,
-} from './artifact-intelligence/index.js';
+} from "./artifact-intelligence/index.js";
 
 // Agentic lifecycle contracts
 export {
   AgentLifecycleActionRequestSchema,
   AgentLifecycleActionRequestValidationError,
+  AgentLifecycleMasteryEvidenceSchema,
+  AgentLifecyclePolicyDecisionEvidenceSchema,
   AgentLifecycleApprovalRequirementSchema,
+  AgentLifecycleToolPermissionSchema,
   AgentLifecycleVerificationRequirementSchema,
   AgentLifecycleActionResultSchema,
   AgentLifecycleActionFailureSchema,
@@ -273,8 +323,14 @@ export {
   type AgentLifecycleActionRequestReasonCode,
   type AgentLifecycleActionRequestValidationIssue,
   type AgentLifecycleApprovalRequirement,
+  type AgentLifecycleFallbackMode,
+  type AgentLifecycleMasteryEvidence,
+  type AgentLifecycleMasteryState,
+  type AgentLifecyclePolicyDecision,
+  type AgentLifecyclePolicyDecisionEvidence,
   type AgentLifecycleRequestedAction,
   type AgentLifecycleRiskLevel,
+  type AgentLifecycleToolPermission,
   type AgentLifecycleVerificationRequirement,
   type AgentLifecycleActionResult,
   type AgentLifecycleActionFailure,
@@ -283,4 +339,99 @@ export {
   type AgentLifecycleHealthStatus,
   type AgentLifecycleRequiredNextAction,
   type AgentLifecycleRollbackReadiness,
-} from './agentic/index.js';
+} from "./agentic/index.js";
+
+// Lifecycle plan, execution, and result contracts (§2.2)
+export {
+  createLifecycleRunId,
+  createLifecycleCorrelationId,
+  LIFECYCLE_RUN_STATUSES,
+  LifecycleRunStatusSchema,
+  LifecycleProfileSchema,
+  parseLifecycleProfile,
+  LifecyclePlanStepSchema,
+  LifecyclePlanSchema,
+  parseLifecyclePlan,
+  LifecycleExecutionRequestSchema,
+  parseLifecycleExecutionRequest,
+  LifecycleStepResultSchema,
+  LifecycleExecutionResultSchema,
+  parseLifecycleExecutionResult,
+  type LifecycleRunId,
+  type LifecycleCorrelationId,
+  type LifecycleRunStatus,
+  type LifecycleProfile,
+  type LifecyclePlanStep,
+  type LifecyclePlan,
+  type LifecycleExecutionRequest,
+  type LifecycleStepResult,
+  type LifecycleExecutionResult,
+  type LifecycleFailureReasonCode,
+} from "./lifecycle/LifecycleContracts.js";
+
+// Gate definition, result manifest, and reference contracts (§2.2)
+export {
+  GATE_KINDS,
+  GateDefinitionSchema,
+  RequiredGateReferenceSchema,
+  GateResultEntrySchema,
+  GateResultManifestSchema,
+  parseGateResultManifest,
+  type GateKind,
+  type GateDefinition,
+  type GateFailureReason,
+  type RequiredGateReference,
+  type GateResultEntry,
+  type GateResultManifest,
+} from "./gate/GateContracts.js";
+
+// Artifact reference and fingerprint contracts (§2.2)
+export {
+  DIGEST_ALGORITHMS,
+  ArtifactDigestSchema,
+  ArtifactFingerprintSchema,
+  ARTIFACT_TYPES,
+  LifecycleArtifactReferenceSchema,
+  ArtifactManifestReferenceSchema,
+  parseArtifactManifestReference,
+  type DigestAlgorithm,
+  type ArtifactDigest,
+  type ArtifactFingerprint,
+  type ArtifactType,
+  type LifecycleArtifactReference,
+  type ArtifactManifestReference,
+} from "./artifact/ArtifactReferences.js";
+
+// Deployment, environment, health report, and rollback reference contracts (§2.2)
+export {
+  EnvironmentReferenceSchema,
+  DeploymentReferenceSchema,
+  DeploymentManifestReferenceSchema,
+  parseDeploymentManifestReference,
+  VerifyHealthReportReferenceSchema,
+  parseVerifyHealthReportReference,
+  RollbackManifestReferenceSchema,
+  parseRollbackManifestReference,
+  type EnvironmentReference,
+  type DeploymentReference,
+  type DeploymentManifestReference,
+  type VerifyHealthReportReference,
+  type RollbackManifestReference,
+} from "./deployment/DeploymentReferences.js";
+
+// Lifecycle event envelope contracts (§2.2)
+export {
+  LifecycleEventEnvelopeSchema,
+  parseLifecycleEventEnvelope,
+  type LifecycleEventType,
+  type LifecycleEventEnvelope,
+} from "./events/LifecycleEventEnvelope.js";
+
+// Agent lifecycle action evidence contracts (§2.2)
+export {
+  AGENT_EVIDENCE_KINDS,
+  AgentLifecycleActionEvidenceSchema,
+  parseAgentLifecycleActionEvidence,
+  type AgentEvidenceKind,
+  type AgentLifecycleActionEvidence,
+} from "./agentic/AgentLifecycleActionEvidence.js";

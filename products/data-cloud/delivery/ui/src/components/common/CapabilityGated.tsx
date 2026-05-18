@@ -9,10 +9,13 @@
  * @doc.layer frontend
  */
 
-import React from 'react';
-import { useSurfaceGate, type GateMode } from '../../hooks/useSurfaceGate';
-import { useSurfaceRegistry } from '../../api/surfaces.service';
-import { Loader2 } from 'lucide-react';
+import React from "react";
+import {
+  useCapabilityGate,
+  type GateMode,
+} from "../../hooks/useCapabilityGate";
+import { useSurfaceRegistry } from "../../api/surfaces.service";
+import { Loader2 } from "lucide-react";
 
 interface CapabilityGatedProps {
   /** Capability aliases to check (e.g., 'ai.assist', 'search.openSearch') */
@@ -28,13 +31,13 @@ interface CapabilityGatedProps {
 
 export const CapabilityGated: React.FC<CapabilityGatedProps> = ({
   aliases,
-  mode = 'active',
+  mode = "active",
   loadingFallback,
   fallback,
   children,
 }) => {
   const { data: registry, isLoading } = useSurfaceRegistry();
-  const allowed = useSurfaceGate(aliases, mode);
+  const allowed = useCapabilityGate(aliases, mode);
 
   if (isLoading && !registry) {
     if (loadingFallback !== undefined) {

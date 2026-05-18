@@ -38,21 +38,36 @@ module.exports = [
       // them here prevents the root CJS config (no TS parser) from issuing
       // spurious "Unexpected token interface/type/enum" parse errors in VS Code.
       "products/yappc/frontend/**",
+      // data-cloud UI apps each have their own eslint.config.js with the TS parser.
+      "products/data-cloud/delivery/ui/**",
+      "products/data-cloud/planes/action/ui/**",
+      "products/data-cloud/planes/action/gateway/**",
     ],
   },
   {
-    files: [
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.ts",
-      "**/*.tsx",
-    ],
+    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
     plugins: {
       ghatana: ghatanaArchitectureRules,
-      i18n: i18nCoverageRule,
-      'no-raw-fetch': noRawFetchRule,
-      'no-production-todos': noProductionTodosRule,
-      'enforce-package-boundaries': enforcePackageBoundariesRule,
+      i18n: {
+        rules: {
+          "i18n-coverage": i18nCoverageRule,
+        },
+      },
+      "no-raw-fetch": {
+        rules: {
+          "no-raw-fetch": noRawFetchRule,
+        },
+      },
+      "no-production-todos": {
+        rules: {
+          "no-production-todos": noProductionTodosRule,
+        },
+      },
+      "enforce-package-boundaries": {
+        rules: {
+          "enforce-package-boundaries": enforcePackageBoundariesRule,
+        },
+      },
     },
     rules: {
       "ghatana/no-cross-product-imports": "error",
@@ -72,20 +87,26 @@ module.exports = [
       "no-restricted-imports": [
         "error",
         {
-          "paths": [
+          paths: [
             {
-              "name": "@ghatana/sso-client",
-              "message": "Direct @ghatana/sso-client import is not allowed in product code. Use @yappc/auth or the platform auth abstraction."
-            }
+              name: "@ghatana/sso-client",
+              message:
+                "Direct @ghatana/sso-client import is not allowed in product code. Use @yappc/auth or the platform auth abstraction.",
+            },
           ],
-          "patterns": [
+          patterns: [
             {
-              "group": ["**/store/StateManager", "**/store/StateManager.ts", "@yappc/state/store/StateManager"],
-              "message": "StateManager is deprecated. Import createAtom / createPersistentAtom / createDerivedAtom from @ghatana/state (re-exported via @yappc/state) instead."
-            }
-          ]
-        }
-      ]
+              group: [
+                "**/store/StateManager",
+                "**/store/StateManager.ts",
+                "@yappc/state/store/StateManager",
+              ],
+              message:
+                "StateManager is deprecated. Import createAtom / createPersistentAtom / createDerivedAtom from @ghatana/state (re-exported via @yappc/state) instead.",
+            },
+          ],
+        },
+      ],
     },
   },
 ];

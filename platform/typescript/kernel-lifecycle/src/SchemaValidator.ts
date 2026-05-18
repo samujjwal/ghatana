@@ -1,6 +1,6 @@
-import Ajv from 'ajv';
-import { promises as fs } from 'node:fs';
-import * as path from 'node:path';
+import Ajv from "ajv";
+import { promises as fs } from "node:fs";
+import * as path from "node:path";
 
 interface ValidatorFunction {
   (data: unknown): boolean;
@@ -22,14 +22,20 @@ export class SchemaValidator {
   /**
    * Validate a file against a schema
    */
-  async validateFile(filePath: string, schemaPath: string): Promise<{ valid: boolean; errors: Array<{ path: string; message: string }> }> {
+  async validateFile(
+    filePath: string,
+    schemaPath: string,
+  ): Promise<{
+    valid: boolean;
+    errors: Array<{ path: string; message: string }>;
+  }> {
     try {
       // Load schema
-      const schemaContent = await fs.readFile(schemaPath, 'utf-8');
+      const schemaContent = await fs.readFile(schemaPath, "utf-8");
       const schema = JSON.parse(schemaContent) as Record<string, unknown>;
 
       // Load data file
-      const dataContent = await fs.readFile(filePath, 'utf-8');
+      const dataContent = await fs.readFile(filePath, "utf-8");
       const data = JSON.parse(dataContent);
 
       // Validate
@@ -38,8 +44,8 @@ export class SchemaValidator {
 
       if (!valid && validator.errors) {
         const errors = validator.errors.map((error) => ({
-          path: 'root',
-          message: error.message || 'Validation failed',
+          path: "root",
+          message: error.message || "Validation failed",
         }));
         return { valid: false, errors };
       }
@@ -49,7 +55,7 @@ export class SchemaValidator {
       const message = error instanceof Error ? error.message : String(error);
       return {
         valid: false,
-        errors: [{ path: 'root', message: `Failed to validate: ${message}` }],
+        errors: [{ path: "root", message: `Failed to validate: ${message}` }],
       };
     }
   }
@@ -57,16 +63,32 @@ export class SchemaValidator {
   /**
    * Validate product lifecycle profiles
    */
-  async validateProductLifecycleProfiles(): Promise<{ valid: boolean; errors: Array<{ path: string; message: string }> }> {
-    const profilesPath = path.join(this.repoRoot, 'config', 'product-lifecycle-profiles.json');
-    const schemaPath = path.join(this.repoRoot, 'config', 'product-lifecycle-profiles-schema.json');
+  async validateProductLifecycleProfiles(): Promise<{
+    valid: boolean;
+    errors: Array<{ path: string; message: string }>;
+  }> {
+    const profilesPath = path.join(
+      this.repoRoot,
+      "config",
+      "product-lifecycle-profiles.json",
+    );
+    const schemaPath = path.join(
+      this.repoRoot,
+      "config",
+      "product-lifecycle-profiles-schema.json",
+    );
 
     try {
       await fs.access(profilesPath);
     } catch {
       return {
         valid: false,
-        errors: [{ path: 'product-lifecycle-profiles.json', message: 'File not found' }],
+        errors: [
+          {
+            path: "product-lifecycle-profiles.json",
+            message: "File not found",
+          },
+        ],
       };
     }
 
@@ -76,16 +98,32 @@ export class SchemaValidator {
   /**
    * Validate toolchain adapter registry
    */
-  async validateToolchainAdapterRegistry(): Promise<{ valid: boolean; errors: Array<{ path: string; message: string }> }> {
-    const registryPath = path.join(this.repoRoot, 'config', 'toolchain-adapter-registry.json');
-    const schemaPath = path.join(this.repoRoot, 'config', 'toolchain-adapter-registry-schema.json');
+  async validateToolchainAdapterRegistry(): Promise<{
+    valid: boolean;
+    errors: Array<{ path: string; message: string }>;
+  }> {
+    const registryPath = path.join(
+      this.repoRoot,
+      "config",
+      "toolchain-adapter-registry.json",
+    );
+    const schemaPath = path.join(
+      this.repoRoot,
+      "config",
+      "toolchain-adapter-registry-schema.json",
+    );
 
     try {
       await fs.access(registryPath);
     } catch {
       return {
         valid: false,
-        errors: [{ path: 'toolchain-adapter-registry.json', message: 'File not found' }],
+        errors: [
+          {
+            path: "toolchain-adapter-registry.json",
+            message: "File not found",
+          },
+        ],
       };
     }
 
@@ -109,28 +147,39 @@ export class SchemaValidator {
 
     // Load profiles to check artifact types
     try {
-      const profilesPath = path.join(this.repoRoot, 'config', 'product-lifecycle-profiles.json');
-      const content = await fs.readFile(profilesPath, 'utf-8');
+      const profilesPath = path.join(
+        this.repoRoot,
+        "config",
+        "product-lifecycle-profiles.json",
+      );
+      const content = await fs.readFile(profilesPath, "utf-8");
       const profiles = JSON.parse(content) as Record<string, unknown>;
 
       // Validate that all referenced artifact types are known
       const validArtifactTypes = [
-        'jar',
-        'war',
-        'static-web-bundle',
-        'docker-image',
-        'npm-package',
-        'test-report',
-        'coverage-report',
-        'source-map',
-        'documentation',
+        "jar",
+        "war",
+        "static-web-bundle",
+        "docker-image",
+        "npm-package",
+        "test-report",
+        "coverage-report",
+        "source-map",
+        "documentation",
       ];
 
-      const profilesObj = profiles.profiles as Record<string, unknown> | undefined;
+      const profilesObj = profiles.profiles as
+        | Record<string, unknown>
+        | undefined;
       if (profilesObj) {
         for (const [profileId, profile] of Object.entries(profilesObj)) {
-          if (typeof profile === 'object' && profile !== null && 'defaultArtifacts' in profile) {
-            const artifacts = (profile as Record<string, unknown>).defaultArtifacts as string[] | undefined;
+          if (
+            typeof profile === "object" &&
+            profile !== null &&
+            "defaultArtifacts" in profile
+          ) {
+            const artifacts = (profile as Record<string, unknown>)
+              .defaultArtifacts as string[] | undefined;
             if (Array.isArray(artifacts)) {
               for (const artifact of artifacts) {
                 if (!validArtifactTypes.includes(artifact)) {
@@ -148,6 +197,77 @@ export class SchemaValidator {
       // Silently continue if we can't load for additional validation
     }
 
-    return { valid: profilesResult.valid, errors: profilesResult.errors, warnings };
+    return {
+      valid: profilesResult.valid,
+      errors: profilesResult.errors,
+      warnings,
+    };
+  }
+
+  /**
+   * Validate a product registry entry has required shape fields.
+   * This is a synchronous shape-only check (no file I/O, no lifecycle execution).
+   * Throws if the entry is missing required structural fields.
+   */
+  validateProductRegistryEntry(productId: string, entry: unknown): void {
+    if (entry === null || entry === undefined || typeof entry !== "object") {
+      throw new Error(
+        `Product registry entry for '${productId}' is not an object`,
+      );
+    }
+
+    const record = entry as Record<string, unknown>;
+
+    const requiredFields = [
+      "id",
+      "kind",
+      "lifecycleReadiness",
+      "metadata",
+    ] as const;
+    for (const field of requiredFields) {
+      if (
+        !(field in record) ||
+        record[field] === undefined ||
+        record[field] === null
+      ) {
+        throw new Error(
+          `Product registry entry for '${productId}' is missing required field: '${field}'`,
+        );
+      }
+    }
+
+    // Validate lifecycleReadiness shape
+    const readiness = record["lifecycleReadiness"];
+    if (typeof readiness !== "object" || readiness === null) {
+      throw new Error(
+        `Product registry entry for '${productId}'.lifecycleReadiness must be an object`,
+      );
+    }
+    const readinessRecord = readiness as Record<string, unknown>;
+    if (!("status" in readinessRecord)) {
+      throw new Error(
+        `Product registry entry for '${productId}'.lifecycleReadiness is missing 'status'`,
+      );
+    }
+
+    // Validate metadata shape
+    const metadata = record["metadata"];
+    if (typeof metadata !== "object" || metadata === null) {
+      throw new Error(
+        `Product registry entry for '${productId}'.metadata must be an object`,
+      );
+    }
+    const metadataRecord = metadata as Record<string, unknown>;
+    for (const metaField of [
+      "displayName",
+      "description",
+      "category",
+    ] as const) {
+      if (!(metaField in metadataRecord)) {
+        throw new Error(
+          `Product registry entry for '${productId}'.metadata is missing '${metaField}'`,
+        );
+      }
+    }
   }
 }

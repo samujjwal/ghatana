@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-invalid-missing-root",
+  "owner": "yappc-fixture",
+  "nodes": {},
+  "bindings": [],
+  "layout": {
+    "type": "flex",
+    "rootId": "root",
+    "nodes": {}
+  },
+  "metadata": {
+    "createdAt": "2026-05-18T00:00:00Z",
+    "updatedAt": "2026-05-18T00:00:00Z"
+  }
+}

@@ -9,7 +9,10 @@
  *
  * Outputs:
  * - config/generated/product-shape-capability-matrix.json (machine-readable)
+ * - config/product-shape-capability-matrix.json (Phase 5 public matrix)
+ * - config/product-shape-capability-matrix.schema.json (Phase 5 public schema)
  * - docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md (human-readable)
+ * - docs/architecture/PRODUCT_SHAPE_CAPABILITY_MATRIX.md (Phase 5 public documentation)
  */
 
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -457,6 +460,207 @@ function generateMarkdown(matrix) {
   return lines.join('\n');
 }
 
+function generatePhase5Matrix(registry, matrix) {
+  return matrix.map((row) => {
+    const product = registry.registry[row.productId];
+    const lifecycleReadiness = product?.lifecycleReadiness ?? {};
+    const surfaces = (product?.surfaces ?? []).map((surface) => surface.type).sort();
+    const requiredArtifactManifests = [
+      ...new Set([
+        ...Object.values(product?.artifacts ?? {}).map((artifact) => artifact.type ?? artifact.packaging).filter(Boolean),
+        'lifecycle-result',
+        'artifact-manifest',
+        'deployment-manifest',
+      ]),
+    ].sort();
+    const missingEvidenceRefs = [
+      ...row.missingManifests.map((manifest) => `manifest:${manifest}`),
+      ...row.missingProviders.map((provider) => `provider:${provider}`),
+      ...row.capabilityGaps.map((gap) => `capability:${gap}`),
+    ].sort();
+    const blockers = normalizeBlockers([
+      ...row.blockingGaps,
+      ...asStringArray(lifecycleReadiness.blockers),
+    ]);
+
+    return {
+      productId: row.productId,
+      kind: row.productKind,
+      surfaces,
+      lifecycleStatus: row.lifecycleStatus,
+      lifecycleExecutionAllowed: product?.lifecycleExecutionAllowed === true,
+      requiredKernelCapabilities: [
+        ...new Set([
+          ...row.requiredCapabilities,
+          ...row.gatesNeeded.map((gate) => `gate:${gate}`),
+        ]),
+      ].sort(),
+      requiredToolchainAdapters: row.requiredAdapters,
+      requiredArtifactManifests,
+      requiredDeploymentTargets: asStringArray(product?.deployment?.targets),
+      requiredSecurityPrivacyGates: row.gatesNeeded.filter((gate) =>
+        ['security', 'privacy', 'a11y', 'i18n', 'consent', 'pii-classification', 'audit-evidence', 'data-sovereignty', 'tenant-data-sovereignty'].includes(gate),
+      ),
+      requiredDataCloudSupport: requiredDataCloudSupport(row),
+      requiredYappcVisibility: requiredYappcVisibility(row),
+      requiredAgentRuntimeSupport: requiredAgentRuntimeSupport(row),
+      currentEvidenceRefs: row.readinessEvidence,
+      missingEvidenceRefs,
+      blockers,
+      nextActions: row.nextActions,
+      validationCommands: [row.nextValidationCommand],
+    };
+  });
+}
+
+function normalizeBlockers(blockers) {
+  return [...new Set(blockers.map((blocker) => {
+    if (
+      blocker.startsWith('missing-manifest:') ||
+      blocker.startsWith('missing-provider:') ||
+      blocker.startsWith('missing-adapter:') ||
+      blocker.startsWith('unknown-adapter:') ||
+      blocker.startsWith('adapter-not-') ||
+      blocker.startsWith('deploy-adapter-')
+    ) {
+      return blocker;
+    }
+    if (blocker.includes('gate')) {
+      return `gate:${blocker}`;
+    }
+    return `product-owner:${blocker}`;
+  }))].sort();
+}
+
+function requiredDataCloudSupport(row) {
+  if (row.productId === 'data-cloud') {
+    return ['provider-bridge', 'runtime-truth', 'event-store', 'artifact-reference-store', 'health-snapshots'];
+  }
+  if (row.lifecycleStatus === 'enabled') {
+    return ['runtime-truth', 'lifecycle-events', 'artifact-references', 'health-snapshots'];
+  }
+  if (row.productKind === 'platform-provider') {
+    return ['provider-bridge-validation'];
+  }
+  return row.missingProviders.length > 0 ? row.missingProviders : [];
+}
+
+function requiredYappcVisibility(row) {
+  if (row.productId === 'yappc') {
+    return ['product-unit-intent-export', 'artifact-intelligence-contracts', 'builder-document-compatibility'];
+  }
+  if (row.lifecycleStatus === 'enabled' || row.lifecycleStatus === 'planned') {
+    return ['product-unit-summary-visible'];
+  }
+  return [];
+}
+
+function requiredAgentRuntimeSupport(row) {
+  if (row.productId === 'data-cloud') {
+    return ['agent-action-evidence', 'trace-ledger', 'policy-denial-observability'];
+  }
+  if (row.lifecycleStatus === 'enabled' || row.lifecycleStatus === 'planned') {
+    return ['approval-aware-agent-actions', 'verification-proof-evidence'];
+  }
+  return [];
+}
+
+function generatePhase5Schema() {
+  return {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    $id: 'https://ghatana.io/schemas/product-shape-capability-matrix.json',
+    title: 'Product Shape Capability Matrix',
+    type: 'object',
+    required: ['version', 'generated', 'source', 'matrix'],
+    additionalProperties: false,
+    properties: {
+      version: { type: 'string', pattern: '^\\d+\\.\\d+\\.\\d+$' },
+      generated: { type: 'string', format: 'date-time' },
+      source: { type: 'string' },
+      matrix: {
+        type: 'array',
+        items: { $ref: '#/definitions/MatrixRow' },
+      },
+    },
+    definitions: {
+      MatrixRow: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'productId',
+          'kind',
+          'surfaces',
+          'lifecycleStatus',
+          'lifecycleExecutionAllowed',
+          'requiredKernelCapabilities',
+          'requiredToolchainAdapters',
+          'requiredArtifactManifests',
+          'requiredDeploymentTargets',
+          'requiredSecurityPrivacyGates',
+          'requiredDataCloudSupport',
+          'requiredYappcVisibility',
+          'requiredAgentRuntimeSupport',
+          'currentEvidenceRefs',
+          'missingEvidenceRefs',
+          'blockers',
+          'nextActions',
+          'validationCommands',
+        ],
+        properties: Object.fromEntries([
+          ['productId', { type: 'string', pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }],
+          ['kind', { type: 'string' }],
+          ['lifecycleStatus', { type: 'string', enum: ['disabled', 'planned', 'partial', 'enabled'] }],
+          ['lifecycleExecutionAllowed', { type: 'boolean' }],
+          ...[
+            'surfaces',
+            'requiredKernelCapabilities',
+            'requiredToolchainAdapters',
+            'requiredArtifactManifests',
+            'requiredDeploymentTargets',
+            'requiredSecurityPrivacyGates',
+            'requiredDataCloudSupport',
+            'requiredYappcVisibility',
+            'requiredAgentRuntimeSupport',
+            'currentEvidenceRefs',
+            'missingEvidenceRefs',
+            'blockers',
+            'nextActions',
+            'validationCommands',
+          ].map((key) => [key, {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+          }]),
+        ]),
+      },
+    },
+  };
+}
+
+function generatePhase5Markdown(matrix) {
+  const lines = [
+    '# Product Shape Capability Matrix',
+    '',
+    'This matrix records shape validation evidence without enabling non-pilot products prematurely.',
+    '',
+    '| Product | Kind | Surfaces | Lifecycle | Execution allowed | Kernel capabilities | Toolchains | Blockers | Next actions |',
+    '|---------|------|----------|-----------|-------------------|---------------------|------------|----------|--------------|',
+  ];
+
+  for (const row of matrix) {
+    lines.push(`| ${row.productId} | ${row.kind} | ${row.surfaces.join(', ') || 'none'} | ${row.lifecycleStatus} | ${String(row.lifecycleExecutionAllowed)} | ${row.requiredKernelCapabilities.join(', ') || 'none'} | ${row.requiredToolchainAdapters.join(', ') || 'none'} | ${row.blockers.join(', ') || 'none'} | ${row.nextActions.join('<br>') || 'none'} |`);
+  }
+
+  lines.push('');
+  lines.push('## Required Rows Covered');
+  lines.push('');
+  for (const productId of ['digital-marketing', 'finance', 'phr', 'flashit', 'yappc', 'data-cloud', 'audio-video', 'tutorputor', 'dcmaar', 'security-gateway']) {
+    const row = matrix.find((candidate) => candidate.productId === productId);
+    lines.push(`- ${productId}: ${row ? 'present' : 'missing'}`);
+  }
+
+  return lines.join('\n');
+}
+
 async function main() {
   const registry = loadRegistry();
   const profiles = loadLifecycleProfiles();
@@ -472,16 +676,31 @@ async function main() {
   matrix.sort((a, b) => a.productId.localeCompare(b.productId));
 
   // Write JSON output
+  const generatedAt = new Date().toISOString();
   const jsonOutputPath = join(repoRoot, 'config/generated/product-shape-capability-matrix.json');
   mkdirSync(dirname(jsonOutputPath), { recursive: true });
-  writeFileSync(jsonOutputPath, JSON.stringify({ version: '1.0.0', generated: new Date().toISOString(), matrix }, null, 2));
+  writeFileSync(jsonOutputPath, JSON.stringify({ version: '1.0.0', generated: generatedAt, source: 'config/canonical-product-registry.json', matrix }, null, 2));
   console.log(`Generated ${jsonOutputPath}`);
+
+  const phase5Matrix = generatePhase5Matrix(registry, matrix);
+  const phase5JsonOutputPath = join(repoRoot, 'config/product-shape-capability-matrix.json');
+  writeFileSync(phase5JsonOutputPath, JSON.stringify({ version: '1.0.0', generated: generatedAt, source: 'config/canonical-product-registry.json', matrix: phase5Matrix }, null, 2));
+  console.log(`Generated ${phase5JsonOutputPath}`);
+
+  const phase5SchemaPath = join(repoRoot, 'config/product-shape-capability-matrix.schema.json');
+  writeFileSync(phase5SchemaPath, JSON.stringify(generatePhase5Schema(), null, 2));
+  console.log(`Generated ${phase5SchemaPath}`);
 
   // Write Markdown output
   const mdOutputPath = join(repoRoot, 'docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md');
   mkdirSync(dirname(mdOutputPath), { recursive: true });
   writeFileSync(mdOutputPath, generateMarkdown(matrix));
   console.log(`Generated ${mdOutputPath}`);
+
+  const architectureMdOutputPath = join(repoRoot, 'docs/architecture/PRODUCT_SHAPE_CAPABILITY_MATRIX.md');
+  mkdirSync(dirname(architectureMdOutputPath), { recursive: true });
+  writeFileSync(architectureMdOutputPath, generatePhase5Markdown(phase5Matrix));
+  console.log(`Generated ${architectureMdOutputPath}`);
 
   console.log(`Product shape capability matrix generated for ${matrix.length} products`);
 }

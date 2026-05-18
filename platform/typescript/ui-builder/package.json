@@ -26,6 +26,7 @@
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
     },
+    "./schema/builder-document-v1.schema.json": "./dist/schema/builder-document-v1.schema.json",
     "./package.json": "./package.json"
   },
   "files": [
@@ -33,7 +34,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ./scripts/copy-schema.mjs",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",

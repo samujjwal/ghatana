@@ -11,11 +11,11 @@
 YAPPC exposes three distinct OpenAPI contracts, each owned by a different service boundary.
 They are **not duplicates** — they serve separate runtimes and audiences.
 
-| File | Service | Runtime | Port | Version | Owned By |
-|------|---------|---------|------|---------|---------|
-| `products/yappc/docs/api/openapi.yaml` | YAPPC Lifecycle (Java backend) | Java / ActiveJ | 7003 | 2.0.0 | YAPPC Backend Team |
-| `products/yappc/api/yappc-api.openapi.yaml` | YAPPC Product API (frontend gateway) | Node.js / Fastify | 7002 | 1.0.0 | YAPPC Frontend Team |
-| `products/yappc/api/yappc-refactorer.openapi.yaml` | YAPPC Refactorer Service (standalone) | Java / ActiveJ | 8082 | 1.0.0 | YAPPC Refactor Team |
+| File                                               | Service                               | Runtime           | Port | Version | Owned By            |
+| -------------------------------------------------- | ------------------------------------- | ----------------- | ---- | ------- | ------------------- |
+| `products/yappc/docs/api/openapi.yaml`             | YAPPC Lifecycle (Java backend)        | Java / ActiveJ    | 7003 | 2.0.0   | YAPPC Backend Team  |
+| `products/yappc/api/yappc-api.openapi.yaml`        | YAPPC Product API (frontend gateway)  | Node.js / Fastify | 7002 | 1.0.0   | YAPPC Frontend Team |
+| `products/yappc/api/yappc-refactorer.openapi.yaml` | YAPPC Refactorer Service (standalone) | Java / ActiveJ    | 8082 | 1.0.0   | YAPPC Refactor Team |
 
 ---
 
@@ -56,6 +56,7 @@ They are **not duplicates** — they serve separate runtimes and audiences.
 See `docs/api/YAPPC_API_VERSIONING_STRATEGY.md` for the full versioning and deprecation policy.
 
 Summary:
+
 - Current stable version: `v1` (canonical path: `/api/v1/*`)
 - Breaking changes require a new major version path segment
 - Non-breaking additive fields are allowed in-place for `v1`
@@ -65,8 +66,14 @@ Summary:
 
 ## Ownership Contacts
 
-| Contract | Team | Slack |
-|----------|------|-------|
-| `docs/api/openapi.yaml` | YAPPC Backend Team | #yappc-core |
-| `api/yappc-api.openapi.yaml` | YAPPC Frontend Team | #yappc-frontend |
-| `api/yappc-refactorer.openapi.yaml` | YAPPC Refactor Team | #yappc-core |
+| Contract                            | Team                | Slack           |
+| ----------------------------------- | ------------------- | --------------- |
+| `docs/api/openapi.yaml`             | YAPPC Backend Team  | #yappc-core     |
+| `api/yappc-api.openapi.yaml`        | YAPPC Frontend Team | #yappc-frontend |
+| `api/yappc-refactorer.openapi.yaml` | YAPPC Refactor Team | #yappc-core     |
+
+---
+
+## Related Documentation
+
+- **Product Lifecycle Contract** (authoritative): [`docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md`](../../../../docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md)

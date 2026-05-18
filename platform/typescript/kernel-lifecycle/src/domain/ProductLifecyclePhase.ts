@@ -1,36 +1,36 @@
 /**
  * Product lifecycle phases
  */
-import type { KernelProviderMode } from '@ghatana/kernel-product-contracts';
+import type { KernelProviderMode } from "@ghatana/kernel-product-contracts";
 
 export type ProductLifecyclePhase =
-  | 'create'
-  | 'bootstrap'
-  | 'dev'
-  | 'validate'
-  | 'test'
-  | 'build'
-  | 'package'
-  | 'release'
-  | 'deploy'
-  | 'verify'
-  | 'promote'
-  | 'rollback'
-  | 'operate'
-  | 'retire';
+  | "create"
+  | "bootstrap"
+  | "dev"
+  | "validate"
+  | "test"
+  | "build"
+  | "package"
+  | "release"
+  | "deploy"
+  | "verify"
+  | "promote"
+  | "rollback"
+  | "operate"
+  | "retire";
 
 /**
  * Product surface types
  */
 export type ProductSurfaceType =
-  | 'backend-api'
-  | 'web'
-  | 'worker'
-  | 'operator'
-  | 'mobile-ios'
-  | 'mobile-android'
-  | 'sdk'
-  | 'domain-pack';
+  | "backend-api"
+  | "web"
+  | "worker"
+  | "operator"
+  | "mobile-ios"
+  | "mobile-android"
+  | "sdk"
+  | "domain-pack";
 
 /**
  * Product surface definition
@@ -39,7 +39,7 @@ export interface ProductSurface {
   type: ProductSurfaceType;
   adapter: string;
   path: string;
-  implementationStatus: 'implemented' | 'planned' | 'backend-only';
+  implementationStatus: "implemented" | "planned" | "backend-only";
   packagePath?: string;
   [key: string]: unknown;
 }
@@ -49,7 +49,7 @@ export interface ProductSurface {
  */
 export interface LifecyclePhaseConfiguration {
   defaultSurfaces: string[];
-  mode: 'parallel' | 'sequential';
+  mode: "parallel" | "sequential";
 }
 
 /**
@@ -116,7 +116,7 @@ export interface VerifyEnvironmentConfig {
  * Health check configuration
  */
 export interface HealthCheckConfig {
-  type: 'http' | 'tcp';
+  type: "http" | "tcp";
   url?: string;
   host?: string;
   port?: number;
@@ -143,7 +143,7 @@ export interface KernelProductEnvironmentConfig {
 export interface ProductLifecycleApprovalRequirementConfig {
   approvalId?: string;
   action: string;
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel?: "low" | "medium" | "high" | "critical";
   required?: boolean;
   requiredApprovers?: string[];
   source?: string;
@@ -163,14 +163,14 @@ export interface ArtifactConfig {
  * Step kind discriminant — identifies what kind of work a plan step represents.
  */
 export type LifecycleStepKind =
-  | 'gate'
-  | 'surface'
-  | 'package'
-  | 'deploy'
-  | 'verify'
-  | 'release'
-  | 'promotion'
-  | 'rollback';
+  | "gate"
+  | "surface"
+  | "package"
+  | "deploy"
+  | "verify"
+  | "release"
+  | "promotion"
+  | "rollback";
 
 /**
  * Adapter context payload passed to each step so the executor can build the
@@ -212,7 +212,7 @@ export interface ExecutionLogger {
  * Execution result
  */
 export interface ExecutionResult {
-  status: 'succeeded' | 'failed' | 'skipped';
+  status: "succeeded" | "failed" | "skipped";
   steps: ExecutionStepResult[];
   artifacts: string[];
   durationMs: number;
@@ -228,7 +228,7 @@ export interface ExecutionResult {
  */
 export interface ExecutionStepResult {
   stepId: string;
-  status: 'succeeded' | 'failed' | 'skipped';
+  status: "succeeded" | "failed" | "skipped";
   exitCode?: number;
   stdout?: string;
   stderr?: string;
@@ -247,7 +247,7 @@ export interface ValidationError {
  * Product lifecycle plan.
  */
 export interface ProductLifecyclePlan {
-  schemaVersion: '1.0.0';
+  schemaVersion: "1.0.0";
   runId: string;
   correlationId: string;
   providerMode: KernelProviderMode;
@@ -264,7 +264,7 @@ export interface ProductLifecyclePlan {
     runtimeTruthProviderId?: string;
   };
   phase: ProductLifecyclePhase;
-  phaseMode: 'parallel' | 'sequential' | 'dag';
+  phaseMode: "parallel" | "sequential" | "dag";
   lifecycleProfile: string;
   environment?: string;
   sourceRef?: string;
@@ -282,15 +282,15 @@ export interface ProductLifecyclePlan {
 }
 
 export type ProductLifecycleManifestType =
-  | 'lifecycle-plan'
-  | 'lifecycle-result'
-  | 'gate-result-manifest'
-  | 'artifact-manifest'
-  | 'deployment-manifest'
-  | 'rollback-manifest'
-  | 'verify-health-report'
-  | 'lifecycle-health-snapshot'
-  | 'lifecycle-events';
+  | "lifecycle-plan"
+  | "lifecycle-result"
+  | "gate-result-manifest"
+  | "artifact-manifest"
+  | "deployment-manifest"
+  | "rollback-manifest"
+  | "verify-health-report"
+  | "lifecycle-health-snapshot"
+  | "lifecycle-events";
 
 export interface ProductLifecycleRequiredPlugin {
   pluginId: string;
@@ -301,20 +301,20 @@ export interface ProductLifecycleRequiredPlugin {
 export interface ProductLifecycleApprovalRequirement {
   approvalId: string;
   action: string;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   required: boolean;
   requiredApprovers?: readonly string[];
   source: string;
 }
 
 export type ProductLifecycleFailureReasonCode =
-  | 'adapter-failed'
-  | 'gate-failed'
-  | 'artifact-missing'
-  | 'manifest-write-failed'
-  | 'approval-required'
-  | 'policy-denied'
-  | 'provider-unavailable';
+  | "adapter-failed"
+  | "gate-failed"
+  | "artifact-missing"
+  | "manifest-write-failed"
+  | "approval-required"
+  | "policy-denied"
+  | "provider-unavailable";
 
 export interface ProductLifecycleManifestRefs {
   lifecyclePlan?: string;
@@ -330,7 +330,7 @@ export interface ProductLifecycleManifestRefs {
 
 export interface ProductLifecycleApprovalRef {
   approvalId: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   ref: string;
 }
 
@@ -338,14 +338,20 @@ export interface ProductLifecycleApprovalRef {
  * Product lifecycle result
  */
 export interface ProductLifecycleResult {
-  schemaVersion: '1.0.0';
+  schemaVersion: "1.0.0";
   runId: string;
   correlationId?: string;
   providerMode?: KernelProviderMode;
   productId: string;
   productUnitRef?: string;
   phase: ProductLifecyclePhase;
-  status: 'succeeded' | 'failed' | 'skipped';
+  lifecycleProfile?: string;
+  environment?: string;
+  requestedPhases?: readonly ProductLifecyclePhase[];
+  executedPhases?: readonly ProductLifecyclePhase[];
+  skippedPhases?: readonly ProductLifecyclePhase[];
+  blockedPhases?: readonly ProductLifecyclePhase[];
+  status: "succeeded" | "failed" | "skipped";
   startedAt: string;
   completedAt: string;
   steps: ProductLifecycleStepResult[];
@@ -373,7 +379,7 @@ export interface ProductLifecycleStep {
   phase: ProductLifecyclePhase;
   surface: string;
   adapter: string;
-  adapterSelectionSource?: 'profile-default' | 'product-config-override';
+  adapterSelectionSource?: "profile-default" | "product-config-override";
   description: string;
   dependsOn: string[];
   estimatedDurationMs: number;
@@ -393,7 +399,7 @@ export interface ProductLifecycleStepResult {
   phase?: ProductLifecyclePhase;
   surface?: string;
   adapter?: string;
-  status: 'succeeded' | 'failed' | 'skipped';
+  status: "succeeded" | "failed" | "skipped";
   startedAt?: string;
   completedAt?: string;
   exitCode?: number;
@@ -430,7 +436,7 @@ export interface ProductLifecycleEvent {
   eventId: string;
   productId: string;
   phase: ProductLifecyclePhase;
-  eventType: 'started' | 'completed' | 'failed' | 'skipped';
+  eventType: "started" | "completed" | "failed" | "skipped";
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
@@ -498,7 +504,7 @@ export interface ProductGatePlan {
   phase: ProductLifecyclePhase;
   source: string;
   providerId?: string;
-  status: 'pending' | 'passed' | 'failed' | 'skipped';
+  status: "pending" | "passed" | "failed" | "skipped";
   gateInputs?: {
     semanticArtifactRefs?: readonly string[];
     residualIslandRef?: string;
@@ -514,7 +520,7 @@ export interface ProductGatePlan {
 export interface ProductGateResult {
   gateId: string;
   gateName: string;
-  status: 'passed' | 'failed' | 'skipped';
+  status: "passed" | "failed" | "skipped";
   checkedAt: string;
   details?: string;
   evidenceRefs?: readonly string[];
@@ -549,7 +555,7 @@ export interface ProductExpectedArtifact {
  * Product failure policy
  */
 export interface ProductFailurePolicy {
-  strategy: 'fail-closed' | 'fail-open' | 'continue-on-error';
+  strategy: "fail-closed" | "fail-open" | "continue-on-error";
   retryConfig?: {
     maxRetries: number;
     backoffMs: number;

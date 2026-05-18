@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-unsafe-preview-policy",
+  "owner": "yappc-fixture",
+  "root": "root",
+  "nodes": {
+    "root": {
+      "id": "root",
+      "contractName": "layout.page",
+      "props": {},
+      "slots": {},
+      "bindings": [],
+      "metadata": {}
+    }
+  },
+  "bindings": [],
+  "layout": {
+    "type": "flex",
+    "rootId": "root",
+    "nodes": {
+      "root": {
+        "id": "root",
+        "type": "root"
+      }
+    }
+  },
+  "metadata": {
+    "createdAt": "2026-05-18T00:00:00Z",
+    "updatedAt": "2026-05-18T00:00:00Z",
+    "previewSecurityPolicy": {
+      "sandbox": "none",
+      "allowNetwork": true,
+      "allowInlineScript": true,
+      "allowSensitiveData": true,
+      "trustState": "trusted"
+    }
+  }
+}

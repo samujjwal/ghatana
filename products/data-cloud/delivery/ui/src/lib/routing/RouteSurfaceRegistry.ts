@@ -1,13 +1,15 @@
 export {
   RouteLifecycleSchema,
-  type RouteLifecycle,
   RouteCapabilitySchema as RouteSurfaceSchema,
   type RouteCapability as RouteSurface,
+  type RouteCapability,
   RouteCapabilityRegistrySchema as RouteSurfaceRegistrySchema,
   type RouteCapabilityRegistry as RouteSurfaceRegistry,
+  type RouteCapabilityRegistry,
+  type RouteLifecycle,
   canonicalRouteRegistry as canonicalRouteSurfaceRegistry,
   getDiscoverableRoutes as getDiscoverableRouteSurfaces,
   getRouteByPath as getRouteSurfaceByPath,
   getActiveRoutes as getActiveRouteSurfaces,
   getRoutesByLifecycle as getRouteSurfacesByLifecycle,
-} from './RouteCapabilityRegistry';
+} from "./RouteCapabilityRegistry";

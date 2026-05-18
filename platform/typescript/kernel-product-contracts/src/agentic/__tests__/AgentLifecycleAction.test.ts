@@ -20,10 +20,32 @@ const request: AgentLifecycleActionRequest = {
     projectId: "digital-marketing",
   },
   requestedByAgent: "agent:release-reviewer",
+  requestedByAgentVersion: "2026.05.0",
+  masteryState: {
+    state: "mastered",
+    stateRef: "mastery:agent:release-reviewer:2026.05.0",
+    evaluatedAt: "2026-05-14T00:00:00.000Z",
+  },
+  policyDecision: {
+    decisionId: "policy:agent-request-1",
+    decision: "requires-approval",
+    evaluatedAt: "2026-05-14T00:00:00.000Z",
+    reasonCodes: ["high-risk-requires-approval"],
+    evidenceRefs: ["evidence:policy:1"],
+  },
+  toolPermissions: [
+    {
+      toolId: "kernel.lifecycle.execute-phase",
+      permissionRef: "permission:kernel.lifecycle.execute-phase",
+      granted: true,
+      allowedActions: ["execute-lifecycle-phase"],
+    },
+  ],
   requestedAction: "execute-lifecycle-phase",
   lifecyclePhase: "deploy",
   proposedPlanRef: "lifecycle-plan:run-1",
   riskLevel: "high",
+  approvalRequired: true,
   requiredApprovals: [
     {
       approvalId: "deploy-prod-approval",
@@ -38,8 +60,12 @@ const request: AgentLifecycleActionRequest = {
       required: true,
     },
   ],
+  inputRefs: ["input:product-unit-intent:1"],
+  outputRefs: ["output:lifecycle-run:run-1"],
+  verificationProofRefs: ["verification:health:1"],
   evidenceRefs: ["evidence:policy:1"],
   rollbackPlanRef: "rollback-plan:run-1",
+  fallbackMode: "rollback",
 };
 
 const result: AgentLifecycleActionResult = {
@@ -62,9 +88,9 @@ const result: AgentLifecycleActionResult = {
 describe("AgentLifecycleAction contracts", () => {
   it("accepts governed agent lifecycle action requests", () => {
     expect(isAgentLifecycleActionRequest(request)).toBe(true);
-    expect(AgentLifecycleActionRequestSchema.parse(request).requestedAction).toBe(
-      "execute-lifecycle-phase"
-    );
+    expect(
+      AgentLifecycleActionRequestSchema.parse(request).requestedAction,
+    ).toBe("execute-lifecycle-phase");
   });
 
   it("rejects raw Gradle pnpm Docker and shell command fields", () => {
@@ -80,9 +106,9 @@ describe("AgentLifecycleAction contracts", () => {
       const parsed = AgentLifecycleActionRequestSchema.safeParse(candidate);
       expect(parsed.success).toBe(false);
       if (!parsed.success) {
-        expect(parsed.error.issues.map((issue) => issue.message).join(" ")).toMatch(
-          /raw shell\/tool commands|Unrecognized key|Invalid option/
-        );
+        expect(
+          parsed.error.issues.map((issue) => issue.message).join(" "),
+        ).toMatch(/raw shell\/tool commands|Unrecognized key|Invalid option/);
       }
     }
   });
@@ -99,6 +125,24 @@ describe("AgentLifecycleAction contracts", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("rejects missing tool permission and denied policy evidence", () => {
+    const missingPermission = AgentLifecycleActionRequestSchema.safeParse({
+      ...request,
+      toolPermissions: [],
+    });
+    const deniedPolicy = AgentLifecycleActionRequestSchema.safeParse({
+      ...request,
+      policyDecision: {
+        ...request.policyDecision,
+        decision: "denied",
+        reasonCodes: ["tenant-scope-denied"],
+      },
+    });
+
+    expect(missingPermission.success).toBe(false);
+    expect(deniedPolicy.success).toBe(false);
+  });
+
   it("returns typed reason codes for invalid requests", () => {
     try {
       parseAgentLifecycleActionRequest({
@@ -106,14 +150,20 @@ describe("AgentLifecycleAction contracts", () => {
         proposedPlanRef: "pnpm test",
         evidenceRefs: [],
         rollbackPlanRef: "",
-      })
+      });
     } catch (error) {
-      expect((error as { readonly issues: readonly { readonly reasonCode: string }[] }).issues.map((issue) => issue.reasonCode)).toEqual(
+      expect(
+        (
+          error as {
+            readonly issues: readonly { readonly reasonCode: string }[];
+          }
+        ).issues.map((issue) => issue.reasonCode),
+      ).toEqual(
         expect.arrayContaining([
           "raw-command-not-allowed",
           "missing-evidence",
           "missing-rollback-plan",
-        ])
+        ]),
       );
       return;
     }
@@ -123,7 +173,9 @@ describe("AgentLifecycleAction contracts", () => {
 
   it("accepts governed agent lifecycle action results", () => {
     expect(isAgentLifecycleActionResult(result)).toBe(true);
-    expect(AgentLifecycleActionResultSchema.parse(result).rollbackReadiness).toBe("ready");
+    expect(
+      AgentLifecycleActionResultSchema.parse(result).rollbackReadiness,
+    ).toBe("ready");
   });
 
   it("accepts structured failure and required next action", () => {
@@ -158,6 +210,8 @@ describe("AgentLifecycleAction contracts", () => {
 
   it("keeps request and result type guards narrow", () => {
     expect(isAgentLifecycleActionRequest(null)).toBe(false);
-    expect(isAgentLifecycleActionResult({ ...result, evaluatedAt: "not-a-date" })).toBe(false);
+    expect(
+      isAgentLifecycleActionResult({ ...result, evaluatedAt: "not-a-date" }),
+    ).toBe(false);
   });
 });

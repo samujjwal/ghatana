@@ -224,8 +224,8 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withAlertRoutes(AlertingHandler alertingHandler, SseStreamingHandler sseHandler) {
         builder
             .with(HttpMethod.GET, "/api/v1/alerts", alertingHandler::handleListAlerts)
-            .with(HttpMethod.POST, "/api/v1/alerts/:id/acknowledge", alertingHandler::handleAcknowledgeAlert)
-            .with(HttpMethod.POST, "/api/v1/alerts/:id/resolve", alertingHandler::handleResolveAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/acknowledge", alertingHandler::handleAcknowledgeAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/resolve", alertingHandler::handleResolveAlert)
             .with(HttpMethod.POST, "/api/v1/alerts/:id/escalate", alertingHandler::handleEscalateAlert)
             .with(HttpMethod.POST, "/api/v1/alerts/:id/auto-remediate", alertingHandler::handleAutoRemediate)
             .with(HttpMethod.POST, "/api/v1/alerts/:id/remediate", alertingHandler::handleRemediateAlert)

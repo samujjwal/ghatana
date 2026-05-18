@@ -8,21 +8,21 @@ import {
   ProductGateResult,
   ProductLifecycleApprovalRef,
   ProductLifecycleApprovalRequirement,
-} from '../domain/ProductLifecyclePhase.js';
+} from "../domain/ProductLifecyclePhase.js";
 import {
   ProductLifecycleStepRunner,
   StepContext,
-} from './ProductLifecycleStepRunner.js';
-import { ExecutionResultCollector } from './ExecutionResultCollector.js';
-import { ConsoleExecutionLogger } from './ExecutionLogger.js';
-import type { KernelLifecycleEventEmitter } from '../events/KernelLifecycleEventEmitter.js';
-import type { LifecycleHealthAggregator } from '../health/LifecycleHealthAggregator.js';
-import { LifecycleManifestWriter } from '../manifest/LifecycleManifestWriter.js';
-import { GateExecutor } from '../gates/GateExecutor.js';
+} from "./ProductLifecycleStepRunner.js";
+import { ExecutionResultCollector } from "./ExecutionResultCollector.js";
+import { ConsoleExecutionLogger } from "./ExecutionLogger.js";
+import type { KernelLifecycleEventEmitter } from "../events/KernelLifecycleEventEmitter.js";
+import type { LifecycleHealthAggregator } from "../health/LifecycleHealthAggregator.js";
+import { LifecycleManifestWriter } from "../manifest/LifecycleManifestWriter.js";
+import { GateExecutor } from "../gates/GateExecutor.js";
 import type {
   ApprovalRequest,
   KernelLifecycleProviderContext,
-} from '@ghatana/kernel-product-contracts';
+} from "@ghatana/kernel-product-contracts";
 
 export interface ProductLifecycleExecutionOptions {
   dryRun: boolean;
@@ -42,7 +42,10 @@ export class ProductLifecycleExecutor {
   private readonly stepRunner: ProductLifecycleStepRunner;
   private readonly resultCollector: ExecutionResultCollector;
 
-  constructor(stepRunner: ProductLifecycleStepRunner, resultCollector: ExecutionResultCollector) {
+  constructor(
+    stepRunner: ProductLifecycleStepRunner,
+    resultCollector: ExecutionResultCollector,
+  ) {
     this.stepRunner = stepRunner;
     this.resultCollector = resultCollector;
   }
@@ -64,26 +67,37 @@ export class ProductLifecycleExecutor {
     this.resultCollector.reset();
     const logger = options.logger ?? new ConsoleExecutionLogger();
 
-    const phaseMode = plan?.phaseMode ?? 'sequential';
+    const phaseMode = plan?.phaseMode ?? "sequential";
     const runId = plan?.runId ?? this.generateRunId();
 
     // Emit lifecycle phase start event
     if (options.eventEmitter) {
-      await options.eventEmitter.emitLifecyclePhaseStart(productId, runId, phase, plan?.correlationId);
+      await options.eventEmitter.emitLifecyclePhaseStart(
+        productId,
+        runId,
+        phase,
+        plan?.correlationId,
+      );
     }
 
     const startTime = Date.now();
     const gateExecution = plan
       ? await new GateExecutor({
-          ...(options.providerContext !== undefined ? { providerContext: options.providerContext } : {}),
+          ...(options.providerContext !== undefined
+            ? { providerContext: options.providerContext }
+            : {}),
         }).execute({
           productId,
           runId,
           phase,
           gates: plan.gates,
           artifacts: [],
-          ...(options.environment !== undefined ? { environment: options.environment } : {}),
-          ...(plan.productUnit !== undefined ? { productUnit: plan.productUnit } : {}),
+          ...(options.environment !== undefined
+            ? { environment: options.environment }
+            : {}),
+          ...(plan.productUnit !== undefined
+            ? { productUnit: plan.productUnit }
+            : {}),
           providerMode: plan.providerMode,
         })
       : {
@@ -97,38 +111,77 @@ export class ProductLifecycleExecutor {
     for (const gateResult of gateExecution.gates) {
       this.resultCollector.addGateResult(gateResult);
       await options.eventEmitter?.emitGateEvaluated(
-          productId,
-          runId,
-          phase,
-          gateResult.gateId,
-          gateResult.status === 'passed',
-          gateResult.details ?? gateResult.status,
-          gateResult.evidenceRefs ?? [],
-          gateResult.durationMs ?? 0,
-          plan?.correlationId,
-        );
+        productId,
+        runId,
+        phase,
+        gateResult.gateId,
+        gateResult.status === "passed",
+        gateResult.details ?? gateResult.status,
+        gateResult.evidenceRefs ?? [],
+        gateResult.durationMs ?? 0,
+        plan?.correlationId,
+      );
     }
 
-    const approvalResolution = gateExecution.failedRequiredGate === undefined && plan
-      ? await this.requestRequiredApprovals(plan, options)
-      : { approvalRefs: [] as ProductLifecycleApprovalRef[] };
+    const approvalResolution =
+      gateExecution.failedRequiredGate === undefined && plan
+        ? await this.requestRequiredApprovals(plan, options)
+        : { approvalRefs: [] as ProductLifecycleApprovalRef[] };
 
-    if (gateExecution.failedRequiredGate === undefined && approvalResolution.failure === undefined) {
-      if (phaseMode === 'parallel' || phaseMode === 'dag') {
+    if (
+      gateExecution.failedRequiredGate === undefined &&
+      approvalResolution.failure === undefined
+    ) {
+      if (phaseMode === "parallel" || phaseMode === "dag") {
         await this.executeDAG(steps, productId, runId, options, logger, plan);
       } else {
-        await this.executeSequential(steps, productId, runId, options, logger, plan);
+        await this.executeSequential(
+          steps,
+          productId,
+          runId,
+          options,
+          logger,
+          plan,
+        );
       }
     }
 
-    let result = this.resultCollector.collect(productId, phase, options.outputDirectory, runId, {
-      ...(plan?.correlationId !== undefined ? { correlationId: plan.correlationId } : {}),
-      providerMode: plan?.providerMode ?? 'bootstrap',
-      ...(plan?.productUnitRef !== undefined ? { productUnitRef: plan.productUnitRef } : {}),
-      ...(approvalResolution.approvalRefs.length > 0 ? { approvalRefs: approvalResolution.approvalRefs } : {}),
-    });
-    result = this.failClosedWhenRequiredGateFailed(result, gateExecution.failedRequiredGate);
-    result = this.failClosedWhenApprovalRequired(result, approvalResolution.failure);
+    let result = this.resultCollector.collect(
+      productId,
+      phase,
+      options.outputDirectory,
+      runId,
+      {
+        ...(plan?.correlationId !== undefined
+          ? { correlationId: plan.correlationId }
+          : {}),
+        providerMode: plan?.providerMode ?? "bootstrap",
+        ...(plan?.productUnitRef !== undefined
+          ? { productUnitRef: plan.productUnitRef }
+          : {}),
+        ...(plan?.lifecycleProfile !== undefined
+          ? { lifecycleProfile: plan.lifecycleProfile }
+          : {}),
+        ...(plan?.environment !== undefined
+          ? { environment: plan.environment }
+          : {}),
+        ...(options.environment !== undefined && plan?.environment === undefined
+          ? { environment: options.environment }
+          : {}),
+        requestedPhases: [phase],
+        ...(approvalResolution.approvalRefs.length > 0
+          ? { approvalRefs: approvalResolution.approvalRefs }
+          : {}),
+      },
+    );
+    result = this.failClosedWhenRequiredGateFailed(
+      result,
+      gateExecution.failedRequiredGate,
+    );
+    result = this.failClosedWhenApprovalRequired(
+      result,
+      approvalResolution.failure,
+    );
     result = this.failClosedWhenRequiredArtifactsMissing(result, plan);
     const duration = Date.now() - startTime;
 
@@ -140,30 +193,44 @@ export class ProductLifecycleExecutor {
         phase,
         result.status,
         duration,
-        plan?.correlationId
+        plan?.correlationId,
       );
     }
 
-    const healthSnapshot = options.healthAggregator && plan
-      ? await options.healthAggregator.aggregateLifecycleHealth(productId, runId, [phase])
-      : {
-          schemaVersion: '1.0.0',
-          productId,
-          runId,
-          status: result.status === 'succeeded' ? 'healthy' : result.status === 'failed' ? 'failed' : 'skipped',
-          phase,
-          snapshotAt: new Date().toISOString(),
-        };
+    const healthSnapshot =
+      options.healthAggregator && plan
+        ? await options.healthAggregator.aggregateLifecycleHealth(
+            productId,
+            runId,
+            [phase],
+          )
+        : {
+            schemaVersion: "1.0.0",
+            productId,
+            runId,
+            status:
+              result.status === "succeeded"
+                ? "healthy"
+                : result.status === "failed"
+                  ? "failed"
+                  : "skipped",
+            phase,
+            snapshotAt: new Date().toISOString(),
+          };
     void healthSnapshot;
 
     const manifestWriter = new LifecycleManifestWriter({
       outputDirectory: options.outputDirectory,
-      ...(options.providerContext !== undefined ? { providerContext: options.providerContext } : {}),
+      ...(options.providerContext !== undefined
+        ? { providerContext: options.providerContext }
+        : {}),
     });
     const manifestWrite = await manifestWriter.writeRequiredManifests({
       result,
       requiredManifests: this.requiredManifestTypes(result, plan),
-      ...(options.environment !== undefined ? { environment: options.environment } : {}),
+      ...(options.environment !== undefined
+        ? { environment: options.environment }
+        : {}),
     });
     result = manifestWrite.result;
 
@@ -171,7 +238,7 @@ export class ProductLifecycleExecutor {
   }
 
   private generateRunId(): string {
-    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const rand = Math.random().toString(36).substring(2, 11);
     return `${ts}-${rand}`;
   }
@@ -180,7 +247,11 @@ export class ProductLifecycleExecutor {
     result: ProductLifecycleResult,
     plan?: ProductLifecyclePlan,
   ): ProductLifecycleResult {
-    if (!plan || plan.expectedArtifacts.length === 0 || result.status !== 'succeeded') {
+    if (
+      !plan ||
+      plan.expectedArtifacts.length === 0 ||
+      result.status !== "succeeded"
+    ) {
       return result;
     }
 
@@ -189,7 +260,9 @@ export class ProductLifecycleExecutor {
         return false;
       }
       return !result.artifacts.some(
-        (artifact) => artifact.surface === expected.surface && artifact.type === expected.type,
+        (artifact) =>
+          artifact.surface === expected.surface &&
+          artifact.type === expected.type,
       );
     });
 
@@ -199,14 +272,14 @@ export class ProductLifecycleExecutor {
 
     const message = `Missing required output artifacts: ${missing
       .map((artifact) => `${artifact.surface}:${artifact.type}`)
-      .join(', ')}`;
+      .join(", ")}`;
 
     return {
       ...result,
-      status: 'failed',
+      status: "failed",
       failure: {
-        reasonCode: 'artifact-missing',
-        stepId: 'artifact-validation',
+        reasonCode: "artifact-missing",
+        stepId: "artifact-validation",
         message,
       },
     };
@@ -217,9 +290,15 @@ export class ProductLifecycleExecutor {
     options: ProductLifecycleExecutionOptions,
   ): Promise<{
     readonly approvalRefs: ProductLifecycleApprovalRef[];
-    readonly failure?: { readonly stepId: string; readonly message: string; readonly cause?: string };
+    readonly failure?: {
+      readonly stepId: string;
+      readonly message: string;
+      readonly cause?: string;
+    };
   }> {
-    const requiredApprovals = plan.approvalRequirements.filter((approval) => approval.required);
+    const requiredApprovals = plan.approvalRequirements.filter(
+      (approval) => approval.required,
+    );
     if (requiredApprovals.length === 0) {
       return { approvalRefs: [] };
     }
@@ -229,10 +308,10 @@ export class ProductLifecycleExecutor {
       return {
         approvalRefs: [],
         failure: {
-          stepId: 'approval-provider',
+          stepId: "approval-provider",
           message: `Lifecycle approvals are required but no approval provider is configured: ${requiredApprovals
             .map((approval) => approval.approvalId)
-            .join(', ')}`,
+            .join(", ")}`,
         },
       };
     }
@@ -266,23 +345,26 @@ export class ProductLifecycleExecutor {
         };
       }
       const approvalStatusProvider = approvalProvider as {
-        getApprovalStatus?: (approvalId: string) => Promise<{ status: string; decision: unknown }>;
+        getApprovalStatus?: (
+          approvalId: string,
+        ) => Promise<{ status: string; decision: unknown }>;
       };
       const approvalStatus =
-        typeof approvalStatusProvider.getApprovalStatus === 'function'
+        typeof approvalStatusProvider.getApprovalStatus === "function"
           ? await approvalStatusProvider.getApprovalStatus(approval.approvalId)
-          : { status: 'pending' as const, decision: null };
+          : { status: "pending" as const, decision: null };
       const status =
-        approvalStatus.status === 'approved' || approvalStatus.status === 'rejected'
+        approvalStatus.status === "approved" ||
+        approvalStatus.status === "rejected"
           ? approvalStatus.status
-          : 'pending';
+          : "pending";
       approvalRefs.push({
         approvalId: approval.approvalId,
         status,
         ref: result.ref ?? `approval:${approval.approvalId}`,
       });
 
-      if (status === 'rejected') {
+      if (status === "rejected") {
         return {
           approvalRefs,
           failure: {
@@ -292,7 +374,7 @@ export class ProductLifecycleExecutor {
         };
       }
 
-      if (status === 'pending') {
+      if (status === "pending") {
         pendingApprovalIds.push(approval.approvalId);
       }
     }
@@ -304,9 +386,10 @@ export class ProductLifecycleExecutor {
     return {
       approvalRefs,
       failure: {
-        stepId: 'approval-required',
-        message: `Lifecycle approval required before ${plan.phase}: ${pendingApprovalIds
-          .join(', ')}`,
+        stepId: "approval-required",
+        message: `Lifecycle approval required before ${plan.phase}: ${pendingApprovalIds.join(
+          ", ",
+        )}`,
       },
     };
   }
@@ -316,7 +399,10 @@ export class ProductLifecycleExecutor {
     approval: ProductLifecycleApprovalRequirement,
     options: ProductLifecycleExecutionOptions,
   ): ApprovalRequest | undefined {
-    if (approval.requiredApprovers === undefined || approval.requiredApprovers.length === 0) {
+    if (
+      approval.requiredApprovers === undefined ||
+      approval.requiredApprovers.length === 0
+    ) {
       return undefined;
     }
 
@@ -325,13 +411,16 @@ export class ProductLifecycleExecutor {
       productUnitId: plan.productId,
       runId: plan.runId,
       correlationId: plan.correlationId,
-      requestedBy: 'kernel-lifecycle',
+      requestedBy: "kernel-lifecycle",
       requestedAt: new Date().toISOString(),
       reason: `Approval required for ${approval.action}`,
-      environment: options.environment ?? plan.environment ?? 'local',
+      environment: options.environment ?? plan.environment ?? "local",
       action: approval.action,
       riskLevel: approval.riskLevel,
-      evidenceRefs: [`lifecycle-plan:${plan.runId}`, `approval-source:${approval.source}`],
+      evidenceRefs: [
+        `lifecycle-plan:${plan.runId}`,
+        `approval-source:${approval.source}`,
+      ],
       requiredApprovers: approval.requiredApprovers,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     };
@@ -339,17 +428,21 @@ export class ProductLifecycleExecutor {
 
   private failClosedWhenApprovalRequired(
     result: ProductLifecycleResult,
-    failure?: { readonly stepId: string; readonly message: string; readonly cause?: string },
+    failure?: {
+      readonly stepId: string;
+      readonly message: string;
+      readonly cause?: string;
+    },
   ): ProductLifecycleResult {
-    if (failure === undefined || result.status === 'failed') {
+    if (failure === undefined || result.status === "failed") {
       return result;
     }
 
     return {
       ...result,
-      status: 'failed',
+      status: "failed",
       failure: {
-        reasonCode: 'approval-required',
+        reasonCode: "approval-required",
         stepId: failure.stepId,
         message: failure.message,
         ...(failure.cause !== undefined ? { cause: failure.cause } : {}),
@@ -361,16 +454,17 @@ export class ProductLifecycleExecutor {
     result: ProductLifecycleResult,
     failedGate?: ProductGateResult,
   ): ProductLifecycleResult {
-    if (failedGate === undefined || result.status === 'failed') {
+    if (failedGate === undefined || result.status === "failed") {
       return result;
     }
     return {
       ...result,
-      status: 'failed',
+      status: "failed",
       failure: {
-        reasonCode: 'gate-failed',
+        reasonCode: "gate-failed",
         stepId: `gate:${failedGate.gateId}`,
-        message: failedGate.details ?? `Required gate ${failedGate.gateId} failed`,
+        message:
+          failedGate.details ?? `Required gate ${failedGate.gateId} failed`,
       },
     };
   }
@@ -386,26 +480,48 @@ export class ProductLifecycleExecutor {
     logger: ConsoleExecutionLogger,
     plan?: ProductLifecyclePlan,
   ): Promise<void> {
-    const state = new Map<string, 'pending' | 'done' | 'failed' | 'skipped'>();
+    const state = new Map<string, "pending" | "done" | "failed" | "skipped">();
     for (const step of steps) {
-      state.set(step.id, 'pending');
+      state.set(step.id, "pending");
     }
 
     for (const step of steps) {
-      const unmetDependency = step.dependsOn.find((dependencyId) => state.get(dependencyId) !== 'done');
+      const unmetDependency = step.dependsOn.find(
+        (dependencyId) => state.get(dependencyId) !== "done",
+      );
       if (unmetDependency) {
-        const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-        await this.emitStepComplete(productId, runId, step, result, options, plan, [
-          `dependency:${unmetDependency}:not-done`,
-        ]);
+        const result = {
+          stepId: step.id,
+          status: "skipped" as const,
+          durationMs: 0,
+        };
+        await this.emitStepComplete(
+          productId,
+          runId,
+          step,
+          result,
+          options,
+          plan,
+          [`dependency:${unmetDependency}:not-done`],
+        );
         this.recordStepResult(result);
-        state.set(step.id, 'skipped');
+        state.set(step.id, "skipped");
         continue;
       }
 
-      const result = await this.runOrDryRun(step, productId, runId, options, logger, plan);
+      const result = await this.runOrDryRun(
+        step,
+        productId,
+        runId,
+        options,
+        logger,
+        plan,
+      );
       this.recordStepResult(result);
-      state.set(step.id, result.status === 'succeeded' ? 'done' : result.status);
+      state.set(
+        step.id,
+        result.status === "succeeded" ? "done" : result.status,
+      );
     }
   }
 
@@ -420,9 +536,9 @@ export class ProductLifecycleExecutor {
     logger: ConsoleExecutionLogger,
     plan?: ProductLifecyclePlan,
   ): Promise<void> {
-    const state = new Map<string, 'pending' | 'done' | 'failed' | 'skipped'>();
+    const state = new Map<string, "pending" | "done" | "failed" | "skipped">();
     for (const step of steps) {
-      state.set(step.id, 'pending');
+      state.set(step.id, "pending");
     }
 
     const settled = new Set<string>();
@@ -433,7 +549,7 @@ export class ProductLifecycleExecutor {
         if (settled.has(step.id)) return false;
         return step.dependsOn.every((dep) => {
           const depState = state.get(dep);
-          return depState === 'done' || depState === 'skipped';
+          return depState === "done" || depState === "skipped";
         });
       });
 
@@ -441,13 +557,23 @@ export class ProductLifecycleExecutor {
         // Skip remaining unsettled steps if no progress can be made
         for (const step of steps) {
           if (!settled.has(step.id)) {
-            const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-            await this.emitStepComplete(productId, runId, step, result, options, plan, [
-              'dag:no-ready-steps',
-            ]);
+            const result = {
+              stepId: step.id,
+              status: "skipped" as const,
+              durationMs: 0,
+            };
+            await this.emitStepComplete(
+              productId,
+              runId,
+              step,
+              result,
+              options,
+              plan,
+              ["dag:no-ready-steps"],
+            );
             this.recordStepResult(result);
             settled.add(step.id);
-            state.set(step.id, 'skipped');
+            state.set(step.id, "skipped");
           }
         }
         break;
@@ -456,16 +582,30 @@ export class ProductLifecycleExecutor {
       // Skip steps whose dependencies have failed
       const toRun: ProductLifecycleStep[] = [];
       for (const step of ready) {
-        const hasFailedDep = step.dependsOn.some((dep) => state.get(dep) === 'failed');
+        const hasFailedDep = step.dependsOn.some(
+          (dep) => state.get(dep) === "failed",
+        );
         if (hasFailedDep) {
-          const failedDependency = step.dependsOn.find((dep) => state.get(dep) === 'failed') ?? 'unknown';
-          const result = { stepId: step.id, status: 'skipped' as const, durationMs: 0 };
-          await this.emitStepComplete(productId, runId, step, result, options, plan, [
-            `dependency:${failedDependency}:failed`,
-          ]);
+          const failedDependency =
+            step.dependsOn.find((dep) => state.get(dep) === "failed") ??
+            "unknown";
+          const result = {
+            stepId: step.id,
+            status: "skipped" as const,
+            durationMs: 0,
+          };
+          await this.emitStepComplete(
+            productId,
+            runId,
+            step,
+            result,
+            options,
+            plan,
+            [`dependency:${failedDependency}:failed`],
+          );
           this.recordStepResult(result);
           settled.add(step.id);
-          state.set(step.id, 'skipped');
+          state.set(step.id, "skipped");
         } else {
           toRun.push(step);
         }
@@ -475,13 +615,18 @@ export class ProductLifecycleExecutor {
 
       // Run eligible steps concurrently
       const batchResults = await Promise.all(
-        toRun.map((step) => this.runOrDryRun(step, productId, runId, options, logger, plan)),
+        toRun.map((step) =>
+          this.runOrDryRun(step, productId, runId, options, logger, plan),
+        ),
       );
 
       for (const result of batchResults) {
         this.recordStepResult(result);
         settled.add(result.stepId);
-        state.set(result.stepId, result.status === 'succeeded' ? 'done' : result.status);
+        state.set(
+          result.stepId,
+          result.status === "succeeded" ? "done" : result.status,
+        );
       }
     }
   }
@@ -503,12 +648,12 @@ export class ProductLifecycleExecutor {
         phase: step.phase,
         surface: step.surface,
         adapter: step.adapter,
-        status: 'skipped' as const,
+        status: "skipped" as const,
         startedAt: timestamp,
         completedAt: timestamp,
         exitCode: 0,
         stdout: step.execution
-          ? `[DRY-RUN] ${step.execution.command} ${step.execution.args.join(' ')}`
+          ? `[DRY-RUN] ${step.execution.command} ${step.execution.args.join(" ")}`
           : `[DRY-RUN] ${step.phase} phase for ${step.surface} via ${step.adapter}`,
         durationMs: 0,
         artifacts: [],
@@ -516,10 +661,24 @@ export class ProductLifecycleExecutor {
         warnings: [],
         ...(plan?.correlationId ? { correlationId: plan.correlationId } : {}),
       };
-      await this.emitStepComplete(productId, runId, step, result, options, plan, ['dry-run']);
+      await this.emitStepComplete(
+        productId,
+        runId,
+        step,
+        result,
+        options,
+        plan,
+        ["dry-run"],
+      );
       return result;
     }
-    const result = await this.executeAdapterStep(step, productId, options, logger, plan);
+    const result = await this.executeAdapterStep(
+      step,
+      productId,
+      options,
+      logger,
+      plan,
+    );
     await this.emitStepComplete(productId, runId, step, result, options, plan);
     return result;
   }
@@ -566,7 +725,9 @@ export class ProductLifecycleExecutor {
       completedAt: new Date().toISOString(),
       errors:
         result.errors ??
-        (result.status === 'failed' ? [result.stderr ?? `Step ${step.id} failed`] : []),
+        (result.status === "failed"
+          ? [result.stderr ?? `Step ${step.id} failed`]
+          : []),
       warnings: result.warnings ?? [],
       ...(plan?.correlationId ? { correlationId: plan.correlationId } : {}),
     };
@@ -626,22 +787,39 @@ export class ProductLifecycleExecutor {
   private stepEvidenceRefs(result: ProductLifecycleStepResult): string[] {
     return [
       ...(result.artifacts ?? []).map((artifact) => `artifact:${artifact.id}`),
-      ...(result.manifestRefs?.artifactManifest ? [`manifest:${result.manifestRefs.artifactManifest}`] : []),
-      ...(result.manifestRefs?.deploymentManifest ? [`manifest:${result.manifestRefs.deploymentManifest}`] : []),
-      ...(result.manifestRefs?.verifyHealthReport ? [`manifest:${result.manifestRefs.verifyHealthReport}`] : []),
-      ...(result.testResults ? [`tests:${result.testResults.tests}:failures:${result.testResults.failures}`] : []),
-      ...(result.coverageResults ? [`coverage:lines:${result.coverageResults.lineCoverage}`] : []),
+      ...(result.manifestRefs?.artifactManifest
+        ? [`manifest:${result.manifestRefs.artifactManifest}`]
+        : []),
+      ...(result.manifestRefs?.deploymentManifest
+        ? [`manifest:${result.manifestRefs.deploymentManifest}`]
+        : []),
+      ...(result.manifestRefs?.verifyHealthReport
+        ? [`manifest:${result.manifestRefs.verifyHealthReport}`]
+        : []),
+      ...(result.testResults
+        ? [
+            `tests:${result.testResults.tests}:failures:${result.testResults.failures}`,
+          ]
+        : []),
+      ...(result.coverageResults
+        ? [`coverage:lines:${result.coverageResults.lineCoverage}`]
+        : []),
     ];
   }
 
-  private isStepRequired(step: ProductLifecycleStep, plan?: ProductLifecyclePlan): boolean {
+  private isStepRequired(
+    step: ProductLifecycleStep,
+    plan?: ProductLifecyclePlan,
+  ): boolean {
     if (plan === undefined) {
       return true;
     }
     if (plan.expectedArtifacts.length === 0) {
       return true;
     }
-    return plan.expectedArtifacts.some((artifact) => artifact.surface === step.surface && artifact.required);
+    return plan.expectedArtifacts.some(
+      (artifact) => artifact.surface === step.surface && artifact.required,
+    );
   }
 
   private requiredManifestTypes(
@@ -650,33 +828,36 @@ export class ProductLifecycleExecutor {
   ): readonly ProductLifecycleManifestType[] {
     const required = new Set<ProductLifecycleManifestType>([
       ...(plan?.requiredManifests ?? []),
-      'lifecycle-result',
-      'lifecycle-health-snapshot',
-      'gate-result-manifest',
+      "lifecycle-result",
+      "lifecycle-health-snapshot",
+      "gate-result-manifest",
     ]);
 
     if (result.artifacts.length > 0) {
-      required.add('artifact-manifest');
+      required.add("artifact-manifest");
     }
-    if (result.phase === 'deploy') {
-      required.add('deployment-manifest');
+    if (result.phase === "deploy") {
+      required.add("deployment-manifest");
     }
-    if (result.phase === 'verify') {
-      required.add('verify-health-report');
+    if (result.phase === "verify") {
+      required.add("verify-health-report");
     }
-    if ((plan?.providerMode ?? result.providerMode) === 'bootstrap') {
-      required.add('lifecycle-events');
+    if ((plan?.providerMode ?? result.providerMode) === "bootstrap") {
+      required.add("lifecycle-events");
     }
 
     return [...required];
   }
 
   /** Resolve the source path for a surface name from the plan, or fall back to the surface ID. */
-  private resolveSurfacePath(surface: string, plan?: ProductLifecyclePlan): string {
+  private resolveSurfacePath(
+    surface: string,
+    plan?: ProductLifecyclePlan,
+  ): string {
     if (!plan) return surface;
 
     for (const s of plan.surfaces) {
-      if (s.surface === surface && typeof s.config.source === 'string') {
+      if (s.surface === surface && typeof s.config.source === "string") {
         return s.config.source;
       }
     }

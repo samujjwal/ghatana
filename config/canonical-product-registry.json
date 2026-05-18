@@ -10,10 +10,7 @@
       "manifestPath": "products/phr/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
       "buildFile": "products/phr/build.gradle.kts",
-      "gradleModules": [
-        ":products:phr",
-        ":products:phr:launcher"
-      ],
+      "gradleModules": [":products:phr", ":products:phr:launcher"],
       "surfaces": [
         {
           "type": "backend-api",
@@ -27,17 +24,10 @@
           "implementationStatus": "implemented"
         }
       ],
-      "pnpmPackages": [
-        "products/phr/apps/*"
-      ],
+      "pnpmPackages": ["products/phr/apps/*"],
       "ci": {
         "enabled": true,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": true,
@@ -75,7 +65,10 @@
         },
         "created": "2026-03-19",
         "documentation": "products/phr/README.md",
-        "status": "active"
+        "status": "active",
+        "displayName": "Personal Health Records",
+        "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
+        "category": "healthcare"
       },
       "lifecycleProfile": "standard-web-api-product",
       "lifecycleStatus": "planned",
@@ -147,24 +140,19 @@
               "readiness": "ready"
             }
           ]
-        }
+        },
+        "status": "blocked"
       },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "sequential"
           }
         },
@@ -193,24 +181,15 @@
         }
       },
       "deployment": {
-        "targets": [
-          "compose-local"
-        ],
+        "targets": ["compose-local"],
         "defaultEnvironment": "local",
-        "healthChecks": [
-          "standard-http"
-        ],
+        "healthChecks": ["standard-http"],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": [
-          "local",
-          "dev",
-          "staging",
-          "prod"
-        ]
+        "supported": ["local", "dev", "staging", "prod"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -394,19 +373,11 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": [
-              "backend-api",
-              "worker",
-              "operator"
-            ],
+            "defaultSurfaces": ["backend-api", "worker", "operator"],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": [
-              "backend-api",
-              "worker",
-              "operator"
-            ],
+            "defaultSurfaces": ["backend-api", "worker", "operator"],
             "mode": "parallel"
           }
         },
@@ -442,24 +413,15 @@
         }
       },
       "deployment": {
-        "targets": [
-          "compose-local"
-        ],
+        "targets": ["compose-local"],
         "defaultEnvironment": "local",
-        "healthChecks": [
-          "standard-http"
-        ],
+        "healthChecks": ["standard-http"],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": [
-          "local",
-          "dev",
-          "staging",
-          "prod"
-        ]
+        "supported": ["local", "dev", "staging", "prod"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -497,17 +459,10 @@
           "implementationStatus": "implemented"
         }
       ],
-      "pnpmPackages": [
-        "products/digital-marketing/ui"
-      ],
+      "pnpmPackages": ["products/digital-marketing/ui"],
       "ci": {
         "enabled": true,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": true,
@@ -552,17 +507,11 @@
         "enabled": true,
         "phases": {
           "dev": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "sequential"
           }
         },
@@ -591,21 +540,15 @@
         }
       },
       "deployment": {
-        "targets": [
-          "compose-local"
-        ],
+        "targets": ["compose-local"],
         "defaultEnvironment": "local",
-        "healthChecks": [
-          "standard-http"
-        ],
+        "healthChecks": ["standard-http"],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": [
-          "local"
-        ]
+        "supported": ["local"]
       },
       "lifecycleExecutionAllowed": true
     },
@@ -618,9 +561,7 @@
       "manifestPath": "products/flashit/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
       "buildFile": "products/flashit/build.gradle.kts",
-      "gradleModules": [
-        ":products:flashit"
-      ],
+      "gradleModules": [":products:flashit"],
       "surfaces": [
         {
           "type": "backend-api",
@@ -648,12 +589,7 @@
       ],
       "ci": {
         "enabled": true,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": true,
@@ -670,7 +606,10 @@
         "owner": "FlashIt Team",
         "created": "2026-03-19",
         "documentation": "products/flashit/README.md",
-        "status": "active"
+        "status": "active",
+        "displayName": "FlashIt",
+        "description": "Flash card learning and study management platform",
+        "category": "education"
       },
       "lifecycleProfile": "mobile-plus-api-product",
       "lifecycleStatus": "planned",
@@ -700,9 +639,7 @@
           "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
           "Add ipa/aab artifact contracts before enabling mobile bundle execution"
         ],
-        "evidenceRefs": [
-          "products/flashit/kernel-product.yaml"
-        ],
+        "evidenceRefs": ["products/flashit/kernel-product.yaml"],
         "blockerGateAdapterMatrix": {
           "blockers": [
             "missing-mobile-adapters",
@@ -748,17 +685,15 @@
               "readiness": "ready"
             }
           ]
-        }
+        },
+        "status": "blocked"
       },
       "lifecycleConfigPath": "products/flashit/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "parallel"
           },
           "build": {
@@ -805,24 +740,15 @@
         }
       },
       "deployment": {
-        "targets": [
-          "compose-local"
-        ],
+        "targets": ["compose-local"],
         "defaultEnvironment": "local",
-        "healthChecks": [
-          "standard-http"
-        ],
+        "healthChecks": ["standard-http"],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": [
-          "local",
-          "dev",
-          "staging",
-          "prod"
-        ]
+        "supported": ["local", "dev", "staging", "prod"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -922,7 +848,10 @@
         "owner": "Data Cloud Team",
         "created": "2026-03-19",
         "documentation": "products/data-cloud/README.md",
-        "status": "active"
+        "status": "active",
+        "displayName": "Data Cloud",
+        "description": "Platform data services and data lake infrastructure provider",
+        "category": "platform-infrastructure"
       },
       "lifecycleReadiness": {
         "reasonCodes": [
@@ -983,7 +912,8 @@
               "readiness": "ready"
             }
           ]
-        }
+        },
+        "status": "blocked"
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1077,7 +1007,10 @@
         "owner": "YAPPC Team",
         "created": "2026-03-19",
         "documentation": "products/yappc/README.md",
-        "status": "active"
+        "status": "active",
+        "displayName": "YAPPC",
+        "description": "Yet Another Platform for Platform Composition \u2014 plugin and scaffold framework",
+        "category": "platform-tooling"
       },
       "lifecycleReadiness": {
         "reasonCodes": [
@@ -1134,7 +1067,8 @@
               "readiness": "ready"
             }
           ]
-        }
+        },
+        "status": "blocked"
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1175,12 +1109,7 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1249,12 +1178,7 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1277,18 +1201,12 @@
           "requires-lifecycle-profile",
           "requires-security-threat-model-gates"
         ],
-        "requiredGates": [
-          "threat-model",
-          "guardian-policy",
-          "security-review"
-        ],
+        "requiredGates": ["threat-model", "guardian-policy", "security-review"],
         "nextRequiredWork": [
           "Define DCMAAR executable backend and web surfaces before adding lifecycle configs",
           "Add threat-model and Guardian policy evidence before enabling lifecycle execution"
         ],
-        "evidenceRefs": [
-          "products/dcmaar/libs/java/guardian-threat-service"
-        ]
+        "evidenceRefs": ["products/dcmaar/libs/java/guardian-threat-service"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1325,12 +1243,7 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1371,26 +1284,18 @@
           "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
           "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests"
         ],
-        "evidenceRefs": [
-          "products/tutorputor/kernel-product.yaml"
-        ]
+        "evidenceRefs": ["products/tutorputor/kernel-product.yaml"]
       },
       "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": [
-              "backend-api",
-              "web"
-            ],
+            "defaultSurfaces": ["backend-api", "web"],
             "mode": "sequential"
           }
         },
@@ -1419,24 +1324,15 @@
         }
       },
       "deployment": {
-        "targets": [
-          "compose-local"
-        ],
+        "targets": ["compose-local"],
         "defaultEnvironment": "local",
-        "healthChecks": [
-          "standard-http"
-        ],
+        "healthChecks": ["standard-http"],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": [
-          "local",
-          "dev",
-          "staging",
-          "prod"
-        ]
+        "supported": ["local", "dev", "staging", "prod"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1473,12 +1369,7 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1510,9 +1401,7 @@
           "Keep Aura disabled until product owners define executable lifecycle surfaces",
           "Add recommendation safety and explainability evidence before lifecycle execution"
         ],
-        "evidenceRefs": [
-          "products/aura/platform/api"
-        ]
+        "evidenceRefs": ["products/aura/platform/api"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1546,12 +1435,7 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1583,9 +1467,7 @@
           "Keep software-org disabled until product owners define executable lifecycle surfaces",
           "Add governance and integration evidence before lifecycle execution"
         ],
-        "evidenceRefs": [
-          "products/software-org"
-        ]
+        "evidenceRefs": ["products/software-org"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1618,12 +1500,7 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,
@@ -1655,9 +1532,7 @@
           "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
           "Add governance and integration evidence before lifecycle execution"
         ],
-        "evidenceRefs": [
-          "products/virtual-org"
-        ]
+        "evidenceRefs": ["products/virtual-org"]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1683,12 +1558,7 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": true,
-        "gates": [
-          "build",
-          "test",
-          "manifest-validation",
-          "security-scan"
-        ]
+        "gates": ["build", "test", "manifest-validation", "security-scan"]
       },
       "conformance": {
         "manifest": false,

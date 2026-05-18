@@ -12,7 +12,7 @@ export {
   getRegistryStore,
   createRegistryStore,
   resetRegistryStore,
-} from './registry/store';
+} from "./registry/store";
 
 export type {
   ComponentEntry,
@@ -20,7 +20,7 @@ export type {
   ThemeEntry,
   PatternEntry,
   RegistryStore,
-} from './registry/store';
+} from "./registry/store";
 
 export {
   starterContracts,
@@ -30,7 +30,7 @@ export {
   TextFieldContract,
   TypographyContract,
   BoxContract,
-} from './starters';
+} from "./starters";
 
 export {
   findBuilderComponents,
@@ -42,10 +42,15 @@ export {
   resolveContractAtVersion,
   resolveAllContractVersions,
   buildContractMap,
-} from './queries';
+  findBuilderCompatibleComponents,
+  validateBuilderCompatibleContract,
+} from "./queries";
 
 export type {
   BuilderPaletteEntry,
   ResolvedCodegenContract,
   ResolvedPreviewPolicy,
-} from './queries';
+  BuilderCompatibilityResult,
+  BuilderCompatibilityViolation,
+  BuilderCompatibleComponent,
+} from "./queries";

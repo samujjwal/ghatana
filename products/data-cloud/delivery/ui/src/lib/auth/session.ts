@@ -15,62 +15,72 @@
  * @doc.layer frontend
  */
 
-import { TokenStorage, type AuthMode } from './tokenStorage';
+import { TokenStorage, type AuthMode } from "./tokenStorage";
 
-const SESSION_TENANT_KEY = 'dc:session:tenantId';
-const SESSION_API_BASE_URL_KEY = 'dc:session:apiBaseUrl';
-const SESSION_SHELL_ROLE_KEY = 'dc:session:shellRole';
-const SESSION_PRODUCT_VIEW_MODE_KEY = 'dc:session:productViewMode';
+const SESSION_TENANT_KEY = "dc:session:tenantId";
+const SESSION_API_BASE_URL_KEY = "dc:session:apiBaseUrl";
+const SESSION_SHELL_ROLE_KEY = "dc:session:shellRole";
+const SESSION_PRODUCT_VIEW_MODE_KEY = "dc:session:productViewMode";
+const LEGACY_TENANT_KEY = "tenantId";
 
-const RESERVED_TENANT_IDS = new Set(['default', 'default-tenant']);
+const RESERVED_TENANT_IDS = new Set(["default", "default-tenant"]);
 
-export const SHELL_ROLES = ['primary-user', 'operator', 'admin'] as const;
+export const SHELL_ROLES = ["primary-user", "operator", "admin"] as const;
 
 export type ShellRole = (typeof SHELL_ROLES)[number];
 
 const SHELL_ROLE_SET = new Set<ShellRole>(SHELL_ROLES);
 
-export const PRODUCT_VIEW_MODES = ['standard', 'steward', 'operator', 'admin', 'auditor'] as const;
+export const PRODUCT_VIEW_MODES = [
+  "standard",
+  "steward",
+  "operator",
+  "admin",
+  "auditor",
+] as const;
 
 export type ProductViewMode = (typeof PRODUCT_VIEW_MODES)[number];
 
 const PRODUCT_VIEW_MODE_SET = new Set<ProductViewMode>(PRODUCT_VIEW_MODES);
 
-export const DEFAULT_PRODUCT_VIEW_MODE: ProductViewMode = 'standard';
+export const DEFAULT_PRODUCT_VIEW_MODE: ProductViewMode = "standard";
 
 export const PRODUCT_VIEW_MODE_LABELS: Record<ProductViewMode, string> = {
-  standard: 'Standard mode',
-  steward: 'Steward mode',
-  operator: 'Operator mode',
-  admin: 'Admin mode',
-  auditor: 'Auditor mode',
+  standard: "Standard mode",
+  steward: "Steward mode",
+  operator: "Operator mode",
+  admin: "Admin mode",
+  auditor: "Auditor mode",
 };
 
 export const PRODUCT_VIEW_MODE_DESCRIPTIONS: Record<ProductViewMode, string> = {
-  standard: 'General workspace usage with core data exploration surfaces.',
-  steward: 'Data stewardship focus with governance and curation surfaces emphasized.',
-  operator: 'Operational monitoring focus for alerts, events, and diagnostics.',
-  admin: 'Administrative focus with operations and management surfaces visible.',
-  auditor: 'Read-focused oversight mode for compliance and traceability review.',
+  standard: "General workspace usage with core data exploration surfaces.",
+  steward:
+    "Data stewardship focus with governance and curation surfaces emphasized.",
+  operator: "Operational monitoring focus for alerts, events, and diagnostics.",
+  admin:
+    "Administrative focus with operations and management surfaces visible.",
+  auditor:
+    "Read-focused oversight mode for compliance and traceability review.",
 };
 
-export const DEFAULT_SHELL_ROLE: ShellRole = 'primary-user';
+export const DEFAULT_SHELL_ROLE: ShellRole = "primary-user";
 
 // DC-UX-036: Labels use "view" suffix to reinforce that this is a UI disclosure control,
 // not an authorization or permission control. Backend permissions are always enforced independently.
 export const SHELL_ROLE_LABELS: Record<ShellRole, string> = {
-  'primary-user': 'Standard view',
-  operator: 'Operator view',
-  admin: 'Admin view',
+  "primary-user": "Standard view",
+  operator: "Operator view",
+  admin: "Admin view",
 };
 
-export const SHELL_ROLE_CONTROL_LABEL = 'View mode menu';
+export const SHELL_ROLE_CONTROL_LABEL = "View mode menu";
 
 // DC-UX-036: Renamed from 'Workspace View' → 'View mode' to clearly distinguish from authorization roles.
-export const SHELL_ROLE_CONTROL_TITLE = 'View mode';
+export const SHELL_ROLE_CONTROL_TITLE = "View mode";
 
 export const SHELL_ROLE_DISCLOSURE_NOTE =
-  'Switching view mode changes which surfaces are visible. It does not grant or remove backend permissions — authorization is always enforced independently.';
+  "Switching view mode changes which surfaces are visible. It does not grant or remove backend permissions — authorization is always enforced independently.";
 
 /**
  * Shell role descriptions for UI display.
@@ -79,13 +89,16 @@ export const SHELL_ROLE_DISCLOSURE_NOTE =
  * not for security authorization.
  */
 export const SHELL_ROLE_DESCRIPTIONS: Record<ShellRole, string> = {
-  'primary-user': 'Show data exploration and analytics surfaces. Operator and admin surfaces are hidden.',
-  operator: 'Also show runtime diagnostics and trust workflows. Does not change backend permissions.',
-  admin: 'Also show administrative surfaces. Backend permissions remain independently enforced.',
+  "primary-user":
+    "Show data exploration and analytics surfaces. Operator and admin surfaces are hidden.",
+  operator:
+    "Also show runtime diagnostics and trust workflows. Does not change backend permissions.",
+  admin:
+    "Also show administrative surfaces. Backend permissions remain independently enforced.",
 };
 
 function normalizeShellRole(value: string | null | undefined): ShellRole {
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     return DEFAULT_SHELL_ROLE;
   }
 
@@ -97,8 +110,10 @@ function normalizeShellRole(value: string | null | undefined): ShellRole {
   return DEFAULT_SHELL_ROLE;
 }
 
-function normalizeProductViewMode(value: string | null | undefined): ProductViewMode {
-  if (typeof value !== 'string') {
+function normalizeProductViewMode(
+  value: string | null | undefined,
+): ProductViewMode {
+  if (typeof value !== "string") {
     return DEFAULT_PRODUCT_VIEW_MODE;
   }
 
@@ -110,9 +125,12 @@ function normalizeProductViewMode(value: string | null | undefined): ProductView
   return DEFAULT_PRODUCT_VIEW_MODE;
 }
 
-export function canAccessShellRole(currentRole: ShellRole, requiredRole: ShellRole): boolean {
+export function canAccessShellRole(
+  currentRole: ShellRole,
+  requiredRole: ShellRole,
+): boolean {
   const roleOrder: Record<ShellRole, number> = {
-    'primary-user': 0,
+    "primary-user": 0,
     operator: 1,
     admin: 2,
   };
@@ -121,14 +139,16 @@ export function canAccessShellRole(currentRole: ShellRole, requiredRole: ShellRo
 }
 
 export class MissingTenantContextError extends Error {
-  constructor(message: string = 'Tenant context is required before using Data Cloud runtime features.') {
+  constructor(
+    message: string = "Tenant context is required before using Data Cloud runtime features.",
+  ) {
     super(message);
-    this.name = 'MissingTenantContextError';
+    this.name = "MissingTenantContextError";
   }
 }
 
 function normalizeTenantId(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     return null;
   }
 
@@ -196,9 +216,19 @@ export const SessionBootstrap = {
   },
 
   getTenantId(): string | null {
-    const sessionTenantId = normalizeTenantId(readStorageItem(sessionStorage, SESSION_TENANT_KEY));
+    const sessionTenantId = normalizeTenantId(
+      readStorageItem(sessionStorage, SESSION_TENANT_KEY),
+    );
     if (sessionTenantId) {
       return sessionTenantId;
+    }
+
+    const legacyTenantId = normalizeTenantId(
+      readStorageItem(localStorage, LEGACY_TENANT_KEY),
+    );
+    if (legacyTenantId) {
+      writeStorageItem(sessionStorage, SESSION_TENANT_KEY, legacyTenantId);
+      return legacyTenantId;
     }
 
     removeStorageItem(sessionStorage, SESSION_TENANT_KEY);
@@ -216,15 +246,19 @@ export const SessionBootstrap = {
   setTenantId(tenantId: string): string {
     const normalized = normalizeTenantId(tenantId);
     if (!normalized) {
-      throw new MissingTenantContextError('Tenant ID must be explicitly provided and cannot use reserved defaults.');
+      throw new MissingTenantContextError(
+        "Tenant ID must be explicitly provided and cannot use reserved defaults.",
+      );
     }
 
     writeStorageItem(sessionStorage, SESSION_TENANT_KEY, normalized);
+    writeStorageItem(localStorage, LEGACY_TENANT_KEY, normalized);
     return normalized;
   },
 
   clearTenantId(): void {
     removeStorageItem(sessionStorage, SESSION_TENANT_KEY);
+    removeStorageItem(localStorage, LEGACY_TENANT_KEY);
   },
 
   hasTenantContext(): boolean {
@@ -233,7 +267,7 @@ export const SessionBootstrap = {
 
   getApiBaseUrl(): string | null {
     const rawValue = readStorageItem(sessionStorage, SESSION_API_BASE_URL_KEY);
-    const normalized = typeof rawValue === 'string' ? rawValue.trim() : '';
+    const normalized = typeof rawValue === "string" ? rawValue.trim() : "";
     return normalized ? normalized : null;
   },
 
@@ -248,7 +282,9 @@ export const SessionBootstrap = {
   },
 
   getShellRole(): ShellRole {
-    return normalizeShellRole(readStorageItem(sessionStorage, SESSION_SHELL_ROLE_KEY));
+    return normalizeShellRole(
+      readStorageItem(sessionStorage, SESSION_SHELL_ROLE_KEY),
+    );
   },
 
   setShellRole(role: ShellRole): ShellRole {
@@ -258,7 +294,9 @@ export const SessionBootstrap = {
   },
 
   getProductViewMode(): ProductViewMode {
-    return normalizeProductViewMode(readStorageItem(sessionStorage, SESSION_PRODUCT_VIEW_MODE_KEY));
+    return normalizeProductViewMode(
+      readStorageItem(sessionStorage, SESSION_PRODUCT_VIEW_MODE_KEY),
+    );
   },
 
   setProductViewMode(mode: ProductViewMode): ProductViewMode {

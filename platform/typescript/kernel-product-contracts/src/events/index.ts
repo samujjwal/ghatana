@@ -17,3 +17,4 @@ export * from "./KernelDeploymentEvent.js";
 export * from "./KernelHealthEvent.js";
 export * from "./KernelAgentGovernanceEvent.js";
 export * from "./KernelPreviewSecurityEvent.js";
+export * from "./LifecycleEventEnvelope.js";

@@ -2,16 +2,12 @@ import type {
   ProductLifecyclePhase,
   ProductSurface,
   ProductSurfaceType,
-} from '@ghatana/kernel-product-contracts';
-import type { ProductLifecycleManifestRefs } from '@ghatana/kernel-lifecycle';
+} from "@ghatana/kernel-product-contracts";
+import type { ProductLifecycleManifestRefs } from "@ghatana/kernel-lifecycle";
 
-export type {
-  ProductLifecyclePhase,
-  ProductSurface,
-  ProductSurfaceType,
-};
+export type { ProductLifecyclePhase, ProductSurface, ProductSurfaceType };
 
-export const TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION = '1.0.0' as const;
+export const TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION = "1.0.0" as const;
 
 export type ToolchainExecutionResultSchemaVersion =
   typeof TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION;
@@ -50,7 +46,9 @@ export interface ToolchainAdapter {
   /**
    * Validate that the expected outputs were produced by execution.
    */
-  validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult>;
+  validateOutputs(
+    context: ToolchainAdapterContext,
+  ): Promise<ToolchainOutputValidationResult>;
 }
 
 /**
@@ -210,7 +208,7 @@ export interface ToolchainExecutionResult {
   /**
    * Overall status.
    */
-  status: 'succeeded' | 'failed' | 'skipped';
+  status: "succeeded" | "failed" | "skipped";
 
   /**
    * Step-level results.
@@ -285,7 +283,7 @@ export interface ToolchainStepResult {
   /**
    * Execution status.
    */
-  status: 'succeeded' | 'failed' | 'skipped';
+  status: "succeeded" | "failed" | "skipped";
 
   /**
    * Exit code (0 for success).
@@ -334,7 +332,7 @@ export interface ToolchainOutputValidationResult {
   /**
    * Overall validation status.
    */
-  status: 'valid' | 'invalid' | 'partial';
+  status: "valid" | "invalid" | "partial";
 
   /**
    * Validation errors (if any).
@@ -358,4 +356,91 @@ export interface ToolchainOutputValidationResult {
 export interface ValidationError {
   path: string;
   message: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §2.5 additions: ToolchainSafetyLevel, ToolchainAdapterCapability,
+//                 ToolchainOutputContract, ToolchainExecutionRequest
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Classifies the safety and readiness of an adapter for kernel-managed execution.
+ *
+ * - `safe`      — adapter is fully tested, output-validated, and allowed by default.
+ * - `blocked`   — adapter must not execute; returns a `not-ready` result.
+ * - `not-ready` — adapter is declared but lacks tests, output contracts, or approvals.
+ * - `planned`   — adapter is architecturally scoped but not yet implemented.
+ */
+export type ToolchainSafetyLevel = "safe" | "blocked" | "not-ready" | "planned";
+
+/**
+ * Describes what an adapter requires and produces for a given lifecycle phase.
+ * Used to validate that all inputs are available before execution and that
+ * all expected outputs are present after execution.
+ */
+export interface ToolchainOutputContract {
+  /** Lifecycle phase this contract applies to. */
+  readonly phase: ProductLifecyclePhase;
+  /** Relative paths of files that must exist in the output directory after execution. */
+  readonly expectedOutputs: readonly string[];
+  /** Human-readable description of what these outputs represent. */
+  readonly description?: string;
+}
+
+/**
+ * Rich metadata describing an adapter's capabilities, readiness, and boundaries.
+ * Extends the runtime adapter interface with governance information.
+ */
+export interface ToolchainAdapterCapability {
+  /** Unique adapter identifier. */
+  readonly adapterId: string;
+  /** Lifecycle phases supported. */
+  readonly supportedPhases: readonly ProductLifecyclePhase[];
+  /** Surface types supported. */
+  readonly supportedSurfaceTypes: readonly ProductSurfaceType[];
+  /** Inputs required before execution (e.g., environment variable names, file paths). */
+  readonly requiredInputs: readonly string[];
+  /** Output contracts per phase. */
+  readonly outputContracts: readonly ToolchainOutputContract[];
+  /** Safety classification. */
+  readonly safetyLevel: ToolchainSafetyLevel;
+  /** Whether the adapter has passing end-to-end tests. */
+  readonly testStatus: "passing" | "failing" | "no-tests";
+  /** Implementation status: fully implemented, partial, or stub. */
+  readonly implementationStatus: "complete" | "partial" | "stub";
+  /** Whether the adapter is allowed to execute without an explicit feature-flag approval. */
+  readonly allowedByDefault: boolean;
+  /** If blocked or not-ready, the reason code for observability. */
+  readonly blockedReasonCode?: string;
+}
+
+/**
+ * Typed execution request passed to {@link ToolchainAdapter.execute}.
+ * Wraps {@link ToolchainAdapterContext} with additional kernel-level fields.
+ */
+export interface ToolchainExecutionRequest {
+  /** Kernel lifecycle run identifier. */
+  readonly runId: string;
+  /** Cross-provider correlation identifier. */
+  readonly correlationId: string;
+  /** Product being processed. */
+  readonly productId: string;
+  /** Lifecycle phase. */
+  readonly phase: ProductLifecyclePhase;
+  /** Product surface. */
+  readonly surface: ProductSurface;
+  /** Target environment (required for deploy/verify/promote/rollback). */
+  readonly environment?: string;
+  /** Source reference (git branch or commit). */
+  readonly sourceRef?: string;
+  /** Whether to plan only and not execute side effects. */
+  readonly dryRun: boolean;
+  /** Surface-specific configuration. */
+  readonly surfaceConfig: Readonly<Record<string, unknown>>;
+  /** Phase-specific configuration. */
+  readonly phaseConfig: Readonly<Record<string, unknown>>;
+  /** Logger for structured output. */
+  readonly logger: AdapterLogger;
+  /** Optional output directory. */
+  readonly outputDir?: string;
 }

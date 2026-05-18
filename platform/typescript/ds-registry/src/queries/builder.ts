@@ -12,8 +12,12 @@
  * @doc.pattern Query
  */
 
-import type { ComponentContract, ComponentPreviewRestrictions } from '@ghatana/ds-schema';
-import type { ComponentEntry, RegistryStore } from '../registry/store';
+import type {
+  ComponentBuilderBinding,
+  ComponentContract,
+  ComponentPreviewRestrictions,
+} from "@ghatana/ds-schema";
+import type { ComponentEntry, RegistryStore } from "../registry/store";
 
 // ============================================================================
 // Builder Palette Entry
@@ -51,6 +55,22 @@ export interface BuilderPaletteEntry {
   readonly version: string;
   /** Semver-stable component status. */
   readonly status: string;
+}
+
+export interface BuilderCompatibilityViolation {
+  readonly path: string;
+  readonly message: string;
+}
+
+export interface BuilderCompatibilityResult {
+  readonly compatible: boolean;
+  readonly violations: readonly BuilderCompatibilityViolation[];
+}
+
+export interface BuilderCompatibleComponent {
+  readonly entry: ComponentEntry;
+  readonly contract: ComponentContract;
+  readonly bindings: readonly ComponentBuilderBinding[];
 }
 
 // ============================================================================
@@ -95,7 +115,7 @@ export interface ResolvedPreviewPolicy {
    * Minimum iframe trust level this component requires.
    * Maps directly to `PreviewMode` in `@ghatana/ui-builder`.
    */
-  readonly minimumTrustLevel: ComponentPreviewRestrictions['minimumTrustLevel'];
+  readonly minimumTrustLevel: ComponentPreviewRestrictions["minimumTrustLevel"];
   readonly requiresNetwork: boolean;
   readonly requiresStorage: boolean;
   readonly requiresConsent: boolean;
@@ -115,13 +135,15 @@ export interface ResolvedPreviewPolicy {
  *
  * Results are sorted by palette group, then by rank (ascending), then by name.
  */
-export function findBuilderComponents(store: RegistryStore): readonly BuilderPaletteEntry[] {
+export function findBuilderComponents(
+  store: RegistryStore,
+): readonly BuilderPaletteEntry[] {
   const entries = store.getAllComponents();
 
   const palette: BuilderPaletteEntry[] = [];
   for (const entry of entries) {
     const contract = entry.contract;
-    if (contract.metadata.status === 'deprecated') continue;
+    if (contract.metadata.status === "deprecated") continue;
     if (!contract.builder) continue;
 
     const p = contract.builder.palette;
@@ -130,11 +152,14 @@ export function findBuilderComponents(store: RegistryStore): readonly BuilderPal
       name: contract.name,
       displayName: p?.displayName ?? contract.name,
       tooltip: p?.tooltip ?? contract.description ?? contract.name,
-      group: p?.group ?? 'Components',
+      group: p?.group ?? "Components",
       subGroup: p?.subGroup,
       rank: p?.rank ?? Number.MAX_SAFE_INTEGER,
       icon: contract.builder.icon,
-      defaultProps: (contract.builder.defaultProps ?? {}) as Record<string, unknown>,
+      defaultProps: (contract.builder.defaultProps ?? {}) as Record<
+        string,
+        unknown
+      >,
       featured: p?.featured ?? false,
       searchKeywords: p?.searchKeywords ?? [],
       version: entry.version,
@@ -151,6 +176,92 @@ export function findBuilderComponents(store: RegistryStore): readonly BuilderPal
   });
 
   return palette;
+}
+
+export function validateBuilderCompatibleContract(
+  contract: ComponentContract,
+): BuilderCompatibilityResult {
+  const violations: BuilderCompatibilityViolation[] = [];
+
+  if (!contract.builder) {
+    violations.push({
+      path: "builder",
+      message: "Builder-compatible components must declare builder metadata.",
+    });
+  }
+
+  if (contract.props.length === 0 && contract.slots.length === 0) {
+    violations.push({
+      path: "props",
+      message:
+        "Builder-compatible components must expose at least one prop or slot.",
+    });
+  }
+
+  if (!contract.metadata.a11y && !contract.builderA11y) {
+    violations.push({
+      path: "builderA11y",
+      message:
+        "Builder-compatible components must declare accessibility requirements.",
+    });
+  }
+
+  if (
+    contract.builder?.canvas?.container === true &&
+    contract.slots.length === 0
+  ) {
+    violations.push({
+      path: "slots",
+      message: "Builder container components must declare at least one slot.",
+    });
+  }
+
+  const propNames = new Set(contract.props.map((prop) => prop.name));
+  const bindingPropNames = new Set(
+    (contract.builder?.bindings ?? []).map((binding) => binding.propName),
+  );
+  for (const binding of contract.builder?.bindings ?? []) {
+    if (!propNames.has(binding.propName)) {
+      violations.push({
+        path: `builder.bindings.${binding.propName}`,
+        message: `Builder binding references unknown prop "${binding.propName}".`,
+      });
+    }
+  }
+
+  for (const prop of contract.props) {
+    if (
+      prop.builderMetadata?.bindable === true &&
+      !bindingPropNames.has(prop.name)
+    ) {
+      violations.push({
+        path: `props.${prop.name}.builderMetadata.bindable`,
+        message: `Bindable prop "${prop.name}" must have a matching builder binding declaration.`,
+      });
+    }
+  }
+
+  return {
+    compatible: violations.length === 0,
+    violations,
+  };
+}
+
+export function findBuilderCompatibleComponents(
+  store: RegistryStore,
+): readonly BuilderCompatibleComponent[] {
+  const components: BuilderCompatibleComponent[] = [];
+  for (const entry of store.getAllComponents()) {
+    const contract = entry.contract;
+    if (contract.metadata.status === "deprecated") continue;
+    if (!validateBuilderCompatibleContract(contract).compatible) continue;
+    components.push({
+      entry,
+      contract,
+      bindings: contract.builder?.bindings ?? [],
+    });
+  }
+  return components;
 }
 
 /**
@@ -172,7 +283,8 @@ export function resolveContractForCodegen(
   if (!codegen) return undefined;
 
   const htmlTagName =
-    codegen.htmlTagName ?? `ghatana-${contract.name.toLowerCase().replace(/\s+/g, '-')}`;
+    codegen.htmlTagName ??
+    `ghatana-${contract.name.toLowerCase().replace(/\s+/g, "-")}`;
 
   return {
     contractName: contract.name,
@@ -181,7 +293,10 @@ export function resolveContractForCodegen(
     componentName: codegen.componentName,
     namedExport: codegen.namedExport,
     htmlTagName,
-    defaultProps: (contract.builder?.defaultProps ?? {}) as Record<string, unknown>,
+    defaultProps: (contract.builder?.defaultProps ?? {}) as Record<
+      string,
+      unknown
+    >,
   };
 }
 
@@ -220,7 +335,7 @@ export function resolvePreviewPolicy(
 
   return {
     contractName,
-    minimumTrustLevel: preview?.minimumTrustLevel ?? 'semi-trusted',
+    minimumTrustLevel: preview?.minimumTrustLevel ?? "semi-trusted",
     requiresNetwork: preview?.requiresNetwork ?? false,
     requiresStorage: preview?.requiresStorage ?? false,
     requiresConsent: preview?.requiresConsent ?? false,
@@ -288,7 +403,9 @@ export function resolveAllContractVersions(
  * This map is the primary input expected by codegen and validation functions
  * in `@ghatana/ui-builder`.
  */
-export function buildContractMap(store: RegistryStore): ReadonlyMap<string, ComponentContract> {
+export function buildContractMap(
+  store: RegistryStore,
+): ReadonlyMap<string, ComponentContract> {
   const result = new Map<string, ComponentContract>();
   const seen = new Set<string>();
   for (const entry of store.getAllComponents()) {

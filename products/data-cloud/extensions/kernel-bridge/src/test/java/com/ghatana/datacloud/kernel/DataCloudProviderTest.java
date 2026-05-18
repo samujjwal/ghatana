@@ -75,6 +75,50 @@ class DataCloudProviderTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Data Cloud provider rejects missing tenant context")
+    void providerRejectsMissingTenantContext() {
+        BridgeContext missingTenantContext = BridgeContext.builder()
+            .tenantId("")
+            .principalId("provider-test")
+            .correlationId("corr-missing-tenant")
+            .build();
+
+        assertThatThrownBy(() -> new DataCloudEventProvider(adapter, missingTenantContext))
+            .isInstanceOf(DataCloudProviderException.class)
+            .satisfies(error -> assertThat(((DataCloudProviderException) error).reasonCode())
+                .isEqualTo(DataCloudProviderException.ReasonCode.TENANT_ISOLATION));
+    }
+
+    @Test
+    @DisplayName("provider health result exposes degraded and unavailable states")
+    void providerHealthResultExposesDegradedAndUnavailableStates() {
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        KernelBridgeProviderHealthResult degraded = provider.providerHealth(
+            KernelBridgeProviderMode.PLATFORM,
+            KernelBridgeProviderStatus.DEGRADED,
+            "latency threshold exceeded",
+            1200,
+            "2026-01-01T00:00:00.000Z",
+            null,
+            java.util.List.of("datacloud://health/events"));
+        KernelBridgeProviderHealthResult unavailable = provider.providerHealth(
+            KernelBridgeProviderMode.PLATFORM,
+            KernelBridgeProviderStatus.UNAVAILABLE,
+            "provider disabled",
+            0,
+            null,
+            "2026-01-01T00:01:00.000Z",
+            java.util.List.of("datacloud://health/events"));
+
+        assertThat(degraded.providerId()).isEqualTo("events");
+        assertThat(degraded.status()).isEqualTo(KernelBridgeProviderStatus.DEGRADED);
+        assertThat(degraded.evidenceRefs()).containsExactly("datacloud://health/events");
+        assertThat(unavailable.status()).isEqualTo(KernelBridgeProviderStatus.UNAVAILABLE);
+        assertThat(unavailable.lastFailureAt()).isEqualTo("2026-01-01T00:01:00.000Z");
+    }
+
+    @Test
     @DisplayName("all provider types persist through the Data Cloud adapter")
     void allProviderTypesPersistThroughAdapter() {
         when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))

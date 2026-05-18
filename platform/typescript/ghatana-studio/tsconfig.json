@@ -21,7 +21,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/api": ["../api/src/index.ts"],
-      "@ghatana/i18n": ["../i18n/src/index.ts"]
+      "@ghatana/i18n": ["../i18n/src/index.ts"],
+      "@ghatana/product-shell": ["../product-shell/src/index.ts"]
     }
   },
   "include": ["src"]

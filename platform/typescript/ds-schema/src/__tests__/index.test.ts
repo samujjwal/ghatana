@@ -7,7 +7,7 @@
  * @test.infra none
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 import {
   z,
   validateToken,
@@ -15,181 +15,188 @@ import {
   validateComponentContract,
   computeContractHash,
   ComponentContractSchema,
-} from '../index';
+} from "../index";
+import { ComponentContractSchema as SourceComponentContractSchema } from "../components/contract.ts";
 
-describe('@ghatana/ds-schema', () => {
-  describe('Token Schema', () => {
-    it('should validate valid color tokens', () => {
+describe("@ghatana/ds-schema", () => {
+  describe("Token Schema", () => {
+    it("should validate valid color tokens", () => {
       const colorToken = {
-        $type: 'color',
-        $value: '#FF0000',
+        $type: "color",
+        $value: "#FF0000",
       };
       const result = validateToken(colorToken);
       expect(result.success).toBe(true);
     });
 
-    it('should validate valid dimension tokens', () => {
+    it("should validate valid dimension tokens", () => {
       const dimensionToken = {
-        $type: 'dimension',
-        $value: '16px',
+        $type: "dimension",
+        $value: "16px",
       };
       const result = validateToken(dimensionToken);
       expect(result.success).toBe(true);
     });
 
-    it('should reject invalid token values', () => {
+    it("should reject invalid token values", () => {
       const invalidToken = {
-        $type: 'color',
-        $value: 'not-a-color',
+        $type: "color",
+        $value: "not-a-color",
       };
       const result = validateToken(invalidToken);
       expect(result.success).toBe(false);
     });
 
-    it('should check token value validity', () => {
+    it("should check token value validity", () => {
       // isValidTokenValue takes only the value parameter
-      const colorResult = validateToken({ $type: 'color', $value: '#FF0000' });
+      const colorResult = validateToken({ $type: "color", $value: "#FF0000" });
       expect(colorResult.success).toBe(true);
     });
   });
 
-  describe('Component Schema', () => {
-    it('should validate component contract schema', () => {
+  describe("Component Schema", () => {
+    it("should validate component contract schema", () => {
       const contract = {
-        name: 'Button',
-        version: '1.0.0',
+        name: "Button",
+        version: "1.0.0",
         props: [
           {
-            name: 'label',
-            type: 'string',
+            name: "label",
+            type: "string",
             required: true,
-            defaultValue: '',
+            defaultValue: "",
           },
         ],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable' as const,
-          platforms: ['web' as const],
+          category: "input",
+          status: "stable" as const,
+          platforms: ["web" as const],
         },
       };
       const result = validateComponentContract(contract);
       expect(result.success).toBe(true);
     });
 
-    it('should require component name', () => {
+    it("should require component name", () => {
       const contract = {
-        name: '',
-        version: '1.0.0',
+        name: "",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable' as const,
-          platforms: ['web' as const],
+          category: "input",
+          status: "stable" as const,
+          platforms: ["web" as const],
         },
       };
       const result = validateComponentContract(contract);
       expect(result.success).toBe(false);
     });
 
-    it('should compute contract hash', () => {
+    it("should compute contract hash", () => {
       const contract = {
-        name: 'Button',
-        version: '1.0.0',
+        name: "Button",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable' as const,
-          platforms: ['web' as const],
+          category: "input",
+          status: "stable" as const,
+          platforms: ["web" as const],
         },
       };
       const hash = computeContractHash(contract);
       expect(hash).toBeDefined();
-      expect(typeof hash).toBe('string');
+      expect(typeof hash).toBe("string");
       expect(hash.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Zod Integration', () => {
-    it('should export zod for convenience', () => {
+  describe("Zod Integration", () => {
+    it("should export zod for convenience", () => {
       expect(z).toBeDefined();
-      expect(typeof z.object).toBe('function');
-      expect(typeof z.string).toBe('function');
+      expect(typeof z.object).toBe("function");
+      expect(typeof z.string).toBe("function");
     });
   });
 
-  describe('V2 Contract Fields - Name Hardening', () => {
+  describe("V2 Contract Fields - Name Hardening", () => {
     const baseContract = {
-      version: '1.0.0',
+      version: "1.0.0",
       props: [],
       slots: [],
       events: [],
       styles: {},
       metadata: {
-        category: 'input',
-        status: 'stable' as const,
-        platforms: ['web' as const],
+        category: "input",
+        status: "stable" as const,
+        platforms: ["web" as const],
       },
     };
 
-    it('should reject empty component name', () => {
-      const result = validateComponentContract({ ...baseContract, name: '' });
+    it("should reject empty component name", () => {
+      const result = validateComponentContract({ ...baseContract, name: "" });
       expect(result.success).toBe(false);
     });
 
-    it('should reject empty prop name', () => {
+    it("should reject empty prop name", () => {
       const result = validateComponentContract({
         ...baseContract,
-        name: 'Button',
-        props: [{ name: '', type: 'string', required: false, defaultValue: '' }],
+        name: "Button",
+        props: [
+          { name: "", type: "string", required: false, defaultValue: "" },
+        ],
       });
       expect(result.success).toBe(false);
     });
 
-    it('should reject empty slot name', () => {
+    it("should reject empty slot name", () => {
       const result = validateComponentContract({
         ...baseContract,
-        name: 'Button',
-        slots: [{ name: '', description: 'A slot', accepts: [] }],
+        name: "Button",
+        slots: [{ name: "", description: "A slot", accepts: [] }],
       });
       expect(result.success).toBe(false);
     });
 
-    it('should reject empty event name', () => {
+    it("should reject empty event name", () => {
       const result = validateComponentContract({
         ...baseContract,
-        name: 'Button',
-        events: [{ name: '', description: 'An event', payload: {} }],
+        name: "Button",
+        events: [{ name: "", description: "An event", payload: {} }],
       });
       expect(result.success).toBe(false);
     });
   });
 
-  describe('V2 Contract Fields - Extended Schemas', () => {
-    it('should accept telemetry contract on component', () => {
-      const result = ComponentContractSchema.safeParse({
-        name: 'Button',
-        version: '1.0.0',
+  describe("V2 Contract Fields - Extended Schemas", () => {
+    it("should accept telemetry contract on component", () => {
+      const result = SourceComponentContractSchema.safeParse({
+        name: "Button",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable',
-          platforms: ['web'],
+          category: "input",
+          status: "stable",
+          platforms: ["web"],
         },
         telemetry: {
           emittedEvents: [
-            { name: 'button:click', description: 'Fired on click', containsPii: false },
+            {
+              name: "button:click",
+              description: "Fired on click",
+              containsPii: false,
+            },
           ],
           autoTracksInteractions: true,
         },
@@ -197,47 +204,49 @@ describe('@ghatana/ds-schema', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.telemetry?.autoTracksInteractions).toBe(true);
-        expect(result.data.telemetry?.emittedEvents[0]?.name).toBe('button:click');
+        expect(result.data.telemetry?.emittedEvents[0]?.name).toBe(
+          "button:click",
+        );
       }
     });
 
-    it('should accept aiPolicy on component', () => {
+    it("should accept aiPolicy on component", () => {
       const result = ComponentContractSchema.safeParse({
-        name: 'SecureField',
-        version: '1.0.0',
+        name: "SecureField",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable',
-          platforms: ['web'],
+          category: "input",
+          status: "stable",
+          platforms: ["web"],
         },
         aiPolicy: {
           allowAutonomousConfiguration: false,
-          reviewRequiredProps: ['content'],
+          reviewRequiredProps: ["content"],
         },
       });
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.aiPolicy?.allowAutonomousConfiguration).toBe(false);
-        expect(result.data.aiPolicy?.reviewRequiredProps).toContain('content');
+        expect(result.data.aiPolicy?.reviewRequiredProps).toContain("content");
       }
     });
 
-    it('should accept preview restrictions on component', () => {
+    it("should accept preview restrictions on component", () => {
       const result = ComponentContractSchema.safeParse({
-        name: 'InternalWidget',
-        version: '1.0.0',
+        name: "InternalWidget",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'display',
-          status: 'experimental',
-          platforms: ['web'],
+          category: "display",
+          status: "experimental",
+          platforms: ["web"],
         },
         preview: {
           requiresNetwork: false,
@@ -250,17 +259,65 @@ describe('@ghatana/ds-schema', () => {
       }
     });
 
-    it('should accept dataClassification on prop', () => {
-      const result = ComponentContractSchema.safeParse({
-        name: 'PasswordField',
-        version: '1.0.0',
+    it("should accept explicit i18n requirements and builder bindings", () => {
+      const result = SourceComponentContractSchema.safeParse({
+        name: "LocalizedButton",
+        version: "1.0.0",
         props: [
           {
-            name: 'value',
-            type: 'string',
+            name: "label",
+            type: "string",
             required: true,
-            defaultValue: '',
-            dataClassification: 'restricted',
+            builderMetadata: {
+              bindable: true,
+            },
+          },
+        ],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: "input",
+          status: "stable",
+          platforms: ["web"],
+        },
+        builder: {
+          bindings: [
+            {
+              propName: "label",
+              bindingTypes: ["data", "state"],
+              acceptedValueTypes: ["string"],
+              required: true,
+            },
+          ],
+        },
+        i18n: {
+          namespaces: ["common"],
+          requiredKeys: ["button.submit"],
+          localeSensitiveProps: ["label"],
+          textProps: ["label"],
+          fallbackBehavior: "show-key",
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.builder?.bindings[0]?.propName).toBe("label");
+        expect(result.data.i18n?.requiredKeys).toContain("button.submit");
+        expect(result.data.i18n?.rtlAware).toBe(true);
+      }
+    });
+
+    it("should accept dataClassification on prop", () => {
+      const result = ComponentContractSchema.safeParse({
+        name: "PasswordField",
+        version: "1.0.0",
+        props: [
+          {
+            name: "value",
+            type: "string",
+            required: true,
+            defaultValue: "",
+            dataClassification: "restricted",
             secretBearing: true,
             reviewRequired: true,
           },
@@ -269,30 +326,30 @@ describe('@ghatana/ds-schema', () => {
         events: [],
         styles: {},
         metadata: {
-          category: 'input',
-          status: 'stable',
-          platforms: ['web'],
+          category: "input",
+          status: "stable",
+          platforms: ["web"],
         },
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.props[0]?.dataClassification).toBe('restricted');
+        expect(result.data.props[0]?.dataClassification).toBe("restricted");
         expect(result.data.props[0]?.secretBearing).toBe(true);
       }
     });
 
-    it('should accept layout semantics on component', () => {
+    it("should accept layout semantics on component", () => {
       const result = ComponentContractSchema.safeParse({
-        name: 'Grid',
-        version: '1.0.0',
+        name: "Grid",
+        version: "1.0.0",
         props: [],
         slots: [],
         events: [],
         styles: {},
         metadata: {
-          category: 'layout',
-          status: 'stable',
-          platforms: ['web'],
+          category: "layout",
+          status: "stable",
+          platforms: ["web"],
         },
         layout: {
           isContainer: true,

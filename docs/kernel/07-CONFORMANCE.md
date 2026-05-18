@@ -11,6 +11,7 @@ Kernel conformance ensures products adhere to platform contracts, lifecycle requ
 - **Check**: Product registry schema validation
 - **Script**: `scripts/check-product-registry-contracts.mjs`
 - **Schema**: `config/canonical-product-registry-schema.json`
+- **Authoritative Source**: `config/canonical-product-registry.json`
 
 ### Lifecycle Conformance
 
@@ -66,6 +67,7 @@ node scripts/check-product-deployment-contracts.mjs
 ## Conformance Failures
 
 Conformance failures are explicit and actionable:
+
 - Missing required fields
 - Invalid schema
 - Mismatched fixtures

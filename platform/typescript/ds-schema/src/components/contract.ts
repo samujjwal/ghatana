@@ -3,26 +3,26 @@
  * design system components and the builder/platform.
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 // ============================================================================
 // Prop Type Schemas
 // ============================================================================
 
 export const PropTypeSchema = z.enum([
-  'string',
-  'number',
-  'boolean',
-  'array',
-  'object',
-  'function',
-  'node', // ReactNode
-  'element', // ReactElement
-  'enum',
-  'union',
-  'literal',
-  'token-ref', // Reference to a design token
-  'component-ref', // Reference to another component
+  "string",
+  "number",
+  "boolean",
+  "array",
+  "object",
+  "function",
+  "node", // ReactNode
+  "element", // ReactElement
+  "enum",
+  "union",
+  "literal",
+  "token-ref", // Reference to a design token
+  "component-ref", // Reference to another component
 ]);
 
 export type PropType = z.infer<typeof PropTypeSchema>;
@@ -36,12 +36,12 @@ export type PropType = z.infer<typeof PropTypeSchema>;
 // ============================================================================
 
 export const DataClassificationSchema = z.enum([
-  'public',
-  'internal',
-  'confidential',
-  'restricted',
-  'pii',
-  'sensitive',
+  "public",
+  "internal",
+  "confidential",
+  "restricted",
+  "pii",
+  "sensitive",
 ] as const);
 
 export type DataClassificationValue = z.infer<typeof DataClassificationSchema>;
@@ -52,16 +52,22 @@ export type DataClassificationValue = z.infer<typeof DataClassificationSchema>;
 
 /** Declares telemetry this component emits when used in production. */
 export const ComponentTelemetryContractSchema = z.object({
-  emittedEvents: z.array(z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    containsPii: z.boolean().default(false),
-  })).default([]),
+  emittedEvents: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        containsPii: z.boolean().default(false),
+      }),
+    )
+    .default([]),
   autoTracksInteractions: z.boolean().default(false),
   requiresConsentForTracking: z.boolean().default(false),
 });
 
-export type ComponentTelemetryContract = z.infer<typeof ComponentTelemetryContractSchema>;
+export type ComponentTelemetryContract = z.infer<
+  typeof ComponentTelemetryContractSchema
+>;
 
 // ============================================================================
 // Observability Contract
@@ -73,7 +79,9 @@ export const ComponentObservabilityContractSchema = z.object({
   reportsRenderErrors: z.boolean().default(false),
 });
 
-export type ComponentObservabilityContract = z.infer<typeof ComponentObservabilityContractSchema>;
+export type ComponentObservabilityContract = z.infer<
+  typeof ComponentObservabilityContractSchema
+>;
 
 // ============================================================================
 // AI Policy
@@ -85,16 +93,16 @@ export type ComponentObservabilityContract = z.infer<typeof ComponentObservabili
  * autonomously (without human review for each change).
  */
 export const AIActionTypeSchema = z.enum([
-  'set-prop',       // AI autonomously sets a prop value
-  'remove-prop',    // AI removes a prop
-  'add-node',       // AI inserts a child node into a slot
-  'remove-node',    // AI removes this node from the document
-  'reorder-node',   // AI reorders children within a slot
-  'add-binding',    // AI adds a data binding to this component
-  'remove-binding', // AI removes a binding
-  'resize',         // AI changes the component's size metadata
-  'reposition',     // AI changes the component's position metadata
-  'style-update',   // AI updates style/token-referenced props
+  "set-prop", // AI autonomously sets a prop value
+  "remove-prop", // AI removes a prop
+  "add-node", // AI inserts a child node into a slot
+  "remove-node", // AI removes this node from the document
+  "reorder-node", // AI reorders children within a slot
+  "add-binding", // AI adds a data binding to this component
+  "remove-binding", // AI removes a binding
+  "resize", // AI changes the component's size metadata
+  "reposition", // AI changes the component's position metadata
+  "style-update", // AI updates style/token-referenced props
 ]);
 
 export type AIActionType = z.infer<typeof AIActionTypeSchema>;
@@ -150,50 +158,57 @@ export const BuilderA11yObligationsSchema = z.object({
    * The minimum WCAG success criteria level this component is designed to meet.
    * `A` is the least strict, `AAA` the most strict.
    */
-  wcagLevel: z.enum(['A', 'AA', 'AAA']).default('AA'),
+  wcagLevel: z.enum(["A", "AA", "AAA"]).default("AA"),
   /**
    * Free-text guidance shown in the builder accessibility panel.
    */
   a11yGuidance: z.string().optional(),
 });
 
-export type BuilderA11yObligations = z.infer<typeof BuilderA11yObligationsSchema>;
+export type BuilderA11yObligations = z.infer<
+  typeof BuilderA11yObligationsSchema
+>;
 
 // ============================================================================
 // Preview Restrictions
 // ============================================================================
 
 export const ComponentPreviewRestrictionsSchema = z.object({
-  minimumTrustLevel: z.enum([
-    'trusted-local',
-    'trusted-controlled',
-    'semi-trusted',
-    'untrusted',
-  ]).default('semi-trusted'),
+  minimumTrustLevel: z
+    .enum(["trusted-local", "trusted-controlled", "semi-trusted", "untrusted"])
+    .default("semi-trusted"),
   requiresNetwork: z.boolean().default(false),
   requiresStorage: z.boolean().default(false),
   requiresConsent: z.boolean().default(false),
 });
 
-export type ComponentPreviewRestrictions = z.infer<typeof ComponentPreviewRestrictionsSchema>;
+export type ComponentPreviewRestrictions = z.infer<
+  typeof ComponentPreviewRestrictionsSchema
+>;
 
 // ============================================================================
 // Configurator Hints
 // ============================================================================
 
 export const ComponentConfiguratorHintsSchema = z.object({
-  groups: z.array(z.object({
-    id: z.string().min(1),
-    label: z.string().min(1),
-    collapsed: z.boolean().default(false),
-    propNames: z.array(z.string()),
-  })).default([]),
+  groups: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        label: z.string().min(1),
+        collapsed: z.boolean().default(false),
+        propNames: z.array(z.string()),
+      }),
+    )
+    .default([]),
   showAdvancedSection: z.boolean().default(true),
   showLivePreview: z.boolean().default(true),
   resettableProps: z.array(z.string()).default([]),
 });
 
-export type ComponentConfiguratorHints = z.infer<typeof ComponentConfiguratorHintsSchema>;
+export type ComponentConfiguratorHints = z.infer<
+  typeof ComponentConfiguratorHintsSchema
+>;
 
 // ============================================================================
 // Layout Semantics
@@ -202,14 +217,18 @@ export type ComponentConfiguratorHints = z.infer<typeof ComponentConfiguratorHin
 export const ComponentLayoutSemanticsSchema = z.object({
   /** Whether this component can contain child components in the builder. */
   isContainer: z.boolean().default(false),
-  defaultDisplay: z.enum(['block', 'inline', 'inline-block', 'flex', 'grid', 'none']).default('block'),
+  defaultDisplay: z
+    .enum(["block", "inline", "inline-block", "flex", "grid", "none"])
+    .default("block"),
   draggable: z.boolean().default(true),
   resizable: z.boolean().default(true),
   aspectRatioLock: z.number().optional(),
-  minDimensions: z.object({
-    width: z.number().optional(),
-    height: z.number().optional(),
-  }).optional(),
+  minDimensions: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional(),
+    })
+    .optional(),
   /**
    * Whether this component fills all available space in its parent container
    * (e.g. a divider, spacer, or full-width banner that should not be inline).
@@ -221,7 +240,9 @@ export const ComponentLayoutSemanticsSchema = z.object({
   allowedChildTypes: z.array(z.string()).optional(),
 });
 
-export type ComponentLayoutSemantics = z.infer<typeof ComponentLayoutSemanticsSchema>;
+export type ComponentLayoutSemantics = z.infer<
+  typeof ComponentLayoutSemanticsSchema
+>;
 
 // ============================================================================
 // Responsive Behavior Metadata
@@ -233,7 +254,7 @@ export type ComponentLayoutSemantics = z.infer<typeof ComponentLayoutSemanticsSc
  */
 export const ResponsiveBreakpointBehaviorSchema = z.object({
   /** Named breakpoint (e.g. 'sm', 'md', 'lg', 'xl'). */
-  breakpoint: z.enum(['xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+  breakpoint: z.enum(["xs", "sm", "md", "lg", "xl", "2xl"]),
   /**
    * Minimum viewport width (px) at which this breakpoint applies.
    * Matches typical Tailwind / Bootstrap breakpoint semantics.
@@ -250,7 +271,9 @@ export const ResponsiveBreakpointBehaviorSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type ResponsiveBreakpointBehavior = z.infer<typeof ResponsiveBreakpointBehaviorSchema>;
+export type ResponsiveBreakpointBehavior = z.infer<
+  typeof ResponsiveBreakpointBehaviorSchema
+>;
 
 /**
  * Captures how a component participates in responsive design.
@@ -282,10 +305,14 @@ export const ComponentResponsiveMetadataSchema = z.object({
    * The token-based responsive scale this component follows.
    * Matches the theme's spacing/typography scale if applicable.
    */
-  responsiveScale: z.enum(['none', 'typography', 'spacing', 'both']).default('none'),
+  responsiveScale: z
+    .enum(["none", "typography", "spacing", "both"])
+    .default("none"),
 });
 
-export type ComponentResponsiveMetadata = z.infer<typeof ComponentResponsiveMetadataSchema>;
+export type ComponentResponsiveMetadata = z.infer<
+  typeof ComponentResponsiveMetadataSchema
+>;
 
 // ============================================================================
 // Privacy Metadata
@@ -313,70 +340,119 @@ export const ComponentPrivacyContractSchema = z.object({
    * Valid values mirror `ComponentPreviewRestrictions.minimumTrustLevel`.
    */
   minimumPreviewTrustLevel: z
-    .enum(['trusted-local', 'trusted-controlled', 'semi-trusted', 'untrusted'])
+    .enum(["trusted-local", "trusted-controlled", "semi-trusted", "untrusted"])
     .optional(),
   /** Regulatory frameworks this component's usage must be reviewed under. */
-  regulatoryFrameworks: z.array(z.enum(['GDPR', 'CCPA', 'HIPAA', 'PCI-DSS', 'SOC2'])).default([]),
+  regulatoryFrameworks: z
+    .array(z.enum(["GDPR", "CCPA", "HIPAA", "PCI-DSS", "SOC2"]))
+    .default([]),
   /** Free-text privacy guidance shown in the builder inspector panel. */
   privacyGuidance: z.string().optional(),
 });
 
-export type ComponentPrivacyContract = z.infer<typeof ComponentPrivacyContractSchema>;
+export type ComponentPrivacyContract = z.infer<
+  typeof ComponentPrivacyContractSchema
+>;
+
+// ============================================================================
+// I18n Metadata
+// ============================================================================
+
+export const ComponentI18nRequirementSchema = z.object({
+  namespaces: z.array(z.string().min(1)).default([]),
+  requiredKeys: z.array(z.string().min(1)).default([]),
+  localeSensitiveProps: z.array(z.string().min(1)).default([]),
+  textProps: z.array(z.string().min(1)).default([]),
+  fallbackBehavior: z
+    .enum(["block-render", "show-key", "use-default-value"])
+    .default("use-default-value"),
+  rtlAware: z.boolean().default(true),
+});
+
+export type ComponentI18nRequirement = z.infer<
+  typeof ComponentI18nRequirementSchema
+>;
+
+// ============================================================================
+// Builder Bindings
+// ============================================================================
+
+export const ComponentBuilderBindingSchema = z.object({
+  propName: z.string().min(1),
+  bindingTypes: z
+    .array(z.enum(["data", "state", "event", "slot", "route"]))
+    .min(1),
+  acceptedValueTypes: z.array(PropTypeSchema).default([]),
+  required: z.boolean().default(false),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  defaultExpression: z.string().optional(),
+});
+
+export type ComponentBuilderBinding = z.infer<
+  typeof ComponentBuilderBindingSchema
+>;
 
 // ============================================================================
 // Component Prop Schema
 // ============================================================================
 
 export const ComponentPropSchema = z.object({
-  name: z.string().min(1, 'Prop name must not be empty'),
+  name: z.string().min(1, "Prop name must not be empty"),
   type: PropTypeSchema,
   typeDetails: z.unknown().optional(), // For complex types (enum values, object shape, etc.)
   description: z.string().optional(),
   required: z.boolean().default(false),
   defaultValue: z.unknown().optional(),
-  
+
   // Builder-specific metadata
-  builderMetadata: z.object({
-    // Control type for builder UI
-    control: z.enum([
-      'text',
-      'number',
-      'toggle',
-      'select',
-      'multiselect',
-      'color',
-      'token-select',
-      'json',
-      'code',
-      'slot',
-      'hidden', // Computed/internal
-    ]).optional(),
-    
-    // Category for grouping in builder UI
-    category: z.string().optional(),
-    
-    // Order within category
-    order: z.number().optional(),
-    
-    // Whether this prop can be bound to data
-    bindable: z.boolean().default(false),
-    
-    // Valid token types for token-ref props
-    tokenTypes: z.array(z.string()).optional(),
-    
-    // Valid component types for component-ref props
-    componentTypes: z.array(z.string()).optional(),
-  }).optional(),
+  builderMetadata: z
+    .object({
+      // Control type for builder UI
+      control: z
+        .enum([
+          "text",
+          "number",
+          "toggle",
+          "select",
+          "multiselect",
+          "color",
+          "token-select",
+          "json",
+          "code",
+          "slot",
+          "hidden", // Computed/internal
+        ])
+        .optional(),
+
+      // Category for grouping in builder UI
+      category: z.string().optional(),
+
+      // Order within category
+      order: z.number().optional(),
+
+      // Whether this prop can be bound to data
+      bindable: z.boolean().default(false),
+
+      // Valid token types for token-ref props
+      tokenTypes: z.array(z.string()).optional(),
+
+      // Valid component types for component-ref props
+      componentTypes: z.array(z.string()).optional(),
+    })
+    .optional(),
 
   // Validation rules
-  validation: z.object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-    minLength: z.number().optional(),
-    maxLength: z.number().optional(),
-    pattern: z.string().optional(), // regex
-    enum: z.array(z.unknown()).optional(),
-  }).optional(),
+  validation: z
+    .object({
+      min: z.number().optional(),
+      max: z.number().optional(),
+      minLength: z.number().optional(),
+      maxLength: z.number().optional(),
+      pattern: z.string().optional(), // regex
+      enum: z.array(z.unknown()).optional(),
+    })
+    .optional(),
 
   // Privacy / security metadata for this prop
   dataClassification: DataClassificationSchema.optional(),
@@ -391,7 +467,7 @@ export type ComponentProp = z.infer<typeof ComponentPropSchema>;
 // ============================================================================
 
 export const ComponentSlotSchema = z.object({
-  name: z.string().min(1, 'Slot name must not be empty'),
+  name: z.string().min(1, "Slot name must not be empty"),
   description: z.string().optional(),
   allowedComponents: z.array(z.string()).optional(), // Whitelist
   disallowedComponents: z.array(z.string()).optional(), // Blacklist
@@ -425,18 +501,20 @@ export const ComponentSlotSchema = z.object({
   designTimeAspectRatio: z.number().optional(),
 
   // Builder metadata
-  builderMetadata: z.object({
-    displayName: z.string().optional(),
-    icon: z.string().optional(),
-    required: z.boolean().default(false),
-    defaultContent: z.unknown().optional(),
-    /**
-     * Hint to the builder palette about where to display this slot's drop
-     * zone — 'inline' keeps the zone within the component's own frame,
-     * 'overlay' draws a separate drop zone on top.
-     */
-    dropZoneMode: z.enum(['inline', 'overlay']).default('inline'),
-  }).optional(),
+  builderMetadata: z
+    .object({
+      displayName: z.string().optional(),
+      icon: z.string().optional(),
+      required: z.boolean().default(false),
+      defaultContent: z.unknown().optional(),
+      /**
+       * Hint to the builder palette about where to display this slot's drop
+       * zone — 'inline' keeps the zone within the component's own frame,
+       * 'overlay' draws a separate drop zone on top.
+       */
+      dropZoneMode: z.enum(["inline", "overlay"]).default("inline"),
+    })
+    .optional(),
 });
 
 export type ComponentSlot = z.infer<typeof ComponentSlotSchema>;
@@ -446,15 +524,17 @@ export type ComponentSlot = z.infer<typeof ComponentSlotSchema>;
 // ============================================================================
 
 export const ComponentEventSchema = z.object({
-  name: z.string().min(1, 'Event name must not be empty'),
+  name: z.string().min(1, "Event name must not be empty"),
   description: z.string().optional(),
   payloadType: z.string().optional(), // TypeScript type string
-  
-  builderMetadata: z.object({
-    // Can be wired to actions in builder
-    actionable: z.boolean().default(true),
-    category: z.string().optional(),
-  }).optional(),
+
+  builderMetadata: z
+    .object({
+      // Can be wired to actions in builder
+      actionable: z.boolean().default(true),
+      category: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type ComponentEvent = z.infer<typeof ComponentEventSchema>;
@@ -466,29 +546,43 @@ export type ComponentEvent = z.infer<typeof ComponentEventSchema>;
 export const ComponentStyleSchema = z.object({
   // CSS properties this component accepts
   styleProps: z.array(z.string()).optional(),
-  
+
   // Token categories that can be applied
-  tokenCategories: z.array(z.enum([
-    'color',
-    'spacing',
-    'typography',
-    'elevation',
-    'border',
-    'motion',
-    'opacity',
-  ])).optional(),
-  
+  tokenCategories: z
+    .array(
+      z.enum([
+        "color",
+        "spacing",
+        "typography",
+        "elevation",
+        "border",
+        "motion",
+        "opacity",
+      ]),
+    )
+    .optional(),
+
   // Style variants
-  variants: z.record(z.string(), z.object({
-    description: z.string().optional(),
-    styleOverrides: z.record(z.string(), z.unknown()),
-  })).optional(),
-  
+  variants: z
+    .record(
+      z.string(),
+      z.object({
+        description: z.string().optional(),
+        styleOverrides: z.record(z.string(), z.unknown()),
+      }),
+    )
+    .optional(),
+
   // Size variants
-  sizes: z.record(z.string(), z.object({
-    description: z.string().optional(),
-    styleOverrides: z.record(z.string(), z.unknown()),
-  })).optional(),
+  sizes: z
+    .record(
+      z.string(),
+      z.object({
+        description: z.string().optional(),
+        styleOverrides: z.record(z.string(), z.unknown()),
+      }),
+    )
+    .optional(),
 });
 
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
@@ -499,134 +593,166 @@ export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 
 export const ComponentContractSchema = z.object({
   // Identification — non-empty name enforced
-  name: z.string().min(1, 'Component name must not be empty'),
-  version: z.string().default('1.0.0'),
+  name: z.string().min(1, "Component name must not be empty"),
+  version: z.string().default("1.0.0"),
   description: z.string().optional(),
-  
+
   // Component metadata
   metadata: z.object({
     category: z.string(), // e.g., 'input', 'display', 'layout', 'feedback'
     subcategory: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    
+
     // Documentation
     docsUrl: z.string().optional(),
     storybookUrl: z.string().optional(),
-    
+
     // Status
-    status: z.enum(['draft', 'experimental', 'stable', 'deprecated']).default('draft'),
-    
+    status: z
+      .enum(["draft", "experimental", "stable", "deprecated"])
+      .default("draft"),
+
     // Platform support
-    platforms: z.array(z.enum(['web', 'ios', 'android', 'figma'])).default(['web']),
-    
+    platforms: z
+      .array(z.enum(["web", "ios", "android", "figma"]))
+      .default(["web"]),
+
     // Accessibility — richer coverage
-    a11y: z.object({
-      role: z.string().optional(),
-      ariaRequired: z.boolean().default(false),
-      ariaSupported: z.boolean().default(true),
-      keyboardNavigation: z.boolean().default(false),
-      screenReader: z.enum(['supported', 'partial', 'not-tested', 'not-applicable']).default('not-tested'),
-      trapsFocus: z.boolean().default(false),
-      wcagCriteria: z.array(z.string()).default([]),
-      notes: z.string().optional(),
-    }).optional(),
+    a11y: z
+      .object({
+        role: z.string().optional(),
+        ariaRequired: z.boolean().default(false),
+        ariaSupported: z.boolean().default(true),
+        keyboardNavigation: z.boolean().default(false),
+        screenReader: z
+          .enum(["supported", "partial", "not-tested", "not-applicable"])
+          .default("not-tested"),
+        trapsFocus: z.boolean().default(false),
+        wcagCriteria: z.array(z.string()).default([]),
+        notes: z.string().optional(),
+      })
+      .optional(),
 
     dataClassification: DataClassificationSchema.optional(),
     reviewRequired: z.boolean().optional(),
   }),
-  
+
   // Interface definition
   props: z.array(ComponentPropSchema).default([]),
   slots: z.array(ComponentSlotSchema).default([]),
   events: z.array(ComponentEventSchema).default([]),
   styles: ComponentStyleSchema.optional(),
-  
+
   // Dependencies
-  dependencies: z.object({
-    // Other components this component requires
-    components: z.array(z.string()).optional(),
-    
-    // Tokens this component uses
-    tokens: z.array(z.string()).optional(),
-    
-    // External libraries
-    packages: z.array(z.object({
-      name: z.string(),
-      version: z.string(),
-      optional: z.boolean().default(false),
-    })).optional(),
-  }).optional(),
-  
+  dependencies: z
+    .object({
+      // Other components this component requires
+      components: z.array(z.string()).optional(),
+
+      // Tokens this component uses
+      tokens: z.array(z.string()).optional(),
+
+      // External libraries
+      packages: z
+        .array(
+          z.object({
+            name: z.string(),
+            version: z.string(),
+            optional: z.boolean().default(false),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+
   // Builder integration
-  builder: z.object({
-    // Icon for component picker
-    icon: z.string().optional(),
+  builder: z
+    .object({
+      // Icon for component picker
+      icon: z.string().optional(),
 
-    // Default props when dragging onto canvas
-    defaultProps: z.record(z.string(), z.unknown()).optional(),
+      // Default props when dragging onto canvas
+      defaultProps: z.record(z.string(), z.unknown()).optional(),
 
-    // Canvas behavior
-    canvas: z.object({
-      resizable: z.boolean().default(true),
-      draggable: z.boolean().default(true),
-      selectable: z.boolean().default(true),
-      container: z.boolean().default(false), // Can contain other components
-    }).optional(),
+      // Builder binding declarations for bindable props/events/slots.
+      bindings: z.array(ComponentBuilderBindingSchema).optional(),
 
-    // Code generation
-    codegen: z.object({
-      importPath: z.string(),
-      componentName: z.string(),
-      namedExport: z.boolean().default(true),
-      /**
-       * The HTML custom-element tag name used by the web/SSR renderer.
-       * Defaults to `ghatana-{contractName.toLowerCase()}` if not provided.
-       * Must be a valid custom element name (contain a hyphen).
-       */
-      htmlTagName: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/).optional(),
-    }).optional(),
+      // Canvas behavior
+      canvas: z
+        .object({
+          resizable: z.boolean().default(true),
+          draggable: z.boolean().default(true),
+          selectable: z.boolean().default(true),
+          container: z.boolean().default(false), // Can contain other components
+        })
+        .optional(),
 
-    /**
-     * Palette identity — how this component appears in the builder's
-     * component picker and drag palette.
-     */
-    palette: z.object({
+      // Code generation
+      codegen: z
+        .object({
+          importPath: z.string(),
+          componentName: z.string(),
+          namedExport: z.boolean().default(true),
+          /**
+           * The HTML custom-element tag name used by the web/SSR renderer.
+           * Defaults to `ghatana-{contractName.toLowerCase()}` if not provided.
+           * Must be a valid custom element name (contain a hyphen).
+           */
+          htmlTagName: z
+            .string()
+            .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/)
+            .optional(),
+        })
+        .optional(),
+
       /**
-       * Group name for the component picker panel (e.g. 'Form Controls',
-       * 'Data Display', 'Layout').
+       * Palette identity — how this component appears in the builder's
+       * component picker and drag palette.
        */
-      group: z.string().optional(),
-      /**
-       * Sub-group within the palette group for finer-grained organisation
-       * (e.g. 'Text Inputs' under 'Form Controls').
-       */
-      subGroup: z.string().optional(),
-      /** Display name shown in the palette (defaults to contract.name). */
-      displayName: z.string().optional(),
-      /**
-       * Short description shown in the palette tooltip (defaults to
-       * contract.description).
-       */
-      tooltip: z.string().optional(),
-      /**
-       * Rank within the palette group — lower numbers appear first.
-       * Components with no rank are placed after ranked ones.
-       */
-      rank: z.number().int().optional(),
-      /** Keywords for palette search (in addition to name and description). */
-      searchKeywords: z.array(z.string()).default([]),
-      /** Whether this component is pinned to the "Favourites" section. */
-      featured: z.boolean().default(false),
-    }).optional(),
-  }).optional(),
-  
+      palette: z
+        .object({
+          /**
+           * Group name for the component picker panel (e.g. 'Form Controls',
+           * 'Data Display', 'Layout').
+           */
+          group: z.string().optional(),
+          /**
+           * Sub-group within the palette group for finer-grained organisation
+           * (e.g. 'Text Inputs' under 'Form Controls').
+           */
+          subGroup: z.string().optional(),
+          /** Display name shown in the palette (defaults to contract.name). */
+          displayName: z.string().optional(),
+          /**
+           * Short description shown in the palette tooltip (defaults to
+           * contract.description).
+           */
+          tooltip: z.string().optional(),
+          /**
+           * Rank within the palette group — lower numbers appear first.
+           * Components with no rank are placed after ranked ones.
+           */
+          rank: z.number().int().optional(),
+          /** Keywords for palette search (in addition to name and description). */
+          searchKeywords: z.array(z.string()).default([]),
+          /** Whether this component is pinned to the "Favourites" section. */
+          featured: z.boolean().default(false),
+        })
+        .optional(),
+    })
+    .optional(),
+
   // Examples
-  examples: z.array(z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    props: z.record(z.string(), z.unknown()),
-    slots: z.record(z.string(), z.unknown()).optional(),
-  })).optional(),
+  examples: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        props: z.record(z.string(), z.unknown()),
+        slots: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
 
   // ════════════════════════════════════════════════════════════════
   // First-class platform extensions
@@ -641,6 +767,8 @@ export const ComponentContractSchema = z.object({
   responsive: ComponentResponsiveMetadataSchema.optional(),
   /** Component-level privacy obligations for builder and preview flows. */
   privacy: ComponentPrivacyContractSchema.optional(),
+  /** I18n obligations for authoring, preview, docs, and generated examples. */
+  i18n: ComponentI18nRequirementSchema.optional(),
   /** Builder-level accessibility obligations for this component. */
   builderA11y: BuilderA11yObligationsSchema.optional(),
 });
@@ -651,7 +779,11 @@ export type ComponentContract = z.infer<typeof ComponentContractSchema>;
 // Validation
 // ============================================================================
 
-export function validateComponentContract(data: unknown): { success: true; data: ComponentContract } | { success: false; errors: z.ZodError } {
+export function validateComponentContract(
+  data: unknown,
+):
+  | { success: true; data: ComponentContract }
+  | { success: false; errors: z.ZodError } {
   const result = ComponentContractSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -677,7 +809,7 @@ export function computeContractHash(contract: ComponentContract): string {
   // DJB2 hash — deterministic, fast
   let hash = 5381;
   for (let i = 0; i < canonical.length; i++) {
-    hash = ((hash << 5) + hash) + canonical.charCodeAt(i);
+    hash = (hash << 5) + hash + canonical.charCodeAt(i);
   }
-  return (hash >>> 0).toString(16).padStart(8, '0');
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }

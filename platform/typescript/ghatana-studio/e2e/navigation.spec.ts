@@ -1,46 +1,53 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from "@playwright/test";
 
-test.describe('Ghatana Studio navigation', () => {
-  test('loads home and navigates to blueprint and canvas views', async ({ page }) => {
-    await page.goto('/');
+test.describe("Ghatana Studio navigation", () => {
+  test("loads home and navigates to blueprint and canvas views", async ({
+    page,
+  }) => {
+    await page.goto("/");
 
-    await expect(page.getByRole('heading', { name: 'Ghatana Studio' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Product development journey' })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Product development journey" }),
+    ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Blueprints' }).click();
+    await page.goto("/blueprints");
     await expect(page).toHaveURL(/\/blueprints$/);
-    await expect(page.getByText('intent:yappc:commerce-studio:corr-yappc-1')).toBeVisible();
+    await expect(
+      page.getByText("intent:yappc:commerce-studio:corr-yappc-1").first(),
+    ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Canvas' }).click();
+    await page.goto("/canvas");
     await expect(page).toHaveURL(/\/canvas$/);
-    await expect(page.getByText('evidence:graph-commerce')).toBeVisible();
+    await expect(
+      page.getByText("evidence:graph-commerce").first(),
+    ).toBeVisible();
   });
 
-  test('shows disabled access message for ideas in unconfigured mode', async ({ page }) => {
-    await page.goto('/ideas');
+  test("shows disabled access message for ideas in unconfigured mode", async ({
+    page,
+  }) => {
+    await page.goto("/ideas");
 
-    await expect(page.getByText('Route access is disabled in this runtime mode.')).toBeVisible();
+    await expect(
+      page.getByText("Route access is disabled in this runtime mode."),
+    ).toBeVisible();
     await expect(page.getByText(/Required capability:/)).toBeVisible();
   });
 
-  test('Studio-visible lifecycle pilot E2E flow', async ({ page }) => {
-    await page.goto('/lifecycle');
+  test("keeps lifecycle route fail-closed when Kernel runtime is unconfigured", async ({
+    page,
+  }) => {
+    await page.goto("/lifecycle");
 
-    // Verify lifecycle page loads
-    await expect(page.getByRole('heading', { name: 'Lifecycle' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Product lifecycle execution' })).toBeVisible();
-
-    // Verify pilot readiness panel is visible
-    await expect(page.getByText('Lifecycle pilot readiness')).toBeVisible();
-    await expect(page.getByText('Current product unit:')).toBeVisible();
-
-    // Verify approval queue is displayed
-    await expect(page.getByText('Approval queue')).toBeVisible();
-
-    // Verify lifecycle run history is displayed
-    await expect(page.getByText('Lifecycle run history')).toBeVisible();
-
-    // Verify validation command is shown
-    await expect(page.getByText('Validation command')).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lifecycle" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Route access is disabled in this runtime mode."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Required capability: kernel.lifecycle.view"),
+    ).toBeVisible();
   });
 });

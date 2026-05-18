@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createHmac } from "node:crypto";
-import { buildApp } from "../app.js";
-import type { KernelLifecycleApiHandlers } from "@ghatana/kernel-lifecycle";
+import { buildApp, type KernelLifecycleApiPort } from "../app.js";
 
 const TEST_SECRET = "test-secret";
 
@@ -145,28 +144,60 @@ describe("Kernel lifecycle routes authz", () => {
   });
 });
 
-function createMockKernelApi(): KernelLifecycleApiHandlers {
+function createMockKernelApi(): KernelLifecycleApiPort {
   return {
     listProductUnits: async () => ({ statusCode: 200, headers: {}, body: [] }),
     getProductUnit: async () => ({ statusCode: 200, headers: {}, body: {} }),
-    createLifecyclePlan: async () => ({ statusCode: 201, headers: {}, body: {} }),
-    executeLifecyclePhase: async () => ({ statusCode: 200, headers: {}, body: {} }),
+    createLifecyclePlan: async () => ({
+      statusCode: 201,
+      headers: {},
+      body: {},
+    }),
+    executeLifecyclePhase: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
     listLifecycleRuns: async () => ({ statusCode: 200, headers: {}, body: [] }),
     getLifecycleRun: async () => ({ statusCode: 200, headers: {}, body: {} }),
-    getGateResultManifest: async () => ({ statusCode: 200, headers: {}, body: {} }),
-    getArtifactManifest: async () => ({ statusCode: 200, headers: {}, body: {} }),
-    getDeploymentManifest: async () => ({ statusCode: 200, headers: {}, body: {} }),
-    getVerifyHealthReport: async () => ({ statusCode: 200, headers: {}, body: {} }),
+    getGateResultManifest: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
+    getArtifactManifest: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
+    getDeploymentManifest: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
+    getVerifyHealthReport: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
     requestApproval: async () => ({ statusCode: 201, headers: {}, body: {} }),
-    submitApprovalDecision: async () => ({ statusCode: 200, headers: {}, body: {} }),
+    submitApprovalDecision: async () => ({
+      statusCode: 200,
+      headers: {},
+      body: {},
+    }),
   };
 }
 
 function createTestJwt(payload: Record<string, unknown>): string {
-  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
   const encodedPayload = Buffer.from(
     JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, ...payload }),
   ).toString("base64url");
-  const signature = createHmac("sha256", TEST_SECRET).update(`${header}.${encodedPayload}`).digest("base64url");
+  const signature = createHmac("sha256", TEST_SECRET)
+    .update(`${header}.${encodedPayload}`)
+    .digest("base64url");
   return `${header}.${encodedPayload}.${signature}`;
 }

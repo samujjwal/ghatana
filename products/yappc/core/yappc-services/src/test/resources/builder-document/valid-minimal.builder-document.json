@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-valid-minimal",
+  "owner": "yappc-fixture",
+  "root": "root",
+  "nodes": {
+    "root": {
+      "id": "root",
+      "contractName": "layout.page",
+      "props": {
+        "title": "Valid fixture"
+      },
+      "slots": {
+        "default": []
+      },
+      "bindings": [],
+      "metadata": {
+        "name": "Root",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 1024,
+          "height": 768
+        },
+        "layout": {
+          "resizable": true,
+          "positionable": false,
+          "overflow": "auto"
+        }
+      }
+    }
+  },
+  "bindings": [],
+  "layout": {
+    "type": "flex",
+    "rootId": "root",
+    "nodes": {
+      "root": {
+        "id": "root",
+        "type": "root",
+        "children": [],
+        "layout": "flex",
+        "layoutProps": {}
+      }
+    }
+  },
+  "metadata": {
+    "createdAt": "2026-05-18T00:00:00Z",
+    "updatedAt": "2026-05-18T00:00:00Z",
+    "author": "fixture"
+  },
+  "i18n": {
+    "defaultLocale": "en-US",
+    "locales": ["en-US"],
+    "translations": {
+      "en-US": {
+        "page.title": "Valid fixture"
+      }
+    }
+  },
+  "a11y": {
+    "title": "Valid fixture",
+    "description": "Fixture used to verify YAPPC BuilderDocument schema compatibility.",
+    "landmarks": [
+      {
+        "type": "main",
+        "nodeId": "root"
+      }
+    ],
+    "skipLinks": []
+  },
+  "privacy": {
+    "classification": "internal",
+    "piiNodes": [],
+    "dataRetention": {
+      "days": 30,
+      "autoDelete": false
+    },
+    "consentRequired": false
+  },
+  "validation": {
+    "rules": []
+  }
+}

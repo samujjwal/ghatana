@@ -20,3 +20,4 @@ export * from "./PluginHealthSnapshot.js";
 export * from "./AgentGovernanceHealthSnapshot.js";
 export * from "./LearningHealthSnapshot.js";
 export * from "./PreviewSecurityHealthSnapshot.js";
+export * from "./KernelHealthSnapshot.js";

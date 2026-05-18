@@ -12,10 +12,15 @@ export {
   resolveContractAtVersion,
   resolveAllContractVersions,
   buildContractMap,
-} from './builder';
+  findBuilderCompatibleComponents,
+  validateBuilderCompatibleContract,
+} from "./builder";
 
 export type {
   BuilderPaletteEntry,
   ResolvedCodegenContract,
   ResolvedPreviewPolicy,
-} from './builder';
+  BuilderCompatibilityResult,
+  BuilderCompatibilityViolation,
+  BuilderCompatibleComponent,
+} from "./builder";

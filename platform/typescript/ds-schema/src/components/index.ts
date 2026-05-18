@@ -13,12 +13,14 @@ export {
   ComponentResponsiveMetadataSchema,
   ResponsiveBreakpointBehaviorSchema,
   ComponentPrivacyContractSchema,
+  ComponentI18nRequirementSchema,
+  ComponentBuilderBindingSchema,
   ComponentAIPolicySchema,
   AIActionTypeSchema,
   BuilderA11yObligationsSchema,
   validateComponentContract,
   computeContractHash,
-} from './contract';
+} from "./contract";
 export {
   BuilderPlatformTargetSchema,
   BuilderComponentCapabilitySchema,
@@ -27,7 +29,7 @@ export {
   BuilderComponentSlotManifestSchema,
   BuilderComponentManifestSchema,
   validateBuilderComponentManifest,
-} from './manifest';
+} from "./manifest";
 
 export type {
   PropType,
@@ -40,11 +42,13 @@ export type {
   ComponentResponsiveMetadata,
   ResponsiveBreakpointBehavior,
   ComponentPrivacyContract,
+  ComponentI18nRequirement,
+  ComponentBuilderBinding,
   ComponentPreviewRestrictions,
   ComponentAIPolicy,
   AIActionType,
   BuilderA11yObligations,
-} from './contract';
+} from "./contract";
 export type {
   BuilderPlatformTarget,
   BuilderComponentCapability,
@@ -52,4 +56,4 @@ export type {
   BuilderSlotExposure,
   BuilderComponentSlotManifest,
   BuilderComponentManifest,
-} from './manifest';
+} from "./manifest";
